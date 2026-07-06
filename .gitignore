@@ -2,10 +2,13 @@ node_modules/
 dist/
 .audit/
 .nx/
+*.nx
 .wz/
+*.wz
 .wz_client/
 wz/
 wz_client/
+wz-client/
 .agents/
 .claude/
 .codex/
