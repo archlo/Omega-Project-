@@ -1,0 +1,10 @@
+import { Text } from 'pixi.js';
+Object.defineProperty(Text.prototype, 'width', { get: () => 0 });
+const { UserList } = await import('../src/ui/game/UserList.js');
+const list: any = new UserList();
+list.isVisible = true;
+console.log('before click, buttons:', list._buttons?.map((t: any) => t.text));
+const r = list.handleMouseButton(161, 30, true);
+console.log('click handled:', r);
+console.log('active tab:', list._activeTab);
+console.log('buttons:', list._buttons?.map((t: any) => t.text));

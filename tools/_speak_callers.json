@@ -1,0 +1,12 @@
+[
+  {
+    "caller": "CMob::OnDie(void)",
+    "addr": "0x64e4b0",
+    "call_site": "0x64e84e"
+  },
+  {
+    "caller": "CMob::OnMobSpeaking(CInPacket &)",
+    "addr": "0x650000",
+    "call_site": "0x65001d"
+  }
+]

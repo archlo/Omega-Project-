@@ -1,0 +1,11 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": ["@dietrichgebert/ponytail"],
+  "mcp": {
+    "ida": {
+      "type": "local",
+      "command": ["ida-mcp", "stdio"],
+      "enabled": true
+    }
+  }
+}

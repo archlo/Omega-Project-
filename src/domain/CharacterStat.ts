@@ -1,0 +1,30 @@
+export class CharacterStat {
+  characterId = 0;
+  name = '';
+  gender: number = 0;
+  skin: number = 0;
+  face = 0;
+  hair = 0;
+  petSn1: number | bigint = 0;
+  petSn2: number | bigint = 0;
+  petSn3: number | bigint = 0;
+  level: number = 0;
+  job: number = 0;
+  str: number = 0;
+  dex: number = 0;
+  int: number = 0;
+  luk: number = 0;
+  hp = 0;
+  maxHp = 0;
+  mp = 0;
+  maxMp = 0;
+  ap: number = 0;
+  spRaw = new Uint8Array(0);
+  exp = 0;
+  pop: number = 0;
+  tempExp = 0;
+  posMap = 0;
+  portal: number = 0;
+  playTime = 0;
+  subJob: number = 0;
+}

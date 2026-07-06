@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.audit/
+.nx/
+.wz/
+.wz_client/
+wz/
+wz_client/
+.agents/
+.claude/
+.codex/
+ida/
+nx-tools/
+*.md
+.mcp.json
