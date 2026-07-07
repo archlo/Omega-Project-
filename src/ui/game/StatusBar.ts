@@ -60,8 +60,8 @@ export class StatusBar extends GamePanel {
   onOptions: (() => void) | null = null;
   onQuit: (() => void) | null = null;
 
-  private _viewW = 1024;
-  private _viewH = 768;
+  private _viewW = 800;
+  private _viewH = 600;
   private _hpPct = 0;
   private _mpPct = 0;
   private _expPct = 0;
@@ -234,9 +234,6 @@ export class StatusBar extends GamePanel {
   relayout(viewW: number, viewH: number): void {
     this._viewW = viewW;
     this._viewH = viewH;
-    // Internal sprites (_bgSprite, gauge caps, text) are positioned at absolute
-    // frame coordinates via _barRef / _barTopLeft.  Do NOT move _root — that
-    // would double-offset everything since the sprites already embed the Y origin.
   }
 
   update(dt: number): void {

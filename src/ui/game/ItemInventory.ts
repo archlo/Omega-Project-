@@ -1,9 +1,11 @@
 import { Container, Graphics, Sprite, Text, TextStyle, Texture } from 'pixi.js';
 import { GamePanel } from './GamePanel.js';
+import type { DragTarget } from '../DragController.js';
 import { BuiltInFont } from '../BuiltInFont.js';
 import { ItemIconLoader } from '../../character/ItemIconLoader.js';
 import type { InventoryOpArg } from '../../net/handlers/PacketArgs.js';
 import type { EquipStats } from '../../domain/InventoryItem.js';
+import { InventoryType } from '../../domain/InventoryItem.js';
 import { TooltipAssets } from './TooltipAssets.js';
 import { ItemTooltip } from './ItemTooltip.js';
 import { WzCanvas } from '../../wz/WzCanvas.js';
@@ -49,7 +51,7 @@ export interface ItemDragPayload { itemId: number; slotPos: number; invType: num
 
 // OG class: CUIItem (TSingleton<CUIItem>, RTTI ms_RTTI_CUIItem; vtable
 // referenced throughout CDraggableItem methods alongside CUIEquip).
-export class ItemInventory extends GamePanel {
+export class ItemInventory extends GamePanel implements DragTarget {
   private _items: InvItem[] = [];
   private _slots = new Map<string, InvItem>(); // key = "${invType}-${pos}"
   private _bg: Graphics;
@@ -462,6 +464,45 @@ export class ItemInventory extends GamePanel {
     const maxScroll = Math.max(0, Math.ceil(maxSlot / COLS) - ROWS);
     if (key === 'PageDown' && !this._extended) { this._scrollOffset[this._activeTab] = Math.min(this._scrollOffset[this._activeTab] + 1, maxScroll); this._rebuildGrid(); return true; }
     if (key === 'PageUp' && !this._extended) { this._scrollOffset[this._activeTab] = Math.max(0, this._scrollOffset[this._activeTab] - 1); this._rebuildGrid(); return true; }
+    return false;
+  }
+
+  // OG: CDraggableItem::OnDropped → GetOffEquipItem (unequip) / rearrange.
+  // Accepts worn equip items (slotPos<0) dragged from EquipInventory, or
+  // inventory items dragged within the inventory to reorder.
+  onUnequipToInventory: ((invType: number, bodyPart: number, invSlot: number) => void) | null = null;
+
+  tryAcceptDrag(payload: unknown, x: number, y: number): boolean {
+    if (!this.isVisible) return false;
+    if (!payload || typeof payload !== 'object' || !('invType' in payload)) return false;
+    const p = payload as ItemDragPayload;
+    const lx = x - this._root.x;
+    const ly = y - this._root.y;
+    const slotPos = this._slotPositionFromPoint(lx, ly);
+
+    // Worn item (negative slotPos) dropped onto inventory — unequip to this slot
+    if (p.slotPos < 0 && p.invType === InventoryType.Equip) {
+      const bodyPart = -p.slotPos;
+      if (slotPos > 0) {
+        // Dropped onto a specific inventory slot — unequip there
+        this.onUnequipToInventory?.(p.invType, bodyPart, slotPos);
+      } else {
+        // Dropped on the panel background — unequip to first free slot
+        const free = this.firstFreeSlot(0);
+        if (free > 0) this.onUnequipToInventory?.(p.invType, bodyPart, free);
+      }
+      return true;
+    }
+
+    // Inventory-to-inventory move (positive slotPos within equip tab)
+    if (p.slotPos > 0 && p.invType === InventoryType.Equip && slotPos > 0 && slotPos !== p.slotPos) {
+      // Rearrange within equip tab — move item from p.slotPos to slotPos
+      // OG doesn't have explicit rearrange via drag (only arrange button),
+      // but we can support it via ChangeSlotPosition with a swap.
+      this.onUnequipToInventory?.(p.invType, -slotPos, p.slotPos);
+      return true;
+    }
+
     return false;
   }
 

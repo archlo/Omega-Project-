@@ -21,8 +21,8 @@ export class Revive extends GamePanel {
   private _message: Text | null = null;
   private _btOk: Button;
   private _font: BuiltInFont | null;
-  private _viewW = 1024;
-  private _viewH = 768;
+  private _viewW = 800;
+  private _viewH = 600;
   private _alpha = 0;
   private _ignoreInputMs = 0;
 

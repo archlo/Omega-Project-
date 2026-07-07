@@ -603,8 +603,6 @@ export class GameStage extends Stage {
     this._camera.ViewHeight = windowH;
     this._equip?.onResize(windowW, windowH);
     this._item?.onResize(windowW, windowH);
-    // StatusBar, ChatBar, QuickSlots, and RevivePanel live inside the
-    // 800×600 frame container — pass frame dims, not the full window size.
     this._statusBar?.relayout(800, 600);
     this._chatBar?.relayout(800, 600);
     this._quickSlots?.Relayout(800, 600);
@@ -721,6 +719,8 @@ export class GameStage extends Stage {
 
   onEnter(game: MapleClaudeGame): void {
     super.onEnter(game);
+    game.bottomAlignFrame = true;
+    game._updateFrameTransform();
     this._camera.ViewWidth = game.pixiApp.screen.width;
     this._camera.ViewHeight = game.pixiApp.screen.height;
     this._player = new CharLook(0);
@@ -821,6 +821,20 @@ export class GameStage extends Stage {
     if (this._field && this._field.Info.Bgm) {
       this._currentBgm = '';
       this._playMapBgm(this._field.Info.Bgm);
+    }
+
+    // Retry minimap data — _applyFieldChange may have fired before
+    // _initMenu created _miniMap.
+    if (this._field && this._miniMap) {
+      const mapId = this._field.LoadedMapId;
+      const mapName = this.game.nameService.MapShortName(mapId) ?? this.game.nameService.MapName(mapId) ?? `Map ${mapId}`;
+      const streetName = this.game.nameService.MapStreetName(mapId) ?? '';
+      this._miniMap.setMapData(this._field.MiniMap, mapName, streetName);
+      this._miniMap.setPortals(
+        Object.values(this._field.Portals).map((p) => ({ x: p.X, y: p.Y })),
+      );
+      this._miniMap.setMiniMapType(0);
+      this._miniMap.onPlayerDotClick = () => this.game.session.send(GameSender.UserMiniMapClick());
     }
   }
 
@@ -923,6 +937,9 @@ export class GameStage extends Stage {
       descOf: (id) => this.game.nameService.ItemDesc(id) ?? null,
     });
     this._syncEquipPetCount();
+    this._equip._petPanelAdded = (panel) => { this.uiRoot.addChild(panel); };
+    this._equip._dragonPanelAdded = (panel) => { this.uiRoot.addChild(panel); };
+    this._equip._mechanicPanelAdded = (panel) => { this.uiRoot.addChild(panel); };
     this._item = new ItemInventory({
       loader: this._loader,
       uiWz,
@@ -949,11 +966,23 @@ export class GameStage extends Stage {
     // such dialog is open to claim the drop (see onMouseButton's drag-end
     // handling).
     this._equip.onDragStart = (payload, texture, x, y) => { this._dragController.beginDrag(payload, texture, x, y); };
+    // OG: CDraggableItem::WearEquipItem — equip from inventory via drag-drop
+    this._equip.onEquipDrop = (invType, invSlot, bodyPart) => {
+      this.game.session.send(GameSender.ChangeSlotPosition(invType, invSlot, -bodyPart, 1));
+    };
+    // OG: CDraggableItem::GetOffEquipItem — unequip worn item to inventory
+    this._equip.onUnequipToInventory = (invType, bodyPart, invSlot) => {
+      this.game.session.send(GameSender.ChangeSlotPosition(invType, -bodyPart, invSlot, 1));
+    };
     this._equip.onCashShop = () => {
       if (this.game.session.isConnected) this.game.session.send(GameSender.MigrateToCashShop());
       this.stageDirector.push(new CashShopStage(this._uiWz));
     };
     this._item.onDragStart = (payload, texture, x, y) => { this._dragController.beginDrag(payload, texture, x, y); };
+    // OG: CDraggableItem::GetOffEquipItem — accept worn equip dropped onto inventory
+    this._item.onUnequipToInventory = (invType, bodyPart, invSlot) => {
+      this.game.session.send(GameSender.ChangeSlotPosition(invType, -bodyPart, invSlot, 1));
+    };
     this._item.onEquipItem = (item) => {
       const bodyPart = GameStage._equipBodyPart(item.id);
       if (bodyPart <= 0) {
@@ -1249,7 +1278,7 @@ export class GameStage extends Stage {
       this._questReward!, this._notice!, this._antiMacroDialog!);
 
     // Fixed-position HUDs — not draggable
-    for (const p of [this._statusBar, this._chatBar, this._miniMap, this._buffList, this._clock, this._slideNotice, this._partyHPBar, this._killCountHud, this._massacreGaugeHud, this._questTimerHud, this._quickSlots!]) {
+    for (const p of [this._statusBar, this._chatBar, this._buffList, this._clock, this._slideNotice, this._partyHPBar, this._killCountHud, this._massacreGaugeHud, this._questTimerHud, this._quickSlots!]) {
       p.draggable = false;
     }
 
@@ -1535,6 +1564,8 @@ export class GameStage extends Stage {
   }
 
   onExit(): void {
+    this.game.bottomAlignFrame = false;
+    this.game._updateFrameTransform();
     this._currentBgm = '';
     this._loader.Dispose();
     this.game.fieldHandlers.onSetField = null;
@@ -2201,12 +2232,10 @@ export class GameStage extends Stage {
       }
     };
     fh.onPetConsumeItemInit = (args) => {
-      const petName = this._getLocalPetName();
-      this._chatBar.addLine(petName ? `${petName} consumed item ${args.itemId}.` : `Pet consumed item ${args.itemId}.`);
+      this._equip.setPetConsumeItem(args.itemId);
     };
     fh.onPetConsumeMPItemInit = (args) => {
-      const petName = this._getLocalPetName();
-      this._chatBar.addLine(petName ? `${petName} drank MP recovery item ${args.itemId}.` : `Pet drank MP recovery item ${args.itemId}.`);
+      this._equip.setPetConsumeMpItem(args.itemId);
     };
 
     // BattleRecord (420-423, CBattleRecordMan::OnPacket)
@@ -3005,11 +3034,20 @@ export class GameStage extends Stage {
       this._statusMessenger.showLoot(`[Option Upgrade] char ${charId} result ${result}`);
     };
     fh.onShowItemReleaseEffect = ({ charId, flag }) => {
-      this._otherChars.get(charId)?.SetStatusBadge('release', 'R', 4);
+      if (charId === this._localCharId) {
+        // OG: CUIEquip::ShowItemReleaseEffect — flag maps to body part index for equipped item
+        this._equip.showItemReleaseEffect(flag);
+      } else {
+        this._otherChars.get(charId)?.SetStatusBadge('release', 'R', 4);
+      }
       this._statusMessenger.showLoot(`[Item Release] char ${charId} flag ${flag}`);
     };
     fh.onShowItemUnreleaseEffect = ({ charId, flag }) => {
-      this._otherChars.get(charId)?.SetStatusBadge('unrelease', 'U', 4);
+      if (charId === this._localCharId) {
+        this._equip.showItemReleaseEffect(flag);
+      } else {
+        this._otherChars.get(charId)?.SetStatusBadge('unrelease', 'U', 4);
+      }
       this._statusMessenger.showLoot(`[Item Unrelease] char ${charId} flag ${flag}`);
     };
     fh.onUserHitByUser = ({ charId, damage }) => {
@@ -3310,6 +3348,7 @@ export class GameStage extends Stage {
       }
 
       this._job = stat.job;
+      this._equip.setJobId(stat.job, stat.level, stat.subJob);
       this._charInfo.charName = stat.name;
       this._charInfo.level = stat.level;
       this._charInfo.job = this.game.nameService.SkillName(stat.job * 10000) ?? `Job ${stat.job}`;
@@ -4008,7 +4047,7 @@ export class GameStage extends Stage {
   private _setEquippedAvatarItem(invType: number, pos: number, itemId: number, equipStats?: EquipStats): void {
     const bodyPart = this._bodyPartFromEquippedPos(invType, pos);
     const name = this.game.nameService.ItemName(itemId) ?? `[${itemId}]`;
-    this._equip.setEquippedByBodyPart(bodyPart, itemId, name);
+    this._equip.setEquippedByBodyPart(bodyPart, itemId, name, equipStats?.grade ?? 0);
     if (equipStats) {
       this._equipStats.set(bodyPart, equipStats);
     }
@@ -4498,6 +4537,13 @@ export class GameStage extends Stage {
 
   private _onSkillRecordResult(records: { skillId: number; level: number; masterLevel: number }[]): void {
     this._skillRecords = records;
+    // OG: CUIEquip::Draw checks for novice skill 1004 via get_novice_skill_as_race(1004, nJob).
+    // Skill 1004 is the base beginner skill; race-specific variants are 20001004 (aran), etc.
+    const hasNovice = records.some(r => {
+      const id = r.skillId;
+      return (id === 1004 || id === 20001004 || id === 20011004 || id === 20021004 || id === 20031004) && r.level > 0;
+    });
+    this._equip.setHasNoviceSkill1004(hasNovice);
     this._skill.skillService = this._skillService;
     this._skill.textureLoader = this._loader;
     const rows: SkillRow[] = [];

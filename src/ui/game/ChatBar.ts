@@ -354,8 +354,20 @@ export class ChatBar extends GamePanel {
       return;
     }
 
+    const chat = ui.GetItem('StatusBar2.img/chat') as WzProperty | null;
+
+    // Helper: load a WzCanvas from a parent and add it to _root at (x,y).
+    // Tries bar (mainBar) first, then chat (StatusBar2.img/chat).
     const loadChatSprite = (name: string, x: number, y: number, visible = true): Sprite | null => {
-      const node = bar.Get(name);
+      let node = bar.Get(name);
+      if (!(node instanceof WzCanvas) && chat) {
+        node = chat.Get(name);
+      }
+      if (node instanceof WzProperty) {
+        // Some WZ entries are properties wrapping a single canvas child
+        const inner = node.Get('0') ?? node.Get('bmp');
+        if (inner instanceof WzCanvas) node = inner;
+      }
       if (!(node instanceof WzCanvas)) {
         console.warn(`[ChatBar] ${name} not a WzCanvas:`, typeof node, node?.constructor?.name);
         return null;
@@ -377,9 +389,9 @@ export class ChatBar extends GamePanel {
     this._layerEnter = loadChatSprite('chatEnter', INPUT_X, INPUT_Y, false);
     this._layerCover = loadChatSprite('chatCover', DISPLAY_X + DISPLAY_W - 82, INPUT_Y, false);
 
-    // Combo box background from StatusBar2.img/chatTarget
+    // Combo box background from StatusBar2.img/mainBar/chatTarget
     const chatTarget = bar.Get('chatTarget');
-    const ctNode = chatTarget instanceof WzProperty ? chatTarget.Get('bmp') : chatTarget instanceof WzCanvas ? chatTarget : null;
+    const ctNode = chatTarget instanceof WzProperty ? chatTarget.Get('bmp') ?? chatTarget.Get('0') : chatTarget instanceof WzCanvas ? chatTarget : null;
     if (ctNode instanceof WzCanvas) {
       const s = loader.Load(ctNode)?.ToPixi();
       if (s) {
@@ -392,7 +404,6 @@ export class ChatBar extends GamePanel {
     }
 
     // Tab bar WZ
-    const chat = ui.GetItem('StatusBar2.img/chat') as WzProperty | null;
     if (chat) {
       const tapBar = chat.Get('tapBar');
       if (tapBar instanceof WzProperty) {

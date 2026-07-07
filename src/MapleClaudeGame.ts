@@ -41,6 +41,8 @@ export class MapleClaudeGame {
   mapContainer!: Container;
   /** 800-px-wide container centered in the window — all UI lives here. */
   frameContainer!: Container;
+  /** When true, the 800x600 frame anchors to the bottom instead of center. */
+  bottomAlignFrame = false;
 
   nameService: NameService;
   questInfoService: QuestInfoService | null = null;
@@ -70,7 +72,10 @@ export class MapleClaudeGame {
   /** Pixels from the left edge of the canvas to the left edge of the 800-px frame. */
   get uiOffset(): number {
     try {
-      return Math.max(0, Math.floor(((this.pixiApp?.screen.width ?? 800) - 800) / 2));
+      const sw = this.pixiApp?.screen.width ?? 800;
+      const sh = this.pixiApp?.screen.height ?? 600;
+    const scale = Math.min(sw / 800, sh / 600, 1);
+      return Math.max(0, Math.floor((sw - 800 * scale) / 2));
     } catch {
       return 0;
     }
@@ -79,8 +84,40 @@ export class MapleClaudeGame {
   private _updateErrCount = 0;
   private _prevKeys = new Set<string>();
 
-  /** Currently-held keyboard keys (event.key values), for continuous input like movement. */
+  /** Currently-held keyboard keys (event.key values, for continuous input like movement). */
   get heldKeys(): ReadonlySet<string> { return this._prevKeys; }
+
+  /** Scale + center the 800x600 UI frame to fill the window. */
+  _updateFrameTransform(): void {
+    const sw = this.pixiApp.screen.width;
+    const sh = this.pixiApp.screen.height;
+    const scale = Math.min(sw / 800, sh / 600, 1);
+    this.frameContainer.scale.set(scale);
+    this.frameContainer.x = Math.floor((sw - 800 * scale) / 2);
+    this.frameContainer.y = this.bottomAlignFrame
+      ? Math.floor(sh - 600 * scale)
+      : Math.floor((sh - 600 * scale) / 2);
+  }
+
+  /** Uniform scale factor applied to the 800x600 UI frame. */
+  get frameScale(): number {
+    try {
+      const sw = this.pixiApp?.screen.width ?? 800;
+      const sh = this.pixiApp?.screen.height ?? 600;
+      return Math.min(sw / 800, sh / 600, 1);
+    } catch {
+      return 1;
+    }
+  }
+
+  /** Convert raw canvas coords to 800x600 frame coords (accounts for scale + offset). */
+  private _canvasToFrame(cx: number, cy: number): { x: number; y: number } {
+    const scale = this.frameScale;
+    return {
+      x: (cx - this.frameContainer.x) / scale,
+      y: (cy - this.frameContainer.y) / scale,
+    };
+  }
 
   constructor() {
     this.router = new PacketRouter();
@@ -133,7 +170,7 @@ export class MapleClaudeGame {
     this.frameContainer = new Container();
     this.pixiApp.stage.addChild(this.mapContainer);
     this.pixiApp.stage.addChild(this.frameContainer);
-    this.frameContainer.x = this.uiOffset;
+    this._updateFrameTransform();
 
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
     canvas.style.cursor = 'none';
@@ -165,26 +202,26 @@ export class MapleClaudeGame {
     document.addEventListener('mousemove', (e) => {
       const { x, y } = toCanvas(e.clientX, e.clientY);
       this.cursor.container.position.set(x, y);
-      const fx = x - this.uiOffset;
-      (window as any).__mouseX = fx;
-      (window as any).__mouseY = y;
-      this.stageDirector.onMouseMove(fx, y);
+      const f = this._canvasToFrame(x, y);
+      (window as any).__mouseX = f.x;
+      (window as any).__mouseY = f.y;
+      this.stageDirector.onMouseMove(f.x, f.y);
     });
     document.addEventListener('mousedown', (e) => {
       const { x, y } = toCanvas(e.clientX, e.clientY);
       this.cursor.setClicked(true);
-      const fx = x - this.uiOffset;
-      (window as any).__mouseX = fx;
-      (window as any).__mouseY = y;
-      this.stageDirector.onMouseButton(fx, y, true, 0);
+      const f = this._canvasToFrame(x, y);
+      (window as any).__mouseX = f.x;
+      (window as any).__mouseY = f.y;
+      this.stageDirector.onMouseButton(f.x, f.y, true, 0);
     });
     document.addEventListener('mouseup', (e) => {
       const { x, y } = toCanvas(e.clientX, e.clientY);
       this.cursor.setClicked(false);
-      const fx = x - this.uiOffset;
-      (window as any).__mouseX = fx;
-      (window as any).__mouseY = y;
-      this.stageDirector.onMouseButton(fx, y, false, 0);
+      const f = this._canvasToFrame(x, y);
+      (window as any).__mouseX = f.x;
+      (window as any).__mouseY = f.y;
+      this.stageDirector.onMouseButton(f.x, f.y, false, 0);
     });
     document.addEventListener('wheel', (e) => {
       (window as any).__wheelDelta = e.deltaY;
@@ -195,7 +232,7 @@ export class MapleClaudeGame {
       const nw = window.innerWidth;
       const nh = window.innerHeight;
       this.pixiApp.renderer.resize(nw, nh);
-      this.frameContainer.x = this.uiOffset;
+      this._updateFrameTransform();
       this.stageDirector.onResize(nw, nh);
     });
 
