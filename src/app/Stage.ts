@@ -66,6 +66,7 @@ export abstract class Stage {
   onMouseMove(x: number, y: number): void {
     this._frameMuteButton?.SetMouse(x, y);
   }
+  onMouseWheel(x: number, y: number, deltaY: number): void {}
   onKeyPress(key: string): void {}
   onResize(windowW: number, windowH: number): void {}
 }

@@ -78,6 +78,7 @@ export class KeyConfig extends GamePanel implements DragTarget {
   private readonly _bg3: Sprite | null;
   private readonly _iconCache = new Map<number, WzSprite | null>();
   private readonly _keyCells = new Map<number, WzSprite | null>();
+  private readonly _keyLabels = new Map<number, WzSprite | null>();
   private readonly _font: BuiltInFont | null;
 
   private readonly _btClose: Button | null;
@@ -245,6 +246,24 @@ export class KeyConfig extends GamePanel implements DragTarget {
     this.onBindingsChanged?.();
   }
 
+  // OG: CFuncKeyMappedMan — bind item to key slot (FuncKeyType.Item).
+  bindItemToKey(scancode: number, itemId: number): void {
+    if (scancode < 0 || scancode >= MapSize) return;
+    const fk: FuncKeyMappedRecord = { type: FuncKeyType.Item, id: itemId };
+    const changed: { index: number; fk: FuncKeyMappedRecord }[] = [];
+    for (let i = 0; i < MapSize; i++) {
+      if (this._map[i].type === FuncKeyType.Item && this._map[i].id === itemId && i !== scancode) {
+        this._map[i] = { ...FuncKeyMappedNone };
+        changed.push({ index: i, fk: FuncKeyMappedNone });
+      }
+    }
+    this._map[scancode] = fk;
+    changed.push({ index: scancode, fk });
+    for (let i = 0; i < MapSize; i++) this._mapOnOpen[i] = { ...this._map[i] };
+    this.onSaveToServer?.(changed);
+    this.onBindingsChanged?.();
+  }
+
   tryBindSkillAt(skillId: number, screenX: number, screenY: number): boolean {
     if (!this.isVisible) return false;
     const lx = screenX - this._root.x;
@@ -268,9 +287,27 @@ export class KeyConfig extends GamePanel implements DragTarget {
   // GameStage's endDrag(visible, x, y) loop offers skill drops to KeyConfig.
   // QuickSlotBar already implements DragTarget this way (Pass 108); KeyConfig had
   // tryBindSkillAt but was never registered as a drop target (zero callers).
+  // Also handles item drops (OG: CDraggableItem → CUIKeyConfig::MapFuncKey).
   tryAcceptDrag(payload: unknown, x: number, y: number): boolean {
-    if (!payload || typeof payload !== 'object' || !('skillId' in payload)) return false;
-    return this.tryBindSkillAt((payload as { skillId: number }).skillId, x, y);
+    if (!payload || typeof payload !== 'object') return false;
+    if ('skillId' in payload) return this.tryBindSkillAt((payload as { skillId: number }).skillId, x, y);
+    if ('itemId' in payload && 'invType' in payload) {
+      const { itemId, invType } = payload as { itemId: number; invType: number };
+      if (invType === 2 || invType === 3 || invType === 4) {
+        return this.tryBindItemAt(itemId, x, y);
+      }
+    }
+    return false;
+  }
+
+  tryBindItemAt(itemId: number, screenX: number, screenY: number): boolean {
+    if (!this.isVisible) return false;
+    const lx = screenX - this._root.x;
+    const ly = screenY - this._root.y;
+    const sc = hitTestKey(lx, ly);
+    if (sc < 0) return false;
+    this.bindItemToKey(sc, itemId);
+    return true;
   }
 
   update(_dt: number): void {
@@ -363,6 +400,13 @@ export class KeyConfig extends GamePanel implements DragTarget {
         this._gfx.rect(cell.x, cell.y, CellSize, CellSize).fill({ color: 0x2a2d3a });
         this._gfx.rect(cell.x, cell.y, CellSize, CellSize).stroke({ color: 0x3c4060, width: 1 });
       }
+      // OG: Draw key name label (e.g., "A", "1", "F1") from WZ
+      const label = this._loadKeyLabel(sc);
+      if (label) {
+        const ls = label.ToPixi();
+        ls.position.set(cell.x, cell.y);
+        this._content.addChild(ls);
+      }
     }
     for (let slot = 0; slot < PaletteCount; slot++) {
       const cell = paletteCell(slot);
@@ -441,6 +485,16 @@ export class KeyConfig extends GamePanel implements DragTarget {
     const node = keyRoot?.Get(String(sc));
     const sprite = node instanceof WzCanvas ? this._loader.Load(node) : null;
     this._keyCells.set(sc, sprite);
+    return sprite;
+  }
+
+  // OG: Key name labels — loaded from KeyConfig/<scancode> (WZ canvases showing "A", "1", etc.)
+  private _loadKeyLabel(sc: number): WzSprite | null {
+    if (this._keyLabels.has(sc)) return this._keyLabels.get(sc)!;
+    let v = this._kc2?.Get(String(sc));
+    if (!(v instanceof WzCanvas)) v = this._kc?.Get(String(sc));
+    const sprite = v instanceof WzCanvas ? this._loader.Load(v) : null;
+    this._keyLabels.set(sc, sprite);
     return sprite;
   }
 

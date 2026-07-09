@@ -22,10 +22,10 @@ const MarkX = 7;
 const MarkY = 17;
 const MarkerScale = 2;
 
-interface Axis {
-  viewStart: number;
-  viewLen: number;
-  drawOffset: number;
+// OG: CalculateScr result — screen origin after clamping
+interface ScrOrig {
+  x: number;
+  y: number;
 }
 
 class FrameSet {
@@ -67,9 +67,30 @@ export class MiniMap extends GamePanel {
   // OG: m_nMiniMapType — set in constructor, affects button layout
   private _miniMapType: MiniMapType = 0;
 
+  // OG: m_nMag — current magnification level (0=normal, 1=2X zoom)
+  private _mag = 0;
+  // OG: m_nMag_Normal — magnification for normal mode
+  private _magNormal = 0;
+  // OG: m_nMag_2X — magnification for 2X mode
+  private _mag2X = 1;
+
+  // OG: m_dwFieldID — current field ID for tracking map changes
+  private _fieldId = 0;
+  // OG: m_bShowMiniMap — whether minimap is visible
+  private _showMiniMap = true;
+  // OG: m_dwSearchedShop — last searched shop ID
+  private _searchedShop = 0;
+  // OG: m_bCreated — whether minimap has been created/initialized
+  private _created = false;
+
   // OG: saved window position from CUIWndPosSaved
   private _savedX: number | null = null;
   private _savedY: number | null = null;
+
+  // OG: Remote player names (m_strRemoteNW/N/NE) — names displayed near minimap edges
+  private _remoteNameNW = '';
+  private _remoteNameN = '';
+  private _remoteNameNE = '';
 
   private readonly _minMap = new FrameSet();
   private readonly _maxMap = new FrameSet();
@@ -86,6 +107,20 @@ export class MiniMap extends GamePanel {
   private readonly _buttons: Button[] = [];
 
   private readonly _font: BuiltInFont | null;
+  // OG: m_pFont — main font for minimap text
+  private _wzFont: WzProperty | null = null;
+  // OG: m_pFontMapName — font for map name display
+  private _wzFontMapName: WzProperty | null = null;
+  // OG: m_pFontMapNameBack — font for map name background/shadow
+  private _wzFontMapNameBack: WzProperty | null = null;
+  // OG: m_pPropFieldInfo — field info property for minimap data
+  private _propFieldInfo: WzProperty | null = null;
+  // OG: m_pPropField — field property for minimap data
+  private _propField: WzProperty | null = null;
+  // OG: m_pSimple_Canvas — simple mode minimap canvas
+  private _simpleCanvas: WzSprite | null = null;
+  // OG: m_pSimple_Canvas_Huge — simple mode huge minimap canvas
+  private _simpleCanvasHuge: WzSprite | null = null;
   private readonly _gfx: Graphics;
   private readonly _content: Container;
 
@@ -95,6 +130,9 @@ export class MiniMap extends GamePanel {
   private readonly _partyMembers: { x: number; y: number; isLeader: boolean }[] = [];
   private readonly _portals: { x: number; y: number }[] = [];
   private readonly _merchants: { x: number; y: number }[] = [];
+  // OG: m_mStalkee (characterId → POINT) + m_mStalkeeName (characterId → name)
+  // Stalkees are followed players shown with name labels on the minimap.
+  private readonly _stalkees = new Map<number, { x: number; y: number; name: string }>();
 
   // OG: OnMouseButton sends packet when clicking player dot
   onPlayerDotClick: (() => void) | null = null;
@@ -129,11 +167,22 @@ export class MiniMap extends GamePanel {
 
     this._markers = new MiniMapMarkers(loader, ui);
 
+    // OG: Simple mode canvas from MiniMapSimpleMode
+    const simpleRoot = ui?.GetItem('UIWindow2.img/MiniMapSimpleMode') as WzProperty | null;
+    this._simpleCanvas = this._loadWzSprite(loader, simpleRoot, 'canvas');
+    this._simpleCanvasHuge = this._loadWzSprite(loader, simpleRoot, 'canvasHuge');
+
     // OG button IDs: 1000=minimize, 1001=maximize, 1002=worldmap, 1003=2X
     this._btMin = this._makeBtn(loader, mm, 'BtMin', () => this._onBtMinimize());
     this._btMax = this._makeBtn(loader, mm, 'BtMax', () => this._onBtMaximize());
     this._btMap = this._makeBtn(loader, mm, 'BtMap', () => this._onBtWorldMap());
-    this._bt2X = this._makeBtn(loader, mm, 'Bt2X', () => this._onBt2X());
+    // OG: SetCtrl_Simple loads Bt2X from MiniMapSimpleMode/Button/Bt2X, not MiniMap root
+    const simpleBtnRoot = ui?.GetItem('UIWindow2.img/MiniMapSimpleMode/Button') as WzProperty | null;
+    this._bt2X = this._makeBtn(loader, simpleBtnRoot ?? mm, 'Bt2X', () => this._onBt2X());
+
+    // OG: Load fonts from WZ (m_pFont, m_pFontMapName, m_pFontMapNameBack)
+    // Font paths from CUIMiniMap::OnCreate
+    this._loadFonts(ui);
 
     this._gfx = new Graphics();
     this._content = new Container();
@@ -157,6 +206,12 @@ export class MiniMap extends GamePanel {
     return c instanceof WzCanvas ? loader.Load(c)?.ToPixi() ?? null : null;
   }
 
+  // OG: Load a WzSprite (for simple mode canvas)
+  private _loadWzSprite(loader: WzTextureLoader, root: WzProperty | null, name: string): WzSprite | null {
+    const c = root?.Get(name);
+    return c instanceof WzCanvas ? loader.Load(c) ?? null : null;
+  }
+
   private _makeBtn(loader: WzTextureLoader, root: WzProperty | null, name: string, onClick: () => void): Button | null {
     const pr = root?.Get(name) as WzProperty | null;
     if (!pr) return null;
@@ -166,30 +221,43 @@ export class MiniMap extends GamePanel {
     return b;
   }
 
+  // OG: Load fonts from WZ (m_pFont, m_pFontMapName, m_pFontMapNameBack)
+  // Font paths from CUIMiniMap::OnCreate — loads from MiniMap/WzFont
+  private _loadFonts(ui: WzPackage | null): void {
+    if (!ui) return;
+    // OG: Font loading from MiniMap/WzFont subtree
+    const fontRoot = ui.GetItem('UIWindow2.img/MiniMap/WzFont') as WzProperty | null;
+    if (fontRoot) {
+      this._wzFont = fontRoot.Get('Normal') as WzProperty | null;
+      this._wzFontMapName = fontRoot.Get('MapName') as WzProperty | null;
+      this._wzFontMapNameBack = fontRoot.Get('MapNameBack') as WzProperty | null;
+    }
+  }
+
   // OG: OnButtonClicked 1000 — ToggleMiniMapState
   private _onBtMinimize(): void {
     if (!this.isVisible) return;
     this._prevMode = this._mode;
     if (this._miniMapType === 1) {
-      // OG: m_nMiniMapType=1 → m_nOption = (m_nOption + 2) % 3
+      // OG: m_nMiniMapType=1 → always (m_nOption + 2) % 3
       this._mode = ((this._mode + 2) % 3) as OgMode;
     } else {
-      // OG: m_nMiniMapType=0 → m_nOption = (m_nOption + 1) % 3
-      this._mode = ((this._mode + 1) % 3) as OgMode;
+      // OG: m_nMiniMapType=0 → if option==0: jump to 2; else: (option+1)%3
+      if (this._mode === 0) {
+        this._mode = 2;
+      } else {
+        this._mode = ((this._mode + 1) % 3) as OgMode;
+      }
     }
+    // OG: if collapsed, force prevMode=1 so maximize restores to huge
     if (this._mode === 2) this._prevMode = 1;
   }
 
   // OG: OnButtonClicked 1001 — restore previous mode
+  // OG decompilation: m_nOption = m_nPrevOption; then ToggleMap()
   private _onBtMaximize(): void {
     if (!this.isVisible) return;
-    if (this._miniMapType === 1) {
-      // OG: m_nMiniMapType=1 → m_nOption = (m_nOption + 1) % 3
-      this._mode = ((this._mode + 1) % 3) as OgMode;
-    } else {
-      // OG: m_nMiniMapType=0 → m_nOption = (m_nOption + 2) % 3
-      this._mode = ((this._mode + 2) % 3) as OgMode;
-    }
+    this._mode = this._prevMode;
   }
 
   // OG: OnButtonClicked 1002 — world map (stub)
@@ -199,8 +267,15 @@ export class MiniMap extends GamePanel {
 
   // OG: OnButtonClicked 1003 — toggle 2X mode
   private _onBt2X(): void {
-    // In OG SetCtrl_Simple, button 1003 toggles between m_nOption 0 and 1
-    this._mode = this._mode === 0 ? 1 : 0;
+    // OG: SetCtrl_Simple toggles between m_nOption 0 (normal) and 1 (huge)
+    // This also switches between m_nMag_Normal and m_nMag_2X
+    if (this._mode === 0) {
+      this._mode = 1;
+      this._mag = this._mag2X;
+    } else {
+      this._mode = 0;
+      this._mag = this._magNormal;
+    }
   }
 
   setMapData(data: MiniMapData | null, mapName: string, regionName: string): void {
@@ -220,6 +295,10 @@ export class MiniMap extends GamePanel {
     this._streetName = street;
     this._mapName = map;
     this._mapId = mapId;
+    // OG: SetFieldID — track current field ID
+    this._fieldId = mapId;
+    // OG: Reset searched shop when changing maps
+    this._searchedShop = 0;
   }
 
   setNpcs(npcs: { x: number; y: number; quest?: boolean }[]): void {
@@ -247,6 +326,18 @@ export class MiniMap extends GamePanel {
     this._merchants.push(...merchants);
   }
 
+  // OG: InsertStalkee(dwCharacterID, strName, pt) — adds a followed player
+  // to m_mStalkee (position) and m_mStalkeeName (name). Drawn with the
+  // friend icon + name label in Update.
+  insertStalkee(id: number, name: string, x: number, y: number): void {
+    this._stalkees.set(id, { x, y, name });
+  }
+
+  // OG: RemoveStalkee(dwCharacterID) — removes from both maps.
+  removeStalkee(id: number): void {
+    this._stalkees.delete(id);
+  }
+
   // OG: SetMiniMapType — m_nMiniMapType 0=simple, 1=normal
   // Affects button layout: simple has 2X button, normal has min/max/worldmap
   setMiniMapType(type: MiniMapType): void {
@@ -261,18 +352,102 @@ export class MiniMap extends GamePanel {
     if (this._mode === 2) this._prevMode = 1;
   }
 
+  // OG: SetShowMiniMap — shows/hides the minimap (m_bShowMiniMap)
+  setShowMiniMap(show: boolean): void {
+    this._showMiniMap = show;
+    this.isVisible = show;
+  }
+
+  // OG: SetFieldID — updates the current field ID (m_dwFieldID)
+  setFieldId(id: number): void {
+    this._fieldId = id;
+  }
+
+  // OG: Remote player names displayed near minimap edges
+  setRemoteNames(nw: string, n: string, ne: string): void {
+    this._remoteNameNW = nw;
+    this._remoteNameN = n;
+    this._remoteNameNE = ne;
+  }
+
+  // OG: SetSearchedShop — tracks last searched shop (m_dwSearchedShop)
+  setSearchedShop(shopId: number): void {
+    this._searchedShop = shopId;
+  }
+
+  // OG: CalculateScr — computes screen origin (m_nScrOrig_X/Y) from local player position
+  // Called before drawing to determine which part of the map to show.
+  // Formula: scrOrig = (realCX + clamp(localX - (paneW << mag) / 2, -realCX, realW - realCX - paneW*2^mag)) >> mag
+  private _calculateScr(
+    localPos: { x: number; y: number },
+    paneW: number,
+    paneH: number,
+    mag: number,
+  ): ScrOrig {
+    if (!this._data) return { x: 0, y: 0 };
+
+    const realW = this._data.Real_W;
+    const realH = this._data.Real_H;
+    const realCX = this._data.Real_CX;
+    const realCY = this._data.Real_CY;
+
+    // X calculation
+    const scaledPaneW = paneW << mag;
+    let scrOrigX = localPos.x - Math.floor(scaledPaneW / 2);
+    // Clamp: if scrOrigX < -realCX, set to -realCX
+    if (scrOrigX < -realCX) scrOrigX = -realCX;
+    // Clamp: if scrOrigX > realW - realCX - scaledPaneW, set to that
+    const maxX = realW - realCX - scaledPaneW;
+    if (scrOrigX > maxX) scrOrigX = maxX;
+    // Final: (realCX + scrOrigX) >> mag
+    scrOrigX = (realCX + scrOrigX) >> mag;
+
+    // Y calculation (same pattern)
+    const scaledPaneH = paneH << mag;
+    let scrOrigY = localPos.y - Math.floor(scaledPaneH / 2);
+    if (scrOrigY < -realCY) scrOrigY = -realCY;
+    const maxY = realH - realCY - scaledPaneH;
+    if (scrOrigY > maxY) scrOrigY = maxY;
+    scrOrigY = (realCY + scrOrigY) >> mag;
+
+    return { x: scrOrigX, y: scrOrigY };
+  }
+
+  // OG: TransformPoint — transforms world coordinates to minimap screen coordinates
+  // Formula: screenX = (worldX + realCX) >> mag - scrOrigX
+  private _transformPoint(
+    world: { x: number; y: number },
+    scrOrig: ScrOrig,
+    mag: number,
+  ): { x: number; y: number } {
+    if (!this._data) return { x: 0, y: 0 };
+    const realCX = this._data.Real_CX;
+    const realCY = this._data.Real_CY;
+    return {
+      x: ((world.x + realCX) >> mag) - scrOrig.x,
+      y: ((world.y + realCY) >> mag) - scrOrig.y,
+    };
+  }
+
   update(_dt: number): void {
-    const win = this._winRect();
-    this._layoutButtons(win);
-    this.draw();
+    try {
+      const win = this._winRect();
+      this._layoutButtons(win);
+      this.draw();
+    } catch (e) {
+      console.warn('MiniMap.update error:', e);
+    }
   }
 
   draw(): void {
-    if (!this.isVisible) return;
+    if (!this.isVisible || !this._showMiniMap) return;
 
     const win = this._winRect();
     this._content.removeChildren();
     this._gfx.clear();
+
+    // OG: m_bCreated — set after first successful draw
+    this._created = true;
 
     // OG: m_nOption 2 = collapsed
     if (this._mode === 2) {
@@ -280,9 +455,14 @@ export class MiniMap extends GamePanel {
       return;
     }
 
-    // OG: m_nOption 0=normal, 1=huge
-    const frame = this._mode === 1 ? this._maxMap : this._minMap;
-    const scale = this._mode === 1 ? 2 : 1;
+    // OG: SetSize logic — m_nOption=0 with m_nMiniMapType=0 → huge (2x)
+    // m_nOption=1 with m_nMiniMapType=0 → normal (1x)
+    // m_nMiniMapType=1 always → normal (1x)
+    const isHuge = this._miniMapType === 0 && this._mode === 0;
+    this._mag = isHuge ? this._mag2X : this._magNormal;
+
+    const frame = isHuge ? this._maxMap : this._minMap;
+    const scale = isHuge ? 2 : 1;
 
     this._gfx.rect(win.x, win.y, win.width, win.height).fill({ color: 0x11111c, alpha: 0.9 });
 
@@ -306,9 +486,11 @@ export class MiniMap extends GamePanel {
 
     this._drawTitle(win, frame.nwW, frame.titleH);
 
+    // OG: Remote player names (m_strRemoteNW/N/NE) displayed near minimap edges
+    this._drawRemoteNames(win);
+
+    // Buttons are positioned by _layoutButtons, just add to content
     for (const b of this._buttons) {
-      b.container.x = win.x;
-      b.container.y = win.y;
       this._content.addChild(b.container);
     }
 
@@ -325,56 +507,100 @@ export class MiniMap extends GamePanel {
   }
 
   private _drawMapAndIcons(pane: { x: number; y: number; width: number; height: number }, scale: number): void {
-    if (this._data?.Canvas) {
-      const canvas = this._data.Canvas;
-      const player = this._data.WorldToCanvas(this.playerWorldPos);
-      const ax = this._computeAxis(player.x, canvas.Width, pane.width, scale);
-      const ay = this._computeAxis(player.y, canvas.Height, pane.height, scale);
-
-      const fitScale = Math.min(pane.width / canvas.Width, pane.height / canvas.Height, 1);
-      const mapSprite = new Sprite(canvas.Texture);
-      mapSprite.width = canvas.Width * fitScale;
-      mapSprite.height = canvas.Height * fitScale;
-      mapSprite.position.set(
-        pane.x + (pane.width - canvas.Width * fitScale) / 2,
-        pane.y + (pane.height - canvas.Height * fitScale) / 2,
-      );
-      this._content.addChildAt(mapSprite, 0);
-
-      // OG: MakeConvexLayer — draw foothold lines on minimap
-      if (this._data.Footholds.length > 0) {
-        this._drawFootholds(pane, ax, ay, scale);
-      }
-
-      // OG: LoadLadderRope — draw ladders/ropes on minimap
-      if (this._data.LadderRopes.length > 0) {
-        this._drawLadderRopes(pane, ax, ay, scale);
-      }
-
-      for (const p of this._portals) this._drawMarker(pane, ax, ay, scale, p, this._markers.Portal, false);
-      for (const m of this._merchants) this._drawMarker(pane, ax, ay, scale, m, this._markers.Merchant ?? this._markers.Another, false);
-      for (const n of this._npcs) this._drawMarker(pane, ax, ay, scale, n, n.quest ? (this._markers.StartNpc ?? this._markers.Npc) : this._markers.Npc, false);
-      for (const o of this._others) this._drawMarker(pane, ax, ay, scale, o, this._markers.Another, true);
-      for (const m of this._partyMembers) this._drawMarker(pane, ax, ay, scale, m, m.isLeader ? this._markers.PartyMaster : this._markers.Party, true);
-      // OG: DrawIcon for player — draws last (on top)
-      this._drawMarker(pane, ax, ay, scale, this.playerWorldPos, this._markers.User, false);
-    } else {
+    if (!this._data?.Canvas) {
       this._gfx.rect(pane.x, pane.y, pane.width, pane.height).fill({ color: 0x1c241c, alpha: 0.8 });
+      return;
     }
+
+    // OG: Use simple mode canvas when m_nMiniMapType=0
+    const isHuge = this._miniMapType === 0 && this._mode === 0;
+    const canvas = this._miniMapType === 0
+      ? (isHuge ? this._simpleCanvasHuge : this._simpleCanvas) ?? this._data.Canvas
+      : this._data.Canvas;
+    const mag = this._mag;
+
+    // OG: CalculateScr — compute screen origin from player position
+    // This determines which part of the map to show in the pane
+    const scrOrig = this._calculateScr(this.playerWorldPos, pane.width, pane.height, mag);
+
+    // OG: Map canvas is drawn at the viewport position
+    // The canvas is scaled by the magnification factor
+    const mapW = canvas.Width * scale;
+    const mapH = canvas.Height * scale;
+
+    // OG: Map position is determined by CalculateScr
+    // If map fits in pane, center it. Otherwise, scroll based on scrOrig
+    let mapX: number;
+    let mapY: number;
+
+    if (mapW <= pane.width) {
+      // Map fits in pane — center it
+      mapX = pane.x + Math.floor((pane.width - mapW) / 2);
+    } else {
+      // Map is larger than pane — scroll based on scrOrig
+      mapX = pane.x - Math.floor(scrOrig.x * scale);
+    }
+
+    if (mapH <= pane.height) {
+      // Map fits in pane — center it
+      mapY = pane.y + Math.floor((pane.height - mapH) / 2);
+    } else {
+      // Map is larger than pane — scroll based on scrOrig
+      mapY = pane.y - Math.floor(scrOrig.y * scale);
+    }
+
+    const mapSprite = new Sprite(canvas.Texture);
+    mapSprite.width = mapW;
+    mapSprite.height = mapH;
+    mapSprite.position.set(mapX, mapY);
+    this._content.addChildAt(mapSprite, 0);
+
+    // OG: MakeConvexLayer — draw foothold lines on minimap
+    if (this._data.Footholds.length > 0) {
+      this._drawFootholds(pane, scrOrig, mag, scale);
+    }
+
+    // OG: LoadLadderRope — draw ladders/ropes on minimap
+    if (this._data.LadderRopes.length > 0) {
+      this._drawLadderRopes(pane, scrOrig, mag, scale);
+    }
+
+    // OG: DrawIcons — entity icons drawn in specific order from Update
+    // 1. Portals
+    for (const p of this._portals) this._drawMarker(pane, scrOrig, mag, scale, p, this._markers.getIcon(this._miniMapType, 'Portal'), false);
+    // 2. NPCs (m_aPtNpc) — with quest icons
+    for (const n of this._npcs) this._drawMarker(pane, scrOrig, mag, scale, n, n.quest ? (this._markers.getIcon(this._miniMapType, 'NpcStart') ?? this._markers.getIcon(this._miniMapType, 'Npc')) : this._markers.getIcon(this._miniMapType, 'Npc'), false);
+    // 3. Remote users (CUserPool) — RemoteUser icon
+    for (const o of this._others) this._drawMarker(pane, scrOrig, mag, scale, o, this._markers.getIcon(this._miniMapType, 'RemoteUser'), true);
+    // 4. Party members
+    for (const m of this._partyMembers) this._drawMarker(pane, scrOrig, mag, scale, m, m.isLeader ? this._markers.getIcon(this._miniMapType, 'PartyMaster') : this._markers.getIcon(this._miniMapType, 'Party'), true);
+    // 5. Stalkees (m_mStalkee) — followed players with name labels
+    for (const [, s] of this._stalkees) {
+      this._drawMarker(pane, scrOrig, mag, scale, s, this._markers.getIcon(this._miniMapType, 'Friend'), true);
+      this._drawStalkeeName(pane, scrOrig, mag, scale, s);
+    }
+    // 6. Shop employees (CEmployeePool) — ShopRemote icon
+    for (const m of this._merchants) this._drawMarker(pane, scrOrig, mag, scale, m, this._markers.getIcon(this._miniMapType, 'ShopRemote'), false);
+    // 7. Player — draws last (on top)
+    this._drawMarker(pane, scrOrig, mag, scale, this.playerWorldPos, this._markers.getIcon(this._miniMapType, 'User'), false);
   }
 
   // OG: MakeConvexLayer — renders foothold segments as lines on the minimap.
-  // Each foothold is drawn as a horizontal line at its y coordinate.
+  // Each foothold is drawn as a line connecting its two endpoints.
   private _drawFootholds(
     pane: { x: number; y: number; width: number; height: number },
-    ax: Axis, ay: Axis, scale: number,
+    scrOrig: ScrOrig, mag: number, scale: number,
   ): void {
     const gfx = this._gfx;
     for (const fh of this._data!.Footholds) {
-      const x1 = pane.x + ax.drawOffset + (fh.x1 - ax.viewStart) * scale;
-      const y1 = pane.y + ay.drawOffset + (fh.y1 - ay.viewStart) * scale;
-      const x2 = pane.x + ax.drawOffset + (fh.x2 - ax.viewStart) * scale;
-      const y2 = pane.y + ay.drawOffset + (fh.y2 - ay.viewStart) * scale;
+      // OG: TransformPoint for each foothold endpoint
+      const p1 = this._transformPoint({ x: fh.x1, y: fh.y1 }, scrOrig, mag);
+      const p2 = this._transformPoint({ x: fh.x2, y: fh.y2 }, scrOrig, mag);
+
+      const x1 = pane.x + p1.x * scale;
+      const y1 = pane.y + p1.y * scale;
+      const x2 = pane.x + p2.x * scale;
+      const y2 = pane.y + p2.y * scale;
 
       // Clip to pane
       const cx1 = Math.max(pane.x, Math.min(x1, pane.x + pane.width));
@@ -390,13 +616,17 @@ export class MiniMap extends GamePanel {
   // OG: LoadLadderRope — renders ladders (red) and ropes (blue) as vertical lines.
   private _drawLadderRopes(
     pane: { x: number; y: number; width: number; height: number },
-    ax: Axis, ay: Axis, scale: number,
+    scrOrig: ScrOrig, mag: number, scale: number,
   ): void {
     const gfx = this._gfx;
     for (const lr of this._data!.LadderRopes) {
-      const px = pane.x + ax.drawOffset + (lr.x - ax.viewStart) * scale;
-      const py1 = pane.y + ay.drawOffset + (lr.y1 - ay.viewStart) * scale;
-      const py2 = pane.y + ay.drawOffset + (lr.y2 - ay.viewStart) * scale;
+      // OG: TransformPoint for ladder/rope endpoints
+      const p1 = this._transformPoint({ x: lr.x, y: lr.y1 }, scrOrig, mag);
+      const p2 = this._transformPoint({ x: lr.x, y: lr.y2 }, scrOrig, mag);
+
+      const px = pane.x + p1.x * scale;
+      const py1 = pane.y + p1.y * scale;
+      const py2 = pane.y + p2.y * scale;
 
       // Clip to pane
       const cpx = Math.max(pane.x, Math.min(px, pane.x + pane.width));
@@ -409,27 +639,18 @@ export class MiniMap extends GamePanel {
     }
   }
 
-  private _computeAxis(playerCanvas: number, canvasLen: number, paneLen: number, scale: number): Axis {
-    const scaledLen = canvasLen * scale;
-    if (scaledLen <= paneLen) {
-      return { viewStart: 0, viewLen: canvasLen, drawOffset: Math.floor((paneLen - scaledLen) / 2) };
-    }
-    const viewLen = Math.max(1, Math.floor(paneLen / scale));
-    const viewStart = Math.max(0, Math.min(playerCanvas - Math.floor(viewLen / 2), canvasLen - viewLen));
-    return { viewStart, viewLen, drawOffset: 0 };
-  }
-
   private _drawMarker(
     pane: { x: number; y: number; width: number; height: number },
-    ax: Axis, ay: Axis, scale: number,
+    scrOrig: ScrOrig, mag: number, scale: number,
     world: { x: number; y: number },
     icon: WzSprite | null,
     clamp: boolean,
   ): void {
     if (!icon || !this._data) return;
-    const c = this._data.WorldToCanvas(world);
-    const px = pane.x + ax.drawOffset + (c.x - ax.viewStart) * scale;
-    const py = pane.y + ay.drawOffset + (c.y - ay.viewStart) * scale;
+    // OG: TransformPoint — convert world to minimap screen coords
+    const c = this._transformPoint(world, scrOrig, mag);
+    const px = pane.x + c.x * scale;
+    const py = pane.y + c.y * scale;
 
     const inside = px >= pane.x && px <= pane.x + pane.width && py >= pane.y && py <= pane.y + pane.height;
     if (inside) {
@@ -456,6 +677,57 @@ export class MiniMap extends GamePanel {
     s.height = h;
     s.position.set(px - Math.floor(w / 2), py - h);
     this._content.addChild(s);
+  }
+
+  // OG: stalkee name label drawn below the friend icon
+  private _drawStalkeeName(
+    pane: { x: number; y: number; width: number; height: number },
+    scrOrig: ScrOrig, mag: number, scale: number,
+    stalkee: { x: number; y: number; name: string },
+  ): void {
+    if (!this._data || !stalkee.name) return;
+    // OG: TransformPoint for stalkee position
+    const c = this._transformPoint(stalkee, scrOrig, mag);
+    const px = pane.x + c.x * scale;
+    const py = pane.y + c.y * scale;
+    // OG: name drawn below icon, centered horizontally
+    const nameText = new Text({
+      text: stalkee.name,
+      style: new TextStyle({ fill: 0xaaaa82, fontSize: 9, fontFamily: 'monospace' }),
+    });
+    nameText.anchor.set(0.5, 0);
+    nameText.position.set(px, py + 2);
+    this._content.addChild(nameText);
+  }
+
+  // OG: Remote player names (m_strRemoteNW/N/NE) displayed near minimap edges
+  // These are names of players in adjacent maps shown at the minimap border.
+  private _drawRemoteNames(win: { x: number; y: number; width: number; height: number }): void {
+    const fontSize = 8;
+    const style = new TextStyle({ fill: 0xaaaa82, fontSize, fontFamily: 'monospace' });
+
+    // NW name — top-left corner below title
+    if (this._remoteNameNW) {
+      const t = new Text({ text: this._remoteNameNW, style });
+      t.position.set(win.x + 4, win.y + 20);
+      this._content.addChild(t);
+    }
+
+    // N name — top-center
+    if (this._remoteNameN) {
+      const t = new Text({ text: this._remoteNameN, style });
+      t.anchor.set(0.5, 0);
+      t.position.set(win.x + win.width / 2, win.y + 20);
+      this._content.addChild(t);
+    }
+
+    // NE name — top-right corner
+    if (this._remoteNameNE) {
+      const t = new Text({ text: this._remoteNameNE, style });
+      t.anchor.set(1, 0);
+      t.position.set(win.x + win.width - 4, win.y + 20);
+      this._content.addChild(t);
+    }
   }
 
   private _drawCollapsed(win: { x: number; y: number; width: number; height: number }): void {
@@ -508,7 +780,8 @@ export class MiniMap extends GamePanel {
       if (this._mapId > 0) {
         const idText = this._mapId.toString();
         const idW = this._font ? this._font.measure(idText).x : 60;
-        const borderR = this._mode === 1 ? this._maxMap.borderR : this._minMap.borderR;
+        const isHuge = this._miniMapType === 0 && this._mode === 0;
+        const borderR = isHuge ? this._maxMap.borderR : this._minMap.borderR;
         const idX = win.x + win.width - this._buttonsWidth() - borderR - idW - 4;
         const idTxt = new Text({ text: idText, style: new TextStyle({ fill: 0xaaaa82, fontSize: 10, fontFamily: 'monospace' }) });
         idTxt.position.set(idX, win.y + 4 + 12);
@@ -579,21 +852,36 @@ export class MiniMap extends GamePanel {
       return { x, y, width: w, height: StripH };
     }
 
-    // OG: m_nOption 0=normal, 1=huge
-    const frame = this._mode === 1 ? this._maxMap : this._minMap;
-    const scale = this._mode === 1 ? 2 : 1;
-    const capW = this._mode === 1 ? HugePaneCapW : NormalPaneCapW;
-    const capH = this._mode === 1 ? HugePaneCapH : NormalPaneCapH;
+    // OG: SetSize logic — m_nOption=0 with m_nMiniMapType=0 → huge (2x)
+    // m_nOption=1 with m_nMiniMapType=0 → normal (1x)
+    // m_nMiniMapType=1 always → normal (1x)
+    const isHuge = this._miniMapType === 0 && this._mode === 0;
+    const frame = isHuge ? this._maxMap : this._minMap;
+    const scale = isHuge ? 2 : 1;
 
+    // OG: SetSize caps pane based on canvas dimensions
+    // Normal: W≥280→cap 210, H≥150→cap 112
+    // Huge: W≥560→cap 420, H≥300→cap 225
     const cw = this._data?.CanvasWidth ?? 180;
     const ch = this._data?.CanvasHeight ?? 120;
-    // OG: SetSize caps pane to min(canvas*scale, cap)
-    const paneW = Math.min(cw * scale, capW);
-    const paneH = Math.min(ch * scale, capH);
+    let paneW: number;
+    let paneH: number;
 
-    const titleNeed = frame.nwW + (this._font && this._mapName ? this._font.measure(this._mapName).x : 0)
-      + 6 + this._buttonsWidth() + TitlePadRight;
-    const finalW = Math.max(paneW, titleNeed - frame.borderL - frame.borderR) + frame.borderL + frame.borderR;
+    if (isHuge) {
+      // Huge mode: canvas*2, capped at 420 if >= 560
+      const hugeW = cw * 2;
+      const hugeH = ch * 2;
+      paneW = hugeW >= 560 ? HugePaneCapW : hugeW;
+      paneH = hugeH >= 300 ? HugePaneCapH : hugeH;
+    } else {
+      // Normal mode: canvas, capped at 210 if >= 280
+      paneW = cw >= 280 ? NormalPaneCapW : cw;
+      paneH = ch >= 150 ? NormalPaneCapH : ch;
+    }
+
+    // OG: Window width = pane width + borders
+    // Title text is clipped if it exceeds the window width
+    const finalW = paneW + frame.borderL + frame.borderR;
     const finalH = paneH + frame.titleH + frame.borderB;
 
     return { x, y, width: finalW, height: finalH };
@@ -610,10 +898,11 @@ export class MiniMap extends GamePanel {
   // OG: SetCtrl positions buttons at (width-46,4), (width-59,4), (width-72,4)
   // and disables the inactive one based on m_nOption + m_nMiniMapType
   private _layoutButtons(win: { x: number; y: number; width: number; height: number }): void {
+    const isHuge = this._miniMapType === 0 && this._mode === 0;
     const borderR = this._mode === 2 ? (this._stripE?.width ?? 9)
-      : this._mode === 1 ? this._maxMap.borderR : this._minMap.borderR;
+      : isHuge ? this._maxMap.borderR : this._minMap.borderR;
     const bandH = this._mode === 2 ? StripH
-      : this._mode === 1 ? this._maxMap.titleH : this._minMap.titleH;
+      : isHuge ? this._maxMap.titleH : this._minMap.titleH;
 
     let bx = win.x + win.width - borderR - this._buttonsWidth() + BtnGap;
     const by = win.y + Math.max(2, Math.floor((Math.min(bandH, 21) - 12) / 2));
@@ -624,17 +913,26 @@ export class MiniMap extends GamePanel {
       bx += b.width + BtnGap;
     }
 
-    // OG: SetCtrl / SetCtrl_Simple button visibility
+    // OG: SetCtrl / SetCtrl_Simple button visibility + enable/disable
     if (this._miniMapType === 1) {
-      // OG: m_nMiniMapType=1 — has min/max/worldmap buttons, no 2X
-      if (this._btMin) this._btMin.enabled = true;
-      if (this._btMax) this._btMax.enabled = true;
+      // OG: m_nMiniMapType=1 — has min/max/worldmap, no 2X
+      if (this._btMin) this._btMin.container.visible = true;
+      if (this._btMax) this._btMax.container.visible = true;
       if (this._bt2X) this._bt2X.container.visible = false;
+      if (this._btMap) this._btMap.container.visible = true;
+      // OG: disable inactive button based on current mode
+      if (this._btMin) this._btMin.enabled = this._mode !== 2;
+      if (this._btMax) this._btMax.enabled = this._mode !== 0;
+      // OG: when !m_bShowMiniMap, both min and max disabled
+      // (m_bShowMiniMap is true when visible, so this is implicit)
     } else {
       // OG: m_nMiniMapType=0 — has worldmap/minimize/2X, no maximize
-      if (this._btMin) this._btMin.enabled = true;
+      if (this._btMin) this._btMin.container.visible = true;
       if (this._btMax) this._btMax.container.visible = false;
       if (this._bt2X) this._bt2X.container.visible = this._mode !== 2;
+      if (this._btMap) this._btMap.container.visible = true;
+      // OG: in simple mode, enable/disable based on mode
+      if (this._btMin) this._btMin.enabled = this._mode !== 2;
     }
   }
 
@@ -648,19 +946,22 @@ export class MiniMap extends GamePanel {
     const hit = x >= win.x && x < win.x + win.width && y >= win.y && y < win.y + win.height;
     if (hit && !down && this.onPlayerDotClick && this._data) {
       // OG: Calculate screen position of player icon and check if click is on it
-      const frame = this._mode === 1 ? this._maxMap : this._minMap;
-      const scale = this._mode === 1 ? 2 : 1;
+      const isHuge = this._miniMapType === 0 && this._mode === 0;
+      const frame = isHuge ? this._maxMap : this._minMap;
+      const scale = isHuge ? 2 : 1;
+      const mag = this._mag;
       const pane = {
         x: win.x + frame.borderL,
         y: win.y + frame.titleH,
         width: win.width - frame.borderL - frame.borderR,
         height: win.height - frame.titleH - frame.borderB,
       };
-      const player = this._data.WorldToCanvas(this.playerWorldPos);
-      const ax = this._computeAxis(player.x, this._data.CanvasWidth, pane.width, scale);
-      const ay = this._computeAxis(player.y, this._data.CanvasHeight, pane.height, scale);
-      const px = pane.x + ax.drawOffset + (player.x - ax.viewStart) * scale;
-      const py = pane.y + ay.drawOffset + (player.y - ay.viewStart) * scale;
+      // OG: CalculateScr for player position
+      const scrOrig = this._calculateScr(this.playerWorldPos, pane.width, pane.height, mag);
+      // OG: TransformPoint for player
+      const c = this._transformPoint(this.playerWorldPos, scrOrig, mag);
+      const px = pane.x + c.x * scale;
+      const py = pane.y + c.y * scale;
 
       // OG: hit rect (-2,-5,5,7) offset to player screen pos
       const hitLeft = px - 2;

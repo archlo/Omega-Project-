@@ -66,6 +66,9 @@ export enum InHeader {
   // 54-78 — chat / shop / inventory / skill
   UserChat                  = 54,
   UserEmotion               = 56,
+  // OG: CWvsContext::SendActiveEffectItemChange (IDA 0x9F9420) —
+  // opcode 57, int(nItemID). Toggles a cosmetic effect item.
+  UserActiveEffectItemChange = 57,
   UserHP                    = 59,
   UserSelectNpc             = 63,
   UserScriptMessageAnswer   = 65,
@@ -94,6 +97,18 @@ export enum InHeader {
   // OG: CWvsContext::SendStatChangeItemCancelRequest (v95 IDA dump,
   // func_encode_seq: int(4), send_op=0x4f)
   UserStatChangeItemCancelRequest = 79,
+  // OG: CWvsContext::SendMobSummonItemUseRequest (IDA 0x9DE580) —
+  // opcode 81, int(updateTime), short(nPOS), int(nItemID).
+  UserMobSummonItemUseRequest = 81,
+  // OG: CWvsContext::SendPetFoodItemUseRequest (IDA 0x9D9F20) —
+  // opcode 82, int(updateTime), short(nPOS), int(nItemID).
+  UserPetFoodItemUseRequest = 82,
+  // OG: CWvsContext::SendTamingMobFoodItemUseRequest (IDA 0x9D63A0) —
+  // opcode 83, int(updateTime), short(nPOS), int(nItemID).
+  UserTamingMobFoodItemUseRequest = 83,
+  // OG: CWvsContext::SendScriptRunItemRequest (IDA 0x9DE7A0) —
+  // opcode 84, int(updateTime), short(nPOS), int(nItemID).
+  UserScriptRunItemUseRequest = 84,
   // OG: opcode 85 (0x55) is a generic "consume cash item" sender shared by
   // several unrelated dialogs — confirmed via the v95 IDA dump's
   // func_encode_seq table for CWvsContext::SendConsumeCashItemUseRequest,
@@ -102,6 +117,17 @@ export enum InHeader {
   // Kept as two names for the two call sites this client actually builds.
   UserCharacterSaleCreate   = 85,
   UserConsumeCashItemUseRequest = 85,
+  // OG: CWvsContext::SendBridleItemUseRequest (IDA 0x9E08C0) —
+  // opcode 87, int(updateTime), short(nPOS), int(nItemID).
+  UserBridleItemUseRequest = 87,
+  // OG: CP_UserItemReleaseRequest (0x61 = 97) — CWvsContext::SendItemReleaseRequest(nUPOS, nEPOS)
+  UserItemReleaseRequest    = 97,
+  // OG: CWvsContext::SendSelectNpcItemUseRequest (IDA 0x9DA430) —
+  // opcode 123, short(nPOS), int(nItemID).
+  UserSelectNpcItemUseRequest = 123,
+  // OG: CWvsContext::SendLotteryItemUseRequest (IDA 0x9D6C50) —
+  // opcode 124, short(nPos), int(nItemID).
+  UserLotteryItemUseRequest = 124,
 
   // OG: CWvsContext::SendSkillLearnItemUseRequest/SendSkillResetItemUseRequest
   // (decompile/9d65e0.c, 9de8c0.c) — using a skill book/mastery book or a
@@ -109,6 +135,12 @@ export enum InHeader {
   // generic UserStatChangeItemUseRequest used for potions/buff items.
   SkillLearnItemUseRequest = 88,
   SkillResetItemUseRequest = 89,
+  // OG: CWvsContext::SendShopScannerItemUseRequest (IDA 0x9E10E0) —
+  // opcode 90, short(nPOS), int(nItemID).
+  UserShopScannerItemUseRequest = 90,
+  // OG: CWvsContext::SendMapTransferItemUseRequest (IDA 0x9E6020) —
+  // opcode 91, short(nPOS), int(nItemID).
+  UserMapTransferItemUseRequest = 91,
 
   // 92-119 — portals / stats / skills / quests
   UserPortalScrollUseRequest = 92,
@@ -208,7 +240,13 @@ export enum InHeader {
   // SendViewEntryRequest/OnRegister/OnComment/OnCommentDelete/OnDelete,
   // decompile/7c3680.c, 7c3710.c, 7c4250.c, 7c4530.c, 7c3b70.c, 7c6520.c)
   UserGuildBBSRequest       = 179,
+  // OG: CWvsContext::SendExpUpItemUseRequest (IDA 0x9DB1C0) —
+  // opcode 181, int(updateTime), short(nPOS), int(nItemID).
+  UserExpUpItemUseRequest   = 181,
 
+  // OG: CWvsContext::SendDragonBallBoxRequest (IDA 0x9D73D0) —
+  // opcode 196, no payload.
+  UserDragonBallBoxRequest  = 196,
   // 216 — quickslot server-side ack (server→client of FuncKeyMappedInit=398)
   QuickslotKeyMappedModified = 216,
 

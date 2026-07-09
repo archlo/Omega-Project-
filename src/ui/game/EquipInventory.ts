@@ -21,7 +21,6 @@ const SLOT_SIZE = 32;
 
 // OG: CUIWndPosSaved — localStorage key (CUIEquip uses key 10)
 const PosSaveKey = 'EquipWndPos';
-const PetEquipPosSaveKey = 'PetEquipWndPos';
 
 interface EquipSlotDef { ox: number; oy: number; key: string; bodyPart: number }
 
@@ -567,10 +566,10 @@ export class EquipInventory extends GamePanel implements DragTarget {
     for (const button of this._buttons) {
       if (button.handleMouseButton(lx, ly, down)) return true;
     }
-    // Check pet panel buttons
+    // Check pet panel buttons — panel is child of _root, so coords are relative to _root
     if (this._petPanel && this._petShown) {
-      const plx = x - this._petPanel.x;
-      const ply = y - this._petPanel.y;
+      const plx = lx - this._petPanel.x;
+      const ply = ly - this._petPanel.y;
       for (const btn of this._btPetSelect) {
         if (btn.handleMouseButton(plx, ply, down)) return true;
       }
@@ -578,10 +577,10 @@ export class EquipInventory extends GamePanel implements DragTarget {
       if (this._btPetPrev?.handleMouseButton(plx, ply, down)) return true;
       if (this._btPetNext?.handleMouseButton(plx, ply, down)) return true;
     }
-    // Check dragon panel slot clicks
+    // Check dragon panel slot clicks — child of _root
     if (this._dragonPanel && this._dragonShown && down) {
-      const dlx = x - this._dragonPanel.x;
-      const dly = y - this._dragonPanel.y;
+      const dlx = lx - this._dragonPanel.x;
+      const dly = ly - this._dragonPanel.y;
       for (let i = 0; i < DRAGON_SLOTS.length; i++) {
         const s = DRAGON_SLOTS[i];
         if (dlx >= s.ox && dlx < s.ox + SLOT_SIZE && dly >= s.oy && dly < s.oy + SLOT_SIZE) {
@@ -598,10 +597,10 @@ export class EquipInventory extends GamePanel implements DragTarget {
         }
       }
     }
-    // Check mechanic panel slot clicks
+    // Check mechanic panel slot clicks — child of _root
     if (this._mechanicPanel && this._mechanicShown && down) {
-      const mlx = x - this._mechanicPanel.x;
-      const mly = y - this._mechanicPanel.y;
+      const mlx = lx - this._mechanicPanel.x;
+      const mly = ly - this._mechanicPanel.y;
       for (let i = 0; i < MECHANIC_SLOTS.length; i++) {
         const s = MECHANIC_SLOTS[i];
         if (mlx >= s.ox && mlx < s.ox + SLOT_SIZE && mly >= s.oy && mly < s.oy + SLOT_SIZE) {
@@ -628,6 +627,11 @@ export class EquipInventory extends GamePanel implements DragTarget {
         if (lx >= s.ox && lx < s.ox + SLOT_SIZE && ly >= s.oy && ly < s.oy + SLOT_SIZE) {
           const equipped = this._equipped.get(s.key);
           if (equipped) {
+            // Ctrl+click: unequip directly without drag
+            if (typeof window !== 'undefined' && (window as any).__ctrlKey === true) {
+              this.onUnequip?.(s.bodyPart);
+              return true;
+            }
             const icon = this._icons?.LoadIcon(equipped.itemId);
             if (icon) {
               this.onDragStart?.({ itemId: equipped.itemId, slotPos: -s.bodyPart, invType: InventoryType.Equip }, icon.Texture, x, y);
@@ -663,10 +667,10 @@ export class EquipInventory extends GamePanel implements DragTarget {
     if (p.invType !== InventoryType.Equip && p.invType !== InventoryType.Cash) return false;
     const lx = x - this._root.x;
     const ly = y - this._root.y;
-    // Check pet panel first — drops on pet panel slots
+    // Check pet panel first — child of _root, coords relative to _root
     if (this._petPanel && this._petShown) {
-      const plx = x - this._petPanel.x;
-      const ply = y - this._petPanel.y;
+      const plx = lx - this._petPanel.x;
+      const ply = ly - this._petPanel.y;
       for (const s of PET_SLOTS) {
         if (plx >= s.ox && plx < s.ox + SLOT_SIZE && ply >= s.oy && ply < s.oy + SLOT_SIZE) {
           if (p.slotPos > 0) {
@@ -677,10 +681,10 @@ export class EquipInventory extends GamePanel implements DragTarget {
         }
       }
     }
-    // Check dragon panel slots
+    // Check dragon panel slots — child of _root
     if (this._dragonPanel && this._dragonShown) {
-      const dlx = x - this._dragonPanel.x;
-      const dly = y - this._dragonPanel.y;
+      const dlx = lx - this._dragonPanel.x;
+      const dly = ly - this._dragonPanel.y;
       for (const s of DRAGON_SLOTS) {
         if (dlx >= s.ox && dlx < s.ox + SLOT_SIZE && dly >= s.oy && dly < s.oy + SLOT_SIZE) {
           if (p.slotPos > 0) {
@@ -690,10 +694,10 @@ export class EquipInventory extends GamePanel implements DragTarget {
         }
       }
     }
-    // Check mechanic panel slots
+    // Check mechanic panel slots — child of _root
     if (this._mechanicPanel && this._mechanicShown) {
-      const mlx = x - this._mechanicPanel.x;
-      const mly = y - this._mechanicPanel.y;
+      const mlx = lx - this._mechanicPanel.x;
+      const mly = ly - this._mechanicPanel.y;
       for (const s of MECHANIC_SLOTS) {
         if (mlx >= s.ox && mlx < s.ox + SLOT_SIZE && mly >= s.oy && mly < s.oy + SLOT_SIZE) {
           if (p.slotPos > 0) {
@@ -867,7 +871,7 @@ export class EquipInventory extends GamePanel implements DragTarget {
     }
     // Condition 2: Bottom slot 6 disabled if Aran (nJob/10000==105) and no pants equipped
     if (bodyPart === 6 && Math.floor(job / 10000) === 105) {
-      if (!this._equipped.has('pants')) return true;
+      if (!this._equipped.has('Bottom')) return true;
     }
     // Condition 3: Slots 18/19/20 disabled if no novice skill 1004
     if ((bodyPart === 18 || bodyPart === 19 || bodyPart === 20) && !this._hasNoviceSkill1004) {
@@ -900,25 +904,13 @@ export class EquipInventory extends GamePanel implements DragTarget {
     this._petShown = true;
     if (!this._petPanel) this._createPetPanel();
     if (!this._petPanel) return;
-    // OG: slides from (CUIEquip.left, CUIEquip.top+103) to (CUIEquip.left+183, CUIEquip.top+103)
-    this._petPanel.x = this._root.x;
-    this._petPanel.y = this._root.y + 103;
+    // OG: positioned at (0, 103) relative to CUIEquip, slides from x=0 to x=183
+    this._petPanel.x = 0;
+    this._petPanel.y = 103;
     this._petSlideX = 0;
     this._petSlideTargetX = 183;
     this._petPanel.visible = true;
-    // Restore pet panel position
-    try {
-      const saved = localStorage.getItem(PetEquipPosSaveKey);
-      if (saved) {
-        const { x, y } = JSON.parse(saved);
-        if (typeof x === 'number' && typeof y === 'number') {
-          this._petPanel.x = x;
-          this._petPanel.y = y;
-          this._petSlideX = x - this._root.x;
-          this._petSlideTargetX = this._petSlideX;
-        }
-      }
-    } catch {}
+    this._petPanel.alpha = 1;
   }
 
   private _hidePetPanel(): void {
@@ -1054,16 +1046,13 @@ export class EquipInventory extends GamePanel implements DragTarget {
     }
 
     this._petPanel = panel;
-    // Add to parent container — needs to be added by GameStage to uiRoot
-    this._petPanelAdded?.(panel);
+    // OG: CUIPetEquip is a child of CUIEquip — moves with it when dragged
+    this._root.addChild(panel);
   }
-
-  // Callback set by GameStage to add pet panel to display tree
-  _petPanelAdded: ((panel: Container) => void) | null = null;
 
   private _updatePetPanel(_dt: number): void {
     if (!this._petPanel) return;
-    // Slide animation — OG: m_nToggleTime decremented by 30 each frame
+    // Slide animation — panel is child of equip, so x is relative to equip origin
     if (this._petSlideX !== this._petSlideTargetX) {
       const diff = this._petSlideTargetX - this._petSlideX;
       const step = Math.sign(diff) * Math.min(Math.abs(diff), 12 * (_dt / 16.67));
@@ -1071,10 +1060,10 @@ export class EquipInventory extends GamePanel implements DragTarget {
       if (Math.abs(this._petSlideTargetX - this._petSlideX) < 1) {
         this._petSlideX = this._petSlideTargetX;
       }
-      this._petPanel.x = this._root.x + this._petSlideX;
-      this._petPanel.y = this._root.y + 103;
+      this._petPanel.x = this._petSlideX;
+      this._petPanel.y = 103;
     }
-    // When slide-out complete, destroy panel
+    // When slide-out complete, hide panel
     if (!this._petShown && this._petSlideX === 0 && this._petPanel) {
       this._petPanel.visible = false;
     }
@@ -1111,12 +1100,6 @@ export class EquipInventory extends GamePanel implements DragTarget {
       for (const s of this._imgFontHpDigits) { if (!s.parent) this._petPanel.addChild(s); }
       for (const s of this._imgFontMpDigits) { if (!s.parent) this._petPanel.addChild(s); }
     }
-    // Save pet panel position
-    if (this._petPanel.visible) {
-      try {
-        localStorage.setItem(PetEquipPosSaveKey, JSON.stringify({ x: this._petPanel.x, y: this._petPanel.y }));
-      } catch {}
-    }
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -1138,9 +1121,9 @@ export class EquipInventory extends GamePanel implements DragTarget {
     this._dragonShown = true;
     if (!this._dragonPanel) this._createDragonPanel();
     if (!this._dragonPanel) return;
-    // OG: positioned at (CUIEquip.left - 151, CUIEquip.top), slides from CUIEquip.left
-    this._dragonPanel.x = this._root.x;
-    this._dragonPanel.y = this._root.y;
+    // OG: positioned at (-151, 0) relative to CUIEquip, slides from x=0 to x=-151
+    this._dragonPanel.x = 0;
+    this._dragonPanel.y = 0;
     this._dragonSlideX = 0;
     this._dragonSlideTargetX = -DRAGON_PANEL_W;
     this._dragonPanel.visible = true;
@@ -1190,14 +1173,13 @@ export class EquipInventory extends GamePanel implements DragTarget {
     }
 
     this._dragonPanel = panel;
-    this._dragonPanelAdded?.(panel);
+    // OG: CUIDragonEquip is a child of CUIEquip — moves with it when dragged
+    this._root.addChild(panel);
   }
-
-  _dragonPanelAdded: ((panel: Container) => void) | null = null;
 
   private _updateDragonPanel(_dt: number): void {
     if (!this._dragonPanel) return;
-    // Slide animation
+    // Slide animation — panel is child of equip, so x is relative to equip origin
     if (this._dragonSlideX !== this._dragonSlideTargetX) {
       const diff = this._dragonSlideTargetX - this._dragonSlideX;
       const step = Math.sign(diff) * Math.min(Math.abs(diff), 12 * (_dt / 16.67));
@@ -1205,8 +1187,8 @@ export class EquipInventory extends GamePanel implements DragTarget {
       if (Math.abs(this._dragonSlideTargetX - this._dragonSlideX) < 1) {
         this._dragonSlideX = this._dragonSlideTargetX;
       }
-      this._dragonPanel.x = this._root.x + this._dragonSlideX;
-      this._dragonPanel.y = this._root.y;
+      this._dragonPanel.x = this._dragonSlideX;
+      this._dragonPanel.y = 0;
     }
     // When slide-out complete, hide panel
     if (!this._dragonShown && this._dragonSlideX === 0 && this._dragonPanel) {
@@ -1243,9 +1225,9 @@ export class EquipInventory extends GamePanel implements DragTarget {
     this._mechanicShown = true;
     if (!this._mechanicPanel) this._createMechanicPanel();
     if (!this._mechanicPanel) return;
-    // OG: positioned at (CUIEquip.left - 151, CUIEquip.top), slides from CUIEquip.left
-    this._mechanicPanel.x = this._root.x;
-    this._mechanicPanel.y = this._root.y;
+    // OG: positioned at (-151, 0) relative to CUIEquip, slides from x=0 to x=-151
+    this._mechanicPanel.x = 0;
+    this._mechanicPanel.y = 0;
     this._mechanicSlideX = 0;
     this._mechanicSlideTargetX = -MECHANIC_PANEL_W;
     this._mechanicPanel.visible = true;
@@ -1294,14 +1276,13 @@ export class EquipInventory extends GamePanel implements DragTarget {
     }
 
     this._mechanicPanel = panel;
-    this._mechanicPanelAdded?.(panel);
+    // OG: CUIMechanicEquip is a child of CUIEquip — moves with it when dragged
+    this._root.addChild(panel);
   }
-
-  _mechanicPanelAdded: ((panel: Container) => void) | null = null;
 
   private _updateMechanicPanel(_dt: number): void {
     if (!this._mechanicPanel) return;
-    // Slide animation
+    // Slide animation — panel is child of equip, so x is relative to equip origin
     if (this._mechanicSlideX !== this._mechanicSlideTargetX) {
       const diff = this._mechanicSlideTargetX - this._mechanicSlideX;
       const step = Math.sign(diff) * Math.min(Math.abs(diff), 12 * (_dt / 16.67));
@@ -1309,8 +1290,8 @@ export class EquipInventory extends GamePanel implements DragTarget {
       if (Math.abs(this._mechanicSlideTargetX - this._mechanicSlideX) < 1) {
         this._mechanicSlideX = this._mechanicSlideTargetX;
       }
-      this._mechanicPanel.x = this._root.x + this._mechanicSlideX;
-      this._mechanicPanel.y = this._root.y;
+      this._mechanicPanel.x = this._mechanicSlideX;
+      this._mechanicPanel.y = 0;
     }
     // When slide-out complete, hide panel
     if (!this._mechanicShown && this._mechanicSlideX === 0 && this._mechanicPanel) {

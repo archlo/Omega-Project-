@@ -49,6 +49,10 @@ export class StageDirector {
     this._current?.onMouseMove(x, y);
   }
 
+  onMouseWheel(x: number, y: number, deltaY: number): void {
+    this._current?.onMouseWheel(x, y, deltaY);
+  }
+
   onKeyPress(key: string): void {
     this._current?.onKeyPress(key);
   }

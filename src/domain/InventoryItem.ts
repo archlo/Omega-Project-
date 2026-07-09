@@ -39,7 +39,7 @@ export class EquipStats {
   craft = 0; incSpeed = 0; incJump = 0;
   levelUpType = 0; level = 0;
   exp = 0; durability = 0; iuc = 0;
-  grade = 0; vicious = 0;
+  grade = 0; released = false; vicious = 0;
   option1 = 0; option2 = 0; option3 = 0;
   socket1 = 0; socket2 = 0;
 }

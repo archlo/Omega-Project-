@@ -75,7 +75,11 @@ export class ItemDecoder {
     e.exp = p.readInt();
     e.durability = p.readInt();
     e.iuc = p.readInt();
-    e.grade = p.readByte();
+    // OG: nGrade byte encodes both grade (bits 0-1) and released flag (bit 2).
+    // GetItemGrade() = nGrade & 3, IsReleased() = nGrade & 4.
+    const rawGrade = p.readByte();
+    e.grade = rawGrade & 3;
+    e.released = (rawGrade & 4) !== 0;
     e.vicious = p.readByte();
     e.option1 = p.readShort();
     e.option2 = p.readShort();

@@ -65,13 +65,12 @@ export function computeDerived(s: StatInputs): DerivedStats {
   max = Math.max(0, Math.min(max, DamageMax));
   min = Math.max(0, Math.min(min, max));
 
-  // TODO_AUDIT.md Seventieth pass: BasicStat::CalcBasePACC/CalcBasePDD/
-  // CalcBaseMDD (decompile 0x721b60/0x721a40/0x721ad0) — real formulas,
-  // confirmed wrong/missing here before this fix. ACC's coefficients
-  // were dex*0.8+luk*0.5 (should be dex*1.2+luk*1.0); PDD/MDD had no
-  // base-stat contribution at all (equipment bonus only).
-  const acc = Math.floor(s.dex * 1.2 + s.luk * 1.0) + s.accBonus;
-  const eva = Math.floor(s.dex * 0.25 + s.luk * 0.25) + s.evaBonus;
+  // BasicStat::CalcBasePACC (0x721b60): floor(dex * 1.2 + luk * 1.0).
+  // BasicStat::CalcBasePDD (0x721a40): floor(str*1.2 + dex*0.5 + luk*0.5 + int*0.4).
+  // BasicStat::CalcBaseMDD (0x721ad0): floor(int*1.2 + dex*0.5 + luk*0.5 + str*0.4).
+  // Final step: multiply by (1 + buffRate/100) and cap at 99999.
+  const acc = Math.min(99999, Math.floor(s.dex * 1.2 + s.luk * 1.0) + s.accBonus);
+  const eva = Math.min(99999, Math.floor(s.dex * 0.25 + s.luk * 0.25) + s.evaBonus);
   const basePdd = Math.floor(s.str * 1.2 + s.dex * 0.5 + s.luk * 0.5 + s.int * 0.4);
   const baseMdd = Math.floor(s.int * 1.2 + s.dex * 0.5 + s.luk * 0.5 + s.str * 0.4);
   const speed = s.speed <= 0 ? 100 : s.speed;

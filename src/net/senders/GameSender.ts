@@ -74,12 +74,146 @@ export class GameSender {
     return GameSender.ChangeSlotPosition(invType, slotPos, 0, count);
   }
 
+  // OG: CUIItem shift+click split — move `count` items from `fromSlot` to
+  // `toSlot` within the same inventory type. `toSlot` must be empty.
+  static ItemSplit(invType: InventoryType, fromSlot: number, toSlot: number, count: number): OutPacket {
+    return GameSender.ChangeSlotPosition(invType, fromSlot, toSlot, count);
+  }
+
   static UseItem(pos: number, itemId: number): OutPacket {
     const p = OutPacket.Of(InHeader.UserStatChangeItemUseRequest);
     p.writeInt(0);
     p.writeShort(pos);
     p.writeInt(itemId);
     return p;
+  }
+
+  // OG: CWvsContext::SendMobSummonItemUseRequest (IDA 0x9DE580) —
+  // opcode 81, int(updateTime), short(nPOS), int(nItemID).
+  static MobSummonItemUseRequest(pos: number, itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserMobSummonItemUseRequest);
+    p.writeInt(Date.now());
+    p.writeShort(pos);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: CWvsContext::SendPetFoodItemUseRequest (IDA 0x9D9F20) —
+  // opcode 82, int(updateTime), short(nPOS), int(nItemID).
+  static PetFoodItemUseRequest(pos: number, itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserPetFoodItemUseRequest);
+    p.writeInt(Date.now());
+    p.writeShort(pos);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: CWvsContext::SendTamingMobFoodItemUseRequest (IDA 0x9D63A0) —
+  // opcode 83, int(updateTime), short(nPOS), int(nItemID).
+  static TamingMobFoodItemUseRequest(pos: number, itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserTamingMobFoodItemUseRequest);
+    p.writeInt(Date.now());
+    p.writeShort(pos);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: CWvsContext::SendScriptRunItemRequest (IDA 0x9DE7A0) —
+  // opcode 84, int(updateTime), short(nPOS), int(nItemID).
+  static ScriptRunItemUseRequest(pos: number, itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserScriptRunItemUseRequest);
+    p.writeInt(Date.now());
+    p.writeShort(pos);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: CWvsContext::SendBridleItemUseRequest (IDA 0x9E08C0) —
+  // opcode 87, int4(updateTime), short2(nPOS), int4(nItemID), int4(mobTemplateId).
+  // mobTemplateId = apMob->field_170 (mob CRC/template from _ZtlSecureFuse).
+  static BridleItemUseRequest(pos: number, itemId: number, mobTemplateId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserBridleItemUseRequest);
+    p.writeInt(Date.now());
+    p.writeShort(pos);
+    p.writeInt(itemId);
+    p.writeInt(mobTemplateId);
+    return p;
+  }
+
+  // OG: CWvsContext::SendShopScannerItemUseRequest (IDA 0x9E10E0) —
+  // opcode 90, short(nPOS), int(nItemID).
+  static ShopScannerItemUseRequest(pos: number, itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserShopScannerItemUseRequest);
+    p.writeShort(pos);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: CWvsContext::SendMapTransferItemUseRequest (IDA 0x9E6020) —
+  // opcode 91, short(nPOS), int(nItemID), RunMapTransferItem(packet, 0):
+  //   byte(0) + string(mapName) + int4(mapId), then int4(updateTime).
+  static MapTransferItemUseRequest(pos: number, itemId: number, mapName: string, mapId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserMapTransferItemUseRequest);
+    p.writeShort(pos);
+    p.writeInt(itemId);
+    p.writeByte(0);
+    p.writeString(mapName);
+    p.writeInt(mapId);
+    p.writeInt(Date.now());
+    return p;
+  }
+
+  // OG: CWvsContext::SendSelectNpcItemUseRequest (IDA 0x9DA430) —
+  // opcode 123, short(nPOS), int(nItemID).
+  static SelectNpcItemUseRequest(pos: number, itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserSelectNpcItemUseRequest);
+    p.writeShort(pos);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: CWvsContext::SendLotteryItemUseRequest (IDA 0x9D6C50) —
+  // opcode 124, short(nPos), int(nItemID).
+  static LotteryItemUseRequest(pos: number, itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserLotteryItemUseRequest);
+    p.writeShort(pos);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: CWvsContext::SendExpUpItemUseRequest (IDA 0x9DB1C0) —
+  // opcode 181, int(updateTime), short(nPOS), int(nItemID).
+  static ExpUpItemUseRequest(pos: number, itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserExpUpItemUseRequest);
+    p.writeInt(Date.now());
+    p.writeShort(pos);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: CWvsContext::SendConsumeCashItemUseRequest (opcode 85) —
+  // simple consume form: int4(updateTime), short2(nPOS), int4(nItemID).
+  // Used for cash pet food (category 524) and other simple cash consumes.
+  static ConsumeCashItemUseRequest(pos: number, itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserConsumeCashItemUseRequest);
+    p.writeInt(0);
+    p.writeShort(pos);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: CWvsContext::SendActiveEffectItemChange (IDA 0x9F9420) —
+  // opcode 57, int(nItemID). Toggles a cosmetic effect item.
+  static ActiveEffectItemChange(itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserActiveEffectItemChange);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: CWvsContext::SendDragonBallBoxRequest (IDA 0x9D73D0) —
+  // opcode 196, no payload.
+  static DragonBallBoxRequest(): OutPacket {
+    return OutPacket.Of(InHeader.UserDragonBallBoxRequest);
   }
 
   // OG: CWvsContext::SendSkillLearnItemUseRequest (decompile/9d65e0.c) —
@@ -192,6 +326,17 @@ export class GameSender {
     const p = OutPacket.Of(InHeader.UserDropMoneyRequest);
     p.writeInt(0);
     p.writeInt(amount);
+    return p;
+  }
+
+  // OG: CWvsContext::SendItemReleaseRequest(nUPOS, nEPOS) — sends the
+  // release-scroll use-slot and equip-slot to the server.
+  // IDA 0x9D5F73: int4(updateTime) + short2(nUPOS) + short2(nEPOS)
+  static ItemReleaseRequest(useSlot: number, equipSlot: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserItemReleaseRequest);
+    p.writeInt(0);
+    p.writeShort(useSlot);
+    p.writeShort(equipSlot);
     return p;
   }
 
@@ -748,6 +893,180 @@ export class GameSender {
     p.writeInt(scrollSlotPos);
     p.writeInt(whiteScrollUse);
     p.writeInt(Date.now());
+    return p;
+  }
+
+  // OG: CUIStatChangeItemDlg / CUISkillResetDlg — AP/SP reset via cash item.
+  // Wire shape: int(itemId) int(timestamp). The server decodes the cash-item
+  // type from the item ID prefix to determine AP vs SP reset.
+  static SkillResetRequest(itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserConsumeCashItemUseRequest);
+    p.writeInt(itemId);
+    p.writeInt(Date.now());
+    return p;
+  }
+
+  // OG: CUIPetRenameDlg — rename a pet via cash item.
+  // Wire shape: int(itemId) int(petId) string(newName).
+  static PetRename(itemId: number, petId: number, newName: string): OutPacket {
+    const p = OutPacket.Of(InHeader.UserConsumeCashItemUseRequest);
+    p.writeInt(itemId);
+    p.writeInt(petId);
+    p.writeString(newName);
+    return p;
+  }
+
+  // OG: CUINameChangeDlg — character name change via cash item.
+  // Wire shape: int(itemId) string(newName).
+  static NameChange(itemId: number, newName: string): OutPacket {
+    const p = OutPacket.Of(InHeader.UserConsumeCashItemUseRequest);
+    p.writeInt(itemId);
+    p.writeString(newName);
+    return p;
+  }
+
+  // OG: CUIMapTransferDlg — teleport to a map via cash item.
+  // Wire shape: int(itemId) int(mapId).
+  static MapTransfer(itemId: number, mapId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserConsumeCashItemUseRequest);
+    p.writeInt(itemId);
+    p.writeInt(mapId);
+    return p;
+  }
+
+  // OG: CUIMegaphoneDlg (avatar variant) — send an avatar megaphone.
+  // Wire shape: int(itemId) string(message).
+  static AvatarMegaphone(itemId: number, message: string): OutPacket {
+    const p = OutPacket.Of(InHeader.UserConsumeCashItemUseRequest);
+    p.writeInt(itemId);
+    p.writeString(message);
+    return p;
+  }
+
+  // OG: CUIWorldSpeakerDlg — world-wide speaker message.
+  // Wire shape: int(itemId) string(message).
+  static WorldSpeaker(itemId: number, message: string): OutPacket {
+    const p = OutPacket.Of(InHeader.UserConsumeCashItemUseRequest);
+    p.writeInt(itemId);
+    p.writeString(message);
+    return p;
+  }
+
+  // OG: CUIMapleTVDlg — send a Maple TV message.
+  // Wire shape: int(itemId) string(recipientName) string(message).
+  static MapleTV(itemId: number, recipientName: string, message: string): OutPacket {
+    const p = OutPacket.Of(InHeader.UserConsumeCashItemUseRequest);
+    p.writeInt(itemId);
+    p.writeString(recipientName);
+    p.writeString(message);
+    return p;
+  }
+
+  // OG: CUIShopScannerDlg — use a shop scanner to find items.
+  // Wire shape: int(itemId).
+  static ShopScanner(itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserConsumeCashItemUseRequest);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: CPersonalShopDlg — set the shop name via cash item.
+  // Wire shape: int(itemId) string(shopName).
+  static PersonalShopName(itemId: number, shopName: string): OutPacket {
+    const p = OutPacket.Of(InHeader.UserConsumeCashItemUseRequest);
+    p.writeInt(itemId);
+    p.writeString(shopName);
+    return p;
+  }
+
+  // OG: CUIIncubatorDlg — use an incubator on equipment.
+  // Wire shape: int(itemId).
+  static Incubator(itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserConsumeCashItemUseRequest);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: Chat donation via cash item (e.g. donation effect).
+  // Wire shape: int(itemId).
+  static ChatDonation(itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserConsumeCashItemUseRequest);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: Weather effect via cash item.
+  // Wire shape: int(itemId).
+  static WeatherEffect(itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserConsumeCashItemUseRequest);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: Couple ring — propose/accept a couple ring via cash item.
+  // Wire shape: int(itemId) string(partnerName).
+  static CoupleRing(itemId: number, partnerName: string): OutPacket {
+    const p = OutPacket.Of(InHeader.UserConsumeCashItemUseRequest);
+    p.writeInt(itemId);
+    p.writeString(partnerName);
+    return p;
+  }
+
+  // OG: Friendship ring — propose/accept a friendship ring via cash item.
+  // Wire shape: int(itemId) string(friendName).
+  static FriendshipRing(itemId: number, friendName: string): OutPacket {
+    const p = OutPacket.Of(InHeader.UserConsumeCashItemUseRequest);
+    p.writeInt(itemId);
+    p.writeString(friendName);
+    return p;
+  }
+
+  // OG: Guild emblem — set/change guild emblem via cash item.
+  // Wire shape: int(itemId).
+  static GuildEmblem(itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserConsumeCashItemUseRequest);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: Merchant name tag — set the merchant name tag via cash item.
+  // Wire shape: int(itemId) string(nameTag).
+  static MerchantNameTag(itemId: number, nameTag: string): OutPacket {
+    const p = OutPacket.Of(InHeader.UserConsumeCashItemUseRequest);
+    p.writeInt(itemId);
+    p.writeString(nameTag);
+    return p;
+  }
+
+  // OG: Package delivery — send a package via cash item.
+  // Wire shape: int(itemId).
+  static PackageDeliver(itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserConsumeCashItemUseRequest);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: Quest helper — use a quest helper cash item.
+  // Wire shape: int(itemId).
+  static QuestHelper(itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserConsumeCashItemUseRequest);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: SP reset — reset skill points via cash item.
+  // Wire shape: int(itemId).
+  static SpReset(itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserConsumeCashItemUseRequest);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: AP reset — reset ability points via cash item.
+  // Wire shape: int(itemId).
+  static APReset(itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserConsumeCashItemUseRequest);
+    p.writeInt(itemId);
     return p;
   }
 
@@ -1768,5 +2087,226 @@ export class GameSender {
   // sent when player clicks their own dot on the minimap.
   static UserMiniMapClick(): OutPacket {
     return OutPacket.Of(InHeader.UserMiniMapClick);
+  }
+
+  // ── CashShop Senders (InHeader.UserCashShopRequest=275) ────────────────
+  // All CCashShop::Send* methods (decompile/487b60.c and siblings).
+  // Sub-action byte first, then action-specific fields.
+
+  /** Sub-action 0: CCashShop::SendLoadLockerRequest — request locker contents. */
+  static CashShopLoadLocker(): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(0);
+    return p;
+  }
+
+  /** Sub-action 1: CCashShop::SendLoadGiftRequest — request gift box contents. */
+  static CashShopLoadGift(): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(1);
+    return p;
+  }
+
+  /** Sub-action 2: CCashShop::SendLoadWishRequest — request wishlist. */
+  static CashShopLoadWish(): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(2);
+    return p;
+  }
+
+  /** Sub-action 3: CCashShop::SendBuyRequest — buy a single item by SN. */
+  static CashShopBuy(sn: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(3);
+    p.writeInt(sn);
+    return p;
+  }
+
+  /** Sub-action 5: CCashShop::SendSetWishRequest — set the 10-slot wishlist. */
+  static CashShopSetWish(sns: number[]): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(5);
+    for (let i = 0; i < 10; i++) p.writeInt(sns[i] ?? 0);
+    return p;
+  }
+
+  /** Sub-action 6: CCashShop::SendMoveLtoSRequest — move item from locker to inventory. */
+  static CashShopMoveLtoS(sn: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(6);
+    p.writeInt(sn);
+    return p;
+  }
+
+  /** Sub-action 7: CCashShop::SendMoveStoLRequest — move item from inventory to locker. */
+  static CashShopMoveStoL(sn: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(7);
+    p.writeInt(sn);
+    return p;
+  }
+
+  /** Sub-action 8: CCashShop::SendUseCouponRequest — redeem a coupon code. */
+  static CashShopUseCoupon(couponCode: string): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(8);
+    p.writeString(couponCode);
+    return p;
+  }
+
+  /** Sub-action 9: CCashShop::SendGiftCouponRequest — gift a coupon to a player. */
+  static CashShopGiftCoupon(receiverName: string, couponCode: string): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(9);
+    p.writeString(receiverName);
+    p.writeString(couponCode);
+    return p;
+  }
+
+  /** Sub-action 10: CCashShop::SendIncSlotCountRequest — purchase extra inventory slots. */
+  static CashShopIncSlotCount(invType: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(10);
+    p.writeByte(invType);
+    return p;
+  }
+
+  /** Sub-action 11: CCashShop::SendIncTrunkCountRequest — purchase extra trunk slots. */
+  static CashShopIncTrunkCount(): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(11);
+    return p;
+  }
+
+  /** Sub-action 12: CCashShop::SendIncCharSlotCountRequest — purchase extra character slot. */
+  static CashShopIncCharSlotCount(): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(12);
+    return p;
+  }
+
+  /** Sub-action 13: CCashShop::SendIncBuyCharCountRequest — purchase extra buy-character count. */
+  static CashShopIncBuyCharCount(): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(13);
+    return p;
+  }
+
+  /** Sub-action 14: CCashShop::SendEnableEquipSlotExtRequest — extend an equip slot by days. */
+  static CashShopEnableEquipSlotExt(bodyPartIndex: number, days: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(14);
+    p.writeShort(bodyPartIndex);
+    p.writeShort(days);
+    return p;
+  }
+
+  /** Sub-action 15: CCashShop::SendDestroyRequest — destroy a locker item by SN. */
+  static CashShopDestroy(sn: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(15);
+    p.writeInt(sn);
+    return p;
+  }
+
+  /** Sub-action 16: CCashShop::SendExpireRequest — expire a locker item by SN. */
+  static CashShopExpire(sn: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(16);
+    p.writeInt(sn);
+    return p;
+  }
+
+  /** Sub-action 17: CCashShop::SendRebateRequest — request rebate for a locker item. */
+  static CashShopRebate(sn: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(17);
+    p.writeInt(sn);
+    return p;
+  }
+
+  /** Sub-action 18: CCashShop::SendCoupleRequest — buy a couple/linked item for a partner. */
+  static CashShopCouple(sn: number, receiverName: string): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(18);
+    p.writeInt(sn);
+    p.writeString(receiverName);
+    return p;
+  }
+
+  /** Sub-action 19: CCashShop::SendBuyPackageRequest — buy a package deal by SNs. */
+  static CashShopBuyPackage(sns: number[]): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(19);
+    p.writeByte(sns.length);
+    for (const sn of sns) p.writeInt(sn);
+    return p;
+  }
+
+  /** Sub-action 20: CCashShop::SendGiftPackageRequest — gift a package to a player. */
+  static CashShopGiftPackage(receiverName: string, sn: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(20);
+    p.writeString(receiverName);
+    p.writeInt(sn);
+    return p;
+  }
+
+  /** Sub-action 21: CCashShop::SendBuyNormalRequest — buy multiple normal items at once. */
+  static CashShopBuyNormal(count: number, sns: number[]): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(21);
+    p.writeByte(count);
+    for (const sn of sns) p.writeInt(sn);
+    return p;
+  }
+
+  /** Sub-action 22: CCashShop::SendFriendShipRequest — buy a friendship item for another player. */
+  static CashShopFriendShip(sn: number, receiverName: string): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(22);
+    p.writeInt(sn);
+    p.writeString(receiverName);
+    return p;
+  }
+
+  /** Sub-action 23: CCashShop::SendFreeCashItemRequest — claim a free cash item. */
+  static CashShopFreeCashItem(sn: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(23);
+    p.writeInt(sn);
+    return p;
+  }
+
+  /** Sub-action 24: CCashShop::SendPurchaseRecordRequest — check purchase record for an item. */
+  static CashShopPurchaseRecord(sn: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(24);
+    p.writeInt(sn);
+    return p;
+  }
+
+  /** Sub-action 25: CCashShop::SendChangeMaplePointRequest — convert Maple Points for an item. */
+  static CashShopChangeMaplePoint(sn: number, amount: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(25);
+    p.writeInt(sn);
+    p.writeInt(amount);
+    return p;
+  }
+
+  /** Sub-action 27: CCashShop::SendQueryCashRequest — query current NX/MaplePoint/Prepaid balances. */
+  static CashShopQueryCash(): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(27);
+    return p;
+  }
+
+  /** Sub-action 26: CCashShop::SendCashGachaponOpenRequest — open a cash gachapon ticket. */
+  static CashShopCashGachaponOpen(sn: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(26);
+    p.writeInt(sn);
+    return p;
   }
 }

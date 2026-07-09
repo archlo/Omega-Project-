@@ -705,26 +705,179 @@ export const enum BodyPart {
  *  `StatDerived.ts`'s formulas (pass 12).
  * ═══════════════════════════════════════════════════════════════════════════ */
 
+/** Full 128-bit CharacterTemporaryStat mask — OG v95 SecondaryStat::DecodeForLocal.
+ *  Bits 0–13 are "common" stats (short, int, int per entry). Bits 14+ are
+ *  "special" stats that may carry inline trailing data after the common loop.
+ *  Bit positions confirmed against the v95 IDA function list and community
+ *  reverse engineering. Bits 122–128 are virtual TemporaryStatBase dispatch. */
 export const enum TempStatMask {
-  Str       = 0x0000001,
-  Dex       = 0x0000002,
-  Int       = 0x0000004,
-  Luk       = 0x0000008,
-  Pad       = 0x0000010,
-  Mad       = 0x0000020,
-  Pdd       = 0x0000040,
-  Mdd       = 0x0000080,
-  Acc       = 0x0000100,
-  Eva       = 0x0000200,
-  Speed     = 0x0000400,
-  Jump      = 0x0000800,
-  MagicAtk  = 0x0001000,
-  MagicDef  = 0x0002000,
-  /*
-   * Beyond this point, the mask uses per-stat sub-encodings rather than a
-   * single bit, so FieldHandlers only enumerates the first 12 named bits.
-   * Extend here as more are decoded.
-   */
+  // ── Common stats (bits 0-13) ── standard (value:short, skillId:int, seconds:int)
+  Str              = 0,
+  Dex              = 1,
+  Int              = 2,
+  Luk              = 3,
+  Pad              = 4,   // Physical ATK
+  Mad              = 5,   // Magical ATK
+  Pdd              = 6,   // Physical DEF
+  Mdd              = 7,   // Magical DEF
+  Acc              = 8,   // Accuracy
+  Eva              = 9,   // Avoidability
+  Speed            = 10,
+  Jump             = 11,
+  MagicAtk         = 12,
+  MagicDef         = 13,
+
+  // ── Skill-specific buffs (bits 14+) ── may carry inline trailing data
+  // Most are standard triples; a few have extra reads after the common loop.
+  Craft            = 14,
+  MagicGuard       = 15,  // nMagicGuard: % damage absorbed by MP
+  DarkSight        = 16,  // tick-only, no inline data
+  Booster          = 17,
+  PowerGuard       = 18,  // nPowerGuard: % damage reflected
+  MaxHP            = 19,
+  MaxMP            = 20,
+  Invincible       = 21,
+  SoulArrow        = 22,  // nSoulArrow: % no-arrow-consume
+  Stun             = 23,
+  Poison           = 24,
+  Seal             = 25,
+  Darkness         = 26,
+  Combo            = 27,  // bCombo: combo counter state
+  Charge           = 28,  // nCharge: element %
+  DragonBlood      = 29,
+  HolySymbol       = 30,  // nHolySymbol: EXP %
+  MesoUp           = 31,  // nMesoUp: meso gain %
+  ShadowPartner    = 32,  // nShadowPartner: damage %
+  PickPocket       = 33,
+  MesoGuard        = 34,  // nMesoGuard: % meso absorb
+  Thaw             = 35,
+  Weakness         = 36,
+  Curse            = 37,
+  Slow             = 38,  // nSlow: movement %
+  Morph            = 39,
+  Regen            = 40,
+  BasicStatUp      = 41,  // Maple Warrior %
+  Stance           = 42,  // bStance: dodge %
+  SharpEyes        = 43,  // nSharpEyes: crit% + crit damage
+  ManaReflection   = 44,
+  Attract          = 45,
+  NoBulletConsume  = 46,
+  Infinity         = 47,  // nInfinity: MP cost %
+  AdvancedBless    = 48,
+  Illusion         = 49,
+  BerserkFury      = 50,
+  DivineBody       = 51,
+  Spark            = 52,
+  FinalAttack      = 53,
+  WindWalk         = 54,
+  // Aran combo system
+  AranCombo        = 55,  // nAranCombo: combo count
+  ComboDrain       = 56,
+  ComboBarrier     = 57,
+  BodyPressure     = 58,
+  SmartKnockback   = 59,
+  RepeatEffect     = 60,
+  ExpBuffRate      = 61,
+  StopPortion      = 62,
+  StopMotion       = 63,
+  Fear             = 64,  // bFear: darkness screen
+  EvanSlow         = 65,
+  MagicShield      = 66,
+  MagicResistance  = 67,
+  SoulStone        = 68,
+  Flying           = 69,
+  Frozen           = 70,
+  // Element-related buffs
+  ElementLight     = 71,
+  ElementDark      = 72,
+  ElementFire      = 73,
+  ElementIce       = 74,
+  // Subsidiary stats
+  AddAttackCount   = 75,
+  AddAttackX       = 76,
+  CrushItemEnchant = 77,
+  // Special mechanics
+  BlessingArmor    = 78,  // inline: nBlessingArmorIncPAD (1 int)
+  DamR             = 79,  // damage reflection %
+  TeleportMastery  = 80,
+  CombatOrders     = 81,
+  Beholder         = 82,
+  // Periodic buffs
+  AddBuffItemID    = 83,
+  // Hyper body / special body
+  HyperBody        = 84,
+  // Dice roll system
+  Dice             = 85,  // inline: aDiceInfo[22] (22 ints)
+  // Rush / mobility
+  Rush             = 86,
+  // Common passive buffs
+  Web              = 87,
+  ElementalCharge  = 88,
+  // Debuffs / status
+  Venom            = 89,
+  DarkAtomic       = 90,
+  BombArrow        = 91,
+  // Special summons / effects
+  SuddenDeath      = 92,
+  Boarding         = 93,
+  // Pet / mount
+  AdditionalPMP    = 94,
+  // Aran-specific
+  AranWhirlwind    = 95,
+  // Common utility
+  Magnet           = 96,
+  // Skill-specific
+  FlashBang        = 97,
+  // Swallow buff
+  SwallowBuff      = 98,  // inline: tSwallowBuffTime (1 int)
+  // Hit effect
+  HitTeleport      = 99,
+  // More skill-specific
+  MoreWildBuff     = 100,
+  Hide              = 101,
+  // Cygnus / specific
+  CygnusFlame      = 102,
+  // Passive stat buffs
+  STRBuff          = 103,
+  DEXBuff          = 104,
+  INTBuff          = 105,
+  LUKBuff          = 106,
+  // More combat
+  AttackCount      = 107,
+  // Equipment effects
+  BuffImmune       = 108,
+  // Skill chains
+  SkillFixed       = 109,
+  // More Aran
+  AranBind         = 110,
+  // Events / specials
+  NotDamaged       = 111,
+  // Final form / transformation
+  FinalCut         = 112,
+  // Damage boost
+  DamageUp         = 113,
+  // Hyper body sub
+  HyperBodyDef     = 114,
+  HyperBodyHP      = 115,
+  HyperBodyMP      = 116,
+  // More element
+  ElementCharge2   = 117,
+  // Unique mechanics
+  Barrier          = 118,
+  GuidedBullet     = 119,
+  Undead           = 120,
+  RideVehicle      = 121,
+
+  // ── Virtual TemporaryStatBase dispatch (bits 122-128) ──
+  // These are "virtual" stat groups that decode via
+  // TemporaryStatBase::DecodeForClient — each carries its own sub-structure.
+  TempStatBase0    = 122,
+  TempStatBase1    = 123,
+  TempStatBase2    = 124,
+  TempStatBase3    = 125,
+  TempStatBase4    = 126,
+  TempStatBase5    = 127,
+  TempStatBase6    = 128,
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

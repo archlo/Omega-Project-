@@ -4,6 +4,7 @@ import { WzTextureLoader } from '../render/WzTextureLoader.js';
 import type { WzPackage } from '../wz/WzPackage.js';
 import { CharLook } from './CharLook.js';
 import { Stance } from './Stance.js';
+import type { TempStatBuff } from '../net/handlers/PacketArgs.js';
 
 export class OtherCharLook {
   readonly container = new Container();
@@ -19,6 +20,16 @@ export class OtherCharLook {
   private _adBoardText = '';
   private _adBoardTimer = 0;
   private _statusBadges = new Map<string, { text: string; timer: number }>();
+
+  // Remote character buff state
+  private _tempStatMaskLo = 0n;
+  private _tempStatMaskHi = 0n;
+  private _tempStatBuffs: TempStatBuff[] = [];
+  private _defenseAtt = 0;
+  private _defenseState = 0;
+  private _diceInfo: number[] = [];
+  private _swallowBuffTime = 0;
+  private _blessingArmorIncPAD = 0;
 
   PortableChairItemId = 0;
 
@@ -104,6 +115,48 @@ export class OtherCharLook {
 
   ClearStatusBadge(key: string): void {
     this._statusBadges.delete(key);
+  }
+
+  // ── Remote character temporary stat (buff) state ──
+
+  SetTemporaryStats(
+    maskLo: bigint, maskHi: bigint,
+    buffs: TempStatBuff[],
+    defenseAtt: number, defenseState: number,
+    diceInfo: number[], swallowBuffTime: number, blessingArmorIncPAD: number,
+  ): void {
+    this._tempStatMaskLo = maskLo;
+    this._tempStatMaskHi = maskHi;
+    this._tempStatBuffs = buffs;
+    this._defenseAtt = defenseAtt;
+    this._defenseState = defenseState;
+    this._diceInfo = diceInfo;
+    this._swallowBuffTime = swallowBuffTime;
+    this._blessingArmorIncPAD = blessingArmorIncPAD;
+  }
+
+  ClearTemporaryStats(maskLo: bigint, maskHi: bigint): void {
+    // Clear only the bits that are set in the reset mask
+    this._tempStatMaskLo &= ~maskLo;
+    this._tempStatMaskHi &= ~maskHi;
+    this._tempStatBuffs = this._tempStatBuffs.filter(b => {
+      if (b.bit < 64) return (this._tempStatMaskLo & (1n << BigInt(b.bit))) !== 0n;
+      return (this._tempStatMaskHi & (1n << BigInt(b.bit - 64))) !== 0n;
+    });
+  }
+
+  get TempStatBuffs(): readonly TempStatBuff[] { return this._tempStatBuffs; }
+  get TempStatMaskLo(): bigint { return this._tempStatMaskLo; }
+  get TempStatMaskHi(): bigint { return this._tempStatMaskHi; }
+  get DefenseAtt(): number { return this._defenseAtt; }
+  get DefenseState(): number { return this._defenseState; }
+  get DiceInfo(): readonly number[] { return this._diceInfo; }
+  get SwallowBuffTime(): number { return this._swallowBuffTime; }
+  get BlessingArmorIncPAD(): number { return this._blessingArmorIncPAD; }
+
+  /** Look up a buff by bit position. Returns undefined if not set. */
+  GetBuffByBit(bit: number): TempStatBuff | undefined {
+    return this._tempStatBuffs.find(b => b.bit === bit);
   }
 
   SetEmotion(emotionId: number): void {

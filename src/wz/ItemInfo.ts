@@ -1,15 +1,14 @@
 import { WzPackage } from '../wz/WzPackage.js';
 import { WzProperty } from '../wz/WzProperty.js';
-import type { CActionMan } from '../character/ActionMan.js';
 
 export class ItemInfo {
   private _itemCache = new Map<number, WzProperty | null>();
   private _categoryCache = new Map<string, WzProperty | null>();
+  private _charImgCache = new Map<number, WzProperty | null>();
 
   constructor(
     private _itemWz: WzPackage | null,
     private _characterWz: WzPackage | null,
-    private _actionMan?: CActionMan,
   ) {}
 
   GetItemProp(itemId: number): WzProperty | null {
@@ -26,8 +25,15 @@ export class ItemInfo {
     const subCategory = Math.floor(itemId / 10000);
 
     if (prefix === 1) {
-      const entry = this._actionMan?.GetCharacterImgEntry(itemId);
-      return entry?.pImg ?? null;
+      // Inlined from CActionMan.GetCharacterImgEntry — loads a character
+      // equipment .img node directly from Character.wz.
+      const cached = this._charImgCache.get(itemId);
+      if (cached !== undefined) return cached;
+      const path = `${itemId.toString().padStart(8, '0')}.img`;
+      const node = this._characterWz?.GetItem(path);
+      const prop = node instanceof WzProperty ? node : null;
+      this._charImgCache.set(itemId, prop);
+      return prop;
     }
 
     if (subCategory <= 3) return null;

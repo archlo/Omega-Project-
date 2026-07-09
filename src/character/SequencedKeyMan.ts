@@ -38,10 +38,12 @@
 // Deferred (needs OG Process/ReserveAction state machine + input infra not in
 // this client): the exact tExpire-from-sequence-start timing (this port uses
 // each tap's held-duration against the element's expire window), the key-UP
-// ignore semantics of KeySequenceElementIgnoreUp, and the Aran per-action
-// dummy-skill variants (GetDummySkillID 0x6de770: 32001007-011). CDashTrigger
-// (0x6df5f0, directional dash → CUser::GetDashingSkill) is a separate
-// direction-only sequence, not a melee finisher, and is left to the movement path.
+// ignore semantics of KeySequenceElementIgnoreUp.
+// Aran per-action dummy-skill variants (GetDummySkillID 0x6de770: 32001007-011)
+// are now implemented via ComboCastContext.aranFinishSkillId callback.
+// CDashTrigger (0x6df5f0, directional dash → CUser::GetDashingSkill) is a
+// separate direction-only sequence, not a melee finisher, and is left to the
+// movement path.
 
 export type ComboTier = 'double' | 'triple';
 export type FinisherDirection = 'none' | 'left' | 'right' | 'up' | 'down';
@@ -55,6 +57,13 @@ export interface ComboCastContext {
   isAttacking(): boolean;
   /** Currently-held movement direction, for the Mihile Final* finishers. Defaults to 'none'. */
   direction?(): FinisherDirection;
+  /**
+   * OG: CFinishAttack::GetDummySkillID (0x6de770) returns a per-action dummy
+   * skill ID (32001007-32001011) used for the finish-attack animation. The
+   * caller supplies the correct variant based on combo state/action.
+   * Fallback: returns undefined (uses the default 32001001).
+   */
+  aranFinishSkillId?(): number | undefined;
 }
 
 // OG: CDoubleAttack::GetSkillID (0x6de560) / CTripleAttack::GetSkillID (0x6de5b0).
@@ -77,7 +86,7 @@ interface FinisherDef {
   /** KeySequenceElement tExpire window (ms) for the triggering tap. */
   tapWindowMs: number;
   /** Skill this finisher casts (job-aware), matching the DoAction body. */
-  skillId(jobId: number): number;
+  skillId(jobId: number, ctx?: ComboCastContext): number;
   /** Optional job gate (Aran FinishAttack). Omitted = eligible for any job (still skill-gated). */
   jobEligible?(jobId: number): boolean;
 }
@@ -88,8 +97,10 @@ const FINISHER_TABLE: FinisherDef[] = [
     skillId: (j) => comboSkillId('double', j) },
   // Aran FinishAttack (0x6de730/0x6de760): directionless chain start, key-up window 1000ms,
   // gated to the Aran/Legend job range so it never shadows Warrior DoubleStab.
+  // GetDummySkillID (0x6de770) returns 32001007-32001011 per current action;
+  // the caller supplies the variant via ComboCastContext.aranFinishSkillId.
   { name: 'AranFinish', fromTier: 'none', advanceTo: 'none', direction: 'none', tapWindowMs: 1000,
-    skillId: () => 32001001, jobEligible: (j) => j >= 2000 && j <= 2112 },
+    skillId: (_j, ctx) => ctx?.aranFinishSkillId?.() ?? 32001001, jobEligible: (j) => j >= 2000 && j <= 2112 },
   { name: 'TripleStab', fromTier: 'double', advanceTo: 'triple', direction: 'none', tapWindowMs: 660,
     skillId: (j) => comboSkillId('triple', j) },
   { name: 'FinalChargeL', fromTier: 'triple', advanceTo: 'none', direction: 'left', tapWindowMs: 600,
@@ -153,7 +164,7 @@ export class SequencedKeyMan {
       if (f.direction !== 'none' && f.direction !== dir) continue;
       if (heldMs > f.tapWindowMs) continue;
       if (f.jobEligible && !f.jobEligible(ctx.jobId)) continue;
-      if (ctx.getSkillLevel(f.skillId(ctx.jobId)) <= 0) continue;
+      if (ctx.getSkillLevel(f.skillId(ctx.jobId, ctx)) <= 0) continue;
       return f;
     }
     return null;
@@ -168,7 +179,7 @@ export class SequencedKeyMan {
     const f = this._reserved;
     this._reserved = null;
     this._lastTier = f.advanceTo;
-    return f.skillId(ctx.jobId);
+    return f.skillId(ctx.jobId, ctx);
   }
 
   /** OG: CSequencedKeyMan::Clear (0x6def40) — reset on field change/death. */

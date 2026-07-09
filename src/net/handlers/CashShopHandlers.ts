@@ -15,10 +15,17 @@ export interface CashShopGachaponResult {
   count: number | null;
 }
 
+export interface OneADayPrevItem {
+  date: number;
+  sn: number;
+  originalSn: number;
+}
+
 export interface CashShopOneADayResult {
   itemDate: number;
   itemSn: number;
   count: number;
+  prevItems: OneADayPrevItem[];
 }
 
 export interface CashShopTransferWorldResult {
@@ -427,7 +434,13 @@ export class CashShopHandlers {
     const itemDate = p.readInt();
     const itemSn = p.readInt();
     const count = p.readInt();
-    for (let i = 0; i < count; i++) p.skip(12); // TODO_AUDIT.md Hundred-and-fifty-sixth pass: OneADayInfo — 12-byte raw struct confirmed via OG decompile/495950.c (OnOneADay): DecodeBuffer(v2, buf, 12 * v4). Size confirmed by ZArray realloc memcpy(v9, a, 12 * nOriginalSN) in decompile/494470.c.
-    this.onOneADay?.({ itemDate, itemSn, count });
+    const prevItems: import('./CashShopHandlers.js').OneADayPrevItem[] = [];
+    for (let i = 0; i < count; i++) {
+      const date = p.readInt();
+      const sn = p.readInt();
+      const originalSn = p.readInt();
+      prevItems.push({ date, sn, originalSn });
+    }
+    this.onOneADay?.({ itemDate, itemSn, count, prevItems });
   }
 }

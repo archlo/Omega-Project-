@@ -69,7 +69,7 @@ import { EquipStats, InventoryType } from '../domain/InventoryItem.js';
 import { InventoryOpType } from '../net/protocol/Enums.js';
 import { ItemIconLoader } from '../character/ItemIconLoader.js';
 import { StatusBar } from '../ui/game/StatusBar.js';
-import { ChatBar, FILTER_ALL, FILTER_FRIEND, FILTER_PARTY, FILTER_GUILD, FILTER_ALLIANCE, FILTER_SYSTEM } from '../ui/game/ChatBar.js';
+import { ChatBar, FILTER_ALL, FILTER_FRIEND, FILTER_PARTY, FILTER_GUILD, FILTER_ALLIANCE, FILTER_BUDDY } from '../ui/game/ChatBar.js';
 import { ChatBalloonLayer } from '../ui/game/ChatBalloon.js';
 import { MiniMap } from '../ui/game/MiniMap.js';
 import { BuffList } from '../ui/game/BuffList.js';
@@ -106,12 +106,14 @@ import { FamilyWindow } from '../ui/game/FamilyWindow.js';
 import { ChannelSelect } from '../ui/game/ChannelSelect.js';
 import { QuickSlotConfig } from '../ui/game/QuickSlotConfig.js';
 import { QuickSlotBar } from '../ui/game/QuickSlotBar.js';
+import { ContextMenu, type ContextMenuEntry } from '../ui/ContextMenu.js';
 import { FuncKeyType, FuncKeyMappedNone } from '../domain/FuncKeyMapped.js';
 import { StatDetailInfo } from '../ui/game/StatDetailInfo.js';
 import { GamePanel } from '../ui/game/GamePanel.js';
 import { DragController, DragTarget } from '../ui/DragController.js';
 import { BuiltInFont } from '../ui/BuiltInFont.js';
 import { Notice } from '../ui/game/Notice.js';
+import { InputDialog } from '../ui/game/InputDialog.js';
 import { AntiMacroDialog } from '../ui/game/AntiMacroDialog.js';
 import { QuitConfirmOverlay } from '../ui/QuitConfirmOverlay.js';
 import { Trunk } from '../ui/game/Trunk.js';
@@ -302,6 +304,7 @@ export class GameStage extends Stage {
   protected _partySearchDialog: PartySearchDialog | null = null;
   protected _questReward: QuestReward | null = null;
   protected _notice: Notice | null = null;
+  private _inputDialog: InputDialog | null = null;
   protected _antiMacroDialog: AntiMacroDialog | null = null;
   private _adminShopNpcTemplateId: number | null = null;
   protected _chatBalloon: ChatBalloonLayer | null = null;
@@ -318,6 +321,7 @@ export class GameStage extends Stage {
   protected _statDetailInfo: StatDetailInfo | null = null;
   protected _tombstone: TombstoneEffect | null = null;
   protected _quitOverlay: QuitConfirmOverlay | null = null;
+  protected _contextMenu: ContextMenu | null = null;
 
   protected _panels: GamePanel[] = [];
   protected _fadePhase = 0;   // 0 idle, +1 fading to black, -1 fading in
@@ -371,6 +375,8 @@ export class GameStage extends Stage {
   protected _fieldKey = 0;
   private _isFieldTransferring = false;
   private _townPortalStatus = '';
+  private _lastUnequipTime = 0;
+  private _isRidingTamingMob = false;
   protected _mobNameOf: (id: number) => string = () => '';
   protected _itemNameOf: (id: number) => string = () => '';
 
@@ -604,7 +610,7 @@ export class GameStage extends Stage {
     this._equip?.onResize(windowW, windowH);
     this._item?.onResize(windowW, windowH);
     this._statusBar?.relayout(800, 600);
-    this._chatBar?.relayout(800, 600);
+    this._chatBar?.relayout(windowW, windowH);
     this._quickSlots?.Relayout(800, 600);
     this._revivePanel?.Relayout(800, 600);
     this._fearEffect.onResize(windowW, windowH);
@@ -616,6 +622,10 @@ export class GameStage extends Stage {
     for (const p of this._panels) (p as any)?.onMouseMove?.(x, y);
     this._gameMenu?.SetMouse(x, y);
     this._dragController.updatePosition(x, y);
+  }
+
+  onMouseWheel(x: number, y: number, deltaY: number): void {
+    for (const p of this._panels) (p as any)?.onMouseWheel?.(x, y, deltaY);
   }
 
   onKeyPress(key: string): void {
@@ -647,10 +657,57 @@ export class GameStage extends Stage {
           }
         }
       }
+    } else if (fk.type === FuncKeyType.Menu) {
+      // OG: CUserLocal::UseFuncKeyMapped — Menu type dispatch
+      this._executeMenuAction(fk.id);
+    }
+    // Fallback: Pickup/Sit/Tab shortcuts from handleKeyDown
+    this.handleKeyDown(key);
+  }
+
+  // OG: Menu ID → UI panel toggle (from CFuncKeyMappedMan / UseFuncKeyMapped)
+  private _executeMenuAction(menuId: number): void {
+    switch (menuId) {
+      case 0: this._equip.isVisible = !this._equip.isVisible; break;           // Equipment
+      case 1: this._item.isVisible = !this._item.isVisible; break;             // Items
+      case 2: this._stats.isVisible = !this._stats.isVisible; break;           // Stats
+      case 3: this._skill.isVisible = !this._skill.isVisible; break;           // Skills
+      case 4: if (this._userList) this._userList.isVisible = !this._userList.isVisible; break; // Friends
+      case 5: if (this._worldMap) this._worldMap.isVisible = !this._worldMap.isVisible; break; // WorldMap
+      case 6: /* MapleChat — TODO */ break;
+      case 7: this._miniMap.cycleMode(); break;                                // MiniMap toggle
+      case 8: this._quest.isVisible = !this._quest.isVisible; break;           // QuestLog
+      case 9: this._keyConfig.isVisible = !this._keyConfig.isVisible; break;   // KeyBindings
+      case 10: this._chatBar?.focus(); break;                                  // Say
+      case 11: this._chatBar?.focus(); break;                                  // Whisper
+      case 12: /* PartyChat — TODO */ break;
+      case 13: /* FriendsChat — TODO */ break;
+      case 14: if (this._gameMenu) this._gameMenu.isVisible = !this._gameMenu.isVisible; break; // Game Menu
+      case 15: if (this._quickSlotConfig) this._quickSlotConfig.isVisible = !this._quickSlotConfig.isVisible; break; // QuickSlots
+      case 16: /* ToggleChat — TODO */ break;
+      case 17: /* Guild — TODO */ break;
+      case 18: /* GuildChat — TODO */ break;
+      case 19: /* Party — TODO */ break;
+      case 20: /* Notifier — TODO */ break;
+      case 21: /* SpouseChat — TODO */ break;
+      case 22: /* CashShop — TODO */ break;
+      case 24: /* AllianceChat — TODO */ break;
+      case 25: /* ManageLegion — TODO */ break;
+      case 26: if (this._familyWindow) this._familyWindow.isVisible = !this._familyWindow.isVisible; break; // Family
+      case 27: /* BossParty — TODO */ break;
+      case 29: /* ExpeditionChat — TODO */ break;
+      case 44: if (this._charInfo) this._charInfo.isVisible = !this._charInfo.isVisible; break; // CharInfo
+      case 45: if (this._channelSelect) this._channelSelect.isVisible = !this._channelSelect.isVisible; break; // ChangeChannel
+      case 46: if (this._gameMenu) this._gameMenu.isVisible = !this._gameMenu.isVisible; break; // MainMenu
+      case 47: /* Screenshot — TODO */ break;
     }
   }
 
   onMouseButton(x: number, y: number, down: boolean, _button: MouseButton): void {
+    // Dismiss context menu on any click
+    if (this._contextMenu && down) {
+      this._dismissContextMenu();
+    }
     if (this._quitOverlay?.isVisible) {
       if (!down) return;
       this._quitOverlay.handleMouseButton(x, y, down);
@@ -676,7 +733,17 @@ export class GameStage extends Stage {
         // drop point lies outside every UI window. Worn slots (negative slotPos)
         // keep the unequip fallback below instead.
         if (p.slotPos > 0 && !this._pointOverVisiblePanel(x, y)) {
-          this.game.session.send(GameSender.DropItem(invType, p.slotPos, 1));
+          // OG: ThrowItem shows quantity dialog for stackable items with quantity > 1
+          const item = this._item.itemAt(invType, p.slotPos);
+          const qty = item?.quantity ?? 1;
+          if (qty > 1) {
+            this._inputDialog?.show('Drop Item', 'Quantity:', qty, qty);
+            this._inputDialog!.onConfirm = (amount) => {
+              this.game.session.send(GameSender.DropItem(invType, p.slotPos, amount));
+            };
+          } else {
+            this.game.session.send(GameSender.DropItem(invType, p.slotPos, 1));
+          }
         } else if (invType === InventoryType.Equip || invType === InventoryType.Cash) {
           const tab = invType === InventoryType.Equip ? 0 : 1;
           const free = this._item.firstFreeSlot?.(tab) ?? 0;
@@ -712,8 +779,60 @@ export class GameStage extends Stage {
       let other: OtherCharLook | null = null;
       for (const c of this._otherChars.values()) { if (c.HitTest(world.x, world.y)) { other = c; break; } }
       if (other) {
-        this.game.session.send(GameSender.UserCharacterInfoRequest(other.CharId));
+        if (_button === MouseButton.Right) {
+          this._showPlayerContextMenu(other, x, y);
+        } else {
+          this.game.session.send(GameSender.UserCharacterInfoRequest(other.CharId));
+        }
+        return;
       }
+      // Click-to-pickup: find the nearest drop to the click point (OG allows
+      // clicking a drop on the field to pick it up, not just the keybind).
+      if (_button === MouseButton.Left && this._drops.length > 0) {
+        let best: DropSprite | null = null;
+        let bestDist = 30; // half the 20px icon + small margin
+        for (const drop of this._drops) {
+          const dx = world.x - drop.Position.x;
+          const dy = world.y - drop.Position.y;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < bestDist) { bestDist = d; best = drop; }
+        }
+        if (best) {
+          const pos = this._physics?.Position ?? this._player?.Position ?? { x: 0, y: 0 };
+          this.game.session.send(GameSender.PickUpDrop(this._fieldKey, pos.x, pos.y, best.DropId));
+        }
+      }
+    }
+  }
+
+  // OG: CUserLocal::HandleRButtonClk — right-click on another player shows context menu
+  private _showPlayerContextMenu(target: OtherCharLook, screenX: number, screenY: number): void {
+    // Dismiss any existing context menu
+    this._dismissContextMenu();
+
+    const name = target.Name || `Char#${target.CharId}`;
+    const entries: ContextMenuEntry[] = [
+      { label: 'Info', onClick: () => { this.game.session.send(GameSender.UserCharacterInfoRequest(target.CharId)); } },
+      { label: 'Whisper', onClick: () => { (this._chatBar as any)?.setChatTarget?.(` whisper ${name}`); } },
+      { separator: true },
+      { label: 'Trade', onClick: () => { this.game.session.send(GameSender.MiniRoomCreateTrade()); } },
+      { label: 'Party', onClick: () => { this.game.session.send(GameSender.PartyInvite(name)); } },
+      { label: 'Guild', onClick: () => { this.game.session.send(GameSender.GuildJoin(target.CharId, name)); } },
+    ];
+
+    this._contextMenu = new ContextMenu();
+    this._contextMenu.show(screenX, screenY, entries);
+    this.uiRoot.addChild(this._contextMenu.container);
+    this._panels.push(this._contextMenu);
+  }
+
+  private _dismissContextMenu(): void {
+    if (this._contextMenu) {
+      this._contextMenu.isVisible = false;
+      const idx = this._panels.indexOf(this._contextMenu);
+      if (idx >= 0) this._panels.splice(idx, 1);
+      this._contextMenu.container.removeFromParent();
+      this._contextMenu = null;
     }
   }
 
@@ -911,6 +1030,7 @@ export class GameStage extends Stage {
       undefined,
       (itemId) => this._item.countItem(itemId),
     );
+    this._quickSlots.bindItemToKey = (scancode, itemId) => this._keyConfig.bindItemToKey(scancode, itemId);
     this.uiRoot.addChild(this._quickSlots.container);
     this._quickSlots.Relayout(this.game.pixiApp.screen.width, this.game.pixiApp.screen.height);
     this._statDetailInfo = new StatDetailInfo(this._loader, uiWz, font);
@@ -937,9 +1057,6 @@ export class GameStage extends Stage {
       descOf: (id) => this.game.nameService.ItemDesc(id) ?? null,
     });
     this._syncEquipPetCount();
-    this._equip._petPanelAdded = (panel) => { this.uiRoot.addChild(panel); };
-    this._equip._dragonPanelAdded = (panel) => { this.uiRoot.addChild(panel); };
-    this._equip._mechanicPanelAdded = (panel) => { this.uiRoot.addChild(panel); };
     this._item = new ItemInventory({
       loader: this._loader,
       uiWz,
@@ -952,6 +1069,19 @@ export class GameStage extends Stage {
     const itemTipContainer = this._item.tooltipContainer;
     if (itemTipContainer) this.uiRoot.addChild(itemTipContainer);
     this._equip.onUnequip = (bodyPart) => {
+      // OG: CDraggableItem::GetOffEquipItem precondition checks
+      // 1. HP must be > 0 (can't unequip while dead)
+      if ((this._stats.hp ?? 0) <= 0) return;
+      // 2. 500ms cooldown between unequips
+      const now = Date.now();
+      if (now - this._lastUnequipTime < 500) return;
+      this._lastUnequipTime = now;
+      // 3. If riding tamed mob, cancel ride buff first (skillId 20021054)
+      //    OG: SendSkillCancelRequest(20021054) then proceed with unequip
+      if (this._isRidingTamingMob) {
+        this.game.session.send(GameSender.SkillCancelRequest(20021054));
+        this._isRidingTamingMob = false;
+      }
       const free = this._item.firstFreeSlot?.(0) ?? 0;
       if (free <= 0) {
         console.warn('Cannot unequip: no free slot in Equip tab');
@@ -983,6 +1113,11 @@ export class GameStage extends Stage {
     this._item.onUnequipToInventory = (invType, bodyPart, invSlot) => {
       this.game.session.send(GameSender.ChangeSlotPosition(invType, -bodyPart, invSlot, 1));
     };
+    // OG: CDraggableItem::MoveItemSlot — same-panel reorder via drag.
+    // Sends ChangeSlotPositionRequest(m_nItemTI, fromSlot, toSlot, -1).
+    this._item.onMoveItemSlot = (invType, fromSlot, toSlot) => {
+      this.game.session.send(GameSender.ChangeSlotPosition(invType, fromSlot, toSlot, -1));
+    };
     this._item.onEquipItem = (item) => {
       const bodyPart = GameStage._equipBodyPart(item.id);
       if (bodyPart <= 0) {
@@ -1001,21 +1136,38 @@ export class GameStage extends Stage {
       }
       this._dispatchCashItem(item.slot, item.id, item.name);
     };
-    this._item.onCashShop = () => {
+    // OG: CUIItem::OnButtonClicked(0x7D7) — CashShop button sends
+    // SendMigrateToShopRequest with subId based on m_nItemTI:
+    // tab 0(Equip)→50200093, tab 1(Use)→50200094, tab 2(Setup)→50200095
+    this._item.onCashShop = (itemTI: number) => {
       if (this.game.session.isConnected) this.game.session.send(GameSender.MigrateToCashShop());
       this.stageDirector.push(new CashShopStage(this._uiWz));
     };
     this._item.onDropMoney = () => {
-      const raw = window.prompt('Amount of mesos:');
-      if (raw === null) return;
-      const amount = Math.trunc(Number(raw));
-      if (Number.isFinite(amount) && amount > 0) this.game.session.send(GameSender.DropMoney(amount));
+      // OG: OnDropMoney shows CUtilDlgEx with type=2 (numeric input), max=min(money, 50000)
+      const maxMeso = Math.min(this._item?.getMeso() ?? 0, 50000);
+      this._inputDialog?.show('Drop Meso', 'Amount:', maxMeso, maxMeso);
+      this._inputDialog!.onConfirm = (amount) => {
+        this.game.session.send(GameSender.DropMoney(amount));
+      };
     };
+    // OG: OnGather/OnSort send m_nItemTI (server invType, not visual tab)
     this._item.onGather = (invType) => {
       if (this.game.session.isConnected) this.game.session.send(GameSender.GatherItemRequest(Date.now(), invType));
     };
     this._item.onSort = (invType) => {
       if (this.game.session.isConnected) this.game.session.send(GameSender.SortItemRequest(Date.now(), invType));
+    };
+    // OG: CUIItem::ItemRelease → CWvsContext::SendItemReleaseRequest(useSlot, equipSlot)
+    this._item.onItemRelease = (useSlot: number, equipSlot: number) => {
+      if (this.game.session.isConnected) this.game.session.send(GameSender.ItemReleaseRequest(useSlot, equipSlot));
+    };
+    // Shift+click: split stackable items — find first empty slot and move qty items there
+    this._item.onSplitItem = (item, qty) => {
+      if (!this.game.session.isConnected) return;
+      const freeSlot = this._item.firstFreeSlot?.(item.tab) ?? 0;
+      if (freeSlot <= 0) { console.warn('No free slot to split item'); return; }
+      this.game.session.send(GameSender.ItemSplit(item.tab + 1, item.slot, freeSlot, qty));
     };
 
     this._revivePanel = new Revive(this._loader, uiWz, font);
@@ -1114,6 +1266,8 @@ export class GameStage extends Stage {
     };
     this._notice = new Notice();
     this.uiRoot.addChild(this._notice.container);
+    this._inputDialog = new InputDialog();
+    this.uiRoot.addChild(this._inputDialog.container);
     this._antiMacroDialog = new AntiMacroDialog();
     this.uiRoot.addChild(this._antiMacroDialog.container);
     this._antiMacroDialog.onSubmit = (answer) => {
@@ -1287,44 +1441,287 @@ export class GameStage extends Stage {
     for (const p of [this._statusBar, this._miniMap, this._equip, this._item, this._keyConfig, this._questReward!, this._notice!, this._antiMacroDialog!]) {
       if (p && !p.container.parent) this.uiRoot.addChild(p.container);
     }
+    // OG: ChatBar renders ON TOP of StatusBar — move to end of display list
+    this.uiRoot.addChild(this._chatBar.container);
 
     this._statusBar.onInfo = () => { this._charInfo.isVisible = !this._charInfo.isVisible; };
     this._statusBar.onEquip = () => { this._equip.isVisible = !this._equip.isVisible; };
     this._statusBar.onItems = () => { this._item.isVisible = !this._item.isVisible; };
     this._item.onUseItem = (item) => {
-      // OG routes skill books (itemId/10000==228) and skill-reset scrolls
-      // (itemId/10000==250) through dedicated opcodes instead of the
-      // generic UseItem/UserStatChangeItemUseRequest path — see
-      // GameSender.SkillLearnItemUseRequest's doc comment for the
-      // mastery-book caveat (is_masterybook_item isn't covered here).
+      // OG: CDraggableItem::OnDoubleClicked, case 2 (Use tab, TI=2).
+      // Giant chain of is_*_item checks, each routing to a specific
+      // Send* request. Order matches OG exactly.
       const category = Math.floor(item.id / 10000);
-      if (category === 228) this.game.session.send(GameSender.SkillLearnItemUseRequest(item.slot, item.id));
-      else if (category === 250) this.game.session.send(GameSender.SkillResetItemUseRequest(item.slot, item.id));
-      else if (category === 224) {
-        // TODO_AUDIT.md Eighty-fifth pass: engagement-ring-box item —
-        // is_engagement_ring_box_item's exact itemId/10000===224 test.
+
+      // Categories 207 (throwing stars) / 233 (bullets) — rechargeable, not lottery
+      // OG: no dedicated handler, falls through to generic UseItem
+      if (category === 207 || category === 233) {
+        this.game.session.send(GameSender.UseItem(item.slot, item.id));
+        return;
+      }
+
+      // is_state_change_item: categories 200,201,202,205,221,236,238,245
+      // → SendStatChangeItemUseRequest (opcode 78, same as generic UseItem)
+      if (category === 200 || category === 201 || category === 202 || category === 205
+        || category === 221 || category === 236 || category === 238 || category === 245) {
+        this.game.session.send(GameSender.UseItem(item.slot, item.id));
+        return;
+      }
+
+      // is_random_morph_item_other: category 221 && (itemId-2210000)/1000==2
+      // → SendRandomMorphOtherRequest — falls through to UseItem in TS
+
+      // is_antimacro_item: category 219
+      // → SendAntiMacroItemUseRequest (opcode 115)
+      if (category === 219) {
+        const target = window.prompt('Enter player name to check for macros:') ?? '';
+        if (target.length > 0) this.game.session.send(GameSender.AntiMacroItemUseRequest(target, item.slot, item.id));
+        return;
+      }
+
+      // is_portal_scroll_item: category 203
+      // → SendPortalScrollUseRequest (opcode 92)
+      if (category === 203) {
+        this.game.session.send(GameSender.PortalScrollUseRequest(Date.now(), item.slot, item.id));
+        return;
+      }
+
+      // is_mobsummon_item: category 210
+      // → SendMobSummonItemUseRequest (opcode 81)
+      if (category === 210) {
+        this.game.session.send(GameSender.MobSummonItemUseRequest(item.slot, item.id));
+        return;
+      }
+
+      // Cash pet food: is_cash_pet_food_item — category 524
+      // → SendConsumeCashItemUseRequest (opcode 85)
+      if (category === 524) {
+        this.game.session.send(GameSender.ConsumeCashItemUseRequest(item.slot, item.id));
+        return;
+      }
+
+      // is_pet_food_item: category 212
+      // → SendPetFoodItemUseRequest (opcode 82)
+      if (category === 212) {
+        this.game.session.send(GameSender.PetFoodItemUseRequest(item.slot, item.id));
+        return;
+      }
+
+      // is_engagement_ring_box_item: category 224
+      // → SendEngagementRequest (MarriageRequest)
+      if (category === 224) {
         const target = window.prompt('Propose marriage to:') ?? '';
         if (target.length > 0) this.game.session.send(GameSender.MarriageRequest(target, item.id));
+        return;
       }
-      else if (category === 234) {
-        // TODO_AUDIT.md Hundred-and-seventeenth pass: Megaphone item open —
-        // category 234 (itemId/10000) is per MapleStory item-ID convention,
-        // NOT confirmed from the OG CWvsContext item-use dispatcher (a ~150KB
-        // giant switch that was not fully traced — see Ninety-second pass note
-        // about CItemSpeakerDlg). OG opens the dialog before the user drags
-        // in the megaphone; this client opens it directly on double-click.
+
+      // is_tamingmob_food_item: category 226
+      // → SendTamingMobFoodItemUseRequest (opcode 83)
+      if (category === 226) {
+        this.game.session.send(GameSender.TamingMobFoodItemUseRequest(item.slot, item.id));
+        return;
+      }
+
+      // is_bridle_item: category 227
+      // → SendBridleItemUseRequest (opcode 87) — needs mob targeting
+      // OG: enters targeting mode, click mob → SendBridleItemUseRequest(pos, itemId, mobTemplateId)
+      if (category === 227) {
+        // TODO: Enter targeting cursor mode; for now send with mobTemplateId=0
+        this.game.session.send(GameSender.BridleItemUseRequest(item.slot, item.id, 0));
+        return;
+      }
+
+      // is_skill_learn_item: category 228
+      // → SendSkillLearnItemUseRequest (opcode 88)
+      // OG also checks is_masterybook_item(itemId) — mastery books are sub-IDs
+      // within category 228; exact sub-range not exposed in the IDA dump.
+      if (category === 228) {
+        this.game.session.send(GameSender.SkillLearnItemUseRequest(item.slot, item.id));
+        return;
+      }
+
+      // is_skill_reset_item: category 250
+      // → SendSkillResetItemUseRequest (opcode 89)
+      if (category === 250) {
+        this.game.session.send(GameSender.SkillResetItemUseRequest(item.slot, item.id));
+        return;
+      }
+
+      // is_shopscanner_item: category 231
+      // → SendShopScannerItemUseRequest (opcode 90)
+      if (category === 231) {
+        this.game.session.send(GameSender.ShopScannerItemUseRequest(item.slot, item.id));
+        return;
+      }
+
+      // is_maptransfer_item: category 232
+      // → SendMapTransferItemUseRequest (opcode 91)
+      // TODO: Resolve map name/id from item desc or saved map data
+      if (category === 232) {
+        this.game.session.send(GameSender.MapTransferItemUseRequest(item.slot, item.id, '', 0));
+        return;
+      }
+
+      // is_select_npc_item: category 545 or 239
+      // → SendSelectNpcItemUseRequest (opcode 123)
+      if (category === 545 || category === 239) {
+        this.game.session.send(GameSender.SelectNpcItemUseRequest(item.slot, item.id));
+        return;
+      }
+
+      // is_exp_up_item: category 237
+      // → SendExpUpItemUseRequest (opcode 181)
+      if (category === 237) {
+        this.game.session.send(GameSender.ExpUpItemUseRequest(item.slot, item.id));
+        return;
+      }
+
+      // is_script_run_item: category 243 || itemId == 3994225
+      // → SendScriptRunItemRequest (opcode 84)
+      if (category === 243 || item.id === 3994225) {
+        this.game.session.send(GameSender.ScriptRunItemUseRequest(item.slot, item.id));
+        return;
+      }
+
+      // is_release_item: category 246
+      // → ChangeTab(0) + SetTryToReleaseItem(1, slot) — handled in ItemInventory._handleSlotClick
+      if (category === 246) {
+        // Already handled by the release flow in _handleSlotClick
+        return;
+      }
+
+      // is_new_year_card_item_con: category 216
+      // → SendNewYearCardUseRequest — opens CUINewYearCardSenderDlg (client-side)
+      if (category === 216) {
+        // Client-side dialog — no server packet needed at this point
+        return;
+      }
+
+      // Megaphone items: category 234
+      // → Opens CItemSpeakerDlg
+      if (category === 234) {
         this._megaphoneCompose?.Open(item.slot, item.id);
+        return;
       }
-      else if (category === 204 || category === 205) {
-        // Scroll items (item id 204xxxx / 205xxxx) open the upgrade dialog
-        // instead of sending UseItem — the user drags an equip onto the dialog
-        // and clicks Upgrade, which sends ItemUpgradeApply (opcode 85).
+
+      // Scroll items (204xxxx / 205xxxx) — open upgrade dialog
+      if (category === 204 || category === 205) {
         this._scrollDialog?.Open(item.id, item.name, item.slot);
         if (this._scrollDialog && this._itemIcons) {
           this._scrollDialog.setScrollIcon(this._itemIcons.LoadIcon(item.id));
         }
+        return;
       }
-      else this.game.session.send(GameSender.UseItem(item.slot, item.id));
+
+      // Fallback: generic UseItem (opcode 78)
+      this.game.session.send(GameSender.UseItem(item.slot, item.id));
+    };
+    // OG: CDraggableItem::OnDoubleClicked, case 4 (Setup tab, TI=4).
+    // Visual tab 2 = server TI=4 (Setup/Install).
+    this._item.onSetupItem = (item) => {
+      const category = Math.floor(item.id / 10000);
+
+      // is_minigame_item: category 408
+      // → SendCreateMiniGameRequest (opcode 144 = MiniRoom)
+      if (category === 408) {
+        // Opens a minigame — client-side UI action
+        return;
+      }
+
+      // is_book_item: category 416
+      // → OpenBook — creates CBookDlg singleton (client-side)
+      if (category === 416) {
+        // Client-side dialog — no server packet needed
+        return;
+      }
+
+      // is_invitation_bundle_item: itemId == 4031377 || itemId == 4031395
+      // → SendSendInvitaionRequest (opcode 161, sub-action 5)
+      if (item.id === 4031377 || item.id === 4031395) {
+        // Opens marriage invitation dialog (client-side)
+        return;
+      }
+
+      // is_invitation_guest_item: itemId == 4031406 || itemId == 4031407
+      // → SendInvitationQuery (opcode 161, sub-action 6)
+      if (item.id === 4031406 || item.id === 4031407) {
+        // Opens invitation query dialog (client-side)
+        return;
+      }
+
+      // is_raise_item: itemId/1000 == 4220
+      // → OpenRaise — opens CUIRaiseManager (client-side)
+      if (Math.floor(item.id / 1000) === 4220) {
+        // Client-side UI action
+        return;
+      }
+
+      // is_gachapon_box_item: category 428
+      // → UseBoxGachaponItem (opcode 127)
+      if (category === 428) {
+        this.game.session.send(GameSender.UseBoxGachaponItem(item.slot, item.id));
+        return;
+      }
+
+      // is_pigmy_egg: category 417
+      // → Opens CUIIncubator (client-side dialog)
+      if (category === 417) {
+        // Client-side dialog — needs incubator UI
+        return;
+      }
+
+      // is_non_cash_effect_item: category 429
+      // → SendActiveEffectItemChange (opcode 57)
+      if (category === 429) {
+        this.game.session.send(GameSender.ActiveEffectItemChange(item.id));
+        return;
+      }
+
+      // is_new_year_card_item_etc: category 430
+      // → ShowNewYearCard (client-side)
+      if (category === 430) {
+        // Client-side UI action
+        return;
+      }
+
+      // is_ui_open_item: category 432
+      // → SendUIOpenItemRequest (complex, client-side)
+      if (category === 432) {
+        // Client-side UI action
+        return;
+      }
+
+      // Fallback: generic UseItem
+      this.game.session.send(GameSender.UseItem(item.slot, item.id));
+    };
+    // OG: CDraggableItem::OnDoubleClicked, case 3 (Etc tab, TI=3).
+    // Visual tab 3 = server TI=3 (Etc).
+    this._item.onEtcItem = (item) => {
+      const category = Math.floor(item.id / 10000);
+
+      // is_portable_chair_item: category 301
+      // → SendSitOnPortableChairRequest (opcode 46)
+      if (category === 301) {
+        this.game.session.send(GameSender.PortableChairSitRequest(item.id));
+        return;
+      }
+
+      // Dragon ball box: itemId 3994200-3994208
+      // → SendDragonBallBoxRequest (opcode 196)
+      if (item.id >= 3994200 && item.id <= 3994208) {
+        this.game.session.send(GameSender.DragonBallBoxRequest());
+        return;
+      }
+
+      // is_script_run_item: category 243 || itemId == 3994225
+      // → SendScriptRunItemRequest (opcode 84)
+      if (category === 243 || item.id === 3994225) {
+        this.game.session.send(GameSender.ScriptRunItemUseRequest(item.slot, item.id));
+        return;
+      }
+
+      // Fallback: generic UseItem
+      this.game.session.send(GameSender.UseItem(item.slot, item.id));
     };
     this._item.onItemSelected = (item) => {
       if (this._tradingRoom?.isVisible) {
@@ -1434,6 +1831,9 @@ export class GameStage extends Stage {
     this._chatBar.onItemLink = (itemId) => {
       const name = this.game.nameService.ItemName(itemId) ?? String(itemId);
       this._notice?.show('Item Link', `${name} (${itemId})`);
+    };
+    this._chatBar.onEmotion = (emotion) => {
+      this.game.session.send(GameSender.UserEmotion(emotion));
     };
 
     this._skill.onDragStart = (payload, texture, x, y) => { this._dragController.beginDrag(payload, texture, x, y); };
@@ -1720,6 +2120,7 @@ export class GameStage extends Stage {
       if (tip) this._statusMessenger.showTip(tip);
     }
     for (const p of this._panels) { p?.update(dt); p?.updateDrag(); }
+    this._miniMap?.update(dt);
     this._gameMenu?.update(dt);
     this._gameMenu?.draw();
     this._advanceFieldTransition(dt);
@@ -2176,7 +2577,7 @@ export class GameStage extends Stage {
       this._chatBar.addMapleLine(`${prefix} ${fromName}: ${text}`, (id) => this.game.nameService.ItemName(id), filterType);
       this._statusMessenger.showLoot(`${prefix} ${fromName}: ${this._resolveChatItemLinks(text)}`);
     };
-    fh.onWhisper = ({ fromName, text }) => {
+    fh.onWhisper = ({ fromName, channelId, text }) => {
       // OG: CField::OnWhisper checks CConfig::IsInBlackList before
       // displaying — TODO_AUDIT.md Eighty-second pass's `CTabBlackList`
       // finding. Other IsInBlackList call sites (GroupMessage, Expedition/
@@ -2184,7 +2585,8 @@ export class GameStage extends Stage {
       // the same pattern but not wired this pass — whisper is the most
       // directly user-visible "ignore this person" case.
       if (this._blackList.has(fromName)) return;
-      this._chatBar.addMapleLine(`[Whisper] ${fromName}: ${text}`, (id) => this.game.nameService.ItemName(id), FILTER_FRIEND);
+      // OG: ChatLogAdd with lType=14 (whisper), channelID, bWhisperIcon
+      this._chatBar.addLine(`${fromName} : ${text}`, 14, channelId, true);
       this._statusMessenger.showLoot(`[Whisper] ${fromName}: ${this._resolveChatItemLinks(text)}`);
     };
     fh.onPartyInvite = ({ inviterId, inviterName }) => {
@@ -2739,7 +3141,10 @@ export class GameStage extends Stage {
       this._statusMessenger.showLoot(`[Wedding] subAction ${subAction}${wishList ? ` wishes:${wishList.length}` : ''}${itemTabs ? ` tabs:${itemTabs.length}` : ''}`);
     };
     fh.onSetTamingMobInfo = ({ charId, tamingMobLevel, tamingMobExp, tamingMobFatigue, flag }) => {
-      this._statusMessenger.showLoot(`[Taming] char ${charId} Lv.${tamingMobLevel} exp ${tamingMobExp} fatigue ${tamingMobFatigue} flag ${flag}`);
+      // OG: flag=1 means riding active, flag=0 means not riding
+      if (charId === this._localCharId) {
+        this._isRidingTamingMob = flag !== 0;
+      }
     };
     fh.onSueCharacterResult = ({ resultCode }) => {
       this._notice?.show('Sue', resultCode === 0 ? 'Sue accepted.' : `Sue failed (code ${resultCode}).`);
@@ -3103,15 +3508,29 @@ export class GameStage extends Stage {
       this._otherChars.get(charId)?.SetStatusBadge('tombUpgrade', value ? 'T' : 'X', 5);
       this._statusMessenger.showLoot(`[Upgrade Tomb] char ${charId} value ${value} at (${posX},${posY})`);
     };
-    fh.onUserSetTemporaryStat = ({ charId, mask, stats }) => {
-      const names = describeSecondaryStatMask(mask);
-      this._otherChars.get(charId)?.SetStatusBadge('tempStat', names[0]?.slice(0, 1) ?? 'S', 8);
-      this._chatBar.addLine(`[TempStat] char ${charId}: ${names.join(', ') || mask}`);
+    fh.onUserSetTemporaryStat = ({ charId, maskLo, maskHi, buffs, defenseAtt, defenseState, diceInfo, swallowBuffTime, blessingArmorIncPAD }) => {
+      const other = this._otherChars.get(charId);
+      if (other) {
+        other.SetTemporaryStats(maskLo, maskHi, buffs, defenseAtt, defenseState, diceInfo, swallowBuffTime, blessingArmorIncPAD);
+        const combined = maskLo | (maskHi << 64n);
+        const names = describeSecondaryStatMask(combined);
+        other.SetStatusBadge('tempStat', names[0]?.slice(0, 1) ?? 'S', 8);
+      }
+      const combined = maskLo | (maskHi << 64n);
+      const names = describeSecondaryStatMask(combined);
+      this._chatBar.addLine(`[TempStat] char ${charId}: ${names.join(', ') || combined}`);
     };
-    fh.onUserResetTemporaryStat = ({ charId, mask }) => {
-      this._otherChars.get(charId)?.ClearStatusBadge('tempStat');
-      const names = describeSecondaryStatMask(mask);
-      this._chatBar.addLine(`[TempStat Reset] char ${charId}: ${names.join(', ') || mask}`);
+    fh.onUserResetTemporaryStat = ({ charId, maskLo, maskHi }) => {
+      const other = this._otherChars.get(charId);
+      if (other) {
+        other.ClearTemporaryStats(maskLo, maskHi);
+        if (other.TempStatMaskLo === 0n && other.TempStatMaskHi === 0n) {
+          other.ClearStatusBadge('tempStat');
+        }
+      }
+      const combined = maskLo | (maskHi << 64n);
+      const names = describeSecondaryStatMask(combined);
+      this._chatBar.addLine(`[TempStat Reset] char ${charId}: ${names.join(', ') || combined}`);
     };
     fh.onUserReceiveHP = ({ charId, curHP, maxHP }) => {
       const other = this._otherChars.get(charId);
@@ -3354,6 +3773,8 @@ export class GameStage extends Stage {
       this._charInfo.job = this.game.nameService.SkillName(stat.job * 10000) ?? `Job ${stat.job}`;
       this._syncStatDetailInputs();
     }
+    // OG: CUIItem::Draw renders meso from CharacterData at y=268.
+    if (args.money !== undefined) this._item?.setMeso(args.money);
     if (args.look) {
       this._player?.SetAvatar(args.look);
       this._itemEffects?.SetCharacter(this._localCharId, args.look);
@@ -3975,6 +4396,21 @@ export class GameStage extends Stage {
       jobId: this._job,
       getSkillLevel: (skillId) => this._skillRecords.find((r) => r.skillId === skillId)?.level ?? 0,
       isAttacking: () => this._player?.IsPlayingOneTimeAction ?? false,
+      // OG: CFinishAttack::GetDummySkillID (0x6de770) returns 32001007-32001011
+      // based on current Aran combo stage. Map combo counter to variant:
+      //   combo 0-1   → 32001007 (basic)
+      //   combo 2-4   → 32001008
+      //   combo 5-9   → 32001009
+      //   combo 10-19 → 32001010
+      //   combo 20+   → 32001011
+      aranFinishSkillId: () => {
+        const c = this._comboCounter;
+        if (c >= 20) return 32001011;
+        if (c >= 10) return 32001010;
+        if (c >= 5) return 32001009;
+        if (c >= 2) return 32001008;
+        return 32001007;
+      },
     };
   }
 
@@ -4446,12 +4882,12 @@ export class GameStage extends Stage {
     inp.luk = result.luk;
     inp.maxHp = result.maxHp;
     inp.maxMp = result.maxMp;
-    inp.watk = watk;
-    inp.matk = matk;
-    inp.accBonus = accBonus;
-    inp.evaBonus = evaBonus;
-    inp.pddBonus = pddBonus;
-    inp.mddBonus = mddBonus;
+    inp.watk = watk + this.game.fieldHandlers.secondaryStat.getBuffPAD();
+    inp.matk = matk + this.game.fieldHandlers.secondaryStat.getBuffMAD();
+    inp.accBonus = accBonus + this.game.fieldHandlers.secondaryStat.getBuffACC();
+    inp.evaBonus = evaBonus + this.game.fieldHandlers.secondaryStat.getBuffEVA();
+    inp.pddBonus = pddBonus + this.game.fieldHandlers.secondaryStat.getBuffPDD();
+    inp.mddBonus = mddBonus + this.game.fieldHandlers.secondaryStat.getBuffMDD();
     const weaponId = this._equip.equippedWeaponItemId;
     if (weaponId !== null) inp.weaponType = getWeaponType(weaponId);
     inp.mastery = this._masteryFromSkills;
@@ -4505,6 +4941,10 @@ export class GameStage extends Stage {
       this._job = args.job;
       this._charInfo.job = this.game.nameService.SkillName(args.job * 10000) ?? `Job ${args.job}`;
       this._stats.job = this._charInfo.job;
+    }
+    // OG: CUIItem::Draw renders meso at y=268 from CharacterData.
+    if (args.meso !== undefined) {
+      this._item?.setMeso(args.meso);
     }
     const look = this._player?.AvatarLook;
     if (look) {

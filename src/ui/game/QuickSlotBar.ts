@@ -50,6 +50,7 @@ export class QuickSlotBar extends GamePanel implements DragTarget {
   private _btSlideUp: Button | null;
   private _btSlideDown: Button | null;
   private _bShowSlide = true;
+  bindItemToKey: ((scancode: number, itemId: number) => void) | null = null;
 
   constructor(
     loader: WzTextureLoader, ui: WzPackage | null, _font: BuiltInFont | null,
@@ -285,9 +286,34 @@ export class QuickSlotBar extends GamePanel implements DragTarget {
   // DragTarget — TODO_AUDIT.md Eighty-ninth/Hundred-and-eighth passes:
   // wires CDraggableSkill::OnDropped's quickslot-drop case (IDA 0x50a4e0)
   // to the previously-dead TryBindSkillAt below via DragController.
+  // Also handles item drops (OG: CDraggableItem → CUIStatusBar::MapFuncKey).
   tryAcceptDrag(payload: unknown, x: number, y: number): boolean {
-    if (!payload || typeof payload !== 'object' || !('skillId' in payload)) return false;
-    return this.TryBindSkillAt((payload as { skillId: number }).skillId, x, y);
+    if (!payload || typeof payload !== 'object') return false;
+    if ('skillId' in payload) return this.TryBindSkillAt((payload as { skillId: number }).skillId, x, y);
+    if ('itemId' in payload && 'invType' in payload) {
+      const { itemId, invType } = payload as { itemId: number; invType: number };
+      // Only allow Use (2), Etc (4), Setup (3) items on quickslot
+      if (invType === 2 || invType === 3 || invType === 4) {
+        return this.TryBindItemAt(itemId, x, y);
+      }
+    }
+    return false;
+  }
+
+  TryBindItemAt(itemId: number, x: number, y: number): boolean {
+    if (!this.isVisible) return false;
+    for (let i = 0; i < SlotCount; i++) {
+      const r = this._slotRect(i);
+      if (x >= r.x && x < r.x + r.width && y >= r.y && y < r.y + r.height) {
+        this._bindItem(this._keys[i], itemId);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private _bindItem(scancode: number, itemId: number): void {
+    this.bindItemToKey?.(scancode, itemId);
   }
 
   TryBindSkillAt(skillId: number, x: number, y: number): boolean {

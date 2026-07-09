@@ -213,6 +213,12 @@ export class FieldScene {
       this._readInt(mm, 'centerX'),
       this._readInt(mm, 'centerY'),
       Math.max(0, this._readInt(mm, 'mag')),
+      [], // Footholds — filled in _finalizeMiniMapData
+      [], // LadderRopes — filled in _finalizeMiniMapData
+      this._readInt(mm, 'width'), // Real_W — same as Width for now
+      this._readInt(mm, 'height'), // Real_H — same as Height for now
+      this._readInt(mm, 'centerX'), // Real_CX — same as CenterX for now
+      this._readInt(mm, 'centerY'), // Real_CY — same as CenterY for now
     );
   }
 
@@ -262,6 +268,10 @@ export class FieldScene {
       this._miniMap.Mag,
       fhs,
       lrs,
+      this._miniMap.Real_W,
+      this._miniMap.Real_H,
+      this._miniMap.Real_CX,
+      this._miniMap.Real_CY,
     );
   }
 

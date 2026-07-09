@@ -235,18 +235,21 @@ describe('Protocol enums — values match the v95 dump (enums.json)', () => {
   });
 
   it('TempStatMask bits (first 12 named bits)', () => {
-    expect(TempStatMask.Str).toBe(0x0000001);
-    expect(TempStatMask.Dex).toBe(0x0000002);
-    expect(TempStatMask.Int).toBe(0x0000004);
-    expect(TempStatMask.Luk).toBe(0x0000008);
-    expect(TempStatMask.Pad).toBe(0x0000010);
-    expect(TempStatMask.Mad).toBe(0x0000020);
-    expect(TempStatMask.Pdd).toBe(0x0000040);
-    expect(TempStatMask.Mdd).toBe(0x0000080);
-    expect(TempStatMask.Acc).toBe(0x0000100);
-    expect(TempStatMask.Eva).toBe(0x0000200);
-    expect(TempStatMask.Speed).toBe(0x0000400);
-    expect(TempStatMask.Jump).toBe(0x0000800);
+    // Bit positions (0-128), not bit flags. Used by SecondaryStat.decode()
+    // to map entry index → stat field. Bit N means the stat is at position N
+    // in the 128-bit mask.
+    expect(TempStatMask.Str).toBe(0);
+    expect(TempStatMask.Dex).toBe(1);
+    expect(TempStatMask.Int).toBe(2);
+    expect(TempStatMask.Luk).toBe(3);
+    expect(TempStatMask.Pad).toBe(4);
+    expect(TempStatMask.Mad).toBe(5);
+    expect(TempStatMask.Pdd).toBe(6);
+    expect(TempStatMask.Mdd).toBe(7);
+    expect(TempStatMask.Acc).toBe(8);
+    expect(TempStatMask.Eva).toBe(9);
+    expect(TempStatMask.Speed).toBe(10);
+    expect(TempStatMask.Jump).toBe(11);
   });
 
   it('MeleeAttackFlag (ENUM_CUserLocal_v4)', () => {

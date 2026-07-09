@@ -182,7 +182,6 @@ export class MapleClaudeGame {
     document.addEventListener('keydown', (e) => {
       if (!this._prevKeys.has(e.key)) {
         this.stageDirector.onKeyPress(e.key);
-        if (e.key === 'Escape') this.shutdown();
       }
       this._prevKeys.add(e.key);
     });
@@ -213,7 +212,10 @@ export class MapleClaudeGame {
       const f = this._canvasToFrame(x, y);
       (window as any).__mouseX = f.x;
       (window as any).__mouseY = f.y;
-      this.stageDirector.onMouseButton(f.x, f.y, true, 0);
+      (window as any).__shiftKey = e.shiftKey;
+      (window as any).__ctrlKey = e.ctrlKey;
+      (window as any).__altKey = e.altKey;
+      this.stageDirector.onMouseButton(f.x, f.y, true, e.button);
     });
     document.addEventListener('mouseup', (e) => {
       const { x, y } = toCanvas(e.clientX, e.clientY);
@@ -221,10 +223,16 @@ export class MapleClaudeGame {
       const f = this._canvasToFrame(x, y);
       (window as any).__mouseX = f.x;
       (window as any).__mouseY = f.y;
-      this.stageDirector.onMouseButton(f.x, f.y, false, 0);
+      (window as any).__shiftKey = e.shiftKey;
+      (window as any).__ctrlKey = e.ctrlKey;
+      (window as any).__altKey = e.altKey;
+      this.stageDirector.onMouseButton(f.x, f.y, false, e.button);
     });
     document.addEventListener('wheel', (e) => {
       (window as any).__wheelDelta = e.deltaY;
+      const { x, y } = toCanvas(e.clientX, e.clientY);
+      const f = this._canvasToFrame(x, y);
+      this.stageDirector.onMouseWheel(f.x, f.y, e.deltaY);
     });
 
     // Resize

@@ -96,4 +96,23 @@ export class CashShopDecoder {
       best, stock, limitGoods, zeroGoods, eventOn, highestCharacterLevelInAccount,
     };
   }
+
+  // Decode the CS_BEST array: 1080 bytes = 90 entries of {category:int32, gender:int32, commoditySn:int32}
+  static decodeBestArray(raw: Uint8Array): { category: number; gender: number; sn: number }[] {
+    if (raw.length !== 0x438) {
+      console.warn(`decodeBestArray: expected 0x438 bytes, got ${raw.length}`);
+    }
+    const view = new DataView(raw.buffer, raw.byteOffset, raw.byteLength);
+    const entries: { category: number; gender: number; sn: number }[] = [];
+    const count = Math.floor(raw.length / 12);
+    for (let i = 0; i < count; i++) {
+      const off = i * 12;
+      entries.push({
+        category: view.getInt32(off, true),
+        gender: view.getInt32(off + 4, true),
+        sn: view.getInt32(off + 8, true),
+      });
+    }
+    return entries;
+  }
 }

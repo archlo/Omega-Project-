@@ -108,6 +108,10 @@ export class StatusBar extends GamePanel {
   private readonly _mpOverlay: (Sprite | null)[] = [null, null];
   private _aniHPTime = 0;
   private _aniMPTime = 0;
+
+  // OG: CUIToolTip — tooltip overlay for EXP gauge hover
+  private _tooltipText: Text | null = null;
+  private _tooltipBg: Graphics | null = null;
   private _aniHPFrame = 0;
   private _aniMPFrame = 0;
 
@@ -368,6 +372,67 @@ export class StatusBar extends GamePanel {
 
   private get _barTopLeft(): { x: number; y: number } {
     return { x: this._barCenterX - 512, y: this._viewH - BAR_H };
+  }
+
+  // OG: CUIStatusBar::ProcessToolTip (0x873140) — EXP gauge tooltip on hover
+  onMouseMove(x: number, y: number): void {
+    if (!this.isVisible) return;
+    this._mouseX = x;
+    this._mouseY = y;
+
+    const tl = this._barTopLeft;
+    const lx = x - tl.x;
+    const ly = y - tl.y;
+
+    // OG: hit-test EXP bar area (rx=76-162, ry=560-574 in 800x600 frame)
+    // In local coords: lx=76, ly=BAR_H-40 to BAR_H-26
+    const inExpArea = lx >= 76 && lx <= 162 && ly >= BAR_H - 40 && ly <= BAR_H - 26;
+
+    // OG: hit-test gauge text rect (28,18)-(336,31) relative to gauge text layer
+    // Gauge text is at EXP_NUM (x=558, y=71) in bar-local coords
+    const inExpText = lx >= EXP_NUM.x + 28 && lx <= EXP_NUM.x + 336
+      && ly >= EXP_NUM.y + 18 && ly <= EXP_NUM.y + 31;
+
+    if (inExpArea || inExpText) {
+      const pct = this.nextExp > 0 ? Math.floor(this.exp / this.nextExp * 100) : 0;
+      let msg: string;
+      if (inExpText) {
+        // OG: StringPool(0x1A37) format — "EXP: %d/%d"
+        msg = `EXP: ${this.exp}/${this.nextExp} (${pct}%)`;
+      } else {
+        // OG: StringPool(0x2B9/0x7FD) format — character info with guild
+        msg = `Lv.${this.level} ${this.charName} — ${this.jobName}\nEXP: ${this.exp}/${this.nextExp} (${pct}%)`;
+      }
+      this._showTooltip(x + 20, y + 20, msg);
+    } else {
+      this._hideTooltip();
+    }
+  }
+
+  private _showTooltip(x: number, y: number, text: string): void {
+    if (!this._tooltipBg) {
+      this._tooltipBg = new Graphics();
+      this._root.addChild(this._tooltipBg);
+    }
+    if (!this._tooltipText) {
+      this._tooltipText = new Text({ text: '', style: { fill: '#FFF', fontSize: 11, fontFamily: 'monospace' } });
+      this._root.addChild(this._tooltipText);
+    }
+    this._tooltipText.text = text;
+    this._tooltipText.x = x + 4;
+    this._tooltipText.y = y + 4;
+    const w = this._tooltipText.width + 8;
+    const h = this._tooltipText.height + 8;
+    this._tooltipBg.clear();
+    this._tooltipBg.rect(x, y, w, h).fill({ color: '#000', alpha: 0.85 });
+    this._tooltipBg.rect(x, y, w, h).stroke({ color: '#666', width: 1 });
+    this._tooltipBg.visible = true;
+    this._tooltipText.visible = true;
+  }
+
+  private _hideTooltip(): void {
+    if (this._tooltipBg) this._tooltipBg.visible = false;
+    if (this._tooltipText) this._tooltipText.visible = false;
   }
 
   private _rebuildGfx(): void {

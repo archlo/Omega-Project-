@@ -54,6 +54,8 @@ export interface SetFieldArgs {
   /** Migrate-only: character skin (1 byte). Distinct from stat.skin. */
   skin?: number;
   stat?: CharacterStat; look?: AvatarLook;
+  /** OG: CharacterData.money — decoded from SetField migrate path (DBChar.MONEY flag). */
+  money?: number;
   /** Non-migrate-only: field type (1 byte; e.g. 0=normal, 1=instance). */
   nFieldType?: number;
   posMap?: number; portal?: number;
@@ -1173,13 +1175,29 @@ export interface UserSetActiveEffectItemArgs { charId: number; itemId: number; }
 // After charId: value(u32) + posX(u32) + posY(u32).
 export interface UserShowUpgradeTombEffectArgs { charId: number; value: number; posX: number; posY: number; }
 
-// OG: CUserRemote::OnSetTemporaryStat (0x953D40) — UINT128 flag mask (16 bytes),
-// not the 8-byte long used here. Full SecondaryStat decode not ported; this
-// simplified read keeps stream alignment but loses upper 64 bits of mask.
-export interface UserSetTemporaryStatArgs { charId: number; mask: bigint; stats: Uint8Array; }
+// OG: CUserRemote::OnSetTemporaryStat (0x953D40) — UINT128 flag mask (16 bytes).
+// Each set bit carries (value: short, skillId: int, seconds: int) + special-case trailing data.
+export interface TempStatBuff {
+  bit: number;       // bit position in the 128-bit mask
+  value: number;     // buff value (short)
+  skillId: number;   // skill that applied the buff
+  seconds: number;   // remaining duration
+}
 
-// OG: CUserRemote::OnResetTemporaryStat (0x953E40) — same UINT128 caveat.
-export interface UserResetTemporaryStatArgs { charId: number; mask: bigint; }
+export interface UserSetTemporaryStatArgs {
+  charId: number;
+  maskLo: bigint;    // lower 64 bits of UINT128 mask
+  maskHi: bigint;    // upper 64 bits of UINT128 mask
+  buffs: TempStatBuff[];
+  defenseAtt: number;
+  defenseState: number;
+  diceInfo: number[];
+  swallowBuffTime: number;
+  blessingArmorIncPAD: number;
+}
+
+// OG: CUserRemote::OnResetTemporaryStat (0x953E40) — UINT128 mask (16 bytes).
+export interface UserResetTemporaryStatArgs { charId: number; maskLo: bigint; maskHi: bigint; }
 
 // OG: CUserRemote::OnReceiveHP (0x953F50). After charId: curHP(u32) + maxHP(u32).
 // Party HP gauge percentage = 100 * curHP / maxHP.

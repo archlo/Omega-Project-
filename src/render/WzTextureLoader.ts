@@ -42,18 +42,28 @@ export class WzTextureLoader {
     }
 
     let originX = 0, originY = 0;
-    const origin = canvas.Property.Get('origin');
-    if (origin instanceof WzVector) {
-      originX = origin.X;
-      originY = origin.Y;
-    }
+    try {
+      const prop = canvas.Property;
+      if (prop) {
+        const origin = prop.Get('origin');
+        if (origin instanceof WzVector) {
+          originX = origin.X;
+          originY = origin.Y;
+        }
+      }
+    } catch { /* NX bitmap nodes may not have origin property */ }
 
     let lt: { x: number; y: number } | null = null;
     let rb: { x: number; y: number } | null = null;
-    const ltV = canvas.Property.Get('lt');
-    if (ltV instanceof WzVector) lt = { x: ltV.X, y: ltV.Y };
-    const rbV = canvas.Property.Get('rb');
-    if (rbV instanceof WzVector) rb = { x: rbV.X, y: rbV.Y };
+    try {
+      const prop = canvas.Property;
+      if (prop) {
+        const ltV = prop.Get('lt');
+        if (ltV instanceof WzVector) lt = { x: ltV.X, y: ltV.Y };
+        const rbV = prop.Get('rb');
+        if (rbV instanceof WzVector) rb = { x: rbV.X, y: rbV.Y };
+      }
+    } catch { /* NX bitmap nodes may not have lt/rb properties */ }
 
     const sprite = new WzSprite(texture, originX, originY, lt, rb);
     this._cache.set(canvas, sprite);
