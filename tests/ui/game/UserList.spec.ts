@@ -8,13 +8,18 @@ Object.defineProperty(Text.prototype, 'width', { get: () => 0 });
 // TODO_AUDIT.md Ninety-second/Hundred-and-eighth passes: GameSender.GuildCreate
 // existed with zero callers — this is the missing "Create" button wiring.
 describe('UserList guild tab', () => {
+  // OG tab order: Friend(0), Party(1), Expedition(2), Guild(3), Alliance(4), BlackList(5)
+  // Panel: 264×382, root at (300,100), tab bar at y=9
   function openGuildTab(list: UserList): void {
     list.isVisible = true;
-    list.handleMouseButton(600 + 2 * (240 / 6) + 1, 100 + 30, true); // click the "Guild" tab (root offset 600,100; 6 tabs)
+    list.handleMouseButton(300 + 3 * (264 / 6) + 1, 100 + 14, true); // Guild tab = index 3
   }
 
   function clickButton(list: UserList, label: string): void {
-    const btn = (list as any)._buttons.find((t: any) => t.text === `[${label}]`);
+    const btn = (list as any)._buttons.find((t: any) => {
+      const txt = t.children?.find((c: any) => c.text === label);
+      return txt !== undefined;
+    });
     expect(btn).toBeDefined();
     btn.emit('pointerdown');
   }
@@ -89,13 +94,17 @@ describe('UserList guild tab', () => {
 // TODO_AUDIT.md Eighty-second pass: CTabBlackList — local-only ignore list
 // (CConfig::AddBlackList/DeleteBlackList, decompile-confirmed no packet).
 describe('UserList block tab', () => {
+  // OG tab order: Friend(0), Party(1), Expedition(2), Guild(3), Alliance(4), BlackList(5)
   function openBlockTab(list: UserList): void {
     list.isVisible = true;
-    list.handleMouseButton(600 + 3 * (240 / 6) + 1, 100 + 30, true); // "Block" tab, 4th of 6
+    list.handleMouseButton(300 + 5 * (264 / 6) + 1, 100 + 14, true); // BlackList tab = index 5
   }
 
   function clickButton(list: UserList, label: string): void {
-    const btn = (list as any)._buttons.find((t: any) => t.text === `[${label}]`);
+    const btn = (list as any)._buttons.find((t: any) => {
+      const txt = t.children?.find((c: any) => c.text === label);
+      return txt !== undefined;
+    });
     expect(btn).toBeDefined();
     btn.emit('pointerdown');
   }

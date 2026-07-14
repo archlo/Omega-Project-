@@ -241,12 +241,13 @@ export class StatusBar extends GamePanel {
   }
 
   update(dt: number): void {
-    // --- HP gauge animation ---
+    // --- HP gauge animation (OG: smooth interpolation) ---
     const hpTarget = this.maxHp > 0 ? Math.min(1, Math.max(0, this.hp / this.maxHp)) : 0;
     if (this._hpTarget < 0) {
-      this._hpPct = hpTarget;
+      // First frame: start animation from current value
       this._hpAnimFrom = hpTarget;
       this._hpTarget = hpTarget;
+      this._hpAnimT = 1;
     } else if (Math.abs(hpTarget - this._hpTarget) > 1e-10) {
       this._hpAnimFrom = this._hpPct;
       this._hpTarget = hpTarget;
@@ -254,7 +255,9 @@ export class StatusBar extends GamePanel {
     }
     if (this._hpAnimT < 1) {
       this._hpAnimT = Math.min(1, this._hpAnimT + dt / 0.7);
-      this._hpPct = this._hpAnimFrom + (this._hpTarget - this._hpAnimFrom) * this._hpAnimT;
+      // OG: smooth ease-out interpolation
+      const t = 1 - Math.pow(1 - this._hpAnimT, 3);
+      this._hpPct = this._hpAnimFrom + (this._hpTarget - this._hpAnimFrom) * t;
     } else {
       this._hpPct = this._hpTarget;
     }
@@ -262,9 +265,9 @@ export class StatusBar extends GamePanel {
     // --- MP gauge animation ---
     const mpTarget = this.maxMp > 0 ? Math.min(1, Math.max(0, this.mp / this.maxMp)) : 0;
     if (this._mpTarget < 0) {
-      this._mpPct = mpTarget;
       this._mpAnimFrom = mpTarget;
       this._mpTarget = mpTarget;
+      this._mpAnimT = 1;
     } else if (Math.abs(mpTarget - this._mpTarget) > 1e-10) {
       this._mpAnimFrom = this._mpPct;
       this._mpTarget = mpTarget;
@@ -272,7 +275,8 @@ export class StatusBar extends GamePanel {
     }
     if (this._mpAnimT < 1) {
       this._mpAnimT = Math.min(1, this._mpAnimT + dt / 0.7);
-      this._mpPct = this._mpAnimFrom + (this._mpTarget - this._mpAnimFrom) * this._mpAnimT;
+      const t = 1 - Math.pow(1 - this._mpAnimT, 3);
+      this._mpPct = this._mpAnimFrom + (this._mpTarget - this._mpAnimFrom) * t;
     } else {
       this._mpPct = this._mpTarget;
     }
@@ -280,9 +284,9 @@ export class StatusBar extends GamePanel {
     // --- EXP gauge animation ---
     const expTarget = this.nextExp > 0 ? Math.min(1, Math.max(0, this.exp / this.nextExp)) : 0;
     if (this._expTarget < 0) {
-      this._expPct = expTarget;
       this._expAnimFrom = expTarget;
       this._expTarget = expTarget;
+      this._expAnimT = 1;
     } else if (Math.abs(expTarget - this._expTarget) > 1e-10) {
       this._expAnimFrom = this._expPct;
       this._expTarget = expTarget;
@@ -290,7 +294,8 @@ export class StatusBar extends GamePanel {
     }
     if (this._expAnimT < 1) {
       this._expAnimT = Math.min(1, this._expAnimT + dt / 0.7);
-      this._expPct = this._expAnimFrom + (this._expTarget - this._expAnimFrom) * this._expAnimT;
+      const t = 1 - Math.pow(1 - this._expAnimT, 3);
+      this._expPct = this._expAnimFrom + (this._expTarget - this._expAnimFrom) * t;
     } else {
       this._expPct = this._expTarget;
     }
@@ -300,19 +305,31 @@ export class StatusBar extends GamePanel {
     this._mpFlashTime = Math.max(0, this._mpFlashTime - dt);
 
     // Overlay frame animation (delay=120ms per frame)
-    this._aniHPTime += dt;
-    this._aniMPTime += dt;
-    if (this._aniHPTime >= 0.12 && this._hpOverlay[0] && this._hpOverlay[1]) {
-      this._aniHPFrame = 1 - this._aniHPFrame;
-      this._hpOverlay[0].visible = this._aniHPFrame === 0;
-      this._hpOverlay[1].visible = this._aniHPFrame === 1;
-      this._aniHPTime -= 0.12;
+    // OG: overlay only animates when gauge value actually changes, not constantly
+    if (Math.abs(this._hpPct - this._hpTarget) > 1e-10) {
+      this._aniHPTime += dt;
+      if (this._aniHPTime >= 0.12 && this._hpOverlay[0] && this._hpOverlay[1]) {
+        this._aniHPFrame = 1 - this._aniHPFrame;
+        this._hpOverlay[0].visible = this._aniHPFrame === 0;
+        this._hpOverlay[1].visible = this._aniHPFrame === 1;
+        this._aniHPTime -= 0.12;
+      }
+    } else {
+      // Stop overlay when gauge reaches target
+      if (this._hpOverlay[0]) this._hpOverlay[0].visible = false;
+      if (this._hpOverlay[1]) this._hpOverlay[1].visible = false;
     }
-    if (this._aniMPTime >= 0.12 && this._mpOverlay[0] && this._mpOverlay[1]) {
-      this._aniMPFrame = 1 - this._aniMPFrame;
-      this._mpOverlay[0].visible = this._aniMPFrame === 0;
-      this._mpOverlay[1].visible = this._aniMPFrame === 1;
-      this._aniMPTime -= 0.12;
+    if (Math.abs(this._mpPct - this._mpTarget) > 1e-10) {
+      this._aniMPTime += dt;
+      if (this._aniMPTime >= 0.12 && this._mpOverlay[0] && this._mpOverlay[1]) {
+        this._aniMPFrame = 1 - this._aniMPFrame;
+        this._mpOverlay[0].visible = this._aniMPFrame === 0;
+        this._mpOverlay[1].visible = this._aniMPFrame === 1;
+        this._aniMPTime -= 0.12;
+      }
+    } else {
+      if (this._mpOverlay[0]) this._mpOverlay[0].visible = false;
+      if (this._mpOverlay[1]) this._mpOverlay[1].visible = false;
     }
 
     // Detect text value changes
@@ -580,7 +597,8 @@ export class StatusBar extends GamePanel {
     color: number
   ): void {
     if (time <= 0) return;
-    const alpha = 0.2 + 0.35 * Math.abs(Math.sin((0.5 - time) * Math.PI * 8));
+    // OG: flash pulses slowly — 2 cycles per 0.5s (not 4)
+    const alpha = 0.2 + 0.35 * Math.abs(Math.sin((0.5 - time) * Math.PI * 4));
     g.rect(tl.x + gauge.x, tl.y + gauge.y - 1, gauge.len, 12).fill({ color, alpha });
   }
 

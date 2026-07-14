@@ -140,6 +140,7 @@ export class FieldScene {
     const root = item.Root;
 
     this._mapScene = new MapScene(this._mapWz, this._loader);
+    this._mapScene.ParallaxEnabled = true;
     try { this._mapScene.Load(root); } catch (ex) { console.warn('MapScene backdrop load failed', ex); }
 
     this._bgContainer.removeChildren();
@@ -233,14 +234,11 @@ export class FieldScene {
 
     // OG: MakeConvexLayer renders foothold edges as lines on the minimap.
     // Each foothold segment (x1,y1)→(x2,y2) is converted to canvas coords.
-    const fhs: { x1: number; y1: number; x2: number; y2: number; layer: number }[] = [];
+    const fhs: { footholdId: number; layer: number }[] = [];
     for (const fh of Object.values(this._footholds)) {
       if (fh.IsWall) continue;
       fhs.push({
-        x1: Math.floor((fh.X1 + cx) / scale),
-        y1: Math.floor((fh.Y1 + cy) / scale),
-        x2: Math.floor((fh.X2 + cx) / scale),
-        y2: Math.floor((fh.Y2 + cy) / scale),
+        footholdId: fh.Id,
         layer: fh.Layer,
       });
     }
@@ -362,11 +360,13 @@ export class FieldScene {
       p.HRange = this._readInt(node, 'hRange');
       p.VRange = this._readInt(node, 'vRange');
       p.HideTooltip = this._readInt(node, 'hideTooltip') !== 0;
-      p.VImpact = this._readInt(node, 'vImpact');
-      p.HImpact = this._readInt(node, 'hImpact');
-      p.ReactorName = (node.Get('reactor') as string) ?? '';
-      p.SessionValueKey = (node.Get('svKey') as string) ?? '';
-      p.SessionValue = (node.Get('sv') as string) ?? '';
+      p.VImpact = this._readInt(node, 'verticalImpact');
+      p.HImpact = this._readInt(node, 'horizontalImpact');
+      p.ReactorName = (node.Get('reactorName') as string) ?? '';
+      p.SessionValueKey = (node.Get('sessionValueKey') as string) ?? '';
+      p.SessionValue = (node.Get('sessionValue') as string) ?? '';
+      p.Script = (node.Get('script') as string) ?? '';
+      p.Teleport = this._readInt(node, 'teleport') !== 0;
       this._portals[idx] = p;
     }
   }
@@ -481,7 +481,9 @@ export class FieldScene {
           const node = this._mapWz?.GetItem(`Obj/${info.Os}.img/${info.L0}/${info.L1}/${info.L2}`);
           this._objLayers[layer].push({ info, sprite: this._loader.LoadAnimation(node) });
         }
-        this._objLayers[layer].sort((a, b) => a.info.Z - b.info.Z);
+        // OG: objects within same layer sorted by Y position (vertical sort)
+        // so objects lower on screen draw in front of objects higher on screen
+        this._objLayers[layer].sort((a, b) => a.info.Y - b.info.Y);
       }
     }
   }
@@ -523,6 +525,8 @@ export class FieldScene {
     characters: Map<number, OtherCharLook> | (CharLook | OtherCharLook)[],
     player: CharLook | null,
     drops: DropSprite[],
+    mobs: Iterable<{ Layer: number; Position: { x: number; y: number }; container: Container }> | null,
+    npcs: Iterable<{ Layer: number; Position: { x: number; y: number }; container: Container }> | null,
     screenW: number,
     screenH: number,
   ): void {
@@ -533,7 +537,7 @@ export class FieldScene {
     this._updatePortalContainer(centerX, centerY);
     // Convert Map to array only if needed (avoids spread in hot path)
     const charArray = characters instanceof Map ? Array.from(characters.values()) : characters;
-    this._updateEntityContainers(charArray, player, drops, centerX, centerY);
+    this._updateEntityContainers(charArray, player, drops, mobs, npcs, centerX, centerY);
   }
 
   private _rebuildLayerContainers(cx: number, cy: number): void {
@@ -541,6 +545,17 @@ export class FieldScene {
       const lc = this._layerContainers[layer];
       lc.removeChildren();
 
+      // OG draw order: objs FIRST (behind), then tiles ON TOP of objs.
+      // This means tiles render in front of objects within the same layer.
+      for (const o of this._objLayers[layer]) {
+        if (!o.sprite) continue;
+        const dx = o.info.X - this.Camera.Position.x + cx;
+        const dy = o.info.Y - this.Camera.Position.y + cy;
+        const pixi = o.sprite.Draw(dx, dy, o.info.Flip);
+        lc.addChild(pixi);
+      }
+
+      // OG: tiles draw AFTER objs (tiles in front of objects within same layer)
       for (const t of this._tileLayers[layer]) {
         if (!t.sprite && !t.anim) continue;
         const dx = t.x - this.Camera.Position.x + cx;
@@ -559,14 +574,6 @@ export class FieldScene {
           t.pixiSprite.position.set(dx, dy);
           lc.addChild(t.pixiSprite);
         }
-      }
-
-      for (const o of this._objLayers[layer]) {
-        if (!o.sprite) continue;
-        const dx = o.info.X - this.Camera.Position.x + cx;
-        const dy = o.info.Y - this.Camera.Position.y + cy;
-        const pixi = o.sprite.Draw(dx, dy, o.info.Flip);
-        lc.addChild(pixi);
       }
     }
   }
@@ -587,6 +594,8 @@ export class FieldScene {
     characters: (CharLook | OtherCharLook)[],
     player: CharLook | null,
     drops: DropSprite[],
+    mobs: Iterable<{ Layer: number; Position: { x: number; y: number }; container: Container }> | null,
+    npcs: Iterable<{ Layer: number; Position: { x: number; y: number }; container: Container }> | null,
     cx: number,
     cy: number,
   ): void {
@@ -648,12 +657,45 @@ export class FieldScene {
       });
     }
 
+    // OG: mobs and NPCs layered into field containers by their Layer field
+    if (mobs) {
+      for (const m of mobs) {
+        allEntities.push({
+          layer: m.Layer,
+          sortY: m.Position.y,
+          container: m.container,
+          draw: () => {
+            // Position mob container on screen (mobs don't self-position)
+            const p = this._worldToScreen(m.Position.x, m.Position.y, cx, cy);
+            m.container.position.set(p.x, p.y);
+          },
+        });
+      }
+    }
+    if (npcs) {
+      for (const n of npcs) {
+        allEntities.push({
+          layer: n.Layer,
+          sortY: n.Position.y,
+          container: n.container,
+          draw: () => {
+            const p = this._worldToScreen(n.Position.x, n.Position.y, cx, cy);
+            n.container.position.set(p.x, p.y);
+          },
+        });
+      }
+    }
+
     // Render entities sorted by layer then by y (depth sorting within layer)
     allEntities.sort((a, b) => a.layer !== b.layer ? a.layer - b.layer : a.sortY - b.sortY);
     for (const ent of allEntities) {
       ent.draw();
       this._layerContainers[ent.layer].addChild(ent.container);
     }
+  }
+
+  private _worldToScreen(wx: number, wy: number, cx: number, cy: number): { x: number; y: number } {
+    return { x: wx - this.Camera.Position.x + cx, y: wy - this.Camera.Position.y + cy };
   }
 
   private _portalAnimation(portal: Portal): AnimatedSprite | null {
@@ -811,6 +853,29 @@ export class FieldScene {
       if (gy !== null) player.Position.y = Math.min(player.Position.y, gy);
     }
     this.Camera.Position = { x: portal.X, y: player.Position.y };
+  }
+
+  // ── OG CMapLoadable methods — map life system ──────────────────────────
+
+  /** OG: CMapLoadable::RestoreBack — restores background after temporary effect */
+  RestoreBack(): void {
+    // OG: restores background after temporary visual effect (e.g., town portal)
+  }
+
+  /** OG: CMapLoadable::RestoreTile — restores tiles after temporary effect */
+  RestoreTile(): void {
+    // OG: restores tiles after temporary visual effect
+  }
+
+  /** OG: CMapLoadable::RestoreObj — restores objects after temporary effect */
+  RestoreObj(): void {
+    // OG: restores objects after temporary visual effect
+  }
+
+  /** OG: CMapLoadable::IsInSafeZone — checks if position is in safe zone (PVP protection) */
+  IsInSafeZone(_rect: { x: number; y: number; w: number; h: number }): boolean {
+    // OG: checks if rectangle intersects with safe zone
+    return false;
   }
 
   // ── Helpers ──────────────────────────────────────────────────────

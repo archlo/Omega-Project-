@@ -56,7 +56,7 @@ describe('FieldScene entity depth layering', () => {
     const field = makeScene();
     const player = makeMockEntity(0, 400) as any; // above foothold 1 (layer 2)
 
-    field.UpdateEntities([], player, [], 800, 600);
+    field.UpdateEntities([], player, [], null, null, 800, 600);
 
     const layerContainers = (field as any)._layerContainers as Container[];
     expect(layerContainers[2].children.includes(player.container)).toBe(true);
@@ -67,7 +67,7 @@ describe('FieldScene entity depth layering', () => {
     const field = makeScene();
     const other = makeMockEntity(500, 400) as any; // above foothold 2 (layer 5)
 
-    field.UpdateEntities([other], null, [], 800, 600);
+    field.UpdateEntities([other], null, [], null, null, 800, 600);
 
     const layerContainers = (field as any)._layerContainers as Container[];
     expect(layerContainers[5].children.includes(other.container)).toBe(true);
@@ -78,7 +78,7 @@ describe('FieldScene entity depth layering', () => {
     const field = makeScene();
     const stray = makeMockEntity(5000, 5000) as any; // far from both footholds
 
-    field.UpdateEntities([stray], null, [], 800, 600);
+    field.UpdateEntities([stray], null, [], null, null, 800, 600);
 
     const layerContainers = (field as any)._layerContainers as Container[];
     expect(layerContainers[7].children.includes(stray.container)).toBe(true);

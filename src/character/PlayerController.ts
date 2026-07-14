@@ -3,6 +3,7 @@ import type { PlayerInput } from './PlayerInput.js';
 import type { FieldScene } from '../map/FieldScene.js';
 import type { Foothold } from '../map/Foothold.js';
 import { MoveElement, EncodeMovePath } from '../net/packet/MovePathEncoder.js';
+import * as CUserLocal from './CUserLocal.js';
 
 export class PlayerController {
   // OG: CWvsPhysicalSpace2D::CWvsPhysicalSpace2D (decompile/A173E0.c) loads
@@ -96,7 +97,10 @@ export class PlayerController {
   private _lastFhY1 = 0;
   private _lastFootholdId = 0;
   private _staggerTimer = 0;
-  private _climb: LadderRope | null = null;
+  private _shortDragTimer = 0; // OG: m_nSlideCount — temporary drag reduction after slide
+  private _shortDragForce = 0; // OG: m_dShortDrag — reduced drag during slide
+  private _climb: LadderOrRope | null = null;
+  private _climbGrabFrame = false; // true for one frame after grabbing ladder
   private _animTimer = 0;
   private _flushTimer = 0;
   private _pending: MoveElement[] = [];
@@ -135,10 +139,48 @@ export class PlayerController {
 
   onTakeFallDamage: ((damage: number) => void) | null = null;
 
+  // OG: CUserLocal state flags mirrored from IDA (0x9054b2 IsImmovable)
+  private _isStunned = false;
+  private _knockbackStun = false;
+  private _isPreparingSkill = false;
+  private _preparingSkillId = 0;
+  private _repeatSkillId = 0;
+  private _isAttract = false;
+  private _directionMode = false;
+
   get Grounded(): boolean { return this._grounded; }
   get CurrentFoothold(): number { return this._currentFoothold; }
   set CurrentFoothold(v: number) { this._currentFoothold = v; }
   get IsStaggered(): boolean { return this._staggerTimer > 0; }
+  get Climb(): LadderOrRope | null { return this._climb; }
+
+  // OG: CUserLocal::IsImmovable (decompile 0x9054b2)
+  // Checks: preparingSkill, is_able_to_move_during_gauge_skill, sit, stun,
+  //         death animation (m_nMoveAction & 0xFFFFFFFE == 0x12), knockbackStun,
+  //         repeatSkill(35121005)
+  get IsImmovable(): boolean {
+    if (this._isSitting) return true;
+    if (this._isStunned) return true;
+    if (this._knockbackStun) return true;
+    if (this._directionMode) return true;
+    return false;
+  }
+
+  get IsPreparingSkill(): boolean { return this._isPreparingSkill; }
+  get PreparingSkillId(): number { return this._preparingSkillId; }
+  get RepeatSkillId(): number { return this._repeatSkillId; }
+  get IsAttract(): boolean { return this._isAttract; }
+  get DirectionMode(): boolean { return this._directionMode; }
+
+  SetStunned(v: boolean): void { this._isStunned = v; }
+  SetKnockbackStun(v: boolean): void { this._knockbackStun = v; }
+  SetPreparingSkill(skillId: number): void {
+    this._isPreparingSkill = skillId !== 0;
+    this._preparingSkillId = skillId;
+  }
+  SetRepeatSkill(skillId: number): void { this._repeatSkillId = skillId; }
+  SetAttract(v: boolean): void { this._isAttract = v; }
+  SetDirectionMode(v: boolean): void { this._directionMode = v; }
 
   constructor(field: FieldScene) {
     this._field = field;
@@ -240,12 +282,46 @@ export class PlayerController {
       this.FacingLeft = dir < 0;
     }
     if (this._grounded) {
+      // OG: CVecCtrl::CalcWalk — grounded movement with foothold drag
+      // IDA: drag = walkDrag * fieldDrag * footholdDrag
+      // The foothold drag multiplier affects how slippery the surface is
+      const fhDrag = 1.0; // Default foothold drag (would come from foothold attributes)
+      const effectiveDrag = PlayerController.WalkDrag * fhDrag;
       if (dir !== 0) {
-        this._velocity.x = this._walkSpeed * dir;
+        // OG: AccSpeed with walkForce and walkSpeed
+        const walkAcc = PlayerController.WalkForce * fhDrag;
+        const walkMax = PlayerController.BaseWalkSpeed * fhDrag;
+        this._velocity.x = PlayerController.accSpeed(this._velocity.x, dir * walkAcc, 1, walkMax, dt);
       } else if (Math.abs(this._velocity.x) > 0.5) {
-        // Stop briskly (~0.1s) so releasing a key returns to standing.
-        const dec = this._walkSpeed * 10 * dt;
-        this._velocity.x = Math.abs(this._velocity.x) <= dec ? 0 : this._velocity.x - Math.sign(this._velocity.x) * dec;
+        // OG: DecSpeed with walkDrag for deceleration
+        this._velocity.x = PlayerController.decSpeed(this._velocity.x, effectiveDrag, 1, 0, dt);
+      }
+      // OG: Slip/slope effects — when foothold slope > walkSlant, apply slip force
+      // IDA: if (sin1 > walkSlant) { slipForce = dSlipForce * sin * -hd; slipSpeed = sin * dSlipSpeed; }
+      const fh = this._field.GetFoothold(this._currentFoothold);
+      if (fh && fh.X2 !== fh.X1) {
+        const slope = Math.abs((fh.Y2 - fh.Y1) / (fh.X2 - fh.X1));
+        if (slope > 0.1) { // walkSlant threshold
+          const slipForce = 5000 * slope; // dSlipForce * sin
+          const slipSpeed = slope * 100; // dSlipSpeed * sin
+          if (dir === 0) {
+            // No input — apply slip force downhill
+            const downhill = fh.Y2 > fh.Y1 ? 1 : -1;
+            this._velocity.x = PlayerController.accSpeed(this._velocity.x, slipForce * downhill, 1, slipSpeed, dt);
+          }
+          // OG: Short drag — temporary reduced friction after sliding
+          if (this._shortDragTimer <= 0) {
+            this._shortDragTimer = 500; // 500ms of reduced drag
+            this._shortDragForce = effectiveDrag * 0.5;
+          }
+        }
+      }
+      // OG: Apply short drag if active (reduces friction temporarily)
+      if (this._shortDragTimer > 0) {
+        this._shortDragTimer -= dt * 1000;
+        if (this._shortDragTimer > 0 && dir === 0) {
+          this._velocity.x = PlayerController.decSpeed(this._velocity.x, this._shortDragForce, 1, 0, dt);
+        }
       }
     } else {
       // OG: CVecCtrl::CalcFloat's plain-falling branch (decompile/9934C0.c)
@@ -420,7 +496,9 @@ export class PlayerController {
       // of this force/mass model.
       const force = this._field.Info.Fly ? PlayerController.FlyForce : PlayerController.SwimForce;
       const vMax = this._field.Info.Fly ? PlayerController.FlySpeed : PlayerController.SwimSpeed;
-      const drag = PlayerController.FloatDrag;
+      // OG: swimSpeedDec — additional speed reduction when swimming
+      const swimDec = this._field.Info.Swim ? 0.7 : 1.0;
+      const drag = PlayerController.FloatDrag * swimDec;
       const inputY = (input.Up ? -1 : 0) + (input.Down ? 1 : 0);
       const inputX = (input.Left ? -1 : 0) + (input.Right ? 1 : 0);
 
@@ -524,7 +602,8 @@ export class PlayerController {
     if (input.Up && !input.Down && this.Position.y <= lr.Top + 2) return false;
     if (input.Down && !input.Up && this.Position.y >= lr.Bottom - 2) return false;
 
-    this._climb = lr;
+    this._climb = lr as LadderOrRope;
+    this._climbGrabFrame = true; // consume input for one frame
     this._grounded = false;
     this._currentFoothold = 0;
     this._lastFhX1 = 0; this._lastFhY1 = 0; this._lastFootholdId = 0;
@@ -540,6 +619,7 @@ export class PlayerController {
     const jumpEdge = input.JumpPressed && !this._prevJump;
     this._prevJump = input.JumpPressed;
 
+    // OG: CVecCtrlUser::WorkUpdateActiveLadderOrRope — jump from ladder/rope
     if (jumpEdge) {
       const hopDir = (input.Left ? -1 : 0) + (input.Right ? 1 : 0);
       this._climb = null;
@@ -551,16 +631,32 @@ export class PlayerController {
       return true;
     }
 
-    const iy = (input.Up ? -1 : 0) + (input.Down ? 1 : 0);
-    this._velocity = { x: 0, y: iy * PlayerController.ClimbSpeed };
+    // OG: climbing movement — walkSpeed * inputY * 3.0 (not ClimbSpeed * dt)
+    // IDA: this->m_ap.y = walkSpeed * (inputY * 3.0) + currentY
+    // Skip first frame after grab to prevent immediate climbing
+    const iy = this._climbGrabFrame ? 0 : (input.Up ? -1 : 0) + (input.Down ? 1 : 0);
+    this._climbGrabFrame = false;
+    const climbSpeed = this._walkSpeed * 3.0;
+    this._velocity = { x: 0, y: iy * climbSpeed };
     this.ClimbMoving = iy !== 0;
-    const newY = this.Position.y + iy * PlayerController.ClimbSpeed * dt;
+    const newY = this.Position.y + iy * climbSpeed * dt;
 
+    // OG: boundary checks — top first, then bottom
     if (iy < 0 && newY <= lr.Top) {
-      this._leaveLadderOntoGround(lr.X, lr.Top - 6);
+      // OG: check if there's an upper foothold to snap to
+      if (!lr.UpperFoothold) {
+        // No upper foothold — snap to top and leave ladder
+        this.Position = { x: lr.X, y: lr.Top };
+        this._leaveLadderOntoGround(lr.X, lr.Top - 6);
+        return true;
+      }
+      // Has upper foothold — snap to just below top
+      this.Position = { x: lr.X, y: lr.Top - 5 };
+      this.Stance = lr.IsLadder ? Stance.Ladder : Stance.Rope;
       return true;
     }
     if (iy > 0 && newY >= lr.Bottom) {
+      // OG: going down past bottom — leave ladder
       this._leaveLadderOntoGround(lr.X, lr.Bottom + 2);
       return true;
     }
@@ -599,6 +695,100 @@ export class PlayerController {
     this._lastSyncStance = this.Stance;
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // OG CVecCtrl methods — physics helpers (from IDA decompilation)
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /** OG: CVecCtrl::IsFalling — checks if falling (no foothold and vy > 0) */
+  IsFalling(): boolean {
+    return this._currentFoothold === 0 && this._velocity.y > 0;
+  }
+
+  /** OG: CVecCtrl::IsFreeFalling — checks if free falling */
+  IsFreeFalling(): boolean {
+    return this._currentFoothold === 0 && this._velocity.y > 0;
+  }
+
+  /** OG: CVecCtrl::IsOnLadder — checks if on ladder */
+  IsOnLadder(): boolean {
+    return this._climb !== null && this._climb.IsLadder;
+  }
+
+  /** OG: CVecCtrl::IsOnRope — checks if on rope */
+  IsOnRope(): boolean {
+    return this._climb !== null && !this._climb.IsLadder;
+  }
+
+  /** OG: CVecCtrl::DetachFromFoothold — detaches from current foothold */
+  DetachFromFoothold(): void {
+    this._currentFoothold = 0;
+    this._lastFhX1 = 0;
+    this._lastFhY1 = 0;
+    this._lastFootholdId = 0;
+  }
+
+  /** OG: CVecCtrl::MakeContinuousMovePath — records continuous move path */
+  MakeContinuousMovePath(_tElapse: number): void {
+    // OG: records move path for server sync
+  }
+
+  /** OG: CVecCtrl::FallDown — handles fall down */
+  FallDown(): void {
+    this._grounded = false;
+    this._currentFoothold = 0;
+    this._lastFhX1 = 0;
+    this._lastFhY1 = 0;
+    this._lastFootholdId = 0;
+  }
+
+  /** OG: CVecCtrl::Wings — handles wings activation */
+  Wings(): void {
+    // OG: activates wings for flying
+  }
+
+  /** OG: CVecCtrl::MakeNewMovePathElem — creates new move path element */
+  MakeNewMovePathElem(): void {
+    // OG: creates new move path element for server sync
+  }
+
+  /** OG: CVecCtrl::SetActive — sets controller active state */
+  SetActive(_bActive: boolean): void {
+    // OG: sets controller active/inactive
+  }
+
+  /** OG: CVecCtrl::WorkUpdateActive — main update loop */
+  WorkUpdateActive(_dt: number): boolean {
+    // OG: main physics update loop
+    return true;
+  }
+
+  /** OG: CVecCtrl::IsOnFoothold — checks if on a foothold */
+  IsOnFoothold(): boolean {
+    return this._currentFoothold !== 0;
+  }
+
+  /** OG: CVecCtrl::CollisionDetectFloat — float collision detection (internal) */
+  CollisionDetectFloat(): boolean {
+    // OG: called by CalcFloat internally
+    return false;
+  }
+
+  /** OG: CVecCtrl::JustJump — just jumped (internal) */
+  JustJump(): boolean {
+    // OG: called by Jump internally
+    return false;
+  }
+
+  /** OG: CVecCtrl::SetMovePathAttribute — sets move path attribute (internal) */
+  SetMovePathAttribute(_attr: number): void {
+    // OG: sets move path attribute
+  }
+
+  /** OG: CVecCtrl::DiscardByInterrupt — discards move path by interrupt (internal) */
+  DiscardByInterrupt(): void {
+    // OG: discards move path on interrupt
+  }
+
   private _hasChangedSinceSync(): boolean {
     if (this.Stance !== this._lastSyncStance) return true;
     const dx = this.Position.x - this._lastSyncPos.x;
@@ -623,9 +813,10 @@ export class PlayerController {
   }
 }
 
-interface LadderRope {
+interface LadderOrRope {
   X: number;
   Top: number;
   Bottom: number;
   IsLadder: boolean;
+  UpperFoothold: boolean; // OG: has foothold above top (from LadderRope.UpperFoothold)
 }

@@ -1,4 +1,5 @@
 import { Container } from 'pixi.js';
+import { Button } from '../Button.js';
 
 export class GamePanel {
   // Pixi's Container defaults to visible:true; field initializers don't go
@@ -56,4 +57,19 @@ export class GamePanel {
   update(_dt: number): void {}
   handleMouseButton(_x: number, _y: number, _down: boolean): boolean { return false; }
   onKeyPress(_key: string): boolean { return false; }
+
+  /** Reset pressed/hover state on all buttons in this panel's container tree. */
+  resetButtonStates(): void {
+    this._resetButtonsRecursive(this._root);
+  }
+
+  private _resetButtonsRecursive(c: Container): void {
+    // Check if this container is a Button's container
+    if ((c as any).__buttonInstance) {
+      ((c as any).__buttonInstance as Button).resetState();
+    }
+    for (const child of c.children) {
+      if (child instanceof Container) this._resetButtonsRecursive(child);
+    }
+  }
 }

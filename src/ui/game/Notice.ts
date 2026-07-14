@@ -1,5 +1,15 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import { GamePanel } from './GamePanel.js';
+import { WzSprite } from '../../render/WzSprite.js';
+import { WzTextureLoader } from '../../render/WzTextureLoader.js';
+import { WzPackage } from '../../wz/WzPackage.js';
+import { WzProperty } from '../../wz/WzProperty.js';
+import { WzCanvas } from '../../wz/WzCanvas.js';
+import { Button } from '../Button.js';
+
+// OG class: CUINoticePremium (156 bytes, inherits CDialog)
+// WZ: UI/UIWindow2.img/Notice/...
+// Close button at (283, 14), StringPool 0x1962 for button UOL
 
 const PANEL_W = 340;
 const PANEL_H = 120;
@@ -7,10 +17,6 @@ const PANEL_H = 120;
 const _titleStyle = new TextStyle({ fill: '#FFE4B5', fontSize: 12, fontFamily: 'monospace' });
 const _msgStyle = new TextStyle({ fill: '#FFF', fontSize: 11, fontFamily: 'monospace', wordWrap: true, wordWrapWidth: 300 });
 
-// OG: generic notices are CUtilDlg::Notice (decompile/977220.c, 334 callers)
-// plus sibling CUtilDlg::YesNo/YesNo2. A separate CUINoticePremium singleton
-// (TSingleton<CUINoticePremium>) handles the premium/cash-shop notice variant
-// — not the same class as this generic OK-dialog panel.
 export class Notice extends GamePanel {
   private _bg: Graphics;
   private _titleText: Text;
@@ -20,19 +26,33 @@ export class Notice extends GamePanel {
   private _isConfirm = false;
 
   onDismiss: (() => void) | null = null;
-  // OG: CUtilDlg::YesNo (sibling of CUtilDlg::Notice) — fired only in
-  // showConfirm() mode when the user picks the affirmative button.
   onConfirm: (() => void) | null = null;
   private _message = '';
 
-  constructor() {
+  constructor(opts: {
+    loader?: WzTextureLoader;
+    uiWz?: WzPackage | null;
+  } = {}) {
     super();
     this._root.visible = false;
 
+    // OG: CUINoticePremium loads from UIWindow2.img/Notice
+    const noticeProp = opts.uiWz?.GetItem('UIWindow2.img/Notice') as WzProperty | null;
+    const bgNode = noticeProp?.Get('backgrnd');
+    const wzBg = (bgNode instanceof WzCanvas && opts.loader) ? opts.loader.Load(bgNode) : null;
+
     this._bg = new Graphics();
-    this._bg.rect(0, 0, PANEL_W, PANEL_H).fill({  color: '#0C0E18', alpha: 0.95 });
-    this._bg.rect(0, 0, PANEL_W, PANEL_H).stroke({  color: '#3C4164', width: 1 });
-    this._bg.rect(0, 0, PANEL_W, 22).fill({  color: '#0F1224' });
+    this._root.addChild(this._bg);
+
+    if (wzBg) {
+      const s = wzBg.ToPixi();
+      this._root.addChild(s);
+    } else {
+      this._bg.rect(0, 0, PANEL_W, PANEL_H).fill({ color: '#0C0E18', alpha: 0.95 });
+      this._bg.rect(0, 0, PANEL_W, PANEL_H).stroke({ color: '#3C4164', width: 1 });
+      this._bg.rect(0, 0, PANEL_W, 22).fill({ color: '#0F1224' });
+    }
+    this._bg.rect(0, 0, PANEL_W, 22).fill({ color: '#0F1224' });
     this._root.addChild(this._bg);
 
     this._titleText = new Text({ text: 'Notice', style: _titleStyle });
@@ -45,8 +65,8 @@ export class Notice extends GamePanel {
 
     this._btnOk = new Container();
     const btn = new Graphics();
-    btn.rect(0, 0, 56, 20).fill({  color: '#1E2030', alpha: 0.9 });
-    btn.rect(0, 0, 56, 20).stroke({  color: '#505570', width: 1 });
+    btn.rect(0, 0, 56, 20).fill({ color: '#1E2030', alpha: 0.9 });
+    btn.rect(0, 0, 56, 20).stroke({ color: '#505570', width: 1 });
     const t = new Text({ text: 'OK', style: new TextStyle({ fill: '#CCC', fontSize: 10, fontFamily: 'monospace' }) });
     t.x = 20; t.y = 4;
     this._btnOk.addChild(btn, t);
@@ -55,8 +75,8 @@ export class Notice extends GamePanel {
 
     this._btnCancel = new Container();
     const cbtn = new Graphics();
-    cbtn.rect(0, 0, 56, 20).fill({  color: '#1E2030', alpha: 0.9 });
-    cbtn.rect(0, 0, 56, 20).stroke({  color: '#505570', width: 1 });
+    cbtn.rect(0, 0, 56, 20).fill({ color: '#1E2030', alpha: 0.9 });
+    cbtn.rect(0, 0, 56, 20).stroke({ color: '#505570', width: 1 });
     const ct = new Text({ text: 'No', style: new TextStyle({ fill: '#CCC', fontSize: 10, fontFamily: 'monospace' }) });
     ct.x = 20; ct.y = 4;
     this._btnCancel.addChild(cbtn, ct);
@@ -90,8 +110,6 @@ export class Notice extends GamePanel {
     this._root.visible = true;
   }
 
-  // OG: CUtilDlg::YesNo — shown for actions that need confirmation before the
-  // client sends a follow-up request packet (e.g. StoreBank get-all fee).
   showConfirm(title: string, message: string): void {
     this._isConfirm = true;
     this._btnCancel.visible = true;

@@ -5,6 +5,23 @@ import type { WzPackage } from '../wz/WzPackage.js';
 import { CharLook } from './CharLook.js';
 import { Stance } from './Stance.js';
 import type { TempStatBuff } from '../net/handlers/PacketArgs.js';
+import { SkillEffectOverlay } from './SkillEffectOverlay.js';
+import * as Avatar from './Avatar.js';
+
+/** OG CUser::DrawGauge — 52×10 HP gauge bar rendered above the character.
+ *  Three nested border rectangles + red fill proportional to HP ratio. */
+const GAUGE_W = 52;
+const GAUGE_H = 10;
+const GAUGE_FILL_MAX = 48; // inner fill width (52 - 2*2 border - 2*1 inner)
+const GAUGE_FILL_Y = 3;
+const GAUGE_FILL_H = 4;
+const GAUGE_DARK_Y = 6;
+const GAUGE_DARK_H = 1;
+const COLOR_BORDER = 0x000000;
+const COLOR_INNER = 0xFFFFFF;
+const COLOR_FILL_BG = 0x000000;
+const COLOR_RED = 0xFF0000;
+const COLOR_DARK = 0xFF9F00; // dark red/maroon for bottom accent line
 
 export class OtherCharLook {
   readonly container = new Container();
@@ -31,19 +48,42 @@ export class OtherCharLook {
   private _swallowBuffTime = 0;
   private _blessingArmorIncPAD = 0;
 
+  // OG CUser fields — guild/medal/team
+  private _guildName = '';
+  private _guildMarkBg = 0;
+  private _guildMarkBgColor = 0;
+  private _guildMark = 0;
+  private _guildMarkColor = 0;
+  private _medalItemId = 0;
+  private _teamName = '';
+
+  // OG CUser::DrawGauge — HP ratio (0..1), -1 = hidden
+  private _hpRatio = -1;
+
+  // Buff repeat effect overlays (OG LoadSkillRepeatEffect)
+  private _buffOverlays: SkillEffectOverlay | null = null;
+
   PortableChairItemId = 0;
 
   // Cached display objects
   private _nameText: Text | null = null;
+  private _guildText: Text | null = null;
+  private _medalText: Text | null = null;
   private _placeholderGfx: Graphics | null = null;
   private _badgeContainer: Container | null = null;
   private _adBoardBg: Graphics | null = null;
   private _adBoardLabel: Text | null = null;
+  private _hpGaugeGfx: Graphics | null = null;
   // Dirty tracking
   private _lastHitFlash = -1;
   private _lastBadgeCount = -1;
   private _lastAdBoard = '';
   private _lastLevel = -1;
+  private _lastName = '';
+  private _lastGuildName = '';
+  private _lastMedalId = -1;
+  private _lastHpRatio = -2;
+  private _lastTeamName = '';
 
   constructor(
     public readonly CharId: number,
@@ -159,6 +199,43 @@ export class OtherCharLook {
     return this._tempStatBuffs.find(b => b.bit === bit);
   }
 
+  // ── OG guild/medal/team name fields ──
+
+  SetGuildInfo(name: string, markBg: number, markBgColor: number, mark: number, markColor: number): void {
+    this._guildName = name;
+    this._guildMarkBg = markBg;
+    this._guildMarkBgColor = markBgColor;
+    this._guildMark = mark;
+    this._guildMarkColor = markColor;
+  }
+
+  SetMedalItemId(medalId: number): void {
+    this._medalItemId = medalId;
+  }
+
+  SetTeamName(name: string): void {
+    this._teamName = name;
+  }
+
+  /** OG CUser::DrawGauge — sets the HP ratio (0..1) for the HP gauge bar.
+   *  Pass -1 to hide the gauge entirely. */
+  SetHpRatio(curHp: number, maxHp: number): void {
+    this._hpRatio = maxHp > 0 ? Math.max(0, Math.min(1, curHp / maxHp)) : 0;
+  }
+
+  HideHpGauge(): void {
+    this._hpRatio = -1;
+  }
+
+  /** Returns a SkillEffectOverlay for persistent buff visuals (OG LoadSkillRepeatEffect).
+   *  Lazy-created — only allocates when a buff effect is first needed. */
+  GetBuffOverlay(): SkillEffectOverlay {
+    if (this._buffOverlays === null) {
+      this._buffOverlays = new SkillEffectOverlay(new WzTextureLoader());
+    }
+    return this._buffOverlays;
+  }
+
   SetEmotion(emotionId: number): void {
     this._charLook?.SetEmotion(emotionId);
   }
@@ -220,13 +297,23 @@ export class OtherCharLook {
     const changed = this._hitFlash !== this._lastHitFlash
       || this._statusBadges.size !== this._lastBadgeCount
       || this._adBoardText !== this._lastAdBoard
-      || this.Level !== this._lastLevel;
+      || this.Level !== this._lastLevel
+      || this.Name !== this._lastName
+      || this._guildName !== this._lastGuildName
+      || this._medalItemId !== this._lastMedalId
+      || this._hpRatio !== this._lastHpRatio
+      || this._teamName !== this._lastTeamName;
 
     if (changed) {
       this._lastHitFlash = this._hitFlash;
       this._lastBadgeCount = this._statusBadges.size;
       this._lastAdBoard = this._adBoardText;
       this._lastLevel = this.Level;
+      this._lastName = this.Name;
+      this._lastGuildName = this._guildName;
+      this._lastMedalId = this._medalItemId;
+      this._lastHpRatio = this._hpRatio;
+      this._lastTeamName = this._teamName;
       this._rebuildDisplay();
     }
 
@@ -252,18 +339,83 @@ export class OtherCharLook {
       this.container.addChild(this._placeholderGfx);
     }
 
+    // ── OG CUser::DrawGauge — HP gauge bar (52×10) above character ──
+    if (this._hpRatio >= 0) {
+      this._drawHpGauge();
+    }
+
+    // ── Name tags (OG CUser::DrawNameTags) ──
+    // Tag 1: Character name (tagType 1000)
+    const nameTagY = -78;
     const tag = `[${this.Level}] ${this.Name}`;
     if (!this._nameText) {
       this._nameText = new Text({ text: tag, style: { fontSize: 11, fill: 0xffe664, stroke: '#000000' } });
       this._nameText.anchor.set(0.5, 1);
-      this._nameText.y = -78;
+      this._nameText.y = nameTagY;
     } else {
       this._nameText.text = tag;
     }
     this.container.addChild(this._nameText);
 
+    // Tag 2: Guild name (tagType 1004) — below character name
+    const displayGuild = this._teamName || this._guildName;
+    if (displayGuild) {
+      const guildTagY = nameTagY + 13;
+      if (!this._guildText) {
+        this._guildText = new Text({ text: displayGuild, style: { fontSize: 10, fill: 0xa0a0ff, stroke: '#000000' } });
+        this._guildText.anchor.set(0.5, 1);
+        this._guildText.y = guildTagY;
+      } else {
+        this._guildText.text = displayGuild;
+      }
+      this.container.addChild(this._guildText);
+    }
+
+    // Tag 3: Medal name (tagType 1006) — below guild name
+    if (this._medalItemId > 0) {
+      const medalTagY = nameTagY + (displayGuild ? 25 : 13);
+      if (!this._medalText) {
+        this._medalText = new Text({ text: `Medal[${this._medalItemId}]`, style: { fontSize: 10, fill: 0xffc94a, stroke: '#000000' } });
+        this._medalText.anchor.set(0.5, 1);
+        this._medalText.y = medalTagY;
+      } else {
+        this._medalText.text = `Medal[${this._medalItemId}]`;
+      }
+      this.container.addChild(this._medalText);
+    }
+
     this._drawBadges();
     this._drawADBoard();
+  }
+
+  /** OG CUser::DrawGauge — renders the 52×10 HP gauge bar.
+   *  3 nested border rectangles + red fill proportional to HP. */
+  private _drawHpGauge(): void {
+    if (!this._hpGaugeGfx) {
+      this._hpGaugeGfx = new Graphics();
+    }
+    const g = this._hpGaugeGfx;
+    g.clear();
+
+    // Position gauge above the name tag area
+    const gx = -(GAUGE_W / 2);
+    const gy = -105;
+
+    // Outer black border (0,0 → 52×10)
+    g.rect(gx, gy, GAUGE_W, GAUGE_H).fill({ color: COLOR_BORDER });
+    // White inner border (1,1 → 50×8)
+    g.rect(gx + 1, gy + 1, GAUGE_W - 2, GAUGE_H - 2).fill({ color: COLOR_INNER });
+    // Black fill background (2,2 → 48×6)
+    g.rect(gx + 2, gy + 2, GAUGE_FILL_MAX, GAUGE_H - 4).fill({ color: COLOR_FILL_BG });
+    // Red fill (3,3 → gaugePos×4)
+    const fillW = Math.floor(GAUGE_FILL_MAX * this._hpRatio);
+    if (fillW > 0) {
+      g.rect(gx + 3, gy + GAUGE_FILL_Y, fillW, GAUGE_FILL_H).fill({ color: COLOR_RED });
+      // Dark accent line at bottom of fill (3,6 → gaugePos×1)
+      g.rect(gx + 3, gy + GAUGE_DARK_Y, fillW, GAUGE_DARK_H).fill({ color: COLOR_DARK });
+    }
+
+    this.container.addChild(this._hpGaugeGfx);
   }
 
   private _drawBadges(): void {

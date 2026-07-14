@@ -3,6 +3,21 @@ import { GamePanel } from './GamePanel.js';
 
 export enum DialogType { Ok, Next, PrevNext, YesNo, Menu, AskText, AskNumber, Quiz, AskAccept }
 
+// OG key code → display name (subset for #k<code># tag resolution in NPC dialogs)
+const _KEY_NAMES: Record<number, string> = {
+  8: 'Backspace', 9: 'Tab', 13: 'Enter', 16: 'Shift', 17: 'Ctrl', 18: 'Alt',
+  27: 'Escape', 32: 'Space', 33: 'Page Up', 34: 'Page Down', 35: 'End', 36: 'Home',
+  37: 'Left', 38: 'Up', 39: 'Right', 40: 'Down', 45: 'Insert', 46: 'Delete',
+  112: 'F1', 113: 'F2', 114: 'F3', 115: 'F4', 116: 'F5', 117: 'F6',
+  118: 'F7', 119: 'F8', 120: 'F9', 121: 'F10', 122: 'F11', 123: 'F12',
+};
+function _keyName(code: number): string {
+  if (_KEY_NAMES[code]) return _KEY_NAMES[code];
+  if (code >= 48 && code <= 57) return String.fromCharCode(code);
+  if (code >= 65 && code <= 90) return String.fromCharCode(code);
+  return `Key ${code}`;
+}
+
 const PANEL_W = 470;
 const PANEL_H = 200;
 const BTN_Y = PANEL_H - 36;
@@ -382,11 +397,15 @@ export class NpcTalk extends GamePanel {
     text = text.replace(/#m(\d+)#/g, (_, id) => this.mapName?.(parseInt(id)) ?? `#m${id}#`);
     text = text.replace(/#q(\d+)#/g, (_, id) => this.skillName?.(parseInt(id)) ?? `#q${id}#`);
     text = text.replace(/#z(\d+)#/g, (_, id) => this.itemName?.(parseInt(id)) ?? `#z${id}#`);
+    // #s<id># → skill name (OG tag type 10)
+    text = text.replace(/#s(\d+)#/g, (_, id) => this.skillName?.(parseInt(id)) ?? `Skill ${id}`);
+    // #k<code># → key name
+    text = text.replace(/#k(\d+)#/g, (_m, code) => `[Key: ${_keyName(parseInt(code))}]`);
     // Strip remaining formatting tokens
     return text.replace(/#l/g, '').replace(/#L\d+#/g, '').replace(/#e/g, '').replace(/#n/g, '')
       .replace(/#b/g, '').replace(/#r/g, '').replace(/#g/g, '')
-      .replace(/#d/g, '').replace(/#k/g, '')
-      .replace(/#i\d+#/g, '').replace(/#v\d+#/g, '').replace(/#s\d+#/g, '')
+      .replace(/#d/g, '')
+      .replace(/#i\d+#/g, '').replace(/#v\d+#/g, '')
       .replace(/#f\d+#/g, '').replace(/#c\d+#/g, '');
   }
 

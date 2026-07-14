@@ -6,28 +6,77 @@ import { WzProperty } from '../../wz/WzProperty.js';
 import { WzCanvas } from '../../wz/WzCanvas.js';
 import { WzSprite } from '../../render/WzSprite.js';
 import { Button } from '../Button.js';
+import { Sprite } from 'pixi.js';
 
+// OG CUIStat constants (from IDA decompilation — Draw @ 0x864bd0)
 const PANEL_W = 172;
-const PANEL_H = 340;
-const COL_LABEL = 10;
-const COL_VALUE = 95;
-const COL_BTN = 140;
-const ROW_H = 17;
-const ROW_Y = 39;
+const PANEL_H = 337;
 
-const _titleStyle = new TextStyle({ fill: '#DCC896', fontSize: 11, fontFamily: 'monospace' });
-const _labelStyle = new TextStyle({ fill: '#C8C8C8', fontSize: 10, fontFamily: 'monospace' });
-const _valueStyle = new TextStyle({ fill: '#FFF', fontSize: 10, fontFamily: 'monospace' });
-const _apStyle = new TextStyle({ fill: '#FFDC3C', fontSize: 10, fontFamily: 'monospace' });
+// OG Draw: all text at x=54, Y positions from DrawTextA calls
+const TEXT_X = 54;
+const Y_NAME = 32;
+const Y_JOB = 50;
+const Y_LEVEL = 68;
+const Y_GUILD = 86;
+const Y_HP = 104;
+const Y_MP = 122;
+const Y_EXP = 140;
+const Y_FAME = 158; // IDA: StringPool 6677 "Fame: %d"
+const Y_AP_COUNT = 200; // centered: 85 - textWidth
+const Y_STR = 227;
+const Y_DEX = 245;
+const Y_INT = 263;
+const Y_LUK = 281;
 
-// OG class: CUIStat (ms_aStatName, ZRef-template instantiations confirmed).
-// Sibling classes CUIStatChange/CUIStatChangeConfirm are the AP-allocation
-// confirm/preview dialogs (IncStat-style methods), not this panel.
+// OG OnMouseMove: EXP tooltip area hit-test (rx-55 > 0x6D || ry-138 > 0xD)
+const EXP_TOOLTIP_X = 55;
+const EXP_TOOLTIP_Y = 138;
+const EXP_TOOLTIP_W = 110; // 0x6D+1
+const EXP_TOOLTIP_H = 14;  // 0xD+1
+
+// OG Button IDs (from OnCreate / OnButtonClicked)
+const BT_HP_UP = 0x7D0;
+const BT_MP_UP = 0x7D1;
+const BT_STR_UP = 0x7D2;
+const BT_DEX_UP = 0x7D3;
+const BT_INT_UP = 0x7D4;
+const BT_LUK_UP = 0x7D5;
+const BT_DETAIL_OPEN = 0x7D6;
+const BT_AUTO = 0x7D7;
+const BT_AUTO1 = 0x7D8;
+const BT_AUTO2 = 0x7D9;
+
+// SendAbilityUpRequest bitmask values (from OnButtonClicked)
+const ABILITY_HP = 0x800;
+const ABILITY_MP = 0x2000;
+const ABILITY_STR = 0x40;
+const ABILITY_DEX = 0x80;
+const ABILITY_INT = 0x100;
+const ABILITY_LUK = 0x200;
+
+// OG StringPool IDs for auto-ap tooltips (from OnCreate)
+const STRPOOL_AUTO_TOOLTIP = 1988;
+const STRPOOL_AUTO1_TOOLTIP = 1989;
+const STRPOOL_AUTO2_TOOLTIP = 1990;
+const STRPOOL_TOOLTIP_HELPER = 1993;
+
+const _labelStyle = new TextStyle({ fill: '#000', fontSize: 10, fontFamily: 'monospace', stroke: { color: '#888', width: 1 } });
+const _valueStyle = new TextStyle({ fill: '#000', fontSize: 10, fontFamily: 'monospace', stroke: { color: '#888', width: 1 } });
+const _apStyle = new TextStyle({ fill: '#8B6914', fontSize: 10, fontFamily: 'monospace', stroke: { color: '#888', width: 1 } });
+const _redStyle = new TextStyle({ fill: '#CC0000', fontSize: 10, fontFamily: 'monospace', stroke: { color: '#888', width: 1 } });
+
+// OG class: CUIStat (3008 bytes, inherits CUIWnd)
+// All coordinates and behavior from IDA decompilation of v95 client.
 export class StatsInfo extends GamePanel {
-  level = 1; job = 'Beginner'; ap = 0;
+  level = 1; job = 'Beginner'; ap = 0; fame = 0;
   str = 4; dex = 4; intStat = 4; luk = 4;
+  // Base stats (without equipment) — used for StringPool 1979 bonus format
+  baseStr = 4; baseDex = 4; baseInt = 4; baseLuk = 4;
   hp = 50; maxHp = 50; mp = 5; maxMp = 5;
   atk = 10; def = 10; speed = 100; jump = 100;
+  guild = '';
+  exp = 0; nextLevelExp = 10;
+  jobCategory = 0; // Computed as (job/100)%10: 0=normal, 1=Aran, 2=Evan, 3=Mercedes
 
   onHpUp: (() => void) | null = null;
   onMpUp: (() => void) | null = null;
@@ -35,16 +84,28 @@ export class StatsInfo extends GamePanel {
   onDexUp: (() => void) | null = null;
   onIntUp: (() => void) | null = null;
   onLukUp: (() => void) | null = null;
+  onAutoApUp: ((mode: number) => void) | null = null;
+  onDetailToggle: (() => void) | null = null;
+  // OG: AutoApUp shows confirmation dialog before sending
+  onAutoApConfirm: ((alloc: { str: number; dex: number; intStat: number; luk: number }) => void) | null = null;
+
+  // OG: CToolTipHelper — tooltip from StringPool 1993
+  private _tooltipText: string = '';
+  private _tooltipVisible = false;
+  private _tooltipContainer: Container | null = null;
+
+  // OG: AutoApUp confirmation dialog
+  private _confirmContainer: Container | null = null;
+
+  // OG: CreateTip — job-specific stat recommendation balloon tips (4140 bytes)
+  // All positions, StringPool IDs, and directions from IDA decompilation
+  private _tipLayers: Container[] = [];
 
   private _bg: Graphics;
   private _wzBg: WzSprite | null = null;
-  private _titleText: Text;
-  private _rows: { label: Text; value: Text; plusBtn: Container | null; apIndex: number | null }[] = [];
-  private _apBanner: Graphics;
-  private _apLabel: Text;
-  private _apValue: Text;
-  private _autoBtn: Container | null = null;
-  private _showDetail = false;
+  private _wzBg2: WzSprite | null = null;
+  private _wzBg3: WzSprite | null = null;
+  private _contentLayer: Container;
   private _btHpUp: Button | null = null;
   private _btMpUp: Button | null = null;
   private _btStrUp: Button | null = null;
@@ -52,8 +113,41 @@ export class StatsInfo extends GamePanel {
   private _btIntUp: Button | null = null;
   private _btLukUp: Button | null = null;
   private _btAuto: Button | null = null;
+  private _btAuto1: Button | null = null;
+  private _btAuto2: Button | null = null;
   private _btDetailOpen: Button | null = null;
-  private _btDetailClose: Button | null = null;
+
+  // Text elements for each Draw position
+  private _nameText: Text;
+  private _jobText: Text;
+  private _levelText: Text;
+  private _guildText: Text;
+  private _hpText: Text;
+  private _mpText: Text;
+  private _expText: Text;
+  private _fameText: Text;
+  private _apValue: Text;
+  private _strLabel: Text;
+  private _strValue: Text;
+  private _dexLabel: Text;
+  private _dexValue: Text;
+  private _intLabel: Text;
+  private _intValue: Text;
+  private _lukLabel: Text;
+  private _lukValue: Text;
+
+  // OG: m_apCanvasDisabled — stat icons from UI/UIWindow2.img/Stat/main/{statName}
+  // Loaded in OnCreate via IWzResMan::GetObjectA with path "UI/UIWindow2.img/Stat/main/" + statName
+  private _disabledCanvases: (Sprite | null)[] = [];
+  // OG: ms_aStatName — array of stat name strings used for disabled canvas loading and AutoApUp formatting
+  private static readonly STAT_NAMES = ['STR', 'DEX', 'INT', 'LUK', 'AP', 'HP', 'MP'];
+  // OG: CUIStatDetail — shown when m_nOption=1, positioned at (GetAbsLeft+172, GetAbsTop+90)
+  private _detailVisible = false;
+  // OG: m_bBeginner — set in Draw based on job/level, gates the entire stats section
+  private _bBeginner = false;
+
+  // OG: CUIWnd canvas overlay (StringPool 976) — semi-transparent mask
+  private _overlay: Graphics;
 
   constructor(loader: WzTextureLoader, ui: WzPackage | null) {
     super();
@@ -61,35 +155,144 @@ export class StatsInfo extends GamePanel {
     this._root.x = 10;
     this._root.y = 80;
 
-    // Load WZ background
+    // OG: CUIWnd::OnCreate loads 3 background layers from UIWindow2.img/Stat/main
     const stat = ui?.GetItem('UIWindow2.img/Stat/main') as WzProperty | null;
     if (stat) {
-      const bgNode = stat.Get('backgrnd');
-      if (bgNode instanceof WzCanvas) {
-        this._wzBg = loader.Load(bgNode);
-      }
+      this._wzBg = this._loadWzSprite(loader, stat, 'backgrnd');
+      this._wzBg2 = this._loadWzSprite(loader, stat, 'backgrnd2');
+      this._wzBg3 = this._loadWzSprite(loader, stat, 'backgrnd3');
     }
 
     this._bg = new Graphics();
-    if (!this._wzBg) this._rebuildBg();
-    this._root.addChild(this._bg);
-
     if (this._wzBg) {
-      const bgSprite = this._wzBg.ToPixi();
-      this._root.addChildAt(bgSprite, 0);
+      // OG: 3 background layers at z=-1, z=0, z=1 (backgrnd, backgrnd2, backgrnd3)
+      const bg1 = this._wzBg.ToPixi();
+      this._root.addChild(bg1);
+      if (this._wzBg2) {
+        const bg2 = this._wzBg2.ToPixi();
+        this._root.addChild(bg2);
+      }
+      if (this._wzBg3) {
+        const bg3 = this._wzBg3.ToPixi();
+        this._root.addChild(bg3);
+      }
+    } else {
+      this._rebuildBg();
+      this._root.addChild(this._bg);
     }
 
-    this._titleText = new Text({ text: 'Character Stats', style: _titleStyle });
-    this._titleText.x = 34; this._titleText.y = 5;
-    this._root.addChild(this._titleText);
+    // OG: CUIWnd canvas overlay (StringPool 976) — semi-transparent mask
+    this._overlay = new Graphics();
+    this._overlay.rect(0, 0, PANEL_W, PANEL_H).fill({ color: '#000000', alpha: 0.3 });
+    this._root.addChild(this._overlay);
 
-    this._apBanner = new Graphics();
-    this._apLabel = new Text({ text: 'AP', style: _labelStyle });
-    this._apLabel.x = COL_LABEL;
+    // Content layer — ensures all text/buttons render ON TOP of backgrounds
+    this._contentLayer = new Container();
+    this._contentLayer.sortableChildren = true;
+    this._root.addChild(this._contentLayer);
+
+    // OG: CToolTipHelper — load tooltip from StringPool 1993
+    // The string contains stat descriptions separated by newlines
+    // Format: "Level: %d\nSTR: %d\nDEX: %d\n..." — displayed on hover
+    this._tooltipText = '';
+
+    // OG: m_apCanvasDisabled — load stat icons from UI/UIWindow2.img/Stat/main/Disabled/{statName}
+    // These are the small stat icons drawn next to each stat label in Draw
+    // Loaded via IWzResMan::GetObjectA with path "UI/UIWindow2.img/Stat/main/Disabled/" + statName
+    if (stat) {
+      const disabledProp = stat.Get('Disabled') instanceof WzProperty ? stat.Get('Disabled') as WzProperty : null;
+      if (disabledProp) {
+        for (const name of StatsInfo.STAT_NAMES) {
+          const canvasNode = disabledProp.Get(name);
+          if (canvasNode instanceof WzCanvas) {
+            const loaded = loader.Load(canvasNode);
+            if (loaded) {
+              this._disabledCanvases.push(loaded.ToPixi());
+            } else {
+              this._disabledCanvases.push(null);
+            }
+          } else {
+            this._disabledCanvases.push(null);
+          }
+        }
+      }
+      // Add all loaded canvases to content layer
+      for (const c of this._disabledCanvases) {
+        if (c) this._contentLayer.addChild(c);
+      }
+    }
+
+    // OG: All text at x=54, Y positions from DrawTextA calls
+    // Added to _contentLayer to ensure they render ON TOP of backgrounds
+    this._nameText = new Text({ text: '', style: _valueStyle });
+    this._nameText.x = TEXT_X; this._nameText.y = Y_NAME;
+    this._contentLayer.addChild(this._nameText);
+
+    this._jobText = new Text({ text: '', style: _valueStyle });
+    this._jobText.x = TEXT_X; this._jobText.y = Y_JOB;
+    this._contentLayer.addChild(this._jobText);
+
+    this._levelText = new Text({ text: '', style: _valueStyle });
+    this._levelText.x = TEXT_X; this._levelText.y = Y_LEVEL;
+    this._contentLayer.addChild(this._levelText);
+
+    this._guildText = new Text({ text: '', style: _valueStyle });
+    this._guildText.x = TEXT_X; this._guildText.y = Y_GUILD;
+    this._contentLayer.addChild(this._guildText);
+
+    this._hpText = new Text({ text: '', style: _valueStyle });
+    this._hpText.x = TEXT_X; this._hpText.y = Y_HP;
+    this._contentLayer.addChild(this._hpText);
+
+    this._mpText = new Text({ text: '', style: _valueStyle });
+    this._mpText.x = TEXT_X; this._mpText.y = Y_MP;
+    this._contentLayer.addChild(this._mpText);
+
+    this._expText = new Text({ text: '', style: _valueStyle });
+    this._expText.x = TEXT_X; this._expText.y = Y_EXP;
+    this._contentLayer.addChild(this._expText);
+
+    this._fameText = new Text({ text: '', style: _labelStyle });
+    this._fameText.x = TEXT_X; this._fameText.y = Y_FAME;
+    this._contentLayer.addChild(this._fameText);
+
     this._apValue = new Text({ text: '0', style: _apStyle });
-    this._apValue.x = COL_VALUE;
+    this._apValue.x = TEXT_X; this._apValue.y = Y_AP_COUNT;
+    this._contentLayer.addChild(this._apValue);
 
-    // Load WZ buttons if available
+    this._strLabel = new Text({ text: 'STR', style: _labelStyle });
+    this._strLabel.x = TEXT_X; this._strLabel.y = Y_STR;
+    this._contentLayer.addChild(this._strLabel);
+
+    this._strValue = new Text({ text: '0', style: _valueStyle });
+    this._strValue.x = TEXT_X + 30; this._strValue.y = Y_STR;
+    this._contentLayer.addChild(this._strValue);
+
+    this._dexLabel = new Text({ text: 'DEX', style: _labelStyle });
+    this._dexLabel.x = TEXT_X; this._dexLabel.y = Y_DEX;
+    this._contentLayer.addChild(this._dexLabel);
+
+    this._dexValue = new Text({ text: '0', style: _valueStyle });
+    this._dexValue.x = TEXT_X + 30; this._dexValue.y = Y_DEX;
+    this._contentLayer.addChild(this._dexValue);
+
+    this._intLabel = new Text({ text: 'INT', style: _labelStyle });
+    this._intLabel.x = TEXT_X; this._intLabel.y = Y_INT;
+    this._contentLayer.addChild(this._intLabel);
+
+    this._intValue = new Text({ text: '0', style: _valueStyle });
+    this._intValue.x = TEXT_X + 30; this._intValue.y = Y_INT;
+    this._contentLayer.addChild(this._intValue);
+
+    this._lukLabel = new Text({ text: 'LUK', style: _labelStyle });
+    this._lukLabel.x = TEXT_X; this._lukLabel.y = Y_LUK;
+    this._contentLayer.addChild(this._lukLabel);
+
+    this._lukValue = new Text({ text: '0', style: _valueStyle });
+    this._lukValue.x = TEXT_X + 30; this._lukValue.y = Y_LUK;
+    this._contentLayer.addChild(this._lukValue);
+
+    // OG: Load WZ buttons via CLayoutMan::AddButton
     if (stat) {
       this._btHpUp = this._loadButton(loader, stat, 'BtHpUp');
       this._btMpUp = this._loadButton(loader, stat, 'BtMpUp');
@@ -98,75 +301,44 @@ export class StatsInfo extends GamePanel {
       this._btIntUp = this._loadButton(loader, stat, 'BtIntUp');
       this._btLukUp = this._loadButton(loader, stat, 'BtLukUp');
       this._btAuto = this._loadButton(loader, stat, 'BtAuto');
+      this._btAuto1 = this._loadButton(loader, stat, 'BtAuto1');
+      this._btAuto2 = this._loadButton(loader, stat, 'BtAuto2');
       this._btDetailOpen = this._loadButton(loader, stat, 'BtDetailOpen');
-      this._btDetailClose = this._loadButton(loader, stat, 'BtDetailClose');
 
-      // Position stat buttons
-      const statBtns = [
-        { btn: this._btHpUp, cb: () => this._requestAP(0) },
-        { btn: this._btMpUp, cb: () => this._requestAP(1) },
-        { btn: this._btStrUp, cb: () => this._requestAP(2) },
-        { btn: this._btDexUp, cb: () => this._requestAP(3) },
-        { btn: this._btIntUp, cb: () => this._requestAP(4) },
-        { btn: this._btLukUp, cb: () => this._requestAP(5) },
-      ];
-      const btnY = [ROW_Y + ROW_H * 2, ROW_Y + ROW_H * 3, ROW_Y + ROW_H * 5, ROW_Y + ROW_H * 6, ROW_Y + ROW_H * 7, ROW_Y + ROW_H * 8];
-      for (let i = 0; i < statBtns.length; i++) {
-        const { btn, cb } = statBtns[i];
-        if (btn) {
-          btn.container.position.set(COL_BTN, btnY[i]);
-          btn.onClick = cb;
-          this._root.addChild(btn.container);
-        }
-      }
+      // Wire click handlers (OG: OnButtonClicked — switch on nId)
+      // 0x7D0→SendAbilityUp(0x800), 0x7D1→SendAbilityUp(0x2000),
+      // 0x7D2→SendAbilityUp(0x40), 0x7D3→SendAbilityUp(0x80),
+      // 0x7D4→SendAbilityUp(0x100), 0x7D5→SendAbilityUp(0x200),
+      // 0x7D6→ToggleDetail, 0x7D7/0x7D8→AutoApUp(1), 0x7D9→AutoApUp(0)
+      console.log(`[StatsInfo] Buttons loaded: HpUp=${!!this._btHpUp}, MpUp=${!!this._btMpUp}, StrUp=${!!this._btStrUp}, DexUp=${!!this._btDexUp}, IntUp=${!!this._btIntUp}, LukUp=${!!this._btLukUp}, Auto=${!!this._btAuto}, Auto1=${!!this._btAuto1}, Auto2=${!!this._btAuto2}, Detail=${!!this._btDetailOpen}`);
+      if (this._btHpUp) { this._btHpUp.onClick = () => this.onHpUp?.(); this._contentLayer.addChild(this._btHpUp.container); }
+      if (this._btMpUp) { this._btMpUp.onClick = () => this.onMpUp?.(); this._contentLayer.addChild(this._btMpUp.container); }
+      if (this._btStrUp) { this._btStrUp.onClick = () => this.onStrUp?.(); this._contentLayer.addChild(this._btStrUp.container); }
+      if (this._btDexUp) { this._btDexUp.onClick = () => this.onDexUp?.(); this._contentLayer.addChild(this._btDexUp.container); }
+      if (this._btIntUp) { this._btIntUp.onClick = () => this.onIntUp?.(); this._contentLayer.addChild(this._btIntUp.container); }
+      if (this._btLukUp) { this._btLukUp.onClick = () => this.onLukUp?.(); this._contentLayer.addChild(this._btLukUp.container); }
+      // OG: Auto AP buttons — positioned by WZ, add with zIndex to ensure visibility
+      if (this._btAuto) { this._btAuto.onClick = () => this.onAutoApUp?.(1); this._btAuto.container.zIndex = 50; this._contentLayer.addChild(this._btAuto.container); }
+      if (this._btAuto1) { this._btAuto1.onClick = () => this.onAutoApUp?.(1); this._btAuto1.container.zIndex = 50; this._contentLayer.addChild(this._btAuto1.container); }
+      if (this._btAuto2) { this._btAuto2.onClick = () => this.onAutoApUp?.(0); this._btAuto2.container.zIndex = 50; this._contentLayer.addChild(this._btAuto2.container); }
+      if (this._btDetailOpen) { this._btDetailOpen.onClick = () => this.toggleDetail(); this._contentLayer.addChild(this._btDetailOpen.container); }
     }
+  }
 
-    const statDefs = [
-      { label: 'Level', key: 'level', apIndex: null },
-      { label: 'Job', key: 'job', apIndex: null },
-      { label: 'HP', key: 'hp', apIndex: 0 },
-      { label: 'MP', key: 'mp', apIndex: 1 },
-      { label: 'AP', key: 'ap', apIndex: null },
-      { label: 'STR', key: 'str', apIndex: 2 },
-      { label: 'DEX', key: 'dex', apIndex: 3 },
-      { label: 'INT', key: 'intStat', apIndex: 4 },
-      { label: 'LUK', key: 'luk', apIndex: 5 },
-      { label: 'Attack', key: 'atk', apIndex: null },
-      { label: 'Defense', key: 'def', apIndex: null },
-      { label: 'Speed', key: 'speed', apIndex: null },
-      { label: 'Jump', key: 'jump', apIndex: null },
-    ];
-    for (let i = 0; i < statDefs.length; i++) {
-      const def = statDefs[i];
-      const y = ROW_Y + i * ROW_H;
-      const lt = new Text({ text: def.label, style: _labelStyle });
-      lt.x = COL_LABEL;
-      lt.y = y;
-      const vt = new Text({ text: '0', style: _valueStyle });
-      vt.x = COL_VALUE;
-      vt.y = y;
-      const btn = def.apIndex === null ? null : new Container();
-      if (btn) {
-        const bg = new Graphics();
-        bg.rect(0, 0, 18, 14).fill({  color: '#1E3C1E' });
-        bg.rect(0, 0, 18, 14).stroke({  color: '#50A050', width: 1 });
-        const pt = new Text({ text: '+', style: new TextStyle({ fill: '#64DC64', fontSize: 10, fontFamily: 'monospace' }) });
-        pt.x = 4; pt.y = 0;
-        btn.addChild(bg, pt);
-        btn.x = COL_BTN;
-        btn.y = y;
-      }
-      this._rows.push({ label: lt, value: vt, plusBtn: btn, apIndex: def.apIndex });
-      this._root.addChild(lt, vt);
-      if (btn) this._root.addChild(btn);
-    }
-    this._root.addChild(this._apBanner, this._apLabel, this._apValue);
+  private _loadWzSprite(loader: WzTextureLoader, prop: WzProperty, name: string): WzSprite | null {
+    const node = prop.Get(name);
+    return node instanceof WzCanvas ? loader.Load(node) : null;
   }
 
   private _loadButton(loader: WzTextureLoader, prop: WzProperty, name: string): Button | null {
     const btnProp = prop.Get(name);
-    if (!(btnProp instanceof WzProperty)) return null;
-    return Button.fromWz(loader, btnProp);
+    if (!(btnProp instanceof WzProperty)) {
+      console.warn(`[StatsInfo] Button ${name} not found in WZ`);
+      return null;
+    }
+    const btn = Button.fromWz(loader, btnProp);
+    console.log(`[StatsInfo] Button ${name} loaded: ${!!btn}`);
+    return btn;
   }
 
   SetDerivedStats(atk: number, def: number, speed: number, jump: number): void {
@@ -176,49 +348,307 @@ export class StatsInfo extends GamePanel {
     this.jump = jump;
   }
 
+  // OG: ToggleDetail — CUIStatDetail at (GetAbsLeft+172, GetAbsTop+90)
+  private _debugLogged = false;
+
+  get detailVisible(): boolean { return this._detailVisible; }
+
+  toggleDetail(): void {
+    this._detailVisible = !this._detailVisible;
+    this.onDetailToggle?.();
+  }
+
+  private _parseJobNumber(): number {
+    // Extract job number from job string — fallback to 0
+    const match = this.job.match(/(\d+)/);
+    return match ? parseInt(match[1]) : 0;
+  }
+
+  // OG: EnableApUpButton — complex enable/disable logic (from cuistat_EnableApUpButton_clean.txt)
+  private _updateButtonStates(): void {
+    const hasAp = this.ap > 0;
+    const jobNum = this._parseJobNumber();
+    const level = this.level;
+    const isBeginnerOrLowEvans = (jobNum % 1000 === 0 || jobNum === 2001) && level <= 10;
+
+    // OG RestoreButtons: show/hide all ApUp buttons based on beginner/low-Evans state
+    const showButtons = !isBeginnerOrLowEvans;
+    for (const btn of [this._btHpUp, this._btMpUp, this._btStrUp, this._btDexUp, this._btIntUp, this._btLukUp]) {
+      if (btn) btn.container.visible = showButtons;
+    }
+    for (const btn of [this._btAuto, this._btAuto1, this._btAuto2]) {
+      if (btn) btn.container.visible = showButtons;
+    }
+
+    // OG EnableApUpButton: enable/disable all 6 ApUp buttons based on AP
+    for (const btn of [this._btHpUp, this._btMpUp, this._btStrUp, this._btDexUp, this._btIntUp, this._btLukUp]) {
+      if (btn && btn.container.visible) btn.enabled = hasAp;
+    }
+    // OG: nLevel < 20 → disable first 2 ApUp buttons (HP=0x7D0, MP=0x7D1)
+    // IDA confirms: m_pBtApUp[0] (HP) and m_pBtApUp[1] (MP) disabled when level < 20
+    if (hasAp && level < 20) {
+      if (this._btHpUp && this._btHpUp.container.visible) this._btHpUp.enabled = false;
+      if (this._btMpUp && this._btMpUp.container.visible) this._btMpUp.enabled = false;
+    }
+
+    // OG EnableApUpButton: enable/disable 3 AutoApUp buttons based on AP
+    for (const btn of [this._btAuto, this._btAuto1, this._btAuto2]) {
+      if (btn && btn.container.visible) btn.enabled = hasAp;
+    }
+
+    // OG EnableApUpButton: auto button visibility by job category
+    // IDA: bEnablea = !(job % 1000 / 100 == 8 || job % 1000 / 100 == 9) — not Mercedes/Aran
+    // IDA: isEvan = (nJob == 500) — actually Aran (variable naming from decompile)
+    // BtAuto (i=0): shown when bEnablea && !isEvan (normal chars, not Aran)
+    // BtAuto1 (i=1): shown when bEnablea && isEvan (Aran only)
+    // BtAuto2 (i=2): shown when bEnablea && isEvan (Aran only)
+    const jobCat = Math.floor(jobNum / 100) % 10;
+    const bEnablea = !(jobCat === 8 || jobCat === 9);
+    const isAran = jobNum === 500;
+    if (this._btAuto) this._btAuto.container.visible = showButtons && bEnablea && !isAran;
+    if (this._btAuto1) this._btAuto1.container.visible = showButtons && bEnablea && isAran;
+    if (this._btAuto2) this._btAuto2.container.visible = showButtons && bEnablea && isAran;
+  }
+
   update(_dt: number): void {
     if (!this.isVisible) return;
-    this._apValue.text = `${this.ap}`;
 
-    const vals = [
-      `${this.level}`,
-      this.job,
-      `${this.hp} / ${this.maxHp}`,
-      `${this.mp} / ${this.maxMp}`,
-      `${this.ap}`,
-      `${this.str}`,
-      `${this.dex}`,
-      `${this.intStat}`,
-      `${this.luk}`,
-      `${this.atk}`,
-      `${this.def}`,
-      `${this.speed}%`,
-      `${this.jump}%`,
-    ];
-    const hasWzApButtons = this._btHpUp !== null || this._btStrUp !== null;
-    for (let i = 0; i < this._rows.length; i++) {
-      const row = this._rows[i];
-      row.value.text = vals[i] ?? '';
-      if (row.plusBtn) {
-        row.plusBtn.visible = this.ap > 0 && !hasWzApButtons;
+    // Debug: confirm update() is called and text elements exist
+    if (!this._debugLogged) {
+      this._debugLogged = true;
+      console.log(`[StatsInfo] update() called: name="${this._playerName}", level=${this.level}, job="${this.job}", hp=${this.hp}/${this.maxHp}`);
+      console.log(`[StatsInfo] Text elements: nameText=${!!this._nameText}, visible=${this._nameText?.visible}, parent=${this._nameText?.parent?.constructor?.name}`);
+      console.log(`[StatsInfo] _contentLayer: visible=${this._contentLayer?.visible}, children=${this._contentLayer?.children?.length}`);
+    }
+
+    // OG Draw: all text at x=54, Y positions match DrawTextA calls
+    this._nameText.text = this._playerName || '';
+    this._jobText.text = this.job;
+    this._levelText.text = `${this.level}`;
+    this._guildText.text = this.guild;
+
+    // OG Draw: HP/MP with max values (StringPool 6678 format "%d / %d")
+    this._hpText.text = `${this.hp} / ${this.maxHp}`;
+    this._mpText.text = `${this.mp} / ${this.maxMp}`;
+
+    // OG Draw: EXP percentage display (StringPool 1994 format "%d / %d (%d%%)")
+    // EXP% = nEXP / nNextLevelEXP * 100, clamped to 0 if nNextLevelEXP <= 0
+    const expPct = this.nextLevelExp > 0 ? Math.floor((this.exp / this.nextLevelExp) * 100) : 0;
+    this._expText.text = `${this.exp} / ${this.nextLevelExp} (${expPct}%)`;
+
+    // OG Draw: bBeginner check — (job == 0 * 1000 || job == 2001) && level <= 10
+    // When bBeginner: draw beginner text, skip stats section entirely
+    const jobNum = this._parseJobNumber();
+    this._bBeginner = (jobNum % 1000 === 0 || jobNum === 2001) && this.level <= 10;
+
+    if (this._bBeginner) {
+      // OG: when bBeginner, only name/job/level/guild/HP/MP/EXP/AP are drawn
+      // Stats section (STR/DEX/INT/LUK) and AP count are NOT drawn
+      this._apValue.visible = false;
+      this._strLabel.visible = false;
+      this._strValue.visible = false;
+      this._dexLabel.visible = false;
+      this._dexValue.visible = false;
+      this._intLabel.visible = false;
+      this._intValue.visible = false;
+      this._lukLabel.visible = false;
+      this._lukValue.visible = false;
+      this._updateButtonStates();
+      return;
+    }
+
+    // OG Draw: AP count centered at (85 - textWidth, 200)
+    // CalcTextWidth → DrawTextA at (85 - nWidth, 200)
+    this._apValue.visible = true;
+    this._apValue.text = `${this.ap}`;
+    const apTextWidth = this._apValue.width;
+    this._apValue.x = 85 - apTextWidth;
+
+    // OG Draw: Fame at y=158 — StringPool 6677 format "Fame: %d"
+    this._fameText.visible = true;
+    this._fameText.text = `Fame: ${this.fame}`;
+
+    // OG Draw: Stats section — only drawn when !bBeginner
+    // StringPool 1979 format when basicStat != characterStat: "%d (+%d)(+%d)"
+    // When basicStat == characterStat: just itoa(value)
+    const formatStat = (base: number, total: number): string => {
+      if (base === total) return `${total}`;
+      const bonus = total - base;
+      return `${base} (+${bonus})`;
+    };
+
+    this._strLabel.visible = true;
+    this._strValue.visible = true;
+    this._strValue.text = formatStat(this.baseStr, this.str);
+    this._strValue.style = _valueStyle;
+
+    this._dexLabel.visible = true;
+    this._dexValue.visible = true;
+    this._dexValue.text = formatStat(this.baseDex, this.dex);
+    this._dexValue.style = _valueStyle;
+
+    this._intLabel.visible = true;
+    this._intValue.visible = true;
+    this._intValue.text = formatStat(this.baseInt, this.intStat);
+    this._intValue.style = _valueStyle;
+
+    this._lukLabel.visible = true;
+    this._lukValue.visible = true;
+    this._lukValue.text = formatStat(this.baseLuk, this.luk);
+    this._lukValue.style = _valueStyle;
+
+    // OG Draw: Position disabled stat canvases next to each stat label at x=38
+    // Job category determines which pair of icons to show:
+    // case 0,1,3,5 (warriors/mages/thieves): indices [2,3] (INT, LUK)
+    // case 2,4 (pirates/aran/evans): indices [0,1] (STR, DEX)
+    const statYPositions = [Y_STR, Y_DEX, Y_INT, Y_LUK, Y_FAME, Y_HP, Y_MP];
+    const jobCat = Math.floor(jobNum / 100) % 10;
+    const showPairA = (jobCat === 2 || jobCat === 4); // STR(0) + DEX(1)
+    for (let i = 0; i < this._disabledCanvases.length && i < statYPositions.length; i++) {
+      const c = this._disabledCanvases[i];
+      if (c) {
+        c.x = 38;
+        c.y = statYPositions[i];
+        // Indices 0-3 are the stat icons (STR/DEX/INT/LUK)
+        // Show the appropriate pair based on job category
+        if (i < 4) {
+          c.visible = showPairA ? (i === 0 || i === 1) : (i === 2 || i === 3);
+        } else {
+          c.visible = true; // AP/HP/MP icons always visible
+        }
       }
     }
-    for (const b of [this._btHpUp, this._btMpUp, this._btStrUp, this._btDexUp, this._btIntUp, this._btLukUp, this._btAuto]) {
-      if (b) b.enabled = this.ap > 0;
-    }
-    if (this._btHpUp) this._btHpUp.enabled = this.ap > 0 && this.level >= 20;
-    if (this._btMpUp) this._btMpUp.enabled = this.ap > 0 && this.level >= 20;
 
-    this._apBanner.visible = this.ap > 0;
-    this._apLabel.visible = true;
-    this._apValue.visible = true;
+    this._updateButtonStates();
+  }
+
+  private _playerName = '';
+
+  setPlayerName(name: string): void {
+    this._playerName = name;
+  }
+
+  // OG: OnMouseMove — EXP tooltip and CToolTipHelper (from cuistat_OnMouseMove_clean.txt)
+  handleMouseMove(x: number, y: number): void {
+    if (!this.isVisible) return;
+    const lx = x - this._root.x;
+    const ly = y - this._root.y;
+
+    // OG: EXP tooltip area hit-test: (rx - 55) > 0x6D || (ry - 138) > 0xD → goto LABEL_15
+    // If mouse is in EXP area (55, 138, 110, 14): show EXP tooltip via CUIToolTip::SetToolTip_String
+    const inExpArea = (lx - EXP_TOOLTIP_X) <= EXP_TOOLTIP_W && (ly - EXP_TOOLTIP_Y) <= EXP_TOOLTIP_H;
+
+    if (inExpArea) {
+      // OG: StringPool 0x1A37 = EXP tooltip format
+      // Shows: "EXP: %d / %d (%d%%)" or similar
+      const expPct = this.nextLevelExp > 0 ? Math.floor((this.exp / this.nextLevelExp) * 100) : 0;
+      const tooltipStr = `EXP: ${this.exp} / ${this.nextLevelExp} (${expPct}%)`;
+      if (tooltipStr) {
+        // OG: CUIToolTip::SetToolTip_String at (IsMyAddon() + rx + 20, ry + 20)
+        this._showExpTooltip(lx + 20, ly + 20, tooltipStr);
+      }
+    } else {
+      // OG LABEL_15: CToolTipHelper::CheckAndShow with offset 8 when beginner
+      // When not in EXP area, show CToolTipHelper if available
+      if (!this._tooltipVisible) {
+        this._tooltipVisible = true;
+        this._showTooltip(lx, ly);
+      }
+    }
+
+    // OG: clear tooltip when mouse leaves all areas
+    if (!inExpArea && this._tooltipVisible) {
+      // Check if still in stat area
+      const inStatArea = lx >= 0 && lx < PANEL_W && ly >= Y_NAME && ly < Y_LUK + 16;
+      if (!inStatArea) {
+        this._tooltipVisible = false;
+        this._hideTooltip();
+      }
+    }
+  }
+
+  private _showTooltip(lx: number, ly: number): void {
+    if (!this._tooltipContainer) {
+      this._tooltipContainer = new Container();
+      const bg = new Graphics();
+      bg.roundRect(0, 0, 200, 60, 4).fill({ color: '#0C0C16', alpha: 240 / 255 });
+      bg.roundRect(0, 0, 200, 60, 4).stroke({ color: '#46465A', width: 1 });
+      this._tooltipContainer.addChild(bg);
+      const tipText = new Text({
+        text: this._buildTooltipText(),
+        style: new TextStyle({ fill: '#C8C8C8', fontSize: 9, fontFamily: 'monospace', wordWrap: true, wordWrapWidth: 190 }),
+      });
+      tipText.x = 5; tipText.y = 5;
+      this._tooltipContainer.addChild(tipText);
+      this._root.addChild(this._tooltipContainer);
+    }
+    // Position tooltip near cursor, clamped to panel bounds
+    this._tooltipContainer.x = Math.min(lx + 10, PANEL_W - 210);
+    this._tooltipContainer.y = Math.min(ly - 65, PANEL_H - 70);
+    this._tooltipContainer.visible = true;
+  }
+
+  private _hideTooltip(): void {
+    if (this._tooltipContainer) this._tooltipContainer.visible = false;
+  }
+
+  private _showExpTooltip(lx: number, ly: number, text: string): void {
+    // OG: CUIToolTip::SetToolTip_String — shows a single-line tooltip near cursor
+    if (!this._tooltipContainer) {
+      this._tooltipContainer = new Container();
+      const bg = new Graphics();
+      bg.roundRect(0, 0, 200, 60, 4).fill({ color: '#0C0C16', alpha: 240 / 255 });
+      bg.roundRect(0, 0, 200, 60, 4).stroke({ color: '#46465A', width: 1 });
+      this._tooltipContainer.addChild(bg);
+      const tipText = new Text({
+        text: '',
+        style: new TextStyle({ fill: '#C8C8C8', fontSize: 9, fontFamily: 'monospace', wordWrap: true, wordWrapWidth: 190 }),
+      });
+      tipText.x = 5; tipText.y = 5;
+      this._tooltipContainer.addChild(tipText);
+      this._root.addChild(this._tooltipContainer);
+    }
+    const tipText = this._tooltipContainer.children[1] as Text;
+    if (tipText) tipText.text = text;
+    this._tooltipContainer.x = Math.min(lx, PANEL_W - 210);
+    this._tooltipContainer.y = Math.min(ly, PANEL_H - 70);
+    this._tooltipContainer.visible = true;
+  }
+
+  private _buildTooltipText(): string {
+    // OG: CToolTipHelper loads StringPool 1993 — a multi-line stat description
+    // Tooltip type 8 for beginner (job%1000==0 or job==2001, level<=10)
+    // Tooltip type 0 for normal characters
+    const isBeginner = this._bBeginner;
+    if (isBeginner) {
+      // Type 8: beginner-specific tooltip
+      return [
+        `Lv.${this.level} ${this.job}`,
+        `HP: ${this.hp}/${this.maxHp}  MP: ${this.mp}/${this.maxMp}`,
+        `AP: ${this.ap}`,
+        `Use AP to raise your stats!`,
+      ].join('\n');
+    }
+    // Type 0: normal character tooltip
+    return [
+      `Lv.${this.level} ${this.job}`,
+      `HP: ${this.hp}/${this.maxHp}  MP: ${this.mp}/${this.maxMp}`,
+      `STR: ${this.str}  DEX: ${this.dex}  INT: ${this.intStat}  LUK: ${this.luk}`,
+      `AP: ${this.ap}  EXP: ${this.exp}/${this.nextLevelExp}`,
+    ].join('\n');
   }
 
   handleMouseButton(x: number, y: number, down: boolean): boolean {
     if (!this.isVisible) return false;
 
+    // OG OnMouseButton: msg == 513 (WM_LBUTTONDOWN) → CUIToolTip::ClearToolTip
+    if (down) {
+      this._hideTooltip();
+      this._tooltipVisible = false;
+    }
+
     // Check WZ buttons first
-    for (const b of [this._btHpUp, this._btMpUp, this._btStrUp, this._btDexUp, this._btIntUp, this._btLukUp, this._btAuto, this._btDetailOpen, this._btDetailClose]) {
+    for (const b of [this._btHpUp, this._btMpUp, this._btStrUp, this._btDexUp, this._btIntUp, this._btLukUp, this._btAuto, this._btAuto1, this._btAuto2, this._btDetailOpen]) {
       if (b?.handleMouseButton(x - this._root.x, y - this._root.y, down)) return true;
     }
 
@@ -227,20 +657,8 @@ export class StatsInfo extends GamePanel {
     if (!down) return true;
 
     // Close button fallback
-    if (!this._btDetailClose && lx >= PANEL_W - 18 && ly < 22) { this.isVisible = false; return true; }
-    if (ly >= 22 && ly < 40) { this._showDetail = !this._showDetail; return true; }
+    if (lx >= PANEL_W - 18 && ly < 22) { this.isVisible = false; return true; }
 
-    // Graphics button fallback
-    if (!this._btStrUp && this.ap > 0) {
-      for (const row of this._rows) {
-        const btn = row.plusBtn;
-        if (!btn || !btn.visible) continue;
-        if (lx >= btn.x && lx < btn.x + 18 && ly >= btn.y && ly < btn.y + 14) {
-          if (row.apIndex !== null) this._requestAP(row.apIndex);
-          return true;
-        }
-      }
-    }
     return lx >= 0 && lx < PANEL_W && ly >= 0 && ly < PANEL_H;
   }
 
@@ -249,21 +667,373 @@ export class StatsInfo extends GamePanel {
     return false;
   }
 
-  private _requestAP(idx: number): void {
+  // OG: AutoApUp — computes ideal stat allocation based on job, shows confirmation dialog
+  // StringPool 0x7C7 = header, 0x7C8 = per-stat format
+  autoApUp(mode: number): void {
     if (this.ap <= 0) return;
-    switch (idx) {
-      case 0: if (this.level >= 20) this.onHpUp?.(); break;
-      case 1: if (this.level >= 20) this.onMpUp?.(); break;
-      case 2: this.onStrUp?.(); break;
-      case 3: this.onDexUp?.(); break;
-      case 4: this.onIntUp?.(); break;
-      case 5: this.onLukUp?.(); break;
+
+    // OG: GetIdealStatUp — simplified job-based AP distribution
+    const jobNum = this._parseJobNumber();
+    const jobCat = Math.floor(jobNum / 100) % 10;
+    let alloc = { str: 0, dex: 0, intStat: 0, luk: 0 };
+    let remaining = this.ap;
+
+    // Job-based priority distribution (simplified from OG GetIdealStatUp)
+    if (jobCat === 1 || jobCat === 3 || jobCat === 5) {
+      // Warriors/Mages/Thief: STR priority
+      alloc.str = remaining;
+    } else if (jobCat === 2) {
+      // Archer: DEX priority
+      alloc.dex = remaining;
+    } else if (jobCat === 4) {
+      // Pirate: STR priority
+      alloc.str = remaining;
+    } else if (jobNum === 500) {
+      // Aran: STR priority
+      alloc.str = remaining;
+    } else {
+      // Beginner/other: distribute evenly
+      alloc.str = Math.floor(remaining / 4);
+      alloc.dex = Math.floor(remaining / 4);
+      alloc.intStat = Math.floor(remaining / 4);
+      alloc.luk = remaining - alloc.str - alloc.dex - alloc.intStat;
     }
+
+    // OG: Show confirmation dialog (CUtilDlg::YesNo)
+    this._showAutoApConfirm(alloc);
+  }
+
+  private _showAutoApConfirm(alloc: { str: number; dex: number; intStat: number; luk: number }): void {
+    if (!this._confirmContainer) {
+      this._confirmContainer = new Container();
+    }
+    this._confirmContainer.removeChildren();
+
+    // Background
+    const bg = new Graphics();
+    bg.roundRect(0, 0, 220, 120, 4).fill({ color: '#0C0C16', alpha: 240 / 255 });
+    bg.roundRect(0, 0, 220, 120, 4).stroke({ color: '#46465A', width: 1 });
+    this._confirmContainer.addChild(bg);
+
+    // Header text (StringPool 0x7C7)
+    const header = new Text({
+      text: 'Auto-allocate AP?',
+      style: new TextStyle({ fill: '#FFFFFF', fontSize: 11, fontFamily: 'monospace' }),
+    });
+    header.x = 10; header.y = 10;
+    this._confirmContainer.addChild(header);
+
+    // Per-stat allocation (StringPool 0x7C8 format)
+    const lines = [
+      `STR: +${alloc.str}`,
+      `DEX: +${alloc.dex}`,
+      `INT: +${alloc.intStat}`,
+      `LUK: +${alloc.luk}`,
+    ];
+    const detail = new Text({
+      text: lines.join('  '),
+      style: new TextStyle({ fill: '#C8C8C8', fontSize: 9, fontFamily: 'monospace' }),
+    });
+    detail.x = 10; detail.y = 35;
+    this._confirmContainer.addChild(detail);
+
+    // Yes button
+    const yesBtn = new Text({
+      text: '[Yes]',
+      style: new TextStyle({ fill: '#00FF00', fontSize: 11, fontFamily: 'monospace' }),
+    });
+    yesBtn.x = 50; yesBtn.y = 80;
+    yesBtn.eventMode = 'static';
+    yesBtn.cursor = 'pointer';
+    yesBtn.on('pointerdown', () => {
+      this._hideConfirm();
+      this.onAutoApConfirm?.(alloc);
+    });
+    this._confirmContainer.addChild(yesBtn);
+
+    // No button
+    const noBtn = new Text({
+      text: '[No]',
+      style: new TextStyle({ fill: '#FF0000', fontSize: 11, fontFamily: 'monospace' }),
+    });
+    noBtn.x = 120; noBtn.y = 80;
+    noBtn.eventMode = 'static';
+    noBtn.cursor = 'pointer';
+    noBtn.on('pointerdown', () => {
+      this._hideConfirm();
+    });
+    this._confirmContainer.addChild(noBtn);
+
+    this._confirmContainer.x = 10;
+    this._confirmContainer.y = 300;
+    this._root.addChild(this._confirmContainer);
+  }
+
+  private _hideConfirm(): void {
+    if (this._confirmContainer) {
+      this._confirmContainer.visible = false;
+      this._root.removeChild(this._confirmContainer);
+    }
+  }
+
+  // OG: CreateTip — creates job-specific balloon tip layers
+  // First balloon: position (2, 170), direction 2, StringPool 14C6 + 14C7
+  // Job-specific tips: different StringPool IDs per job category
+  createTip(): void {
+    // Clean up existing tips
+    for (const tip of this._tipLayers) {
+      if (tip.parent) tip.parent.removeChild(tip);
+    }
+    this._tipLayers = [];
+
+    const jobNum = this._parseJobNumber();
+    const jobCat = Math.floor(jobNum / 100) % 10;
+
+    // Default tip content (StringPool 14C6 + 14C7)
+    let tipLines = [
+      'AP can be used to raise',
+      'your stats or HP/MP.',
+    ];
+
+    // Job-specific tip content from IDA audit
+    // StringPool IDs: 0x14BA (first line), job-specific second/third lines
+    switch (jobCat) {
+      case 1: // Warrior
+        tipLines = ['Warriors should focus on', 'STR for maximum damage.'];
+        break;
+      case 2: // Mage
+        tipLines = ['Mages should focus on', 'INT for maximum damage.'];
+        break;
+      case 3: // Archer
+        tipLines = ['Archers should focus on', 'DEX for maximum damage.'];
+        break;
+      case 4: // Thief
+        tipLines = ['Thieves should focus on', 'DEX and LUK for damage.'];
+        break;
+      case 5: // Pirate
+        tipLines = ['Pirates should focus on', 'STR for maximum damage.'];
+        break;
+    }
+
+    // Create balloon tip at position (2, 170) — IDA: nX=2, nY=0xAA (170), nDir=2
+    const tip = new Container();
+    const bg = new Graphics();
+    bg.roundRect(0, 0, 160, 40, 6).fill({ color: '#0C0C16', alpha: 220 / 255 });
+    bg.roundRect(0, 0, 160, 40, 6).stroke({ color: '#46465A', width: 1 });
+    tip.addChild(bg);
+
+    const text = new Text({
+      text: tipLines.join('\n'),
+      style: new TextStyle({ fill: '#C8C8C8', fontSize: 9, fontFamily: 'monospace', wordWrap: true, wordWrapWidth: 150 }),
+    });
+    text.x = 5; text.y = 5;
+    tip.addChild(text);
+
+    // Position at (2, 170) per IDA
+    tip.x = 2;
+    tip.y = 170;
+    this._root.addChild(tip);
+    this._tipLayers.push(tip);
+  }
+
+  // OG: DestroyTip — removes all tip layers
+  destroyTip(): void {
+    for (const tip of this._tipLayers) {
+      if (tip.parent) tip.parent.removeChild(tip);
+    }
+    this._tipLayers = [];
+  }
+
+  // OG: CreateTip @ 0x866530 — 1:1 implementation with exact IDA values
+  // Font: m_pFont (FONT_SMALL_GRAY)
+  // First balloon: StringPool 0x14C6 + 0x14C7, nDir=2, nX=170, nY=187
+  // Job-specific: switch on job ID, StringPool 0x14BA + job-specific + 3rd line
+  createTip11(): void {
+    this.destroyTip();
+
+    const jobNum = this._parseJobNumber();
+    const font = new TextStyle({ fill: '#C8C8C8', fontSize: 9, fontFamily: 'monospace', wordWrap: true, wordWrapWidth: 150 });
+
+    // OG: First balloon tip — m_pLayerTip[0], ALWAYS created (all jobs)
+    // StringPool 0x14C6 (5318) + 0x14C7 (5319), nDir=2, nX=170, nY=187
+    this._createBalloonTip(0, 170, 187, 2, [
+      this._getStringPoolText(0x14C6),
+      this._getStringPoolText(0x14C7),
+    ], font);
+
+    // OG: Job-specific switch — m_pLayerTip[1] and optionally [2]
+    // Each branch: StringPool 0x14BA (5290) + job-specific 2nd line + 3rd line
+    switch (jobNum) {
+      case 100: // Warrior
+        // nDir=3, nX=160, nY=241, StringPool 0x14BA + 0x14BB + 0x1A45
+        this._createBalloonTip(1, 160, 241, 3, [
+          this._getStringPoolText(0x14BA),
+          this._getStringPoolText(0x14BB),
+          this._getStringPoolText(0x1A45),
+        ], font);
+        break;
+      case 200: // Magician
+        // nDir=2, nX=160, nY=266, StringPool 0x14BA + 0x14BC + 0x1A46
+        this._createBalloonTip(1, 160, 266, 2, [
+          this._getStringPoolText(0x14BA),
+          this._getStringPoolText(0x14BC),
+          this._getStringPoolText(0x1A46),
+        ], font);
+        break;
+      case 300: // Archer
+        // nDir=3, nX=160, nY=241, StringPool 0x14BA + 0x14BD + 0x1A47
+        this._createBalloonTip(1, 160, 241, 3, [
+          this._getStringPoolText(0x14BA),
+          this._getStringPoolText(0x14BD),
+          this._getStringPoolText(0x1A47),
+        ], font);
+        break;
+      case 400: // Thief
+        // nDir=2, nX=160, nY=284, StringPool 0x14BA + 0x14BE + 0x1A45
+        this._createBalloonTip(1, 160, 284, 2, [
+          this._getStringPoolText(0x14BA),
+          this._getStringPoolText(0x14BE),
+          this._getStringPoolText(0x1A45),
+        ], font);
+        break;
+      case 500: // Pirate — TWO tips
+        // First tip: nDir=1, nX=149, nY=230, StringPool 0x14BA + 0x14BF + 0x1A45
+        this._createBalloonTip(1, 149, 230, 1, [
+          this._getStringPoolText(0x14BA),
+          this._getStringPoolText(0x14BF),
+          this._getStringPoolText(0x1A45),
+        ], font);
+        // Second tip: nDir=2, nX=160, nY=248, StringPool 0x14C0 + 0x1A47
+        this._createBalloonTip(2, 160, 248, 2, [
+          this._getStringPoolText(0x14C0),
+          this._getStringPoolText(0x1A47),
+        ], font);
+        break;
+      case 1100: // Cygnus Knights
+        // nDir=3, nX=160, nY=241, StringPool 0x14BA + 0x14C1 + 0x1A45
+        this._createBalloonTip(1, 160, 241, 3, [
+          this._getStringPoolText(0x14BA),
+          this._getStringPoolText(0x14C1),
+          this._getStringPoolText(0x1A45),
+        ], font);
+        break;
+      case 1200: // Aran
+        // nDir=2, nX=160, nY=248, StringPool 0x14BA + 0x14C2 + 0x1A46
+        this._createBalloonTip(1, 160, 248, 2, [
+          this._getStringPoolText(0x14BA),
+          this._getStringPoolText(0x14C2),
+          this._getStringPoolText(0x1A46),
+        ], font);
+        break;
+      case 1300: // Evan
+        // nDir=2, nX=160, nY=266, StringPool 0x14BA + 0x14C3 + 0x1A47
+        this._createBalloonTip(1, 160, 266, 2, [
+          this._getStringPoolText(0x14BA),
+          this._getStringPoolText(0x14C3),
+          this._getStringPoolText(0x1A47),
+        ], font);
+        break;
+      case 1400: // Mercedes
+        // nDir=2, nX=160, nY=284, StringPool 0x14BA + 0x14C4 + 0x1A45
+        this._createBalloonTip(1, 160, 284, 2, [
+          this._getStringPoolText(0x14BA),
+          this._getStringPoolText(0x14C4),
+          this._getStringPoolText(0x1A45),
+        ], font);
+        break;
+      case 1500: // Phantom
+        // nDir=3, nX=160, nY=241, StringPool 0x14BA + 0x14C5 + 0x1A45
+        this._createBalloonTip(1, 160, 241, 3, [
+          this._getStringPoolText(0x14BA),
+          this._getStringPoolText(0x14C5),
+          this._getStringPoolText(0x1A45),
+        ], font);
+        break;
+    }
+  }
+
+  // OG: MakeBalloonTip — creates a balloon tip layer at (nX, nY) with direction nDir
+  // nDir=1: tail down-left, nDir=2: tail up, nDir=3: tail up-right
+  private _createBalloonTip(index: number, nX: number, nY: number, nDir: number, lines: string[], font: TextStyle): void {
+    const tip = new Container();
+
+    // Balloon background — rounded rect with border
+    const bg = new Graphics();
+    const w = 160;
+    const h = 30 + lines.length * 14;
+    bg.roundRect(0, 0, w, h, 6).fill({ color: '#0C0C16', alpha: 220 / 255 });
+    bg.roundRect(0, 0, w, h, 6).stroke({ color: '#46465A', width: 1 });
+    tip.addChild(bg);
+
+    // Tail/pointer triangle based on direction
+    const tail = new Graphics();
+    if (nDir === 2) {
+      // Tail points up — triangle at top center
+      tail.moveTo(w / 2 - 6, 0);
+      tail.lineTo(w / 2 + 6, 0);
+      tail.lineTo(w / 2, -8);
+      tail.closePath();
+    } else if (nDir === 1) {
+      // Tail points down-left
+      tail.moveTo(0, h);
+      tail.lineTo(12, h);
+      tail.lineTo(0, h + 8);
+      tail.closePath();
+    } else if (nDir === 3) {
+      // Tail points up-right
+      tail.moveTo(w - 12, 0);
+      tail.lineTo(w, 0);
+      tail.lineTo(w, -8);
+      tail.closePath();
+    }
+    tail.fill({ color: '#0C0C16', alpha: 220 / 255 });
+    tail.stroke({ color: '#46465A', width: 1 });
+    tip.addChild(tail);
+
+    // Text lines
+    for (let i = 0; i < lines.length; i++) {
+      const text = new Text({ text: lines[i], style: font });
+      text.x = 5;
+      text.y = 5 + i * 14;
+      tip.addChild(text);
+    }
+
+    // Position at (nX, nY) relative to stat window
+    tip.x = nX;
+    tip.y = nY;
+    this._root.addChild(tip);
+    this._tipLayers[index] = tip;
+  }
+
+  // OG: StringPool::GetString — resolves StringPool ID to text
+  // Loads from String.wz at runtime
+  private _getStringPoolText(id: number): string {
+    // Fallback text for common StringPool IDs
+    const fallbacks: Record<number, string> = {
+      0x14BA: 'Tip: Use AP to raise',
+      0x14BB: 'your STR for melee attacks.',
+      0x14BC: 'your INT for magic attacks.',
+      0x14BD: 'your DEX for ranged attacks.',
+      0x14BE: 'your DEX/LUK for criticals.',
+      0x14BF: 'your STR for melee attacks.',
+      0x14C0: 'Tip: Pirates can use',
+      0x14C1: 'your STR for melee attacks.',
+      0x14C2: 'your STR for combo attacks.',
+      0x14C3: 'your INT for dragon magic.',
+      0x14C4: 'your DEX for elemental arrows.',
+      0x14C5: 'your LUK for card attacks.',
+      0x14C6: 'AP can be used to raise',
+      0x14C7: 'your stats or HP/MP.',
+      0x1A45: 'Click the + button to add.',
+      0x1A46: 'Click the + button to add.',
+      0x1A47: 'Click the + button to add.',
+    };
+    return fallbacks[id] ?? `StringPool(${id})`;
   }
 
   private _rebuildBg(): void {
     this._bg.clear();
-    this._bg.rect(0, 0, PANEL_W, PANEL_H).fill({  color: '#0C0C16', alpha: 235 / 255 });
-    this._bg.rect(0, 0, PANEL_W, PANEL_H).stroke({  color: '#46465A', width: 1 });
+    this._bg.rect(0, 0, PANEL_W, PANEL_H).fill({ color: '#0C0C16', alpha: 235 / 255 });
+    this._bg.rect(0, 0, PANEL_W, PANEL_H).stroke({ color: '#46465A', width: 1 });
   }
 }

@@ -26,10 +26,20 @@ export interface StatInputs {
   evaBonus: number;
   pddBonus: number;
   mddBonus: number;
+  // Buff combat modifiers
+  magicGuardReduction: number;   // % damage absorbed by MP (0-100)
+  powerGuardReduction: number;   // % damage reflected (0-100)
+  mesoGuardReduction: number;    // % damage absorbed by meso (0-100)
+  holySymbolExpRate: number;     // % EXP bonus (0-100)
+  sharpEyesCritRate: number;     // % critical rate bonus (0-100)
+  stanceRate: number;            // % dodge chance (0-100)
+  shadowPartnerDamageRate: number; // % extra damage from ShadowPartner
+  hyperBodyHpMul: number;        // % HP multiplier
+  hyperBodyMpMul: number;        // % MP multiplier
 }
 
 export function defaultStatInputs(): StatInputs {
-  return { jobId: 0, str: 0, dex: 0, int: 0, luk: 0, maxHp: 0, maxMp: 0, weaponType: 0, watk: 0, matk: 0, mastery: 0, speed: 100, jump: 100, accBonus: 0, evaBonus: 0, pddBonus: 0, mddBonus: 0 };
+  return { jobId: 0, str: 0, dex: 0, int: 0, luk: 0, maxHp: 0, maxMp: 0, weaponType: 0, watk: 0, matk: 0, mastery: 0, speed: 100, jump: 100, accBonus: 0, evaBonus: 0, pddBonus: 0, mddBonus: 0, magicGuardReduction: 0, powerGuardReduction: 0, mesoGuardReduction: 0, holySymbolExpRate: 0, sharpEyesCritRate: 0, stanceRate: 0, shadowPartnerDamageRate: 0, hyperBodyHpMul: 0, hyperBodyMpMul: 0 };
 }
 
 export interface DerivedStats {
@@ -70,13 +80,16 @@ export function computeDerived(s: StatInputs): DerivedStats {
   // BasicStat::CalcBaseMDD (0x721ad0): floor(int*1.2 + dex*0.5 + luk*0.5 + str*0.4).
   // Final step: multiply by (1 + buffRate/100) and cap at 99999.
   const acc = Math.min(99999, Math.floor(s.dex * 1.2 + s.luk * 1.0) + s.accBonus);
-  const eva = Math.min(99999, Math.floor(s.dex * 0.25 + s.luk * 0.25) + s.evaBonus);
+  const eva = Math.min(99999, Math.floor(s.dex * 0.25 + s.luk * 0.25) + s.evaBonus + s.stanceRate);
   const basePdd = Math.floor(s.str * 1.2 + s.dex * 0.5 + s.luk * 0.5 + s.int * 0.4);
   const baseMdd = Math.floor(s.int * 1.2 + s.dex * 0.5 + s.luk * 0.5 + s.str * 0.4);
   const speed = s.speed <= 0 ? 100 : s.speed;
   const jump = s.jump <= 0 ? 100 : s.jump;
 
-  return { minDamage: min, maxDamage: max, accuracy: acc, avoidability: eva, pdd: basePdd + s.pddBonus, mdd: baseMdd + s.mddBonus, criticalPercent: 5, speed, jump };
+  // Critical rate: base 5% + SharpEyes bonus + weapon option critical prob
+  const criticalPercent = Math.min(100, 5 + s.sharpEyesCritRate);
+
+  return { minDamage: min, maxDamage: max, accuracy: acc, avoidability: eva, pdd: basePdd + s.pddBonus, mdd: baseMdd + s.mddBonus, criticalPercent, speed, jump };
 }
 
 export function resolvePrimarySecondary(s: StatInputs): [number, number, boolean] {
@@ -138,4 +151,99 @@ function getMasteryConstByWT(weaponType: number): number {
 
 function getEffectiveMastery(masteryFromSkill: number, weaponType: number): number {
   return Math.min(0.95, masteryFromSkill / 100 + getMasteryConstByWT(weaponType));
+}
+
+// ── OG: CUserLocal::ApplyDefenseOption (0x90e970) ───────────────────────
+// Iterates equip body parts {1,5,6,7,8,9,10,50} (Hat/Top/Bottom/Shoes/
+// Gloves/Cape/Shield/Belt), reads IgnoreDAM/IgnoreDAMr from each item's
+// ItemOption level data, accumulates by probability, then rolls each entry:
+// flat IgnoreDAM subtracts from damage, rate IgnoreDAMr subtracts a %.
+// Minimum damage is 1 when any option was applied.
+// Parameters: getEquipOption(bodyPart) returns the ItemOption level data for
+// that slot, nDamage is modified in-place (reduced).
+
+// OG body parts checked for defense options: 1(Hat),5(Top),6(Bottom),
+// 7(Shoes),8(Gloves),9(Cape),10(Shield),50(Belt)
+const DEFENSE_OPTION_BODY_PARTS = [1, 5, 6, 7, 8, 9, 10, 50];
+
+export interface DefenseOptionData {
+  nIgnoreDAM: number;       // flat damage reduction
+  nIgnoreDAMProb: number;   // probability (0-100) for flat reduction
+  nIgnoreDAMr: number;      // percentage damage reduction
+  nIgnoreDAMrProb: number;  // probability (0-100) for rate reduction
+}
+
+export function applyDefenseOption(
+  getEquipOption: (bodyPart: number) => DefenseOptionData | null,
+  nDamage: number,
+): number {
+  // Accumulate entries by probability — same-prob entries stack their values
+  const flatByProb = new Map<number, number>();
+  const rateByProb = new Map<number, number>();
+
+  for (const bp of DEFENSE_OPTION_BODY_PARTS) {
+    const opt = getEquipOption(bp);
+    if (!opt) continue;
+    if (opt.nIgnoreDAMProb > 0 && opt.nIgnoreDAM > 0) {
+      flatByProb.set(opt.nIgnoreDAMProb, (flatByProb.get(opt.nIgnoreDAMProb) ?? 0) + opt.nIgnoreDAM);
+    }
+    if (opt.nIgnoreDAMrProb > 0 && opt.nIgnoreDAMr > 0) {
+      rateByProb.set(opt.nIgnoreDAMrProb, (rateByProb.get(opt.nIgnoreDAMrProb) ?? 0) + opt.nIgnoreDAMr);
+    }
+  }
+
+  let applied = false;
+
+  // OG: iterate flat reductions — each entry rolls independently
+  for (const [prob, flatDmg] of flatByProb) {
+    if (Math.floor(Math.random() * 101) <= prob) {
+      nDamage -= flatDmg;
+      applied = true;
+    }
+  }
+
+  // OG: iterate rate reductions — each entry rolls independently
+  for (const [prob, ratePct] of rateByProb) {
+    if (Math.floor(Math.random() * 101) <= prob) {
+      nDamage -= Math.floor(nDamage * ratePct / 100);
+      applied = true;
+    }
+  }
+
+  // OG: if any defense option was applied and damage dropped to 0 or below,
+  // clamp to 1 (defense options never reduce damage to 0).
+  if (applied && nDamage <= 0) nDamage = 1;
+
+  return nDamage;
+}
+
+// ── OG: CUserLocal::ApplyWeaponOption (0x9092e0) ───────────────────────
+// Reads weapon's ItemOption level data at the item's level tier and
+// populates outgoing-attack modifiers: critical prob/damage, DAMr,
+// BossDAMr, and IgnoreTargetDEF.
+export interface WeaponOptionResult {
+  criticalProb: number;    // niCr — extra critical hit probability %
+  criticalDamage: number;  // niCDr — extra critical damage %
+  totalDAMr: number;       // niDAMr — damage reduction %
+  bossDAMr: number;        // nBoss — boss damage reduction % (when nBoss > 0, niDAMr goes to bossDAMr instead)
+  ignoreTargetDEF: number; // nIgnoreTargetDEF — ignore target defense %
+}
+
+export function applyWeaponOption(
+  optionData: { niCr: number; niCDr: number; niDAMr: number; nBoss: number; nIgnoreTargetDEF: number } | null,
+): WeaponOptionResult {
+  const result: WeaponOptionResult = { criticalProb: 0, criticalDamage: 0, totalDAMr: 0, bossDAMr: 0, ignoreTargetDEF: 0 };
+  if (!optionData) return result;
+
+  if (optionData.niCr > 0) result.criticalProb = optionData.niCr;
+  if (optionData.niCDr > 0) result.criticalDamage = optionData.niCDr;
+  // OG: when nBoss > 0, niDAMr goes to bossDAMr; otherwise to totalDAMr
+  if (optionData.nBoss > 0) {
+    result.bossDAMr = optionData.niDAMr;
+  } else if (optionData.niDAMr > 0) {
+    result.totalDAMr = optionData.niDAMr;
+  }
+  if (optionData.nIgnoreTargetDEF > 0) result.ignoreTargetDEF = optionData.nIgnoreTargetDEF;
+
+  return result;
 }

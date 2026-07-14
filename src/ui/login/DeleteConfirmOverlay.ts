@@ -92,8 +92,10 @@ export class DeleteConfirmOverlay {
   }
 
   private _makeButton(label: string, x: number, y: number, w: number, h: number, onClick: () => void): void {
-    const btn = new Graphics();
-    btn.roundRect(0, 0, w, h, 4).fill({ color: 0x225577 }).stroke({ width: 1, color: 0x6699CC });
+    const btn = new Container();
+    const bg = new Graphics();
+    bg.roundRect(0, 0, w, h, 4).fill({ color: 0x225577 }).stroke({ width: 1, color: 0x6699CC });
+    btn.addChild(bg);
     const text = new Text({ text: label, style: new TextStyle({ fill: 0xFFFFFF, fontSize: 13, fontFamily: 'monospace' }) });
     text.anchor.set(0.5);
     text.position.set(w / 2, h / 2);

@@ -22,29 +22,113 @@ const CTS_SPEED            = 10n;
 const CTS_JUMP             = 11n;
 const CTS_MAGIC_ATK        = 12n;
 const CTS_MAGIC_DEF        = 13n;
-
-// Special-case bits that carry inline trailing data after the common loop.
-const CTS_BASIC_STAT_UP    = 41n;  // Maple Warrior %
 const CTS_MAGIC_GUARD      = 15n;
 const CTS_DARK_SIGHT       = 16n;
 const CTS_BOOSTER          = 17n;
 const CTS_POWER_GUARD      = 18n;
 const CTS_MAX_HP           = 19n;
 const CTS_MAX_MP           = 20n;
+const CTS_INVINCIBLE       = 21n;
+const CTS_SOUL_ARROW       = 22n;
+const CTS_STUN             = 23n;
+const CTS_POISON           = 24n;
+const CTS_SEAL             = 25n;
+const CTS_DARKNESS         = 26n;
+const CTS_COMBO            = 27n;
+const CTS_CHARGE           = 28n;
+const CTS_DRAGON_BLOOD     = 29n;
 const CTS_HOLY_SYMBOL      = 30n;
+const CTS_MESO_UP          = 31n;
 const CTS_SHADOW_PARTNER   = 32n;
+const CTS_PICK_POCKET      = 33n;
 const CTS_MESO_GUARD       = 34n;
+const CTS_THAW             = 35n;
+const CTS_WEAKNESS         = 36n;
+const CTS_CURSE            = 37n;
+const CTS_SLOW             = 38n;
+const CTS_MORPH            = 39n;
+const CTS_REGEN            = 40n;
+const CTS_BASIC_STAT_UP    = 41n;  // Maple Warrior %
 const CTS_STANCE           = 42n;
 const CTS_SHARP_EYES       = 43n;
+const CTS_MANA_REFLECTION  = 44n;
+const CTS_ATTRACT          = 45n;  // Taunt
+const CTS_NO_BULLET_CONSUME = 46n;
 const CTS_INFINITY         = 47n;
+const CTS_ADVANCED_BLESS   = 48n;
+const CTS_ILLUSION         = 49n;
+const CTS_BERSERK_FURY     = 50n;
+const CTS_DIVINE_BODY      = 51n;
+const CTS_SPARK            = 52n;
+const CTS_FINAL_ATTACK     = 53n;
+const CTS_WIND_WALK        = 54n;
 const CTS_ARAN_COMBO       = 55n;
 const CTS_COMBO_DRAIN      = 56n;
 const CTS_COMBO_BARRIER    = 57n;
+const CTS_BODY_PRESSURE    = 58n;
+const CTS_SMART_KNOCKBACK  = 59n;
+const CTS_REPEAT_EFFECT    = 60n;
+const CTS_EXP_BUFF_RATE    = 61n;
+const CTS_STOP_PORTION     = 62n;
+const CTS_STOP_MOTION      = 63n;
 const CTS_FEAR             = 64n;
+const CTS_EVAN_SLOW        = 65n;
+const CTS_MAGIC_SHIELD      = 66n;
+const CTS_MAGIC_RESISTANCE  = 67n;
+const CTS_SOUL_STONE       = 68n;
+const CTS_FLYING           = 69n;
+const CTS_FROZEN           = 70n;
+const CTS_ELEMENT_LIGHT    = 71n;
+const CTS_ELEMENT_DARK     = 72n;
+const CTS_ELEMENT_FIRE     = 73n;
+const CTS_ELEMENT_ICE      = 74n;
+const CTS_ADD_ATTACK_COUNT = 75n;
+const CTS_ADD_ATTACK_X     = 76n;
+const CTS_CRUSH_ITEM_ENCHANT = 77n;
 const CTS_BLESSING_ARMOR   = 78n;  // inline: 1 extra int
+const CTS_DAMR             = 79n;
+const CTS_TELEPORT_MASTERY = 80n;
+const CTS_COMBAT_ORDERS    = 81n;
+const CTS_BEHOLDER         = 82n;
+const CTS_ADD_BUFF_ITEM_ID = 83n;
+const CTS_HYPER_BODY       = 84n;
 const CTS_DICE             = 85n;  // inline: 22 extra ints
+const CTS_RUSH             = 86n;
+const CTS_WEB              = 87n;
+const CTS_ELEMENTAL_CHARGE = 88n;
+const CTS_VENOM            = 89n;
+const CTS_DARK_ATOMIC      = 90n;
+const CTS_BOMB_ARROW       = 91n;
+const CTS_SUDDEN_DEATH     = 92n;
+const CTS_BOARDING         = 93n;
+const CTS_ADDITIONAL_PMP   = 94n;
+const CTS_ARAN_WHIRLWIND   = 95n;
+const CTS_MAGNET           = 96n;
+const CTS_FLASH_BANG       = 97n;
 const CTS_SWALLOW_BUFF     = 98n;  // inline: 1 extra int
+const CTS_HIT_TELEPORT     = 99n;
+const CTS_MORE_WILD_BUFF   = 100n;
+const CTS_HIDE             = 101n;
+const CTS_CYGNUS_FLAME     = 102n;
+const CTS_STR_BUFF         = 103n;
+const CTS_DEX_BUFF         = 104n;
+const CTS_INT_BUFF         = 105n;
+const CTS_LUK_BUFF         = 106n;
+const CTS_ATTACK_COUNT     = 107n;
+const CTS_BUFF_IMMUNE      = 108n;
+const CTS_SKILL_FIXED      = 109n;
+const CTS_ARAN_BIND        = 110n;
+const CTS_NOT_DAMAGED      = 111n;
+const CTS_FINAL_CUT        = 112n;
+const CTS_DAMAGE_UP        = 113n;
+const CTS_HYPER_BODY_DEF   = 114n;
+const CTS_HYPER_BODY_HP    = 115n;
+const CTS_HYPER_BODY_MP    = 116n;
+const CTS_ELEMENTAL_CHARGE2 = 117n;
+const CTS_BARRIER          = 118n;
+const CTS_GUIDED_BULLET    = 119n;
 const CTS_UNDEAD           = 120n;
+const CTS_RIDE_VEHICLE     = 121n;
 
 // Bits that require extra inline data reads after the common loop.
 // [bitPosition, extraReadCount]
@@ -224,6 +308,7 @@ function defaultBuffValues(): BuffStatValues {
 
 /** Map bit position to BuffStatValues field name. */
 const BIT_TO_FIELD: Record<number, keyof BuffStatValues> = {
+  // Common stats (bits 0-13)
   [Number(CTS_STR)]:            'str',
   [Number(CTS_DEX)]:            'dex',
   [Number(CTS_INT)]:            'int',
@@ -238,26 +323,114 @@ const BIT_TO_FIELD: Record<number, keyof BuffStatValues> = {
   [Number(CTS_JUMP)]:           'jump',
   [Number(CTS_MAGIC_ATK)]:      'magicAtk',
   [Number(CTS_MAGIC_DEF)]:      'magicDef',
+  // Skill-specific (bits 15-121)
   [Number(CTS_MAGIC_GUARD)]:    'magicGuard',
   [Number(CTS_DARK_SIGHT)]:     'darkSight',
   [Number(CTS_BOOSTER)]:        'booster',
   [Number(CTS_POWER_GUARD)]:    'powerGuard',
   [Number(CTS_MAX_HP)]:         'maxHp',
   [Number(CTS_MAX_MP)]:         'maxMp',
+  [Number(CTS_INVINCIBLE)]:     'invincible',
+  [Number(CTS_SOUL_ARROW)]:     'soulArrow',
+  [Number(CTS_STUN)]:           'stun',
+  [Number(CTS_POISON)]:         'poison',
+  [Number(CTS_SEAL)]:           'seal',
+  [Number(CTS_DARKNESS)]:       'darkness',
+  [Number(CTS_COMBO)]:          'combo',
+  [Number(CTS_CHARGE)]:         'charge',
+  [Number(CTS_DRAGON_BLOOD)]:   'dragonBlood',
   [Number(CTS_HOLY_SYMBOL)]:    'holySymbol',
+  [Number(CTS_MESO_UP)]:        'mesoUp',
   [Number(CTS_SHADOW_PARTNER)]: 'shadowPartner',
+  [Number(CTS_PICK_POCKET)]:    'pickPocket',
   [Number(CTS_MESO_GUARD)]:     'mesoGuard',
+  [Number(CTS_THAW)]:           'thaw',
+  [Number(CTS_WEAKNESS)]:       'weakness',
+  [Number(CTS_CURSE)]:          'curse',
+  [Number(CTS_SLOW)]:           'slow',
+  [Number(CTS_MORPH)]:          'morph',
+  [Number(CTS_REGEN)]:          'regen',
+  [Number(CTS_BASIC_STAT_UP)]:  'basicStatUp',
   [Number(CTS_STANCE)]:         'stance',
   [Number(CTS_SHARP_EYES)]:     'sharpEyes',
+  [Number(CTS_MANA_REFLECTION)]: 'manaReflection',
+  [Number(CTS_ATTRACT)]:        'attract',
+  [Number(CTS_NO_BULLET_CONSUME)]: 'noBulletConsume',
   [Number(CTS_INFINITY)]:       'infinity',
+  [Number(CTS_ADVANCED_BLESS)]: 'advancedBless',
+  [Number(CTS_ILLUSION)]:       'illusion',
+  [Number(CTS_BERSERK_FURY)]:   'berserkFury',
+  [Number(CTS_DIVINE_BODY)]:    'divineBody',
+  [Number(CTS_SPARK)]:          'spark',
+  [Number(CTS_FINAL_ATTACK)]:   'finalAttack',
+  [Number(CTS_WIND_WALK)]:      'windWalk',
   [Number(CTS_ARAN_COMBO)]:     'aranCombo',
   [Number(CTS_COMBO_DRAIN)]:    'comboDrain',
   [Number(CTS_COMBO_BARRIER)]:  'comboBarrier',
+  [Number(CTS_BODY_PRESSURE)]:  'bodyPressure',
+  [Number(CTS_SMART_KNOCKBACK)]: 'smartKnockback',
+  [Number(CTS_REPEAT_EFFECT)]:  'repeatEffect',
+  [Number(CTS_EXP_BUFF_RATE)]:  'expBuffRate',
+  [Number(CTS_STOP_PORTION)]:   'stopPortion',
+  [Number(CTS_STOP_MOTION)]:    'stopMotion',
   [Number(CTS_FEAR)]:           'fear',
+  [Number(CTS_EVAN_SLOW)]:      'evanSlow',
+  [Number(CTS_MAGIC_SHIELD)]:   'magicShield',
+  [Number(CTS_MAGIC_RESISTANCE)]: 'magicResistance',
+  [Number(CTS_SOUL_STONE)]:     'soulStone',
+  [Number(CTS_FLYING)]:         'flying',
+  [Number(CTS_FROZEN)]:         'frozen',
+  [Number(CTS_ELEMENT_LIGHT)]:  'elementLight',
+  [Number(CTS_ELEMENT_DARK)]:   'elementDark',
+  [Number(CTS_ELEMENT_FIRE)]:   'elementFire',
+  [Number(CTS_ELEMENT_ICE)]:    'elementIce',
+  [Number(CTS_ADD_ATTACK_COUNT)]: 'addAttackCount',
+  [Number(CTS_ADD_ATTACK_X)]:   'addAttackX',
+  [Number(CTS_CRUSH_ITEM_ENCHANT)]: 'crushItemEnchant',
   [Number(CTS_BLESSING_ARMOR)]: 'blessingArmor',
+  [Number(CTS_DAMR)]:           'damR',
+  [Number(CTS_TELEPORT_MASTERY)]: 'teleportMastery',
+  [Number(CTS_COMBAT_ORDERS)]:  'combatOrders',
+  [Number(CTS_BEHOLDER)]:       'beholder',
+  [Number(CTS_ADD_BUFF_ITEM_ID)]: 'addBuffItemId',
+  [Number(CTS_HYPER_BODY)]:     'hyperBody',
   [Number(CTS_DICE)]:           'dice',
+  [Number(CTS_RUSH)]:           'rush',
+  [Number(CTS_WEB)]:            'web',
+  [Number(CTS_ELEMENTAL_CHARGE)]: 'elementalCharge',
+  [Number(CTS_VENOM)]:          'venom',
+  [Number(CTS_DARK_ATOMIC)]:    'darkAtomic',
+  [Number(CTS_BOMB_ARROW)]:     'bombArrow',
+  [Number(CTS_SUDDEN_DEATH)]:   'suddenDeath',
+  [Number(CTS_BOARDING)]:       'boarding',
+  [Number(CTS_ADDITIONAL_PMP)]: 'additionalPmp',
+  [Number(CTS_ARAN_WHIRLWIND)]: 'aranWhirlwind',
+  [Number(CTS_MAGNET)]:         'magnet',
+  [Number(CTS_FLASH_BANG)]:     'flashBang',
   [Number(CTS_SWALLOW_BUFF)]:   'swallowBuff',
+  [Number(CTS_HIT_TELEPORT)]:   'hitTeleport',
+  [Number(CTS_MORE_WILD_BUFF)]: 'moreWildBuff',
+  [Number(CTS_HIDE)]:           'hide',
+  [Number(CTS_CYGNUS_FLAME)]:   'cygnusFlame',
+  [Number(CTS_STR_BUFF)]:       'strBuff',
+  [Number(CTS_DEX_BUFF)]:       'dexBuff',
+  [Number(CTS_INT_BUFF)]:       'intBuff',
+  [Number(CTS_LUK_BUFF)]:       'lukBuff',
+  [Number(CTS_ATTACK_COUNT)]:   'attackCount',
+  [Number(CTS_BUFF_IMMUNE)]:    'buffImmune',
+  [Number(CTS_SKILL_FIXED)]:    'skillFixed',
+  [Number(CTS_ARAN_BIND)]:      'aranBind',
+  [Number(CTS_NOT_DAMAGED)]:    'notDamaged',
+  [Number(CTS_FINAL_CUT)]:      'finalCut',
+  [Number(CTS_DAMAGE_UP)]:      'damageUp',
+  [Number(CTS_HYPER_BODY_DEF)]: 'hyperBodyDef',
+  [Number(CTS_HYPER_BODY_HP)]:  'hyperBodyHp',
+  [Number(CTS_HYPER_BODY_MP)]:  'hyperBodyMp',
+  [Number(CTS_ELEMENTAL_CHARGE2)]: 'elementCharge2',
+  [Number(CTS_BARRIER)]:        'barrier',
+  [Number(CTS_GUIDED_BULLET)]:  'guidedBullet',
   [Number(CTS_UNDEAD)]:         'undead',
+  [Number(CTS_RIDE_VEHICLE)]:   'rideVehicle',
 };
 
 /** Per-entry decoded from the packet: value + skillId + seconds. */
@@ -371,6 +544,44 @@ export class SecondaryStat {
 
   /** Stance dodge probability (0-100%). */
   getStanceRate(): number { return this._buff.stance; }
+
+  /** DarkSight active (non-zero = active). */
+  isDarkSightActive(): boolean { return this._buff.darkSight !== 0; }
+
+  /** Booster active (non-zero = active). */
+  isBoosterActive(): boolean { return this._buff.booster !== 0; }
+
+  /** ShadowPartner active (non-zero = active). */
+  isShadowPartnerActive(): boolean { return this._buff.shadowPartner !== 0; }
+
+  /** HyperBody active (non-zero = active). */
+  isHyperBodyActive(): boolean { return this._buff.hyperBody !== 0; }
+
+  /** Stun active (non-zero = active). */
+  isStunActive(): boolean { return this._buff.stun !== 0; }
+
+  /** Poison active (non-zero = active). */
+  isPoisonActive(): boolean { return this._buff.poison !== 0; }
+
+  /** Seal active (non-zero = active). */
+  isSealActive(): boolean { return this._buff.seal !== 0; }
+
+  /** Combo counter from aran combo skill (non-zero = active). */
+  getAranCombo(): number { return this._buff.aranCombo; }
+
+  /** Combo drain percentage. */
+  getComboDrainRate(): number { return this._buff.comboDrain; }
+
+  /** ShadowPartner damage percentage bonus (0-100%). */
+  getShadowPartnerDamageRate(): number { return this._buff.shadowPartner; }
+
+  /** Booster attack speed bonus (negative = faster). */
+  getBoosterSpeedBonus(): number { return this._buff.booster; }
+
+  /** HyperBody HP/MP multiplier percentage. */
+  getHyperBodyHpMultiplier(): number { return this._buff.hyperBodyHp; }
+
+  getHyperBodyMpMultiplier(): number { return this._buff.hyperBodyMp; }
 
   /**
    * Decode a TemporaryStatSet packet body (128-bit mask + per-stat data).

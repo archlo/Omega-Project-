@@ -2,7 +2,10 @@ import { Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
 import { GamePanel } from './GamePanel.js';
 import { WzTextureLoader } from '../../render/WzTextureLoader.js';
 import { WzPackage } from '../../wz/WzPackage.js';
+import { WzCanvas } from '../../wz/WzCanvas.js';
+import { WzProperty } from '../../wz/WzProperty.js';
 import { WzSprite } from '../../render/WzSprite.js';
+import { ComboBox, ComboBoxItem } from '../ComboBox.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // OG v95 CUIStatusBar Chat — Exact coordinates from IDA decompilation
@@ -76,7 +79,6 @@ const TAB_SPACING = 46;  // OG: filter button spacing in _ResetChatBarPos
 // Index 4=0x326(Guild), 5=0x1896(Alliance), 8=0x322(Find)
 const CHAT_TARGETS = ['All', 'Whisper', 'Party', 'Buddy', 'Guild', 'Alliance', '', '', 'Find'];
 const CHAT_TARGET_INTERNAL = ['all', 'whisper', 'party', 'buddy', 'guild', 'alliance', '', '', 'find'];
-const DROPDOWN_ROW_H = 16;
 
 // --- Tab cycling (OG OnKey 0x87FDE0 — VK_TAB mapping) ---
 // Tab index 0..8 cycles through chat targets in this exact order:
@@ -146,6 +148,7 @@ interface ChatLogEntry {
   bWhisperIcon: boolean;  // m_bWhisperIcon
   isFirstLine: boolean;   // m_bFirstLine
   itemID: number;         // m_pItem.nItemID (0 = no item link)
+  itemLinks?: { start: number; end: number; itemId: number }[];  // char ranges for [ItemName] spans
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -204,9 +207,6 @@ export class ChatBar extends GamePanel {
   private _layerChatBar: Sprite | null = null; // tapBar (577×4 separator)
   private _layerTapBarOver: Sprite | null = null; // tapBarOver (hover state)
 
-  // Combo box WZ sprite
-  private _comboSprite: Sprite | null = null;
-
   // Display elements (Graphics fallbacks, hidden when WZ available)
   private _bg: Graphics;
   private _inputBg: Graphics;
@@ -214,13 +214,7 @@ export class ChatBar extends GamePanel {
   private _inputText: Text;
 
   // Combo box
-  private _comboBg: Graphics;
-  private _comboLabel: Text;
-  private _comboTriangle: Graphics;
-  private _comboOpen = false;
-  private _dropdownContainer: Container;
-  private _dropdownGfx: Graphics[] = [];
-  private _dropdownLabels: Text[] = [];
+  private _combo: ComboBox;
 
   // Tab bar
   private _tabBarGfx: Graphics;
@@ -296,23 +290,22 @@ export class ChatBar extends GamePanel {
     this._cursor.visible = false;
     this._root.addChild(this._cursor);
 
-    // Combo box
-    this._comboBg = new Graphics();
-    this._comboBg.visible = false;
-    this._root.addChild(this._comboBg);
-
-    this._comboLabel = new Text({ text: CHAT_TARGETS[0], style: _comboStyle });
-    this._comboLabel.x = COMBO_X + 4;
-    this._comboLabel.y = COMBO_Y + 3;
-    this._root.addChild(this._comboLabel);
-
-    this._comboTriangle = new Graphics();
-    this._comboTriangle.visible = false;
-    this._root.addChild(this._comboTriangle);
-
-    this._dropdownContainer = new Container();
-    this._dropdownContainer.visible = false;
-    this._root.addChild(this._dropdownContainer);
+    // Combo box (reusable ComboBox component)
+    const comboItems: ComboBoxItem[] = CHAT_TARGETS
+      .map((t, i) => ({ label: t, value: CHAT_TARGET_INTERNAL[i] }))
+      .filter(it => it.label);
+    this._combo = new ComboBox({ width: COMBO_W, height: COMBO_H, style: _comboStyle });
+    this._combo.setItems(comboItems);
+    this._combo.onChange = (val) => {
+      const idx = CHAT_TARGET_INTERNAL.indexOf(val);
+      if (idx >= 0) {
+        this._nChatTarget = idx;
+        this.onChatTargetChange?.(val);
+      }
+    };
+    this._combo.container.x = COMBO_X;
+    this._combo.container.y = COMBO_Y;
+    this._root.addChild(this._combo.container);
 
     // OG: m_pFontChatLog[0..26] — per-type fonts (height + ARGB color)
     for (const fc of FONT_COLORS) {
@@ -320,8 +313,11 @@ export class ChatBar extends GamePanel {
         fill: this._argbToCss(fc.color),
         fontSize: fc.height,
         fontFamily: 'monospace',
-      }));
+      }      ));
     }
+
+    // Build initial line containers for the default MINIMAL chat type
+    this._applyLayout();
   }
 
   relayout(_viewW: number, _viewH: number): void {
@@ -331,6 +327,14 @@ export class ChatBar extends GamePanel {
   // ═══════════════════════════════════════════════════════════════════════════
   // OG: SetChatType (0x879C00) — switch between minimal/small/expanded
   // ═══════════════════════════════════════════════════════════════════════════
+  toggleChat(): void {
+    if (this._chatType === CHAT_TYPE_MINIMAL) {
+      this.setChatType(CHAT_TYPE_EXPANDED);
+    } else {
+      this.setChatType(CHAT_TYPE_MINIMAL);
+    }
+  }
+
   get chatType(): number { return this._chatType; }
   get chatHeight(): number { return this._chatHeight; }
 
@@ -389,8 +393,6 @@ export class ChatBar extends GamePanel {
     // Hide Graphics fallbacks when WZ layers available
     this._bg.visible = !this._layerSpace && !this._layerSpace2;
     this._inputBg.visible = !this._layerEnter;
-    this._comboBg.visible = !this._comboSprite;
-    this._comboTriangle.visible = !this._comboSprite;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -430,19 +432,6 @@ export class ChatBar extends GamePanel {
     this._inputBg.clear();
     this._inputBg.rect(EDIT_X, EDIT_Y, EDIT_W, EDIT_H).fill({ color: '#111', alpha: 0.8 });
     this._inputBg.rect(EDIT_X, EDIT_Y, EDIT_W, EDIT_H).stroke({ color: '#555', width: 1 });
-
-    // Combo box
-    this._comboBg.clear();
-    this._comboBg.rect(COMBO_X, COMBO_Y, COMBO_W, COMBO_H).fill({ color: '#111', alpha: 0.8 });
-    this._comboBg.rect(COMBO_X, COMBO_Y, COMBO_W, COMBO_H).stroke({ color: '#555', width: 1 });
-
-    // Combo triangle
-    this._comboTriangle.clear();
-    this._comboTriangle.poly([
-      COMBO_X + COMBO_W - 12, COMBO_Y + 6,
-      COMBO_X + COMBO_W - 4, COMBO_Y + 6,
-      COMBO_X + COMBO_W - 8, COMBO_Y + 14,
-    ]).fill({ color: '#AAA' });
 
     // tapBar layer position (OG: RelMove(0, m_ptChatWnd.y - 2))
     if (this._layerChatBar) {
@@ -551,8 +540,42 @@ export class ChatBar extends GamePanel {
   }
 
   addMapleLine(text: string, itemNameFn: (id: number) => string | null | undefined, filterType = FILTER_ALL): void {
-    // Simple version — just add with default type
-    this.addLine(text, 0);
+    // OG: parse #i<ItemID># tags → [ItemName] with item link tracking
+    const links: { start: number; end: number; itemId: number }[] = [];
+    const processed = text.replace(/#i(\d+)#/g, (_match, idStr) => {
+      const itemId = parseInt(idStr, 10);
+      const name = itemNameFn(itemId);
+      if (name !== null && name !== undefined) {
+        const replacement = `[${name}]`;
+        return replacement;
+      }
+      return _match;
+    });
+    // Now compute link positions in the processed text by scanning for [Name] patterns
+    let scanPos = 0;
+    const original = text;
+    const re = /#i(\d+)#/g;
+    let m: RegExpExecArray | null;
+    let resultOffset = 0;
+    while ((m = re.exec(original)) !== null) {
+      const itemId = parseInt(m[1], 10);
+      const name = itemNameFn(itemId);
+      if (name !== null && name !== undefined) {
+        const replacement = `[${name}]`;
+        // Position in processed text = original match start + accumulated offset
+        const start = m.index + resultOffset;
+        links.push({ start, end: start + replacement.length, itemId });
+        resultOffset += replacement.length - m[0].length;
+      } else {
+        resultOffset += 0; // no change in length
+      }
+    }
+    this.addLine(processed, 0);
+    // Attach link metadata to the last chatLog entry
+    if (links.length > 0 && this._chatLog.length > 0) {
+      const entry = this._chatLog[this._chatLog.length - 1];
+      entry.itemLinks = links;
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -675,12 +698,14 @@ export class ChatBar extends GamePanel {
           const t = new Text({ text: entry.text, style: font });
           t.x = TEXT_X;
           container.addChild(t);
+          this._lineTexts[i] = t;
         }
       } else {
         // OG: regular line — DrawTextA(9, nTop, m_sChat, m_pFontChatLog[m_nType])
         const t = new Text({ text: entry.text, style: font });
         t.x = TEXT_X;
         container.addChild(t);
+        this._lineTexts[i] = t;
       }
 
       container.visible = true;
@@ -708,14 +733,12 @@ export class ChatBar extends GamePanel {
   // ═══════════════════════════════════════════════════════════════════════════
   setChatTarget(target: number): void {
     this._nChatTarget = target;
-    this._comboLabel.text = CHAT_TARGETS[target] ?? 'All';
     this.onChatTargetChange?.(CHAT_TARGET_INTERNAL[target] ?? 'all');
   }
 
   // OG: SetChatTarget by internal index (for tab cycling)
   private setChatTargetByIndex(idx: number): void {
     this._nChatTarget = idx;
-    this._comboLabel.text = CHAT_TARGETS[idx] ?? 'All';
     this.onChatTargetChange?.(CHAT_TARGET_INTERNAL[idx] ?? 'all');
   }
 
@@ -723,7 +746,6 @@ export class ChatBar extends GamePanel {
   private setChatTargetByName(name: string): void {
     this._whisperTarget = name;
     this._nChatTarget = 7;
-    this._comboLabel.text = name || 'Whisper';
     this.onChatTargetChange?.('whisper');
     // Add to whisper candidate list (OG: AddWhisperCandidate)
     this._addWhisperCandidate(name);
@@ -923,13 +945,13 @@ export class ChatBar extends GamePanel {
         } else {
           // OG: m_ptChatWnd.y = 1, SetChatTarget(7) → enter whisper input mode
           this._nChatTarget = 7;
-          this._comboLabel.text = 'Whisper';
+          this._combo.setLabel('Whisper');
           this.onChatTargetChange?.('whisper');
         }
       } else {
         this.setChatTargetByIndex(next);
       }
-      this._comboOpen = false;
+      this._combo.close();
       return true;
     }
     if (key === 'ArrowUp') {
@@ -977,11 +999,6 @@ export class ChatBar extends GamePanel {
     const displayW = this._chatType === CHAT_TYPE_MINIMAL ? DISPLAY_W_502 : DISPLAY_W_577;
 
     // Hit-test areas
-    const inCombo = lx >= COMBO_X && lx < COMBO_X + COMBO_W && ly >= COMBO_Y && ly < COMBO_Y + COMBO_H;
-    const dropdownOpen = this._comboOpen;
-    const dropdownH = CHAT_TARGETS.filter(t => t).length * DROPDOWN_ROW_H;
-    const inDropdown = dropdownOpen && lx >= COMBO_X && lx < COMBO_X + COMBO_W
-      && ly >= COMBO_Y - dropdownH && ly < COMBO_Y;
     const tabOffset = this._chatType === CHAT_TYPE_EXPANDED ? TAB_H : 0;
     const inTabs = this._chatType === CHAT_TYPE_EXPANDED
       && lx >= DISPLAY_X && lx < DISPLAY_X + TAB_NAMES.length * TAB_SPACING
@@ -994,8 +1011,14 @@ export class ChatBar extends GamePanel {
       && lx >= DISPLAY_X + displayW - SCROLLBAR_W && lx < DISPLAY_X + displayW
       && ly >= displayY + TAB_H && ly < displayY + this._chatHeight;
 
-    if (!inCombo && !inDropdown && !inTabs && !inDisplay && !inInput && !inScrollbar) {
-      if (down && !inCombo && !inDropdown) this._comboOpen = false;
+    // Delegate combo box hit testing to ComboBox component
+    const comboLx = lx - COMBO_X;
+    const comboLy = ly - COMBO_Y;
+    if (this._combo.handleMouseButton(comboLx, comboLy, down)) {
+      return true;
+    }
+
+    if (!inTabs && !inDisplay && !inInput && !inScrollbar) {
       if (down) this._blur();
       return false;
     }
@@ -1018,31 +1041,16 @@ export class ChatBar extends GamePanel {
       return true;
     }
 
-    // Dropdown item click
-    if (inDropdown) {
-      const visibleTargets = CHAT_TARGETS.map((t, i) => ({ text: t, index: i })).filter(t => t.text);
-      const idx = Math.floor((ly - (COMBO_Y - dropdownH)) / DROPDOWN_ROW_H);
-      if (idx >= 0 && idx < visibleTargets.length) {
-        this.setChatTarget(visibleTargets[idx].index);
-        this._comboOpen = false;
-        return true;
-      }
-    }
-
-    // Combo box click
-    if (inCombo) {
-      this._comboOpen = !this._comboOpen;
-      this._syncDropdown();
-      return true;
-    }
-
     // Tab click (OG: filter XOR toggle on m_dwChatFilterFlag)
     if (inTabs) {
       const tab = Math.floor((lx - DISPLAY_X) / TAB_SPACING);
       if (tab >= 0 && tab < TAB_NAMES.length) {
         this._activeTab = tab;
-        // OG: filter buttons toggle via XOR on m_dwChatFilterFlag
-        if (tab < FILTER_FLAGS.length) {
+        if (tab === 0) {
+          // OG: "All" tab clears all filters
+          this._dwChatFilterFlag = 0;
+        } else if (tab < FILTER_FLAGS.length) {
+          // OG: other tabs toggle via XOR on m_dwChatFilterFlag
           this._dwChatFilterFlag ^= FILTER_FLAGS[tab];
         }
         this._refreshChatLog();
@@ -1057,9 +1065,37 @@ export class ChatBar extends GamePanel {
       return true;
     }
 
-    // Display click → focus
+    // Display click → focus + item link detection
     if (inDisplay) {
       this.focus();
+      // OG: check if click lands on an item link in the display area
+      if (down && this.onItemLink) {
+        const tabOff = this._chatType === CHAT_TYPE_EXPANDED ? TAB_H : 0;
+        const lineIdx = Math.floor((ly - displayY - tabOff - 2) / LINE_H);
+        // Map display line index (bottom-up) to filtered chatLog index
+        const filtered: number[] = [];
+        for (let i = 0; i < this._chatLog.length; i++) {
+          if (this._isFiltered(this._chatLog[i].lType)) filtered.push(i);
+        }
+        const totalVisible = filtered.length;
+        const scrollRange = Math.max(0, totalVisible - this._chatWndLineVisible + 1);
+        const clampedScroll = Math.min(this._scroll, scrollRange);
+        const bottomIdx = totalVisible - 1 - clampedScroll;
+        const visIdx = bottomIdx - lineIdx;
+        if (visIdx >= 0 && visIdx < filtered.length) {
+          const entry = this._chatLog[filtered[visIdx]];
+          if (entry.itemLinks && entry.itemLinks.length > 0) {
+            // Compute char index from click x: text starts at TEXT_X, each char ≈7px
+            const charIdx = Math.floor((lx - TEXT_X) / 7);
+            for (const link of entry.itemLinks) {
+              if (charIdx >= link.start && charIdx < link.end) {
+                this.onItemLink(link.itemId);
+                break;
+              }
+            }
+          }
+        }
+      }
       return true;
     }
 
@@ -1142,74 +1178,68 @@ export class ChatBar extends GamePanel {
   // WZ Asset Loading (OG OnCreate 0x87B5F0)
   // ═══════════════════════════════════════════════════════════════════════════
   initWzAssets(loader: WzTextureLoader, ui: WzPackage): void {
-    const bar = ui.GetItem('StatusBar2.img/mainBar');
-    if (!bar || typeof (bar as any).Get !== 'function') return;
-    const barProp = bar as any;
+    // OG: ChatBar loads WZ from StatusBar2.img/mainBar via WzProperty.Get() —
+    // same pattern StatusBar uses (proven working), NOT full-path ui.GetItem().
+    const bar = ui.GetItem('StatusBar2.img/mainBar') as WzProperty | null;
+    if (!bar) return;
 
-    const loadLayer = (uol: string, x: number, y: number, visible = true): Sprite | null => {
+    // Helper: get canvas child from a WzProperty parent, unwrap if needed
+    const loadCanvas = (parent: WzProperty, name: string, x: number, y: number, visible = true): Sprite | null => {
       try {
-        const node = ui.GetItem(uol);
+        const node = parent.Get(name);
         if (!node) return null;
-        let canvasNode = node;
-        if (typeof (node as any).Get === 'function' && typeof (node as any).ToPixi !== 'function') {
+        if (node instanceof WzCanvas) {
+          const wzSprite = loader.Load(node);
+          if (wzSprite) {
+            const s = wzSprite.ToPixi();
+            if (s) { s.anchor.set(0, 0); s.position.set(x, y); s.visible = visible; this._root.addChild(s); return s; }
+          }
+        } else if (typeof (node as any).Get === 'function' && typeof (node as any).ToPixi !== 'function') {
+          // Property node — unwrap by looking for '0' or 'bmp' child canvas
           const inner = (node as any).Get('0') ?? (node as any).Get('bmp');
-          if (inner) canvasNode = inner;
+          if (inner instanceof WzCanvas) {
+            const wzSprite = loader.Load(inner);
+            if (wzSprite) {
+              const s = wzSprite.ToPixi();
+              if (s) { s.anchor.set(0, 0); s.position.set(x, y); s.visible = visible; this._root.addChild(s); return s; }
+            }
+          }
         }
-        const wzSprite = loader.Load(canvasNode as any);
-        if (!wzSprite) return null;
-        const s = wzSprite.ToPixi();
-        if (s) { s.anchor.set(0, 0); s.position.set(x, y); s.visible = visible; this._root.addChild(s); return s; }
       } catch {}
       return null;
     };
 
-    // Chat layers (OG OnCreate lines 1814-1893)
-    this._layerSpace = loadLayer('StatusBar2.img/mainBar/chatSpace', DISPLAY_X, this._chatWndY);
-    this._layerSpace2 = loadLayer('StatusBar2.img/mainBar/chatSpace2', DISPLAY_X, this._chatWndY);
-    this._layerEnter = loadLayer('StatusBar2.img/mainBar/chatEnter', EDIT_X, EDIT_Y, false);
-    this._layerCover = loadLayer('StatusBar2.img/mainBar/chatCover', DISPLAY_X + DISPLAY_W_577 - 82, EDIT_Y, false);
+    // Chat layers (OG OnCreate lines 1814-1893) — all direct children of mainBar
+    this._layerSpace = loadCanvas(bar, 'chatSpace', DISPLAY_X, this._chatWndY);
+    this._layerSpace2 = loadCanvas(bar, 'chatSpace2', DISPLAY_X, this._chatWndY);
+    this._layerEnter = loadCanvas(bar, 'chatEnter', EDIT_X, EDIT_Y, false);
+    this._layerCover = loadCanvas(bar, 'chatCover', DISPLAY_X + DISPLAY_W_577 - 82, EDIT_Y, false);
 
     // Combo box WZ sprite (OG: StatusBar2.img/mainBar/chatTarget/base)
-    let ctNode: any = null;
-    for (const path of ['StatusBar2.img/mainBar/chatTarget/base', 'StatusBar.img/base/chatTarget', 'StatusBar2.img/mainBar/chatTarget']) {
-      const node = ui.GetItem(path);
-      if (!node) continue;
-      let canvasNode = node;
-      if (typeof (node as any).Get === 'function' && typeof (node as any).ToPixi !== 'function') {
-        const inner = (node as any).Get('bmp') ?? (node as any).Get('0');
-        if (inner) canvasNode = inner;
-      }
-      const wzSprite = loader.Load(canvasNode as any);
-      if (wzSprite) { ctNode = wzSprite; break; }
-    }
-    if (ctNode) {
-      const s = ctNode.ToPixi();
-      if (s) {
-        s.anchor.set(0, 0);
-        s.position.set(COMBO_X, COMBO_Y);
-        this._comboSprite = s;
-        this._comboBg.visible = false;
-        this._comboTriangle.visible = false;
-        this._root.addChildAt(s, this._root.getChildIndex(this._comboLabel) - 1);
-      }
+    const ctBase = bar.Get('chatTarget') as WzProperty | null;
+    if (ctBase) {
+      this._combo.loadWzAsset(loader, ctBase, 'base');
     }
 
     // Tab bar filter buttons (OG: StatusBar2.img/chat/Tap/*)
+    const chatRoot = ui.GetItem('StatusBar2.img/chat') as WzProperty | null;
     const filterNames = ['all', 'friend', 'party', 'guild', 'association', 'expedition'];
-    for (let i = 0; i < Math.min(TAB_NAMES.length, 6); i++) {
-      const tapPath = `StatusBar2.img/chat/Tap/${filterNames[i]}`;
-      const tapNode = ui.GetItem(tapPath);
-      if (tapNode && typeof (tapNode as any).Get === 'function') {
-        const normal = (tapNode as any).Get('normal/0') ?? (tapNode as any).Get('normal');
-        if (normal) {
-          const wzSprite = loader.Load(normal as any);
-          if (wzSprite) {
-            const s = wzSprite.ToPixi();
-            if (s) {
-              s.anchor.set(0, 0);
-              s.position.set(DISPLAY_X + i * TAB_SPACING, this._chatWndY);
-              this._tabBarSprites[i] = s;
-              this._root.addChild(s);
+    if (chatRoot) {
+      for (let i = 0; i < Math.min(TAB_NAMES.length, 6); i++) {
+        const tapRoot = chatRoot.Get('Tap') as WzProperty | null;
+        const tapNode = tapRoot?.Get(filterNames[i]);
+        if (tapNode && typeof (tapNode as any).Get === 'function') {
+          const normal = (tapNode as any).Get('normal/0') ?? (tapNode as any).Get('normal');
+          if (normal instanceof WzCanvas) {
+            const wzSprite = loader.Load(normal);
+            if (wzSprite) {
+              const s = wzSprite.ToPixi();
+              if (s) {
+                s.anchor.set(0, 0);
+                s.position.set(DISPLAY_X + i * TAB_SPACING, this._chatWndY);
+                this._tabBarSprites[i] = s;
+                this._root.addChild(s);
+              }
             }
           }
         }
@@ -1217,114 +1247,83 @@ export class ChatBar extends GamePanel {
     }
 
     // tapBar layer (OG SetChatType line 265: "UI/StatusBar2.img/chat/tapBar")
-    // Creates 577×4 canvas, copies tapBar at (1, 0), layer z=0
-    const tapBarNode = ui.GetItem('StatusBar2.img/chat/tapBar');
-    if (tapBarNode) {
-      let canvasNode = tapBarNode;
-      if (typeof (tapBarNode as any).Get === 'function' && typeof (tapBarNode as any).ToPixi !== 'function') {
-        const inner = (tapBarNode as any).Get('0') ?? (tapBarNode as any).Get('bmp');
-        if (inner) canvasNode = inner;
-      }
-      const wzSprite = loader.Load(canvasNode as any);
-      if (wzSprite) {
-        const s = wzSprite.ToPixi();
-        if (s) {
-          s.anchor.set(0, 0);
-          s.position.set(1, this._chatWndY - 2);
-          s.zIndex = 0;
-          this._layerChatBar = s;
-          this._root.addChild(s);
+    if (chatRoot) {
+      const tapBarNode = chatRoot.Get('tapBar');
+      if (tapBarNode) {
+        let canvasNode: unknown = tapBarNode;
+        if (typeof (tapBarNode as any).Get === 'function' && typeof (tapBarNode as any).ToPixi !== 'function') {
+          const inner = (tapBarNode as any).Get('0') ?? (tapBarNode as any).Get('bmp');
+          if (inner) canvasNode = inner;
+        }
+        if (canvasNode instanceof WzCanvas) {
+          const wzSprite = loader.Load(canvasNode);
+          if (wzSprite) {
+            const s = wzSprite.ToPixi();
+            if (s) {
+              s.anchor.set(0, 0);
+              s.position.set(1, this._chatWndY - 2);
+              s.zIndex = 0;
+              this._layerChatBar = s;
+              this._root.addChild(s);
+            }
+          }
         }
       }
     }
 
     // tapBarOver (OG: "UI/StatusBar2.img/chat/tapBarOver" — hover state)
-    const tapBarOverNode = ui.GetItem('StatusBar2.img/chat/tapBarOver');
-    if (tapBarOverNode) {
-      let canvasNode = tapBarOverNode;
-      if (typeof (tapBarOverNode as any).Get === 'function' && typeof (tapBarOverNode as any).ToPixi !== 'function') {
-        const inner = (tapBarOverNode as any).Get('0') ?? (tapBarOverNode as any).Get('bmp');
-        if (inner) canvasNode = inner;
-      }
-      const wzSprite = loader.Load(canvasNode as any);
-      if (wzSprite) {
-        const s = wzSprite.ToPixi();
-        if (s) {
-          s.anchor.set(0, 0);
-          s.position.set(0, this._chatWndY - 2);
-          s.visible = false;
-          this._layerTapBarOver = s;
-          this._root.addChild(s);
+    if (chatRoot) {
+      const tapBarOverNode = chatRoot.Get('tapBarOver');
+      if (tapBarOverNode) {
+        let canvasNode: unknown = tapBarOverNode;
+        if (typeof (tapBarOverNode as any).Get === 'function' && typeof (tapBarOverNode as any).ToPixi !== 'function') {
+          const inner = (tapBarOverNode as any).Get('0') ?? (tapBarOverNode as any).Get('bmp');
+          if (inner) canvasNode = inner;
+        }
+        if (canvasNode instanceof WzCanvas) {
+          const wzSprite = loader.Load(canvasNode);
+          if (wzSprite) {
+            const s = wzSprite.ToPixi();
+            if (s) {
+              s.anchor.set(0, 0);
+              s.position.set(0, this._chatWndY - 2);
+              s.visible = false;
+              this._layerTapBarOver = s;
+              this._root.addChild(s);
+            }
+          }
         }
       }
     }
 
     // OG: whisper icon sprites (StringPool 6581 → "UI/StatusBar.img/chat/whisper/%d")
-    for (let i = 0; i < 4; i++) {
-      const node = ui.GetItem(`StatusBar2.img/chat/whisper/${i}`);
-      if (node) {
-        const wzSprite = loader.Load(node as any);
-        if (wzSprite) {
-          this._whisperIcons[i] = wzSprite;
+    if (chatRoot) {
+      for (let i = 0; i < 4; i++) {
+        const node = chatRoot.Get(`whisper/${i}`);
+        if (node instanceof WzCanvas) {
+          const wzSprite = loader.Load(node);
+          if (wzSprite) {
+            this._whisperIcons[i] = wzSprite;
+          }
         }
       }
     }
 
     // OG: channel digit sprites (StringPool 6582 → "UI/StatusBar.img/chat/digit/%d")
-    for (let i = 0; i <= 9; i++) {
-      const node = ui.GetItem(`StatusBar2.img/chat/digit/${i}`);
-      if (node) {
-        const wzSprite = loader.Load(node as any);
-        if (wzSprite) {
-          this._channelDigits[i] = wzSprite;
+    if (chatRoot) {
+      for (let i = 0; i <= 9; i++) {
+        const node = chatRoot.Get(`digit/${i}`);
+        if (node instanceof WzCanvas) {
+          const wzSprite = loader.Load(node);
+          if (wzSprite) {
+            this._channelDigits[i] = wzSprite;
+          }
         }
       }
     }
 
     this._applyLayout();
     this._updateWzVisibility();
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Dropdown sync
-  // ═══════════════════════════════════════════════════════════════════════════
-  private _syncDropdown(): void {
-    this._dropdownContainer.removeChildren();
-    this._dropdownGfx = [];
-    this._dropdownLabels = [];
-
-    if (!this._comboOpen) {
-      this._dropdownContainer.visible = false;
-      return;
-    }
-
-    // OG: only show non-empty targets
-    const visibleTargets = CHAT_TARGETS.map((t, i) => ({ text: t, index: i })).filter(t => t.text);
-    const dropdownH = visibleTargets.length * DROPDOWN_ROW_H;
-    this._dropdownContainer.visible = true;
-
-    for (let i = 0; i < visibleTargets.length; i++) {
-      const iy = COMBO_Y - dropdownH + i * DROPDOWN_ROW_H;
-      const isSelected = visibleTargets[i].index === this._nChatTarget;
-
-      const g = new Graphics();
-      g.rect(COMBO_X, iy, COMBO_W, DROPDOWN_ROW_H).fill({ color: isSelected ? '#3C4164' : '#1A1A2E', alpha: 0.9 });
-      g.rect(COMBO_X, iy, COMBO_W, DROPDOWN_ROW_H).stroke({ color: '#444', width: 1 });
-      this._dropdownContainer.addChild(g);
-      this._dropdownGfx.push(g);
-
-      if (isSelected) {
-        const check = new Graphics();
-        check.rect(COMBO_X + 3, iy + 4, 8, 8).fill({ color: '#64DC64' });
-        this._dropdownContainer.addChild(check);
-      }
-
-      const t = new Text({ text: visibleTargets[i].text, style: _comboStyle });
-      t.x = COMBO_X + 14;
-      t.y = iy + 3;
-      this._dropdownContainer.addChild(t);
-      this._dropdownLabels.push(t);
-    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

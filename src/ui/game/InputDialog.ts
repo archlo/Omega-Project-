@@ -1,5 +1,14 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import { GamePanel } from './GamePanel.js';
+import { WzSprite } from '../../render/WzSprite.js';
+import { WzTextureLoader } from '../../render/WzTextureLoader.js';
+import { WzPackage } from '../../wz/WzPackage.js';
+import { WzProperty } from '../../wz/WzProperty.js';
+import { WzCanvas } from '../../wz/WzCanvas.js';
+
+// OG: CUtilDlgEx — type=2 (numeric input) dialog.
+// WZ: UI/UIWindow2.img/UtilDlgEx (confirmed from IDA OnCreate_INPUT at 0x983af8)
+// Sub-paths: backgrnd, text, etc. loaded from UtilDlgEx property
 
 const PANEL_W = 240;
 const PANEL_H = 110;
@@ -8,8 +17,6 @@ const _titleStyle = new TextStyle({ fill: '#FFE4B5', fontSize: 12, fontFamily: '
 const _labelStyle = new TextStyle({ fill: '#CCC', fontSize: 11, fontFamily: 'monospace' });
 const _inputStyle = new TextStyle({ fill: '#FFF', fontSize: 11, fontFamily: 'monospace' });
 
-// OG: CUtilDlgEx with type=2 (numeric input) — used for meso drop amount and
-// stackable item drop quantity. Simplified TS version with a text input field.
 export class InputDialog extends GamePanel {
   private _bg: Graphics;
   private _titleText: Text;
@@ -24,15 +31,30 @@ export class InputDialog extends GamePanel {
   onConfirm: ((value: number) => void) | null = null;
   onCancel: (() => void) | null = null;
 
-  constructor() {
+  constructor(opts: {
+    loader?: WzTextureLoader;
+    uiWz?: WzPackage | null;
+  } = {}) {
     super();
     this._root.visible = false;
 
+    // OG: CUtilDlgEx loads from UIWindow2.img/UtilDlgEx
+    const dlgProp = opts.uiWz?.GetItem('UIWindow2.img/UtilDlgEx') instanceof WzProperty
+      ? opts.uiWz!.GetItem('UIWindow2.img/UtilDlgEx') as WzProperty : null;
+    const bgNode = dlgProp?.Get('backgrnd');
+    const wzBg = (bgNode instanceof WzCanvas && opts.loader) ? opts.loader.Load(bgNode) : null;
+
     this._bg = new Graphics();
-    this._bg.rect(0, 0, PANEL_W, PANEL_H).fill({ color: '#0C0E18', alpha: 0.95 });
-    this._bg.rect(0, 0, PANEL_W, PANEL_H).stroke({ color: '#3C4164', width: 1 });
-    this._bg.rect(0, 0, PANEL_W, 22).fill({ color: '#0F1224' });
     this._root.addChild(this._bg);
+
+    if (wzBg) {
+      const s = wzBg.ToPixi();
+      this._root.addChild(s);
+    } else {
+      this._bg.rect(0, 0, PANEL_W, PANEL_H).fill({ color: '#0C0E18', alpha: 0.95 });
+      this._bg.rect(0, 0, PANEL_W, PANEL_H).stroke({ color: '#3C4164', width: 1 });
+      this._bg.rect(0, 0, PANEL_W, 22).fill({ color: '#0F1224' });
+    }
 
     this._titleText = new Text({ text: 'Input', style: _titleStyle });
     this._titleText.x = 10; this._titleText.y = 4;

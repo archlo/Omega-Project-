@@ -17,10 +17,8 @@ const _slotStyle = new TextStyle({ fill: '#FFF', fontSize: 10, fontFamily: 'mono
 // OnCreate/OnButtonClicked/Draw/ClearToolTip).
 export class Repair extends GamePanel {
   OnRepair: ((slot: number) => void) | null = null;
+  OnRepairAll: (() => void) | null = null;
   OnClosed: (() => void) | null = null;
-  // ponytail: OG OnButtonClicked (decompile/6d3a20.c) also has a "repair all"
-  // button (id 0x3E8 -> SendRepairDurabilityAll, GameSender.RepairDurabilityAll).
-  // No such button exists in this panel yet — add one if repair-all is needed.
 
   private _background: WzSprite | null;
   private _font: BuiltInFont | null;
@@ -43,6 +41,13 @@ export class Repair extends GamePanel {
     const title = new Text({ text: 'Repair', style: _titleStyle });
     title.x = 8; title.y = 5;
     this.container.addChild(title);
+
+    // OG CRepairDurabilityDlg button id 0x3E8 — "Repair All"
+    const allBtn = new Button('Repair All');
+    allBtn.container.position.set(PanelW - 110, PanelH - 32);
+    allBtn.onClick = () => this.OnRepairAll?.();
+    this.container.addChild(allBtn.container);
+    this._allButtons.push(allBtn);
   }
 
   Open(items: { slot: number; name: string; durability: number; maxDurability: number }[]): void {

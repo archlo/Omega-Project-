@@ -35,7 +35,7 @@ describe('FieldScene.UpdateEntities', () => {
     const player = makeMockEntity(100) as any;
 
     expect(player.container.parent).toBeNull();
-    field.UpdateEntities([], player, [], 800, 600);
+    field.UpdateEntities([], player, [], null, null, 800, 600);
     expect(player.container.parent).not.toBeNull();
     // Must be a descendant of the field's own root container.
     expect(field.container.children.includes(player.container.parent!)).toBe(true);
@@ -45,7 +45,7 @@ describe('FieldScene.UpdateEntities', () => {
     const field = makeScene();
     const other = makeMockEntity(50) as any;
 
-    field.UpdateEntities([other], null, [], 800, 600);
+    field.UpdateEntities([other], null, [], null, null, 800, 600);
     expect(other.container.parent).not.toBeNull();
     expect(field.container.children.includes(other.container.parent!)).toBe(true);
   });
@@ -54,7 +54,7 @@ describe('FieldScene.UpdateEntities', () => {
     const field = makeScene();
     const drop = makeMockEntity(75) as any;
 
-    field.UpdateEntities([], null, [drop], 800, 600);
+    field.UpdateEntities([], null, [drop], null, null, 800, 600);
     expect(drop.container.parent).not.toBeNull();
     expect(field.container.children.includes(drop.container.parent!)).toBe(true);
   });
@@ -63,10 +63,10 @@ describe('FieldScene.UpdateEntities', () => {
     const field = makeScene();
     const player = makeMockEntity(100) as any;
 
-    field.UpdateEntities([], player, [], 800, 600);
+    field.UpdateEntities([], player, [], null, null, 800, 600);
     const layer = player.container.parent!;
     const countAfterFirst = layer.children.length;
-    field.UpdateEntities([], player, [], 800, 600);
+    field.UpdateEntities([], player, [], null, null, 800, 600);
     expect(layer.children.length).toBe(countAfterFirst);
   });
 });

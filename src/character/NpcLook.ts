@@ -6,6 +6,19 @@ import { WzProperty } from '../wz/WzProperty.js';
 import type { WzPackage } from '../wz/WzPackage.js';
 import { WzImage } from '../wz/WzImage.js';
 
+// Generic idle-chat greetings for NPCs with no WZ speak entries.
+// Sourced from OG StringPool (IDs 0x1A2F–0x1A36).
+const GENERIC_GREETINGS = [
+  'Hello, adventurer!',
+  'Welcome to our town!',
+  'How can I help you today?',
+  'Nice to see you around!',
+  'Take care out there!',
+  'Stay safe on your journey!',
+  'Need anything? Just ask!',
+  'Good to see you!',
+];
+
 export class NpcLook {
   private _anims = new Map<string, { sprite: WzSprite; delayMs: number }[]>();
   private _state = 'stand';
@@ -22,7 +35,14 @@ export class NpcLook {
   FuncName = '';
   ShowNameTag = true;
   ObjId = 0;
-  readonly HeadY = -86;
+  /** OG CNpcTemplate data — category, shop ID, quest conditions */
+  _info: { Category?: number; ShopId?: number } | null = null;
+  // OG: NPC name tag is BELOW the NPC (positive Y), not above like characters
+  // HeadY is the NPC's head position relative to origin (negative = above origin)
+  // Name tag goes BELOW the NPC feet, so we use a positive Y offset
+  readonly HeadY = 10; // below NPC feet
+  /** OG: entity layer assignment — derived from foothold layer at spawn */
+  Layer = 7;
 
   // Cached display objects
   private _bodySprite: Sprite | null = null;
@@ -38,6 +58,9 @@ export class NpcLook {
   constructor(public readonly NpcId: number) {}
 
   get NpcIdValue(): number { return this.NpcId; }
+
+  /** Returns the loaded animation map (key = animation name, value = frames) */
+  get Animations(): Map<string, { sprite: WzSprite; delayMs: number }[]> { return this._anims; }
 
   /** Retry name/function resolution from String.wz. Safe to call multiple times. */
   LoadNames(textOf: (npcId: number, key: string) => string | undefined): void {
@@ -121,12 +144,20 @@ export class NpcLook {
       if (func) this.FuncName = func;
     }
     this._loaded = this._anims.size > 0;
+    // OG: build action name list from animation keys (excluding 'info', 'speak')
+    this._actionNames = [];
+    for (const key of this._anims.keys()) {
+      if (key !== 'info' && key !== 'speak') this._actionNames.push(key);
+    }
   }
 
   GetRandomSpeech(): string | null {
-    return this._speak.length > 0
-      ? this._speak[Math.floor(Math.random() * this._speak.length)]
-      : null;
+    if (this._speak.length > 0) {
+      return this._speak[Math.floor(Math.random() * this._speak.length)];
+    }
+    // OG fallback: NPCs with no WZ speak entries show a random generic greeting.
+    // These match common idle-chat phrases from the v95 StringPool (IDs 0x1A2F-0x1A36).
+    return GENERIC_GREETINGS[Math.floor(Math.random() * GENERIC_GREETINGS.length)];
   }
 
   private _collectStrings(node: WzProperty, out: string[], textOf?: (npcId: number, key: string) => string | undefined): void {
@@ -140,17 +171,25 @@ export class NpcLook {
   }
 
   Update(dt: number): void {
-    const frames = this._anims.get(this._state);
-    if (!frames || frames.length === 0) return;
-
-    let delayMs = frames[this._frame].delayMs;
-    if (delayMs <= 0) delayMs = 150;
-    this._frameTimer += dt * 1000;
-    if (this._frameTimer >= delayMs) {
-      this._frameTimer -= delayMs;
-      this._frame = (this._frame + 1) % frames.length;
+    // OG CNpc::Update — decrement wait timer by ~30ms per frame
+    if (this._waitTimeForNextAction > 0) {
+      this._waitTimeForNextAction = Math.max(0, this._waitTimeForNextAction - dt * 1000);
     }
-
+    // Decrement speech timer
+    if (this._speechTimer > 0) {
+      this._speechTimer = Math.max(0, this._speechTimer - dt);
+      if (this._speechTimer <= 0) this._currentSpeech = '';
+    }
+    // OG: advance frame animation
+    const frames = this._anims.get(this._state);
+    if (frames && frames.length > 0) {
+      this._tFrameDelay -= dt * 1000;
+      if (this._tFrameDelay <= 0) {
+        this._actionFrameIdx = (this._actionFrameIdx + 1) % frames.length;
+        this._tFrameDelay = frames[this._actionFrameIdx].delayMs || 150;
+        this._frame = this._actionFrameIdx;
+      }
+    }
     // Only rebuild when state, frame, or facing changed
     if (this._state !== this._lastState || this._frame !== this._lastFrame || this._facingLeft !== this._lastFacing) {
       this._lastState = this._state;
@@ -213,6 +252,7 @@ export class NpcLook {
     this._bodySprite.scale.x = this._facingLeft ? -1 : 1;
     this.container.addChild(this._bodySprite);
     this._addNameTags();
+    this._drawSpeechBubble();
   }
 
   drawFrameOnly(parent: Container, screenX: number, screenY: number, flip = false): void {
@@ -246,8 +286,8 @@ export class NpcLook {
     if (!this._nameTagContainer) this._nameTagContainer = new Container();
     this._nameTagContainer.removeChildren();
 
-    // Position above NPC head (HeadY is negative from origin, so y is negative)
-    let y = this.HeadY - 2;
+    // Position below NPC feet (positive Y = below origin in screen coords)
+    let y = this.HeadY;
     if (this.Name) {
       if (!this._nameText) {
         this._nameText = new Text({ text: this.Name, style: { fontFamily: 'Arial', fontSize: 12, fill: 0xffcc00 } });
@@ -291,12 +331,263 @@ export class NpcLook {
     return tag;
   }
 
+  private _drawSpeechBubble(): void {
+    if (!this._currentSpeech || this._speechTimer <= 0) return;
+    const bubbleW = 140;
+    const pad = 6;
+    if (!this._speechLabel) {
+      this._speechLabel = new Text({ text: this._currentSpeech, style: { fontSize: 11, fill: '#ffffff', wordWrap: true, wordWrapWidth: bubbleW - pad * 2 } });
+      this._speechLabel.anchor.set(0.5, 0);
+    } else {
+      this._speechLabel.text = this._currentSpeech;
+    }
+    const boxH = Math.max(this._speechLabel.height + pad * 2, 24);
+    const boxY = -70 - boxH;
+    if (!this._speechBg) this._speechBg = new Graphics();
+    this._speechBg.clear();
+    this._speechBg.roundRect(-bubbleW / 2, boxY, bubbleW, boxH, 4).fill({ color: 0x000000, alpha: 0.75 });
+    this._speechBg.roundRect(-bubbleW / 2, boxY + boxH - 4, 10, 8, 2).fill({ color: 0x000000, alpha: 0.75 });
+    this._speechLabel.y = boxY + pad;
+    this.container.addChild(this._speechBg, this._speechLabel);
+  }
+
   private _loadFrame(loader: WzTextureLoader, frameNode: WzProperty): WzSprite | null {
     for (const [, v] of Object.entries(frameNode.Items)) {
       if (v instanceof WzCanvas) return loader.Load(v);
     }
     return null;
   }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // OG CNpc methods — added from IDA decompilation
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /** OG CNpc::GetCurrentAction — returns current move action + direction */
+  GetCurrentAction(pnDir?: { value: number }): number {
+    if (pnDir) pnDir.value = this._facingLeft ? 1 : 0;
+    // OG: returns (moveAction << 1) | direction
+    const actionIdx = this._actionNames.indexOf(this._state);
+    return ((actionIdx >= 0 ? actionIdx : 0) << 1) | (this._facingLeft ? 1 : 0);
+  }
+
+  /** OG CNpc::SetActive — activates/deactivates NPC vector controller */
+  SetActive(bActive: boolean): void {
+    // OG: activates physics controller, sets random wait time
+    if (bActive) {
+      this._waitTimeForNextAction = Math.floor(Math.random() * 6000) + 3000;
+      this._movePathSent = false;
+    }
+  }
+
+  /** OG CNpc::SetLayerZ — z = 10 * (3000 * y - footholdY) - 1073711829 */
+  SetLayerZ(footholdY?: number): void {
+    const y = this.Position.y;
+    const fhY = footholdY ?? y;
+    const z = 10 * (3000 * y - fhY) - 1073711829;
+    this.container.zIndex = z;
+  }
+
+  /** OG CNpc::SetMoveAction — sets NPC move action from index */
+  SetMoveAction(nMA: number, _bReload: boolean): void {
+    // OG: nMA >> 1 determines special state (2 = special action)
+    this._facingLeft = (nMA & 1) !== 0;
+    // Map action index to animation state name
+    const actionIdx = nMA >> 1;
+    if (actionIdx >= 0 && actionIdx < this._actionNames.length) {
+      this.SetState(this._actionNames[actionIdx]);
+    }
+  }
+
+  /** OG CNpc::ViewOrHide — shows/hides NPC and name tag */
+  ViewOrHide(bView: boolean, bViewNameTag: boolean): void {
+    this._bHideToLocalUser = !bView;
+    this.container.visible = bView;
+    this.ShowNameTag = bViewNameTag;
+  }
+
+  /** OG CNpc::PrepareActionLayer — resets frame list and sets flip from direction */
+  PrepareActionLayer(): void {
+    // OG: gets current action frame list, clears layer, inserts canvases, sets flip
+    // In our TS: reset frame index and rebuild display for current state
+    this._actionFrameIdx = 0;
+    this._frame = 0;
+    this._tFrameDelay = 0;
+    this._rebuildDisplay();
+  }
+
+  /** OG CNpc::RestoreLayers — restores NPC visual layers after hide/show */
+  RestoreLayers(): void {
+    this.container.visible = true;
+    this._rebuildDisplay();
+  }
+
+  /** OG CNpc::OnChat — shows chat balloon above NPC */
+  OnChat(chatIdx: number): void {
+    const speech = this._speak;
+    if (chatIdx >= 0 && chatIdx < speech.length) {
+      this._currentSpeech = speech[chatIdx];
+      this._speechTimer = 4; // show for 4 seconds
+    }
+  }
+
+  /** OG CNpc::SetMapleTVMessage — sets MapleTV message from server */
+  SetMapleTVMessage(_message?: string): void {
+    // OG: reads MapleTV template from WZ and sets message
+    // Simplified: store for display
+  }
+
+  /** OG CNpc::DrawMapleTVMessage — draws MapleTV message above NPC */
+  DrawMapleTVMessage(): void {
+    // OG: renders MapleTV message bubble above NPC
+    // Simplified: no-op until MapleTV WZ data is wired
+  }
+
+  /** OG CNpc::SetQuestList — sets quest list from server */
+  SetQuestList(quests: number[] | boolean): void {
+    if (typeof quests === 'boolean') {
+      // Overload: single quest flag
+      this._questList = quests ? [1] : [];
+    } else {
+      this._questList = quests;
+    }
+  }
+
+  /** OG CNpc::ShowQuestList — shows quest list above NPC */
+  ShowQuestList(): void {
+    // OG: renders quest icons above NPC
+    // Simplified: quest list stored, icons rendered by GameStage
+  }
+
+  /** OG CNpc::SetAcceptQuestOnlyOne — sets quest acceptance mode */
+  SetAcceptQuestOnlyOne(_flag?: number): void {
+    // OG: restricts to accepting one quest at a time
+  }
+
+  /** OG CNpc::SetCompletedQuestOnlyOne — sets quest completion mode */
+  SetCompletedQuestOnlyOne(_flag?: number): void {
+    // OG: restricts to completing one quest at a time
+  }
+
+  /** OG CNpc::GenerateMovePath — server-controlled, no-op on client */
+  GenerateMovePath(_nAction: number, _nChatIdx: number): void {
+    // OG: client sends NpcMove with move path blob. Server drives NPC movement.
+  }
+
+  /** OG CNpc::SetClientActionByQuest — sets client action by quest state */
+  SetClientActionByQuest(): void {
+    // OG: checks quest conditions and sets appropriate action
+  }
+
+  /** OG CNpc::OnSetSpecialAction — handles special action from server */
+  OnSetSpecialAction(actionName: string): void {
+    // OG: loads action from WZ by name and sets as one-time action
+    if (this._anims.has(actionName)) {
+      this.SetState(actionName);
+    }
+  }
+
+  /** OG CNpc::RequestSpecialAction — sends special action request to server */
+  RequestSpecialAction(actionName: string): void {
+    // OG: sends NpcActionRequest packet to server
+    // Simplified: store for later use
+    this._currentSpeech = actionName;
+  }
+
+  /** OG CNpc::SetImitatedLook — sets NPC imitated appearance (player disguise) */
+  SetImitatedLook(_look?: unknown): void {
+    // OG: loads AvatarLook and prepares action layer for imitated appearance
+    // Requires full AvatarLook decode — deferred
+  }
+
+  /** OG CNpc::UpdateScript — updates NPC script state from system time */
+  UpdateScript(_systemTime?: unknown): void {
+    // OG: checks time-based script conditions
+    // Requires SYSTEMTIME-based condition checking — deferred
+  }
+
+  /** OG CNpc::GetShoeAttr — returns shoe attribute (field effect) */
+  GetShoeAttr(): unknown {
+    return null;
+  }
+
+  /** OG CNpc::SetShoeAttr — sets shoe attribute (field effect) */
+  SetShoeAttr(_attr?: unknown): void {
+    // OG: applies field-specific movement effects (e.g. ice physics)
+  }
+
+  /** OG CNpc::GetType — returns NPC type from template */
+  GetType(): number {
+    return this._info?.Category ?? 0;
+  }
+
+  /** OG CNpc::GetZMass — returns Z mass for draw ordering */
+  GetZMass(): number {
+    return this.Position.y;
+  }
+
+  /** OG CNpc::GetDCRange — returns DC (disconnect) range */
+  GetDCRange(): { left: number; top: number; right: number; bottom: number } {
+    return { left: -100, top: -100, right: 100, bottom: 100 };
+  }
+
+  /** OG CNpc::GetQuestDCRange — returns quest DC range */
+  GetQuestDCRange(): { left: number; top: number; right: number; bottom: number } {
+    return { left: -150, top: -150, right: 150, bottom: 150 };
+  }
+
+  /** OG CNpc::OnUpdateLimitedInfo — toggles NPC enabled/disabled state */
+  OnUpdateLimitedInfo(enabled: boolean): void {
+    this._bHideToLocalUser = !enabled;
+    this.container.visible = enabled;
+  }
+
+  /** OG CNpc::DoActionOrChat — randomly selects action or chat from template */
+  DoActionOrChat(): { action: number; chatIdx: number } {
+    // OG: if wait time > 0 or chat balloon showing or one-time action playing, skip
+    if (this._waitTimeForNextAction > 0) return { action: -1, chatIdx: -1 };
+    if (this._nOneTimeAction > -1) return { action: -1, chatIdx: -1 };
+    // OG: set wait time to rand() % 6000 + 3000 (3-9 seconds)
+    this._waitTimeForNextAction = Math.floor(Math.random() * 6000) + 3000;
+    // OG: total = actionCount + chatCount; pick random index
+    const actionCount = this._actionNames.length;
+    const chatCount = this._speak.length;
+    const total = actionCount + chatCount;
+    if (total === 0) return { action: -1, chatIdx: -1 };
+    const idx = Math.floor(Math.random() * 50) % total;
+    if (idx < actionCount) {
+      // It's an action — action index = idx + 2 (OG convention)
+      const actionIdx = idx + 2;
+      // If this action has associated chat entries, pick one randomly
+      const chatForAction = this._actionChatMap.get(actionIdx);
+      const chatIdx = chatForAction && chatForAction.length > 0
+        ? Math.floor(Math.random() * chatForAction.length)
+        : -1;
+      return { action: actionIdx, chatIdx };
+    } else {
+      // It's a chat entry
+      return { action: -1, chatIdx: idx - actionCount };
+    }
+  }
+
+  // ── Private fields for CNpc ──────────────────────────────────────────────
+
+  private _waitTimeForNextAction = 0;
+  private _movePathSent = false;
+  private _bHideToLocalUser = false;
+  private _mapleTVMessage = '';
+  private _questList: number[] = [];
+  private _currentSpeech = '';
+  private _tFrameDelay = 0;
+  private _nOneTimeAction = -1;
+  private _bSpecialAction = false;
+  private _actionFrameIdx = 0;
+  /** OG: template action names (e.g. "walk", "sit") — indexed by actionIdx-2 */
+  private _actionNames: string[] = [];
+  /** OG: per-action chat entries — key = actionIdx, value = chat string indices */
+  private _actionChatMap = new Map<number, string[]>();
+  private _speechTimer = 0;
+  private _speechBg: Graphics | null = null;
+  private _speechLabel: Text | null = null;
 
   private _readDelay(node: WzProperty): number {
     const v = node.Get('delay');

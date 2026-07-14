@@ -56,6 +56,9 @@ export interface SetFieldArgs {
   stat?: CharacterStat; look?: AvatarLook;
   /** OG: CharacterData.money — decoded from SetField migrate path (DBChar.MONEY flag). */
   money?: number;
+  /** OG: CharacterData.equipped — decoded equip slots from SetField migrate path. */
+  equipped?: { slot: number; item: any }[];
+  equippedCash?: { slot: number; item: any }[];
   /** Non-migrate-only: field type (1 byte; e.g. 0=normal, 1=instance). */
   nFieldType?: number;
   posMap?: number; portal?: number;
@@ -420,12 +423,14 @@ export interface HontaleTimerArgs { flag: number; value: number; }
 export interface ChaosZakumTimerArgs { flag: number; value: number; }
 export interface HontailTimerArgs { flag: number; value: number; }
 export interface ZakumTimerArgs { flag: number; value: number; }
-// OG: CRPSGameDlg::OnPacket / CParcelDlg::OnPacket each have their own
-// internal switch (confirmed via func_switches) — the dump's decode_layout
-// for these is a merged trace across branches, not one reliable linear
-// shape. Only the leading sub-action byte is decoded; the rest is opaque
-// per sub-action until each branch is read individually.
-export interface RPSGameDlgArgs { subAction: number; }
+// OG: CRPSGameDlg::OnPacket — subAction byte decoded, then for subAction=11
+// two more bytes: npcSelect (which RPS the NPC chose) and cntStraightVictories
+// (negative = user lost, 0 = first game, positive = win streak count).
+export interface RPSGameDlgArgs {
+  subAction: number;
+  npcSelect: number;       // -1 when not applicable (subAction != 11)
+  cntStraightVictories: number; // signed byte — negative means loss
+}
 export interface ParcelDlgArgs { subAction: number; }
 // charId is the owner's character id (CSummonedPool::OnPacket decodes it
 // before dispatching by sub-opcode, decompile/75ac70.c); summonedId keys
@@ -506,6 +511,14 @@ export interface MiniRoomArgs {
   miniRoomType?: number;
   pwd?: boolean;
   isEmployee?: boolean;
+  // MemoryGame sub-protocol
+  cardIndex?: number;
+  cardType?: number;
+  showState?: number;
+  round?: number;
+  cardOrder?: number[];
+  winnerIndex?: number;
+  gameResultType?: number;
 }
 
 export interface ReactorEnterArgs {
@@ -1282,7 +1295,7 @@ export interface MobSuspendResetArgs { mobId: number; isSuspended: boolean; }
 export interface MobAffectedArgs { mobId: number; skillId: number; duration: number; }
 export interface MobCatchEffectArgs { mobId: number; catchSkillId: number; catchItemId: number; }
 export interface MobEffectByItemArgs { mobId: number; itemId: number; }
-export interface MobIncChargeCountArgs { mobId: number; chargeCount: number; }
+export interface MobIncChargeCountArgs { mobId: number; chargeCount: number; attackReady: boolean; }
 export interface MobEscortFullPathArgs { mobId: number; state: number; stopDuration: number; movePath?: unknown; }
 export interface MobEscortStopPermArgs { mobId: number; }
 export interface MobEscortStopSayArgs { mobId: number; stopDuration: number; }

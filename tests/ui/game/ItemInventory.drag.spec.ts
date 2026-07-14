@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Texture } from 'pixi.js';
+import { Texture, Sprite } from 'pixi.js';
 import { ItemInventory } from '../../../src/ui/game/ItemInventory.js';
 
 // TODO_AUDIT.md item-drag-and-drop TODO: mousedown over an inventory item
@@ -7,7 +7,8 @@ import { ItemInventory } from '../../../src/ui/game/ItemInventory.js';
 describe('ItemInventory drag-and-drop', () => {
   function fakeIcons() {
     const texture = Texture.EMPTY;
-    return { LoadIcon: () => ({ Texture: texture }) } as any;
+    const fakeSprite = new Sprite(texture);
+    return { LoadIcon: () => ({ Texture: texture, ToPixi: () => fakeSprite }) } as any;
   }
 
   it('starts a drag with the item payload on mousedown over a slot', () => {

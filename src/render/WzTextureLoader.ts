@@ -7,6 +7,7 @@ import { AnimatedSprite } from './AnimatedSprite.js';
 
 export class WzTextureLoader {
   private _cache = new Map<WzCanvas, WzSprite>();
+  private _failed = new WeakSet<WzCanvas>();
 
   Load(canvas: WzCanvas | null): WzSprite | null {
     if (canvas === null) return null;
@@ -14,9 +15,10 @@ export class WzTextureLoader {
 
     const cached = this._cache.get(canvas);
     if (cached) return cached;
+    if (this._failed.has(canvas)) return null;
 
     if (canvas.Width <= 0 || canvas.Height <= 0) {
-      console.warn(`[WzLoader] skip ${canvas.Width}x${canvas.Height} (fmt=${canvas.Format})`);
+      this._failed.add(canvas);
       return null;
     }
 
@@ -24,7 +26,7 @@ export class WzTextureLoader {
     try {
       pixels = canvas.DecodeBgra();
     } catch (e) {
-      console.warn(`[WzLoader] DecodeBgra failed (fmt=${canvas.Format})`, e);
+      this._failed.add(canvas);
       return null;
     }
 

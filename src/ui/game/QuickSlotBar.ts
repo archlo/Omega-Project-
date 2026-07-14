@@ -34,22 +34,26 @@ export class QuickSlotBar extends GamePanel implements DragTarget {
   private _bindingAt: (scancode: number) => FuncKeyMapped;
   private _bindSkill: (scancode: number, skillId: number) => void;
   private _skillIcon: (skillId: number) => WzSprite | null;
+  private _itemIcon: (itemId: number) => WzSprite | null;
   private _skillCdInfo: (skillId: number) => { remain: number; total: number } | null;
   private _itemCooltimeRemaining = 0;
   private _itemCooltimeTotal = 0;
   private _isStateChangeItem: (itemId: number) => boolean;
+  private _isBindableItem: (itemId: number, invType: number) => boolean;
   private _itemCountOf: (itemId: number) => number;
   private _viewW = 800;
   private _viewH = 600;
   private _slotG!: Graphics;
   private _cdG!: Graphics;
   private _skillSprites: (Sprite | null)[] = new Array(SlotCount).fill(null);
+  private _cashTagSprites: (Sprite | null)[] = new Array(SlotCount).fill(null);
   private _labelSprites: (Sprite | null)[] = new Array(SlotCount).fill(null);
   private _fallbackLabels: Text[] = [];
   private _numberTexts: Text[] = [];
   private _btSlideUp: Button | null;
   private _btSlideDown: Button | null;
   private _bShowSlide = true;
+  private _cashTagLoader: (() => Sprite | null) | null = null;
   bindItemToKey: ((scancode: number, itemId: number) => void) | null = null;
 
   constructor(
@@ -57,8 +61,11 @@ export class QuickSlotBar extends GamePanel implements DragTarget {
     bindingAt: (scancode: number) => FuncKeyMapped,
     bindSkill: (scancode: number, skillId: number) => void,
     skillIcon: (skillId: number) => WzSprite | null,
+    itemIcon: (itemId: number) => WzSprite | null,
     skillCdInfo?: (skillId: number) => { remain: number; total: number } | null,
     isStateChangeItem?: (itemId: number) => boolean,
+    isBindableItem?: (itemId: number, invType: number) => boolean,
+    cashTagLoader?: () => Sprite | null,
     itemCountOf?: (itemId: number) => number,
   ) {
     super();
@@ -66,8 +73,11 @@ export class QuickSlotBar extends GamePanel implements DragTarget {
     this._bindingAt = bindingAt;
     this._bindSkill = bindSkill;
     this._skillIcon = skillIcon;
+    this._itemIcon = itemIcon;
     this._skillCdInfo = skillCdInfo ?? (() => null);
     this._isStateChangeItem = isStateChangeItem ?? (() => false);
+    this._isBindableItem = isBindableItem ?? (() => false);
+    this._cashTagLoader = cashTagLoader ?? null;
     this._itemCountOf = itemCountOf ?? (() => 0);
 
     // OG Init: loads slide bg from UIWindow2.img/KeyConfig/quickslotConfig
@@ -132,6 +142,8 @@ export class QuickSlotBar extends GamePanel implements DragTarget {
         let icon: WzSprite | null = null;
         if (binding.type === FuncKeyType.Skill) {
           icon = this._skillIcon(binding.id);
+        } else if (binding.type === FuncKeyType.Item) {
+          icon = this._itemIcon(binding.id);
         }
         if (icon?.Texture) {
           let sp = this._skillSprites[i];
@@ -146,8 +158,22 @@ export class QuickSlotBar extends GamePanel implements DragTarget {
           sp.width = r.width - 4;
           sp.height = r.height - 4;
           sp.visible = true;
+          // OG: DrawItemIconForSlot — cash tag overlay for cash items
+          if (binding.type === FuncKeyType.Item && Math.floor(binding.id / 1_000_000) === 5) {
+            if (!this._cashTagSprites[i] && this._cashTagLoader) {
+              this._cashTagSprites[i] = this._cashTagLoader();
+              if (this._cashTagSprites[i]) this._root.addChild(this._cashTagSprites[i]!);
+            }
+            if (this._cashTagSprites[i]) {
+              this._cashTagSprites[i]!.position.set(r.x + r.width - this._cashTagSprites[i]!.width, r.y + r.height - this._cashTagSprites[i]!.height);
+              this._cashTagSprites[i]!.visible = true;
+            }
+          } else {
+            if (this._cashTagSprites[i]) this._cashTagSprites[i]!.visible = false;
+          }
         } else {
           if (this._skillSprites[i]) this._skillSprites[i]!.visible = false;
+          if (this._cashTagSprites[i]) this._cashTagSprites[i]!.visible = false;
         }
       } else {
         if (this._skillSprites[i]) this._skillSprites[i]!.visible = false;
@@ -292,8 +318,8 @@ export class QuickSlotBar extends GamePanel implements DragTarget {
     if ('skillId' in payload) return this.TryBindSkillAt((payload as { skillId: number }).skillId, x, y);
     if ('itemId' in payload && 'invType' in payload) {
       const { itemId, invType } = payload as { itemId: number; invType: number };
-      // Only allow Use (2), Etc (4), Setup (3) items on quickslot
-      if (invType === 2 || invType === 3 || invType === 4) {
+      // OG CDraggableItem::MapFuncKey: only specific items are bindable
+      if (this._isBindableItem(itemId, invType)) {
         return this.TryBindItemAt(itemId, x, y);
       }
     }

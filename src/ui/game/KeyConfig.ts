@@ -112,6 +112,7 @@ export class KeyConfig extends GamePanel implements DragTarget {
   onSaveToServer: ((changed: { index: number; fk: FuncKeyMappedRecord }[]) => void) | null = null;
   onOpenQuickSlot: (() => void) | null = null;
   skillIconResolver: ((skillId: number) => WzSprite | null) | null = null;
+  itemIconResolver: ((itemId: number) => WzSprite | null) | null = null;
 
   constructor(loader: WzTextureLoader, ui: WzPackage | null, font: BuiltInFont | null) {
     initLayout();
@@ -467,6 +468,9 @@ export class KeyConfig extends GamePanel implements DragTarget {
     }
     if (fk.type === FuncKeyType.Skill || fk.type === FuncKeyType.MacroSkill) {
       return this.skillIconResolver?.(fk.id) ?? null;
+    }
+    if (fk.type === FuncKeyType.Item || fk.type === FuncKeyType.Effect) {
+      return this.itemIconResolver?.(fk.id) ?? null;
     }
     return null;
   }

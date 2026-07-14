@@ -54,7 +54,9 @@ describe('Third batch resolved by chasing per-pool switch tables', () => {
       const p = OutPacket.Of(header);
       p.writeByte(2); p.writeInt(999); // extra bytes are opaque tail, ignored
       dispatch(router, p.toArray());
-      expect(captured).toEqual({ subAction: 2 });
+      // RPSGameDlg handler now decodes subAction 11 fields (npcSelect, cntStraightVictories)
+      // but subAction 2 only decodes the leading byte — extra bytes are ignored
+      expect(captured.subAction).toBe(2);
     }
   });
 

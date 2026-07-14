@@ -33,8 +33,11 @@ export class StatDetailInfo extends GamePanel {
   private _font: BuiltInFont | null;
   private _bg: WzSprite | null;
   private _bg2: WzSprite | null;
+  private _bg3: WzSprite | null;
   private _btHpUp: Button | null;
   private _bgSprite: Sprite | null = null;
+  private _bg2Sprite: Sprite | null = null;
+  private _bg3Sprite: Sprite | null = null;
   private _statTexts: Text[] = [];
 
   constructor(loader: WzTextureLoader, ui: WzPackage | null, font: BuiltInFont | null) {
@@ -47,6 +50,7 @@ export class StatDetailInfo extends GamePanel {
     const detailProp = detail instanceof WzProperty ? detail : null;
     this._bg = detailProp?.Get('backgrnd') instanceof WzCanvas ? loader.Load(detailProp!.Get('backgrnd') as WzCanvas) : null;
     this._bg2 = detailProp?.Get('backgrnd2') instanceof WzCanvas ? loader.Load(detailProp!.Get('backgrnd2') as WzCanvas) : null;
+    this._bg3 = detailProp?.Get('backgrnd3') instanceof WzCanvas ? loader.Load(detailProp!.Get('backgrnd3') as WzCanvas) : null;
     this._btHpUp = detailProp?.Get('BtHpUp') instanceof WzProperty ? new Button('HP Up') : null;
   }
 
@@ -57,12 +61,22 @@ export class StatDetailInfo extends GamePanel {
 
   draw(): void {
     if (!this.isVisible) return;
-    // background
+    // OG: 3 background layers (backgrnd, backgrnd2, backgrnd3)
     if (this._bg?.Texture && !this._bgSprite) {
       this._bgSprite = this._bg.ToPixi();
       this._root.addChild(this._bgSprite);
     }
+    if (this._bg2?.Texture && !this._bg2Sprite) {
+      this._bg2Sprite = this._bg2.ToPixi();
+      this._root.addChild(this._bg2Sprite);
+    }
+    if (this._bg3?.Texture && !this._bg3Sprite) {
+      this._bg3Sprite = this._bg3.ToPixi();
+      this._root.addChild(this._bg3Sprite);
+    }
     if (this._bgSprite) this._bgSprite.visible = true;
+    if (this._bg2Sprite) this._bg2Sprite.visible = true;
+    if (this._bg3Sprite) this._bg3Sprite.visible = true;
 
     // derived stats
     const d = computeDerived(this.Inputs);

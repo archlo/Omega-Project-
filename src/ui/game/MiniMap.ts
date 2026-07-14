@@ -3,6 +3,7 @@ import { GamePanel } from './GamePanel.js';
 import { Button } from '../Button.js';
 import { BuiltInFont } from '../BuiltInFont.js';
 import { MiniMapData } from '../../map/MiniMapData.js';
+import type { Foothold } from '../../map/Foothold.js';
 import { WzSprite } from '../../render/WzSprite.js';
 import { WzTextureLoader } from '../../render/WzTextureLoader.js';
 import { WzPackage } from '../../wz/WzPackage.js';
@@ -136,6 +137,8 @@ export class MiniMap extends GamePanel {
 
   // OG: OnMouseButton sends packet when clicking player dot
   onPlayerDotClick: (() => void) | null = null;
+  // OG: m_pField — live foothold dictionary for dynamic foothold state rendering
+  private _footholds: Record<number, Foothold> | null = null;
 
   constructor(loader: WzTextureLoader, ui: WzPackage | null, font: BuiltInFont | null) {
     super();
@@ -260,9 +263,12 @@ export class MiniMap extends GamePanel {
     this._mode = this._prevMode;
   }
 
-  // OG: OnButtonClicked 1002 — world map (stub)
+  // OG: OnButtonClicked 1002 — world map dialog
+  // Wired from GameStage to toggle the WorldMap panel.
+  onBtWorldMap: (() => void) | null = null;
+
   private _onBtWorldMap(): void {
-    // TODO: open CWorldMapDlg
+    this.onBtWorldMap?.();
   }
 
   // OG: OnButtonClicked 1003 — toggle 2X mode
@@ -356,6 +362,11 @@ export class MiniMap extends GamePanel {
   setShowMiniMap(show: boolean): void {
     this._showMiniMap = show;
     this.isVisible = show;
+  }
+
+  // Live foothold reference for dynamic foothold state (disabled/moving)
+  setFootholds(footholds: Record<number, Foothold>): void {
+    this._footholds = footholds;
   }
 
   // OG: SetFieldID — updates the current field ID (m_dwFieldID)
@@ -587,15 +598,21 @@ export class MiniMap extends GamePanel {
 
   // OG: MakeConvexLayer — renders foothold segments as lines on the minimap.
   // Each foothold is drawn as a line connecting its two endpoints.
+  // Looks up live positions from FieldScene.Footholds so dynamic foothold
+  // state changes (ApplyFootHoldState) are reflected on the minimap.
   private _drawFootholds(
     pane: { x: number; y: number; width: number; height: number },
     scrOrig: ScrOrig, mag: number, scale: number,
   ): void {
     const gfx = this._gfx;
     for (const fh of this._data!.Footholds) {
-      // OG: TransformPoint for each foothold endpoint
-      const p1 = this._transformPoint({ x: fh.x1, y: fh.y1 }, scrOrig, mag);
-      const p2 = this._transformPoint({ x: fh.x2, y: fh.y2 }, scrOrig, mag);
+      // Look up live foothold — skip if not found or disabled (State===0)
+      const live = this._footholds?.[fh.footholdId] ?? null;
+      if (!live || live.State === 0) continue;
+
+      // OG: TransformPoint for each foothold endpoint using live coordinates
+      const p1 = this._transformPoint({ x: live.X1, y: live.Y1 }, scrOrig, mag);
+      const p2 = this._transformPoint({ x: live.X2, y: live.Y2 }, scrOrig, mag);
 
       const x1 = pane.x + p1.x * scale;
       const y1 = pane.y + p1.y * scale;

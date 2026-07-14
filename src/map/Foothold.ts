@@ -54,4 +54,49 @@ export class Foothold {
     const ex = x - px, ey = y - py;
     return ex * ex + ey * ey;
   }
+
+  /** OG: CStaticFoothold::IsVertical — checks if foothold is vertical (X1 === X2) */
+  IsVertical(): boolean {
+    return this.X1 === this.X2;
+  }
+
+  /** OG: CStaticFoothold::GetForwardLink — follows foothold chain in a direction
+   *  @param d - direction (-1 = backward, +1 = forward)
+   *  @param posCur - current position along foothold
+   *  @param len - remaining distance to travel
+   *  Returns the foothold after traveling len distance in direction d */
+  GetForwardLink(d: number, posCur: number, len: number): Foothold | null {
+    let remaining = len;
+    let pos = posCur;
+
+    if (d < 0) {
+      pos = posCur;
+    } else if (d <= 0) {
+      return this;
+    } else {
+      pos = this.GetLength() - posCur;
+    }
+
+    remaining -= pos;
+    if (remaining <= 0) return this;
+
+    let current: Foothold | null = this;
+    while (current) {
+      const next = d >= 0 ? current.Next : current.Prev;
+      if (!next) return null;
+      // Find the next foothold in the field
+      // This is a simplified version - full implementation would need FieldScene reference
+      remaining -= current.GetLength();
+      if (remaining <= 0) return current;
+      current = null; // Would need field reference to continue
+    }
+    return this;
+  }
+
+  /** OG: CStaticFoothold::GetLength — returns foothold length */
+  GetLength(): number {
+    const dx = this.X2 - this.X1;
+    const dy = this.Y2 - this.Y1;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
 }

@@ -1,6 +1,7 @@
 import { Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
 import { GamePanel } from './GamePanel.js';
 import { WzProperty } from '../../wz/WzProperty.js';
+import { WzPackage } from '../../wz/WzPackage.js';
 import { WzTextureLoader } from '../../render/WzTextureLoader.js';
 import { WzSprite } from '../../render/WzSprite.js';
 
@@ -56,10 +57,12 @@ export class BookDlg extends GamePanel {
   private _closeLabel: Text;
 
   private _loader: WzTextureLoader | null = null;
+  private _itemWz: WzPackage | null = null;
 
-  constructor(loader?: WzTextureLoader) {
+  constructor(loader?: WzTextureLoader, itemWz?: WzPackage) {
     super();
     this._loader = loader ?? null;
+    this._itemWz = itemWz ?? null;
     this._root.position.set(WND_X, WND_Y);
 
     this._bg = new Graphics();
@@ -100,7 +103,7 @@ export class BookDlg extends GamePanel {
       return;
     }
 
-    this._lastPage = Math.max(0, (this._bookProp.getCount() ?? 0) - 1);
+    this._lastPage = Math.max(0, Object.keys(this._bookProp.Items).length - 1);
     this._setPage(0);
   }
 
@@ -124,18 +127,18 @@ export class BookDlg extends GamePanel {
     // OG: Loads two columns (index 0 and 1) per page
     for (let col = 0; col < 2; col++) {
       const pageKey = String(nPage + col);
-      const pageNode = this._bookProp.get(pageKey);
+      const pageNode = this._bookProp.Get(pageKey) as WzProperty | null;
       if (!pageNode) continue;
 
       let lineY = 0;
       let lineIdx = 0;
       while (true) {
-        const lineNode = pageNode.get(String(lineIdx));
+        const lineNode = pageNode.Get(String(lineIdx)) as WzProperty | null;
         if (!lineNode) break;
 
-        const textVal = lineNode.get('text');
+        const textVal = lineNode.Get('text');
         const text = textVal !== undefined && textVal !== null ? String(textVal) : '';
-        const alignVal = lineNode.get('align');
+        const alignVal = lineNode.Get('align');
         const align = alignVal !== undefined && alignVal !== null ? Number(alignVal) : 0;
 
         // OG: CTextAnalyzer with width=PAGE_W, margin=PAGE_MARGIN
@@ -200,12 +203,11 @@ export class BookDlg extends GamePanel {
 
   /** OG: OpenBook — loads WZ data from item's "book" property. */
   private _loadBookProperty(nItemID: number): WzProperty | null {
-    // Try loading from the item's WZ book sub-node
+    if (!this._itemWz) return null;
     const category = Math.floor(nItemID / 10000);
-    // OG resolves via CItemInfo::GetItemProp → item/<category>/<itemId>/book
     try {
-      const prop = WzProperty.fromPath(`Item/Consume/${category}.img/${nItemID}/book`);
-      if (prop && prop.getCount && prop.getCount() > 0) return prop;
+      const prop = this._itemWz.GetItem(`Consume/${category}.img/${nItemID}/book`) as WzProperty | null;
+      if (prop && Object.keys(prop.Items).length > 0) return prop;
     } catch {
       // fall through
     }

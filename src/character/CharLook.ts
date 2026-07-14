@@ -108,7 +108,13 @@ export class CharLook {
 
   StartAction(actionKey: string): void {
     if (!this.ActionExists(actionKey)) {
-      actionKey = 'stand1';
+      // OG: when WZ data lacks the animation, fall back to the action key
+      // itself (for stance keys like 'jump', 'ladder', 'rope') rather than
+      // always falling back to 'stand1'. Only fall back to 'stand1' if the
+      // key is not in the known action set at all.
+      if (!CharLook.FallbackActions.includes(actionKey)) {
+        actionKey = 'stand1';
+      }
     }
     if (actionKey !== this._currentAction) {
       this._currentAction = actionKey;

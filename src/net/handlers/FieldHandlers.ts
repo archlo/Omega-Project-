@@ -6,7 +6,7 @@ import { OutHeader, InHeader } from '../packet/OpCodes.js';
 import { PacketRouter } from '../session/PacketRouter.js';
 import { ClientSession } from '../session/ClientSession.js';
 import { ScriptMessageType, ScriptMessageParam } from '../packet/ScriptMessageType.js';
-import { MiniRoomType } from '../packet/MiniRoomProtocol.js';
+import { MiniRoomType, MiniRoomProtocol as MiniRoomProtocolFull } from '../packet/MiniRoomProtocol.js';
 import { ItemDecoder } from '../packet/ItemDecoder.js';
 import { DecodeMovePath } from '../packet/MovePathDecoder.js';
 import { MoveActionToStance } from '../../character/Stance.js';
@@ -362,6 +362,14 @@ export class FieldHandlers {
   onRequestFootHoldInfo: (() => void) | null = null;
   onAntiMacroResult: ((args: AntiMacroResultArgs) => void) | null = null;
   onDestroyShopResult: ((args: DestroyShopResultArgs) => void) | null = null;
+  // OG: CUserLocal::OnFieldFadeInOut (decompile 0x9057a3)
+  onFieldFadeInOut: ((color: number, duration: number, fadeOut: number, fadeTime: number) => void) | null = null;
+  // OG: CUserLocal::OnFieldFadeOutForce (decompile 0x9057f4)
+  onFieldFadeOutForce: ((color: number) => void) | null = null;
+  // OG: CUserLocal::OnNotifyHPDecByField (decompile 0x90fedb)
+  onNotifyHPDecByField: ((hpDec: number) => void) | null = null;
+  // OG: CUserLocal::OnSetDirectionMode (decompile 0x905502)
+  onSetDirectionMode: ((bDirection: boolean, afterDelay: number) => void) | null = null;
   onMacroSysDataInit: ((slots: MacroSlot[]) => void) | null = null;
   onSetITC: ((args: SetITCArgs) => void) | null = null;
   onSetCashShop: ((args: SetCashShopArgs) => void) | null = null;
@@ -411,6 +419,66 @@ export class FieldHandlers {
   onUserGuildNameChanged: ((args: UserGuildNameChangedArgs) => void) | null = null;
   onUserGuildMarkChanged: ((args: UserGuildMarkChangedArgs) => void) | null = null;
   onUserThrowGrenade: ((args: UserThrowGrenadeArgs) => void) | null = null;
+
+  // ── CUserLocal packet callbacks (medium-priority gaps) ─────────────
+  // OG: CUserLocal::OnPlayEventSound (0x916d60) — decodeStr → play_field_sound(name, 100)
+  onPlayEventSound: ((soundName: string) => void) | null = null;
+  // OG: CUserLocal::OnPlayMinigameSound (0x916e10) — decodeStr → play_minigame_sound(name, 100)
+  onPlayMinigameSound: ((soundName: string) => void) | null = null;
+  // OG: CUserLocal::OnOpenClassCompetitionPage (0x9055a8) — creates CClassCompetition UI if not exists
+  onOpenClassCompetitionPage: (() => void) | null = null;
+  // OG: CUserLocal::OnHireTutor (0x90e5b9) — decode1(bSpawn), creates/removes CTutor
+  onHireTutor: ((bSpawn: boolean) => void) | null = null;
+  // OG: CUserLocal::OnTutorMsg (0x916f60) — decode1(flag), then idx+duration or msg+width+duration
+  onTutorMsg: ((isIndex: boolean, idxOrMsg: number | string, duration: number, width?: number) => void) | null = null;
+  // OG: CUserLocal::OnResignQuestReturn (0x905720) — decode2(questId) → TryRegisterAutoStartQuest + DeleteQuest
+  onResignQuestReturn: ((questId: number) => void) | null = null;
+  // OG: CUserLocal::OnPassMateName (0x918283) — decode2(questId) + decodeStr(mateName) → SetQuestMateName
+  onPassMateName: ((questId: number, mateName: string) => void) | null = null;
+  // OG: CUserLocal::OnBuffzoneEffect (0x9183a0) — decode4(itemId), loads WZ item property for buff zone visual
+  onBuffzoneEffect: ((itemId: number) => void) | null = null;
+  // OG: CUserLocal::OnGoToCommoditySN (0x90576f) — decode4(commoditySN) → SendMigrateToShopRequest
+  onGoToCommoditySN: ((commoditySN: number) => void) | null = null;
+  // OG: CUserLocal::OnDamageMeter (0x905620) — decode4(duration) → CDamageMeter::SetTimer
+  onDamageMeter: ((duration: number) => void) | null = null;
+  // OG: CUserLocal::OnTimeBombAttack (0x9323f0) — decode5(skillId,nUnknown,nInvincible,nImpactDeg,nDamage)
+  onTimeBombAttack: ((args: { skillId: number; nUnknown: number; nInvincible: number; nUserImpactDeg: number; nDamage: number }) => void) | null = null;
+  // OG: CUser::OnPassiveMove (0x8dea10) — decode charId, then CMovePath::OnMovePacket for driven chars
+  onUserPassiveMove: ((charId: number) => void) | null = null;
+  // OG: CUserLocal::OnFollowCharacterFailed (0x910e92) — decode4(failedCharId) + decode4(reason)
+  onFollowCharacterFailed: ((failedCharId: number, reason: number) => void) | null = null;
+  // OG: CUserLocal::OnVengeanceSkillApply (0x909b10) — decode4(skillId), if 3120010 → DoActiveSkill_MeleeAttack
+  onVengeanceSkillApply: ((skillId: number) => void) | null = null;
+  // OG: CUserLocal::OnExJablinApply (0x9034e0) — no decode, sets m_bNextShootExJablin = 1
+  onExJablinApply: (() => void) | null = null;
+  // OG: CUserLocal::OnAskAPSPEvent (0x90f10c) — decode4(charId) + decode4(nReason), shows YesNo dialog
+  onAskAPSPEvent: ((charId: number, nReason: number) => void) | null = null;
+  // OG: CUser::OnRandomEmotion (0x8e34b0) — decode4(itemId) → random emotion from AreaBuffItem
+  onUserRandomEmotion: ((itemId: number) => void) | null = null;
+  // OG: CUserLocal::OnSetStandAloneMode (0x90555f) — decode1(standAloneMode)
+  onSetStandAloneMode: ((standAloneMode: number) => void) | null = null;
+  // OG: CUserLocal::OnQuestResult (0x914080) — decode1(subAction), 13-case switch, complex quest UI
+  onQuestResult: ((subAction: number, payload: Uint8Array) => void) | null = null;
+  // OG: CUserLocal::OnTeleport (0x913ff0) — server confirms teleport position
+  onUserTeleport: ((args: { x: number; y: number }) => void) | null = null;
+  // OG: CUserLocal::OnIncComboResponse (0x91a970) — server sends combo count
+  onIncComboResponse: ((nCombo: number) => void) | null = null;
+  // OG: CUserLocal::OnRadioSchedule (0x918120) — decodeStr + decode4 → CRadioManager::Play
+  onRadioSchedule: ((musicFile: string, duration: number) => void) | null = null;
+  // OG: CUserLocal::OnQuestGuideResult (case 274) — pure UI minimap arrow, no-op in this client
+  onQuestGuideResult: ((questId: number) => void) | null = null;
+  // OG: CUserLocal::OnDeliveryQuest (case 275) — delivery quest notification
+  onDeliveryQuest: ((questId: number) => void) | null = null;
+  // OG: CUserLocal::OnOpenUI (0x9055f0) — decode1 → CWvsContext::UI_Open
+  onOpenUI: ((uiType: number) => void) | null = null;
+  // OG: CUserLocal::OnOpenUIWithOption (0x932320) — decode4+decode4 → UI_Open + special cases
+  onOpenUIWithOption: ((uiType: number, option: number) => void) | null = null;
+  // OG: CUserLocal::OnNoticeMsg (0x9181f0) — decodeStr → CUtilDlg::Notice
+  onNoticeMsg: ((message: string) => void) | null = null;
+  // OG: CUser::OnChatMsg (local echo) — decodeStr → chat log add
+  onUserLocalChatMsg: ((message: string) => void) | null = null;
+  // OG: CUser::OnMiniRoomBalloon — decode mini room balloon info
+  onMiniRoomBalloon: ((args: { charId: number; miniRoomType: number; sn: number; title: string; bPrivate: boolean; gameKind: number; curUsers: number; maxUsers: number; gameOn: boolean }) => void) | null = null;
 
   // ── Pet & Dragon callbacks (IDA_NEW_GAPS.md) ───────────────────────
   onPetActivated: ((args: PetActivatedArgs) => void) | null = null;
@@ -718,6 +786,35 @@ export class FieldHandlers {
     this.onUserGuildNameChanged = null;
     this.onUserGuildMarkChanged = null;
     this.onUserThrowGrenade = null;
+    this.onPlayEventSound = null;
+    this.onPlayMinigameSound = null;
+    this.onOpenClassCompetitionPage = null;
+    this.onHireTutor = null;
+    this.onTutorMsg = null;
+    this.onResignQuestReturn = null;
+    this.onPassMateName = null;
+    this.onBuffzoneEffect = null;
+    this.onGoToCommoditySN = null;
+    this.onDamageMeter = null;
+    this.onTimeBombAttack = null;
+    this.onUserPassiveMove = null;
+    this.onFollowCharacterFailed = null;
+    this.onVengeanceSkillApply = null;
+    this.onExJablinApply = null;
+    this.onAskAPSPEvent = null;
+    this.onUserRandomEmotion = null;
+    this.onSetStandAloneMode = null;
+    this.onQuestResult = null;
+    this.onUserTeleport = null;
+    this.onIncComboResponse = null;
+    this.onRadioSchedule = null;
+    this.onQuestGuideResult = null;
+    this.onDeliveryQuest = null;
+    this.onOpenUI = null;
+    this.onOpenUIWithOption = null;
+    this.onNoticeMsg = null;
+    this.onUserLocalChatMsg = null;
+    this.onMiniRoomBalloon = null;
     this.onPetActivated = null;
     this.onPetEvol = null;
     this.onPetMove = null;
@@ -774,40 +871,179 @@ export class FieldHandlers {
     router.register(OutHeader.UserEffectLocal, (p, s) => this.handleUserEffect(p, true));
     // TODO_AUDIT.md Hundred-and-fifty-sixth pass: CUserLocal::OnPacket stubs — all confirmed from decompile/9340C0.c switch table.
     router.register(OutHeader.SitResult, (_p) => {});
-    router.register(OutHeader.UserTeleport, (_p) => {});
-    router.register(OutHeader.MesoGiveSucceeded, (_p) => {});
-    router.register(OutHeader.MesoGiveFailed, (_p) => {});
-    router.register(OutHeader.RandomMesobagSucceeded, (_p) => {});
+    // OG: CUserLocal::OnTeleport (0x913ff0) — reads short(x) + short(y),
+    // moves the player via CVecCtrlUser::raw_Move. Server teleport confirmation.
+    router.register(OutHeader.UserTeleport, (p) => {
+      const x = p.readShort();
+      const y = p.readShort();
+      this.onUserTeleport?.({ x, y });
+    });
+    // OG: CUserLocal::OnMesoGive_Succeeded (0x90f950) — reads int(nInc),
+    // the meso amount successfully given to another player.
+    router.register(OutHeader.MesoGiveSucceeded, (p) => {
+      const nInc = p.readInt();
+      this.onIncMoney?.(nInc);
+    });
+    // OG: CUserLocal::OnMesoGive_Failed (0x90d530) — reads int(nDec),
+    // the meso amount that was deducted then returned on failure.
+    router.register(OutHeader.MesoGiveFailed, (p) => {
+      const nDec = p.readInt();
+      this.onIncMoney?.(-nDec);
+    });
+    // OG: CUserLocal::OnRandomMesobag_Succeeded (0x90fa30) — reads int(nInc),
+    // the meso amount obtained from the random meso bag.
+    router.register(OutHeader.RandomMesobagSucceeded, (p) => {
+      const nInc = p.readInt();
+      this.onIncMoney?.(nInc);
+    });
+    // OG: CUserLocal::OnRandomMesobag_Failed (0x90d560) — no further data,
+    // the bag was empty.
     router.register(OutHeader.RandomMesobagFailed, (_p) => {});
-    router.register(OutHeader.FieldFadeInOut, (_p) => {});
-    router.register(OutHeader.FieldFadeOutForce, (_p) => {});
-    router.register(OutHeader.NotifyHPDecByField, (_p) => {});
-    router.register(OutHeader.BalloonMsg, (_p) => {});
-    router.register(OutHeader.PlayEventSound, (_p) => {});
-    router.register(OutHeader.PlayMinigameSound, (_p) => {});
-    router.register(OutHeader.OpenClassCompetitionPage, (_p) => {});
-    router.register(OutHeader.OpenUI, (_p) => {});
-    router.register(OutHeader.OpenUIWithOption, (_p) => {});
-    router.register(OutHeader.SetDirectionMode, (_p) => {});
-    router.register(OutHeader.SetStandAloneMode, (_p) => {});
-    router.register(OutHeader.HireTutor, (_p) => {});
-    router.register(OutHeader.TutorMsg, (_p) => {});
-    router.register(OutHeader.IncComboResponse, (_p) => {});
-    router.register(OutHeader.UserRandomEmotion, (_p) => {});
-    router.register(OutHeader.ResignQuestReturn, (_p) => {});
-    router.register(OutHeader.PassMateName, (_p) => {});
-    router.register(OutHeader.RadioSchedule, (_p) => {});
-    router.register(OutHeader.NoticeMsg, (_p) => {});
-    router.register(OutHeader.UserLocalChatMsg, (_p) => {});
-    router.register(OutHeader.BuffzoneEffect, (_p) => {});
-    router.register(OutHeader.GoToCommoditySN, (_p) => {});
-    router.register(OutHeader.DamageMeterResult, (_p) => {});
-    router.register(OutHeader.TimeBombAttack, (_p) => {});
-    router.register(OutHeader.UserPassiveMove, (_p) => {});
-    router.register(OutHeader.FollowCharacterFailed, (_p) => {});
-    router.register(OutHeader.ExJablinApply, (_p) => {});
-    router.register(OutHeader.AskAPSPEvent, (_p) => {});
-    router.register(OutHeader.DeliveryQuest, (_p) => {});
+    router.register(OutHeader.FieldFadeInOut, (p) => {
+      // OG: CUserLocal::OnFieldFadeInOut — reads 4 ints: color, duration, fadeOut, fadeTime
+      const color = p.readInt();
+      const duration = p.readInt();
+      const fadeOut = p.readInt();
+      const fadeTime = p.readInt();
+      this.onFieldFadeInOut?.(color, duration, fadeOut, fadeTime);
+    });
+    router.register(OutHeader.FieldFadeOutForce, (p) => {
+      // OG: CUserLocal::OnFieldFadeOutForce — reads 1 int: color
+      const color = p.readInt();
+      this.onFieldFadeOutForce?.(color);
+    });
+    router.register(OutHeader.NotifyHPDecByField, (p) => {
+      // OG: CUserLocal::OnNotifyHPDecByField — reads 1 int: HP drain amount
+      const hpDec = p.readInt();
+      this.onNotifyHPDecByField?.(hpDec);
+    });
+    router.register(OutHeader.BalloonMsg, (p, s) => this.handleBalloonMsg(p));
+    // OG: CUserLocal::OnPlayEventSound (0x916d60) — decodeStr → play_field_sound(name, 100)
+    router.register(OutHeader.PlayEventSound, (p) => {
+      const soundName = p.readString();
+      this.onPlayEventSound?.(soundName);
+    });
+    // OG: CUserLocal::OnPlayMinigameSound (0x916e10) — decodeStr → play_minigame_sound(name, 100)
+    router.register(OutHeader.PlayMinigameSound, (p) => {
+      const soundName = p.readString();
+      this.onPlayMinigameSound?.(soundName);
+    });
+    // OG: CUserLocal::OnOpenClassCompetitionPage (0x9055a8) — no decode, creates CClassCompetition UI
+    router.register(OutHeader.OpenClassCompetitionPage, (_p) => {
+      this.onOpenClassCompetitionPage?.();
+    });
+    router.register(OutHeader.OpenUI, (p, s) => this.handleOpenUI(p));
+    router.register(OutHeader.OpenUIWithOption, (p, s) => this.handleOpenUIWithOption(p));
+    router.register(OutHeader.SetDirectionMode, (p) => {
+      // OG: CUserLocal::OnSetDirectionMode — reads byte(bDirection) + int(afterDelay)
+      const bDirection = p.readByte() !== 0;
+      const afterDelay = p.readInt();
+      this.onSetDirectionMode?.(bDirection, afterDelay);
+    });
+    // OG: CUserLocal::OnSetStandAloneMode (0x90555f) — decode1(standAloneMode) → CWvsContext
+    router.register(OutHeader.SetStandAloneMode, (p) => {
+      const standAloneMode = p.readByte();
+      this.onSetStandAloneMode?.(standAloneMode);
+    });
+    // OG: CUserLocal::OnHireTutor (0x90e5b9) — decode1(bSpawn), creates/removes CTutor
+    router.register(OutHeader.HireTutor, (p) => {
+      const bSpawn = p.readByte() !== 0;
+      this.onHireTutor?.(bSpawn);
+    });
+    // OG: CUserLocal::OnTutorMsg (0x916f60) — decode1(flag), then idx+duration or msg+width+duration
+    router.register(OutHeader.TutorMsg, (p) => {
+      const isIndex = p.readByte() !== 0;
+      if (isIndex) {
+        const idx = p.readInt();
+        const duration = p.readInt();
+        this.onTutorMsg?.(isIndex, idx, duration);
+      } else {
+        const msg = p.readString();
+        const width = p.readInt();
+        const duration = p.readInt();
+        this.onTutorMsg?.(isIndex, msg, duration, width);
+      }
+    });
+    // OG: CUserLocal::OnIncComboResponse (0x91a970) — reads int(nCombo),
+    // sets m_tLastSetCombo = get_update_time(), calls DrawCombo.
+    router.register(OutHeader.IncComboResponse, (p) => {
+      const nCombo = p.readInt();
+      this.onIncComboResponse?.(nCombo);
+    });
+    // OG: CUser::OnRandomEmotion (0x8e34b0) — decode4(itemId) → random emotion from AreaBuffItem
+    router.register(OutHeader.UserRandomEmotion, (p) => {
+      const itemId = p.readInt();
+      this.onUserRandomEmotion?.(itemId);
+    });
+    // OG: CUserLocal::OnResignQuestReturn (0x905720) — decode2(questId) → TryRegisterAutoStartQuest + DeleteQuest
+    router.register(OutHeader.ResignQuestReturn, (p) => {
+      const questId = p.readShort();
+      this.onResignQuestReturn?.(questId);
+    });
+    // OG: CUserLocal::OnPassMateName (0x918283) — decode2(questId) + decodeStr(mateName)
+    router.register(OutHeader.PassMateName, (p) => {
+      const questId = p.readShort();
+      const mateName = p.readString();
+      this.onPassMateName?.(questId, mateName);
+    });
+    router.register(OutHeader.RadioSchedule, (p) => {
+      // OG: CUserLocal::OnRadioSchedule — decodeStr(musicFile) + decode4(duration)
+      const musicFile = p.readString();
+      const duration = p.readInt();
+      this.onRadioSchedule?.(musicFile, duration);
+    });
+    router.register(OutHeader.NoticeMsg, (p, s) => this.handleNoticeMsg(p));
+    router.register(OutHeader.UserLocalChatMsg, (p, s) => this.handleUserLocalChatMsg(p));
+    // OG: CUserLocal::OnBuffzoneEffect (0x9183a0) — decode4(itemId), loads WZ item property for buff zone visual
+    router.register(OutHeader.BuffzoneEffect, (p) => {
+      const itemId = p.readInt();
+      this.onBuffzoneEffect?.(itemId);
+    });
+    // OG: CUserLocal::OnGoToCommoditySN (0x90576f) — decode4(commoditySN) → SendMigrateToShopRequest
+    router.register(OutHeader.GoToCommoditySN, (p) => {
+      const commoditySN = p.readInt();
+      this.onGoToCommoditySN?.(commoditySN);
+    });
+    // OG: CUserLocal::OnDamageMeter (0x905620) — decode4(duration) → CDamageMeter::SetTimer
+    router.register(OutHeader.DamageMeterResult, (p) => {
+      const duration = p.readInt();
+      this.onDamageMeter?.(duration);
+    });
+    // OG: CUserLocal::OnTimeBombAttack (0x9323f0) — decode5(skillId,nUnknown,nInvincible,nImpactDeg,nDamage)
+    router.register(OutHeader.TimeBombAttack, (p) => {
+      const skillId = p.readInt();
+      const nUnknown = p.readInt();
+      const nInvincible = p.readInt();
+      const nUserImpactDeg = p.readInt();
+      const nDamage = p.readInt();
+      this.onTimeBombAttack?.({ skillId, nUnknown, nInvincible, nUserImpactDeg, nDamage });
+    });
+    // OG: CUser::OnPassiveMove (0x8dea10) — decode charId, then CMovePath::OnMovePacket for driven chars
+    router.register(OutHeader.UserPassiveMove, (p) => {
+      const charId = p.readInt();
+      this.onUserPassiveMove?.(charId);
+    });
+    // OG: CUserLocal::OnFollowCharacterFailed (0x910e92) — decode4(failedCharId) + decode4(reason)
+    router.register(OutHeader.FollowCharacterFailed, (p) => {
+      const failedCharId = p.readInt();
+      const reason = p.readInt();
+      this.onFollowCharacterFailed?.(failedCharId, reason);
+    });
+    // OG: CUserLocal::OnExJablinApply (0x9034e0) — no decode, sets m_bNextShootExJablin = 1
+    router.register(OutHeader.ExJablinApply, (_p) => {
+      this.onExJablinApply?.();
+    });
+    // OG: CUserLocal::OnAskAPSPEvent (0x90f10c) — decode4(charId) + decode4(nReason), shows YesNo dialog
+    router.register(OutHeader.AskAPSPEvent, (p) => {
+      const charId = p.readInt();
+      const nReason = p.readInt();
+      this.onAskAPSPEvent?.(charId, nReason);
+    });
+    // OG: CUserLocal::OnDeliveryQuest (case 275) — reads questId(4) for delivery quest notification
+    router.register(OutHeader.DeliveryQuest, (p) => {
+      const questId = p.readInt();
+      this.onDeliveryQuest?.(questId);
+    });
     // CField::OnPacket case 196 is an explicit no-op in the OG (decompile/546D50.c — return;).
     router.register(OutHeader.FieldNop196, (_p) => {});
     router.register(OutHeader.UserSetActivePortableChair, (p, s) => this.handleUserSetActivePortableChair(p));
@@ -1049,7 +1285,19 @@ export class FieldHandlers {
     router.register(OutHeader.ChaosZakumTimer, (p, s) => { this.onChaosZakumTimer?.({ flag: p.readByte(), value: p.readInt() }); });
     router.register(OutHeader.HontailTimer, (p, s) => { this.onHontailTimer?.({ flag: p.readByte(), value: p.readInt() }); });
     router.register(OutHeader.ZakumTimer, (p, s) => { this.onZakumTimer?.({ flag: p.readByte(), value: p.readInt() }); });
-    router.register(OutHeader.RPSGameDlg, (p, s) => { this.onRPSGameDlg?.({ subAction: p.readByte() }); });
+    router.register(OutHeader.RPSGameDlg, (p, s) => {
+      const subAction = p.readByte();
+      // OG: CRPSGameDlg::OnPacket decodes subAction byte, then for case 11
+      // reads two more bytes: npcSelect and cntStraightVictories.
+      let npcSelect = -1;
+      let cntStraightVictories = 0;
+      if (subAction === 11) {
+        npcSelect = p.readByte();
+        cntStraightVictories = p.readByte();
+        // OG: signed — negative means loss
+      }
+      this.onRPSGameDlg?.({ subAction, npcSelect, cntStraightVictories });
+    });
     router.register(OutHeader.ParcelDlg, (p, s) => { this.onParcelDlg?.({ subAction: p.readByte() }); });
     // OG: CSummonedPool::OnPacket (decompile/75ac70.c) decodes a leading
     // int charId before dispatching by sub-opcode to CSummonedPool::
@@ -1147,15 +1395,24 @@ export class FieldHandlers {
     router.register(OutHeader.OpenGateCreate, (p, s) => this.handleOpenGateCreate(p));
     router.register(OutHeader.OpenGateRemove, (p, s) => this.handleOpenGateRemove(p));
     router.register(OutHeader.MakerResult, (p, s) => this.handleMakerResult(p));
-    // TODO_AUDIT.md Hundred-and-fifty-sixth pass: CUserLocal opcodes confirmed but decode unimplemented — registered as no-ops to close audit gap.
-    // QuestResult (242): large sub-action dispatch (40KB decompile), heavily coupled to dialog/script UI not yet present.
-    router.register(OutHeader.QuestResult, (_p) => {});
-    // OpenSkillGuide (262): CUserLocal::OnPacket case 262 — exact decode shape not yet confirmed.
+    // OG: CUserLocal::OnQuestResult (0x914080) — decode1(subAction), 13-case switch, complex quest UI
+    router.register(OutHeader.QuestResult, (p) => {
+      const subAction = p.readByte();
+      const payload = p.readBytes(p.remaining);
+      this.onQuestResult?.(subAction, payload);
+    });
+    // OG: CUserLocal::OnOpenSkillGuide (0x90e6aa) — no decode, opens UI(3,1) + OpenCurSkillGuide
     router.register(OutHeader.OpenSkillGuide, (_p) => { this.onOpenSkillGuide?.(); });
-    // VengeanceSkillApply (271): CUserLocal::OnPacket case 271 — exact decode shape not yet confirmed.
-    router.register(OutHeader.VengeanceSkillApply, (_p) => {});
-    // QuestGuideResult (274): draws minimap arrow to next quest objective — pure UI, no quest-guide feature in this client.
-    router.register(OutHeader.QuestGuideResult, (_p) => {});
+    // OG: CUserLocal::OnVengeanceSkillApply (0x909b10) — decode4(skillId), if 3120010 → DoActiveSkill_MeleeAttack
+    router.register(OutHeader.VengeanceSkillApply, (p) => {
+      const skillId = p.readInt();
+      this.onVengeanceSkillApply?.(skillId);
+    });
+    // OG: CUserLocal::OnQuestGuideResult (case 274) — reads questId(4) for minimap arrow direction
+    router.register(OutHeader.QuestGuideResult, (p) => {
+      const questId = p.readInt();
+      this.onQuestGuideResult?.(questId);
+    });
     router.register(OutHeader.FieldEffect, (p, s) => this.handleFieldEffect(p));
     router.register(OutHeader.BlowWeather, (p, s) => this.handleBlowWeather(p));
     router.register(OutHeader.PlayJukeBox, (p, s) => this.handlePlayJukeBox(p));
@@ -1349,6 +1606,9 @@ export class FieldHandlers {
       }
       // OG: CharacterData.money — exposed for CUIItem meso display.
       if (characterData.money !== undefined) args.money = characterData.money;
+      // OG: CharacterData.equipped — populate equip panel on field entry
+      if (characterData.equipped) args.equipped = characterData.equipped;
+      if (characterData.equippedCash) args.equippedCash = characterData.equippedCash;
     } else {
       args.nFieldType = p.readByte();
       args.posMap = p.readInt();
@@ -3455,6 +3715,62 @@ export class FieldHandlers {
           args.index = p.readByte();
           args.quantity = p.readShort();
           break;
+        // ── MemoryGame sub-protocol ────────────────────────────────────
+        case MiniRoomProtocolFull.MGRP_TieRequest:
+          args.userIndex = p.readByte();
+          break;
+        case MiniRoomProtocolFull.MGRP_TieResult:
+          args.userIndex = p.readByte();
+          args.resultCode = p.readByte();
+          break;
+        case MiniRoomProtocolFull.MGRP_GiveUpRequest:
+          args.userIndex = p.readByte();
+          break;
+        case MiniRoomProtocolFull.MGRP_GiveUpResult:
+          args.userIndex = p.readByte();
+          break;
+        case MiniRoomProtocolFull.MGRP_RetreatRequest:
+          args.userIndex = p.readByte();
+          break;
+        case MiniRoomProtocolFull.MGRP_RetreatResult:
+          args.userIndex = p.readByte();
+          break;
+        case MiniRoomProtocolFull.MGRP_LeaveEngage:
+          args.userIndex = p.readByte();
+          break;
+        case MiniRoomProtocolFull.MGRP_LeaveEngageCancel:
+          args.userIndex = p.readByte();
+          break;
+        case MiniRoomProtocolFull.MGRP_Ready:
+          args.userIndex = p.readByte();
+          break;
+        case MiniRoomProtocolFull.MGRP_CancelReady:
+          args.userIndex = p.readByte();
+          break;
+        case MiniRoomProtocolFull.MGRP_Ban:
+          args.userIndex = p.readByte();
+          break;
+        case MiniRoomProtocolFull.MGRP_Start:
+          args.round = p.readByte();
+          args.userIndex = p.readByte();
+          args.cardOrder = [];
+          while (p.remaining > 0) {
+            args.cardOrder.push(p.readByte());
+          }
+          break;
+        case MiniRoomProtocolFull.MGRP_GameResult:
+          args.winnerIndex = p.readByte();
+          args.gameResultType = p.readByte();
+          break;
+        case MiniRoomProtocolFull.MGRP_TimeOver:
+          args.userIndex = p.readByte();
+          break;
+        case MiniRoomProtocolFull.MGP_TurnUpCard:
+          args.cardIndex = p.readByte();
+          args.cardType = p.readByte();
+          args.showState = p.readByte();
+          args.userIndex = p.readByte();
+          break;
         default:
           console.debug('MiniRoom action', action, 'not decoded');
           break;
@@ -4617,6 +4933,68 @@ export class FieldHandlers {
     } catch { /* malformed */ }
   }
 
+  // ── CUserLocal medium-priority packet handlers ───────────────────────
+
+  // OG: CUserLocal::OnOpenUI (0x9055f0) — Decode1 → CWvsContext::UI_Open(uiType, -1).
+  private handleOpenUI(p: InPacket): void {
+    try {
+      const uiType = p.readByte();
+      this.onOpenUI?.(uiType);
+    } catch { /* malformed */ }
+  }
+
+  // OG: CUserLocal::OnOpenUIWithOption (0x932320) — Decode4(uiType) + Decode4(option)
+  // → CWvsContext::UI_Open(uiType, -1), then special cases:
+  //   uiType 7: UI_Close(7) + UI_Toggle(7, option) — quest UI toggle
+  //   uiType 21: CUIPartySearch::RequestPartyAdverSearch(option) — party search
+  //   uiType 33: CRepairDurabilityDlg(option) — repair durability dialog
+  private handleOpenUIWithOption(p: InPacket): void {
+    try {
+      const uiType = p.readInt();
+      const option = p.readInt();
+      this.onOpenUIWithOption?.(uiType, option);
+    } catch { /* malformed */ }
+  }
+
+  // OG: CUserLocal::OnNoticeMsg (0x9181f0) — DecodeStr → CUtilDlg::Notice.
+  private handleNoticeMsg(p: InPacket): void {
+    try {
+      const message = p.readString();
+      this.onNoticeMsg?.(message);
+    } catch { /* malformed */ }
+  }
+
+  // OG: CUserLocal::OnChatMsg (0x9xxxxx) — local echo of the player's own
+  // sent chat message. DecodeStr → CStatusBar::ChatLogAdd.
+  private handleUserLocalChatMsg(p: InPacket): void {
+    try {
+      const message = p.readString();
+      this.onUserLocalChatMsg?.(message);
+    } catch { /* malformed */ }
+  }
+
+  // OG: CUser::OnMiniRoomBalloon (0x8e8d50) — decode mini room balloon info
+  // for other characters' trade shops / mini rooms visible on the map.
+  private handleBalloonMsg(p: InPacket): void {
+    try {
+      const charId = p.readInt();
+      const miniRoomType = p.readByte();
+      if (miniRoomType === 0) {
+        // type 0 = destroy balloon
+        this.onMiniRoomBalloon?.({ charId, miniRoomType: 0, sn: 0, title: '', bPrivate: false, gameKind: 0, curUsers: 0, maxUsers: 0, gameOn: false });
+        return;
+      }
+      const sn = p.readInt();
+      const title = p.readString();
+      const bPrivate = p.readByte() !== 0;
+      const gameKind = p.readByte();
+      const curUsers = p.readByte();
+      const maxUsers = p.readByte();
+      const gameOn = p.readByte() !== 0;
+      this.onMiniRoomBalloon?.({ charId, miniRoomType, sn, title, bPrivate, gameKind, curUsers, maxUsers, gameOn });
+    } catch { /* malformed */ }
+  }
+
   private handleUserHitByUser(p: InPacket): void {
     try {
       this.onUserHitByUser?.({ charId: p.readInt(), damage: p.readInt() });
@@ -5039,7 +5417,7 @@ export class FieldHandlers {
 
   private handleMobIncChargeCount(p: InPacket): void {
     try {
-      this.onMobIncChargeCount?.({ mobId: p.readInt(), chargeCount: p.readInt() });
+      this.onMobIncChargeCount?.({ mobId: p.readInt(), chargeCount: p.readInt(), attackReady: p.readInt() !== 0 });
     } catch { /* malformed */ }
   }
 

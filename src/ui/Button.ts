@@ -8,7 +8,14 @@ export class Button {
   onClick: (() => void) | null = null;
   onHoverSound: (() => void) | null = null;
   onClickSound: (() => void) | null = null;
-  enabled = true;
+  private _enabled = true;
+  get enabled() { return this._enabled; }
+  set enabled(v: boolean) {
+    if (this._enabled === v) return;
+    this._enabled = v;
+    if (this._normal) this._refreshSprite();
+    else this.drawBg();
+  }
   width = 120;
   height = 28;
   label = '';
@@ -30,6 +37,7 @@ export class Button {
   constructor(label?: string) {
     this.label = label ?? '';
     this.container = new Container();
+    (this.container as any).__buttonInstance = this;
     this._bg = new Graphics();
     this._labelText = new Text({
       text: this.label,
@@ -97,6 +105,16 @@ export class Button {
     }
   }
 
+  /** Reset pressed/hover state — call on global mouse-up or focus change */
+  resetState(): void {
+    if (this._pressed || this._hovered) {
+      this._pressed = false;
+      this._hovered = false;
+      if (this._normal) this._refreshSprite();
+      else this.drawBg();
+    }
+  }
+
   handleMouseButton(x: number, y: number, down: boolean): boolean {
     if (!this.enabled) return false;
     const b = this.bounds;
@@ -110,6 +128,9 @@ export class Button {
           return true;
         }
       } else {
+        // Always reset pressed state on mouse-up, even if outside the button.
+        // This prevents buttons from staying stuck in pressed visual state
+        // when a panel opens during mouse-down and the mouse-up goes to the panel.
         const wasPressed = this._pressed;
         this._pressed = false;
         this._refreshSprite();

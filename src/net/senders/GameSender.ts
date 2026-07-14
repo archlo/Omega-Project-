@@ -1763,6 +1763,89 @@ export class GameSender {
     return p;
   }
 
+  // ── MemoryGame (InHeader.MiniRoom 144, sub-protocol MGP_*) ──────────────
+
+  /** Client sends when flipping a card. Opcode byte + MGP_TurnUpCard(68) + cardIdx + bSelected. */
+  static MemoryGameTurnUpCard(cardIdx: number, bSelected: boolean): OutPacket {
+    const p = OutPacket.Of(InHeader.MiniRoom);
+    p.writeByte(MiniRoomProtocolFull.MGP_TurnUpCard);
+    p.writeByte(cardIdx);
+    p.writeByte(bSelected ? 1 : 0);
+    return p;
+  }
+
+  static MemoryGameReady(bReady: boolean): OutPacket {
+    const p = OutPacket.Of(InHeader.MiniRoom);
+    p.writeByte(MiniRoomProtocolFull.MGRP_Ready);
+    p.writeByte(bReady ? 1 : 0);
+    return p;
+  }
+
+  static MemoryGameStart(): OutPacket {
+    const p = OutPacket.Of(InHeader.MiniRoom);
+    p.writeByte(MiniRoomProtocolFull.MGRP_Start);
+    return p;
+  }
+
+  static MemoryGameTieRequest(): OutPacket {
+    const p = OutPacket.Of(InHeader.MiniRoom);
+    p.writeByte(MiniRoomProtocolFull.MGRP_TieRequest);
+    return p;
+  }
+
+  static MemoryGameGiveUp(): OutPacket {
+    const p = OutPacket.Of(InHeader.MiniRoom);
+    p.writeByte(MiniRoomProtocolFull.MGRP_GiveUpRequest);
+    return p;
+  }
+
+  static MemoryGameBan(): OutPacket {
+    const p = OutPacket.Of(InHeader.MiniRoom);
+    p.writeByte(MiniRoomProtocolFull.MGRP_Ban);
+    return p;
+  }
+
+  // ── RPS Game (CP_RPSGame = 0xa0 = 160) ──────────────────────────────────
+  // OG: CRPSGameDlg uses COutPacket(160) with sub-opcodes 0-5.
+  // All methods encode: opcode 160 + sub-opcode byte + optional extra byte.
+
+  static RPSGameStart(): OutPacket {
+    const p = OutPacket.Of(160);
+    p.writeByte(0); // sub-opcode: start
+    return p;
+  }
+
+  static RPSGameSelection(rpsChoice: number): OutPacket {
+    const p = OutPacket.Of(160);
+    p.writeByte(1); // sub-opcode: selection
+    p.writeByte(rpsChoice); // 0=rock, 1=paper, 2=scissor
+    return p;
+  }
+
+  static RPSGameTimeout(): OutPacket {
+    const p = OutPacket.Of(160);
+    p.writeByte(2); // sub-opcode: timeout
+    return p;
+  }
+
+  static RPSGameContinue(): OutPacket {
+    const p = OutPacket.Of(160);
+    p.writeByte(3); // sub-opcode: continue
+    return p;
+  }
+
+  static RPSGameExit(): OutPacket {
+    const p = OutPacket.Of(160);
+    p.writeByte(4); // sub-opcode: exit
+    return p;
+  }
+
+  static RPSGameRetry(): OutPacket {
+    const p = OutPacket.Of(160);
+    p.writeByte(5); // sub-opcode: retry
+    return p;
+  }
+
   // CCashShop::SendCheckNameChangePossiblePacket (decompile/488190.c).
   static CheckNameChangePossible(characterId: number, secondaryPassword: string): OutPacket {
     const p = OutPacket.Of(InHeader.CheckNameChangePossible);
@@ -2307,6 +2390,289 @@ export class GameSender {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
     p.writeByte(26);
     p.writeInt(sn);
+    return p;
+  }
+
+  // ── Additional cash shop senders (from IDA decompilation) ──
+
+  /** CCashShop::SendCheckNameChangePossiblePacket (decompile/488190.c). */
+  static CashShopCheckNameChange(itemId: number, newName: string): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(28); // sub-action 28
+    p.writeInt(itemId);
+    p.writeString(newName);
+    return p;
+  }
+
+  /** CCashShop::SendNameChangeRequest — confirm name change after checking. */
+  static CashShopNameChange(sn: number, newName: string): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(29); // sub-action 29
+    p.writeInt(sn);
+    p.writeString(newName);
+    return p;
+  }
+
+  /** CCashShop::SendCheckTransferWorldPossiblePacket (decompile/4884C0.c). */
+  static CashShopCheckTransferWorld(): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(30); // sub-action 30
+    return p;
+  }
+
+  /** CCashShop::SendTransferWorldRequest — transfer character to another world. */
+  static CashShopTransferWorld(sn: number, worldName: string): OutPacket {
+    const p = OutPacket.Of(InHeader.UserCashShopRequest);
+    p.writeByte(31); // sub-action 31
+    p.writeInt(sn);
+    p.writeString(worldName);
+    return p;
+  }
+
+  // ── Additional CWvsContext senders (from v95 IDA decompilation) ──
+
+  // OG: CWvsContext::SendGetUpFromChairRequest (0x9d6740).
+  // Encodes: short(2). Opcode 0x2D (45) = UserSitRequest.
+  // `tTimeInterval` is the minimum ms since last sit; OG passes 0 or 500.
+  static SitRequest(tTimeInterval: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserSitRequest);
+    p.writeShort(tTimeInterval);
+    return p;
+  }
+
+  // OG: CWvsContext::SendGivePopularityRequest (0x9f67e0).
+  // Encodes: int(4) byte(1). Opcode TBD.
+  // sName is the target character name; bInc is 1=inc fame, 0=dec fame.
+  static GivePopularityRequest(targetName: string, incFame: boolean): OutPacket {
+    const p = OutPacket.Of(InHeader.UserGivePopularityRequest);
+    p.writeString(targetName);
+    p.writeByte(incFame ? 1 : 0);
+    return p;
+  }
+
+  // OG: CWvsContext::SendActivatePetRequest (0x9f6980).
+  // Encodes: int(4) buffer int(4) short(2) byte(1). Opcode 0x2D (45) = UserSitRequest.
+  // `nPos` is the inventory slot of the pet item.
+  static ActivatePetRequest(pos: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserSitRequest);
+    p.writeInt(pos);
+    return p;
+  }
+
+  // OG: CWvsContext::SendWaterOfLife (0x9f28e0).
+  // No payload. Opcode 0x81 (129).
+  static WaterOfLife(): OutPacket {
+    return OutPacket.Of(InHeader.UserWaterOfLife);
+  }
+
+  // OG: CWvsContext::SendMigrateToShopRequest (0x9dc280).
+  // int(4) payload. Opcode 0x2B (43) = UserMigrateToCashShopRequest.
+  // bFromWishItem: 0=normal, 1=from wish item.
+  static MigrateToShopRequest(bFromWishItem: boolean): OutPacket {
+    const p = OutPacket.Of(InHeader.UserMigrateToCashShopRequest);
+    p.writeInt(bFromWishItem ? 1 : 0);
+    return p;
+  }
+
+  // OG: CWvsContext::SendMigrateToITCRequest (0x9def50).
+  // No payload. Migrates to the Item Trading Room (ITC).
+  // Opcode: sends UserMigrateToCashShopRequest with sub-payload.
+  static MigrateToITCRequest(): OutPacket {
+    return OutPacket.Of(InHeader.UserMigrateToCashShopRequest);
+  }
+
+  // OG: CWvsContext::SendTempExpUseRequest (0x9db430).
+  // Encodes: int(4). Uses accumulated temp EXP.
+  static TempExpUseRequest(): OutPacket {
+    const p = OutPacket.Of(InHeader.UserTempExpUseRequest);
+    p.writeInt(0);
+    return p;
+  }
+
+  // OG: CWvsContext::SendUIOpenItemRequest (0x9d64d0).
+  // Encodes: int(4) short(2) int(4).
+  static UIOpenItemRequest(pos: number, itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserUIOpenItemRequest);
+    p.writeInt(0); // updateTime placeholder
+    p.writeShort(pos);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: CWvsContext::SendRemoteShopOpenRequest (0x9f30d0).
+  // Encodes: short(2). Opens a hired merchant remotely.
+  static RemoteShopOpenRequest(pos: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserRemoteShopOpenRequest);
+    p.writeShort(pos);
+    return p;
+  }
+
+  // OG: CWvsContext::SendBoobyTrapAlert (0xa09680).
+  // Encodes: int(4). Notifies server about booby trap pickup.
+  static BoobyTrapAlert(trapType: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserBoobyTrapAlert);
+    p.writeInt(trapType);
+    return p;
+  }
+
+  // OG: CWvsContext::SendPartyWanted (0xa10100).
+  // Encodes: int(4) int(4) int(4) int(4). Registers party recruitment.
+  static PartyWanted(minLv: number, maxLv: number, count: number, jobFlag: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserPartyWanted);
+    p.writeInt(minLv);
+    p.writeInt(maxLv);
+    p.writeInt(count);
+    p.writeInt(jobFlag);
+    return p;
+  }
+
+  // OG: CWvsContext::SendCancelPartyWanted (0xa0ffd0).
+  // No payload. Cancels party recruitment.
+  static CancelPartyWanted(): OutPacket {
+    return OutPacket.Of(InHeader.UserCancelPartyWanted);
+  }
+
+  // OG: CWvsContext::SendRegisterJunior (0xa09dd0).
+  // Encodes: string. Registers a junior in the Family system.
+  static RegisterJunior(charName: string): OutPacket {
+    const p = OutPacket.Of(InHeader.UserFamilyRegisterJunior);
+    p.writeString(charName);
+    return p;
+  }
+
+  // OG: CWvsContext::SendUnregisterJunior (0xa099e0).
+  // Encodes: int(4). Unregisters a junior by character ID.
+  static UnregisterJunior(charId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserFamilyUnregisterJunior);
+    p.writeInt(charId);
+    return p;
+  }
+
+  // OG: CWvsContext::SendUnregisterParent (0xa098d0).
+  // No payload. Unregisters the current parent.
+  static UnregisterParent(): OutPacket {
+    return OutPacket.Of(InHeader.UserFamilyUnregisterParent);
+  }
+
+  // OG: CWvsContext::SendRingDropRequest (0x9d6810).
+  // Encodes: byte(1) int(4). Drops a ring item.
+  static RingDropRequest(itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserRingDropRequest);
+    p.writeByte(1); // type
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: CWvsContext::SendInvitationQuery (0x9da630).
+  // Encodes: byte(1) int(4) int(4). Queries an invitation.
+  static InvitationQuery(pos: number, itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserInvitationQuery);
+    p.writeByte(1); // type
+    p.writeInt(pos);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: CWvsContext::SendNewYearCardUseRequest (0x9da380).
+  // Encodes: short(2) int(4). Uses a New Year card item.
+  static NewYearCardUseRequest(pos: number, itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserNewYearCardUseRequest);
+    p.writeShort(pos);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: CWvsContext::SendRandomMorphOtherRequest (0x9cced0).
+  // Encodes: short(2) int(4). Uses a random morph item on another player.
+  static RandomMorphOtherRequest(pos: number, itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserRandomMorphOtherRequest);
+    p.writeShort(pos);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: CWvsContext::SendWishListInput (0x9e19d0).
+  // Encodes: byte(1) byte(1) string. Inputs wish list items.
+  static WishListInput(wishList: string[], count: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserWeddingWishListRequest);
+    p.writeByte(6); // sub-action: PutItem
+    p.writeByte(count);
+    for (const name of wishList) p.writeString(name);
+    return p;
+  }
+
+  // OG: CWvsContext::SendRequestSessionValue (0x9e1a90).
+  // Encodes: string byte(1). Requests a session value.
+  static RequestSessionValue(key: string, reset: boolean): OutPacket {
+    const p = OutPacket.Of(InHeader.UserSessionValueRequest);
+    p.writeString(key);
+    p.writeByte(reset ? 1 : 0);
+    return p;
+  }
+
+  // OG: CWvsContext::SendOpenShopRequest (0x9fc570).
+  // Encodes: byte(1) byte(1) string byte(1) short(2) int(4).
+  // Opens a personal/entrusted shop.
+  static OpenShopRequest(pos: number, itemId: number, name: string, desc: string, minLevel: number, flags: number): OutPacket {
+    const p = OutPacket.Of(InHeader.MiniRoom);
+    p.writeByte(15); // sub-action: OpenShopRequest
+    p.writeByte(0);
+    p.writeString(name);
+    p.writeByte(0);
+    p.writeShort(minLevel);
+    p.writeInt(flags);
+    return p;
+  }
+
+  // OG: CWvsContext::SendFollowCharacterRequest (0x9f9530).
+  // Encodes: int(4) byte(1) byte(1). Follows another character.
+  static FollowCharacterRequest(charId: number, action: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserFollowCharacterRequest);
+    p.writeInt(charId);
+    p.writeByte(action);
+    p.writeByte(0);
+    return p;
+  }
+
+  // OG: CWvsContext::SendStatChangeItemUseRequest (0x9ddfe0).
+  // Encodes: int(4) short(2) int(4). Uses a stat change item (potion/buff).
+  static StatChangeItemUseRequest(pos: number, itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserStatChangeItemUseRequest);
+    p.writeInt(0); // updateTime placeholder
+    p.writeShort(pos);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: CWvsContext::SendStatChangeItemUseRequestByPetQ (0x9de400).
+  // Encodes: buffer byte(1) int(4) short(2) int(4). Pet auto-consume.
+  static StatChangeItemUseRequestByPetQ(petName: string, pos: number, itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserStatChangeItemUseRequest);
+    p.writeString(petName);
+    p.writeByte(0);
+    p.writeInt(0); // updateTime
+    p.writeShort(pos);
+    p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: CWvsContext::SendDropMoneyRequest (0x9f6650).
+  // Encodes: int(4) int(4). Drops mesos on the ground.
+  static DropMoneyRequest(amount: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserDropMoneyRequest);
+    p.writeInt(amount);
+    p.writeInt(0);
+    return p;
+  }
+
+  // OG: CWvsContext::SendSendInvitaionRequest (0x9e16e0) — note OG typo.
+  // Encodes: byte(1) string int(4) int(4). Sends an invitation query.
+  static SendInvitationRequest(pos: number, itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserInvitationQuery);
+    p.writeByte(1); // type
+    p.writeString('');
+    p.writeInt(pos);
+    p.writeInt(itemId);
     return p;
   }
 }

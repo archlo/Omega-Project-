@@ -9,10 +9,7 @@ export interface ICanvasSprite {
 // Each convex layer is a set of connected foothold segments (x1,y1)→(x2,y2)
 // that form the walkable platforms visible as lines on the minimap.
 export interface MiniMapFoothold {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
+  footholdId: number;
   layer: number;
 }
 

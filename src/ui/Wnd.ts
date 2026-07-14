@@ -38,6 +38,7 @@ export class CWnd {
   visible = true;
   enabled = true;
   focused = false;
+  m_pFocusWnd: CWnd | null = null;
 
   private _layerGfx: Graphics | null = null;
 
@@ -62,6 +63,28 @@ export class CWnd {
   OnMouseMove(_x: number, _y: number): boolean { return false; }
   OnMouseEnter(_active: boolean): void {}
   OnMouseWheel(_x: number, _y: number, _delta: number): boolean { return false; }
+  OnSetFocus(): void {}
+  OnKillFocus(): void {}
+
+  GetAbsLeft(): number {
+    let x = this.container.position.x;
+    let p = this.parent;
+    while (p) {
+      x += p.container.position.x;
+      p = p.parent;
+    }
+    return x;
+  }
+
+  GetAbsTop(): number {
+    let y = this.container.position.y;
+    let p = this.parent;
+    while (p) {
+      y += p.container.position.y;
+      p = p.parent;
+    }
+    return y;
+  }
 
   Draw(pRect: WndRect | null): void {
     if (!this._layerGfx) return;
@@ -78,6 +101,8 @@ export class CWnd {
 
   Destroy(): void {
     this.OnDestroy();
+    if (WndMan.m_pFocusWnd === this) WndMan.SetFocus(null);
+    this.m_pFocusWnd = null;
     for (const c of [...this.children]) c.Destroy();
     this.children.length = 0;
     this._layerGfx?.removeFromParent();
@@ -101,7 +126,10 @@ export class CWnd {
       if (!c.visible) continue;
       const cx = x - c.container.position.x;
       const cy = y - c.container.position.y;
-      if (cx >= 0 && cy >= 0 && cx < c.width && cy < c.height) return c;
+      if (cx >= 0 && cy >= 0 && cx < c.width && cy < c.height) {
+        const deeper = c.HitTest(cx, cy);
+        return deeper ?? c;
+      }
     }
     if (x >= 0 && y >= 0 && x < this.width && y < this.height) return this;
     return null;
@@ -171,6 +199,46 @@ export class WndMan {
   static readonly windows: CWnd[] = [];
   static readonly updateWindows: CWnd[] = [];
   static readonly invalidatedWindows: CWnd[] = [];
+  static m_pFocusWnd: CWnd | null = null;
+
+  static SetFocus(wnd: CWnd | null): void {
+    if (WndMan.m_pFocusWnd === wnd) return;
+    if (WndMan.m_pFocusWnd) {
+      WndMan.m_pFocusWnd.focused = false;
+      WndMan.m_pFocusWnd.OnKillFocus();
+    }
+    WndMan.m_pFocusWnd = wnd;
+    if (wnd) {
+      wnd.focused = true;
+      wnd.OnSetFocus();
+    }
+  }
+
+  static GetFocusWnd(): CWnd | null {
+    return WndMan.m_pFocusWnd;
+  }
+
+  static OnMouseDown(btn: number, flags: number, x: number, y: number): void {
+    const hit = WndMan.GetHandlerFromPoint(x, y);
+    if (hit) WndMan.SetFocus(hit);
+    hit?.OnMouseButton(btn, flags, x - hit.GetAbsLeft(), y - hit.GetAbsTop());
+  }
+
+  static OnKeyDown(key: number, flags: number): void {
+    WndMan.m_pFocusWnd?.OnKey(key, flags);
+  }
+
+  static OnMouseMove(x: number, y: number): boolean {
+    const hit = WndMan.GetHandlerFromPoint(x, y);
+    if (hit) return hit.OnMouseMove(x - hit.GetAbsLeft(), y - hit.GetAbsTop());
+    return false;
+  }
+
+  static OnMouseWheel(x: number, y: number, delta: number): boolean {
+    const hit = WndMan.GetHandlerFromPoint(x, y);
+    if (hit) return hit.OnMouseWheel(x - hit.GetAbsLeft(), y - hit.GetAbsTop(), delta);
+    return false;
+  }
 
   static InsertWindow(wnd: CWnd): void {
     let inserted = false;
@@ -237,6 +305,7 @@ export class WndMan {
   }
 
   static DestroyAll(): void {
+    WndMan.SetFocus(null);
     for (const wnd of [...WndMan.windows]) wnd.Destroy();
     WndMan.windows.length = 0;
     WndMan.updateWindows.length = 0;

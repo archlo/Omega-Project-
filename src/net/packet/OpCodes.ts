@@ -276,6 +276,74 @@ export enum InHeader {
 
   // OG: CUICharacterSaleDlg::SendCheckDuplicateIDPacket (decompile/777d20.c)
   UserCharacterSaleCheckId  = 311,
+
+  // OG: CWvsContext::SendWaterOfLife (0x9f28e0) — push 81h (129).
+  // No payload. Triggers the Water of Life revive flow.
+  UserWaterOfLife           = 129,
+
+  // OG: CWvsContext::SendUnregisterParent (0xa098d0) — push 0ADh (173).
+  // No payload. Unregisters the current parent in the Family system.
+  UserFamilyUnregisterParent = 173,
+
+  // OG: CWvsContext::SendCancelPartyWanted (0xa0ffd0) — push 10Bh (267).
+  // No payload. Cancels the party recruitment advertisement.
+  UserCancelPartyWanted     = 267,
+
+  // OG: CWvsContext::SendGivePopularityRequest (0x9f67e0) — int(4) byte(1).
+  // Target character name + inc/dec flag. Opcode TBD from MCP decompilation.
+  UserGivePopularityRequest = 99,
+
+  // OG: CWvsContext::SendTempExpUseRequest (0x9db430) — int(4).
+  // Uses accumulated temporary EXP. Opcode TBD from MCP decompilation.
+  UserTempExpUseRequest     = 130,
+
+  // OG: CWvsContext::SendUIOpenItemRequest (0x9d64d0) — int(4) short(2) int(4).
+  // Uses a UI-opening item. Opcode TBD from MCP decompilation.
+  UserUIOpenItemRequest     = 131,
+
+  // OG: CWvsContext::SendRemoteShopOpenRequest (0x9f30d0) — short(2).
+  // Opens a hired merchant remotely. Opcode TBD from MCP decompilation.
+  UserRemoteShopOpenRequest = 132,
+
+  // OG: CWvsContext::SendBoobyTrapAlert (0xa09680) — int(4).
+  // Notifies server about booby trap pickup. Opcode TBD from MCP decompilation.
+  UserBoobyTrapAlert        = 133,
+
+  // OG: CWvsContext::SendPartyWanted (0xa10100) — int(4)*4.
+  // Party recruitment: minLv, maxLv, count, jobFlag. Opcode TBD.
+  UserPartyWanted           = 134,
+
+  // OG: CWvsContext::SendRegisterJunior (0xa09dd0) — string.
+  // Registers a junior in the Family system. Opcode TBD.
+  UserFamilyRegisterJunior  = 174,
+
+  // OG: CWvsContext::SendUnregisterJunior (0xa099e0) — int(4).
+  // Unregisters a junior by character ID. Opcode TBD.
+  UserFamilyUnregisterJunior = 175,
+
+  // OG: CWvsContext::SendRingDropRequest (0x9d6810) — byte(1) int(4).
+  // Drops a ring item. Opcode TBD.
+  UserRingDropRequest       = 135,
+
+  // OG: CWvsContext::SendInvitationQuery (0x9da630) — byte(1) int(4) int(4).
+  // Queries an invitation. Opcode TBD.
+  UserInvitationQuery       = 136,
+
+  // OG: CWvsContext::SendNewYearCardUseRequest (0x9da380) — short(2) int(4).
+  // Uses a New Year card item. Opcode TBD.
+  UserNewYearCardUseRequest = 137,
+
+  // OG: CWvsContext::SendRandomMorphOtherRequest (0x9cced0) — short(2) int(4).
+  // Uses a random morph item on another player. Opcode TBD.
+  UserRandomMorphOtherRequest = 138,
+
+  // OG: CWvsContext::SendFollowCharacterRequest (0x9f9530) — int(4) byte(1) byte(1).
+  // Follows another character. Opcode TBD.
+  UserFollowCharacterRequest = 139,
+
+  // OG: CWvsContext::SendRequestSessionValue (0x9e1a90) — string byte(1).
+  // Requests a session value. Opcode TBD.
+  UserSessionValueRequest   = 140,
 }
 
 export enum OutHeader {

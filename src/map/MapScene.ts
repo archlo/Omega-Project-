@@ -30,6 +30,10 @@ export class MapScene {
   /** World-coordinate position of the map's `sp` (start point) portal, or null if absent. */
   StartPoint: { x: number; y: number } | null = null;
   Camera = { x: 0, y: 0 };
+  /** When false (default for login/char select), backgrounds ignore Rx/Ry parallax
+   *  and alpha — they render as static decorations matching the original client's
+   *  non-gameplay screens. */
+  ParallaxEnabled = false;
   // Real canvas size, kept in sync via SetCamera()'s screenW/screenH params.
   // Defaults to 800x600 only for the brief window between construction and
   // the first SetCamera() call (matches the previous hardcoded behavior for
@@ -215,8 +219,25 @@ export class MapScene {
     scrollX = 0,
     scrollY = 0,
   ): void {
-    const bx = info.X + screenCenter.x - this.Camera.x + scrollX;
-    const by = info.Y + screenCenter.y - this.Camera.y + scrollY;
+    // Rx/Ry parallax: rx=0 means fixed on screen, rx=100 scrolls 1:1 with camera.
+    // The reference (backgrnd_render_system.cpp) computes effective camera offset
+    // as camera * (rx / 100) so that low-rx backgrounds barely move.
+    // Only active in gameplay (ParallaxEnabled); login/char select screens use
+    // a static camera and backgrounds should not shift.
+    let bx: number;
+    let by: number;
+    if (this.ParallaxEnabled) {
+      const parallaxX = this.Camera.x * (info.Rx / 100);
+      const parallaxY = this.Camera.y * (info.Ry / 100);
+      bx = info.X + screenCenter.x - parallaxX + scrollX;
+      by = info.Y + screenCenter.y - parallaxY + scrollY;
+    } else {
+      // Original formula — login / char select
+      bx = info.X + screenCenter.x - this.Camera.x + scrollX;
+      by = info.Y + screenCenter.y - this.Camera.y + scrollY;
+    }
+
+    const alpha = this.ParallaxEnabled ? info.Alpha / 255 : 1;
 
     // Animated non-tiled: draw current frame at parallaxed position
     if (anim) {
@@ -225,6 +246,7 @@ export class MapScene {
       const isTiled = info.Type === BackType.HTiled || info.Type === BackType.VTiled || info.Type === BackType.Tiled;
       if (!isTiled && !isScrolling) {
         const s = anim.Draw(bx, by);
+        s.alpha = alpha;
         this.container.addChild(s);
         return;
       }
@@ -233,28 +255,52 @@ export class MapScene {
     const wz = anim ? anim.Current : sprite;
     if (wz === null) return;
 
-    switch (info.Type) {
-      case BackType.Normal: {
-        const s = this._newSprite(wz);
-        s.position.set(bx, by);
-        this.container.addChild(s);
-        break;
+    // Gameplay: viewport-aware tiling + alpha. Login: original simple tiling.
+    if (this.ParallaxEnabled) {
+      switch (info.Type) {
+        case BackType.Normal: {
+          const s = this._newSprite(wz);
+          s.alpha = alpha;
+          s.position.set(bx, by);
+          this.container.addChild(s);
+          break;
+        }
+        case BackType.HMoveA:
+        case BackType.HMoveB:
+        case BackType.HTiled:
+          this._tileH(wz, bx, by, info, screenWidth, screenHeight, alpha);
+          break;
+        case BackType.VMoveA:
+        case BackType.VMoveB:
+        case BackType.VTiled:
+          this._tileV(wz, bx, by, info, screenWidth, screenHeight, alpha);
+          break;
+        case BackType.Tiled:
+          this._tileBoth(wz, bx, by, info, screenWidth, screenHeight, alpha);
+          break;
       }
-      // HMoveA/B = HTiled + auto-scroll (offset already in bx via scrollX)
-      case BackType.HMoveA:
-      case BackType.HMoveB:
-      case BackType.HTiled:
-        this._tileH(wz, bx, by, info, screenWidth);
-        break;
-      // VMoveA/B = VTiled + auto-scroll (offset already in by via scrollY)
-      case BackType.VMoveA:
-      case BackType.VMoveB:
-      case BackType.VTiled:
-        this._tileV(wz, bx, by, info, screenHeight);
-        break;
-      case BackType.Tiled:
-        this._tileBoth(wz, bx, by, info, screenWidth, screenHeight);
-        break;
+    } else {
+      switch (info.Type) {
+        case BackType.Normal: {
+          const s = this._newSprite(wz);
+          s.position.set(bx, by);
+          this.container.addChild(s);
+          break;
+        }
+        case BackType.HMoveA:
+        case BackType.HMoveB:
+        case BackType.HTiled:
+          this._tileHLegacy(wz, bx, by, info, screenWidth);
+          break;
+        case BackType.VMoveA:
+        case BackType.VMoveB:
+        case BackType.VTiled:
+          this._tileVLegacy(wz, bx, by, info, screenHeight);
+          break;
+        case BackType.Tiled:
+          this._tileBothLegacy(wz, bx, by, info, screenWidth, screenHeight);
+          break;
+      }
     }
   }
 
@@ -283,7 +329,103 @@ export class MapScene {
     return s;
   }
 
-  private _tileH(wz: WzSprite, bx: number, by: number, info: BackInfo, screenWidth: number): void {
+  /**
+   * Viewport-aware horizontal tiling matching the reference (backgrnd_render_system.cpp).
+   * Calculates tile count from viewport bounds using modular arithmetic, then
+   * renders only the tiles visible within [0, screenWidth] x [0, screenHeight].
+   */
+  private _tileH(wz: WzSprite, bx: number, by: number, info: BackInfo, screenWidth: number, screenHeight: number, alpha = 1): void {
+    const period = info.Cx > 0 ? info.Cx : wz.Width;
+    if (period <= 0) { const s = this._cloneSprite(wz); s.alpha = alpha; s.position.set(bx, by); this.container.addChild(s); return; }
+
+    const texW = wz.Width;
+    const vpLeft = 0;
+    const vpRight = screenWidth;
+
+    // Find leftmost tile: start from bx and wrap left until fully before viewport
+    // The reference calculates: tile_start_right = (bx + texW) % period, then
+    // derives tile_start_left from there. We replicate this in screen space.
+    const rem = ((bx + texW - vpLeft) % period + period) % period;
+    const tileStartRight = rem > 0 ? rem + vpLeft : period + vpLeft;
+    let tileStartLeft = tileStartRight - texW;
+
+    if (tileStartLeft >= vpRight) return;
+
+    const tileCnt = Math.ceil((vpRight - tileStartLeft) / period);
+    for (let j = 0; j < tileCnt; j++) {
+      const s = this._cloneSprite(wz);
+      s.alpha = alpha;
+      s.position.set(tileStartLeft + j * period, by);
+      this.container.addChild(s);
+    }
+  }
+
+  /**
+   * Viewport-aware vertical tiling. Same approach as _tileH but on Y axis.
+   */
+  private _tileV(wz: WzSprite, bx: number, by: number, info: BackInfo, screenWidth: number, screenHeight: number, alpha = 1): void {
+    const period = info.Cy > 0 ? info.Cy : wz.Height;
+    if (period <= 0) { const s = this._cloneSprite(wz); s.alpha = alpha; s.position.set(bx, by); this.container.addChild(s); return; }
+
+    const texH = wz.Height;
+    const vpTop = 0;
+    const vpBottom = screenHeight;
+
+    const rem = ((by + texH - vpTop) % period + period) % period;
+    const tileStartBottom = rem > 0 ? rem + vpTop : period + vpTop;
+    let tileStartTop = tileStartBottom - texH;
+
+    if (tileStartTop >= vpBottom) return;
+
+    const tileCnt = Math.ceil((vpBottom - tileStartTop) / period);
+    for (let i = 0; i < tileCnt; i++) {
+      const s = this._cloneSprite(wz);
+      s.alpha = alpha;
+      s.position.set(bx, tileStartTop + i * period);
+      this.container.addChild(s);
+    }
+  }
+
+  /**
+   * Viewport-aware bidirectional tiling.
+   */
+  private _tileBoth(wz: WzSprite, bx: number, by: number, info: BackInfo, screenWidth: number, screenHeight: number, alpha = 1): void {
+    const px = info.Cx > 0 ? info.Cx : wz.Width;
+    const py = info.Cy > 0 ? info.Cy : wz.Height;
+    if (px <= 0 || py <= 0) { const s = this._cloneSprite(wz); s.alpha = alpha; s.position.set(bx, by); this.container.addChild(s); return; }
+
+    const texW = wz.Width;
+    const texH = wz.Height;
+
+    // Horizontal
+    const remX = ((bx + texW) % px + px) % px;
+    const tileRightX = remX > 0 ? remX : px;
+    let startX = tileRightX - texW;
+    if (startX >= screenWidth) return;
+    const cntX = Math.ceil((screenWidth - startX) / px);
+
+    // Vertical
+    const remY = ((by + texH) % py + py) % py;
+    const tileBottomY = remY > 0 ? remY : py;
+    let startY = tileBottomY - texH;
+    if (startY >= screenHeight) return;
+    const cntY = Math.ceil((screenHeight - startY) / py);
+
+    for (let i = 0; i < cntY; i++)
+      for (let j = 0; j < cntX; j++) {
+        const s = this._cloneSprite(wz);
+        s.alpha = alpha;
+        s.position.set(startX + j * px, startY + i * py);
+        this.container.addChild(s);
+      }
+  }
+
+  // ── Legacy tiling (login / char select) ──────────────────────────
+  // Original simple loop — no viewport math, no alpha. Used when
+  // ParallaxEnabled is false so login-screen backgrounds stay exactly
+  // as they were before the backgrnd_render_system port.
+
+  private _tileHLegacy(wz: WzSprite, bx: number, by: number, info: BackInfo, screenWidth: number): void {
     const period = info.Cx > 0 ? info.Cx : wz.Width;
     if (period <= 0) { const s = this._cloneSprite(wz); s.position.set(bx, by); this.container.addChild(s); return; }
     let x = bx;
@@ -293,7 +435,7 @@ export class MapScene {
     }
   }
 
-  private _tileV(wz: WzSprite, bx: number, by: number, info: BackInfo, screenHeight: number): void {
+  private _tileVLegacy(wz: WzSprite, bx: number, by: number, info: BackInfo, screenHeight: number): void {
     const period = info.Cy > 0 ? info.Cy : wz.Height;
     if (period <= 0) { const s = this._cloneSprite(wz); s.position.set(bx, by); this.container.addChild(s); return; }
     let y = by;
@@ -303,7 +445,7 @@ export class MapScene {
     }
   }
 
-  private _tileBoth(wz: WzSprite, bx: number, by: number, info: BackInfo, screenWidth: number, screenHeight: number): void {
+  private _tileBothLegacy(wz: WzSprite, bx: number, by: number, info: BackInfo, screenWidth: number, screenHeight: number): void {
     const px = info.Cx > 0 ? info.Cx : wz.Width;
     const py = info.Cy > 0 ? info.Cy : wz.Height;
     if (px <= 0 || py <= 0) { const s = this._cloneSprite(wz); s.position.set(bx, by); this.container.addChild(s); return; }

@@ -9,12 +9,14 @@ export class Portal {
   Image = '';
   Delay = 0;
   OnlyOnce = false;
-  HRange = 0;
-  VRange = 0;
+  HRange = 100;
+  VRange = 100;
   HideTooltip = false;
   VImpact = 0;
   HImpact = 0;
   ReactorName = '';
   SessionValueKey = '';
   SessionValue = '';
+  Script = '';
+  Teleport = false;
 }

@@ -1,4 +1,4 @@
-import { Container, Graphics, Text, TextStyle } from 'pixi.js';
+import { Container, Text, TextStyle } from 'pixi.js';
 import { GamePanel } from './GamePanel.js';
 
 const FADE_TIME = 3;
@@ -15,7 +15,7 @@ export class StatusMessenger extends GamePanel {
   position = { x: 300, y: 320 };
 
   private _msgContainer: Container;
-  private _messages: { text: Graphics; time: number }[] = [];
+  private _messages: { text: Container; time: number }[] = [];
 
   constructor() {
     super();
@@ -47,7 +47,7 @@ export class StatusMessenger extends GamePanel {
   }
 
   private _addMsg(text: string, color: string): void {
-    const c = new Graphics();
+    const c = new Container();
     const t = new Text({ text, style: new TextStyle({ fill: color, fontSize: 11, fontFamily: 'monospace' }) });
     c.addChild(t);
     c.x = 0;
