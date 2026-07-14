@@ -26,7 +26,7 @@ describe('GameStage avatar equip op sync', () => {
     stage._applyEquipOps([{ opType: InventoryOpType.Add, invType: InventoryType.Cash, pos: -105, itemId: 1049000 }]);
     expect(look.hairEquip.get(5)).toBe(1049000);
     expect(look.unseenEquip.get(5)).toBe(1042000);
-    expect(stage._equip.setEquippedByBodyPart).toHaveBeenCalledWith(5, 1049000, 'Item 1049000', 0);
+    expect(stage._equip.setEquippedByBodyPart).toHaveBeenCalledWith(5, 1049000, 'Item 1049000', 0, undefined);
 
     stage._applyEquipOps([{ opType: InventoryOpType.Remove, invType: InventoryType.Cash, pos: -105 }]);
     expect(look.hairEquip.get(5)).toBe(1042000);

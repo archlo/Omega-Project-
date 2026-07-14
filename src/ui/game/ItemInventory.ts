@@ -61,6 +61,8 @@ export class InvItem {
   petRepleteness?: number;
   petRemainLife?: number;
   equipStats?: EquipStats;
+  /** OG: CItemInfo::IsCashItem — true for cash items (info/cash != 0) */
+  cash = false;
 }
 
 // OG: CDraggableItem's drop payload — TODO_AUDIT.md item-drag-and-drop TODO.
@@ -90,7 +92,7 @@ export class ItemInventory extends GamePanel implements DragTarget {
   private _wzTabDisabled: (WzSprite | null)[] = new Array(5).fill(null);
   private _tabWidths: number[] = [31, 31, 31, 31, 31];
   private _tabLabels: Text[] = [];
-  private _slotBgs: Graphics[] = [];
+  private _slotBgs: Container[] = [];
   private _slotLabels: Text[] = [];
   private _slotQtys: Text[] = [];
   private _activeTab = 0;
@@ -296,7 +298,7 @@ export class ItemInventory extends GamePanel implements DragTarget {
 
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < FULL_COLS; c++) {
-        const g = new Graphics();
+        const g = new Container();
         this._slotBgs.push(g);
         this._root.addChild(g);
 
@@ -410,7 +412,7 @@ export class ItemInventory extends GamePanel implements DragTarget {
     const gridCols = this._extended ? FULL_COLS : COLS;
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < gridCols; c++) {
-        const g = new Graphics();
+        const g = new Container();
         this._slotBgs.push(g);
         this._root.addChild(g);
 
@@ -623,6 +625,8 @@ export class ItemInventory extends GamePanel implements DragTarget {
           item.petRepleteness = op.petRepleteness;
           item.petRemainLife = op.petRemainLife;
           item.equipStats = op.equipStats;
+          // OG: CItemInfo::IsCashItem — items with ID >= 5000000 are cash items
+          item.cash = Math.floor(op.itemId / 1_000_000) === 5;
           this._items.push(item);
           this._slots.set(`${tab}-${op.pos}`, item);
           this._latestItem = { itemId: op.itemId, tab, slot: op.pos };
@@ -650,6 +654,8 @@ export class ItemInventory extends GamePanel implements DragTarget {
       }
     }
     this._updateActiveUseSlot();
+    // Rebuild display after inventory operations to show new/changed items
+    this._rebuild();
   }
 
   private _findSlot(tab: number, pos: number): InvItem | undefined {
@@ -915,7 +921,6 @@ export class ItemInventory extends GamePanel implements DragTarget {
 
         // Clear previous children (old icons, disabled overlays, etc.)
         this._slotBgs[idx].removeChildren();
-        this._slotBgs[idx].clear();
 
         // OG: no empty slot background drawn — bg3 layer provides the grid.
 
@@ -973,6 +978,14 @@ export class ItemInventory extends GamePanel implements DragTarget {
             const ih = icon.Texture.height;
             iconSpr.position.set(sx + (SLOT_W - iw) / 2, sy + (SLOT_H - ih) / 2);
             this._slotBgs[idx].addChild(iconSpr);
+            // OG: DrawItemIconForSlot — cash tag overlay in bottom-right corner
+            if (item.cash) {
+              const cashTag = this._icons.GetCashTag();
+              if (cashTag) {
+                cashTag.position.set(sx + SLOT_W - cashTag.width, sy + SLOT_H - cashTag.height);
+                this._slotBgs[idx].addChild(cashTag);
+              }
+            }
           }
         }
 

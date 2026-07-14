@@ -4,6 +4,7 @@ import type { WzProperty } from '../wz/WzProperty.js';
 import type { WzSprite } from '../render/WzSprite.js';
 import type { WzTextureLoader } from '../render/WzTextureLoader.js';
 import { WzUol } from '../wz/WzUol.js';
+import { Sprite } from 'pixi.js';
 
 /**
 Resolves an item's inventory icon (the 32x32-ish cell sprite) from the WZ files.
@@ -24,6 +25,8 @@ export class ItemIconLoader {
   private _cache = new Map<number, WzSprite | null>();
   private _petCache = new Map<number, WzSprite | null>();
   private _attrCache = new Map<number, ItemAttr | null>();
+  private _cashTag: WzSprite | null = null;
+  private _cashTagLoaded = false;
 
   constructor(
     private _loader: WzTextureLoader,
@@ -39,13 +42,52 @@ export class ItemIconLoader {
 
     let sprite: WzSprite | null = null;
     try {
-      sprite = Math.floor(itemId / 1_000_000) === 1 ? this._loadEquipIcon(itemId) : this._loadItemIcon(itemId);
+      // OG CItemInfo::GetItemProp: equips (1xxxxxx) and cash equips (5xxxxxx where group!=500)
+      // load from Character.wz; everything else from Item.wz
+      const invType = Math.floor(itemId / 1_000_000);
+      if (invType === 1) {
+        sprite = this._loadEquipIcon(itemId);
+      } else if (invType === 5 && Math.floor(itemId / 10000) !== 500) {
+        // Cash equip — OG slot type 2, loads from Character.wz like regular equips
+        sprite = this._loadEquipIcon(itemId);
+      } else {
+        sprite = this._loadItemIcon(itemId);
+      }
     } catch {
       sprite = null;
     }
 
     this._cache.set(itemId, sprite);
     return sprite;
+  }
+
+  /** OG: CItemInfo::DrawItemIconForSlot cash tag overlay — small "CASH" indicator
+      drawn in the bottom-right corner of cash items. Loaded from UIWindow2.img/Item/cash
+      or similar WZ path. Returns null if the cash tag asset isn't available. */
+  GetCashTag(): Sprite | null {
+    if (this._cashTagLoaded) return this._cashTag?.NewSprite() ?? null;
+    this._cashTagLoaded = true;
+    if (!this._itemWz) return null;
+    // Try common WZ paths for the cash tag icon
+    const paths = [
+      'UIWindow2.img/Item/cash',
+      'UIWindow2.img/Item/Cash',
+    ];
+    for (const p of paths) {
+      const node = this._itemWz.GetItem(p);
+      if (node instanceof WzCanvas) {
+        this._cashTag = this._loader.Load(node);
+        break;
+      }
+      if (node instanceof WzUol) {
+        const resolved = node.Resolve();
+        if (resolved instanceof WzCanvas) {
+          this._cashTag = this._loader.Load(resolved);
+          break;
+        }
+      }
+    }
+    return this._cashTag?.NewSprite() ?? null;
   }
 
   /** Pet icon from `Item.wz/Pet/<id:D8>.img/info/icon`. Pets live in their own
@@ -171,8 +213,13 @@ export class ItemIconLoader {
 
   // Character.wz folder for an equip id, by the 4-digit category (itemId / 10000).
   // Mapped from OG CItemInfo::get_equip_data_path (0x5A6060).
+  // StringPool IDs: 0x93E=Unknown, 0x93F=Consume, 0x940=Install, 0x941=Cap,
+  // 0x942=Accessory, 0x943=Coat, 0x944=Longcoat, 0x945=Pants, 0x946=Shoes,
+  // 0x947=Glove, 0x948=Shield, 0x949=Cape, 0x94A=Ring, 0x94B=PetEquip,
+  // 0x94C=Weapon, 0x94D=TamingMob, 0x94F=Dragon, 0x18FA=Mechanic
   private static _category(itemId: number): string | null {
     const cat = Math.floor(itemId / 10000);
+    // OG get_equip_data_path (0x5A6060) — explicit cases first, then weapon default
     switch (true) {
       case cat === 100: return 'Cap';
       case cat >= 101 && cat <= 103: return 'Accessory';
@@ -181,27 +228,31 @@ export class ItemIconLoader {
       case cat === 106: return 'Pants';
       case cat === 107: return 'Shoes';
       case cat === 108: return 'Glove';
-      case cat === 109: return 'Shield';
+      case cat === 109 || cat === 119: return 'Shield';
       case cat === 110: return 'Cape';
       case cat === 111: return 'Ring';
       case cat >= 112 && cat <= 115: return 'Accessory';
       case cat >= 116 && cat <= 118: return null;
-      case cat === 119: return 'Shield';
-      case cat >= 130 && cat <= 160: return 'Weapon';
-      case cat >= 161 && cat <= 165: return 'Mechanic';
-      case cat >= 166 && cat <= 179: return 'Weapon';
       case cat >= 180 && cat <= 183: return 'PetEquip';
-      case cat >= 190 && cat <= 193: return 'TamingMob';
+      case cat >= 190 && cat <= 191 || cat === 193 || cat === 198: return 'TamingMob';
       case cat >= 194 && cat <= 197: return 'Dragon';
-      case cat === 198: return 'TamingMob';
-      default: return null;
+      default: {
+        // OG default: cat/10 in {13,14,16,17} → Weapon (130-139, 140-149, 160-169, 170-179)
+        // Mechanic (161-165) is checked INSIDE the weapon default since it's within the weapon range
+        const tens = Math.floor(cat / 10);
+        if (cat >= 161 && cat <= 165) return 'Mechanic';
+        if (tens === 13 || tens === 14 || tens === 16 || tens === 17) return 'Weapon';
+        return null;
+      }
     }
   }
 }
 
 function I(p: WzProperty, key: string): number {
   const v = p.Get(key);
-  return typeof v === 'number' ? v : 0;
+  if (typeof v === 'number') return v;
+  if (typeof v === 'bigint') return Number(v);
+  return 0;
 }
 
 /**
@@ -221,4 +272,9 @@ export interface ItemAttr {
   // Hundred-and-second/Hundred-and-fifth/Hundred-and-ninth passes
   // (EQUIPPED_SETITEM/ToolTip_SetItemList). 0 when the item belongs to no set.
   SetItemId: number;
+  // OG: Equip-specific fields from SetToolTip_Equip_Basic / DrawToolTip_Equip
+  ProtectionType?: number;  // 0-3, border color selection
+  Durability?: number;      // 0-100, durability bar
+  Level?: number;           // growth item level
+  StarForce?: number;       // star force enhancement count
 }

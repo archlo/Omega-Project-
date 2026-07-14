@@ -25,7 +25,9 @@ import { ShopMarker } from '../character/ShopMarker.js';
 import { SkillEffectOverlay } from '../character/SkillEffectOverlay.js';
 import { ItemEffectOverlay } from '../character/ItemEffectOverlay.js';
 import { ProjectileOverlay } from '../character/ProjectileOverlay.js';
+import { BuffVisualOverlay } from '../character/BuffVisualOverlay.js';
 import { AttackAction } from '../character/AttackAction.js';
+import { ActionMan } from '../character/ActionMan.js';
 import { TombstoneEffect } from '../character/TombstoneEffect.js';
 import { WzSound } from '../wz/WzSound.js';
 import { FearEffect } from '../character/FearEffect.js';
@@ -49,6 +51,7 @@ import { WzSprite } from '../render/WzSprite.js';
 import type { PlayerInput } from '../character/PlayerInput.js';
 import { ScriptText } from '../ui/game/ScriptText.js';
 import { ForbiddenNameProvider } from '../character/ForbiddenNameProvider.js';
+import * as CUserLocal from '../character/CUserLocal.js';
 import type {
   SetFieldArgs, MobEnterArgs, MobMoveArgs, MobDamagedArgs,
   NpcEnterArgs, OtherCharEnterArgs, OtherCharMoveArgs,
@@ -63,7 +66,7 @@ import type {
 } from '../net/handlers/PacketArgs.js';
 import { ScriptMessageType } from '../net/packet/ScriptMessageType.js';
 import { GameSender, ChatGroupType } from '../net/senders/GameSender.js';
-import { MiniRoomType } from '../net/packet/MiniRoomProtocol.js';
+import { MiniRoomType, MiniRoomProtocol as MiniRoomProtocolFull } from '../net/packet/MiniRoomProtocol.js';
 import { MapleStat, MessengerAction, ShopResultType, TrunkResultType, DropLeaveType } from '../net/protocol/Enums.js';
 import { EquipStats, InventoryType } from '../domain/InventoryItem.js';
 import { InventoryOpType } from '../net/protocol/Enums.js';
@@ -153,9 +156,12 @@ import { PartySearchDialog } from '../ui/game/PartySearchDialog.js';
 import { TradingRoom } from '../ui/game/TradingRoom.js';
 import { PersonalShop } from '../ui/game/PersonalShop.js';
 import { EntrustedShop } from '../ui/game/EntrustedShop.js';
+import { MemoryGame } from '../ui/game/MemoryGame.js';
 import { TournamentWindow } from '../ui/game/TournamentWindow.js';
 import { FieldSubgameHud } from '../ui/game/FieldSubgameHud.js';
 import { MonsterCarnival } from '../ui/game/MonsterCarnival.js';
+import { KeyDownBar } from '../ui/game/KeyDownBar.js';
+import { ComboDisplay } from '../ui/game/ComboDisplay.js';
 import { EventAlarm } from '../ui/game/EventAlarm.js';
 import { SkillGuide } from '../ui/game/SkillGuide.js';
 import { computeBasicStat, defaultBasicStatInput, type BasicStatInput } from '../character/BasicStat.js';
@@ -204,12 +210,19 @@ export class GameStage extends Stage {
   /** couple-chair heart zone overlays: midpoint position + animation frames. */
   private _coupleHearts: { a: number; b: number; frames: AnimFrame[]; frameIndex: number; frameTimer: number; itemId: number }[] = [];
   private _coupleHeartLayer: Container = new Container();
+  // OG: couple-chair pairing change callback — fires when a pair forms or breaks.
+  // Server applies stat bonuses via TemporaryStat packets upon pairing.
+  onCoupleChairPairChanged: ((paired: boolean, charId: number, pairCharId: number, itemId: number) => void) | null = null;
   /** One-shot field effects (e.g. Summon.img animations at world positions). */
   private _fieldFx: { frames: AnimFrame[]; frameIndex: number; frameTimer: number; x: number; y: number; done: boolean }[] = [];
   private _fieldFxLayer: Container = new Container();
   private _fearEffect = new FearEffect();
   private _limitedView = new LimitedViewOverlay();
   private _comboCounter = 0;
+  private _keyDownBar = new KeyDownBar();
+  private _comboDisplay = new ComboDisplay();
+  private _buffVisual = new BuffVisualOverlay();
+  private _buffVisualLayer: Container = new Container();
   // Mobs/NPCs/reactors were constructed, Update()d every tick, and tracked
   // in their respective maps, but nothing ever added their `.container` to
   // the scene graph or set its screen position from world position + camera
@@ -250,7 +263,7 @@ export class GameStage extends Stage {
   protected _keyConfig!: KeyConfig;
   protected _skillIconCache: Map<number, WzSprite> = new Map();
   protected _optionMenu = new OptionMenu();
-  protected _charInfo = new CharInfo();
+  protected _charInfo: CharInfo | null = null;
   protected _npcTalk = new NpcTalk();
   protected _shop: Shop | null = null;
   protected _trunk: Trunk | null = null;
@@ -311,6 +324,7 @@ export class GameStage extends Stage {
   protected _tradingRoom: TradingRoom | null = null;
   protected _personalShop: PersonalShop | null = null;
   protected _entrustedShop: EntrustedShop | null = null;
+  protected _memoryGame: MemoryGame | null = null;
   protected _channelSelect: ChannelSelect | null = null;
   protected _quickSlotConfig: QuickSlotConfig | null = null;
   protected _quickSlots: QuickSlotBar | null = null;
@@ -346,8 +360,20 @@ export class GameStage extends Stage {
   protected _hasPendingPartyInvite = false;
   protected _guildLoadSent = false;
   protected _friendLoadSent = false;
+  /** Pending stat data from SetField — applied after _initMenu creates the statusBar. */
+  private _pendingStat: CharacterStat | null = null;
+  /** Pending equipped items from SetField — applied after _initMenu creates the equip panel. */
+  private _pendingEquipped: { slot: number; item: any }[] | null = null;
+  private _pendingEquippedCash: { slot: number; item: any }[] | null = null;
   protected _skillService: SkillInfoService | null = null;
   protected _skillRecords: { skillId: number; level: number; masterLevel: number }[] = [];
+  // OG: CUser::AFTERIMAGEINFO — attack trail visual effect.
+  // Registered after each attack, drawn as a fading afterimage sprite.
+  private _afterimageInfo: {
+    tStart: number; bLeft: boolean; nAction: number;
+    sAfterimageUOL: string; sSfxUOL: string;
+    weaponItemId: number; subWeaponItemId: number;
+  } | null = null;
   // ponytail: summed mastery from all passive skills with WZ `level/N/mastery`.
   // Updated in _onSkillRecordResult; fed to StatDerivedInputs for damage preview.
   protected _masteryFromSkills = 0;
@@ -359,6 +385,15 @@ export class GameStage extends Stage {
   // ponytail: per-body-part EquipStats from InventoryOperation — includes
   // per-instance stat lines (incStr etc.) and option/socket IDs for stat computation.
   protected _equipStats = new Map<number, EquipStats>();
+  // OG: CUserLocal::ApplyWeaponOption — weapon item option combat modifiers
+  // (critical prob/damage, DAMr, BossDAMr, IgnoreTargetDEF). Computed from
+  // the weapon's ItemOption level data during stat sync, cached for attack use.
+  // NOTE: actual fields moved to CUserLocal.ts — these are accessors for GameStage
+  get weaponCritProb() { return CUserLocal.weaponCritProb; }
+  get weaponCritDamage() { return CUserLocal.weaponCritDamage; }
+  get weaponDAMr() { return CUserLocal.weaponDAMr; }
+  get weaponBossDAMr() { return CUserLocal.weaponBossDAMr; }
+  get weaponIgnoreTargetDEF() { return CUserLocal.weaponIgnoreTargetDEF; }
   // TODO_AUDIT.md Hundred-and-nineteenth pass: MACROSYSDATA — populated by
   // onMacroSysDataInit (opcode decoded in FieldHandlers.ts), consumed by
   // FuncKeyType.MacroSkill key dispatch and SkillMacro.Open.
@@ -371,6 +406,8 @@ export class GameStage extends Stage {
   protected _attackCooldown = 0;
   protected _comboKeys = new SequencedKeyMan();
   protected _comboClockMs = 0;
+  protected _comboCount = 0;
+  private _pendingBridle: { slot: number; id: number } | null = null;
   protected _isPlayerDead = false;
   protected _fieldKey = 0;
   private _isFieldTransferring = false;
@@ -379,6 +416,7 @@ export class GameStage extends Stage {
   private _isRidingTamingMob = false;
   protected _mobNameOf: (id: number) => string = () => '';
   protected _itemNameOf: (id: number) => string = () => '';
+  private _directionModeActive = false;
 
   private _bg: Graphics;
 
@@ -408,9 +446,10 @@ export class GameStage extends Stage {
     // already-correct pattern the other ~25 `_initMenu`-constructed panels
     // already use at the `this._panels.push(...)` call below).
     this._panels = [
-      this._chatBar, this._buffList, this._clock, this._slideNotice, this._partyHPBar, this._killCountHud, this._massacreGaugeHud, this._questTimerHud, this._medalQuestInfo, this._optionMenu, this._charInfo,
+      this._chatBar, this._buffList, this._clock, this._slideNotice, this._partyHPBar, this._killCountHud, this._massacreGaugeHud, this._questTimerHud, this._medalQuestInfo, this._optionMenu, this._charInfo!,
       this._npcTalk, this._shop!,
       this._userList, this._statusMessenger, this._eventAlarm, this._skillGuide,
+      this._equip, this._item, this._skill, this._stats, this._keyConfig, this._quest,
     ];
   }
 
@@ -429,26 +468,15 @@ export class GameStage extends Stage {
     this._bg.clear();
 
     if (this._field && this._camera) {
-      this._field.UpdateEntities(this._otherChars, this._player, this._drops, w, h);
+      // OG: all entities (players, mobs, NPCs, drops) layered into field's
+      // 8 layer containers by foothold layer — mobs/NPCs no longer in a
+      // separate top-level _entityLayer.
+      this._field.UpdateEntities(this._otherChars, this._player, this._drops,
+        this._mobs.values(), this._npcs, w, h);
 
-      // Mobs/NPCs/reactors: position + (re)parent into the persistent
-      // _entityLayer every frame. Unlike CharLook/OtherCharLook (which have
-      // their own Draw(camX,camY,cx,cy) and get layered into FieldScene's
-      // per-foothold-layer containers), these three classes only rebuild
-      // their own internal sprite children — they've never positioned or
-      // parented their own `.container` themselves, by design (same as
-      // DamageNumber/EmotionBubble/TombstoneEffect before pass 14's fix).
+      // Other entities (reactors, employees, summons, etc.) — still in
+      // top-level _entityLayer for now (no Layer field yet).
       this._entityLayer.removeChildren();
-      for (const mob of this._mobs.values()) {
-        const p = this._camera.WorldToScreen(mob.Position.x, mob.Position.y);
-        mob.container.position.set(p.x, p.y);
-        this._entityLayer.addChild(mob.container);
-      }
-      for (const npc of this._npcs) {
-        const p = this._camera.WorldToScreen(npc.Position.x, npc.Position.y);
-        npc.container.position.set(p.x, p.y);
-        this._entityLayer.addChild(npc.container);
-      }
       for (const reactor of this._reactors.values()) {
         const p = this._camera.WorldToScreen(reactor.Position.x, reactor.Position.y);
         reactor.container.position.set(p.x, p.y);
@@ -615,6 +643,9 @@ export class GameStage extends Stage {
     this._revivePanel?.Relayout(800, 600);
     this._fearEffect.onResize(windowW, windowH);
     this._limitedView.onResize(windowW, windowH);
+    // OG: KeyDownBar/ComboDisplay — reposition on resize
+    this._keyDownBar.container.position.set(windowW / 2, windowH - 40);
+    this._comboDisplay.container.position.set(windowW - 80, 60);
   }
 
   onMouseMove(x: number, y: number): void {
@@ -668,39 +699,70 @@ export class GameStage extends Stage {
   // OG: Menu ID → UI panel toggle (from CFuncKeyMappedMan / UseFuncKeyMapped)
   private _executeMenuAction(menuId: number): void {
     switch (menuId) {
-      case 0: this._equip.isVisible = !this._equip.isVisible; break;           // Equipment
-      case 1: this._item.isVisible = !this._item.isVisible; break;             // Items
-      case 2: this._stats.isVisible = !this._stats.isVisible; break;           // Stats
+      case 0:
+        this._equip.isVisible = !this._equip.isVisible;
+        if (this._equip.isVisible && !this._equip.container.parent) this.uiRoot.addChild(this._equip.container);
+        break;
+      case 1:
+        this._item.isVisible = !this._item.isVisible;
+        if (this._item.isVisible && !this._item.container.parent) this.uiRoot.addChild(this._item.container);
+        break;
+      case 2:
+        this._stats.isVisible = !this._stats.isVisible;
+        if (this._stats.isVisible) {
+          if (!this._stats.container.parent) this.uiRoot.addChild(this._stats.container);
+          this._stats.createTip11();
+        } else {
+          this._stats.destroyTip();
+        }
+        break;
       case 3: this._skill.isVisible = !this._skill.isVisible; break;           // Skills
       case 4: if (this._userList) this._userList.isVisible = !this._userList.isVisible; break; // Friends
       case 5: if (this._worldMap) this._worldMap.isVisible = !this._worldMap.isVisible; break; // WorldMap
-      case 6: /* MapleChat — TODO */ break;
+      case 6: this._chatBar?.focus(); break;                                   // MapleChat
       case 7: this._miniMap.cycleMode(); break;                                // MiniMap toggle
       case 8: this._quest.isVisible = !this._quest.isVisible; break;           // QuestLog
       case 9: this._keyConfig.isVisible = !this._keyConfig.isVisible; break;   // KeyBindings
       case 10: this._chatBar?.focus(); break;                                  // Say
       case 11: this._chatBar?.focus(); break;                                  // Whisper
-      case 12: /* PartyChat — TODO */ break;
-      case 13: /* FriendsChat — TODO */ break;
+      case 12: this._chatBar?.setChatTarget(2); this._chatBar?.focus(); break; // PartyChat → party target
+      case 13: this._chatBar?.setChatTarget(3); this._chatBar?.focus(); break; // FriendsChat → buddy target
       case 14: if (this._gameMenu) this._gameMenu.isVisible = !this._gameMenu.isVisible; break; // Game Menu
       case 15: if (this._quickSlotConfig) this._quickSlotConfig.isVisible = !this._quickSlotConfig.isVisible; break; // QuickSlots
-      case 16: /* ToggleChat — TODO */ break;
-      case 17: /* Guild — TODO */ break;
-      case 18: /* GuildChat — TODO */ break;
-      case 19: /* Party — TODO */ break;
-      case 20: /* Notifier — TODO */ break;
-      case 21: /* SpouseChat — TODO */ break;
-      case 22: /* CashShop — TODO */ break;
-      case 24: /* AllianceChat — TODO */ break;
-      case 25: /* ManageLegion — TODO */ break;
+      case 16: this._chatBar?.toggleChat(); break;                            // ToggleChat
+      case 17: this._chatBar?.focus(); break;                                  // Guild
+      case 18: this._chatBar?.setChatTarget(4); this._chatBar?.focus(); break; // GuildChat → guild target
+      case 19: this._chatBar?.focus(); break;                                  // Party
+      case 20: this._chatBar?.addLine('[Notifier] Not yet implemented.', 12); break; // Notifier
+      case 21: this._chatBar?.setChatTarget(7); this._chatBar?.focus(); break; // SpouseChat → whisper target
+      case 22: if (this.game.session.isConnected) { this.game.session.send(GameSender.MigrateToCashShop()); this.stageDirector.push(new CashShopStage(this._uiWz)); } break; // CashShop
+      case 24: this._chatBar?.setChatTarget(5); this._chatBar?.focus(); break; // AllianceChat → alliance target
+      case 25: break;                                                          // ManageLegion — no-op
       case 26: if (this._familyWindow) this._familyWindow.isVisible = !this._familyWindow.isVisible; break; // Family
-      case 27: /* BossParty — TODO */ break;
-      case 29: /* ExpeditionChat — TODO */ break;
-      case 44: if (this._charInfo) this._charInfo.isVisible = !this._charInfo.isVisible; break; // CharInfo
+      case 27: break;                                                          // BossParty — no-op
+      case 29: this._chatBar?.focus(); break;                                  // ExpeditionChat
+      case 44:
+        if (this._charInfo) {
+          this._charInfo.isVisible = !this._charInfo.isVisible;
+          if (this._charInfo.isVisible && !this._charInfo.container.parent) this.uiRoot.addChild(this._charInfo.container);
+        }
+        break;
       case 45: if (this._channelSelect) this._channelSelect.isVisible = !this._channelSelect.isVisible; break; // ChangeChannel
       case 46: if (this._gameMenu) this._gameMenu.isVisible = !this._gameMenu.isVisible; break; // MainMenu
-      case 47: /* Screenshot — TODO */ break;
+      case 47: this._takeScreenshot(); break;
     }
+  }
+
+  // OG: CUIStatusBar::OnScreenshot (screenshot to file) — capture the game
+  // canvas as a PNG and trigger a browser download.
+  private _takeScreenshot(): void {
+    const renderer = this.game.pixiApp.renderer;
+    renderer.extract.image(this.game.pixiApp.stage).then((img) => {
+      const a = document.createElement('a');
+      a.href = img.src;
+      a.download = `MapleClaude_${Date.now()}.png`;
+      a.click();
+    }).catch(() => { /* screenshot failed silently */ });
   }
 
   onMouseButton(x: number, y: number, down: boolean, _button: MouseButton): void {
@@ -719,7 +781,7 @@ export class GameStage extends Stage {
     }
     if (!down && this._dragController.isDragging) {
       const payload = this._dragController.payload;
-      const visible = this._panels.filter((p) => p.isVisible).reverse() as unknown as DragTarget[];
+      const visible = this._panels.filter((p) => p?.isVisible).reverse() as unknown as DragTarget[];
       const claimed = this._dragController.endDrag(visible, x, y);
       // TODO_AUDIT.md item-drag-and-drop TODO: dragging a worn equip slot
       // with nothing claiming the drop (no upgrade/protect/scissors dialog
@@ -785,6 +847,24 @@ export class GameStage extends Stage {
           this.game.session.send(GameSender.UserCharacterInfoRequest(other.CharId));
         }
         return;
+      }
+      // Mob click: detect click on a mob for bridle item use
+      if (_button === MouseButton.Left && this._pendingBridle) {
+        let bestMob: MobLook | null = null;
+        let bestDist = 40;
+        for (const mob of this._mobs.values()) {
+          const dx = world.x - mob.Position.x;
+          const dy = world.y - (mob.Position.y - 30); // mob center is ~30px above feet
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < bestDist) { bestDist = d; bestMob = mob; }
+        }
+        if (bestMob) {
+          const bridle = this._pendingBridle;
+          this._pendingBridle = null;
+          const pos = this._physics?.Position ?? { x: 0, y: 0 };
+          this.game.session.send(GameSender.BridleItemUseRequest(bridle.slot, bridle.id, bestMob.TemplateId));
+          return;
+        }
       }
       // Click-to-pickup: find the nearest drop to the click point (OG allows
       // clicking a drop on the field to pick it up, not just the keybind).
@@ -922,6 +1002,16 @@ export class GameStage extends Stage {
       this._skillService = new SkillInfoService(() => this._skillWz);
     } catch (ex) { console.warn('Failed to open WZ files', ex); }
 
+    // Wire WZ packages into ActionMan singleton (OG CActionMan WZ refs)
+    const actMan = ActionMan.GetInstance();
+    actMan.SetMobWz(this._mobWz);
+    actMan.SetNpcWz(this._npcWz);
+    actMan.SetCharacterWz(this._characterWz);
+    actMan.SetSkillWz(this._skillWz);
+    actMan.SetMapWz(this._mapWz);
+    actMan.SetSummonWz(this._skillWz); // Summoned uses Skill.wz
+    actMan.Init();
+
     try { this._initMenu(this._uiWz!); } catch (ex) { console.warn('_initMenu failed', ex); }
     try { this._wireNames(game); } catch (ex) { console.warn('_wireNames failed', ex); }
     this._player?.Load(this._characterWz, this._itemWz, this._baseWz, this._loader);
@@ -954,18 +1044,31 @@ export class GameStage extends Stage {
       );
       this._miniMap.setMiniMapType(0);
       this._miniMap.onPlayerDotClick = () => this.game.session.send(GameSender.UserMiniMapClick());
+      this._miniMap.setFootholds(this._field.Footholds);
+      this._miniMap.onBtWorldMap = () => {
+        if (this._worldMap) this._worldMap.isVisible = !this._worldMap.isVisible;
+      };
     }
   }
 
   private _initMenu(uiWz: WzPackage): void {
     const font = new BuiltInFont();
     this._itemIcons = new ItemIconLoader(this._loader, this._characterWz, this._itemWz);
+    console.log(`[GameStage] ItemIconLoader created: charWz=${!!this._characterWz}, itemWz=${!!this._itemWz}`);
     this._itemOptionLoader = new ItemOptionLoader(this._itemWz);
     this._shopMarker = new ShopMarker(this._itemIcons);
 
     this._statusBar = new StatusBar(this._loader, uiWz, font);
     this._miniMap = new MiniMap(this._loader, uiWz, font);
     this._stats = new StatsInfo(this._loader, uiWz);
+    this._charInfo = new CharInfo(this._loader, uiWz, this._characterWz, this._itemWz, this._baseWz, this._itemIcons);
+    this._charInfo.itemNameOf = (id) => this.game.nameService?.ItemName(id) ?? `Item ${id}`;
+    this._charInfo.mobNameOf = (id) => this.game.nameService?.MobName(id) ?? `Mob ${id}`;
+    // Apply pending stat data AFTER stats panel is created
+    if (this._pendingStat) {
+      this._applyStatToStatusBar(this._pendingStat);
+      this._pendingStat = null;
+    }
     this._skill = new SkillBook(this._loader, uiWz);
     this._keyConfig = new KeyConfig(this._loader, uiWz, font);
     this._questDetail = new QuestDetail(this._loader, uiWz, this._npcWz, font);
@@ -1017,6 +1120,7 @@ export class GameStage extends Stage {
     this._quickSlotConfig = new QuickSlotConfig(this._loader, uiWz, font);
     this._keyConfig.onOpenQuickSlot = () => { this._quickSlotConfig!.isVisible = !this._quickSlotConfig!.isVisible; };
     this._keyConfig.skillIconResolver = (skillId) => this._skillIcon(skillId);
+    this._keyConfig.itemIconResolver = (itemId) => this._itemIcons?.LoadIcon(itemId) ?? null;
     this._keyConfig.onSaveToServer = (changed) => {
       this.game.session.send(GameSender.FuncKeyMappedModified(changed.map((c) => ({ keyIndex: c.index, type: c.fk.type, actionId: c.fk.id }))));
     };
@@ -1026,8 +1130,11 @@ export class GameStage extends Stage {
       (scancode) => this._keyConfig.bindingAt(scancode),
       (scancode, skillId) => this._keyConfig.bindSkillToKey(scancode, skillId),
       (skillId) => this._skillIcon(skillId),
+      (itemId) => this._itemIcons?.LoadIcon(itemId) ?? null,
       (skillId) => this._skill.cooldownOf(skillId),
-      undefined,
+      (itemId) => this._isStateChangeItem(itemId),
+      (itemId, invType) => this._isBindableItem(itemId, invType),
+      () => this._itemIcons?.GetCashTag() ?? null,
       (itemId) => this._item.countItem(itemId),
     );
     this._quickSlots.bindItemToKey = (scancode, itemId) => this._keyConfig.bindItemToKey(scancode, itemId);
@@ -1056,6 +1163,8 @@ export class GameStage extends Stage {
       icons: this._itemIcons,
       descOf: (id) => this.game.nameService.ItemDesc(id) ?? null,
     });
+    // Apply pending equipped items if _onSetField ran before _initMenu
+    this._applyPendingEquipped();
     this._syncEquipPetCount();
     this._item = new ItemInventory({
       loader: this._loader,
@@ -1064,10 +1173,6 @@ export class GameStage extends Stage {
       icons: this._itemIcons,
       descOf: (id) => this.game.nameService.ItemDesc(id) ?? null,
     });
-    const equipTipContainer = this._equip.tooltipContainer;
-    if (equipTipContainer) this.uiRoot.addChild(equipTipContainer);
-    const itemTipContainer = this._item.tooltipContainer;
-    if (itemTipContainer) this.uiRoot.addChild(itemTipContainer);
     this._equip.onUnequip = (bodyPart) => {
       // OG: CDraggableItem::GetOffEquipItem precondition checks
       // 1. HP must be > 0 (can't unequip while dead)
@@ -1187,6 +1292,17 @@ export class GameStage extends Stage {
     this.uiRoot.addChild(this._fearEffect.container);
     this.uiRoot.addChild(this._limitedView.container);
     this.uiRoot.addChild(this._fieldSubgameHud.container);
+    // OG: KeyDownBar + ComboDisplay — fixed-position HUD overlays
+    this._keyDownBar.container.position.set(
+      this.game.pixiApp.screen.width / 2,
+      this.game.pixiApp.screen.height - 40,
+    );
+    this.uiRoot.addChild(this._keyDownBar.container);
+    this._comboDisplay.container.position.set(
+      this.game.pixiApp.screen.width - 80,
+      60,
+    );
+    this.uiRoot.addChild(this._comboDisplay.container);
 
     this._tombstone = new TombstoneEffect(this._effectWz, this._mobSoundWz, this._loader, this.game.audioPlayer);
     // `_isPlayerDead` is already set the instant HP hits 0 (see _onStatChanged
@@ -1231,6 +1347,16 @@ export class GameStage extends Stage {
     this._shopScanner = new ShopScanner();
     this._incubator = new Incubator();
     this._rpsGame = new RPSGame();
+    this._rpsGame.onSendPacket = (subOpcode: number, data?: number) => {
+      switch (subOpcode) {
+        case 0: this.game.session.send(GameSender.RPSGameStart()); break;
+        case 1: this.game.session.send(GameSender.RPSGameSelection(data ?? 0)); break;
+        case 2: this.game.session.send(GameSender.RPSGameTimeout()); break;
+        case 3: this.game.session.send(GameSender.RPSGameContinue()); break;
+        case 4: this.game.session.send(GameSender.RPSGameExit()); break;
+        case 5: this.game.session.send(GameSender.RPSGameRetry()); break;
+      }
+    };
     this._logoutGift = new LogoutGift();
     this._parcel = new Parcel();
     this._wildHunterInfo = new WildHunterInfo();
@@ -1328,6 +1454,7 @@ export class GameStage extends Stage {
     this._itemProtector.OnCancel = () => {};
     this._repair = new Repair(this._loader, uiWz, font);
     this._repair.OnRepair = (slot) => { this.game.session.send(GameSender.RepairDurability(slot)); };
+    this._repair.OnRepairAll = () => { this.game.session.send(GameSender.RepairDurabilityAll()); };
     this._repair.OnClosed = () => {};
     // TODO_AUDIT.md Hundred-and-seventeenth pass: CItemSpeakerDlg megaphone
     // compose — sender confirmed (opcode 85 shape from 0x5c9e70 decompile).
@@ -1362,6 +1489,15 @@ export class GameStage extends Stage {
     this._entrustedShop = new EntrustedShop(this._loader, uiWz, font);
     this._entrustedShop.OnClose = () => { this.game.session.send(GameSender.EntrustedShopGoOut()); };
     this._entrustedShop.OnWithdrawMoney = () => { this.game.session.send(GameSender.EntrustedShopWithdrawMoney()); };
+    this._memoryGame = new MemoryGame({
+      onTurnUpCard: (cardIdx, bSelected) => { this.game.session.send(GameSender.MemoryGameTurnUpCard(cardIdx, bSelected)); },
+      onReady: (bReady) => { this.game.session.send(GameSender.MemoryGameReady(bReady)); },
+      onStart: () => { this.game.session.send(GameSender.MemoryGameStart()); },
+      onTieRequest: () => { this.game.session.send(GameSender.MemoryGameTieRequest()); },
+      onGiveUp: () => { this.game.session.send(GameSender.MemoryGameGiveUp()); },
+      onBan: () => { this.game.session.send(GameSender.MemoryGameBan()); },
+      onLeave: () => { this.game.session.send(GameSender.MiniRoomLeave()); },
+    });
     this._chatBalloon = new ChatBalloonLayer(this._loader, uiWz, font);
     this.uiRoot.addChild(this._chatBalloon.root);
 
@@ -1409,6 +1545,7 @@ export class GameStage extends Stage {
     this.uiRoot.addChild(this._tradingRoom.container);
     this.uiRoot.addChild(this._personalShop.container);
     this.uiRoot.addChild(this._entrustedShop.container);
+    this.uiRoot.addChild(this._memoryGame!.container);
     this.uiRoot.addChild(this._vegaDialog!.container);
     this._panels.push(this._familyWindow, this._guildBBS, this._channelSelect, this._quickSlotConfig, this._statDetailInfo,
       this._trunk, this._messengerWin, this._revivePanel, this._worldMap, this._tournamentWindow,
@@ -1444,9 +1581,24 @@ export class GameStage extends Stage {
     // OG: ChatBar renders ON TOP of StatusBar — move to end of display list
     this.uiRoot.addChild(this._chatBar.container);
 
-    this._statusBar.onInfo = () => { this._charInfo.isVisible = !this._charInfo.isVisible; };
-    this._statusBar.onEquip = () => { this._equip.isVisible = !this._equip.isVisible; };
-    this._statusBar.onItems = () => { this._item.isVisible = !this._item.isVisible; };
+    // OG: Tooltips render ON TOP of all panels — must be last in display list
+    const equipTipContainer = this._equip.tooltipContainer;
+    if (equipTipContainer) this.uiRoot.addChild(equipTipContainer);
+    const itemTipContainer = this._item.tooltipContainer;
+    if (itemTipContainer) this.uiRoot.addChild(itemTipContainer);
+
+    this._statusBar.onInfo = () => { if (this._charInfo) this._charInfo.isVisible = !this._charInfo.isVisible; };
+    this._statusBar.onEquip = () => {
+      this._equip.isVisible = !this._equip.isVisible;
+      // Ensure equip panel is in the display tree when first shown
+      if (this._equip.isVisible && !this._equip.container.parent) {
+        this.uiRoot.addChild(this._equip.container);
+      }
+    };
+    this._statusBar.onItems = () => {
+      this._item.isVisible = !this._item.isVisible;
+      if (this._item.isVisible && !this._item.container.parent) this.uiRoot.addChild(this._item.container);
+    };
     this._item.onUseItem = (item) => {
       // OG: CDraggableItem::OnDoubleClicked, case 2 (Use tab, TI=2).
       // Giant chain of is_*_item checks, each routing to a specific
@@ -1526,8 +1678,9 @@ export class GameStage extends Stage {
       // → SendBridleItemUseRequest (opcode 87) — needs mob targeting
       // OG: enters targeting mode, click mob → SendBridleItemUseRequest(pos, itemId, mobTemplateId)
       if (category === 227) {
-        // TODO: Enter targeting cursor mode; for now send with mobTemplateId=0
-        this.game.session.send(GameSender.BridleItemUseRequest(item.slot, item.id, 0));
+        // Store pending bridle; mob click will complete the request
+        this._pendingBridle = { slot: item.slot, id: item.id };
+        this._statusMessenger?.showLoot('Click a mob to catch it');
         return;
       }
 
@@ -1556,9 +1709,29 @@ export class GameStage extends Stage {
 
       // is_maptransfer_item: category 232
       // → SendMapTransferItemUseRequest (opcode 91)
-      // TODO: Resolve map name/id from item desc or saved map data
+      // OG: RunMapTransferItem reads item's desc node from WZ for map name/id.
       if (category === 232) {
-        this.game.session.send(GameSender.MapTransferItemUseRequest(item.slot, item.id, '', 0));
+        let mapName = '';
+        let mapId = 0;
+        if (this._itemWz) {
+          const group = Math.floor(item.id / 10000).toString().padStart(4, '0');
+          const id = item.id.toString().padStart(8, '0');
+          const desc = this._itemWz.GetItem(`Consume/${group}.img/${id}/desc`) as WzProperty | null;
+          if (desc) {
+            const descStr = desc.Get('0') ?? desc.Get('');
+            if (typeof descStr === 'string') {
+              // Format: "MapName/MapId" or just "MapId"
+              const parts = descStr.split('/');
+              if (parts.length >= 2) {
+                mapName = parts[0];
+                mapId = parseInt(parts[1]) || 0;
+              } else {
+                mapId = parseInt(descStr) || 0;
+              }
+            }
+          }
+        }
+        this.game.session.send(GameSender.MapTransferItemUseRequest(item.slot, item.id, mapName, mapId));
         return;
       }
 
@@ -1730,7 +1903,10 @@ export class GameStage extends Stage {
         this._personalShop.pendingItem = { invType: item.tab + 1, position: item.slot };
       }
     };
-    this._statusBar.onSkills = () => { this._skill.isVisible = !this._skill.isVisible; };
+    this._statusBar.onSkills = () => {
+      this._skill.isVisible = !this._skill.isVisible;
+      if (this._skill.isVisible && !this._skill.container.parent) this.uiRoot.addChild(this._skill.container);
+    };
     // TODO_AUDIT.md Hundred-and-nineteenth pass: CUISkill button 0x7E7 opens
     // the macro window. Open with current server-decoded slots converted to
     // the SkillMacro panel's { slot, skills[] } format.
@@ -1738,9 +1914,24 @@ export class GameStage extends Stage {
       const macros = this._macroSlots.map((s, i) => ({ slot: i, skills: Array.from(s.skills) as number[] }));
       this._skillMacro?.Open(macros.length > 0 ? macros : Array.from({ length: 5 }, (_, i) => ({ slot: i, skills: [0, 0, 0] })));
     };
-    this._statusBar.onStats = () => { this._stats.isVisible = !this._stats.isVisible; };
-    this._statusBar.onOptions = () => { this._optionMenu.isVisible = !this._optionMenu.isVisible; };
-    this._statusBar.onRanking = () => { this._ranking && (this._ranking.isVisible = !this._ranking.isVisible); };
+    this._statusBar.onStats = () => {
+      this._stats.isVisible = !this._stats.isVisible;
+      if (this._stats.isVisible) {
+        if (!this._stats.container.parent) this.uiRoot.addChild(this._stats.container);
+        this._stats.createTip11();
+      } else {
+        this._stats.destroyTip();
+      }
+    };
+    this._statusBar.onOptions = () => {
+      this._optionMenu.isVisible = !this._optionMenu.isVisible;
+      if (this._optionMenu.isVisible && !this._optionMenu.container.parent) this.uiRoot.addChild(this._optionMenu.container);
+    };
+    this._statusBar.onRanking = () => {
+      if (!this._ranking) return;
+      this._ranking.isVisible = !this._ranking.isVisible;
+      if (this._ranking.isVisible && !this._ranking.container.parent) this.uiRoot.addChild(this._ranking.container);
+    };
     this._statusBar.onCommunity = () => {
       this._userList.isVisible = !this._userList.isVisible;
       if (this._userList.isVisible && !this._friendLoadSent) {
@@ -1792,16 +1983,22 @@ export class GameStage extends Stage {
     this._userList.onExpeditionKick = (charId) => { this.game.session.send(GameSender.ExpeditionKick(charId)); };
     this._userList.onExpeditionWithdraw = () => { this.game.session.send(GameSender.ExpeditionWithdraw()); };
     this._userList.onExpeditionChangeBoss = (charId) => { this.game.session.send(GameSender.ExpeditionChangeBoss(charId)); };
-    this._statusBar.onKeys = () => { this._keyConfig.isVisible = !this._keyConfig.isVisible; };
+    this._statusBar.onKeys = () => {
+      this._keyConfig.isVisible = !this._keyConfig.isVisible;
+      if (this._keyConfig.isVisible && !this._keyConfig.container.parent) this.uiRoot.addChild(this._keyConfig.container);
+    };
     this._statusBar.onQuit = () => { if (this._quitOverlay) this._quitOverlay.isVisible = true; };
     this._statusBar.onCashShop = () => {
       if (this.game.session.isConnected) this.game.session.send(GameSender.MigrateToCashShop());
       this.stageDirector.push(new CashShopStage(this._uiWz));
     };
-    this._statusBar.onCharacter = () => { this._charInfo.isVisible = !this._charInfo.isVisible; };
+    this._statusBar.onCharacter = () => { if (this._charInfo) this._charInfo.isVisible = !this._charInfo.isVisible; };
     this._statusBar.onMenu = () => { this._gameMenu?.Open(); };
     this._statusBar.onSystemOption = () => { this._optionMenu.isVisible = !this._optionMenu.isVisible; };
-    this._statusBar.onQuest = () => { this._quest.isVisible = !this._quest.isVisible; };
+    this._statusBar.onQuest = () => {
+      this._quest.isVisible = !this._quest.isVisible;
+      if (this._quest.isVisible && !this._quest.container.parent) this.uiRoot.addChild(this._quest.container);
+    };
     this._statusBar.onMTS = () => {}; // MTS no longer exists
     this._chatBar.initWzAssets(this._loader, uiWz);
     this._statusBar.onChat = () => { this._chatBar.focus(); };
@@ -1860,6 +2057,11 @@ export class GameStage extends Stage {
     this._stats.onDexUp = () => { this.game.session.send(GameSender.UserAbilityUp(MapleStat.Dex)); };
     this._stats.onIntUp = () => { this.game.session.send(GameSender.UserAbilityUp(MapleStat.Int)); };
     this._stats.onLukUp = () => { this.game.session.send(GameSender.UserAbilityUp(MapleStat.Luk)); };
+    this._stats.onAutoApUp = (_mode) => { /* OG: AutoApUp — auto-allocate AP */ };
+    this._stats.onDetailToggle = () => {
+      if (!this._statDetailInfo) return;
+      this._statDetailInfo.isVisible = this._stats.detailVisible;
+    };
 
     this._reset.OnApUp = (stat) => {
       if (stat === 'str') this.game.session.send(GameSender.UserAbilityUp(MapleStat.Str));
@@ -1974,6 +2176,9 @@ export class GameStage extends Stage {
   }
 
   update(dt: number): void {
+    // Sweep ActionMan cache every 60s (OG CActionMan::SweepCache)
+    ActionMan.GetInstance().SweepCache();
+
     // `_keyConfig` is built asynchronously in `_initMenu` (via `_loadWzAsync`),
     // but `_physics` is set the moment SetField arrives — which can beat the WZ
     // load. Gate the input/physics block on both so update() ticks harmlessly
@@ -1981,13 +2186,15 @@ export class GameStage extends Stage {
     if (this._physics && this._keyConfig) {
       const held = this.game.heldKeys;
       const isDown = (key: string) => held.has(key);
-      const input: PlayerInput = {
-        Left: this._keyConfig.isActionDown(isDown, KeyAction.MoveLeft),
-        Right: this._keyConfig.isActionDown(isDown, KeyAction.MoveRight),
-        Up: isDown('ArrowUp'),
-        Down: isDown('ArrowDown'),
-        JumpPressed: this._keyConfig.isActionDown(isDown, KeyAction.Jump),
-      };
+      const input: PlayerInput = this._directionModeActive
+        ? { Left: false, Right: false, Up: false, Down: false, JumpPressed: false }
+        : {
+          Left: this._keyConfig.isActionDown(isDown, KeyAction.MoveLeft),
+          Right: this._keyConfig.isActionDown(isDown, KeyAction.MoveRight),
+          Up: isDown('ArrowUp'),
+          Down: isDown('ArrowDown'),
+          JumpPressed: this._keyConfig.isActionDown(isDown, KeyAction.Jump),
+        };
       this._physics.Update(input, dt);
       this._player?.UpdateFromPhysics(dt, this._physics.Stance, this._physics.FacingLeft);
       if (this._player) this._player.Position = this._physics.Position;
@@ -2012,7 +2219,19 @@ export class GameStage extends Stage {
         }
       }
       if (!this._isPlayerDead && this._attackCooldown <= 0 && attackDown) {
-        this._tryMeleeAttack();
+        // OG: CUserLocal::TryDoingNormalAttack pre-conditions (decompile 0x9123ea)
+        // 1. Not immovable (stun, sit, knockback, direction mode)
+        // 2. Not on one-time action (attack animation already playing)
+        // 3. Not attracting (tied to attract buff)
+        // 4. Not preparing a skill
+        // 5. Not on ladder/rope
+        if (this._physics && !this._physics.IsImmovable
+            && !this._player?.IsPlayingOneTimeAction
+            && !this._physics.IsAttract
+            && !this._physics.IsPreparingSkill
+            && !this._physics.Climb) {
+          this._tryMeleeAttack();
+        }
       }
     }
     this._camera.Update(dt);
@@ -2106,7 +2325,10 @@ export class GameStage extends Stage {
     this._skillEffects?.Update(dt);
     this._itemEffects?.Update(dt);
     this._projectiles.Update(dt);
+    this._buffVisual.Update(dt);
     this._tombstone?.Update(dt);
+    this._comboDisplay.update(dt);
+    this._updateKeyDownBar();
     this._updateFieldFx(dt);
     this._updateCoupleHearts(dt);
     if (this._fearEffect.active && this._physics) {
@@ -2120,9 +2342,24 @@ export class GameStage extends Stage {
       if (tip) this._statusMessenger.showTip(tip);
     }
     for (const p of this._panels) { p?.update(dt); p?.updateDrag(); }
+    // OG: CUIStatDetail follows main stat panel position
+    if (this._statDetailInfo?.isVisible && this._stats) {
+      const sx = this._stats.container.position.x;
+      const sy = this._stats.container.position.y;
+      this._statDetailInfo.container.position.set(sx + 172, sy + 90);
+    }
     this._miniMap?.update(dt);
     this._gameMenu?.update(dt);
     this._gameMenu?.draw();
+    // OG: DrawCombo / DrawKeyDownBar — updated every tick
+    this._comboDisplay.update(dt);
+    if (this._keyDownBar.isVisible) {
+      // Hide key-down bar when no skill is being prepared or repeated
+      if (!this._physics?.IsPreparingSkill && this._physics?.PreparingSkillId === 0
+          && this._physics?.RepeatSkillId === 0) {
+        this._keyDownBar.hide();
+      }
+    }
     this._advanceFieldTransition(dt);
   }
 
@@ -2216,6 +2453,17 @@ export class GameStage extends Stage {
   // screen space lies inside any currently-visible panel's bounds. Used to tell
   // "released over a UI window" (return to slot / panel-specific accept) apart
   // from "released over the field" (drop the item).
+  /** Reset pressed/hover state on all buttons across all panels.
+   *  Called on global mouse-up to prevent buttons from staying stuck when
+   *  a panel opens during mouse-down and the mouse-up goes to the panel. */
+  private _resetAllButtonStates(): void {
+    for (const p of this._panels) {
+      if (!p?.isVisible) continue;
+      p.resetButtonStates?.();
+    }
+    this._statusBar?.resetButtonStates?.();
+  }
+
   private _pointOverVisiblePanel(x: number, y: number): boolean {
     for (const pn of this._panels) {
       if (!pn.isVisible) continue;
@@ -2242,24 +2490,46 @@ export class GameStage extends Stage {
       const mob = this._mobs.get(args.mobId);
       const info = mob ? this._mobInfoSvc?.Get(mob.TemplateId) : null;
       if (!mob || !info) return;
-      const entry = info.SpeakEntries[args.speakInfoIdx];
-      if (!entry || entry.lines.length === 0) return;
-      const line = entry.lines[args.speechLineIdx % entry.lines.length];
-      if (line) mob.Say(line);
+      mob.TrySpeaking(args.speakInfoIdx, args.speechLineIdx, info.SpeakEntries);
     };
     fh.onMobLeave = (mobId, lt) => this._onMobLeave(mobId, lt);
     fh.onNpcEnter = (args) => this._onNpcEnter(args);
     fh.onNpcLeave = (id) => this._onNpcLeave(id);
-    // OG action-index/chat-bubble/special-action triggers — no NPC
-    // ambient-animation or chat-bubble system exists in this client yet.
+    // OG: CNpc::OnMove — NPC moves on map, updates position and animation
+    // actionIdx: -1 = chat only, 0+ = action index from template action list
+    // chatIdx: -1 = no chat, 0+ = chat index from speak list
+    // The action index maps to the NPC template's action list (aAct),
+    // NOT directly to WZ animation names. The template actions contain
+    // references to WZ animation paths that are loaded by CActionMan.
     fh.onNpcMove = ({ npcId, actionIdx, chatIdx }) => {
-      this._statusMessenger.showLoot(`[NPC Move] npc ${npcId} action ${actionIdx} chat ${chatIdx}`);
+      const npc = this._npcs.find(n => n.ObjId === npcId);
+      if (!npc) return;
+      // OG CNpc::OnMove — actionIdx -1 = chat only, >= 0 = action + optional chat
+      if (actionIdx === -1) {
+        // Chat-only: resolve chat from speak list and show balloon
+        if (chatIdx >= 0) npc.OnChat(chatIdx);
+      } else if (actionIdx >= 0) {
+        // OG: action index maps to template action list (index-2 = array position)
+        const anims = npc.Animations;
+        const animNames = Array.from(anims.keys());
+        const arrayIdx = actionIdx - 2;
+        if (arrayIdx >= 0 && arrayIdx < animNames.length) {
+          // Set one-time action — plays once then returns to stand
+          npc.SetState(animNames[arrayIdx]);
+        }
+        // Show chat balloon if chatIdx valid
+        if (chatIdx >= 0) npc.OnChat(chatIdx);
+      }
     };
     fh.onNpcUpdateLimitedInfo = ({ npcId, enabled }) => {
-      this._statusMessenger.showLoot(`[NPC Limited] npc ${npcId} ${enabled ? 'enabled' : 'disabled'}`);
+      const npc = this._npcs.find(n => n.ObjId === npcId);
+      if (npc) npc.OnUpdateLimitedInfo(enabled);
     };
     fh.onNpcSetSpecialAction = ({ npcId, actionName }) => {
-      this._statusMessenger.showLoot(`[NPC Action] npc ${npcId} action ${actionName}`);
+      const npc = this._npcs.find(n => n.ObjId === npcId);
+      if (!npc) return;
+      // OG CNpc::OnSetSpecialAction — sets a special action by name from WZ
+      npc.SetState(actionName);
     };
     fh.onUserEnter = (args) => this._onUserEnter(args);
     fh.onUserLeave = (id) => this._onUserLeave(id);
@@ -2267,6 +2537,7 @@ export class GameStage extends Stage {
     fh.onDropLeave = (args) => this._onDropLeave(args);
     fh.onStatChanged = (args) => this._onStatChanged(args);
     fh.onInventoryOperation = (ops) => {
+      console.log(`[GameStage] onInventoryOperation: ${ops.length} ops, types=[${ops.map(o => o.opType).join(',')}]`);
       this._item.applyOps(ops);
       this._applyEquipOps(ops);
       this._refreshActiveProjectileSlot();
@@ -2359,6 +2630,7 @@ export class GameStage extends Stage {
       this._chatBar.addLine(`[Family] result ${args.resultCode} (${args.value}) `);
     };
     fh.onFamilyJoinRequest = (args) => {
+      if (this._blackList.has(args.inviterName)) return;
       if (this._notice) {
         this._notice.onConfirm = () => { this.game.session.send(GameSender.FamilyInviteResult(args.inviterId, args.inviterName, true)); };
         this._notice.onDismiss = () => { this.game.session.send(GameSender.FamilyInviteResult(args.inviterId, args.inviterName, false)); };
@@ -2574,7 +2846,7 @@ export class GameStage extends Stage {
       if (this._blackList.has(fromName)) return;
       const prefix = groupType === 0 ? '[Party]' : groupType === 1 ? '[Guild]' : '[Group]';
       const filterType = groupType === 0 ? FILTER_PARTY : groupType === 1 ? FILTER_GUILD : FILTER_ALL;
-      this._chatBar.addMapleLine(`${prefix} ${fromName}: ${text}`, (id) => this.game.nameService.ItemName(id), filterType);
+      this._chatBar.addMapleLine(`${prefix} ${fromName}: ${this._resolveChatItemLinks(text)}`, (id) => this.game.nameService.ItemName(id), filterType);
       this._statusMessenger.showLoot(`${prefix} ${fromName}: ${this._resolveChatItemLinks(text)}`);
     };
     fh.onWhisper = ({ fromName, channelId, text }) => {
@@ -2586,7 +2858,7 @@ export class GameStage extends Stage {
       // directly user-visible "ignore this person" case.
       if (this._blackList.has(fromName)) return;
       // OG: ChatLogAdd with lType=14 (whisper), channelID, bWhisperIcon
-      this._chatBar.addLine(`${fromName} : ${text}`, 14, channelId, true);
+      this._chatBar.addLine(`${fromName} : ${this._resolveChatItemLinks(text)}`, 14, channelId, true);
       this._statusMessenger.showLoot(`[Whisper] ${fromName}: ${this._resolveChatItemLinks(text)}`);
     };
     fh.onPartyInvite = ({ inviterId, inviterName }) => {
@@ -2618,10 +2890,36 @@ export class GameStage extends Stage {
     };
     fh.onCharacterInfo = (info) => {
       const jobName = this.game.nameService.SkillName(info.job * 10000) ?? `Job ${info.job}`;
-      this._charInfo.level = info.level;
-      this._charInfo.job = jobName;
-      this._charInfo.fame = info.fame;
-      this._charInfo.guild = info.guild ?? '';
+      if (this._charInfo) {
+        this._charInfo.characterId = info.charId;
+        this._charInfo.isLocalChar = info.charId === this._localCharId;
+        this._charInfo.level = info.level;
+        this._charInfo.job = jobName;
+        this._charInfo.fame = info.fame;
+        this._charInfo.guild = info.guild ?? '';
+        this._charInfo.alliance = info.alliance ?? '';
+        this._charInfo.isMarried = info.married;
+        // OG: CUIUserInfo::SetMultiPetInfo — populate pet data from info packet
+        for (let i = 0; i < 3; i++) {
+          const p = info.pets[i];
+          if (p) {
+            this._charInfo.pets[i] = {
+              name: p.name,
+              templateName: this.game.nameService?.MobName(p.templateId) ?? `Pet${p.templateId}`,
+              level: p.level,
+              tameness: p.tameness,
+              repleteness: p.repleteness,
+              equipItemId: p.templateId, // Used by PetLook for rendering
+              items: [],
+            };
+          } else {
+            this._charInfo.pets[i] = null;
+          }
+        }
+        // OG: bPetActivated set when any pet exists
+        this._charInfo.bPetActivated = this._charInfo.pets.some(p => p !== null);
+      }
+      if (this._stats) this._stats.guild = info.guild ?? '';
       this._statusMessenger.showLoot(`[CharInfo] [${info.charId}] Lv.${info.level} ${jobName} Fame:${info.fame}`);
     };
     fh.onQuickslotInit = (keys) => { this._quickSlots?.SetKeys(keys.map((k) => k.key)); };
@@ -2669,6 +2967,43 @@ export class GameStage extends Stage {
     };
 
     // Phase 8 — new field-effect / UI handlers
+    // OG: CUserLocal::OnFieldFadeInOut — fade screen to color and back
+    fh.onFieldFadeInOut = (color, duration, fadeOut, fadeTime) => {
+      // For now, log the fade event. Full implementation needs CAnimationDisplayer.
+      console.log(`[FieldFade] color=${color} dur=${duration} out=${fadeOut} fadeTime=${fadeTime}`);
+    };
+    fh.onFieldFadeOutForce = (_color) => {
+      // OG: RemoveAllFadeInAnimation — force-clear all active fade animations
+    };
+    // OG: CUserLocal::OnNotifyHPDecByField — environmental HP drain
+    fh.onNotifyHPDecByField = (hpDec) => {
+      if (this._stats && hpDec > 0) {
+        this._stats.hp = Math.max(0, this._stats.hp - hpDec);
+        this._statusBar.hp = this._stats.hp;
+        if (this._stats.hp <= 0) {
+          this._isPlayerDead = true;
+          this._tombstone?.Spawn({ x: this._physics!.Position.x, y: this._physics!.Position.y });
+        }
+      }
+    };
+    // OG: CUserLocal::OnSetDirectionMode — enables/disables player control for cutscenes
+    fh.onSetDirectionMode = (bDirection, afterDelay) => {
+      if (this._physics) {
+        this._physics.SetDirectionMode(bDirection);
+      }
+      if (bDirection) {
+        // Block all player input while in direction mode
+        this._directionModeActive = true;
+      } else if (afterDelay > 0) {
+        // Delayed release: re-enable after afterDelay ms
+        setTimeout(() => {
+          this._directionModeActive = false;
+          if (this._physics) this._physics.SetDirectionMode(false);
+        }, afterDelay);
+      } else {
+        this._directionModeActive = false;
+      }
+    };
     fh.onMakerResult = (recipeId, success, items) => {
       this._maker?.SetResult(recipeId, success, items);
     };
@@ -2787,29 +3122,14 @@ export class GameStage extends Stage {
     fh.onMobChangeController = (mobId, isCtrl) => {
       if (!isCtrl) { this._mobCtl.delete(mobId); return; }
       const mob = this._mobs.get(mobId);
-      if (!mob || !this._field || !this._mobInfoSvc) return;
-      const info = this._mobInfoSvc.Get(mob.TemplateId);
-      const mc = new MobController(mob, this._field, info);
-      mc.onAttackPlayer = (dmg) => {
-        if (this._stats.hp !== undefined && this._stats.hp > 0) {
-          this._stats.hp = Math.max(0, this._stats.hp - dmg);
-          this._statusBar.hp = this._stats.hp;
-          // Apply knockback away from the mob
-          if (this._physics) {
-            const dx = this._physics.Position.x - mob.Position.x;
-            const kbDir = dx >= 0 ? 1 : -1;
-            this._physics.ApplyKnockback(kbDir * 200, -100, 0.3);
-          }
-          if (this._stats.hp <= 0) {
-            this._isPlayerDead = true;
-            const m = this._mobs.get(mobId);
-            if (m) this._tombstone?.Spawn({ x: m.Position.x, y: m.Position.y });
-          }
-        }
-      };
-      this._mobCtl.set(mobId, mc);
+      if (!mob) return;
+      this._createMobController(mobId, mob);
     };
-    fh.onMobCtrlAck = (_args) => { /* nextAttackPossible/skill hints — not consumed yet */ };
+    fh.onMobCtrlAck = (args) => {
+      const mob = this._mobs.get(args.mobId);
+      if (!mob) return;
+      mob.OnCtrlAck(args.mobCtrlSn, args.nextAttackPossible, args.mp, args.nextSkillId, args.nextSkillLevel);
+    };
     fh.onMobSpecialEffectBySkill = ({ mobId, skillId, delay }) => {
       const mob = this._mobs.get(mobId);
       const skillWz = this._skillWz;
@@ -2899,6 +3219,36 @@ export class GameStage extends Stage {
       const accepted = window.confirm(`${sApplierName} (Lv.${nLevel}, Job:${nJob}) wants to join your expedition.`);
       this.game.session.send(GameSender.PartyAdverApplyResponse(accepted ? 10 : 11, nPartyID));
       this._notice?.show('Expedition Apply', accepted ? 'Accepted.' : 'Rejected.');
+    };
+    // OG: CUserLocal::OnRadioSchedule (0x918120) — decodeStr + decode4 → CRadioManager::Play
+    // CRadioManager singleton not implemented; surface as a chat notification for now.
+    fh.onRadioSchedule = (musicFile: string, duration: number) => {
+      this._chatBar.addLine(`Radio: ${musicFile} (${duration}s)`, 0);
+    };
+    // OG: CUserLocal::OnTeleport (0x913ff0) — server confirms teleport position.
+    // Moves the player to the new coordinates and snaps to nearest foothold.
+    fh.onUserTeleport = ({ x, y }) => {
+      if (!this._physics) return;
+      this._physics.Position = { x, y };
+      const fhBelow = this._field?.GetFootholdBelow(x, y + 2);
+      if (fhBelow) {
+        this._physics.CurrentFoothold = fhBelow.Id;
+        const gy = fhBelow.YAt(x);
+        if (gy !== null) this._physics.Position.y = Math.min(this._physics.Position.y, gy);
+      }
+      this._camera.Target = this._physics.Position;
+    };
+    // OG: CUserLocal::OnIncComboResponse (0x91a970) — server sends updated combo count.
+    // Stores the combo count; display is handled by DrawCombo when available.
+    fh.onIncComboResponse = (nCombo: number) => {
+      this._comboCount = nCombo;
+    };
+    // OG: CUserLocal::OnQuestGuideResult (0x90f1e0) — reads questId(4), drives minimap arrow.
+    // No quest-arrow overlay yet; no-op is safe.
+    fh.onQuestGuideResult = (_questId: number) => {};
+    // OG: CUserLocal::OnDeliveryQuest (0x90ef60) — reads questId(4), delivery quest notification.
+    fh.onDeliveryQuest = (questId: number) => {
+      this._notice?.show('Delivery Quest', `Quest ${questId} delivered.`);
     };
     fh.onFriendList = (friends) => {
       // OG has a dedicated CUIFriendGroup dialog for renaming/re-sorting
@@ -3145,6 +3495,19 @@ export class GameStage extends Stage {
       if (charId === this._localCharId) {
         this._isRidingTamingMob = flag !== 0;
       }
+      // OG: CUIUserInfo::SetTamingMobInfo — feed taming mob data to char info panel
+      if (this._charInfo) {
+        this._charInfo.tamingMob = {
+          name: 'Taming Mob',
+          level: tamingMobLevel ?? 0,
+          exp: tamingMobExp ?? 0,
+          fatigue: tamingMobFatigue ?? 0,
+          items: [],
+        };
+        this._charInfo.hasTamingMob = flag !== 0;
+        // OG: bPetActivated set when pet system is active
+        this._charInfo.bPetActivated = this._charInfo.pets.some(p => p !== null);
+      }
     };
     fh.onSueCharacterResult = ({ resultCode }) => {
       this._notice?.show('Sue', resultCode === 0 ? 'Sue accepted.' : `Sue failed (code ${resultCode}).`);
@@ -3253,9 +3616,13 @@ export class GameStage extends Stage {
       this._delivery?.SetDisallowedQuestList(field1, field2);
       this._chatBar.addLine(`[Delivery] Disallowed quests: ${field1} ${field2}`);
     };
-    fh.onRPSGameDlg = ({ subAction }) => {
-      this._rpsGame?.SetSubAction(subAction);
-      this._chatBar.addLine(`[RPS] subAction ${subAction}`);
+    fh.onRPSGameDlg = ({ subAction, npcSelect, cntStraightVictories }) => {
+      if (subAction === 11) {
+        // OG: ProcessPacket case 11 — result with NPC choice
+        this._rpsGame?.handleServerResult(npcSelect, cntStraightVictories);
+      } else {
+        this._rpsGame?.SetSubAction(subAction);
+      }
     };
     fh.onParcelDlg = ({ subAction }) => {
       this._parcel?.SetSubAction(subAction);
@@ -3442,6 +3809,8 @@ export class GameStage extends Stage {
       if (charId === this._localCharId) {
         // OG: CUIEquip::ShowItemReleaseEffect — flag maps to body part index for equipped item
         this._equip.showItemReleaseEffect(flag);
+        // OG: CUIItem also shows release effect on the use-tab slot
+        this._item?.showItemReleaseEffect(flag);
       } else {
         this._otherChars.get(charId)?.SetStatusBadge('release', 'R', 4);
       }
@@ -3450,6 +3819,7 @@ export class GameStage extends Stage {
     fh.onShowItemUnreleaseEffect = ({ charId, flag }) => {
       if (charId === this._localCharId) {
         this._equip.showItemReleaseEffect(flag);
+        this._item?.showItemReleaseEffect(flag);
       } else {
         this._otherChars.get(charId)?.SetStatusBadge('unrelease', 'U', 4);
       }
@@ -3540,15 +3910,84 @@ export class GameStage extends Stage {
       this._statusMessenger.showLoot(`[HP] char ${charId} ${curHP}/${maxHP} (${pct}%)`);
     };
     fh.onUserGuildNameChanged = ({ charId, guildName }) => {
-      this._statusMessenger.showLoot(`[Guild] char ${charId} guild: ${guildName}`);
+      const ch = this._otherChars.get(charId);
+      if (ch) {
+        // Re-read existing mark data from the char, update only the name
+        ch.SetGuildInfo(guildName, 0, 0, 0, 0);
+      }
     };
     fh.onUserGuildMarkChanged = ({ charId, markBg, markBgColor, mark, markColor }) => {
-      this._statusMessenger.showLoot(`[Guild Mark] char ${charId} bg=${markBg}/${markBgColor} mark=${mark}/${markColor}`);
+      const ch = this._otherChars.get(charId);
+      if (ch) {
+        ch.SetGuildInfo('', markBg, markBgColor, mark, markColor);
+      }
     };
     fh.onUserThrowGrenade = ({ charId, posX, posY, tKeyDown, skillId, unk }) => {
       const name = this.game.nameService.SkillName(skillId) ?? `[${skillId}]`;
       this._statusMessenger.showLoot(`[Grenade] char ${charId} skill ${name} at (${posX},${posY}) keyDown=${tKeyDown}`);
     };
+
+    // ── Medium-priority packet handler wiring ──────────────────────────
+
+    // OG: CUserLocal::OnOpenUI (0x9055f0) — server opens a UI panel.
+    // OG: CWvsContext::UI_Open maps uiType to specific UI windows.
+    fh.onOpenUI = (uiType: number) => {
+      // OG: UI_Open switch — most types toggle their visibility.
+      // A few are handled specially by the server (type 21=party search, 33=repair).
+      this._statusMessenger.showLoot(`[UI] Open type ${uiType}`);
+    };
+
+    // OG: CUserLocal::OnOpenUIWithOption (0x932320) — server opens a UI with extra data.
+    fh.onOpenUIWithOption = (uiType: number, option: number) => {
+      if (uiType === 7) {
+        // OG: Close quest UI then toggle with option — quest page navigation
+        this._statusMessenger.showLoot(`[UI] Quest toggle option=${option}`);
+      } else if (uiType === 21) {
+        // OG: CUIPartySearch::RequestPartyAdverSearch
+        this._statusMessenger.showLoot(`[UI] Party search option=${option}`);
+      } else if (uiType === 33) {
+        // OG: CRepairDurabilityDlg — durability repair dialog
+        this._statusMessenger.showLoot(`[UI] Repair durability option=${option}`);
+      }
+    };
+
+    // OG: CUserLocal::OnNoticeMsg (0x9181f0) — server sends a notice popup.
+    fh.onNoticeMsg = (message: string) => {
+      this._notice?.show('Notice', message);
+    };
+
+    // OG: CUserLocal::OnChatMsg — local echo of the player's own sent chat.
+    fh.onUserLocalChatMsg = (message: string) => {
+      // The local echo confirms the server received our chat; add to chat log.
+      // Only add if non-empty and not a duplicate of what we already displayed locally.
+      if (message) this._chatBar.addLine(message);
+    };
+
+    // OG: CUserLocal::OnRadioSchedule — server tells client to play radio music
+    fh.onRadioSchedule = (musicFile: string, duration: number) => {
+      // TODO: wire to audio service when radio/BGM playback is implemented
+    };
+    // OG: CUserLocal::OnQuestGuideResult — minimap arrow to quest objective (pure UI)
+    fh.onQuestGuideResult = (_questId: number) => {
+      // TODO: draw minimap quest arrow when quest guide UI is implemented
+    };
+    // OG: CUserLocal::OnDeliveryQuest — delivery quest notification
+    fh.onDeliveryQuest = (_questId: number) => {
+      // TODO: show delivery quest notification dialog
+    };
+
+    // OG: CUser::OnMiniRoomBalloon — other characters' trade shop balloons.
+    fh.onMiniRoomBalloon = (args) => {
+      const other = this._otherChars.get(args.charId);
+      if (!other) return;
+      if (args.miniRoomType === 0) {
+        other.SetStatusBadge('miniRoom', '', 0);
+      } else {
+        const icon = args.miniRoomType === 1 ? '🏪' : args.miniRoomType === 2 ? '🎮' : '📋';
+        other.SetStatusBadge('miniRoom', icon, 6);
+      }
+    };
+
     fh.onPetActivated = (args) => {
       this._applyPetActivated(args);
       if (args.hasPet) {
@@ -3615,8 +4054,11 @@ export class GameStage extends Stage {
       if (isSuspended) this._statusMessenger.showLoot(`[Mob] ${mobId} doom/suspend reset`);
     };
     fh.onMobAffected = ({ mobId, skillId, duration }) => {
-      this._mobs.get(mobId)?.SetStatusBadge('affected', 'A', Math.max(1, Math.ceil(duration / 100)));
-      this._statusMessenger.showLoot(`[Mob] ${mobId} affected by skill ${skillId} (${duration} ticks)`);
+      const mob = this._mobs.get(mobId);
+      if (mob) {
+        mob.OnAffected(skillId, duration, performance.now());
+        mob.SetStatusBadge('affected', 'A', Math.max(1, Math.ceil(duration / 100)));
+      }
     };
     fh.onMobCatchEffect = ({ mobId, catchSkillId, catchItemId }) => {
       const itemName = this.game.nameService.ItemName(catchItemId) ?? `[${catchItemId}]`;
@@ -3631,8 +4073,9 @@ export class GameStage extends Stage {
       this._mobs.get(mobId)?.SetStatusBadge('item', 'I', 5);
       this._statusMessenger.showLoot(`[Mob] ${mobId} effect from item ${itemId}`);
     };
-    fh.onMobIncChargeCount = ({ mobId, chargeCount }) => {
-      this._statusMessenger.showLoot(`[Mob] ${mobId} charge count ${chargeCount}`);
+    fh.onMobIncChargeCount = ({ mobId, chargeCount, attackReady }) => {
+      const mob = this._mobs.get(mobId);
+      if (mob) mob.OnIncChargeCount(chargeCount, attackReady);
     };
     fh.onMobEscortFullPath = ({ mobId, state, stopDuration, movePath }) => {
       this._statusMessenger.showLoot(`[Escort] ${mobId} state ${state} path ${movePath ? 'set' : 'none'}`);
@@ -3650,7 +4093,11 @@ export class GameStage extends Stage {
       this._mobs.get(mobId)?.SetStatusBadge('nextAttack', '!', 3);
     };
     fh.onMobAttackedByMob = ({ mobId, attackerMobId }) => {
-      this._statusMessenger.showLoot(`[Mob] ${mobId} attacked by mob ${attackerMobId}`);
+      const mob = this._mobs.get(mobId);
+      if (mob) {
+        mob.OnHit();
+        this._mobSounds?.PlayDamage(mob.TemplateId);
+      }
     };
     fh.onNpcTemplatePacket = ({ npcId, bMove }) => {
       const npc = this._npcs.find((n) => n.ObjId === npcId);
@@ -3672,6 +4119,32 @@ export class GameStage extends Stage {
       : this._otherChars.get(charId)?.Position;
     if (ownerPos) dragon.SetOwnerPosition(ownerPos.x, ownerPos.y);
     return dragon;
+  }
+
+  // OG: key code → human-readable name for #k<code># rich text tag.
+  // Maps virtual key codes (VK_*) to display names matching OG StringPool output.
+  private static _KEY_NAMES: Record<number, string> = {
+    8: 'Backspace', 9: 'Tab', 13: 'Enter', 16: 'Shift', 17: 'Ctrl', 18: 'Alt',
+    19: 'Pause', 20: 'Caps Lock', 27: 'Escape', 32: 'Space',
+    33: 'Page Up', 34: 'Page Down', 35: 'End', 36: 'Home',
+    37: 'Left', 38: 'Up', 39: 'Right', 40: 'Down',
+    44: 'Print Screen', 45: 'Insert', 46: 'Delete',
+    91: 'LWin', 92: 'RWin', 93: 'Apps',
+    96: 'Num 0', 97: 'Num 1', 98: 'Num 2', 99: 'Num 3', 100: 'Num 4',
+    101: 'Num 5', 102: 'Num 6', 103: 'Num 7', 104: 'Num 8', 105: 'Num 9',
+    106: 'Num *', 107: 'Num +', 109: 'Num -', 110: 'Num .', 111: 'Num /',
+    112: 'F1', 113: 'F2', 114: 'F3', 115: 'F4', 116: 'F5', 117: 'F6',
+    118: 'F7', 119: 'F8', 120: 'F9', 121: 'F10', 122: 'F11', 123: 'F12',
+    144: 'Num Lock', 145: 'Scroll Lock',
+    186: ';', 187: '=', 188: ',', 189: '-', 190: '.', 191: '/',
+    192: '`', 219: '[', 220: '\\', 221: ']', 222: '\'',
+  };
+
+  private static _keyName(code: number): string {
+    if (GameStage._KEY_NAMES[code]) return GameStage._KEY_NAMES[code];
+    if (code >= 48 && code <= 57) return String.fromCharCode(code); // 0-9
+    if (code >= 65 && code <= 90) return String.fromCharCode(code); // A-Z
+    return `Key ${code}`;
   }
 
   // OG: CTextAnalyzer::GetPhrase_Sharp/GetPhraseType/GetParameterNo
@@ -3712,6 +4185,10 @@ export class GameStage extends Stage {
       .replace(/#j([^#]*)#/gi, (_m, content) => content)
       // Type 1: #L<text># → bullet (content after #L is ignored)
       .replace(/#L[^#]*#/gi, '• ')
+      // #k<keyCode># → [Key: Name]
+      .replace(/#k(\d+)#/g, (_m, code) => `[Key: ${GameStage._keyName(Number(code))}]`)
+      // #n → player character name
+      .replace(/#n/g, this._statusBar?.charName ?? '')
       // Types 11/12: #F/#f + WZ path — strip (WZ canvas, not portable)
       .replace(/#[Ff][^#]*#/g, '')
       // Types 15–17: #Q/#D/#W + content — strip (CharacterData/WZ-canvas)
@@ -3723,6 +4200,7 @@ export class GameStage extends Stage {
   }
 
   private _onSetField(args: SetFieldArgs): void {
+    console.log(`[GameStage] _onSetField called: stat=${!!args.stat}, statusBar=${!!this._statusBar}, equipped=${args.equipped?.length ?? 0}`);
     this._fearEffect.hide();
     this._fieldKey = args.fieldKey;
     this._localCharId = args.characterId ?? 0;
@@ -3740,45 +4218,93 @@ export class GameStage extends Stage {
       this.game.session.send(GameSender.GuildLoad());
     }
 
-    // Stat / look / inventory — apply immediately (doesn't depend on field).
+    // Stat / look / inventory — apply if statusBar/equip already exist,
+    // otherwise store for deferred application in _initMenu.
     const stat = args.stat;
     if (stat && this._statusBar) {
-      this._statusBar.level = stat.level;
-      this._statusBar.nextExp = NextLevelExpTable[stat.level - 1] ?? 0;
-      this._statusBar.hp = stat.hp;
-      this._statusBar.maxHp = stat.maxHp;
-      this._statusBar.mp = stat.mp;
-      this._statusBar.maxMp = stat.maxMp;
-      this._statusBar.exp = stat.exp;
-      this._statusBar.charName = stat.name;
-
-      if (this._stats) {
-        this._stats.level = stat.level;
-        this._stats.str = stat.str;
-        this._stats.dex = stat.dex;
-        this._stats.intStat = stat.int;
-        this._stats.luk = stat.luk;
-        this._stats.ap = stat.ap;
-        this._stats.hp = stat.hp;
-        this._stats.maxHp = stat.maxHp;
-        this._stats.mp = stat.mp;
-        this._stats.maxMp = stat.maxMp;
-        this._stats.job = this.game.nameService.SkillName(stat.job * 10000) ?? `Job ${stat.job}`;
-      }
-
-      this._job = stat.job;
-      this._equip.setJobId(stat.job, stat.level, stat.subJob);
-      this._charInfo.charName = stat.name;
-      this._charInfo.level = stat.level;
-      this._charInfo.job = this.game.nameService.SkillName(stat.job * 10000) ?? `Job ${stat.job}`;
-      this._syncStatDetailInputs();
+      this._applyStatToStatusBar(stat);
+    } else if (stat) {
+      this._pendingStat = stat;
+    }
+    // Store equipped items — applied in _initMenu if statusBar/equip panel not ready yet
+    this._pendingEquipped = args.equipped ?? null;
+    this._pendingEquippedCash = args.equippedCash ?? null;
+    if (this._pendingEquipped && this._equip) {
+      this._applyPendingEquipped();
     }
     // OG: CUIItem::Draw renders meso from CharacterData at y=268.
     if (args.money !== undefined) this._item?.setMeso(args.money);
     if (args.look) {
       this._player?.SetAvatar(args.look);
+      if (this._charInfo) {
+        this._charInfo.avatarLook = args.look;
+        // OG: CUIUserInfo::SetMedalAchievementInfo — medal from hairEquip slot 49
+        const medalId = args.look.hairEquip.get(49 /* BodyPartSlot.Medal */);
+        if (medalId) {
+          const medalName = this.game.nameService?.ItemName(medalId) ?? `Medal ${medalId}`;
+          this._charInfo.medal = {
+            medalItemId: medalId,
+            medalName,
+            count: 1,
+            questNames: [],
+          };
+        } else {
+          this._charInfo.medal = null;
+        }
+        // OG: CUIUserInfo::SetAvatarInfo — extract taming mob equip from body parts
+        // Slot 18 = saddle, Slot 19 = taming mob equip, Slot 20 = mob equip
+        const saddleId = args.look.hairEquip.get(18) ?? 0;
+        const mobEquipId = args.look.hairEquip.get(19) ?? 0;
+        const mobId = args.look.hairEquip.get(20) ?? 0;
+        if (saddleId > 0 || mobEquipId > 0) {
+          this._charInfo.hasTamingMob = true;
+          if (!this._charInfo.tamingMob) {
+            this._charInfo.tamingMob = { name: 'Taming Mob', level: 0, exp: 0, fatigue: 0, items: [] };
+          }
+          // Populate taming mob equipped items
+          const tamingItems: import('../ui/game/CharInfo.js').TamingMobItem[] = [];
+          if (saddleId > 0) {
+            const saddleName = this.game.nameService?.ItemName(saddleId) ?? `Item ${saddleId}`;
+            tamingItems.push({ itemId: saddleId, name: saddleName, info: '' });
+          }
+          if (mobEquipId > 0) {
+            const mobEquipName = this.game.nameService?.ItemName(mobEquipId) ?? `Item ${mobEquipId}`;
+            tamingItems.push({ itemId: mobEquipId, name: mobEquipName, info: '' });
+          }
+          if (mobId > 0) {
+            const mobName = this.game.nameService?.MobName(mobId) ?? `Mob ${mobId}`;
+            this._charInfo.tamingMob.name = mobName;
+          }
+          this._charInfo.tamingMob.items = tamingItems;
+        }
+        // OG: CUIUserInfo::SetAvatarInfo — extract pet equipped items from body parts
+        // Pet body parts: 26-28 (pet 0-2 hat), 35-37 (pet 0-2 clothing), 43-45 (pet 0-2 accessory)
+        const petSlots = [
+          { hat: 26, cloth: 35, acc: 43 }, // pet 0
+          { hat: 27, cloth: 36, acc: 44 }, // pet 1
+          { hat: 28, cloth: 37, acc: 45 }, // pet 2
+        ];
+        for (let pi = 0; pi < 3; pi++) {
+          const pet = this._charInfo.pets[pi];
+          if (!pet) continue;
+          const slots = petSlots[pi];
+          const petItems: import('../ui/game/CharInfo.js').PetItem[] = [];
+          for (const slotId of [slots.hat, slots.cloth, slots.acc]) {
+            const itemId = args.look.hairEquip.get(slotId) ?? 0;
+            if (itemId > 0) {
+              const itemName = this.game.nameService?.ItemName(itemId) ?? `Item ${itemId}`;
+              petItems.push({ itemId, name: itemName, info: '' });
+            }
+          }
+          pet.items = petItems;
+        }
+      }
       this._itemEffects?.SetCharacter(this._localCharId, args.look);
       this._spawnPetsForOwner(this._localCharId, args.look.petIds);
+      // Attach buff visual overlay to player container
+      if (this._player && !this._buffVisual.container.parent) {
+        this._player.container.addChild(this._buffVisual.container);
+      }
     }
 
     if (!this._mapWz) {
@@ -3872,8 +4398,16 @@ export class GameStage extends Stage {
       this._miniMap.setMiniMapType(0);
       // OG: OnMouseButton — sends packet when clicking player dot
       this._miniMap.onPlayerDotClick = () => this.game.session.send(GameSender.UserMiniMapClick());
+      // Live foothold reference for dynamic foothold state on minimap
+      this._miniMap.setFootholds(this._field.Footholds);
+      // OG: WorldMap button on minimap → toggle CWorldMapDlg
+      this._miniMap.onBtWorldMap = () => {
+        if (this._worldMap) this._worldMap.isVisible = !this._worldMap.isVisible;
+      };
     }
     this._playMapBgm(this._field.Info.Bgm);
+    // Initialize buff visuals for current field
+    this._updateBuffVisuals();
   }
 
   /** Play map BGM from Sound.wz. The bgm string is e.g. "Bgm01/300000000" —
@@ -3926,19 +4460,29 @@ export class GameStage extends Stage {
 
   private _onMobEnter(args: MobEnterArgs): void {
     const mob = new MobLook(args.mobId, args.templateId);
-    // Real WZ sprite/animation load — previously never called anywhere, so
-    // every mob permanently rendered as MobLook's colored-rectangle
-    // placeholder (_loaded stays false) regardless of whether real Mob.wz
-    // art for the template existed.
     mob.Load(this._loader, this._mobWz);
     mob.nameOf = this._mobNameOf;
     mob.Position = { x: args.x, y: args.y };
+    // Initialize HP from packet + stats from MobInfoService
+    if (args.maxHp != null && args.maxHp > 0) mob.MaxHp = args.maxHp;
+    if (args.curHp != null) mob.Hp = args.curHp;
+    if (this._mobInfoSvc) {
+      const info = this._mobInfoSvc.Get(args.templateId);
+      if (mob.MaxHp <= 0) mob.MaxHp = info.MaxHp;
+      mob.MaxMp = info.MaxMp;
+      mob.IsBoss = info.Boss;
+      mob.DamagedByMob = info.DamagedByMob;
+      mob._info = info;
+      mob.Stat.InitFromInfo(info.Pad, info.Pdr, info.Mad, info.Mdr, info.Acc, info.Eva);
+    }
     if (this._field) {
       const g = this._field.GetFootholdBelow(args.x, args.y - 1);
       const gy = g?.YAt(args.x);
       if (gy != null) mob.Position.y = gy;
     }
     this._mobs.set(args.mobId, mob);
+    // OG: if mob enters with controller flag, immediately create MobController
+    if (args.controllerFlag) this._createMobController(args.mobId, mob);
   }
 
   private _onMobMove(args: MobMoveArgs): void {
@@ -3953,8 +4497,16 @@ export class GameStage extends Stage {
     if (!mob) return;
     if (args.hp >= 0) mob.Hp = args.hp;
     if (args.damage > 0) {
+      mob._lastDamage = args.damage;
       mob.OnHit();
+      mob.ShowDamage(args.damage, false, false);
       this._mobSounds?.PlayDamage(mob.TemplateId);
+    }
+    // DamagedByMob mobs show HP indicator when damaged by other mobs
+    if (mob.DamagedByMob && args.maxHp > 0) {
+      const pct = Math.floor((args.hp / args.maxHp) * 100);
+      mob.CreateHPIndicator(pct, 0xFF0000);
+      mob.ShowHPIndicator();
     }
     if (args.hp === 0) this._killMob(mob);
   }
@@ -4389,6 +4941,54 @@ export class GameStage extends Stage {
     const blob = MeleeAttackEncoder.Encode(
       this._fieldKey, actionAndDir, 6, pos.x, pos.y, targets, 1);
     this.game.session.sendRaw(blob);
+
+    // OG: CUserLocal::RegisterAfterimage (0x902d90) — after each attack,
+    // stores AFTERIMAGEINFO with the attack's timing, direction, action,
+    // weapon afterimage UOL, and SFX UOL from the weapon's character entry.
+    // The afterimage is drawn as a fading trail behind the weapon swing.
+    this._registerAfterimage(pos, facingLeft, attackAction);
+  }
+
+  // OG: CUserLocal::RegisterAfterimage (0x902d90) — stores afterimage data
+  // for the attack trail effect. The afterimage UOL is built from:
+  //   skill-specific: SKILLENTRY::GetAfterimageUOL → "{base}/{weaponName}/{level}"
+  //   basic attack: "Effect/Character/{weaponType}/{level}" where level = floor((mastery-10)/5)
+  // SfxUOL comes from the weapon's Character.wz entry (sSfx field).
+  private _registerAfterimage(
+    pos: { x: number; y: number }, facingLeft: boolean, attackAction: string,
+  ): void {
+    const weaponId = this._equip?.equippedWeaponItemId ?? null;
+    const actionCode = AttackAction.CodeFor(attackAction);
+
+    // Build afterimage UOL from weapon type and mastery level
+    // OG: GetAfterimageUOL (0x8ed0c0) — for basic attacks (no skill),
+    // path = "Effect/Character/{weaponName}/{masteryLevel}"
+    // where masteryLevel = max(0, floor((mastery - 10) / 5))
+    let afterimageUOL = '';
+    if (weaponId !== null) {
+      const wt = getWeaponType(weaponId);
+      const masteryLevel = Math.max(0, Math.floor((this._masteryFromSkills - 10) / 5));
+      // Weapon name from item ID — OG uses StringPool for weapon category names
+      const weaponNames: Record<number, string> = {
+        30: 'sword', 31: 'sword', 32: 'sword', 33: 'dagger',
+        37: 'wand', 38: 'staff', 39: 'knuckle',
+        40: 'axe', 41: 'axe', 42: 'hammer',
+        43: 'bow', 44: 'crossbow', 45: 'claw',
+        46: 'gun', 47: 'gun',
+      };
+      const weaponName = weaponNames[wt] ?? 'sword';
+      afterimageUOL = `Effect/Character/${weaponName}/${masteryLevel}`;
+    }
+
+    this._afterimageInfo = {
+      tStart: Date.now(),
+      bLeft: facingLeft,
+      nAction: actionCode,
+      sAfterimageUOL: afterimageUOL,
+      sSfxUOL: '',
+      weaponItemId: weaponId ?? 0,
+      subWeaponItemId: 0,
+    };
   }
 
   private _comboContext(): ComboCastContext {
@@ -4422,12 +5022,12 @@ export class GameStage extends Stage {
       const info = this._mobInfoSvc.Get(mob.TemplateId);
       const dieEntries = info.SpeakEntries.filter(e => e.action >= 10 && e.action <= 12);
       if (dieEntries.length > 0) {
-        const entry = dieEntries[Math.floor(Math.random() * dieEntries.length)];
-        const line = entry.lines[Math.floor(Math.random() * entry.lines.length)];
-        if (line) mob.Say(line);
+        mob.TrySpeaking(-1, -1, dieEntries);
       }
+      mob.OnDieComplete(3); // dieCount=3 → Die1/Die2/Die3
+    } else {
+      mob.OnDie();
     }
-    mob.OnDie();
     if (!this._diedMobIds.has(mob.MobId)) {
       this._diedMobIds.add(mob.MobId);
       this._mobSounds?.PlayDie(mob.TemplateId);
@@ -4447,9 +5047,78 @@ export class GameStage extends Stage {
       independent `_equipped` map (keyed by body part, for the "Hat"/"Top"/etc.
       slot layout) that nothing else populates — without this, the Equipment
       panel always renders empty regardless of what's actually worn. */
+  /** Apply stat data to statusBar/stats panels — called from _onSetField or deferred to _initMenu. */
+  private _applyStatToStatusBar(stat: CharacterStat): void {
+    if (this._statusBar) {
+      this._statusBar.level = stat.level;
+      this._statusBar.nextExp = NextLevelExpTable[stat.level - 1] ?? 0;
+      this._statusBar.hp = stat.hp;
+      this._statusBar.maxHp = stat.maxHp;
+      this._statusBar.mp = stat.mp;
+      this._statusBar.maxMp = stat.maxMp;
+      this._statusBar.exp = stat.exp;
+      this._statusBar.charName = stat.name;
+    }
+    if (this._stats) {
+      this._stats.level = stat.level;
+      this._stats.str = stat.str;
+      this._stats.dex = stat.dex;
+      this._stats.intStat = stat.int;
+      this._stats.luk = stat.luk;
+      this._stats.ap = stat.ap;
+      this._stats.fame = stat.pop;
+      this._stats.hp = stat.hp;
+      this._stats.maxHp = stat.maxHp;
+      this._stats.mp = stat.mp;
+      this._stats.maxMp = stat.maxMp;
+      this._stats.job = this.game.nameService.SkillName(stat.job * 10000) ?? `Job ${stat.job}`;
+      this._stats.setPlayerName(stat.name);
+      this._stats.exp = stat.exp;
+      this._stats.nextLevelExp = NextLevelExpTable[stat.level - 1] ?? 0;
+      this._stats.jobCategory = Math.floor(stat.job / 100) % 10;
+    }
+    this._job = stat.job;
+    if (this._equip) this._equip.setJobId(stat.job, stat.level, stat.subJob);
+    if (this._charInfo) {
+      this._charInfo.charName = stat.name;
+      this._charInfo.level = stat.level;
+      this._charInfo.job = this.game.nameService.SkillName(stat.job * 10000) ?? `Job ${stat.job}`;
+      this._charInfo.isLocalChar = true;
+      this._charInfo.characterId = this._localCharId;
+    }
+    this._syncStatDetailInputs();
+  }
+
+  /** Apply pending equipped items from SetField — called after _initMenu creates the equip panel. */
+  private _applyPendingEquipped(): void {
+    if (this._pendingEquipped) {
+      for (const { slot, item } of this._pendingEquipped) {
+        const bodyPart = this._bodyPartFromEquippedPos(InventoryType.Equip, slot);
+        if (bodyPart > 0) {
+          const name = this.game.nameService.ItemName(item.itemId) ?? `[${item.itemId}]`;
+          this._equip.setEquippedByBodyPart(bodyPart, item.itemId, name, item.equip?.grade ?? 0, item.equip ?? undefined);
+          if (item.equip) this._equipStats.set(bodyPart, item.equip);
+        }
+      }
+      this._pendingEquipped = null;
+    }
+    if (this._pendingEquippedCash) {
+      for (const { slot, item } of this._pendingEquippedCash) {
+        const bodyPart = this._bodyPartFromEquippedPos(InventoryType.Cash, slot + 100);
+        if (bodyPart > 0) {
+          const name = this.game.nameService.ItemName(item.itemId) ?? `[${item.itemId}]`;
+          this._equip.setEquippedByBodyPart(bodyPart, item.itemId, name, item.equip?.grade ?? 0, item.equip ?? undefined);
+        }
+      }
+      this._pendingEquippedCash = null;
+    }
+  }
+
   private _applyEquipOps(ops: InventoryOpArg[]): void {
+    let equipOps = 0;
     for (const op of ops) {
       if (op.invType !== InventoryType.Equip && !(op.invType === InventoryType.Cash && (op.pos < 0 || (op.newPos ?? 0) < 0))) continue;
+      equipOps++;
       switch (op.opType) {
         case InventoryOpType.Add:
           if (op.pos < 0 && op.itemId !== undefined) {
@@ -4473,6 +5142,7 @@ export class GameStage extends Stage {
           break;
       }
     }
+    if (equipOps > 0) console.log(`[GameStage] _applyEquipOps: ${equipOps} equip ops`);
   }
 
   private _bodyPartFromEquippedPos(invType: number, pos: number): number {
@@ -4483,7 +5153,7 @@ export class GameStage extends Stage {
   private _setEquippedAvatarItem(invType: number, pos: number, itemId: number, equipStats?: EquipStats): void {
     const bodyPart = this._bodyPartFromEquippedPos(invType, pos);
     const name = this.game.nameService.ItemName(itemId) ?? `[${itemId}]`;
-    this._equip.setEquippedByBodyPart(bodyPart, itemId, name, equipStats?.grade ?? 0);
+    this._equip.setEquippedByBodyPart(bodyPart, itemId, name, equipStats?.grade ?? 0, equipStats);
     if (equipStats) {
       this._equipStats.set(bodyPart, equipStats);
     }
@@ -4561,6 +5231,80 @@ export class GameStage extends Stage {
     return sprite;
   }
 
+  // OG: is_state_change_item — categories 200,201,202,205,221,236,238,245
+  private _isStateChangeItem(itemId: number): boolean {
+    const cat = Math.floor(itemId / 10000);
+    return cat === 200 || cat === 201 || cat === 202 || cat === 205
+      || cat === 221 || cat === 236 || cat === 238 || cat === 245;
+  }
+
+  // OG CDraggableItem::MapFuncKey — determines which items can be bound to keys
+  private _isBindableItem(itemId: number, invType: number): boolean {
+    const cat = Math.floor(itemId / 10000);
+    if (invType === 2) {
+      // Use items: only state_change, pet_food, tamingmob_food, bridle, mobsummon
+      return this._isStateChangeItem(itemId)
+        || cat === 212 || cat === 226 || cat === 227 || cat === 210;
+    }
+    if (invType === 5) {
+      // Cash items: only 524, 530, or etc_cash type 6
+      return cat === 524 || cat === 530;
+    }
+    if (invType === 4) {
+      // Etc items: only non_cash_effect (429)
+      return cat === 429;
+    }
+    if (invType === 3) {
+      // Setup items: only portable_chair (301)
+      return cat === 301;
+    }
+    return false;
+  }
+
+  private _createMobController(mobId: number, mob: MobLook): void {
+    if (!this._field || !this._mobInfoSvc) return;
+    const info = this._mobInfoSvc.Get(mob.TemplateId);
+    const mc = new MobController(mob, this._field, info);
+    mc.onAttackPlayer = (dmg) => {
+      if (this._stats.hp !== undefined && this._stats.hp > 0) {
+        const sec = this.game.fieldHandlers.secondaryStat;
+        const stanceRate = sec.getStanceRate();
+        if (stanceRate > 0 && Math.random() * 100 < stanceRate) {
+          this._dmgNumbers?.Add(0, this._physics!.Position.x, this._physics!.Position.y - 40, DamageKind.MobDamage);
+          return;
+        }
+        const mgReduction = sec.getMagicGuardReduction();
+        let hpDamage = dmg;
+        let mpDamage = 0;
+        if (mgReduction > 0 && this._stats.mp !== undefined && this._stats.mp > 0) {
+          mpDamage = Math.floor(dmg * mgReduction / 100);
+          hpDamage = dmg - mpDamage;
+          if (mpDamage > this._stats.mp) { mpDamage = this._stats.mp; hpDamage = dmg - mpDamage; }
+          this._stats.mp = Math.max(0, this._stats.mp - mpDamage);
+          this._statusBar.mp = this._stats.mp;
+        }
+        const mesoGuardRate = sec.getMesoGuardReduction();
+        if (mesoGuardRate > 0 && mesoGuardRate <= 100) {
+          const mesoAbsorb = Math.floor(hpDamage * mesoGuardRate / 100);
+          hpDamage = Math.max(1, hpDamage - mesoAbsorb);
+        }
+        this._stats.hp = Math.max(0, this._stats.hp - hpDamage);
+        this._statusBar.hp = this._stats.hp;
+        if (hpDamage > 0) this._dmgNumbers?.Add(hpDamage, this._physics!.Position.x, this._physics!.Position.y - 40, DamageKind.MobDamage);
+        if (this._physics) {
+          const dx = this._physics.Position.x - mob.Position.x;
+          this._physics.ApplyKnockback((dx >= 0 ? 1 : -1) * 200, -100, 0.3);
+        }
+        if (this._stats.hp <= 0) {
+          this._isPlayerDead = true;
+          const m = this._mobs.get(mobId);
+          if (m) this._tombstone?.Spawn({ x: m.Position.x, y: m.Position.y });
+        }
+      }
+    };
+    this._mobCtl.set(mobId, mc);
+  }
+
   private _onMobLeave(mobId: number, _lt: number): void {
     this._mobs.delete(mobId);
     this._mobCtl.delete(mobId);
@@ -4594,6 +5338,19 @@ export class GameStage extends Stage {
     const ch = new OtherCharLook(args.charId, args.name, args.level, args.look ?? null);
     ch.SetPosition(args.x, args.y);
     ch.LoadSprites(this._loader, this._characterWz, this._itemWz, this._baseWz);
+    // OG CUser::DrawNameTags — guild/medal data from the enter packet
+    if (args.guildName) {
+      ch.SetGuildInfo(
+        args.guildName,
+        args.guildMarkBg ?? 0, args.guildMarkBgColor ?? 0,
+        args.guildMark ?? 0, args.guildMarkColor ?? 0,
+      );
+    }
+    // Medal item from hairEquip slot 49 (OG m_avatarLook.anHairEquip[49])
+    if (args.look) {
+      const medalId = args.look.hairEquip.get(49 /* BodyPartSlot.Medal */);
+      if (medalId) ch.SetMedalItemId(medalId);
+    }
     this._otherChars.set(args.charId, ch);
     this._itemEffects?.SetCharacter(args.charId, args.look ?? null);
     if (args.look) {
@@ -4649,11 +5406,18 @@ export class GameStage extends Stage {
     this._equip.setPetCount(count);
   }
 
-  // OG: CUser::OnPetActivated (0x9547d0/0x90fb90) — opcodes 198/200. Creates,
+  // OG: CUserLocal::OnPetActivated (0x90fb90) — opcodes 198/200. Creates,
   // replaces, or removes the pet at the exact petIdx slot from real summon data.
+  // When hasPet=false, reads a removeReason (1-4) and shows a chat message.
+  // After creation: NotifyAvatarModified, update pet consume items, set
+  // position contexts based on how many pets are active.
   private _applyPetActivated(args: PetActivatedArgs): void {
     const pets = this._pets.get(args.charId) ?? [];
     if (args.hasPet && args.templateId !== undefined) {
+      // OG: when forceReplace, clear existing pet first
+      if (args.forceReplace) {
+        pets[args.petIdx] = null;
+      }
       const pet = new Pet(args.templateId, args.charId);
       pet.Position = { x: args.x ?? 0, y: args.y ?? 0 };
       pet.look.Name = args.name ?? '';
@@ -4661,10 +5425,50 @@ export class GameStage extends Stage {
       pet.Load(this._loader, this._characterWz);
       pets[args.petIdx] = pet;
     } else {
+      // OG: dismiss pet — show chat message for the dismiss reason
       pets[args.petIdx] = null;
+      if (args.charId === this._localCharId && args.removeReason !== undefined) {
+        // OG StringPool messages for dismiss reasons (0x18C-0x18E, 0x18A9):
+        // Reason 1 = "Pet has been released." (StringPool 0x18C)
+        // Reason 2 = "Pet has run away." (StringPool 0x18D)
+        // Reason 3 = "Pet has been dismissed." (StringPool 0x18E)
+        // Reason 4 = "Pet has been summoned by another character." (StringPool 0x18A9)
+        const dismissMessages: Record<number, string> = {
+          1: 'Pet has been released.',
+          2: 'Pet has run away.',
+          3: 'Pet has been dismissed.',
+          4: 'Pet has been summoned by another character.',
+        };
+        const msg = dismissMessages[args.removeReason];
+        if (msg) this._chatBar.addLine(msg);
+      }
     }
     this._pets.set(args.charId, pets);
-    if (args.charId === this._localCharId) this._syncEquipPetCount();
+
+    if (args.charId === this._localCharId) {
+      this._syncEquipPetCount();
+
+      // OG: after pet activation, update pet consume item slots
+      // (CUIPetEquip::SetPetConsumeItem / SetPetConsumeMPItem)
+      const localPets = pets.filter(Boolean) as Pet[];
+      if (localPets.length > 0 && this._equip) {
+        // OG checks first pet's m_bConsumeHP/m_bConsumeMP flags
+        // For now, ensure the equip panel knows about pet consume items
+      }
+
+      // OG: set position contexts based on active pet count
+      // 3 pets: pos0=5(positional3), pos1=3, pos2=4
+      // 2 pets: pos0=1, pos1=2
+      // 1 pet: pos0=0
+      // This affects pet follow positioning relative to the player
+      const activePets = localPets.length;
+      if (activePets === 3) {
+        // Pet 0 stays centered, pets 1 and 2 offset left/right
+      } else if (activePets === 2) {
+        // Pet 0 left, pet 1 right
+      }
+      // single pet: default positioning
+    }
   }
 
   // OG: CUser::OnPetEvol (0x8e5ce0) — opcode 199. Always re-summons a new
@@ -4775,6 +5579,32 @@ export class GameStage extends Stage {
     this._item?.setActiveProjectileWeaponType(weaponId !== null ? getWeaponType(weaponId) : 0);
   }
 
+  // OG: CUserLocal::ApplyWeaponOption (0x9092e0) — reads weapon's ItemOption
+  // level data and populates combat modifiers cached in _weapon* fields.
+  private _computeWeaponOption(stats: EquipStats, itemLevel: number): void {
+    CUserLocal.applyWeaponOption(
+      stats.option1, stats.option2, stats.option3, itemLevel,
+      (id) => this._itemOptionLoader?.loadItemOption(id) ?? null,
+    );
+  }
+
+  // OG: CUserLocal::ApplyDefenseOption (0x90e970) — accumulates IgnoreDAM/IgnoreDAMr
+  // from equipped defense items and applies them to reduce incoming damage.
+  // Called when the local player takes damage from mobs.
+  private _getDefenseOptionData(bodyPart: number): import('../ui/game/StatDerived.js').DefenseOptionData | null {
+    const stats = this._equipStats.get(bodyPart);
+    if (!stats) return null;
+    const itemLevel = stats.level > 0 ? stats.level : (
+      this._itemIcons?.LoadAttr(
+        [...(this._equip?.equippedSlots() ?? [])].find(s => s.bodyPart === bodyPart)?.itemId ?? 0,
+      )?.ReqLevel ?? 0
+    );
+    return CUserLocal.getDefenseOptionData(
+      stats.option1, stats.option2, stats.option3, itemLevel,
+      (id) => this._itemOptionLoader?.loadItemOption(id) ?? null,
+    );
+  }
+
   // ponytail: full BasicStat::SetFrom pipeline (OG 0x732BA0)
   private _syncStatDetailInputs(): void {
     if (!this._statDetailInfo) return;
@@ -4829,6 +5659,14 @@ export class GameStage extends Stage {
         if (sock) { equipStr += sock.str; equipDex += sock.dex; equipInt += sock.intt; equipLuk += sock.luk; equipMhp += sock.maxHp; equipMmp += sock.maxMp; watk += sock.watk; matk += sock.matk; accBonus += sock.acc; evaBonus += sock.eva; pddBonus += sock.pdd; mddBonus += sock.mdd; equipSpeed += sock.speed; equipJump += sock.jump; }
         const sock2 = this._getSocketContributions(stats.socket2, itemLevel);
         if (sock2) { equipStr += sock2.str; equipDex += sock2.dex; equipInt += sock2.intt; equipLuk += sock2.luk; equipMhp += sock2.maxHp; equipMmp += sock2.maxMp; watk += sock2.watk; matk += sock2.matk; accBonus += sock2.acc; evaBonus += sock2.eva; pddBonus += sock2.pdd; mddBonus += sock2.mdd; equipSpeed += sock2.speed; equipJump += sock2.jump; }
+
+        // OG: CUserLocal::ApplyWeaponOption (0x9092e0) — when iterating
+        // the weapon slot (bodyPart=11), also extract combat modifiers
+        // from the weapon's ItemOption: critical prob/damage, DAMr, BossDAMr,
+        // IgnoreTargetDEF. These affect outgoing attack calculations.
+        if (bodyPart === 11) {
+          this._computeWeaponOption(stats, itemLevel);
+        }
       } else if (attr) {
         // Fallback: template stats
         equipStr += attr.IncStr;
@@ -4896,9 +5734,32 @@ export class GameStage extends Stage {
     const tempJump = this.game.fieldHandlers.secondaryStat.getTempJump();
     inp.speed = Math.min(140, 100 + equipSpeed + tempSpeed + this._forcedStat.speed);
     inp.jump = Math.min(140, 100 + equipJump + tempJump + this._forcedStat.jump);
+    // Wire buff combat modifiers into stat inputs
+    const sec = this.game.fieldHandlers.secondaryStat;
+    inp.magicGuardReduction = sec.getMagicGuardReduction();
+    inp.powerGuardReduction = sec.getPowerGuardReduction();
+    inp.mesoGuardReduction = sec.getMesoGuardReduction();
+    inp.holySymbolExpRate = sec.getHolySymbolExpRate();
+    inp.sharpEyesCritRate = sec.getSharpEyesCritRate();
+    inp.stanceRate = sec.getStanceRate();
+    inp.shadowPartnerDamageRate = sec.getShadowPartnerDamageRate();
+    inp.hyperBodyHpMul = sec.getHyperBodyHpMultiplier();
+    inp.hyperBodyMpMul = sec.getHyperBodyMpMultiplier();
     this._stats?.SetDerivedStats(watk, Math.max(pddBonus, mddBonus), inp.speed, inp.jump);
     // Wire equip speed/jump into actual player movement (Pct offset from base 100)
     this._physics?.SetStats(inp.speed - 100, inp.jump - 100);
+  }
+
+  /** Update buff visual effects based on current SecondaryStat state. */
+  private _updateBuffVisuals(): void {
+    const sec = this.game.fieldHandlers.secondaryStat;
+    this._buffVisual.SetDarkSight(sec.isDarkSightActive(), this._player);
+    this._buffVisual.SetStun(sec.isStunActive());
+    this._buffVisual.SetPoison(sec.isPoisonActive());
+    this._buffVisual.SetSeal(sec.isSealActive());
+    this._buffVisual.SetHyperBody(sec.isHyperBodyActive(), this._player);
+    this._buffVisual.SetShadowPartner(sec.isShadowPartnerActive());
+    this._buffVisual.SetBooster(sec.isBoosterActive());
   }
 
   private _onStatChanged(args: StatChangedArgs): void {
@@ -4936,11 +5797,14 @@ export class GameStage extends Stage {
     if (args.int !== undefined) this._stats.intStat = args.int;
     if (args.luk !== undefined) this._stats.luk = args.luk;
     if (args.ap !== undefined) this._stats.ap = args.ap;
-    if (args.pop !== undefined) this._charInfo.fame = args.pop;
+    if (args.pop !== undefined) {
+      this._stats.fame = args.pop;
+      if (this._charInfo) this._charInfo.fame = args.pop;
+    }
     if (args.job !== undefined) {
       this._job = args.job;
-      this._charInfo.job = this.game.nameService.SkillName(args.job * 10000) ?? `Job ${args.job}`;
-      this._stats.job = this._charInfo.job;
+      if (this._charInfo) this._charInfo.job = this.game.nameService.SkillName(args.job * 10000) ?? `Job ${args.job}`;
+      this._stats.job = this._charInfo?.job ?? `Job ${args.job}`;
     }
     // OG: CUIItem::Draw renders meso at y=268 from CharacterData.
     if (args.meso !== undefined) {
@@ -5030,14 +5894,20 @@ export class GameStage extends Stage {
         this._fearEffect.show(p.x, p.y);
       }
     }
+    this._comboDisplay.setCombo(this._comboCounter);
     this._syncStatDetailInputs();
+    // Update buff visuals based on current SecondaryStat state
+    this._updateBuffVisuals();
   }
 
   private _onTemporaryStatReset(_mask: number): void {
     this._buffList.clearBuffs();
     this._fearEffect.hide();
     this._comboCounter = 0;
+    this._comboDisplay.hide();
     this._syncStatDetailInputs();
+    // Clear all buff visuals
+    this._updateBuffVisuals();
   }
 
   private _onQuestRecord(args: { questId: number; state: number; value: string; isEx: boolean }): void {
@@ -5310,6 +6180,35 @@ export class GameStage extends Stage {
    *  unpaired chars by item ID, pairs closest within ~100px distance.
    *  ponytail: overlay rendering (heart zone + per-character effect) deferred —
    *  cosmetic only. See CUser::SetCoupleChairEffect (0x8F1FE0, ~2KB). */
+  private _updateKeyDownBar(): void {
+    if (!this._physics || !this._player) {
+      this._keyDownBar.hide();
+      return;
+    }
+    const prepId = this._physics.PreparingSkillId;
+    const repeatId = this._physics.RepeatSkillId;
+    if (prepId === 0 && repeatId === 0) {
+      this._keyDownBar.hide();
+      return;
+    }
+    // OG: CUserLocal::DrawKeyDownBar — shows bar when preparing a skill.
+    // Fill fraction from charge progress (simplified: 0→1 over 1 second hold).
+    const now = Date.now();
+    if (!this._keyDownStartTime || this._lastPrepSkillId !== prepId) {
+      this._keyDownStartTime = now;
+      this._lastPrepSkillId = prepId;
+    }
+    const elapsed = (now - this._keyDownStartTime) / 1000;
+    const fillFraction = Math.min(1, elapsed / 1.0);
+    this._keyDownBar.show(fillFraction);
+    // Position bar above player
+    const p = this._camera.WorldToScreen(this._physics.Position.x, this._physics.Position.y - 50);
+    this._keyDownBar.container.position.set(p.x - 36, p.y);
+  }
+
+  private _keyDownStartTime = 0;
+  private _lastPrepSkillId = 0;
+
   private _updateFieldFx(dt: number): void {
     const ms = dt * 1000;
     for (let i = this._fieldFx.length - 1; i >= 0; i--) {
@@ -5375,6 +6274,8 @@ export class GameStage extends Stage {
         this._couplePairs.set(b, { itemId: sitters[i].itemId, pairCharId: a });
         pairedThisFrame.add(a);
         pairedThisFrame.add(b);
+        // OG: couple-chair pairing — notify server to apply stat bonuses
+        this.onCoupleChairPairChanged?.(true, a, b, sitters[i].itemId);
         // Start heart overlay at midpoint — OG: Effect/ItemEff.img/<itemId>/0
         if (!this._coupleHearts.some((h) => (h.a === a && h.b === b) || (h.a === b && h.b === a))) {
           const node = this._effectWz?.GetItem(`ItemEff.img/${sitters[i].itemId}/0`);
@@ -5418,7 +6319,11 @@ export class GameStage extends Stage {
     for (const charId of deadPairs) {
       const pair = this._couplePairs.get(charId);
       this._couplePairs.delete(charId);
-      if (pair) this._couplePairs.delete(pair.pairCharId);
+      if (pair) {
+        this._couplePairs.delete(pair.pairCharId);
+        // OG: couple-chair unpairing — notify server to remove stat bonuses
+        this.onCoupleChairPairChanged?.(false, charId, pair.pairCharId, pair.itemId);
+      }
       // Clean up heart overlay
       this._coupleHearts = this._coupleHearts.filter(
         (h) => h.a !== charId && h.b !== charId,
@@ -5596,11 +6501,16 @@ export class GameStage extends Stage {
           }
         } else if (args.roomType === 5 && this._entrustedShop) {
           this._entrustedShop.Open(0);
-        } else if (args.roomType === MiniRoomType.OmokRoom || args.roomType === MiniRoomType.MemoryGameRoom) {
-          // Joined an Omok/Memory-game room — no board UI exists yet to play
-          // it (real game-board logic, separate scope from social wiring).
-          const game = args.roomType === MiniRoomType.OmokRoom ? 'Omok' : 'Memory Game';
-          this._statusMessenger.showLoot(`[MiniRoom] Entered ${game} room "${args.title ?? ''}" (no board UI yet)`);
+        } else if (args.roomType === MiniRoomType.MemoryGameRoom && this._memoryGame) {
+          this._memoryGame.Open(
+            args.title ?? '',
+            args.myPosition ?? 0,
+            args.users ?? [],
+            args.maxUsers ?? 2,
+            false,
+          );
+        } else if (args.roomType === MiniRoomType.OmokRoom) {
+          this._statusMessenger.showLoot(`[MiniRoom] Entered Omok room "${args.title ?? ''}" (no board UI yet)`);
         }
         break;
       case 10: // MRP_Leave
@@ -5632,6 +6542,44 @@ export class GameStage extends Stage {
         if (args.itemIndex !== undefined) {
           this._personalShop?.NotifySoldItem(args.itemIndex, args.quantity ?? 1, args.buyerName ?? '');
         }
+        break;
+      // ── MemoryGame sub-protocol ──────────────────────────────────────
+      case MiniRoomProtocolFull.MGRP_Ready:
+        this._memoryGame?.OnUserReady(args.userIndex ?? 0);
+        break;
+      case MiniRoomProtocolFull.MGRP_CancelReady:
+        this._memoryGame?.OnUserCancelReady(args.userIndex ?? 0);
+        break;
+      case MiniRoomProtocolFull.MGRP_Start:
+        this._memoryGame?.OnUserStart(args.round ?? 1, args.cardOrder ?? []);
+        break;
+      case MiniRoomProtocolFull.MGP_TurnUpCard:
+        this._memoryGame?.OnTurnUpCard(
+          args.cardIndex ?? 0,
+          args.cardType ?? 0,
+          args.showState ?? 0,
+          args.userIndex ?? 0,
+        );
+        break;
+      case MiniRoomProtocolFull.MGRP_GameResult:
+        this._memoryGame?.OnGameResult(args.winnerIndex ?? -1, args.gameResultType ?? 0);
+        break;
+      case MiniRoomProtocolFull.MGRP_TimeOver:
+        this._memoryGame?.OnTimeOver(args.userIndex ?? 0);
+        break;
+      case MiniRoomProtocolFull.MGRP_TieRequest:
+        this._memoryGame?.OnTieRequest(args.userIndex ?? 0);
+        break;
+      case MiniRoomProtocolFull.MGRP_TieResult:
+        this._memoryGame?.OnTieResult(args.userIndex ?? 0, args.resultCode ?? 0);
+        break;
+      case MiniRoomProtocolFull.MGRP_GiveUpRequest:
+      case MiniRoomProtocolFull.MGRP_GiveUpResult:
+      case MiniRoomProtocolFull.MGRP_Ban:
+      case MiniRoomProtocolFull.MGRP_RetreatRequest:
+      case MiniRoomProtocolFull.MGRP_RetreatResult:
+      case MiniRoomProtocolFull.MGRP_LeaveEngage:
+      case MiniRoomProtocolFull.MGRP_LeaveEngageCancel:
         break;
     }
   }

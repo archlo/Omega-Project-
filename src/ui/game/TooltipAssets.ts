@@ -39,8 +39,19 @@ export class TooltipAssets {
     return sprite;
   }
 
+  // OG: WZ asset names use reqLEV, reqSTR, etc. — map from display names
+  private static readonly REQ_MAP: Record<string, string> = {
+    'level': 'reqLEV',
+    'str': 'reqSTR',
+    'dex': 'reqDEX',
+    'int': 'reqINT',
+    'luk': 'reqLUK',
+    'pop': 'reqPOP',
+  };
+
   Req(key: string, met: boolean): WzSprite | null {
-    return this.Get(`${met ? 'Can' : 'Cannot'}/${key}`);
+    const wzKey = TooltipAssets.REQ_MAP[key] ?? key;
+    return this.Get(`${met ? 'Can' : 'Cannot'}/${wzKey}`);
   }
 
   JobLabel(klass: string, greyed: boolean): WzSprite | null {

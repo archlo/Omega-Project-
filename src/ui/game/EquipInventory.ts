@@ -2,7 +2,7 @@ import { Container, Graphics, Sprite, Text, TextStyle, Texture } from 'pixi.js';
 import { GamePanel } from './GamePanel.js';
 import type { DragTarget } from '../DragController.js';
 import type { ItemDragPayload } from './ItemInventory.js';
-import { InventoryType } from '../../domain/InventoryItem.js';
+import { InventoryType, EquipStats } from '../../domain/InventoryItem.js';
 import { BuiltInFont } from '../BuiltInFont.js';
 import { ItemIconLoader } from '../../character/ItemIconLoader.js';
 import { TooltipAssets } from './TooltipAssets.js';
@@ -161,8 +161,11 @@ export class EquipInventory extends GamePanel implements DragTarget {
   private _btPet: Button | null = null;
   private _btMechanic: Button | null = null;
   private _btSlot: Button | null = null;
+  private _btArrange: Button | null = null;
   private _btClose: Button | null = null;
   private _expanded = false;
+  // OG: CUIEquip::SetArrangeButton — single toggle between BtGather (state 0) and BtSort (state 1).
+  private _arrangeState = 0; // 0=gather, 1=sort
   private _effectLayer = new Container();
   private _releaseEffects: { bodyPart: number; anim: AnimatedSprite; elapsedMs: number }[] = [];
 
@@ -172,7 +175,7 @@ export class EquipInventory extends GamePanel implements DragTarget {
   private _viewW = 800;
   private _viewH = 600;
 
-  private _equipped = new Map<string, { itemId: number; name: string; grade: number }>();
+  private _equipped = new Map<string, { itemId: number; name: string; grade: number; cash: boolean; stats?: EquipStats }>();
   private _hoverKey: string | null = null;
   private _mouseX = 0;
   private _mouseY = 0;
@@ -230,6 +233,9 @@ export class EquipInventory extends GamePanel implements DragTarget {
   // OG: CDraggableItem::GetOffEquipItem — TODO_AUDIT.md item-drag-and-drop
   onDragStart: ((payload: ItemDragPayload, texture: Texture, x: number, y: number) => void) | null = null;
   onCashShop: (() => void) | null = null;
+  // OG: CUIEquip::SetArrangeButton — fires when arrange button is clicked.
+  // state=0 → gather (BtGather), state=1 → sort (BtSort).
+  onArrange: ((state: number) => void) | null = null;
 
   constructor(opts: {
     loader?: WzTextureLoader,
@@ -337,6 +343,16 @@ export class EquipInventory extends GamePanel implements DragTarget {
       // OG: BtMechanic (nID=0xBBB) only shown for Mechanic (job==35).
       this._btDragon = this._makeButton(opts.loader, charProp, 'BtDragon', () => this._toggleDragonPanel());
       this._btMechanic = this._makeButton(opts.loader, charProp, 'BtMechanic', () => this._toggleMechanicPanel());
+      // OG: BtArrange — toggles between BtGather (state 0) and BtSort (state 1).
+      // Positioned at (142, 4) in the expanded header area.
+      this._btArrange = this._makeButton(opts.loader, charProp, 'BtGather', () => {
+        this._arrangeState = this._arrangeState === 0 ? 1 : 0;
+        this.onArrange?.(this._arrangeState);
+      });
+      if (this._btArrange) {
+        this._btArrange.container.x = 142;
+        this._btArrange.container.y = 4;
+      }
       // OG: CUIWnd base class creates BtClose — load from Basic.img
       const closeImg = opts.uiWz?.GetItem('Basic.img/BtClose3');
       if (closeImg instanceof WzProperty) {
@@ -438,10 +454,17 @@ export class EquipInventory extends GamePanel implements DragTarget {
       (s3 as any).label = 'equipInventoryWzBg3';
       this._root.addChildAt(s3, 2);
     }
+    // Re-add slot icons and grade frame on top of backgrounds
+    // (backgrounds inserted at indices 0-2 push everything else down)
+    for (const icon of this._slotIcons) {
+      this._root.addChild(icon);
+    }
+    if (this._gradeFrame) this._root.addChild(this._gradeFrame);
+    this._root.addChild(this._effectLayer);
   }
 
   equip(slotKey: string, itemName: string, itemId = 0, grade = 0): void {
-    this._equipped.set(slotKey, { itemId, name: itemName, grade });
+    this._equipped.set(slotKey, { itemId, name: itemName, grade, cash: Math.floor(itemId / 1_000_000) === 5 });
   }
   unequip(slotKey: string): void { this._equipped.delete(slotKey); }
 
@@ -461,7 +484,7 @@ export class EquipInventory extends GamePanel implements DragTarget {
   setHasNoviceSkill1004(has: boolean): void { this._hasNoviceSkill1004 = has; }
 
   setEquipped(slotKey: string, itemId: number, name: string, grade = 0): void {
-    this._equipped.set(slotKey, { itemId, name, grade });
+    this._equipped.set(slotKey, { itemId, name, grade, cash: Math.floor(itemId / 1_000_000) === 5 });
   }
 
   findSlotByItemId(itemId: number): string | null {
@@ -476,18 +499,18 @@ export class EquipInventory extends GamePanel implements DragTarget {
     return -1;
   }
 
-  setEquippedByBodyPart(bodyPart: number, itemId: number, name: string, grade = 0): void {
+  setEquippedByBodyPart(bodyPart: number, itemId: number, name: string, grade = 0, stats?: EquipStats): void {
     for (const s of SLOTS) {
-      if (s.bodyPart === bodyPart) { this._equipped.set(s.key, { itemId, name, grade }); return; }
+      if (s.bodyPart === bodyPart) { this._equipped.set(s.key, { itemId, name, grade, cash: Math.floor(itemId / 1_000_000) === 5, stats }); return; }
     }
     for (const s of PET_SLOTS) {
-      if (s.bodyPart === bodyPart) { this._equipped.set(s.key, { itemId, name, grade }); return; }
+      if (s.bodyPart === bodyPart) { this._equipped.set(s.key, { itemId, name, grade, cash: Math.floor(itemId / 1_000_000) === 5, stats }); return; }
     }
     for (const s of DRAGON_SLOTS) {
-      if (s.bodyPart === bodyPart) { this._equipped.set(s.key, { itemId, name, grade }); return; }
+      if (s.bodyPart === bodyPart) { this._equipped.set(s.key, { itemId, name, grade, cash: Math.floor(itemId / 1_000_000) === 5, stats }); return; }
     }
     for (const s of MECHANIC_SLOTS) {
-      if (s.bodyPart === bodyPart) { this._equipped.set(s.key, { itemId, name, grade }); return; }
+      if (s.bodyPart === bodyPart) { this._equipped.set(s.key, { itemId, name, grade, cash: Math.floor(itemId / 1_000_000) === 5, stats }); return; }
     }
   }
   unequipByBodyPart(bodyPart: number): void {
@@ -503,6 +526,12 @@ export class EquipInventory extends GamePanel implements DragTarget {
     for (const s of MECHANIC_SLOTS) {
       if (s.bodyPart === bodyPart) { this._equipped.delete(s.key); return; }
     }
+  }
+
+  // OG: CUIEquip::SetArrangeButton — set arrange state externally.
+  // state=0 → gather (BtGather), state=1 → sort (BtSort).
+  setArrangeState(state: number): void {
+    this._arrangeState = state;
   }
 
   onUnequip: ((bodyPart: number) => void) | null = null;
@@ -727,10 +756,15 @@ export class EquipInventory extends GamePanel implements DragTarget {
     return false;
   }
 
+  private _debugLogged = false;
   update(_dt: number): void {
     if (!this.isVisible) {
       this._tooltip?.Hide();
       return;
+    }
+    if (!this._debugLogged) {
+      this._debugLogged = true;
+      console.log(`[EquipInv] update called: icons=${!!this._icons}, slotCount=${this._slotIcons.length}, equippedCount=${this._equipped.size}`);
     }
 
     // OG: CUIWndPosSaved — save position while visible (after drag)
@@ -752,6 +786,9 @@ export class EquipInventory extends GamePanel implements DragTarget {
       const hasItem = equipped !== undefined;
 
       const icon = hasItem ? (this._icons?.LoadIcon(equipped!.itemId) ?? null) : null;
+      if (hasItem && !icon) {
+        console.warn(`[EquipInv] No icon for slot ${s.key} item ${equipped!.itemId} (icons=${!!this._icons})`);
+      }
       this._slotIcons[i].visible = icon !== null;
       if (icon) {
         this._slotIcons[i].texture = icon.Texture;
@@ -761,21 +798,29 @@ export class EquipInventory extends GamePanel implements DragTarget {
       if (hasItem && equipped!.grade > 0 && this._gradeFrame) {
         this._drawGradeFrame(this._gradeFrame, equipped!.grade, s.ox, s.oy, SLOT_SIZE, SLOT_SIZE);
       }
+      // OG: DrawItemIconForSlot — cash tag overlay in bottom-right corner
+      if (hasItem && equipped!.cash && this._icons) {
+        const cashTag = this._icons.GetCashTag();
+        if (cashTag) {
+          cashTag.position.set(s.ox + SLOT_SIZE - cashTag.width, s.oy + SLOT_SIZE - cashTag.height);
+          this._effectLayer.addChild(cashTag);
+        }
+      }
       if (!hasItem && this._wzDisabled && (s.bodyPart === 10 || s.bodyPart === 18 || s.bodyPart === 19 || s.bodyPart === 20)) {
         const disabled = this._wzDisabled.ToPixi();
         disabled.position.set(s.ox, s.oy);
-        this._slotIcons[i].addChild(disabled);
+        this._effectLayer.addChild(disabled);
       }
       // OG: Dynamic SetSlotDisable — apply disabled overlay based on character state even when item IS equipped
       if (hasItem && this._wzDisabled && this._isSlotDynamicallyDisabled(s.bodyPart)) {
         const disabled = this._wzDisabled.ToPixi();
         disabled.position.set(s.ox, s.oy);
-        this._slotIcons[i].addChild(disabled);
+        this._effectLayer.addChild(disabled);
       }
       if (!hasItem && this._wzCashPendant && s.bodyPart === 59) {
         const pendant = this._wzCashPendant.ToPixi();
         pendant.position.set(s.ox, s.oy);
-        this._slotIcons[i].addChild(pendant);
+        this._effectLayer.addChild(pendant);
       }
 
       if (hasItem && lx >= s.ox && lx < s.ox + SLOT_SIZE && ly >= s.oy && ly < s.oy + SLOT_SIZE) {
@@ -791,7 +836,7 @@ export class EquipInventory extends GamePanel implements DragTarget {
       const equipped = this._equipped.get(this._hoverKey);
       if (equipped && this._tooltip) {
         const setCount = this._equippedSetCount(equipped.itemId);
-        this._tooltip.Draw(equipped.itemId, equipped.name, 0, 1, this._mouseX, this._mouseY, this._viewW, this._viewH, setCount);
+        this._tooltip.Draw(equipped.itemId, equipped.name, 0, 1, this._mouseX, this._mouseY, this._viewW, this._viewH, setCount, undefined, undefined, undefined, undefined, equipped.stats);
       }
     } else {
       this._tooltip?.Hide();
@@ -824,10 +869,13 @@ export class EquipInventory extends GamePanel implements DragTarget {
 
   private _layoutButtons(): void {
     if (this._btDragon) {
+      // OG: BtDragon shown for Dragon Knight (job==22) or Evan (job==2001)
       const show = this._jobId === 22 || this._jobId === 2001;
       this._btDragon.container.visible = show;
+      if (show && this._level < 50) this._btDragon.enabled = false;
     }
     if (this._btMechanic) {
+      // OG: BtMechanic shown for Mechanic (job==35), level >= 50
       const show = this._jobId === 35;
       this._btMechanic.container.visible = show;
       if (show && this._level < 50) this._btMechanic.enabled = false;
