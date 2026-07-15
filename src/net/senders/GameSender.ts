@@ -2675,4 +2675,67 @@ export class GameSender {
     p.writeInt(itemId);
     return p;
   }
+
+  // ── Pet C→S packets ────────────────────────────────────────────────────
+
+  // OG: CPet::DoAction (0x6a2340) — opcode 200.
+  // Encodes: buffer(8:petLockerSN) int(updateTime) byte(type) byte(action) string(chat)
+  static PetAction(petLockerSN: bigint, type: number, action: number, chat: string): OutPacket {
+    const p = OutPacket.Of(InHeader.UserPetAction);
+    p.writeLong(petLockerSN);
+    p.writeInt(Date.now());
+    p.writeByte(type);
+    p.writeByte(action);
+    p.writeString(chat);
+    return p;
+  }
+
+  // OG: CPet::ParseCommand (0x6a3cc0) — opcode 201.
+  // Encodes: buffer(8:petLockerSN) byte(hasName) byte(interactionIdx)
+  static PetInteractionRequest(petLockerSN: bigint, hasName: boolean, interactionIdx: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserPetInteractionRequest);
+    p.writeLong(petLockerSN);
+    p.writeByte(hasName ? 1 : 0);
+    p.writeByte(interactionIdx);
+    return p;
+  }
+
+  // OG: CPet::SendDropPickUpRequest (0x6a0820) — opcode 202.
+  // Encodes: buffer(8:petLockerSN) byte(fieldCrc) int(updateTime) short(x) short(y)
+  //          int(dropId) int(cliCrc) byte(pickupOthers) byte(sweepForDrop) byte(longRange)
+  //          [if dropId%13==0: short(x) short(y) int(posCRC) int(rectCrc)]
+  static PetDropPickUpRequest(
+    petLockerSN: bigint, x: number, y: number, dropId: number,
+    cliCrc: number, pickupOthers: boolean, sweepForDrop: boolean, longRange: boolean,
+    posCRC?: number, rectCrc?: number,
+  ): OutPacket {
+    const p = OutPacket.Of(InHeader.UserPetDropPickUpRequest);
+    p.writeLong(petLockerSN);
+    p.writeByte(0); // fieldCrc placeholder
+    p.writeInt(Date.now());
+    p.writeShort(x);
+    p.writeShort(y);
+    p.writeInt(dropId);
+    p.writeInt(cliCrc);
+    p.writeByte(pickupOthers ? 1 : 0);
+    p.writeByte(sweepForDrop ? 1 : 0);
+    p.writeByte(longRange ? 1 : 0);
+    if (dropId % 13 === 0) {
+      p.writeShort(x);
+      p.writeShort(y);
+      p.writeInt(posCRC ?? 0);
+      p.writeInt(rectCrc ?? 0);
+    }
+    return p;
+  }
+
+  // OG: CPet::SendUpdateExceptionListRequest (0x6a0dd0) — opcode 204.
+  // Encodes: buffer(8:petLockerSN) byte(count) int(itemIds)[count]
+  static PetUpdateExceptionList(petLockerSN: bigint, itemIds: number[]): OutPacket {
+    const p = OutPacket.Of(InHeader.UserPetUpdateExceptionList);
+    p.writeLong(petLockerSN);
+    p.writeByte(itemIds.length);
+    for (const id of itemIds) p.writeInt(id);
+    return p;
+  }
 }

@@ -247,6 +247,13 @@ export enum InHeader {
   // OG: CWvsContext::SendDragonBallBoxRequest (IDA 0x9D73D0) —
   // opcode 196, no payload.
   UserDragonBallBoxRequest  = 196,
+
+  // 197-205 — Pet C→S opcodes (CPet::DoAction / ParseCommand / SendDropPickUpRequest / SendUpdateExceptionListRequest)
+  UserPetAction              = 200, // CPet::DoAction sends opcode 200: buffer(8:petLockerSN) int(timestamp) byte(type) byte(action) string(chat)
+  UserPetInteractionRequest  = 201, // CPet::ParseCommand sends opcode 201: buffer(8:petLockerSN) byte(hasName) byte(interactionIdx)
+  UserPetDropPickUpRequest   = 202, // CPet::SendDropPickUpRequest sends opcode 202: buffer(8:petLockerSN) byte(fieldCrc) int(timestamp) short(x) short(y) int(dropId) int(cliCrc) byte(pickupOthers) byte(sweepForDrop) byte(longRange)
+  UserPetUpdateExceptionList = 204, // CPet::SendUpdateExceptionListRequest sends opcode 204: buffer(8:petLockerSN) byte(count) int(itemIds)[count]
+
   // 216 — quickslot server-side ack (server→client of FuncKeyMappedInit=398)
   QuickslotKeyMappedModified = 216,
 

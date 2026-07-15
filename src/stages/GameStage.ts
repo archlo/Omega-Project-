@@ -14,6 +14,7 @@ import { ReactorLook } from '../character/ReactorLook.js';
 import { DropSprite } from '../character/DropSprite.js';
 import { SummonedLook } from '../character/SummonedLook.js';
 import { Pet } from '../character/Pet.js';
+import type { PetCallbacks } from '../character/Pet.js';
 import { DragonLook } from '../character/DragonLook.js';
 import { TownPortalLook } from '../character/TownPortalLook.js';
 import { EmployeeLook } from '../character/EmployeeLook.js';
@@ -2418,6 +2419,9 @@ export class GameStage extends Stage {
     if (this._physics.IsSitting) {
       this.game.session.send(GameSender.UserSitRequest(-1));
       this._physics.StandUp();
+      // OG: release pets from hang-on-back when player stands
+      const localPets = this._pets.get(this._localCharId) ?? [];
+      for (const pet of localPets) pet?.HangOnBack(false);
       return;
     }
     const pos = this._physics.Position;
@@ -2426,12 +2430,18 @@ export class GameStage extends Stage {
       this.game.session.send(GameSender.UserSitRequest(seatIdx));
       const seat = this._field!.GetSeatPosition(seatIdx)!;
       this._physics.Sit(seat.x, seat.y);
+      // OG: pets hang on back when player sits on seat
+      const localPets = this._pets.get(this._localCharId) ?? [];
+      for (const pet of localPets) pet?.HangOnBack(true);
       return;
     }
     const chair = this._item.FindPortableChair();
     if (chair) {
       this.game.session.send(GameSender.PortableChairSitRequest(chair.id));
       this._physics.Sit(pos.x, pos.y);
+      // OG: pets hang on back when player sits on portable chair
+      const localPets = this._pets.get(this._localCharId) ?? [];
+      for (const pet of localPets) pet?.HangOnBack(true);
     }
   }
 
@@ -2542,6 +2552,21 @@ export class GameStage extends Stage {
       this._applyEquipOps(ops);
       this._refreshActiveProjectileSlot();
       this._syncStatDetailInputs();
+      // OG: sync pet stats from inventory Add ops to active Pet instances.
+      // When the server sends a pet item (Cash tab Add with pet fields), update
+      // the matching Pet's tameness/repleteness via OnValidateStat → UpdatePetAbility.
+      for (const op of ops) {
+        if (op.opType !== InventoryOpType.Add) continue;
+        if (op.petTameness === undefined) continue;
+        const localPets = this._pets.get(this._localCharId) ?? [];
+        for (const pet of localPets) {
+          if (!pet) continue;
+          if (pet.TemplateId !== op.itemId) continue;
+          if (op.petLevel !== undefined) pet.SetLevel(op.petLevel);
+          pet.OnValidateStat(op.petTameness, op.petRepleteness ?? pet.Repleteness, pet.PetAttribute);
+          break;
+        }
+      }
     };
     fh.onSkillRecordResult = (records) => this._onSkillRecordResult(records);
     fh.onSkillCooltimeSet = (skillId, remainSec) => {
@@ -4006,27 +4031,25 @@ export class GameStage extends Stage {
       if (movePath) pet.ReplayMove(movePath);
       else pet.SnapNearOwner();
     };
-    fh.onPetAction = ({ charId, petIdx, actionNo, chat }) => {
+    fh.onPetAction = ({ charId, petIdx, type, actionNo, chat, flag }) => {
       const pet = this._petAt(charId, petIdx);
       if (!pet) return;
-      pet.PlayAction(actionNo);
+      pet.OnAction(type, actionNo, chat, flag);
       if (chat) {
-        pet.look.Say(chat);
         this._chatBar.addLine(`[Pet] ${chat}`);
       }
     };
     fh.onPetNameChange = ({ charId, petIdx, newName, showNameTag }) => {
       const pet = this._petAt(charId, petIdx);
       if (!pet) return;
-      pet.look.Name = newName;
-      pet.look.ShowNameTag = showNameTag;
+      pet.OnNameChanged(newName, showNameTag);
       this._statusMessenger.showLoot(`[Pet] ${newName} renamed`);
     };
     fh.onPetLoadExceptionList = ({ charId, petIdx, lockerSN, itemIds }) => {
       this._petAt(charId, petIdx)?.SetExceptionList(lockerSN, itemIds);
     };
-    fh.onPetActionCommand = ({ charId, petIdx, successFlag }) => {
-      this._petAt(charId, petIdx)?.PlayReaction(successFlag !== 0);
+    fh.onPetActionCommand = ({ charId, petIdx, nType, interactionIdx, successFlag }) => {
+      this._petAt(charId, petIdx)?.OnActionCommand(nType, interactionIdx ?? 0, successFlag);
     };
     fh.onDragonMove = ({ charId, movePath }) => {
       const dragon = this._ensureDragon(charId);
@@ -4631,6 +4654,22 @@ export class GameStage extends Stage {
   /** Handle a chat line: route slash commands locally, send the rest as UserChat. */
   private _handleChatCommand(line: string): void {
     if (!line.startsWith('/')) {
+      // OG: try pet commands first — if any active pet recognizes the input,
+      // don't send as regular chat. If the pet is level 15+, also send via
+      // ChatCommand (pet speaks the message in a balloon).
+      const localPets = this._pets.get(this._localCharId) ?? [];
+      for (const pet of localPets) {
+        if (!pet) continue;
+        if (pet.ParseCommand(line)) return;
+      }
+      // No pet command matched — send as regular chat.
+      // But if a level 15+ pet exists, also have the pet speak it.
+      for (const pet of localPets) {
+        if (pet && pet.GetLevel() >= 15) {
+          pet.ChatCommand(line);
+          break;
+        }
+      }
       this.game.session.send(GameSender.UserChat(line));
       return;
     }
@@ -5372,12 +5411,21 @@ export class GameStage extends Stage {
       if (tid <= 0) continue;
       if (existing[i]) continue;
       const pet = new Pet(tid, ownerCharId);
+      pet.Callbacks = this._makePetCallbacks();
+      pet.PetIndex = i;
       const pos = ownerCharId === this._localCharId
         ? this._physics?.Position
         : this._otherChars.get(ownerCharId)?.Position;
       if (pos) pet.Position = { ...pos };
       pet.look.FaceLeft(false);
-      pet.Load(this._loader, this._characterWz);
+      pet.Load(this._loader, this._characterWz, this._itemWz);
+      pet.PlayEffectCallback = (path) => {
+        const node = this._effectWz?.GetItem(path);
+        if (node) {
+          // TODO: load and play effect frames at pet position
+        }
+      };
+      pet.ChatMessageCallback = (msg) => this._chatBar.addLine(msg);
       existing[i] = pet;
     }
     this._pets.set(ownerCharId, existing);
@@ -5396,6 +5444,24 @@ export class GameStage extends Stage {
 
   private _petAt(charId: number, petIdx: number): Pet | undefined {
     return this._pets.get(charId)?.[petIdx] ?? undefined;
+  }
+
+  /** Returns a PetCallbacks instance wired to GameSender for packet sending. */
+  private _makePetCallbacks(): PetCallbacks {
+    return {
+      onPetAction: (lockerSN, type, action, chat) => {
+        this.game.session.send(GameSender.PetAction(lockerSN, type, action, chat));
+      },
+      onPetInteraction: (lockerSN, hasName, interactionIdx) => {
+        this.game.session.send(GameSender.PetInteractionRequest(lockerSN, hasName, interactionIdx));
+      },
+      onPetDropPickUp: (lockerSN, x, y, dropId, cliCrc, pickupOthers, sweepForDrop, longRange) => {
+        this.game.session.send(GameSender.PetDropPickUpRequest(lockerSN, x, y, dropId, cliCrc, pickupOthers, sweepForDrop, longRange));
+      },
+      onPetExceptionList: (lockerSN, itemIds) => {
+        this.game.session.send(GameSender.PetUpdateExceptionList(lockerSN, itemIds));
+      },
+    };
   }
 
   private _syncEquipPetCount(): void {
@@ -5419,10 +5485,19 @@ export class GameStage extends Stage {
         pets[args.petIdx] = null;
       }
       const pet = new Pet(args.templateId, args.charId);
+      pet.Callbacks = this._makePetCallbacks();
+      pet.PetIndex = args.petIdx;
       pet.Position = { x: args.x ?? 0, y: args.y ?? 0 };
       pet.look.Name = args.name ?? '';
       pet.LockerSN = args.lockerSN ?? null;
-      pet.Load(this._loader, this._characterWz);
+      pet.Load(this._loader, this._characterWz, this._itemWz);
+      pet.PlayEffectCallback = (path) => {
+        const node = this._effectWz?.GetItem(path);
+        if (node) {
+          // TODO: load and play effect frames at pet position
+        }
+      };
+      pet.ChatMessageCallback = (msg) => this._chatBar.addLine(msg);
       pets[args.petIdx] = pet;
     } else {
       // OG: dismiss pet — show chat message for the dismiss reason
@@ -5460,14 +5535,17 @@ export class GameStage extends Stage {
       // 3 pets: pos0=5(positional3), pos1=3, pos2=4
       // 2 pets: pos0=1, pos1=2
       // 1 pet: pos0=0
-      // This affects pet follow positioning relative to the player
       const activePets = localPets.length;
       if (activePets === 3) {
-        // Pet 0 stays centered, pets 1 and 2 offset left/right
+        localPets[0]?.SetPositionContext(5);
+        localPets[1]?.SetPositionContext(3);
+        localPets[2]?.SetPositionContext(4);
       } else if (activePets === 2) {
-        // Pet 0 left, pet 1 right
+        localPets[0]?.SetPositionContext(1);
+        localPets[1]?.SetPositionContext(2);
+      } else if (activePets === 1) {
+        localPets[0]?.SetPositionContext(0);
       }
-      // single pet: default positioning
     }
   }
 
@@ -5476,10 +5554,19 @@ export class GameStage extends Stage {
   private _applyPetEvol(args: PetEvolArgs): void {
     const pets = this._pets.get(args.charId) ?? [];
     const pet = new Pet(args.templateId, args.charId);
+    pet.Callbacks = this._makePetCallbacks();
+    pet.PetIndex = args.petIdx;
     pet.Position = { x: args.x, y: args.y };
     pet.look.Name = args.name;
     pet.LockerSN = args.lockerSN;
-    pet.Load(this._loader, this._characterWz);
+    pet.Load(this._loader, this._characterWz, this._itemWz);
+    pet.PlayEffectCallback = (path) => {
+      const node = this._effectWz?.GetItem(path);
+      if (node) {
+        // TODO: load and play effect frames at pet position
+      }
+    };
+    pet.ChatMessageCallback = (msg) => this._chatBar.addLine(msg);
     pets[args.petIdx] = pet;
     this._pets.set(args.charId, pets);
     if (args.charId === this._localCharId) this._syncEquipPetCount();
