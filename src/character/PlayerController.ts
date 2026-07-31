@@ -290,7 +290,7 @@ export class PlayerController {
       if (dir !== 0) {
         // OG: AccSpeed with walkForce and walkSpeed
         const walkAcc = PlayerController.WalkForce * fhDrag;
-        const walkMax = PlayerController.BaseWalkSpeed * fhDrag;
+        const walkMax = this._walkSpeed * fhDrag;
         this._velocity.x = PlayerController.accSpeed(this._velocity.x, dir * walkAcc, 1, walkMax, dt);
       } else if (Math.abs(this._velocity.x) > 0.5) {
         // OG: DecSpeed with walkDrag for deceleration
