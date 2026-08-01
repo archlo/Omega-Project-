@@ -5557,6 +5557,7 @@ export class GameStage extends Stage {
       this._statusBar.maxMp = stat.maxMp;
       this._statusBar.exp = stat.exp;
       this._statusBar.charName = stat.name;
+      this._statusBar.jobName = this.game.nameService.SkillName(stat.job * 10000) ?? `Job ${stat.job}`;
     }
     if (this._stats) {
       this._stats.level = stat.level;
@@ -6412,6 +6413,7 @@ export class GameStage extends Stage {
     if (args.hp !== undefined) {
       this._statusBar.hp = args.hp;
       this._stats.hp = args.hp;
+      this._skill.characterHp = args.hp; // OG: HP check in OnSkillLevelUpButton
       if (args.hp <= 0 && this._physics) {
         this._isPlayerDead = true;
         this._tombstone?.Spawn({ x: this._physics.Position.x, y: this._physics.Position.y });
@@ -6461,8 +6463,11 @@ export class GameStage extends Stage {
     }
     if (args.job !== undefined) {
       this._job = args.job;
-      if (this._charInfo) this._charInfo.job = this.game.nameService.SkillName(args.job * 10000) ?? `Job ${args.job}`;
-      this._stats.job = this._charInfo?.job ?? `Job ${args.job}`;
+      this._skill.characterJob = args.job; // OG: job used in SP validation
+      const jobName = this.game.nameService.SkillName(args.job * 10000) ?? `Job ${args.job}`;
+      if (this._charInfo) this._charInfo.job = jobName;
+      this._stats.job = jobName;
+      if (this._statusBar) this._statusBar.jobName = jobName;
     }
     // OG: CUIItem::Draw renders meso at y=268 from CharacterData.
     if (args.meso !== undefined) {

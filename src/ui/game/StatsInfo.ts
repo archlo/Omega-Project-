@@ -7,6 +7,7 @@ import { WzCanvas } from '../../wz/WzCanvas.js';
 import { WzSprite } from '../../render/WzSprite.js';
 import { Button } from '../Button.js';
 import { Sprite } from 'pixi.js';
+import { getIdealStatUp, StatPair } from './StatDetailInfo.js';
 
 // OG CUIStat constants (from IDA decompilation — Draw @ 0x864bd0)
 const PANEL_W = 172;
@@ -500,10 +501,10 @@ export class StatsInfo extends GamePanel {
     // OG Draw: Position disabled stat canvases next to each stat label at x=38
     // Job category determines which pair of icons to show:
     // case 0,1,3,5 (warriors/mages/thieves): indices [2,3] (INT, LUK)
-    // case 2,4 (pirates/aran/evans): indices [0,1] (STR, DEX)
+    // case 2 (archer): indices [0,1] (STR, DEX)
+    // case 4 (thief): indices [0,2] (STR, INT)
     const statYPositions = [Y_STR, Y_DEX, Y_INT, Y_LUK, Y_FAME, Y_HP, Y_MP];
     const jobCat = Math.floor(jobNum / 100) % 10;
-    const showPairA = (jobCat === 2 || jobCat === 4); // STR(0) + DEX(1)
     for (let i = 0; i < this._disabledCanvases.length && i < statYPositions.length; i++) {
       const c = this._disabledCanvases[i];
       if (c) {
@@ -512,7 +513,16 @@ export class StatsInfo extends GamePanel {
         // Indices 0-3 are the stat icons (STR/DEX/INT/LUK)
         // Show the appropriate pair based on job category
         if (i < 4) {
-          c.visible = showPairA ? (i === 0 || i === 1) : (i === 2 || i === 3);
+          if (jobCat === 2) {
+            // Archer: show STR(0) + DEX(1)
+            c.visible = (i === 0 || i === 1);
+          } else if (jobCat === 4) {
+            // Thief: show STR(0) + INT(2)
+            c.visible = (i === 0 || i === 2);
+          } else {
+            // Warrior/Mage/Pirate/Botanist: show INT(2) + LUK(3)
+            c.visible = (i === 2 || i === 3);
+          }
         } else {
           c.visible = true; // AP/HP/MP icons always visible
         }
@@ -669,34 +679,40 @@ export class StatsInfo extends GamePanel {
 
   // OG: AutoApUp — computes ideal stat allocation based on job, shows confirmation dialog
   // StringPool 0x7C7 = header, 0x7C8 = per-stat format
+  // Calls GetIdealStatUp (0x73DDB0) for job-based allocation
   autoApUp(mode: number): void {
     if (this.ap <= 0) return;
 
-    // OG: GetIdealStatUp — simplified job-based AP distribution
     const jobNum = this._parseJobNumber();
-    const jobCat = Math.floor(jobNum / 100) % 10;
-    let alloc = { str: 0, dex: 0, intStat: 0, luk: 0 };
-    let remaining = this.ap;
+    const level = this.level;
 
-    // Job-based priority distribution (simplified from OG GetIdealStatUp)
-    if (jobCat === 1 || jobCat === 3 || jobCat === 5) {
-      // Warriors/Mages/Thief: STR priority
-      alloc.str = remaining;
-    } else if (jobCat === 2) {
-      // Archer: DEX priority
-      alloc.dex = remaining;
-    } else if (jobCat === 4) {
-      // Pirate: STR priority
-      alloc.str = remaining;
-    } else if (jobNum === 500) {
-      // Aran: STR priority
-      alloc.str = remaining;
-    } else {
-      // Beginner/other: distribute evenly
-      alloc.str = Math.floor(remaining / 4);
-      alloc.dex = Math.floor(remaining / 4);
-      alloc.intStat = Math.floor(remaining / 4);
-      alloc.luk = remaining - alloc.str - alloc.dex - alloc.intStat;
+    // OG: GetIdealStatUp returns StatPair[] with { dwStatFlag, nValue }
+    // Then AutoApUp caps each entry to available AP and shows confirmation
+    const statPairs = getIdealStatUp(jobNum, level, this.str, this.dex, this.intStat, this.luk, mode === 1);
+
+    // Cap each allocation to available AP (OG: loops through pairs, caps each to remaining AP)
+    let remaining = this.ap;
+    const alloc = { str: 0, dex: 0, intStat: 0, luk: 0 };
+
+    for (const pair of statPairs) {
+      let amount = Math.min(pair.nValue, remaining);
+      if (amount < 0) amount = 0;
+      remaining -= amount;
+
+      switch (pair.dwStatFlag) {
+        case 0x40: alloc.str += amount; break;   // STR
+        case 0x80: alloc.dex += amount; break;   // DEX
+        case 0x100: alloc.intStat += amount; break; // INT
+        case 0x200: alloc.luk += amount; break;  // LUK
+      }
+    }
+
+    // Distribute any remaining AP to the last stat (OG: adds remainder to last entry)
+    if (remaining > 0) {
+      if (alloc.luk > 0) alloc.luk += remaining;
+      else if (alloc.intStat > 0) alloc.intStat += remaining;
+      else if (alloc.dex > 0) alloc.dex += remaining;
+      else alloc.str += remaining;
     }
 
     // OG: Show confirmation dialog (CUtilDlg::YesNo)
@@ -881,16 +897,16 @@ export class StatsInfo extends GamePanel {
         ], font);
         break;
       case 300: // Archer
-        // nDir=3, nX=160, nY=241, StringPool 0x14BA + 0x14BD + 0x1A47
-        this._createBalloonTip(1, 160, 241, 3, [
+        // nDir=2, nX=160, nY=248, StringPool 0x14BA + 0x14BD + 0x1A47
+        this._createBalloonTip(1, 160, 248, 2, [
           this._getStringPoolText(0x14BA),
           this._getStringPoolText(0x14BD),
           this._getStringPoolText(0x1A47),
         ], font);
         break;
       case 400: // Thief
-        // nDir=2, nX=160, nY=284, StringPool 0x14BA + 0x14BE + 0x1A45
-        this._createBalloonTip(1, 160, 284, 2, [
+        // nDir=1, nX=149, nY=230, StringPool 0x14BA + 0x14BE + 0x1A45
+        this._createBalloonTip(1, 149, 230, 1, [
           this._getStringPoolText(0x14BA),
           this._getStringPoolText(0x14BE),
           this._getStringPoolText(0x1A45),
@@ -910,43 +926,43 @@ export class StatsInfo extends GamePanel {
         ], font);
         break;
       case 1100: // Cygnus Knights
-        // nDir=3, nX=160, nY=241, StringPool 0x14BA + 0x14C1 + 0x1A45
-        this._createBalloonTip(1, 160, 241, 3, [
+        // nDir=2, nX=160, nY=248, StringPool 0x14BA + 0x14C0 + 0x1A47
+        this._createBalloonTip(1, 160, 248, 2, [
           this._getStringPoolText(0x14BA),
-          this._getStringPoolText(0x14C1),
-          this._getStringPoolText(0x1A45),
+          this._getStringPoolText(0x14C0),
+          this._getStringPoolText(0x1A47),
         ], font);
         break;
       case 1200: // Aran
-        // nDir=2, nX=160, nY=248, StringPool 0x14BA + 0x14C2 + 0x1A46
+        // nDir=2, nX=160, nY=248, StringPool 0x14BA + 0x14C0 + 0x1A47
         this._createBalloonTip(1, 160, 248, 2, [
           this._getStringPoolText(0x14BA),
-          this._getStringPoolText(0x14C2),
-          this._getStringPoolText(0x1A46),
+          this._getStringPoolText(0x14C0),
+          this._getStringPoolText(0x1A47),
         ], font);
         break;
       case 1300: // Evan
-        // nDir=2, nX=160, nY=266, StringPool 0x14BA + 0x14C3 + 0x1A47
-        this._createBalloonTip(1, 160, 266, 2, [
+        // nDir=2, nX=160, nY=248, StringPool 0x14BA + 0x14C0 + 0x1A47
+        this._createBalloonTip(1, 160, 248, 2, [
           this._getStringPoolText(0x14BA),
-          this._getStringPoolText(0x14C3),
+          this._getStringPoolText(0x14C0),
           this._getStringPoolText(0x1A47),
         ], font);
         break;
       case 1400: // Mercedes
-        // nDir=2, nX=160, nY=284, StringPool 0x14BA + 0x14C4 + 0x1A45
-        this._createBalloonTip(1, 160, 284, 2, [
+        // nDir=2, nX=160, nY=248, StringPool 0x14BA + 0x14C0 + 0x1A47
+        this._createBalloonTip(1, 160, 248, 2, [
           this._getStringPoolText(0x14BA),
-          this._getStringPoolText(0x14C4),
-          this._getStringPoolText(0x1A45),
+          this._getStringPoolText(0x14C0),
+          this._getStringPoolText(0x1A47),
         ], font);
         break;
       case 1500: // Phantom
-        // nDir=3, nX=160, nY=241, StringPool 0x14BA + 0x14C5 + 0x1A45
-        this._createBalloonTip(1, 160, 241, 3, [
+        // nDir=2, nX=160, nY=248, StringPool 0x14BA + 0x14C0 + 0x1A47
+        this._createBalloonTip(1, 160, 248, 2, [
           this._getStringPoolText(0x14BA),
-          this._getStringPoolText(0x14C5),
-          this._getStringPoolText(0x1A45),
+          this._getStringPoolText(0x14C0),
+          this._getStringPoolText(0x1A47),
         ], font);
         break;
     }

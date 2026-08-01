@@ -870,6 +870,28 @@ export class FieldScene {
     return best;
   }
 
+  /** OG: CWvsPhysicalSpace2D::GetCrossCandidate — returns enabled footholds whose
+   *  bounding boxes intersect the movement segment (xm1,ym1)→(xm2,ym2). Used by
+   *  CollisionDetectFloat to find potential collision targets during freefall. */
+  GetCrossCandidate(xm1: number, ym1: number, xm2: number, ym2: number): Foothold[] {
+    const minX = Math.min(xm1, xm2);
+    const maxX = Math.max(xm1, xm2);
+    const minY = Math.min(ym1, ym2);
+    const maxY = Math.max(ym1, ym2);
+    const result: Foothold[] = [];
+    for (const fh of Object.values(this._footholds)) {
+      if (fh.State === 0) continue;
+      // Bounding-box rejection
+      const fhMinX = Math.min(fh.X1, fh.X2);
+      const fhMaxX = Math.max(fh.X1, fh.X2);
+      const fhMinY = Math.min(fh.Y1, fh.Y2);
+      const fhMaxY = Math.max(fh.Y1, fh.Y2);
+      if (fhMaxX < minX || fhMinX > maxX || fhMaxY < minY || fhMinY > maxY) continue;
+      result.push(fh);
+    }
+    return result;
+  }
+
   GetLadderOrRope(x: number, y: number): LadderRope | null {
     // OG: CField::GetLadderOrRope — checks X distance and Y range
     // The OG uses a wider range for easier grabbing

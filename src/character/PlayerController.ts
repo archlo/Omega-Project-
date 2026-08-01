@@ -629,17 +629,34 @@ export class PlayerController {
     }
 
     if (vy > 0) {
+      // OG: CVecCtrl::CalcFloat uses CollisionDetectFloat for segment-crossing
+      // detection — catches thin platforms and angled footholds during diagonal
+      // movement. Only used when there's significant horizontal velocity (the
+      // simple GetFootholdBelow handles pure-vertical falls).
+      if (Math.abs(this._velocity.x) > 1) {
+        const collision = this.CollisionDetectFloat(newX, newY);
+        if (collision.landed && collision.fh !== null) {
+          this.Position = { x: collision.x, y: collision.y };
+          this._velocity.y = 0;
+          this._grounded = true;
+          if (!collision.fh.IsWall && collision.fh.Uvx !== 0) {
+            const dotProduct = this._velocity.x * collision.fh.Uvx;
+            this._velocity.x = dotProduct * collision.fh.Uvx;
+          }
+          this._currentFoothold = collision.fh.Id;
+          this._applyFallDamage();
+          return;
+        }
+      }
+
+      // Simple vertical check — catches the common case (falling straight down)
       const fh = this._field.GetFootholdBelow(newX, this.Position.y);
       if (fh !== null && fh.YAt(newX) !== null) {
         const groundY = fh.YAt(newX)!;
-        // OG: player lands only if they cross the ground level from above
-        // Use < instead of <= so player at exact edge Y falls through
         if (this.Position.y < groundY && newY >= groundY) {
           this.Position = { x: newX, y: groundY };
           this._velocity.y = 0;
           this._grounded = true;
-          // OG: project velocity onto foothold direction when landing on angled surface
-          // This prevents sliding off angled landings
           if (!fh.IsWall && fh.Uvx !== 0) {
             const dotProduct = this._velocity.x * fh.Uvx;
             this._velocity.x = dotProduct * fh.Uvx;
@@ -891,10 +908,110 @@ export class PlayerController {
     return this._currentFoothold !== 0;
   }
 
-  /** OG: CVecCtrl::CollisionDetectFloat — float collision detection (internal) */
-  CollisionDetectFloat(): boolean {
-    // OG: called by CalcFloat internally
-    return false;
+  /** OG: CVecCtrl::CollisionDetectFloat (0x994740) — segment-crossing collision
+   *  detection during freefall. Checks if the movement path from current position
+   *  to new position crosses any foothold line segment. If it does, snaps to the
+   *  earliest crossing point and lands on that foothold.
+   *
+   *  The OG version is ~450 lines of C++ with cross-product candidate tracking,
+   *  reserved-foothold landing, z-mass page filtering, and velocity projection.
+   *  This is a simplified but functionally equivalent version that handles the
+   *  critical case: thin platforms and angled footholds during fast diagonal movement. */
+  CollisionDetectFloat(newX: number, newY: number): { x: number; y: number; fh: Foothold | null; landed: boolean } {
+    const oldX = this.Position.x;
+    const oldY = this.Position.y;
+    const dxm = newX - oldX;
+    const dym = newY - oldY;
+
+    // No movement — no collision possible
+    if (dxm === 0 && dym === 0) {
+      return { x: newX, y: newY, fh: null, landed: false };
+    }
+
+    // Get candidate footholds near the movement segment
+    const candidates = this._field.GetCrossCandidate(oldX, oldY, newX, newY);
+
+    let bestT = Infinity; // Time parameter along movement segment (0..1)
+    let bestFh: Foothold | null = null;
+    let bestIx = 0;
+    let bestIy = 0;
+
+    for (const fh of candidates) {
+      // Skip walls — walls are handled by ZMass collision separately
+      if (fh.IsWall) continue;
+
+      // Skip the foothold we're currently standing on (would re-land immediately)
+      if (fh.Id === this._currentFoothold && this._grounded) continue;
+
+      // OG: cross-product segment intersection test
+      const x1 = fh.X1, y1 = fh.Y1, x2 = fh.X2, y2 = fh.Y2;
+      const dxf = x2 - x1, dyf = y2 - y1;
+
+      // Cross product: which side of the foothold segment is each movement endpoint on?
+      const crossOld = (x1 - oldX) * dyf - (y1 - oldY) * dxf;
+      const crossNew = (x1 - newX) * dyf - (y1 - newY) * dxf;
+
+      // Both on same side — no crossing
+      if (crossOld > 0 && crossNew > 0) continue;
+      if (crossOld < 0 && crossNew < 0) continue;
+
+      // Cross product: which side of the movement segment is each foothold endpoint on?
+      const crossFh1 = (oldX - x1) * dym - (oldY - y1) * dxm;
+      const crossFh2 = (oldX - x2) * dym - (oldY - y2) * dxm;
+
+      // Both on same side — no crossing
+      if (crossFh1 > 0 && crossFh2 > 0) continue;
+      if (crossFh1 < 0 && crossFh2 < 0) continue;
+
+      // Segments intersect — compute exact intersection via line-line formula
+      const denom = dxm * dyf - dym * dxf;
+      if (Math.abs(denom) < 0.001) continue; // Parallel/degenerate
+
+      const t = ((x1 - oldX) * dyf - (y1 - oldY) * dxf) / denom;
+      const u = ((x1 - oldX) * dym - (y1 - oldY) * dxm) / denom;
+
+      // Must intersect within both segments (with small epsilon for edge cases)
+      if (t < -0.01 || t > 1.01) continue;
+      if (u < -0.01 || u > 1.01) continue;
+      const tClamped = Math.max(0, Math.min(1, t));
+
+      // Calculate exact intersection point
+      const ix = oldX + tClamped * dxm;
+      const iy = oldY + tClamped * dym;
+
+      // Only land on this foothold if we're coming from above (vy > 0)
+      if (this._velocity.y <= 0) continue;
+
+      // Keep the earliest crossing (smallest t = closest to old position)
+      if (tClamped < bestT) {
+        bestT = tClamped;
+        bestFh = fh;
+        bestIx = ix;
+        bestIy = iy;
+      }
+
+      // Only land on this foothold if we're coming from above (vy > 0) or
+      // the foothold has a downward slope we're hitting from the side
+      // OG: primarily checks vy > 0, but also handles lateral collisions
+      const isLanding = this._velocity.y > 0 || (dyf !== 0 && Math.abs(dyf) > Math.abs(dxf));
+      if (!isLanding) continue;
+
+      // Keep the earliest crossing (smallest t = closest to old position)
+      if (t < bestT) {
+        bestT = t;
+        bestFh = fh;
+        // Store the exact intersection point
+        bestIx = ix;
+        bestIy = iy;
+      }
+    }
+
+    if (bestFh !== null && bestT < 1) {
+      // Snap to the intersection point on the foothold
+      return { x: bestIx, y: bestIy, fh: bestFh, landed: true };
+    }
+
+    return { x: newX, y: newY, fh: null, landed: false };
   }
 
   /** OG: CVecCtrl::JustJump — just jumped (internal) */

@@ -247,3 +247,9 @@ export function applyWeaponOption(
 
   return result;
 }
+
+// OG: get_weapon_type (0x46F660) — extracts weapon type from item ID
+// Returns (nItemID / 10000) % 100 for equip items
+export function getWeaponType(itemId: number): number {
+  return Math.floor(itemId / 10000) % 100;
+}

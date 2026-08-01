@@ -209,6 +209,8 @@ export class SkillBook extends GamePanel {
   onDragStart: ((payload: SkillDragPayload, texture: Texture, x: number, y: number) => void) | null = null;
   // OG: SendSkillUpRequest callback
   onSendSkillUp: ((skillId: number) => void) | null = null;
+  // OG: play_ui_sound(StringPool 0x75E) on drag start
+  onDragSound: (() => void) | null = null;
 
   private _skills: SkillRow[] = [];
   private _tabs: SkillRow[][] = [];
@@ -222,6 +224,9 @@ export class SkillBook extends GamePanel {
   characterLevel = 0;
   characterJob = 0;
   characterSubJob = 0;
+  characterHp = 0; // OG: HP check in OnSkillLevelUpButton
+  isAdmin = false; // OG: admin/tester/manager bypass
+  private _lastSkillUpTime = 0; // OG: 500ms cooldown between skill up requests
   // OG: ExtendSP — dual-blade extended SP tracking
   private _extendSP: number[] = [0, 0, 0, 0]; // ExtendSP::Get(tab)
   // OG: Per-tab SP — beginner SP, job SP, extend SP tracked separately
@@ -234,7 +239,7 @@ export class SkillBook extends GamePanel {
   private _bg: Graphics;
   private _titleText: Text;
   private _spText: Text;
-  private _tabGraphics: Graphics[] = [];
+  private _tabSprites: Sprite[] = []; // OG: WZ canvas sprites for tab backgrounds
   private _tabLabels: Text[] = [];
   private _tabLabelStrings: string[] = [...TAB_LABELS];
   private _rowIcons: Sprite[] = [];
@@ -280,13 +285,30 @@ export class SkillBook extends GamePanel {
   public skillIncPanel: SkillIncPanel;
   public skillDecPanel: SkillDecPanel;
   public skillChangeConfirm: SkillChangeConfirm;
+  // OG: CUIWnd position persistence (CreateUIWndPosSaved key 10)
+  private static readonly _posKey = 'SkillBookWndPos';
 
   constructor(loader?: WzTextureLoader, ui?: WzPackage | null,
     font?: BuiltInFont, icons?: ItemIconLoader) {
     super();
     this._root.visible = false;
-    this._root.x = 190;
-    this._root.y = 40;
+
+    // OG: Restore saved position from localStorage
+    try {
+      const saved = localStorage.getItem(SkillBook._posKey);
+      if (saved) {
+        const { x, y } = JSON.parse(saved);
+        if (typeof x === 'number' && typeof y === 'number') {
+          this._root.x = x;
+          this._root.y = y;
+        }
+      }
+    } catch { /* ignore */ }
+    // Default position only if no saved position
+    if (this._root.x === 0 && this._root.y === 0) {
+      this._root.x = 190;
+      this._root.y = 40;
+    }
 
     // OG: CUIWnd::OnCreate loads backgrnd from UIWindow2.img/Skill/main
     let hasWzBg = false;
@@ -452,14 +474,15 @@ export class SkillBook extends GamePanel {
 
     // OG: Tab control at (8, 10), 154×20, nTabSpace=1
     // Max 8 tabs: 6 regular + Aran + DualBlade
+    // OG uses CCtrlTab which renders WZ canvas textures for each tab
     for (let i = 0; i < 8; i++) {
-      const g = new Graphics();
-      this._tabGraphics.push(g);
-      this._root.addChild(g);
+      const s = new Sprite(Texture.EMPTY);
+      s.visible = false;
+      this._tabSprites.push(s);
+      this._root.addChild(s);
       const t = new Text({ text: '', style: _labelStyle });
       this._tabLabels.push(t);
       this._root.addChild(t);
-      g.visible = false;
       t.visible = false;
     }
 
@@ -610,6 +633,16 @@ export class SkillBook extends GamePanel {
     ];
   }
 
+  // OG: Find skill by ID across all tabs
+  private _findSkill(skillId: number): SkillRow | null {
+    for (const tab of this._tabs) {
+      for (const sk of tab) {
+        if (sk.id === skillId) return sk;
+      }
+    }
+    return null;
+  }
+
   // OG: CUISkill::CanSkillUp (0x84a930) — full SP validation
   canSkillUp(skillId: number): boolean {
     const job = Math.floor(skillId / 10000);
@@ -665,13 +698,39 @@ export class SkillBook extends GamePanel {
   onSkillLevelUp(skillId: number): boolean {
     const job = Math.floor(skillId / 10000);
 
-    // OG: admin/tester bypass
-    // (In TS, we trust the caller to handle admin checks)
+    // OG: admin/tester/manager bypass — skip all checks
+    if (this.isAdmin) {
+      const tabSp = this.getTabSp();
+      if (tabSp <= 0) return false;
+      this.sp--;
+      this.onSendSkillUp?.(skillId);
+      this.onSkillUp?.(skillId);
+      return true;
+    }
 
-    // OG: Check SP availability
-    if (this.sp <= 0) return false;
+    // OG: Cooldown check — 500ms between requests (m_tExclRequestSent)
+    const now = performance.now();
+    if (now - this._lastSkillUpTime < 500) return false;
+    this._lastSkillUpTime = now;
 
-    // OG: Validate skill can be leveled up
+    // OG: HP check — must be alive to allocate SP
+    if (this.characterHp <= 0) return false;
+
+    // OG: Check SP availability (per-tab)
+    const tabSp = this.getTabSp();
+    if (tabSp <= 0) return false;
+
+    // OG: bUpButtonDisabled check — some skills block manual allocation
+    const info = this.skillService?.Get(skillId);
+    if (info?.UpButtonDisabled) return false;
+
+    // OG: GetSkillLevelUpState != 1 check — state must be exactly 1 (allocatable)
+    if (info && info.MaxLevel > 0) {
+      const sk = this._findSkill(skillId);
+      if (sk && sk.level >= info.MaxLevel) return false;
+    }
+
+    // OG: Validate skill can be leveled up (per-tier SP check)
     if (isBeginnerJob(job) || isExtendspJob(job)) {
       // Beginner/extendsp skills: always allowed if SP > 0
     } else if (isDualJob(job)) {
@@ -729,14 +788,23 @@ export class SkillBook extends GamePanel {
     // OG: SetScrollBar — range = skillCount - 3 (not VISIBLE_ROWS)
     const tab = this._tabs[this._activeTab] || [];
     this._scrollBar.setRange(Math.max(0, tab.length - 3));
-    // OG: GetRecommendSKill — find recommended skill for current tab
+    // OG: GetRecommendSKill — WZ-driven from Skill.wz/<root>.img/recommend
     this._recommendSkillId = 0;
-    if (tab.length > 0) {
-      // Simple heuristic: recommend the first non-passive skill with level > 0
-      for (const sk of tab) {
-        if (!sk.passive && sk.level > 0 && sk.level < sk.maxLevel) {
-          this._recommendSkillId = sk.id;
-          break;
+    if (tab.length > 0 && this.skillService) {
+      const rootId = tab[0].id ? Math.floor(tab[0].id / 10000) * 1000 : 0;
+      if (rootId > 0) {
+        // OG: sum all skill levels in this root, then find matching recommend entry
+        let nSLVSum = 0;
+        for (const sk of tab) nSLVSum += sk.level;
+        this._recommendSkillId = this.skillService.GetRecommendSkill(rootId, nSLVSum);
+      }
+      // Fallback: first non-passive with level > 0
+      if (!this._recommendSkillId) {
+        for (const sk of tab) {
+          if (!sk.passive && sk.level > 0 && sk.level < sk.maxLevel) {
+            this._recommendSkillId = sk.id;
+            break;
+          }
         }
       }
     }
@@ -776,7 +844,26 @@ export class SkillBook extends GamePanel {
 
     const tab = this._tabs[this._activeTab] || [];
 
-    // OG Draw: Book icon at (15, 55) via pBookIcon
+    // OG Draw: Book icon at (15, 55) via pBookIcon — loaded from Skill.wz/Root/<id>/icon
+    if (this.skillService && this._activeTab < this._tabs.length) {
+      const rootId = this._tabs[this._activeTab]?.[0]?.id
+        ? Math.floor(this._tabs[this._activeTab][0].id / 10000) * 1000
+        : 0;
+      if (rootId > 0) {
+        const bookCanvas = this.skillService.GetBookIcon(rootId);
+        if (bookCanvas && this.textureLoader) {
+          const ws = this.textureLoader.Load(bookCanvas);
+          if (ws) {
+            if (!this._bookIcon) {
+              this._bookIcon = new Sprite(ws.Texture);
+              this._root.addChild(this._bookIcon);
+            } else {
+              this._bookIcon.texture = ws.Texture;
+            }
+          }
+        }
+      }
+    }
     if (this._bookIcon) {
       this._bookIcon.position.set(15, 55);
       this._bookIcon.visible = true;
@@ -793,9 +880,18 @@ export class SkillBook extends GamePanel {
     this._spText.x = 104 - this._spText.width;
     this._spText.y = SP_TEXT_Y;
 
-    // OG Draw: Book name — centered at (104-w/2, 65) via m_pFontBookName
+    // OG Draw: Book name — loaded from Skill.wz/Root/<id>/name via get_labeled_string
     // If width >= 110, split at space: line1 at (50,55), line2 at (50,69)
-    const bookName = this._tabs.length > 0 ? (this._tabLabelStrings[this._activeTab] ?? '') : '';
+    let bookName = this._tabLabelStrings[this._activeTab] ?? '';
+    if (this.skillService && this._activeTab < this._tabs.length) {
+      const rootId = this._tabs[this._activeTab]?.[0]?.id
+        ? Math.floor(this._tabs[this._activeTab][0].id / 10000) * 1000
+        : 0;
+      if (rootId > 0) {
+        const wzName = this.skillService.GetBookName(rootId);
+        if (wzName) bookName = wzName;
+      }
+    }
     this._titleText.text = bookName;
     // OG Draw: measure text width for centering decision (v29 >= 110 check)
     const bookNameWidth = this._titleText.width;
@@ -858,8 +954,17 @@ export class SkillBook extends GamePanel {
           recBg.visible = false;
         }
 
-        // OG Draw: Skill name at (50, nTop-18) via m_pFont
-        this._rowNames[i].text = sk.name || `[${sk.id}]`;
+        // OG Draw: Skill name at (50, nTop-18) via m_pFont — truncated at 95px width
+        const rawName = sk.name || `[${sk.id}]`;
+        this._rowNames[i].text = rawName;
+        // OG: format_string truncates at max pixel width (95px for skill names)
+        if (this._rowNames[i].width > 95) {
+          let truncated = rawName;
+          while (truncated.length > 1 && this._rowNames[i].width > 92) {
+            truncated = truncated.slice(0, -1);
+            this._rowNames[i].text = truncated + '…';
+          }
+        }
         this._rowNames[i].x = 50;
         this._rowNames[i].y = nTop - 18;
 
@@ -937,37 +1042,30 @@ export class SkillBook extends GamePanel {
     const tabSpacing = 1; // OG: nTabSpace = 1
     const tabW = numTabs > 0 ? Math.floor((TAB_W - tabSpacing * (numTabs - 1)) / numTabs) : TAB_W;
 
-    for (let i = 0; i < this._tabGraphics.length; i++) {
+    for (let i = 0; i < this._tabSprites.length; i++) {
       const isActive = i === this._activeTab;
       const tx = TAB_X + i * (tabW + tabSpacing);
 
       // Show/hide tabs based on actual count
-      this._tabGraphics[i].visible = i < numTabs;
+      this._tabSprites[i].visible = i < numTabs;
       this._tabLabels[i].visible = i < numTabs;
       if (i >= numTabs) continue;
 
-      this._tabGraphics[i].clear();
-
-      // OG: Use WZ tab texture if available (Tab/disabled/i, Tab/enabled/i)
-      // These are loaded in the constructor from UIWindow2.img/Skill/main/Tab
+      // OG: Use WZ tab texture sprite if available
+      // These are loaded from Tab/disabled/i and Tab/enabled/i
       const tabTex = isActive
         ? (this._tabEnabledTex[i] ?? this._tabEnabledTex[0] ?? null)
         : (this._tabDisabledTex[i] ?? this._tabDisabledTex[0] ?? null);
 
       if (tabTex) {
-        // WZ texture covers the full tab area — replace the Graphics with a Sprite
-        // For now, draw the texture at the correct position
-        this._tabGraphics[i].rect(tx, TAB_Y, tabW, TAB_H);
-        this._tabGraphics[i].fill({ color: isActive ? '#3C4164' : '#1A1A2E', alpha: 0.9 });
+        this._tabSprites[i].texture = tabTex;
+        this._tabSprites[i].position.set(tx, TAB_Y);
+        this._tabSprites[i].width = tabW;
+        this._tabSprites[i].height = TAB_H;
       } else {
-        // Fallback: graphics-based tab
-        if (isActive) {
-          this._tabGraphics[i].rect(tx, TAB_Y, tabW, TAB_H)
-            .fill({ color: '#3C4164', alpha: 0.8 });
-        } else {
-          this._tabGraphics[i].rect(tx, TAB_Y, tabW, TAB_H)
-            .fill({ color: '#1A1A2E', alpha: 0.6 });
-        }
+        // Fallback: colored rectangle
+        this._tabSprites[i].texture = Texture.EMPTY;
+        this._tabSprites[i].position.set(tx, TAB_Y);
       }
 
       // OG: Tab label text — centered in tab
@@ -985,6 +1083,11 @@ export class SkillBook extends GamePanel {
     this.skillIncPanel.update(_dt);
     this.skillDecPanel.update(_dt);
     this.skillChangeConfirm.update(_dt);
+
+    // OG: CUIWndPosSaved — save position to localStorage
+    try {
+      localStorage.setItem(SkillBook._posKey, JSON.stringify({ x: this._root.x, y: this._root.y }));
+    } catch { /* ignore */ }
   }
 
   // OG: GetSkillIndexFromPoint — hit testing (v10 starts at 127, step 40)
@@ -1079,6 +1182,8 @@ export class SkillBook extends GamePanel {
       if (abs < tab.length) {
         const sk = tab[abs];
         if (!sk.passive && sk.level > 0) {
+          // OG: play_ui_sound(StringPool 0x75E) on drag start
+          this.onDragSound?.();
           this.onDragStart?.({ skillId: sk.id }, this._rowIcons[iconIdx].texture, x, y);
           const now = performance.now();
           const isDoubleClick = sk.id === this._lastClickSkillId && now - this._lastClickTime < 400;
@@ -1097,6 +1202,7 @@ export class SkillBook extends GamePanel {
       if (abs < tab.length) {
         const sk = tab[abs];
         if (!sk.passive && sk.level > 0) {
+          this.onDragSound?.();
           this.onDragStart?.({ skillId: sk.id }, this._rowIcons[rowIdx].texture, x, y);
           const now = performance.now();
           const isDoubleClick = sk.id === this._lastClickSkillId && now - this._lastClickTime < 400;
@@ -1216,13 +1322,21 @@ export class SkillBook extends GamePanel {
     // OG: SetScrollBar — range = skillCount - 3
     const tab = this._tabs[this._activeTab] || [];
     this._scrollBar.setRange(Math.max(0, tab.length - 3));
-    // OG: GetRecommendSKill — find recommended skill for new tab
+    // OG: GetRecommendSKill — WZ-driven from Skill.wz/<root>.img/recommend
     this._recommendSkillId = 0;
-    if (tab.length > 0) {
-      for (const sk of tab) {
-        if (!sk.passive && sk.level > 0 && sk.level < sk.maxLevel) {
-          this._recommendSkillId = sk.id;
-          break;
+    if (tab.length > 0 && this.skillService) {
+      const rootId = tab[0].id ? Math.floor(tab[0].id / 10000) * 1000 : 0;
+      if (rootId > 0) {
+        let nSLVSum = 0;
+        for (const sk of tab) nSLVSum += sk.level;
+        this._recommendSkillId = this.skillService.GetRecommendSkill(rootId, nSLVSum);
+      }
+      if (!this._recommendSkillId) {
+        for (const sk of tab) {
+          if (!sk.passive && sk.level > 0 && sk.level < sk.maxLevel) {
+            this._recommendSkillId = sk.id;
+            break;
+          }
         }
       }
     }

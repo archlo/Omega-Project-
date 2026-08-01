@@ -56,6 +56,16 @@ function makeField() {
       }
       return null;
     },
+    GetCrossCandidate(xm1: number, ym1: number, xm2: number, ym2: number) {
+      const minX = Math.min(xm1, xm2), maxX = Math.max(xm1, xm2);
+      const minY = Math.min(ym1, ym2), maxY = Math.max(ym1, ym2);
+      return Object.values(this._footholds).filter((fh: any) => {
+        if (fh.State === 0) return false;
+        const fhMinX = Math.min(fh.X1, fh.X2), fhMaxX = Math.max(fh.X1, fh.X2);
+        const fhMinY = Math.min(fh.Y1, fh.Y2), fhMaxY = Math.max(fh.Y1, fh.Y2);
+        return fhMaxX >= minX && fhMinX <= maxX && fhMaxY >= minY && fhMinY <= maxY;
+      });
+    },
     GetLadderOrRope(_x: number, _y: number) { return null; },
     GetZMassWallX(_zmass: number, _fromX: number, _toX: number, _yTop: number, _yBottom: number) { return null; },
   } as any;
