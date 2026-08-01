@@ -8,6 +8,8 @@ import { WzSprite } from '../../render/WzSprite.js';
 import { Button } from '../Button.js';
 import { Sprite } from 'pixi.js';
 import { getIdealStatUp, StatPair } from './StatDetailInfo.js';
+import { StringPoolService } from '../../localization/StringPoolService.js';
+import { ToolTip } from './ToolTip.js';
 
 // OG CUIStat constants (from IDA decompilation — Draw @ 0x864bd0)
 const PANEL_W = 172;
@@ -30,10 +32,12 @@ const Y_INT = 263;
 const Y_LUK = 281;
 
 // OG OnMouseMove: EXP tooltip area hit-test (rx-55 > 0x6D || ry-138 > 0xD)
+// Valid range: rx in [55, 164], ry in [138, 151]
+// Width = 109 (0x6D), Height = 13 (0xD)
 const EXP_TOOLTIP_X = 55;
 const EXP_TOOLTIP_Y = 138;
-const EXP_TOOLTIP_W = 110; // 0x6D+1
-const EXP_TOOLTIP_H = 14;  // 0xD+1
+const EXP_TOOLTIP_W = 109; // 0x6D
+const EXP_TOOLTIP_H = 13;  // 0xD
 
 // OG Button IDs (from OnCreate / OnButtonClicked)
 const BT_HP_UP = 0x7D0;
@@ -90,11 +94,6 @@ export class StatsInfo extends GamePanel {
   // OG: AutoApUp shows confirmation dialog before sending
   onAutoApConfirm: ((alloc: { str: number; dex: number; intStat: number; luk: number }) => void) | null = null;
 
-  // OG: CToolTipHelper — tooltip from StringPool 1993
-  private _tooltipText: string = '';
-  private _tooltipVisible = false;
-  private _tooltipContainer: Container | null = null;
-
   // OG: AutoApUp confirmation dialog
   private _confirmContainer: Container | null = null;
 
@@ -150,11 +149,30 @@ export class StatsInfo extends GamePanel {
   // OG: CUIWnd canvas overlay (StringPool 976) — semi-transparent mask
   private _overlay: Graphics;
 
-  constructor(loader: WzTextureLoader, ui: WzPackage | null) {
+  private _stringPool: StringPoolService | null = null;
+  private _toolTip: ToolTip | null = null;
+
+  constructor(loader: WzTextureLoader, ui: WzPackage | null, stringPool?: StringPoolService) {
     super();
+    this._stringPool = stringPool ?? null;
+    this._toolTip = new ToolTip();
     this._root.visible = false;
-    this._root.x = 10;
-    this._root.y = 80;
+
+    // OG: CUIWnd position persistence — save/restore via localStorage key 10
+    const savedPos = localStorage.getItem('CUIStatWndPos');
+    if (savedPos) {
+      try {
+        const pos = JSON.parse(savedPos);
+        this._root.x = pos.x ?? 10;
+        this._root.y = pos.y ?? 80;
+      } catch { this._root.x = 10; this._root.y = 80; }
+    } else {
+      this._root.x = 10;
+      this._root.y = 80;
+    }
+
+    // OG: CUIWnd::OnCreate creates close button (type 1 = BtClose)
+    this.createCloseButton(loader, ui, 1, PANEL_W);
 
     // OG: CUIWnd::OnCreate loads 3 background layers from UIWindow2.img/Stat/main
     const stat = ui?.GetItem('UIWindow2.img/Stat/main') as WzProperty | null;
@@ -193,9 +211,7 @@ export class StatsInfo extends GamePanel {
     this._root.addChild(this._contentLayer);
 
     // OG: CToolTipHelper — load tooltip from StringPool 1993
-    // The string contains stat descriptions separated by newlines
-    // Format: "Level: %d\nSTR: %d\nDEX: %d\n..." — displayed on hover
-    this._tooltipText = '';
+    // Loaded via ToolTip class
 
     // OG: m_apCanvasDisabled — load stat icons from UI/UIWindow2.img/Stat/main/Disabled/{statName}
     // These are the small stat icons drawn next to each stat label in Draw
@@ -311,7 +327,6 @@ export class StatsInfo extends GamePanel {
       // 0x7D2→SendAbilityUp(0x40), 0x7D3→SendAbilityUp(0x80),
       // 0x7D4→SendAbilityUp(0x100), 0x7D5→SendAbilityUp(0x200),
       // 0x7D6→ToggleDetail, 0x7D7/0x7D8→AutoApUp(1), 0x7D9→AutoApUp(0)
-      console.log(`[StatsInfo] Buttons loaded: HpUp=${!!this._btHpUp}, MpUp=${!!this._btMpUp}, StrUp=${!!this._btStrUp}, DexUp=${!!this._btDexUp}, IntUp=${!!this._btIntUp}, LukUp=${!!this._btLukUp}, Auto=${!!this._btAuto}, Auto1=${!!this._btAuto1}, Auto2=${!!this._btAuto2}, Detail=${!!this._btDetailOpen}`);
       if (this._btHpUp) { this._btHpUp.onClick = () => this.onHpUp?.(); this._contentLayer.addChild(this._btHpUp.container); }
       if (this._btMpUp) { this._btMpUp.onClick = () => this.onMpUp?.(); this._contentLayer.addChild(this._btMpUp.container); }
       if (this._btStrUp) { this._btStrUp.onClick = () => this.onStrUp?.(); this._contentLayer.addChild(this._btStrUp.container); }
@@ -334,11 +349,9 @@ export class StatsInfo extends GamePanel {
   private _loadButton(loader: WzTextureLoader, prop: WzProperty, name: string): Button | null {
     const btnProp = prop.Get(name);
     if (!(btnProp instanceof WzProperty)) {
-      console.warn(`[StatsInfo] Button ${name} not found in WZ`);
       return null;
     }
     const btn = Button.fromWz(loader, btnProp);
-    console.log(`[StatsInfo] Button ${name} loaded: ${!!btn}`);
     return btn;
   }
 
@@ -350,7 +363,6 @@ export class StatsInfo extends GamePanel {
   }
 
   // OG: ToggleDetail — CUIStatDetail at (GetAbsLeft+172, GetAbsTop+90)
-  private _debugLogged = false;
 
   get detailVisible(): boolean { return this._detailVisible; }
 
@@ -413,14 +425,6 @@ export class StatsInfo extends GamePanel {
 
   update(_dt: number): void {
     if (!this.isVisible) return;
-
-    // Debug: confirm update() is called and text elements exist
-    if (!this._debugLogged) {
-      this._debugLogged = true;
-      console.log(`[StatsInfo] update() called: name="${this._playerName}", level=${this.level}, job="${this.job}", hp=${this.hp}/${this.maxHp}`);
-      console.log(`[StatsInfo] Text elements: nameText=${!!this._nameText}, visible=${this._nameText?.visible}, parent=${this._nameText?.parent?.constructor?.name}`);
-      console.log(`[StatsInfo] _contentLayer: visible=${this._contentLayer?.visible}, children=${this._contentLayer?.children?.length}`);
-    }
 
     // OG Draw: all text at x=54, Y positions match DrawTextA calls
     this._nameText.text = this._playerName || '';
@@ -530,6 +534,11 @@ export class StatsInfo extends GamePanel {
     }
 
     this._updateButtonStates();
+
+    // OG: CUIWnd position persistence — save current position
+    try {
+      localStorage.setItem('CUIStatWndPos', JSON.stringify({ x: this._root.x, y: this._root.y }));
+    } catch { /* ignore */ }
   }
 
   private _playerName = '';
@@ -539,6 +548,8 @@ export class StatsInfo extends GamePanel {
   }
 
   // OG: OnMouseMove — EXP tooltip and CToolTipHelper (from cuistat_OnMouseMove_clean.txt)
+  private _tooltipShown = false;
+
   handleMouseMove(x: number, y: number): void {
     if (!this.isVisible) return;
     const lx = x - this._root.x;
@@ -556,73 +567,60 @@ export class StatsInfo extends GamePanel {
       if (tooltipStr) {
         // OG: CUIToolTip::SetToolTip_String at (IsMyAddon() + rx + 20, ry + 20)
         this._showExpTooltip(lx + 20, ly + 20, tooltipStr);
+        this._tooltipShown = true;
       }
     } else {
       // OG LABEL_15: CToolTipHelper::CheckAndShow with offset 8 when beginner
       // When not in EXP area, show CToolTipHelper if available
-      if (!this._tooltipVisible) {
-        this._tooltipVisible = true;
+      if (!this._tooltipShown) {
+        this._tooltipShown = true;
         this._showTooltip(lx, ly);
       }
     }
 
     // OG: clear tooltip when mouse leaves all areas
-    if (!inExpArea && this._tooltipVisible) {
+    if (!inExpArea && this._tooltipShown) {
       // Check if still in stat area
       const inStatArea = lx >= 0 && lx < PANEL_W && ly >= Y_NAME && ly < Y_LUK + 16;
       if (!inStatArea) {
-        this._tooltipVisible = false;
+        this._tooltipShown = false;
         this._hideTooltip();
       }
     }
   }
 
   private _showTooltip(lx: number, ly: number): void {
-    if (!this._tooltipContainer) {
-      this._tooltipContainer = new Container();
-      const bg = new Graphics();
-      bg.roundRect(0, 0, 200, 60, 4).fill({ color: '#0C0C16', alpha: 240 / 255 });
-      bg.roundRect(0, 0, 200, 60, 4).stroke({ color: '#46465A', width: 1 });
-      this._tooltipContainer.addChild(bg);
-      const tipText = new Text({
-        text: this._buildTooltipText(),
-        style: new TextStyle({ fill: '#C8C8C8', fontSize: 9, fontFamily: 'monospace', wordWrap: true, wordWrapWidth: 190 }),
-      });
-      tipText.x = 5; tipText.y = 5;
-      this._tooltipContainer.addChild(tipText);
-      this._root.addChild(this._tooltipContainer);
+    if (!this._toolTip) return;
+
+    // OG: CToolTipHelper::CheckAndShow — show stat tooltip on hover
+    this._toolTip.clearToolTip();
+
+    // Build tooltip content using ToolTip's line system
+    const tooltipText = this._buildTooltipText();
+    const lines = tooltipText.split('\n');
+
+    for (const line of lines) {
+      this._toolTip.addInfo(line, 11); // GEN_WHITE
     }
-    // Position tooltip near cursor, clamped to panel bounds
-    this._tooltipContainer.x = Math.min(lx + 10, PANEL_W - 210);
-    this._tooltipContainer.y = Math.min(ly - 65, PANEL_H - 70);
-    this._tooltipContainer.visible = true;
+
+    // Position and show
+    this._toolTip.setToolTipString(lx + 20, ly + 20, '');
+    this._root.addChild(this._toolTip.container);
   }
 
   private _hideTooltip(): void {
-    if (this._tooltipContainer) this._tooltipContainer.visible = false;
+    if (this._toolTip) {
+      this._toolTip.clearToolTip();
+    }
   }
 
   private _showExpTooltip(lx: number, ly: number, text: string): void {
+    if (!this._toolTip) return;
+
     // OG: CUIToolTip::SetToolTip_String — shows a single-line tooltip near cursor
-    if (!this._tooltipContainer) {
-      this._tooltipContainer = new Container();
-      const bg = new Graphics();
-      bg.roundRect(0, 0, 200, 60, 4).fill({ color: '#0C0C16', alpha: 240 / 255 });
-      bg.roundRect(0, 0, 200, 60, 4).stroke({ color: '#46465A', width: 1 });
-      this._tooltipContainer.addChild(bg);
-      const tipText = new Text({
-        text: '',
-        style: new TextStyle({ fill: '#C8C8C8', fontSize: 9, fontFamily: 'monospace', wordWrap: true, wordWrapWidth: 190 }),
-      });
-      tipText.x = 5; tipText.y = 5;
-      this._tooltipContainer.addChild(tipText);
-      this._root.addChild(this._tooltipContainer);
-    }
-    const tipText = this._tooltipContainer.children[1] as Text;
-    if (tipText) tipText.text = text;
-    this._tooltipContainer.x = Math.min(lx, PANEL_W - 210);
-    this._tooltipContainer.y = Math.min(ly, PANEL_H - 70);
-    this._tooltipContainer.visible = true;
+    this._toolTip.clearToolTip();
+    this._toolTip.setToolTipString(lx + 20, ly + 20, text);
+    this._root.addChild(this._toolTip.container);
   }
 
   private _buildTooltipText(): string {
@@ -654,7 +652,7 @@ export class StatsInfo extends GamePanel {
     // OG OnMouseButton: msg == 513 (WM_LBUTTONDOWN) → CUIToolTip::ClearToolTip
     if (down) {
       this._hideTooltip();
-      this._tooltipVisible = false;
+      this._tooltipShown = false;
     }
 
     // Check WZ buttons first
@@ -845,8 +843,8 @@ export class StatsInfo extends GamePanel {
         ], font);
         break;
       case 400: // Thief
-        // nDir=1, nX=149, nY=230, StringPool 0x14BA + 0x14BE + 0x1A45
-        this._createBalloonTip(1, 149, 230, 1, [
+        // nDir=2, nX=160, nY=248, StringPool 0x14BA + 0x14BE + 0x1A45
+        this._createBalloonTip(1, 160, 248, 2, [
           this._getStringPoolText(0x14BA),
           this._getStringPoolText(0x14BE),
           this._getStringPoolText(0x1A45),
@@ -962,9 +960,15 @@ export class StatsInfo extends GamePanel {
   }
 
   // OG: StringPool::GetString — resolves StringPool ID to text
-  // Loads from String.wz at runtime
+  // Loads from String.wz at runtime via StringPoolService
   private _getStringPoolText(id: number): string {
-    // Fallback text for common StringPool IDs
+    // Try loading from StringPoolService first
+    if (this._stringPool) {
+      const text = this._stringPool.getString(id);
+      if (text) return text;
+    }
+
+    // Fallback text for common StringPool IDs (when String.wz not available)
     const fallbacks: Record<number, string> = {
       0x14BA: 'Tip: Use AP to raise',
       0x14BB: 'your STR for melee attacks.',

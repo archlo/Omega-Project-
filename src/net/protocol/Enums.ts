@@ -348,26 +348,34 @@ export const enum InventoryOpType {
   UpdateExp      = 4,
 }
 
-/** DropEnter (OutHeader.DropEnterField=322) enterType byte. */
+/** DropEnter (OutHeader.DropEnterField=322) enterType byte.
+ *  Values match server DropEnterType enum (Kinoko port). */
 export const enum DropEnterType {
-  Show     = 0,
-  Existing = 1,
-  Tween    = 2,
-  Fade     = 3,
-  ShowFade = 4,
-  ShowDrop = 5,
-  MoneyShow = 6,
-  Fade2    = 7,
+  /** Drop already on the field when player enters — no animation. */
+  JustShowing  = 0,
+  /** New drop created (mob kill) — parabolic fall from source. */
+  Create       = 1,
+  /** Drop placed directly on foothold — no fall animation. */
+  OnTheFoothold = 2,
+  /** Drop fading out (reactor expiry, etc). */
+  FadingOut    = 3,
 }
 
-/** DropLeave (OutHeader.DropLeaveField=324) leaveType byte. */
+/** DropLeave (OutHeader.DropLeaveField=324) leaveType byte.
+ *  Values match server DropLeaveType enum (Kinoko port). */
 export const enum DropLeaveType {
-  Timeout        = 0,
-  PickedUp       = 1,
-  PickupOther    = 2,
-  PickedUpByRemote = 3,
-  RemovedByAdmin = 4,
-  PickedUpBySelf = 5,
+  /** Drop expired on ground. */
+  Timeout          = 0,
+  /** Screen scrolled past drop. */
+  ScreenScroll     = 1,
+  /** Picked up by a user (pickUpId = charId). */
+  PickedUpByUser   = 2,
+  /** Picked up by a mob. */
+  PickedUpByMob    = 3,
+  /** Exploded (meso explosion skill). */
+  Explode          = 4,
+  /** Picked up by a pet (pickUpId = charId, then petIndex). */
+  PickedUpByPet    = 5,
 }
 
 /** Trunk payload flag bits — FieldHandlers.ts:810-820 (BigInt-mask against a readLong()).

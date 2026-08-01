@@ -150,23 +150,19 @@ describe('Protocol enums — values match the v95 dump (enums.json)', () => {
   });
 
   it('DropEnterType', () => {
-    expect(DropEnterType.Show).toBe(0);
-    expect(DropEnterType.Existing).toBe(1);
-    expect(DropEnterType.Tween).toBe(2);
-    expect(DropEnterType.Fade).toBe(3);
-    expect(DropEnterType.ShowFade).toBe(4);
-    expect(DropEnterType.ShowDrop).toBe(5);
-    expect(DropEnterType.MoneyShow).toBe(6);
-    expect(DropEnterType.Fade2).toBe(7);
+    expect(DropEnterType.JustShowing).toBe(0);
+    expect(DropEnterType.Create).toBe(1);
+    expect(DropEnterType.OnTheFoothold).toBe(2);
+    expect(DropEnterType.FadingOut).toBe(3);
   });
 
   it('DropLeaveType', () => {
     expect(DropLeaveType.Timeout).toBe(0);
-    expect(DropLeaveType.PickedUp).toBe(1);
-    expect(DropLeaveType.PickupOther).toBe(2);
-    expect(DropLeaveType.PickedUpByRemote).toBe(3);
-    expect(DropLeaveType.RemovedByAdmin).toBe(4);
-    expect(DropLeaveType.PickedUpBySelf).toBe(5);
+    expect(DropLeaveType.ScreenScroll).toBe(1);
+    expect(DropLeaveType.PickedUpByUser).toBe(2);
+    expect(DropLeaveType.PickedUpByMob).toBe(3);
+    expect(DropLeaveType.Explode).toBe(4);
+    expect(DropLeaveType.PickedUpByPet).toBe(5);
   });
 
   it('WhisperFlag (ENUM_CField_v3)', () => {

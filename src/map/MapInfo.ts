@@ -67,6 +67,9 @@ export class MapInfo {
   // OG: RestorePeculiarInfo (0x546560) — `peculiarInfo` node
   PeculiarInfo = '';
 
+  // OG: m_nMiniMapType — 0=simple (has 2X button), 1=normal (has min/max/worldmap buttons)
+  MiniMapType = 0;
+
   // OG: RestoreSwinArea (0x5330E0) — `swimArea` node, swim-capable regions
   SwimAreaRect: { left: number; top: number; right: number; bottom: number } | null = null;
 

@@ -2056,9 +2056,13 @@ export class FieldHandlers {
     const x = p.readShort();
     const y = p.readShort();
     const sourceId = p.readInt();
-    const animated = enterType !== DropEnterType.Tween;
+    // OG: source position block is written for all enter types except
+    // ON_THE_FOOTHOLD (server writes it whenever enterType != 2).
+    // Only Create (1) triggers the parabolic fall animation in DropSprite.
+    const hasSourcePos = enterType !== DropEnterType.OnTheFoothold;
+    const animated = enterType === DropEnterType.Create;
     let sx = x, sy = y;
-    if (animated) {
+    if (hasSourcePos) {
       try {
         sx = p.readShort();
         sy = p.readShort();
@@ -2072,9 +2076,9 @@ export class FieldHandlers {
     const leaveType = p.readByte();
     const dropId = p.readInt();
     let pickUpId = 0;
-    if (leaveType === DropLeaveType.PickupOther
-        || leaveType === DropLeaveType.PickedUpByRemote
-        || leaveType === DropLeaveType.PickedUpBySelf) {
+    if (leaveType === DropLeaveType.PickedUpByUser
+        || leaveType === DropLeaveType.PickedUpByMob
+        || leaveType === DropLeaveType.PickedUpByPet) {
       try { pickUpId = p.readInt(); } catch {}
     }
     this.onDropLeave?.({ dropId, leaveType, pickUpId });

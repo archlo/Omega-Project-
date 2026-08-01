@@ -1067,7 +1067,8 @@ export class GameStage extends Stage {
       this._miniMap.setPortals(
         Object.values(this._field.Portals).map((p) => ({ x: p.X, y: p.Y })),
       );
-      this._miniMap.setMiniMapType(0);
+      // OG: m_nMiniMapType — read from field info (0=simple, 1=normal)
+      this._miniMap.setMiniMapType(this._field.Info.MiniMapType as 0 | 1);
       this._miniMap.onPlayerDotClick = () => this.game.session.send(GameSender.UserMiniMapClick());
       this._miniMap.setFootholds(this._field.Footholds);
       this._miniMap.onBtWorldMap = () => {
@@ -2442,7 +2443,7 @@ export class GameStage extends Stage {
       Array.from(this._otherChars.values(), (c) => ({ x: c.Position.x, y: c.Position.y })),
     );
     // OG: CUIMiniMap::Update reads CNpcPool — quest NPCs get StartNpc icon
-    this._miniMap.setNpcs(this._npcs.map((n) => ({ x: n.Position.x, y: n.Position.y, quest: false })));
+    this._miniMap.setNpcs(this._npcs.map((n) => ({ x: n.Position.x, y: n.Position.y, quest: n.QuestInfoVisible || n.QuestList.length > 0 })));
     // OG: CUIMiniMap::Update reads CEmployeePool for merchant icons
     this._miniMap.setMerchants(
       Array.from(this._employees.values(), (e) => ({ x: e.Position.x, y: e.Position.y })),
@@ -4677,8 +4678,8 @@ export class GameStage extends Stage {
       this._miniMap.setPortals(
         Object.values(this._field.Portals).map((p) => ({ x: p.X, y: p.Y })),
       );
-      // OG: m_nMiniMapType=0 (simple mode with 2X button)
-      this._miniMap.setMiniMapType(0);
+      // OG: m_nMiniMapType — read from field info (0=simple, 1=normal)
+      this._miniMap.setMiniMapType(this._field.Info.MiniMapType as 0 | 1);
       // OG: OnMouseButton — sends packet when clicking player dot
       this._miniMap.onPlayerDotClick = () => this.game.session.send(GameSender.UserMiniMapClick());
       // Live foothold reference for dynamic foothold state on minimap
@@ -6162,9 +6163,9 @@ export class GameStage extends Stage {
   // position this client doesn't track for drops) keeps the prior instant
   // removal.
   private _onDropLeave(args: DropLeaveArgs): void {
-    const isPickup = args.leaveType === DropLeaveType.PickupOther
-      || args.leaveType === DropLeaveType.PickedUpByRemote
-      || args.leaveType === DropLeaveType.PickedUpBySelf;
+    const isPickup = args.leaveType === DropLeaveType.PickedUpByUser
+      || args.leaveType === DropLeaveType.PickedUpByMob
+      || args.leaveType === DropLeaveType.PickedUpByPet;
     if (isPickup && args.pickUpId === this._localCharId && this._player) {
       const drop = this._drops.find((d) => d.DropId === args.dropId);
       if (drop) { drop.StartAbsorb(() => this._player!.Position); return; }

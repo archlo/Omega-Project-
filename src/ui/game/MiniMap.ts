@@ -512,32 +512,39 @@ export class MiniMap extends GamePanel {
   // OG: Save window position for CUIWndPosSaved
   private _savePosition(): void {
     const pos = this._root.position;
+    this._savedX = pos.x;
+    this._savedY = pos.y;
     try {
       localStorage.setItem(PosSaveKey, JSON.stringify({ x: pos.x, y: pos.y }));
     } catch {}
   }
 
   private _drawMapAndIcons(pane: { x: number; y: number; width: number; height: number }, scale: number): void {
+    // OG: Draw background even when canvas is null
     if (!this._data?.Canvas) {
       this._gfx.rect(pane.x, pane.y, pane.width, pane.height).fill({ color: 0x1c241c, alpha: 0.8 });
-      return;
+      // Continue to draw icons even without canvas
     }
 
     // OG: Use simple mode canvas when m_nMiniMapType=0
     const isHuge = this._miniMapType === 0 && this._mode === 0;
     const canvas = this._miniMapType === 0
-      ? (isHuge ? this._simpleCanvasHuge : this._simpleCanvas) ?? this._data.Canvas
-      : this._data.Canvas;
+      ? (isHuge ? this._simpleCanvasHuge : this._simpleCanvas) ?? this._data?.Canvas
+      : this._data?.Canvas;
     const mag = this._mag;
 
     // OG: CalculateScr — compute screen origin from player position
     // This determines which part of the map to show in the pane
-    const scrOrig = this._calculateScr(this.playerWorldPos, pane.width, pane.height, mag);
+    // BUG FIX: _calculateScr expects canvas-pixel dimensions, not screen-pixel
+    // In huge mode, pane.width is 2x the canvas width, so we divide by scale
+    const canvasPaneW = canvas ? canvas.Width : pane.width / scale;
+    const canvasPaneH = canvas ? canvas.Height : pane.height / scale;
+    const scrOrig = this._calculateScr(this.playerWorldPos, canvasPaneW, canvasPaneH, mag);
 
     // OG: Map canvas is drawn at the viewport position
     // The canvas is scaled by the magnification factor
-    const mapW = canvas.Width * scale;
-    const mapH = canvas.Height * scale;
+    const mapW = (canvas?.Width ?? 0) * scale;
+    const mapH = (canvas?.Height ?? 0) * scale;
 
     // OG: Map position is determined by CalculateScr
     // If map fits in pane, center it. Otherwise, scroll based on scrOrig
@@ -560,19 +567,22 @@ export class MiniMap extends GamePanel {
       mapY = pane.y - Math.floor(scrOrig.y * scale);
     }
 
-    const mapSprite = new Sprite(canvas.Texture);
-    mapSprite.width = mapW;
-    mapSprite.height = mapH;
-    mapSprite.position.set(mapX, mapY);
-    this._content.addChildAt(mapSprite, 0);
+    // Draw map canvas if available
+    if (canvas) {
+      const mapSprite = new Sprite(canvas.Texture);
+      mapSprite.width = mapW;
+      mapSprite.height = mapH;
+      mapSprite.position.set(mapX, mapY);
+      this._content.addChildAt(mapSprite, 0);
+    }
 
     // OG: MakeConvexLayer — draw foothold lines on minimap
-    if (this._data.Footholds.length > 0) {
+    if (this._data && this._data.Footholds.length > 0) {
       this._drawFootholds(pane, scrOrig, mag, scale);
     }
 
     // OG: LoadLadderRope — draw ladders/ropes on minimap
-    if (this._data.LadderRopes.length > 0) {
+    if (this._data && this._data.LadderRopes.length > 0) {
       this._drawLadderRopes(pane, scrOrig, mag, scale);
     }
 
@@ -769,9 +779,14 @@ export class MiniMap extends GamePanel {
 
     this._drawTitle(win, this._stripW?.width ?? 64, StripH);
 
+    // OG: Position buttons at right side of strip (same as expanded mode)
+    const borderR = this._stripE?.width ?? 9;
+    let bx = win.x + win.width - borderR - this._buttonsWidth() + BtnGap;
+    const by = win.y + Math.max(2, Math.floor((StripH - 12) / 2));
+
     for (const b of this._buttons) {
-      b.container.x = win.x;
-      b.container.y = win.y;
+      b.container.position.set(bx, by);
+      bx += b.width + BtnGap;
       this._content.addChild(b.container);
     }
   }
@@ -782,8 +797,16 @@ export class MiniMap extends GamePanel {
 
     const tx = win.x + tabW - 8;
 
-    // OG: expanded modes (m_nOption 0/1) show street name + map name on two lines
-    // Collapsed mode (m_nOption 2) shows map name + map ID
+    // OG: Collapsed mode (m_nOption 2) shows only map name centered in strip
+    if (this._mode === 2) {
+      const ty = win.y + Math.floor((bandH - 12) / 2);
+      const t = new Text({ text: title, style: new TextStyle({ fill: 0xffffff, fontSize: 10, fontFamily: 'monospace' }) });
+      t.position.set(tx, ty);
+      this._content.addChild(t);
+      return;
+    }
+
+    // OG: Expanded modes (m_nOption 0/1) show street name + map name on two lines
     if (this._streetName) {
       const streetText = new Text({ text: this._streetName, style: new TextStyle({ fill: 0xaaaa82, fontSize: 10, fontFamily: 'monospace' }) });
       streetText.position.set(tx, win.y + 4);
@@ -857,9 +880,10 @@ export class MiniMap extends GamePanel {
   }
 
   private _winRect(): { x: number; y: number; width: number; height: number } {
-    // OG: CUIWndPosSaved — restore from localStorage if available
-    const x = this._savedX ?? 4;
-    const y = this._savedY ?? 4;
+    // OG: Window rect in local coordinates (relative to _root)
+    // _root.position handles the screen offset, so _winRect returns local (0,0)
+    const x = 0;
+    const y = 0;
 
     // OG: m_nOption 2 = collapsed → just the title strip
     if (this._mode === 2) {
@@ -974,7 +998,10 @@ export class MiniMap extends GamePanel {
         height: win.height - frame.titleH - frame.borderB,
       };
       // OG: CalculateScr for player position
-      const scrOrig = this._calculateScr(this.playerWorldPos, pane.width, pane.height, mag);
+      // BUG FIX: _calculateScr expects canvas-pixel dimensions, not screen-pixel
+      const canvasPaneW = this._data?.Canvas ? this._data.Canvas.Width : pane.width / scale;
+      const canvasPaneH = this._data?.Canvas ? this._data.Canvas.Height : pane.height / scale;
+      const scrOrig = this._calculateScr(this.playerWorldPos, canvasPaneW, canvasPaneH, mag);
       // OG: TransformPoint for player
       const c = this._transformPoint(this.playerWorldPos, scrOrig, mag);
       const px = pane.x + c.x * scale;

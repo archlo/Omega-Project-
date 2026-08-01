@@ -241,6 +241,10 @@ export class FieldScene {
     // RestorePeculiarInfo (0x546560): reads `peculiarInfo` node
     mi.PeculiarInfo = (info.Get('peculiarInfo') as string) ?? '';
 
+    // OG: m_nMiniMapType — reads `miniMapType` node
+    // 0=simple (has 2X button), 1=normal (has min/max/worldmap buttons)
+    mi.MiniMapType = this._readInt(info, 'miniMapType');
+
     // RestoreSwinArea (0x5330E0): reads `swimArea` node
     const swimAreaNode = info.Get('swimArea');
     if (swimAreaNode instanceof WzProperty) {

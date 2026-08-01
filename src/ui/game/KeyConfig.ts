@@ -104,6 +104,9 @@ export class KeyConfig extends GamePanel implements DragTarget {
   private _dragMouseX = 0;
   private _dragMouseY = 0;
 
+  // Click-to-bind: selected key cell waiting for a palette action
+  private _selectedKeySc = -1;
+
   private _windowDrag = false;
   private _windowDragOffX = 0;
   private _windowDragOffY = 0;
@@ -399,7 +402,8 @@ export class KeyConfig extends GamePanel implements DragTarget {
       const icon = this._iconFor(this._dragIcon);
       if (icon) {
         const s = icon.ToPixi();
-        s.position.set(dmLx - 16, dmLy - 16);
+        // Anchor is OriginY/Height; most key icons have origin at bottom
+        s.position.set(dmLx - icon.Width * s.anchor.x, dmLy - icon.Height * s.anchor.y);
         this._content.addChild(s);
       } else {
         this._drawPlaceholder(dmLx - 16, dmLy - 16, this._dragIcon);
@@ -438,6 +442,10 @@ export class KeyConfig extends GamePanel implements DragTarget {
       } else {
         this._gfx.rect(cell.x, cell.y, CellSize, CellSize).fill({ color: 0x2a2d3a });
         this._gfx.rect(cell.x, cell.y, CellSize, CellSize).stroke({ color: 0x3c4060, width: 1 });
+      }
+      // Highlight selected key (awaiting palette action)
+      if (sc === this._selectedKeySc) {
+        this._gfx.rect(cell.x - 1, cell.y - 1, CellSize + 2, CellSize + 2).stroke({ color: 0xffd700, width: 2 });
       }
       // OG: Draw key name label (e.g., "A", "1", "F1") from WZ
       const label = this._loadKeyLabel(sc);
@@ -602,23 +610,58 @@ export class KeyConfig extends GamePanel implements DragTarget {
     if (!inside) return false;
 
     const sc = hitTestKey(lx, ly);
-    if (sc >= 0 && this._isBound(this._map[sc])) {
-      this._dragIcon = this._map[sc];
-      this._dragFromScancode = sc;
-      this._map[sc] = { ...FuncKeyMappedNone };
-      this._dragActive = true;
+    if (sc >= 0) {
+      // If a palette action is selected, bind it to this key
+      if (this._selectedKeySc === -2) {
+        const fk = this._dragIcon;
+        if (fk.type !== FuncKeyType.None) {
+          this._map[sc] = fk;
+          this.onBindingsChanged?.();
+        }
+        this._selectedKeySc = -1;
+        this._dragIcon = FuncKeyMappedNone;
+        return true;
+      }
+      // If clicking the same selected key, deselect
+      if (sc === this._selectedKeySc) {
+        this._selectedKeySc = -1;
+        return true;
+      }
+      // If clicking a bound key, start drag (pick up)
+      if (this._isBound(this._map[sc])) {
+        this._dragIcon = this._map[sc];
+        this._dragFromScancode = sc;
+        this._map[sc] = { ...FuncKeyMappedNone };
+        this._dragActive = true;
+        this._selectedKeySc = -1;
+        return true;
+      }
+      // Clicking an unbound key — select it for binding
+      this._selectedKeySc = sc;
       return true;
     }
 
     const slot = hitTestPalette(lx, ly);
     if (slot >= 0) {
       const fk = paletteBinding(slot);
-      if ((fk.type === FuncKeyType.Menu && fk.id === 22) || this._isPlaced(fk)) return true;
+      if (fk.type === FuncKeyType.Menu && fk.id === 22) return true; // CashShop not bindable
+      // If a key is selected, bind this palette action to it
+      if (this._selectedKeySc >= 0) {
+        this._map[this._selectedKeySc] = fk;
+        this._selectedKeySc = -1;
+        this.onBindingsChanged?.();
+        return true;
+      }
+      // Otherwise start drag from palette
+      if (this._isPlaced(fk)) return true;
       this._dragIcon = fk;
       this._dragFromScancode = -1;
       this._dragActive = true;
       return true;
     }
+
+    // Click outside key/palette — deselect
+    this._selectedKeySc = -1;
 
     if (ly < 24) {
       this._windowDrag = true;
@@ -673,6 +716,7 @@ export class KeyConfig extends GamePanel implements DragTarget {
     this._dragActive = false;
     this._dragFromScancode = -1;
     this._windowDrag = false;
+    this._selectedKeySc = -1;
   }
 
   private _handleConfirmClick(lx: number, ly: number): void {
@@ -739,29 +783,28 @@ export class KeyConfig extends GamePanel implements DragTarget {
   }
 
   private _keysToScanCode(key: string): number {
+    // Maps e.key values (what the browser sends) to DirectInput scancodes.
     const map: Record<string, number> = {
-      'Digit1': 2, 'Digit2': 3, 'Digit3': 4, 'Digit4': 5, 'Digit5': 6,
-      'Digit6': 7, 'Digit7': 8, 'Digit8': 9, 'Digit9': 10, 'Digit0': 11,
-      'Minus': 12, 'Equal': 13, 'Backspace': 14, 'Tab': 15,
-      'KeyQ': 16, 'KeyW': 17, 'KeyE': 18, 'KeyR': 19, 'KeyT': 20,
-      'KeyY': 21, 'KeyU': 22, 'KeyI': 23, 'KeyO': 24, 'KeyP': 25,
-      'BracketLeft': 26, 'BracketRight': 27, 'Enter': 28,
-      'KeyA': 30, 'KeyS': 31, 'KeyD': 32, 'KeyF': 33, 'KeyG': 34,
-      'KeyH': 35, 'KeyJ': 36, 'KeyK': 37, 'KeyL': 38,
-      'Semicolon': 39, 'Quote': 40, 'Backquote': 41,
-      'ShiftLeft': 42, 'Backslash': 43,
-      'KeyZ': 44, 'KeyX': 45, 'KeyC': 46, 'KeyV': 47, 'KeyB': 48,
-      'KeyN': 49, 'KeyM': 50, 'Comma': 51, 'Period': 52, 'Slash': 53,
-      'ShiftRight': 54,
-      'AltLeft': 56, 'Space': 57, 'CapsLock': 58,
+      '1': 2, '2': 3, '3': 4, '4': 5, '5': 6,
+      '6': 7, '7': 8, '8': 9, '9': 10, '0': 11,
+      '-': 12, '=': 13, 'Backspace': 14, 'Tab': 15,
+      'q': 16, 'w': 17, 'e': 18, 'r': 19, 't': 20,
+      'y': 21, 'u': 22, 'i': 23, 'o': 24, 'p': 25,
+      '[': 26, ']': 27, 'Enter': 28,
+      'a': 30, 's': 31, 'd': 32, 'f': 33, 'g': 34,
+      'h': 35, 'j': 36, 'k': 37, 'l': 38,
+      ';': 39, "'": 40, '`': 41,
+      'Shift': 42, '\\': 43,
+      'z': 44, 'x': 45, 'c': 46, 'v': 47, 'b': 48,
+      'n': 49, 'm': 50, ',': 51, '.': 52, '/': 53,
       'F1': 59, 'F2': 60, 'F3': 61, 'F4': 62, 'F5': 63,
       'F6': 64, 'F7': 65, 'F8': 66, 'F9': 67, 'F10': 68,
       'Home': 71, 'PageUp': 73, 'End': 79, 'PageDown': 81,
       'Insert': 82, 'Delete': 83,
       'F11': 87, 'F12': 88,
-      'ControlLeft': 29, 'ControlRight': 89,
-      'AltRight': 90,
-      // Arrow keys — hardcoded in isActionDown but good to map
+      'Control': 29,
+      'Alt': 56, ' ': 57, 'CapsLock': 58,
+      // Arrow keys — hardcoded in isActionDown
       'ArrowLeft': -1, 'ArrowRight': -1, 'ArrowUp': -1, 'ArrowDown': -1,
     };
     return map[key] ?? -1;
@@ -769,27 +812,25 @@ export class KeyConfig extends GamePanel implements DragTarget {
 
   private _scanCodeToKey(sc: number): string | null {
     const map: Record<number, string> = {
-      2: 'Digit1', 3: 'Digit2', 4: 'Digit3', 5: 'Digit4', 6: 'Digit5',
-      7: 'Digit6', 8: 'Digit7', 9: 'Digit8', 10: 'Digit9', 11: 'Digit0',
-      12: 'Minus', 13: 'Equal', 14: 'Backspace', 15: 'Tab',
-      16: 'KeyQ', 17: 'KeyW', 18: 'KeyE', 19: 'KeyR', 20: 'KeyT',
-      21: 'KeyY', 22: 'KeyU', 23: 'KeyI', 24: 'KeyO', 25: 'KeyP',
-      26: 'BracketLeft', 27: 'BracketRight', 28: 'Enter',
-      29: 'ControlLeft',
-      30: 'KeyA', 31: 'KeyS', 32: 'KeyD', 33: 'KeyF', 34: 'KeyG',
-      35: 'KeyH', 36: 'KeyJ', 37: 'KeyK', 38: 'KeyL',
-      39: 'Semicolon', 40: 'Quote', 41: 'Backquote',
-      42: 'ShiftLeft', 43: 'Backslash',
-      44: 'KeyZ', 45: 'KeyX', 46: 'KeyC', 47: 'KeyV', 48: 'KeyB',
-      49: 'KeyN', 50: 'KeyM', 51: 'Comma', 52: 'Period', 53: 'Slash',
-      54: 'ShiftRight',
-      56: 'AltLeft', 57: 'Space', 58: 'CapsLock',
+      2: '1', 3: '2', 4: '3', 5: '4', 6: '5',
+      7: '6', 8: '7', 9: '8', 10: '9', 11: '0',
+      12: '-', 13: '=', 14: 'Backspace', 15: 'Tab',
+      16: 'q', 17: 'w', 18: 'e', 19: 'r', 20: 't',
+      21: 'y', 22: 'u', 23: 'i', 24: 'o', 25: 'p',
+      26: '[', 27: ']', 28: 'Enter',
+      29: 'Control',
+      30: 'a', 31: 's', 32: 'd', 33: 'f', 34: 'g',
+      35: 'h', 36: 'j', 37: 'k', 38: 'l',
+      39: ';', 40: "'", 41: '`',
+      42: 'Shift', 43: '\\',
+      44: 'z', 45: 'x', 46: 'c', 47: 'v', 48: 'b',
+      49: 'n', 50: 'm', 51: ',', 52: '.', 53: '/',
+      56: 'Alt', 57: ' ', 58: 'CapsLock',
       59: 'F1', 60: 'F2', 61: 'F3', 62: 'F4', 63: 'F5',
       64: 'F6', 65: 'F7', 66: 'F8', 67: 'F9', 68: 'F10',
       71: 'Home', 73: 'PageUp', 79: 'End', 81: 'PageDown',
       82: 'Insert', 83: 'Delete',
       87: 'F11', 88: 'F12',
-      89: 'ControlRight', 90: 'AltRight',
     };
     return map[sc] ?? null;
   }
