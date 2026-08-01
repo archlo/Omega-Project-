@@ -7,9 +7,11 @@ import { WzSprite } from '../render/WzSprite.js';
 import { WzTextureLoader } from '../render/WzTextureLoader.js';
 import { GameSender } from '../net/senders/GameSender.js';
 import { ItemIconLoader } from '../character/ItemIconLoader.js';
+import { ItemInfoService } from '../character/ItemInfoService.js';
 import { CashShopDecoder } from '../net/packet/CashShopDecoder.js';
 import { CharLook } from '../character/CharLook.js';
 import { AvatarCodec } from '../net/handlers/AvatarCodec.js';
+import { ScrollBar } from '../ui/game/ScrollBar.js';
 import type { ModifiedCommodityEntry, SetCashShopArgs } from '../domain/CashShopData.js';
 import type {
   CashShopCashAmount,
@@ -22,9 +24,9 @@ import type {
 
 // ── OG v95 Cash Shop Layout Constants ──
 // From IDA: CCashShop::Init CreateWnd calls (bScreenCoord=1)
-// All positions are absolute screen pixels on 1024×768 canvas
-const CS_W = 1024;
-const CS_H = 768;
+// All positions are absolute screen pixels on the v95 800×600 canvas.
+const CS_W = 800;
+const CS_H = 600;
 
 // Character preview / background (m_pLayer) — LEFT COLUMN
 const CHAR_X = 0;
@@ -38,7 +40,7 @@ const TAB_X = 272;
 const TAB_Y = 17;
 const TAB_W = 508;
 const TAB_H = 78;
-const TAB_COUNT = 10;
+const TAB_COUNT = 9;
 
 // Item grid (CCSWnd_List) — center, 2 columns × 5 rows = 10 plates
 // OG: CreateWnd L=275, T=95, W=412, H=430
@@ -99,13 +101,7 @@ const INV_COL_STEP = 35;
 const INV_COLS = 4;
 const INV_ROWS = 3;
 
-// OG tab names (from StringPool — these are the sub-category labels)
-const TAB_NAMES = [
-  'New', 'Character', 'Equip', 'Hair/Face',
-  'Pet', 'Others', 'Event', 'Package', 'Popular', 'One-a-Day',
-];
-
-// Colors (Graphics fallback)
+// Text colors used for server-backed values and OG text overlays.
 const COL_BG = 0x0E1226;
 const COL_PANEL = 0x10142A;
 const COL_PLATE = 0x14182A;
@@ -123,8 +119,13 @@ const COL_SEPARATOR = 0x373C5F;
 interface CashCommodity {
   sn: number;
   itemId: number;
+  count: number;
   name: string;
   price: number;
+  priority: number;
+  period: number;
+  bonus: boolean;
+  reqPop: number;
   category: number;
   categorySub: number;
   discountRate: number;
@@ -135,6 +136,14 @@ interface CashCommodity {
   reqLevel: number;
   forPremiumUser: boolean;
   limit: number;        // 0=unlimited, 1=limited, 2=no maple point
+  maplePoint: number;
+  meso: number;
+  pbCash: number;
+  pbPoint: number;
+  pbGift: number;
+  packageSnList: number[];
+  stockState: number;
+  limitState: number;
 }
 
 export class CashShopStage extends Stage {
@@ -151,6 +160,9 @@ export class CashShopStage extends Stage {
   private _modifiedCommodities: ModifiedCommodityEntry[] = [];
   private _discountRates: Map<string, number> = new Map(); // key: "category:index" → rate%
   private _notSaleSNs: Set<number> = new Set();
+  private _stockStates = new Map<number, number>();
+  private _limitGoods: Array<{ sns: number[]; count: number; state: number; condition: number; dateStart: number; dateEnd: number; hourStart: number; hourEnd: number; weekdays: number[] }> = [];
+  private _zeroGoods: Array<{ startSN: number; endSN: number; eventSN: number; condition: number; dateStart: number; dateEnd: number; hourStart: number; hourEnd: number; weekdays: number[] }> = [];
 
   // ── UI state ──
   private _activeTab = 0;
@@ -177,6 +189,7 @@ export class CashShopStage extends Stage {
   private _charWz: WzPackage | null = null;
   private _itemWz: WzPackage | null = null;
   private _baseWz: WzPackage | null = null;
+  private _itemInfo: ItemInfoService | null = null;
 
   // ── CCSWnd_Char outfit tabs (OG: tab control for outfit categories) ──
   // OG: OnTabChanged switches between equip/cash/other outfit categories
@@ -207,6 +220,9 @@ export class CashShopStage extends Stage {
   // ── Locker state ──
   private _lockerItems: { sn: number; itemId: number; name: string }[] = [];
   private _lockerScroll = 0;
+  private _cashInventoryItems: { sn: number; itemId: number; count: number }[] = [];
+  private _wishlist: number[] = new Array(10).fill(0);
+  private _giftRecords = new Uint8Array(0);
 
   // ── Dialog states (OG: CConfirmPurchaseDlg / CUINameChangeDlg / etc) ──
   private _nameChangeVisible = false;
@@ -240,6 +256,7 @@ export class CashShopStage extends Stage {
   private _oneADayTimer = { hours: 0, minutes: 0, seconds: 0 };
   private _oneADayTimerAccum = 0;
   private _oneADaySelected = -1;
+  private _oneADayMode: 0 | 1 = 0;
 
   // ── WZ assets (loaded from UI.nx/CashShop.img) ──
   private _bg: WzSprite | null = null;
@@ -251,6 +268,9 @@ export class CashShopStage extends Stage {
   private _previewBgs: (WzSprite | null)[] = [null, null, null];
   private _previewOn: WzSprite | null = null;
   private _previewOff: WzSprite | null = null;
+  private _btBuyAvatar: WzSprite | null = null;
+  private _btDefaultAvatar: WzSprite | null = null;
+  private _btTakeoffAvatar: WzSprite | null = null;
 
   // Status bar buttons — 4 states each
   private _btCharge: WzSprite | null = null;
@@ -275,11 +295,22 @@ export class CashShopStage extends Stage {
   private _btSearch: WzSprite | null = null;
   private _btSearchBuy: WzSprite | null = null;
   private _btSearchCancel: WzSprite | null = null;
+  private _searchPopup: WzSprite | null = null;
+
+  // UI/OneADay.img/CSOneADay assets.
+  private _oneADayBase: WzSprite | null = null;
+  private _oneADayItemBox: WzSprite | null = null;
+  private _oneADayBuy: WzSprite | null = null;
+  private _oneADayGift: WzSprite | null = null;
 
   // Inventory expansion buttons
   private _btExConsume: WzSprite | null = null;
   private _btExEquip: WzSprite | null = null;
   private _btExEtc: WzSprite | null = null;
+  private _btExInstall: WzSprite | null = null;
+  private _btExTrunk: WzSprite | null = null;
+  private _inventoryScrollbar: ScrollBar | null = null;
+  private _lockerScrollbar: ScrollBar | null = null;
 
   // Effect badges (animated — multiple frames)
   private _effectHot: WzSprite | null = null;
@@ -305,6 +336,11 @@ export class CashShopStage extends Stage {
   private _bgStatus: WzSprite | null = null;
   private _bgBest: WzSprite | null = null;
   private _bgGift: WzSprite | null = null;
+  private _bgNameChange: WzSprite | null = null;
+  private _bgTransferWorld: WzSprite | null = null;
+  private _bgNameChangeNotice: WzSprite | null = null;
+  private _bgTransferWorldNotice: WzSprite | null = null;
+  private _btNameCheck: WzSprite | null = null;
 
   // Hover state tracking
   private _hoveredBtn: string | null = null;
@@ -327,6 +363,14 @@ export class CashShopStage extends Stage {
     this._loader = new WzTextureLoader();
     this._icons = new ItemIconLoader(this._loader, game.wz.character, game.wz.item);
     this._loadAssets();
+    this._inventoryScrollbar = new ScrollBar(INV_X, INV_Y + 160, 102, pos => {
+      this._invFirstPosition = pos;
+    }, { loader: this._loader, uiWz: this._ui });
+    this._root.addChild(this._inventoryScrollbar.container);
+    this._lockerScrollbar = new ScrollBar(0, 229, 67, pos => {
+      this._lockerScroll = pos;
+    }, { loader: this._loader, uiWz: this._ui });
+    this._root.addChild(this._lockerScrollbar.container);
     this._wireHandlers(game);
     this._requestInitialData();
     this.mapRoot.addChild(this._root);
@@ -340,6 +384,9 @@ export class CashShopStage extends Stage {
         this._charWz = game.wz.character ?? await open('Character');
         this._itemWz = game.wz.item ?? await open('Item');
         this._baseWz = game.wz.base ?? await open('Base');
+        this._itemInfo = new ItemInfoService(this._charWz, this._itemWz);
+        for (const commodity of this._commodities) commodity.name = this._getItemName(commodity.itemId);
+        for (const item of this._lockerItems) item.name = this._getItemName(item.itemId);
       } catch (ex) { console.warn('CashShopStage: failed to load WZ for character preview', ex); }
     };
     loadWz();
@@ -353,9 +400,12 @@ export class CashShopStage extends Stage {
     this._icons = null;
     this._loader?.Dispose();
     this._loader = null;
+    this._inventoryScrollbar = null;
+    this._lockerScrollbar = null;
     this._charWz = null;
     this._itemWz = null;
     this._baseWz = null;
+    this._itemInfo = null;
     super.onExit();
   }
 
@@ -393,6 +443,7 @@ export class CashShopStage extends Stage {
       this._oneADayTimer = { hours: 23, minutes: 59, seconds: 59 };
       this._oneADayTimerAccum = 0;
       this._oneADaySelected = -1;
+      this._oneADayMode = 0;
       this._statusMessage = args.count > 0 ? `One-a-day: item SN ${args.itemSn}` : 'No one-a-day item today.';
     };
     h.onChargeParamResult = (nexonClubId: string) => {
@@ -460,6 +511,7 @@ export class CashShopStage extends Stage {
 
       // Store not-sale serial numbers
       this._notSaleSNs = new Set(args.notSaleSNs);
+      this._decodeSaleTables(args.stock ?? new Uint8Array(0), args.limitGoods ?? new Uint8Array(0), args.zeroGoods ?? new Uint8Array(0));
 
       // Build commodity list from modified data, excluding not-for-sale items
       this._modifiedCommodities = args.modifiedCommodities;
@@ -485,8 +537,13 @@ export class CashShopStage extends Stage {
         this._commodities.push({
           sn,
           itemId,
+          count: m.data?.count ?? 1,
           name: this._getItemName(itemId),
           price: m.data?.price ?? 0,
+          priority: m.data?.priority ?? i,
+          period: m.data?.period ?? 0,
+          bonus: m.data?.bonus ?? false,
+          reqPop: m.data?.reqPop ?? 0,
           category,
           categorySub: 0,
           discountRate,
@@ -497,8 +554,17 @@ export class CashShopStage extends Stage {
           reqLevel: m.data?.reqLevel ?? 0,
           forPremiumUser: m.data?.forPremiumUser ?? false,
           limit: m.data?.limit ?? 0,
+          maplePoint: m.data?.maplePoint ?? 0,
+          meso: m.data?.meso ?? 0,
+          pbCash: m.data?.pbCash ?? 0,
+          pbPoint: m.data?.pbPoint ?? 0,
+          pbGift: m.data?.pbGift ?? 0,
+          packageSnList: m.data?.packageSnList ?? [],
+          stockState: this._stockStates.get(sn) ?? 0,
+          limitState: this._getLimitGoodsState(sn),
         });
       }
+      this._commodities.sort((a, b) => a.priority - b.priority || a.sn - b.sn);
     };
   }
 
@@ -544,9 +610,65 @@ export class CashShopStage extends Stage {
 
   /** Get a human-readable item name from the itemId. */
   private _getItemName(itemId: number): string {
-    const prefix = Math.floor(itemId / 1000000);
-    const typeNames: Record<number, string> = { 1: 'Equip', 2: 'Use', 3: 'Setup', 4: 'Etc', 5: 'Cash' };
-    return `${typeNames[prefix] ?? 'Item'} ${itemId}`;
+    return this._itemInfo?.GetItemName(itemId) ?? '';
+  }
+
+  private _decodeSaleTables(stock: Uint8Array, limitGoods: Uint8Array, zeroGoods: Uint8Array): void {
+    this._stockStates.clear();
+    const stockView = new DataView(stock.buffer, stock.byteOffset, stock.byteLength);
+    for (let off = 0; off + 8 <= stock.byteLength; off += 8) {
+      this._stockStates.set(stockView.getInt32(off, true), stockView.getInt32(off + 4, true));
+    }
+
+    this._limitGoods = [];
+    const limitView = new DataView(limitGoods.buffer, limitGoods.byteOffset, limitGoods.byteLength);
+    for (let off = 0; off + 104 <= limitGoods.byteLength; off += 104) {
+      const values = Array.from({ length: 26 }, (_, i) => limitView.getInt32(off + i * 4, true));
+      this._limitGoods.push({
+        sns: values.slice(1, 11).filter(sn => sn !== 0),
+        count: values[13],
+        state: values[12],
+        condition: values[14],
+        dateStart: values[15],
+        dateEnd: values[16],
+        hourStart: values[17],
+        hourEnd: values[18],
+        weekdays: values.slice(19, 26),
+      });
+    }
+
+    this._zeroGoods = [];
+    const zeroView = new DataView(zeroGoods.buffer, zeroGoods.byteOffset, zeroGoods.byteLength);
+    for (let off = 0; off + 68 <= zeroGoods.byteLength; off += 68) {
+      const values = Array.from({ length: 17 }, (_, i) => zeroView.getInt32(off + i * 4, true));
+      this._zeroGoods.push({
+        startSN: values[0], endSN: values[1], eventSN: values[2], condition: values[3],
+        dateStart: values[4], dateEnd: values[5], hourStart: values[6], hourEnd: values[7],
+        weekdays: values.slice(8, 15),
+      });
+    }
+  }
+
+  private _getLimitGoodsState(sn: number): number {
+    return this._limitGoods.find(entry => entry.sns.includes(sn))?.state ?? 0;
+  }
+
+  private _saleTimeMatches(condition: number, dateStart: number, dateEnd: number, hourStart: number, hourEnd: number, weekdays: number[]): boolean {
+    const now = new Date();
+    const date = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+    if ((condition & 2) !== 0 && (date < dateStart || date > dateEnd)) return false;
+    if ((condition & 4) !== 0 && !weekdays[now.getDay()]) return false;
+    if ((condition & 8) !== 0 && (now.getHours() < hourStart || now.getHours() >= hourEnd)) return false;
+    return true;
+  }
+
+  private _isSaleAvailable(item: CashCommodity): boolean {
+    if (item.stockState === 2 || item.limitState === 2) return false;
+    const limit = this._limitGoods.find(entry => entry.sns.includes(item.sn));
+    if (limit && (limit.count <= 0 || limit.state === 2 || !this._saleTimeMatches(limit.condition, limit.dateStart, limit.dateEnd, limit.hourStart, limit.hourEnd, limit.weekdays))) return false;
+    const zero = this._zeroGoods.find(entry => item.sn >= entry.startSN && item.sn <= entry.endSN);
+    if (zero && !this._saleTimeMatches(zero.condition, zero.dateStart, zero.dateEnd, zero.hourStart, zero.hourEnd, zero.weekdays)) return false;
+    return true;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -583,18 +705,10 @@ export class CashShopStage extends Stage {
       this._drawWzSprite(this._bg, 0, 0);
     }
 
-    // Draw list background if available
-    if (this._bgList) {
-      this._drawWzSprite(this._bgList, LIST_X - 4, LIST_Y - 4);
-    }
-
     this._drawCharacterPreview();
     this._drawTabBar();
-    if (this._activeTab === 9) {
-      this._drawOneADay();
-    } else {
-      this._drawItemGrid();
-    }
+    if (this._oneADayItemSN > 0) this._drawOneADay();
+    else this._drawItemGrid();
     this._drawBestPanel();
     this._drawLockerPanel();
     this._drawInventoryPanel();
@@ -633,9 +747,6 @@ export class CashShopStage extends Stage {
 
     if (previewBg) {
       this._drawWzSprite(previewBg, CHAR_X, CHAR_Y);
-    } else {
-      this._g.rect(CHAR_X, CHAR_Y, CHAR_W, CHAR_H).fill({ color: 0x0A0E1A });
-      this._g.rect(CHAR_X, CHAR_Y, CHAR_W, CHAR_H).stroke({ color: COL_SEPARATOR, width: 1 });
     }
 
     if (this._charLook) {
@@ -644,22 +755,6 @@ export class CashShopStage extends Stage {
       const container = this._charLook.container;
       container.position.set(CHAR_X + CHAR_W / 2, CHAR_Y + CHAR_H - 30);
       this._root.addChild(container);
-    } else {
-      this._addText('Character', CHAR_X + 80, CHAR_Y + 8, COL_TEXT_DIM, 10);
-      this._addText('Preview', CHAR_X + 90, CHAR_Y + 150, COL_TEXT_DIM, 12);
-    }
-
-    // OG CCSWnd_Char outfit category tabs — horizontal tabs below character preview
-    // Tab 0: Equip, Tab 1: Cash
-    const outfitTabY = CHAR_Y + CHAR_H + 4;
-    const outfitTabW = Math.floor(CHAR_W / 2);
-    const outfitTabs = ['Equip', 'Cash'];
-    for (let i = 0; i < outfitTabs.length; i++) {
-      const tx = CHAR_X + i * outfitTabW;
-      const isActive = i === this._outfitTab;
-      this._g.rect(tx, outfitTabY, outfitTabW, 14).fill({ color: isActive ? COL_TAB_ACTIVE : COL_TAB_INACTIVE });
-      this._g.rect(tx, outfitTabY, outfitTabW, 14).stroke({ color: isActive ? COL_TAB_BORDER_ACTIVE : COL_PLATE_BORDER, width: 1 });
-      this._addText(outfitTabs[i], tx + 4, outfitTabY + 2, isActive ? COL_TEXT_WHITE : COL_TEXT_DIM, 9);
     }
 
     // PreviewOnOff toggle button
@@ -667,10 +762,15 @@ export class CashShopStage extends Stage {
     const toggleX = CHAR_X + CHAR_W - 36;
     if (this._previewOff) {
       this._drawWzSprite(this._previewOff, toggleX, toggleY);
-    } else {
-      this._g.rect(toggleX, toggleY, 33, 23).fill({ color: COL_TAB_ACTIVE });
-      this._g.rect(toggleX, toggleY, 33, 23).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
-      this._addText('On', toggleX + 8, toggleY + 5, COL_TEXT_WHITE, 9);
+    }
+
+    const avatarButtons = [
+      [this._btBuyAvatar, 17],
+      [this._btDefaultAvatar, 101],
+      [this._btTakeoffAvatar, 187],
+    ] as const;
+    for (const [sprite, x] of avatarButtons) {
+      if (sprite) this._drawWzSprite(sprite, CHAR_X + x, CHAR_Y + 237);
     }
   }
 
@@ -691,9 +791,6 @@ export class CashShopStage extends Stage {
     // Background — use WZ sprite if available
     if (this._bgStatus) {
       this._drawWzSprite(this._bgStatus, STATUS_X, STATUS_Y);
-    } else {
-      this._g.rect(STATUS_X, STATUS_Y, STATUS_W, STATUS_H).fill({ color: 0x10141F });
-      this._g.rect(STATUS_X, STATUS_Y, STATUS_W, STATUS_H).stroke({ color: COL_SEPARATOR, width: 1 });
     }
 
     // NX balances — OG positions: labels at X=10-60, values right-aligned at X=220
@@ -719,34 +816,26 @@ export class CashShopStage extends Stage {
 
     // OG button IDs: 1000=Charge, 1001=Check, 1002=Coupon, 1003=Exit
     // Buttons positioned at right side of status bar — use mouseOver state on hover
-    const btnY = STATUS_Y + 20;
+    const btnY = STATUS_Y;
     const statusBtns = [
-      { normal: this._btCharge, over: this._btChargeOver, x: STATUS_X + 350, label: 'Charge', key: 'charge' },
-      { normal: this._btCheck, over: this._btCheckOver, x: STATUS_X + 400, label: 'Check', key: 'check' },
-      { normal: this._btCoupon, over: this._btCouponOver, x: STATUS_X + 450, label: 'Coupon', key: 'coupon' },
+      { normal: this._btCharge, over: this._btChargeOver, x: STATUS_X + 248, key: 'charge' },
+      { normal: this._btCheck, over: this._btCheckOver, x: STATUS_X + 289, key: 'check' },
+      { normal: this._btCoupon, over: this._btCouponOver, x: STATUS_X + 330, key: 'coupon' },
     ];
     for (const btn of statusBtns) {
       const isHovered = this._hoveredBtn === btn.key;
       const sprite = isHovered ? (btn.over ?? btn.normal) : btn.normal;
       if (sprite) {
         this._drawWzSprite(sprite, btn.x, btnY);
-      } else {
-        this._g.rect(btn.x, btnY, 50, 18).fill({ color: isHovered ? 0x3A4A6A : COL_TAB_ACTIVE });
-        this._g.rect(btn.x, btnY, 50, 18).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
-        this._addText(btn.label, btn.x + 4, btnY + 3, COL_TEXT_WHITE, 10);
       }
     }
 
     // Exit button
-    const exitX = STATUS_X + STATUS_W - 40;
+    const exitX = STATUS_X + 378;
     const exitHovered = this._hoveredBtn === 'exit';
     const exitSprite = exitHovered ? (this._btExitOver ?? this._btExit) : this._btExit;
     if (exitSprite) {
       this._drawWzSprite(exitSprite, exitX, btnY);
-    } else {
-      this._g.rect(exitX, btnY, 30, 18).fill({ color: exitHovered ? 0xAA2222 : 0x8B0000 });
-      this._g.rect(exitX, btnY, 30, 18).stroke({ color: 0xFF4444, width: 1 });
-      this._addText('X', exitX + 10, btnY + 3, 0xFFFFFF, 12);
     }
   }
 
@@ -755,30 +844,10 @@ export class CashShopStage extends Stage {
   // Uses CCtrlSelector (horizontal), NOT CCtrlTab
   // Each tab has a pre-rendered WZ canvas from CSTab/Tab/1-9
   private _drawTabBar(): void {
-    // Background
-    this._g.rect(TAB_X, TAB_Y, TAB_W, TAB_H).fill({ color: COL_PANEL });
-    this._g.rect(TAB_X, TAB_Y, TAB_W, TAB_H).stroke({ color: COL_SEPARATOR, width: 1 });
-
-    // Draw horizontal tab items
-    const tabItemW = Math.floor(TAB_W / TAB_COUNT);
-    for (let i = 0; i < TAB_COUNT; i++) {
-      const tx = TAB_X + i * tabItemW;
-      const isActive = i === this._activeTab;
-
-      // Use WZ tab sprite if available
-      const tabSprite = this._tabSprites[i];
-      if (tabSprite) {
-        this._drawWzSprite(tabSprite, tx, TAB_Y);
-      } else {
-        // Graphics fallback — horizontal tab
-        this._g.rect(tx, TAB_Y, tabItemW, TAB_H).fill({ color: isActive ? COL_TAB_ACTIVE : COL_TAB_INACTIVE });
-        this._g.rect(tx, TAB_Y, tabItemW, TAB_H).stroke({ color: isActive ? COL_TAB_BORDER_ACTIVE : COL_TAB_BORDER_INACTIVE, width: 1 });
-      }
-
-      // Tab label (centered in tab item)
-      const labelW = TAB_NAMES[i].length * 7;
-      this._addText(TAB_NAMES[i], tx + (tabItemW - labelW) / 2, TAB_Y + 30, isActive ? COL_TEXT_WHITE : COL_TEXT_DIM, 11);
-    }
+    // Each CSTab/Tab/N canvas is the complete 508x78 selector for category N.
+    // The OG client draws one canvas, not nine overlaid tab fragments.
+    const tabSprite = this._tabSprites[this._activeTab];
+    if (tabSprite) this._drawWzSprite(tabSprite, TAB_X, TAB_Y);
   }
 
   // ── Item grid (CCSWnd_List) — CENTER, 2 columns × 5 rows ──
@@ -786,10 +855,6 @@ export class CashShopStage extends Stage {
   // 10 PICTURE_PLATE entries with (nX, nY, sUOL)
   // Each plate: 64×64 item icon area + name + price
   private _drawItemGrid(): void {
-    // Panel background
-    this._g.rect(LIST_X, LIST_Y, LIST_W, LIST_H).fill({ color: COL_PANEL });
-    this._g.rect(LIST_X, LIST_Y, LIST_W, LIST_H).stroke({ color: COL_SEPARATOR, width: 1 });
-
     const items = this._searchResults ?? this._getCurrentPageItems();
     const offset = this._page * PLATES_PER_PAGE;
 
@@ -798,7 +863,10 @@ export class CashShopStage extends Stage {
         const plateIdx = row * PLATE_COLS + col;
         const absIdx = offset + plateIdx;
         const px = LIST_X + col * PLATE_COL_W;
-        const py = LIST_Y + row * PLATE_ROW_H;
+        const py = LIST_Y + row * PLATE_ROW_H + 2;
+
+        // CSList/Base is the authentic plate background, including empty plates.
+        if (this._bgList) this._drawWzSprite(this._bgList, px, py);
 
         if (absIdx < items.length) {
           const item = items[absIdx];
@@ -807,14 +875,7 @@ export class CashShopStage extends Stage {
 
           // Plate background — use WZ state canvas if available, else Graphics fallback
           const plateBg = isSelected ? (this._plateStateHover ?? this._plateStateNormal) : this._plateStateNormal;
-          if (plateBg) {
-            this._drawWzSprite(plateBg, px, py);
-          } else {
-            this._g.rect(px, py, PLATE_W, PLATE_H)
-              .fill({ color: isSelected ? 0x1E2845 : COL_PLATE });
-            this._g.rect(px, py, PLATE_W, PLATE_H)
-              .stroke({ color: isSelected ? COL_TAB_BORDER_ACTIVE : COL_PLATE_BORDER, width: isSelected ? 2 : 1 });
-          }
+          if (plateBg && plateBg !== this._bgList) this._drawWzSprite(plateBg, px, py);
 
           // Keyboard focus indicator — dotted border around focused plate
           if (isFocused && !isSelected) {
@@ -841,8 +902,6 @@ export class CashShopStage extends Stage {
           if (item.discountRate > 0) {
             if (this._discountBg) {
               this._drawWzSprite(this._discountBg, px + 70, py + 46);
-            } else {
-              this._g.rect(px + 70, py + 46, 50, 14).fill({ color: 0xCC3333 });
             }
             // Draw discount percentage using digit sprites
             const rateStr = `-${item.discountRate}%`;
@@ -857,8 +916,6 @@ export class CashShopStage extends Stage {
                   continue;
                 }
               }
-              // Fallback: draw character as text
-              this._addText(ch, dx, py + 48, 0xFFFFFF, 10);
               dx += 7;
             }
             this._addText(`${item.price}`, px + 124, py + 48, 0x888888, 9);
@@ -871,10 +928,6 @@ export class CashShopStage extends Stage {
           const buySprite = buyHovered ? (this._btBuyOver ?? this._btBuy) : this._btBuy;
           if (buySprite) {
             this._drawWzSprite(buySprite, buyX, buyY);
-          } else {
-            this._g.rect(buyX, buyY, 35, 20).fill({ color: buyHovered ? 0x3A5A3A : COL_TAB_ACTIVE });
-            this._g.rect(buyX, buyY, 35, 20).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
-            this._addText('Buy', buyX + 8, buyY + 4, COL_TEXT_WHITE, 10);
           }
 
           // Gift button (OG: CSList/BtGift — 4 states)
@@ -884,10 +937,6 @@ export class CashShopStage extends Stage {
           const giftSprite = giftHovered ? (this._btGiftOver ?? this._btGift) : this._btGift;
           if (giftSprite) {
             this._drawWzSprite(giftSprite, giftX, giftY);
-          } else {
-            this._g.rect(giftX, giftY, 35, 20).fill({ color: giftHovered ? 0x3D6A2E : 0x2D4A1E });
-            this._g.rect(giftX, giftY, 35, 20).stroke({ color: 0x4A8A2D, width: 1 });
-            this._addText('Gift', giftX + 8, giftY + 4, COL_TEXT_GREEN, 10);
           }
 
           // Effect badges (OG: CSEffect — hot/new/sale)
@@ -898,10 +947,6 @@ export class CashShopStage extends Stage {
           } else if (this._effectNew) {
             this._drawWzSprite(this._effectNew, px + 2, py + 2);
           }
-        } else {
-          // Empty plate
-          this._g.rect(px, py, PLATE_W, PLATE_H)
-            .fill({ color: 0x0E112A, alpha: 0.6 });
         }
       }
     }
@@ -929,8 +974,7 @@ export class CashShopStage extends Stage {
   // 10 number digit canvases, countdown timer, state machine
   private _drawOneADay(): void {
     // Panel background — same area as item grid
-    this._g.rect(LIST_X, LIST_Y, LIST_W, LIST_H).fill({ color: COL_PANEL });
-    this._g.rect(LIST_X, LIST_Y, LIST_W, LIST_H).stroke({ color: COL_SEPARATOR, width: 1 });
+    if (this._oneADayBase) this._drawWzSprite(this._oneADayBase, LIST_X + 3, LIST_Y + 3);
 
     // Title
     this._addText('One-a-Day', LIST_X + 140, LIST_Y + 8, COL_TEXT_GOLD, 13);
@@ -941,9 +985,7 @@ export class CashShopStage extends Stage {
     const todayW = LIST_W - 20;
     const todayH = 100;
 
-    // Background — selected/highlighted state
-    this._g.rect(todayX, todayY, todayW, todayH).fill({ color: 0x1A2040 });
-    this._g.rect(todayX, todayY, todayW, todayH).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 2 });
+      if (this._oneADayItemBox) this._drawWzSprite(this._oneADayItemBox, todayX, todayY);
 
     this._addText('Today\'s Item', todayX + 8, todayY + 4, COL_TEXT_DIM, 10);
 
@@ -962,12 +1004,9 @@ export class CashShopStage extends Stage {
         this._addText(comm.name, todayX + 80, todayY + 30, COL_TEXT_WHITE, 12);
         this._addText(`${comm.price} NX`, todayX + 80, todayY + 48, COL_TEXT_GOLD, 11);
 
-        // Buy button
         const buyX = todayX + todayW - 80;
         const buyY = todayY + 65;
-        this._g.rect(buyX, buyY, 70, 24).fill({ color: COL_TAB_ACTIVE });
-        this._g.rect(buyX, buyY, 70, 24).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
-        this._addText('Free', buyX + 18, buyY + 5, COL_TEXT_GREEN, 11);
+        if (this._oneADayBuy) this._drawWzSprite(this._oneADayBuy, buyX, buyY);
       } else {
         // SN exists but commodity not loaded yet
         this._addText(`Item SN: ${this._oneADayItemSN}`, todayX + 80, todayY + 40, COL_TEXT_DIM, 11);
@@ -1049,19 +1088,12 @@ export class CashShopStage extends Stage {
   private _drawBestPanel(): void {
     if (this._bgBest) {
       this._drawWzSprite(this._bgBest, BEST_X, BEST_Y);
-    } else {
-      this._g.rect(BEST_X, BEST_Y, BEST_W, BEST_H).fill({ color: COL_PANEL });
-      this._g.rect(BEST_X, BEST_Y, BEST_W, BEST_H).stroke({ color: COL_SEPARATOR, width: 1 });
     }
 
     for (let i = 0; i < 5; i++) {
       // OG GetBestRect: each item is 90×68 at step 69
       const itemTop = i * BEST_STEP; // relative to panel top
       const by = BEST_Y + itemTop;
-
-      // Item background
-      this._g.rect(BEST_X, by, BEST_W, 68).fill({ color: COL_PLATE });
-      this._g.rect(BEST_X, by, BEST_W, 68).stroke({ color: COL_PLATE_BORDER, width: 1 });
 
       if (i < this._bestItems.length) {
         const best = this._bestItems[i];
@@ -1099,9 +1131,6 @@ export class CashShopStage extends Stage {
   private _drawLockerPanel(): void {
     if (this._bgLocker) {
       this._drawWzSprite(this._bgLocker, LOCKER_X, LOCKER_Y);
-    } else {
-      this._g.rect(LOCKER_X, LOCKER_Y, LOCKER_W, LOCKER_H).fill({ color: COL_PANEL });
-      this._g.rect(LOCKER_X, LOCKER_Y, LOCKER_W, LOCKER_H).stroke({ color: COL_SEPARATOR, width: 1 });
     }
     this._addText('Cash Locker', LOCKER_X + 80, LOCKER_Y + 4, COL_TEXT_GOLD, 11);
 
@@ -1111,9 +1140,6 @@ export class CashShopStage extends Stage {
         const idx = startIdx + row * LOCKER_COLS + col;
         const cx = LOCKER_X + 10 + col * LOCKER_COL_STEP;
         const cy = LOCKER_Y + 20 + row * LOCKER_COL_STEP;
-
-        this._g.rect(cx, cy, LOCKER_CELL, LOCKER_CELL).fill({ color: COL_PLATE });
-        this._g.rect(cx, cy, LOCKER_CELL, LOCKER_CELL).stroke({ color: COL_PLATE_BORDER, width: 1 });
 
         if (idx < this._lockerItems.length) {
           const item = this._lockerItems[idx];
@@ -1129,32 +1155,11 @@ export class CashShopStage extends Stage {
 
     // OG scrollbar: job-dependent X position, at Y=229 (relative to panel), size 29×67
     const scrollbarX = this._getLockerScrollbarX();
-    const scrollbarAbsX = LOCKER_X + scrollbarX;
-    const scrollbarAbsY = LOCKER_Y + 229 - LOCKER_Y; // 229 is absolute Y in OG, panel is at 318, so offset = 229 within canvas
-    // Actually OG uses absolute coordinates: scrollbar at (v7, 229) in screen space
-    // Since locker panel is at (LOCKER_X, LOCKER_Y) and the scrollbar is at screen (scrollbarX, 229)
-    // We need to draw it relative to the panel. But LOCKER_Y=318 and scrollbar Y=229 means
-    // the scrollbar is ABOVE the locker panel — it's in the character preview area.
-    // This is correct: the locker scrollbar overlays the bottom of the character preview.
-    const sbW = 29;
-    const sbH = 67;
-    // Draw scrollbar track
-    this._g.rect(scrollbarX, 229, sbW, sbH).fill({ color: 0x0A0E1A });
-    this._g.rect(scrollbarX, 229, sbW, sbH).stroke({ color: COL_PLATE_BORDER, width: 1 });
-    // Draw thumb (draggable indicator)
     const maxScroll = Math.max(0, Math.ceil(this._lockerItems.length / (LOCKER_COLS * LOCKER_ROWS)) - 1);
-    if (maxScroll > 0) {
-      const thumbH = Math.max(16, sbH / (maxScroll + 1));
-      const thumbY = 229 + (sbH - thumbH) * (this._lockerScroll / maxScroll);
-      this._g.rect(scrollbarX + 2, thumbY, sbW - 4, thumbH).fill({ color: COL_TAB_ACTIVE });
+    if (this._lockerScrollbar) {
+      this._lockerScrollbar.container.x = scrollbarX;
+      this._lockerScrollbar.setRange(maxScroll);
     }
-    // Scroll arrows
-    const arrowY = LOCKER_Y + LOCKER_H - 16;
-    const hasMoreDown = this._lockerScroll < maxScroll;
-    this._g.rect(LOCKER_X + 10, arrowY, 40, 14).fill({ color: this._lockerScroll > 0 ? COL_TAB_ACTIVE : COL_TAB_INACTIVE });
-    this._addText('▲', LOCKER_X + 24, arrowY + 1, COL_TEXT_WHITE, 10);
-    this._g.rect(LOCKER_X + 60, arrowY, 40, 14).fill({ color: hasMoreDown ? COL_TAB_ACTIVE : COL_TAB_INACTIVE });
-    this._addText('▼', LOCKER_X + 74, arrowY + 1, COL_TEXT_WHITE, 10);
   }
 
   /** OG CCSWnd_Locker::OnCreate — job-dependent scrollbar X position */
@@ -1176,22 +1181,32 @@ export class CashShopStage extends Stage {
   private _drawInventoryPanel(): void {
     if (this._bgInventory) {
       this._drawWzSprite(this._bgInventory, INV_X, INV_Y);
-    } else {
-      this._g.rect(INV_X, INV_Y, INV_W, INV_H).fill({ color: COL_PANEL });
-      this._g.rect(INV_X, INV_Y, INV_W, INV_H).stroke({ color: COL_SEPARATOR, width: 1 });
     }
     this._addText('Inventory', INV_X + 80, INV_Y + 4, COL_TEXT_GOLD, 11);
 
     // OG: Inventory tab selector (equip/use/setup/etc) — horizontal tabs
     // For now, show the current tab type
     const tabNames = ['Equip', 'Use', 'Setup', 'Etc', 'Cash'];
-    const tabW = Math.floor(INV_W / tabNames.length);
+    const tabX = INV_X + 4;
+    const tabY = INV_Y + 28;
+    const tabW = Math.floor(156 / tabNames.length);
     for (let i = 0; i < tabNames.length; i++) {
-      const tx = INV_X + i * tabW;
+      const tx = tabX + i * tabW;
       const isActive = i === this._invItemTI;
-      this._g.rect(tx, INV_Y + 14, tabW, 14).fill({ color: isActive ? COL_TAB_ACTIVE : COL_TAB_INACTIVE });
-      this._g.rect(tx, INV_Y + 14, tabW, 14).stroke({ color: isActive ? COL_TAB_BORDER_ACTIVE : COL_PLATE_BORDER, width: 1 });
-      this._addText(tabNames[i], tx + 2, INV_Y + 15, isActive ? COL_TEXT_WHITE : COL_TEXT_DIM, 8);
+      this._g.rect(tx, tabY, tabW, 14).fill({ color: isActive ? COL_TAB_ACTIVE : COL_TAB_INACTIVE });
+      this._g.rect(tx, tabY, tabW, 14).stroke({ color: isActive ? COL_TAB_BORDER_ACTIVE : COL_PLATE_BORDER, width: 1 });
+      this._addText(tabNames[i], tx + 2, tabY + 1, isActive ? COL_TEXT_WHITE : COL_TEXT_DIM, 8);
+    }
+
+    const expansionButtons = [
+      [this._btExEquip, 176, 27],
+      [this._btExConsume, 176, 54],
+      [this._btExInstall, 176, 81],
+      [this._btExEtc, 176, 108],
+      [this._btExTrunk, 176, 135],
+    ] as const;
+    for (const [sprite, x, y] of expansionButtons) {
+      if (sprite) this._drawWzSprite(sprite, INV_X + x, INV_Y + y);
     }
 
     // 4×3 grid of 35×35 cells — render actual items from CharacterData
@@ -1238,10 +1253,18 @@ export class CashShopStage extends Stage {
         }
       }
     }
+    this._inventoryScrollbar?.setRange(Math.max(0, items.length - 12));
   }
 
   /** Get items for the current inventory tab from CharacterData */
   private _getInvItems(): { itemId: number; count: number; cashSN: number }[] {
+    if (this._invItemTI === 4) {
+      return this._cashInventoryItems.map(item => ({
+        itemId: item.itemId,
+        count: item.count,
+        cashSN: item.sn,
+      }));
+    }
     if (!this._characterData) return [];
     const cd = this._characterData as any;
     // OG: aaItemSlot is an array of arrays indexed by inventory type
@@ -1261,6 +1284,25 @@ export class CashShopStage extends Stage {
     return result;
   }
 
+  /** Decode the fixed-size GW_CashItemInfo payload used by the OG client. */
+  private _parseCashItem(bytes: Uint8Array): { sn: number; itemId: number; count: number } | null {
+    if (bytes.byteLength < 8) return null;
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    const itemId = view.getInt32(0, true);
+    const sn = view.getInt32(4, true);
+    if (itemId <= 0 || sn <= 0) return null;
+    const count = bytes.byteLength >= 12 ? Math.max(1, view.getInt16(8, true)) : 1;
+    return { sn, itemId, count };
+  }
+
+  private _appendCashItem(bytes: Uint8Array): void {
+    const item = this._parseCashItem(bytes);
+    if (!item) return;
+    const existing = this._cashInventoryItems.findIndex(value => value.sn === item.sn);
+    if (existing >= 0) this._cashInventoryItems[existing] = item;
+    else this._cashInventoryItems.push(item);
+  }
+
   // ── Search button (CCSWnd_ItemSearch) — RIGHT COLUMN TOP ──
   // OG: L=690, T=97, W=89, H=22
   // CCSWnd_ItemSearch::OnCreate creates a full search UI with:
@@ -1269,36 +1311,21 @@ export class CashShopStage extends Stage {
   // - Price filter controls
   // - PopUp canvases for search results display
   private _drawSearchButton(): void {
-    // Search button — use WZ if available
-    this._g.rect(SEARCH_X, SEARCH_Y, SEARCH_W, SEARCH_H).fill({ color: COL_TAB_ACTIVE });
-    this._g.rect(SEARCH_X, SEARCH_Y, SEARCH_W, SEARCH_H).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
-    this._addText('Search', SEARCH_X + 20, SEARCH_Y + 5, COL_TEXT_WHITE, 11);
+    if (this._btSearch) this._drawWzSprite(this._btSearch, SEARCH_X, SEARCH_Y);
 
     // Search overlay — input field when search is active
     if (this._searchActive) {
       const overlayY = SEARCH_Y + SEARCH_H + 4;
 
-      // Search dialog background (OG: CSItemSearch popup)
-      this._g.rect(SEARCH_X - 10, overlayY - 4, SEARCH_W + 20, 80).fill({ color: 0x0E1226 });
-      this._g.rect(SEARCH_X - 10, overlayY - 4, SEARCH_W + 20, 80).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
+      if (this._searchPopup) this._drawWzSprite(this._searchPopup, SEARCH_X - 10, overlayY - 4);
 
       // Input field label
       this._addText('Name:', SEARCH_X - 6, overlayY + 2, COL_TEXT_DIM, 9);
 
-      // Input field
-      this._g.rect(SEARCH_X + 20, overlayY, SEARCH_W - 20, 16).fill({ color: 0x0A0E1A });
-      this._g.rect(SEARCH_X + 20, overlayY, SEARCH_W - 20, 16).stroke({ color: COL_SEPARATOR, width: 1 });
       this._addText(this._searchQuery + '_', SEARCH_X + 22, overlayY + 2, COL_TEXT_WHITE, 10);
 
-      // Search button
-      this._g.rect(SEARCH_X - 6, overlayY + 20, 40, 16).fill({ color: COL_TAB_ACTIVE });
-      this._g.rect(SEARCH_X - 6, overlayY + 20, 40, 16).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
-      this._addText('Find', SEARCH_X + 4, overlayY + 22, COL_TEXT_WHITE, 9);
-
-      // Cancel button
-      this._g.rect(SEARCH_X + 38, overlayY + 20, 40, 16).fill({ color: 0x3C1A1A });
-      this._g.rect(SEARCH_X + 38, overlayY + 20, 40, 16).stroke({ color: 0x8B4444, width: 1 });
-      this._addText('Cancel', SEARCH_X + 44, overlayY + 22, COL_TEXT_WHITE, 9);
+      if (this._btSearchBuy) this._drawWzSprite(this._btSearchBuy, SEARCH_X - 6, overlayY + 20);
+      if (this._btSearchCancel) this._drawWzSprite(this._btSearchCancel, SEARCH_X + 38, overlayY + 20);
 
       // Result count
       if (this._searchResults) {
@@ -1484,10 +1511,9 @@ export class CashShopStage extends Stage {
 
   // ── Name Change Dialog (OG: CUINameChangeDlg) ──
   private _drawNameChangeDialog(): void {
-    const dlgW = 300; const dlgH = 180;
+    const dlgW = 266; const dlgH = 124;
     const dlgX = (CS_W - dlgW) / 2; const dlgY = (CS_H - dlgH) / 2;
-    this._g.rect(dlgX, dlgY, dlgW, dlgH).fill({ color: 0x10142A });
-    this._g.rect(dlgX, dlgY, dlgW, dlgH).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 2 });
+    if (this._bgNameChange) this._drawWzSprite(this._bgNameChange, dlgX, dlgY);
     this._addText('Name Change', dlgX + 100, dlgY + 10, COL_TEXT_GOLD, 14);
     this._addText('Enter new name:', dlgX + 20, dlgY + 40, COL_TEXT_WHITE, 11);
     // Input field
@@ -1505,10 +1531,11 @@ export class CashShopStage extends Stage {
 
   // ── World Transfer Dialog (OG: CUIWorldTransferDlg) ──
   private _drawWorldTransferDialog(): void {
-    const dlgW = 300; const dlgH = 220;
+    const dlgW = this._worldTransferNames.length > 0 ? 406 : 209;
+    const dlgH = this._worldTransferNames.length > 0 ? 424 : 101;
     const dlgX = (CS_W - dlgW) / 2; const dlgY = (CS_H - dlgH) / 2;
-    this._g.rect(dlgX, dlgY, dlgW, dlgH).fill({ color: 0x10142A });
-    this._g.rect(dlgX, dlgY, dlgW, dlgH).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 2 });
+    const background = this._worldTransferNames.length > 0 ? this._bgTransferWorldNotice : this._bgTransferWorld;
+    if (background) this._drawWzSprite(background, dlgX, dlgY);
     this._addText('World Transfer', dlgX + 90, dlgY + 10, COL_TEXT_GOLD, 14);
     this._addText('Select target world:', dlgX + 20, dlgY + 40, COL_TEXT_WHITE, 11);
     for (let i = 0; i < this._worldTransferNames.length; i++) {
@@ -1793,25 +1820,27 @@ export class CashShopStage extends Stage {
   onMouseMove(x: number, y: number): void {
     const lx = x - this._root.x;
     const ly = y;
+    this._inventoryScrollbar?.handleMouseMove(lx - INV_X, ly - INV_Y - 160);
+    this._lockerScrollbar?.handleMouseMove(lx - this._getLockerScrollbarX(), ly - 229);
 
     // Track hover state for buttons (OG: mouseOver state)
     this._hoveredBtn = null;
 
     // Status bar buttons
     const btnY = STATUS_Y + 20;
-    if (ly >= btnY && ly < btnY + 41) {
-      if (lx >= STATUS_X + 350 && lx < STATUS_X + 391) this._hoveredBtn = 'charge';
-      else if (lx >= STATUS_X + 400 && lx < STATUS_X + 441) this._hoveredBtn = 'check';
-      else if (lx >= STATUS_X + 450 && lx < STATUS_X + 491) this._hoveredBtn = 'coupon';
-      else if (lx >= STATUS_X + STATUS_W - 40 && lx < STATUS_X + STATUS_W + 1) this._hoveredBtn = 'exit';
+    if (ly >= STATUS_Y && ly < STATUS_Y + 49) {
+      if (lx >= STATUS_X + 248 && lx < STATUS_X + 289) this._hoveredBtn = 'charge';
+      else if (lx >= STATUS_X + 289 && lx < STATUS_X + 330) this._hoveredBtn = 'check';
+      else if (lx >= STATUS_X + 330 && lx < STATUS_X + 371) this._hoveredBtn = 'coupon';
+      else if (lx >= STATUS_X + 378 && lx < STATUS_X + 546) this._hoveredBtn = 'exit';
     }
 
     // Inventory tab hover
     const tabNames = ['Equip', 'Use', 'Setup', 'Etc', 'Cash'];
-    const tabW = Math.floor(INV_W / tabNames.length);
+    const tabW = Math.floor(156 / tabNames.length);
     for (let i = 0; i < tabNames.length; i++) {
-      const tx = INV_X + i * tabW;
-      if (lx >= tx && lx < tx + tabW && ly >= INV_Y + 14 && ly < INV_Y + 28) {
+      const tx = INV_X + 4 + i * tabW;
+      if (lx >= tx && lx < tx + tabW && ly >= INV_Y + 28 && ly < INV_Y + 42) {
         this._hoveredBtn = `invTab_${i}`;
         break;
       }
@@ -1827,7 +1856,7 @@ export class CashShopStage extends Stage {
           const absIdx = offset + plateIdx;
           if (absIdx >= items.length) continue;
           const px = LIST_X + col * PLATE_COL_W;
-          const py = LIST_Y + row * PLATE_ROW_H;
+          const py = LIST_Y + row * PLATE_ROW_H + 2;
           const buyX = px + PLATE_W - 40;
           const buyY = py + 52;
           const giftY = py + 26;
@@ -1842,9 +1871,17 @@ export class CashShopStage extends Stage {
   }
 
   onMouseButton(x: number, y: number, down: boolean, _button: MouseButton): void {
-    if (!down) return;
     const lx = x - this._root.x;
     const ly = y;
+    if (!down) {
+      this._inventoryScrollbar?.handleMouseButton(lx - INV_X, ly - INV_Y - 160, false);
+      this._lockerScrollbar?.handleMouseButton(lx - this._getLockerScrollbarX(), ly - 229, false);
+      return;
+    }
+
+    if (this._oneADayItemSN > 0 && this._handleOneADayClick(lx, ly)) return;
+    if (this._inventoryScrollbar?.handleMouseButton(lx - INV_X, ly - INV_Y - 160, down)) return;
+    if (this._lockerScrollbar?.handleMouseButton(lx - this._getLockerScrollbarX(), ly - 229, down)) return;
 
     // Gift dialog click handling
     if (this._giftVisible) {
@@ -1956,8 +1993,8 @@ export class CashShopStage extends Stage {
 
     // Exit button (OG: CCSWnd_Status nId=1003 — in status bar at bottom)
     const exitX = STATUS_X + STATUS_W - 40;
-    const exitY = STATUS_Y + 20;
-    if (lx >= exitX && lx < exitX + 30 && ly >= exitY && ly < exitY + 18) {
+    const exitY = STATUS_Y;
+    if (lx >= exitX && lx < exitX + 168 && ly >= exitY && ly < exitY + 49) {
       this._exit();
       return;
     }
@@ -2009,17 +2046,19 @@ export class CashShopStage extends Stage {
       }
     }
 
-    // Outfit tab clicks (OG: CCSWnd_Char outfit category tabs)
-    const outfitTabY = CHAR_Y + CHAR_H + 4;
-    const outfitTabW = Math.floor(CHAR_W / 2);
-    if (ly >= outfitTabY && ly < outfitTabY + 14) {
-      for (let i = 0; i < 2; i++) {
-        const tx = CHAR_X + i * outfitTabW;
-        if (lx >= tx && lx < tx + outfitTabW) {
-          this._outfitTab = i;
-          this._outfitScrollbar = 0;
-          return;
-        }
+    // CCSWnd_Char avatar controls (IDs 1000-1002).
+    if (ly >= CHAR_Y + 237 && ly < CHAR_Y + 256) {
+      if (lx >= CHAR_X + 17 && lx < CHAR_X + 100) {
+        this._statusMessage = 'Avatar purchase selected.';
+        return;
+      }
+      if (lx >= CHAR_X + 101 && lx < CHAR_X + 184) {
+        this._statusMessage = 'Default avatar selected.';
+        return;
+      }
+      if (lx >= CHAR_X + 187 && lx < CHAR_X + 242) {
+        this._statusMessage = 'Avatar take-off selected.';
+        return;
       }
     }
 
@@ -2080,7 +2119,7 @@ export class CashShopStage extends Stage {
     for (let row = 0; row < PLATE_ROWS; row++) {
       for (let col = 0; col < PLATE_COLS; col++) {
         const px = LIST_X + col * PLATE_COL_W;
-        const py = LIST_Y + row * PLATE_ROW_H;
+        const py = LIST_Y + row * PLATE_ROW_H + 2;
         if (lx >= px && lx < px + PLATE_W && ly >= py && ly < py + PLATE_H) {
           const plateIdx = row * PLATE_COLS + col;
           const items = this._searchResults ?? this._getCurrentPageItems();
@@ -2192,16 +2231,67 @@ export class CashShopStage extends Stage {
 
     // Inventory tab clicks (OG: CCSWnd_Inventory tab control)
     const tabNames = ['Equip', 'Use', 'Setup', 'Etc', 'Cash'];
-    const tabW = Math.floor(INV_W / tabNames.length);
+    const tabW = Math.floor(156 / tabNames.length);
     for (let i = 0; i < tabNames.length; i++) {
-      const tx = INV_X + i * tabW;
-      if (lx >= tx && lx < tx + tabW && ly >= INV_Y + 14 && ly < INV_Y + 28) {
+      const tx = INV_X + 4 + i * tabW;
+      if (lx >= tx && lx < tx + tabW && ly >= INV_Y + 28 && ly < INV_Y + 42) {
         this._invItemTI = i;
         this._invFirstPosition = 0;
         this._selectedInvCell = -1;
         return;
       }
     }
+  }
+
+  private _handleOneADayClick(lx: number, ly: number): boolean {
+    const selectorX = LIST_X + 412;
+    const selectorY = LIST_Y + 406;
+    if (lx >= selectorX && lx < selectorX + 40 && ly >= selectorY && ly < selectorY + 24) {
+      this._oneADayMode = this._oneADayMode === 0 ? 1 : 0;
+      this._oneADaySelected = -1;
+      return true;
+    }
+
+    const todayX = LIST_X + 10;
+    const todayY = LIST_Y + 28;
+    const todayW = LIST_W - 20;
+    if (this._oneADayMode === 0) {
+      const buyY = todayY + 65;
+      if (lx >= todayX + todayW - 80 && lx < todayX + todayW - 10 && ly >= buyY && ly < buyY + 24) {
+        const item = this._commodities.find(c => c.sn === this._oneADayItemSN);
+        if (item) {
+          this._buyPending = true;
+          this._processBuy(item);
+          this._statusMessage = `Buying ${item.name}...`;
+        }
+        return true;
+      }
+      return lx >= LIST_X && lx < LIST_X + LIST_W && ly >= LIST_Y && ly < LIST_Y + LIST_H;
+    }
+
+    const gridStartY = todayY + 100 + 10 + 14;
+    const gridPlateW = 120;
+    const gridPlateH = 80;
+    for (let i = 0; i < 10; i++) {
+      const col = i % 3;
+      const row = Math.floor(i / 3);
+      const px = LIST_X + 10 + col * (gridPlateW + 14);
+      const py = gridStartY + row * (gridPlateH + 10);
+      if (lx >= px && lx < px + gridPlateW && ly >= py && ly < py + gridPlateH) {
+        if (i < this._oneADayPrevItems.length) {
+          this._oneADaySelected = i;
+          const previous = this._oneADayPrevItems[i];
+          const item = this._commodities.find(c => c.sn === previous.originalSn || c.sn === previous.sn);
+          if (item) {
+            this._buyPending = true;
+            this._processBuy(item);
+            this._statusMessage = `Buying ${item.name}...`;
+          }
+        }
+        return true;
+      }
+    }
+    return lx >= LIST_X && lx < LIST_X + LIST_W && ly >= LIST_Y && ly < LIST_Y + LIST_H;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -2223,7 +2313,7 @@ export class CashShopStage extends Stage {
 
     // Commodity validation: must exist and be on sale
     const commodity = this._commodities.find(c => c.sn === item.sn);
-    if (!commodity || !commodity.onSale) {
+    if (!commodity || !commodity.onSale || !this._isSaleAvailable(commodity)) {
       this._statusMessage = 'Item not found or not for sale.';
       return;
     }
@@ -2557,16 +2647,28 @@ export class CashShopStage extends Stage {
         this._statusMessage = `Locker loaded: ${args.itemCount} items`;
         break;
       }
-      case 0x5A: this._statusMessage = `${args.giftCount} gifts loaded`; break;
+      case 0x5A:
+        this._giftRecords = args.gifts.slice();
+        this._statusMessage = `${args.giftCount} gifts loaded`;
+        break;
       case 0x5C: // LoadWish result — wishlist SNs
+        this._wishlist = args.wishlist.slice(0, 10);
         this._statusMessage = `Wishlist loaded: ${args.wishlist.length} items`;
         break;
       case 0x62: // SetWish result
+        this._wishlist = args.wishlist.slice(0, 10);
         this._statusMessage = 'Wishlist updated';
         break;
-      case 0x64: this._buyPending = false; this._statusMessage = 'Purchase complete!'; break;
+      case 0x64:
+        this._buyPending = false;
+        this._appendCashItem(args.itemBytes);
+        this._statusMessage = 'Purchase complete!';
+        break;
       case 0x66: // BuyNormalDone — items moved to inventory
         this._buyPending = false;
+        for (let i = 0; i < args.itemCount; i++) {
+          this._appendCashItem(args.items.subarray(i * 55, (i + 1) * 55));
+        }
         this._statusMessage = `Normal buy complete: ${args.itemCount} items`;
         break;
       case 0x68: // GiftDone
@@ -2612,6 +2714,7 @@ export class CashShopStage extends Stage {
         break;
       case 0xAA: // FreeCashItemDone
         this._buyPending = false;
+        this._appendCashItem(args.itemBytes);
         this._statusMessage = 'Free item claimed!';
         break;
       case 0xAF: // PurchaseRecordResult
@@ -2624,8 +2727,17 @@ export class CashShopStage extends Stage {
       case 0x6D: this._statusMessage = `Inventory expanded to ${args.newSlotCount}`; break;
       case 0x6F: this._statusMessage = `Storage expanded to ${args.trunkCount}`; break;
       case 0x77: this._statusMessage = 'Item moved to locker'; break;
-      case 0x79: this._statusMessage = 'Item moved to inventory'; break;
-      case 0x9A: this._buyPending = false; this._statusMessage = `Package: ${args.itemCount} items`; break;
+      case 0x79:
+        this._appendCashItem(args.itemBytes);
+        this._statusMessage = 'Item moved to inventory';
+        break;
+      case 0x9A:
+        this._buyPending = false;
+        for (let i = 0; i < args.itemCount; i++) {
+          this._appendCashItem(args.items.subarray(i * 55, (i + 1) * 55));
+        }
+        this._statusMessage = `Package: ${args.itemCount} items`;
+        break;
       case 0x98: this._buyPending = false; this._statusMessage = 'Couple item sent!'; break;
       case 0x9E: this._buyPending = false; this._statusMessage = 'Purchase complete!'; break;
       case 0xA2: this._buyPending = false; this._statusMessage = 'Friendship item sent!'; break;
@@ -2734,7 +2846,7 @@ export class CashShopStage extends Stage {
   private _getCurrentPageItems(): CashCommodity[] {
     if (this._searchResults) return this._searchResults;
     return this._commodities.filter(c => {
-      if (!c.onSale) return false;
+      if (!c.onSale || !this._isSaleAvailable(c)) return false;
 
       // Tab 0 (New/Best) and Tab 8 (Popular) show all items
       if (this._activeTab === 0 || this._activeTab === 8) return true;
@@ -2810,6 +2922,23 @@ export class CashShopStage extends Stage {
       } catch { return null; }
     };
 
+    const oneADay = this._ui.GetItem('OneADay.img') as any;
+    const oneADayItems = (oneADay?.Root as any)?.Items as Record<string, unknown> | undefined;
+    const tryLoadOneADay = (path: string): WzSprite | null => {
+      if (!oneADayItems) return null;
+      try {
+        const parts = path.split('/');
+        let node: any = oneADayItems[parts[0]];
+        for (let i = 1; i < parts.length && node; i++) node = node.Items?.[parts[i]];
+        return node instanceof WzCanvas ? this._loader!.Load(node) : null;
+      } catch { return null; }
+    };
+
+    this._oneADayBase = tryLoadOneADay('CSOneADay/Base01');
+    this._oneADayItemBox = tryLoadOneADay('CSOneADay/ItemBoxBig');
+    this._oneADayBuy = tryLoadOneADay('CSOneADay/BtBuy/normal');
+    this._oneADayGift = tryLoadOneADay('CSOneADay/BtGift/normal');
+
     // Background — OG: Base/backgrnd (800×600)
     this._bg = tryLoad('Base/backgrnd');
 
@@ -2821,12 +2950,13 @@ export class CashShopStage extends Stage {
     // PreviewOnOff toggle button — NX wraps canvas inside sub-node
     this._previewOn = tryLoad('Base/PreviewOnOff/On/0');
     this._previewOff = tryLoad('Base/PreviewOnOff/Off/0');
+    this._btBuyAvatar = tryLoad('CSChar/BtBuyAvatar/normal');
+    this._btDefaultAvatar = tryLoad('CSChar/BtDefaultAvatar/normal');
+    this._btTakeoffAvatar = tryLoad('CSChar/BtTakeoffAvatar/normal');
 
-    // Tab sprites: CSTab/Tab/1 through CSTab/Tab/9
-    // OG: tab canvas mapping: 8→1, 9→9, else nTab+1
+    // Tab sprites: CSTab/Tab/1 through CSTab/Tab/9.
     for (let i = 0; i < TAB_COUNT; i++) {
-      const canvasIdx = (i === 8) ? 1 : (i === 9) ? 9 : i + 1;
-      this._tabSprites[i] = tryLoad(`CSTab/Tab/${canvasIdx}`);
+      this._tabSprites[i] = tryLoad(`CSTab/Tab/${i + 1}`);
     }
 
     // Status bar buttons — 4 states: normal, mouseOver, pressed, disabled
@@ -2845,6 +2975,17 @@ export class CashShopStage extends Stage {
     this._btGift = tryLoad('CSList/BtGift/normal');
     this._btGiftOver = tryLoad('CSList/BtGift/mouseOver');
 
+    this._btSearch = tryLoad('CSItemSearch/BtSearch/normal');
+    this._btSearchBuy = tryLoad('CSItemSearch/BtBuy/normal');
+    this._btSearchCancel = tryLoad('CSItemSearch/BtCancel/normal');
+    this._searchPopup = tryLoad('CSItemSearch/PopUp/backgrnd');
+
+    this._btExEquip = tryLoad('CSInventory/BtExEquip/normal');
+    this._btExConsume = tryLoad('CSInventory/BtExConsume/normal');
+    this._btExInstall = tryLoad('CSInventory/BtExInstall/normal');
+    this._btExEtc = tryLoad('CSInventory/BtExEtc/normal');
+    this._btExTrunk = tryLoad('CSInventory/BtExTrunk/normal');
+
     // List background (200×80 plate canvas)
     this._bgList = tryLoad('CSList/Base');
 
@@ -2862,11 +3003,17 @@ export class CashShopStage extends Stage {
     this._discountLine = tryLoad('CSDiscount/Line');
     this._discountTotal = tryLoad('CSDiscount/total');
 
-    // Panel backgrounds — fallback to main bg when WZ panels don't exist
-    this._bgLocker = tryLoad('CSLocker/Base') ?? this._bg;
-    this._bgInventory = tryLoad('CSInventory/Base') ?? this._bg;
-    this._bgStatus = tryLoad('CSStatus/Base') ?? this._bg;
-    this._bgBest = tryLoad('CSBest/Base') ?? this._bg;
+    // These panels are part of Base/backgrnd in v95. There are no separate
+    // CSLocker/CSInventory/CSStatus/CSBest background canvases.
+    this._bgLocker = null;
+    this._bgInventory = null;
+    this._bgStatus = null;
+    this._bgBest = null;
     this._bgGift = tryLoad('CSGift/backgrnd');
+    this._bgNameChange = tryLoad('CSChangeName/Base/backgrnd');
+    this._bgNameChangeNotice = tryLoad('CSChangeName/Base/backgrndnotice');
+    this._bgTransferWorld = tryLoad('CSTransferWorld/Base/backgrnd');
+    this._bgTransferWorldNotice = tryLoad('CSTransferWorld/Base/backgrndnotice');
+    this._btNameCheck = tryLoad('CSChangeName/BtCheck/normal');
   }
 }
