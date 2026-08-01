@@ -87,7 +87,7 @@ const LOCKER_Y = 318;
 const LOCKER_X = Math.floor((CS_W - LOCKER_W) / 2); // centered
 const LOCKER_CELL = 32;
 const LOCKER_COL_STEP = 35; // 0x23
-const LOCKER_COLS = 3;
+const LOCKER_COLS = 6;
 const LOCKER_ROWS = 2;
 
 // Inventory (CCSWnd_Inventory) — bottom left
@@ -151,6 +151,7 @@ export class CashShopStage extends Stage {
   private _loader: WzTextureLoader | null = null;
   private _icons: ItemIconLoader | null = null;
   private _root: Container;
+  private _staticRoot: Container;
   private _g: Graphics;
   private _prevW: number;
 
@@ -172,11 +173,15 @@ export class CashShopStage extends Stage {
   private _maplePoints = 0;
   private _cashShopAuthorized = false;
   private _statusMessage = '';
+  private _couponVisible = false;
+  private _couponValue = '';
   private _selectedPlate = -1;
   private _focusedPlate = -1;
   private _buyPending = false;
   private _playerLevel = 1;
   private _playerJob = 0;
+  private _playerGender = 0;
+  private _playerFame = 0;
   private _isPremium = false;
 
   // ── Confirm buy dialog (OG: CConfirmPurchaseDlg) ──
@@ -210,6 +215,8 @@ export class CashShopStage extends Stage {
 
   // ── Inventory click state ──
   private _selectedInvCell = -1;
+  private _lastInventoryClickCell = -1;
+  private _lastInventoryClickAt = 0;
   private _invItemTI = 0; // OG m_nItemTI — current inventory tab (0=equip, 1=use, 2=setup, 3=etc, 4=cash)
   private _invFirstPosition = 0; // OG m_nFirstPosition — scroll offset for inventory grid
   private _invSlotCount = 0; // total items in current inventory tab
@@ -268,6 +275,7 @@ export class CashShopStage extends Stage {
   private _previewBgs: (WzSprite | null)[] = [null, null, null];
   private _previewOn: WzSprite | null = null;
   private _previewOff: WzSprite | null = null;
+  private _previewEnabled = true;
   private _btBuyAvatar: WzSprite | null = null;
   private _btDefaultAvatar: WzSprite | null = null;
   private _btTakeoffAvatar: WzSprite | null = null;
@@ -336,11 +344,18 @@ export class CashShopStage extends Stage {
   private _bgStatus: WzSprite | null = null;
   private _bgBest: WzSprite | null = null;
   private _bgGift: WzSprite | null = null;
+  private _bgGiftWide: WzSprite | null = null;
+  private _btGiftBuddy: WzSprite | null = null;
+  private _btGiftGuild: WzSprite | null = null;
+  private _btGiftHide: WzSprite | null = null;
   private _bgNameChange: WzSprite | null = null;
   private _bgTransferWorld: WzSprite | null = null;
   private _bgNameChangeNotice: WzSprite | null = null;
   private _bgTransferWorldNotice: WzSprite | null = null;
   private _btNameCheck: WzSprite | null = null;
+  private _confirmNotice: WzSprite | null = null;
+  private _confirmOk: WzSprite | null = null;
+  private _confirmNo: WzSprite | null = null;
 
   // Hover state tracking
   private _hoveredBtn: string | null = null;
@@ -354,6 +369,7 @@ export class CashShopStage extends Stage {
     this._ui = ui;
     this._prevW = prevW;
     this._root = new Container();
+    this._staticRoot = new Container();
     this._g = new Graphics();
     this._root.addChild(this._g);
   }
@@ -363,6 +379,7 @@ export class CashShopStage extends Stage {
     this._loader = new WzTextureLoader();
     this._icons = new ItemIconLoader(this._loader, game.wz.character, game.wz.item);
     this._loadAssets();
+    this._buildStaticLayer();
     this._inventoryScrollbar = new ScrollBar(INV_X, INV_Y + 160, 102, pos => {
       this._invFirstPosition = pos;
     }, { loader: this._loader, uiWz: this._ui });
@@ -374,7 +391,9 @@ export class CashShopStage extends Stage {
     this._wireHandlers(game);
     this._requestInitialData();
     this.mapRoot.addChild(this._root);
+    this.mapRoot.addChildAt(this._staticRoot, this.mapRoot.children.length - 1);
     this._root.x = Math.floor((this._prevW - CS_W) / 2);
+    this._staticRoot.x = this._root.x;
 
     // Load WZ packages for character rendering
     const dir = game.wzDir ?? '/wz_client';
@@ -387,6 +406,7 @@ export class CashShopStage extends Stage {
         this._itemInfo = new ItemInfoService(this._charWz, this._itemWz);
         for (const commodity of this._commodities) commodity.name = this._getItemName(commodity.itemId);
         for (const item of this._lockerItems) item.name = this._getItemName(item.itemId);
+        this._tryBuildCharacterPreview();
       } catch (ex) { console.warn('CashShopStage: failed to load WZ for character preview', ex); }
     };
     loadWz();
@@ -394,6 +414,7 @@ export class CashShopStage extends Stage {
 
   onExit(): void {
     this._unwireHandlers();
+    this._charLook?.container.removeFromParent();
     this._clearDynamic();
     for (const s of this._dynamicIcons) s.destroy();
     this._dynamicIcons = [];
@@ -402,6 +423,11 @@ export class CashShopStage extends Stage {
     this._loader = null;
     this._inventoryScrollbar = null;
     this._lockerScrollbar = null;
+    this._root.removeFromParent();
+    this._root.destroy({ children: true });
+    this._staticRoot.removeFromParent();
+    this._staticRoot.destroy({ children: true });
+    this._charLook = null;
     this._charWz = null;
     this._itemWz = null;
     this._baseWz = null;
@@ -481,6 +507,8 @@ export class CashShopStage extends Stage {
       this._cashShopAuthorized = args.cashShopAuthorized;
       this._playerLevel = args.highestCharacterLevelInAccount;
       this._playerJob = args.characterData?.characterStat?.job ?? 0;
+      this._playerGender = args.characterData?.characterStat?.gender ?? 0;
+      this._playerFame = args.characterData?.characterStat?.pop ?? 0;
       this._characterData = args.characterData ?? null;
 
       // Build character preview from character data
@@ -492,13 +520,15 @@ export class CashShopStage extends Stage {
           args.characterData.equippedCash,
         );
         if (!this._charLook) {
-          if (!this._charWz || !this._itemWz || !this._baseWz || !this._loader) return;
-          this._charLook = new CharLook(stat.skin);
-          this._charLook.Load(this._charWz, this._itemWz, this._baseWz, this._loader);
+          if (this._charWz && this._itemWz && this._baseWz && this._loader) {
+            this._charLook = new CharLook(stat.skin);
+            this._charLook.Load(this._charWz, this._itemWz, this._baseWz, this._loader);
+          }
         }
-        this._charLook.SetAvatar(look);
-        this._charLook.StartAction('stand1');
+        this._charLook?.SetAvatar(look);
+        this._charLook?.StartAction('stand1');
       }
+      this._tryBuildCharacterPreview();
 
       // Decode best array
       this._bestItems = CashShopDecoder.decodeBestArray(args.best);
@@ -613,6 +643,42 @@ export class CashShopStage extends Stage {
     return this._itemInfo?.GetItemName(itemId) ?? '';
   }
 
+  private _tryBuildCharacterPreview(): void {
+    const data = this._characterData as any;
+    const stat = data?.characterStat;
+    if (!stat || !data?.equipped || !this._charWz || !this._itemWz || !this._baseWz || !this._loader) return;
+    const look = AvatarCodec.FromCharacterData(stat, data.equipped, data.equippedCash);
+    if (!this._charLook) {
+      this._charLook = new CharLook(stat.skin);
+      this._charLook.Load(this._charWz, this._itemWz, this._baseWz, this._loader);
+    }
+    this._charLook.SetAvatar(look);
+    this._charLook.StartAction('stand1');
+  }
+
+  private _buildStaticLayer(): void {
+    this._staticRoot.removeChildren().forEach(child => child.destroy());
+    if (!this._bg) return;
+    const sprite = this._bg.ToPixi();
+    this._staticRoot.addChild(sprite);
+  }
+
+  private _getSalePrice(item: CashCommodity): number {
+    return item.discountRate > 0 ? Math.floor(item.price * (100 - item.discountRate) / 100) : item.price;
+  }
+
+  private _isCommodityUsable(item: CashCommodity): boolean {
+    if (item.reqLevel > 0 && this._playerLevel < item.reqLevel) return false;
+    if (item.reqPop > 0 && this._playerFame < item.reqPop) return false;
+    if (item.gender !== 0 && item.gender !== 2 && item.gender !== this._playerGender) return false;
+    if (item.classField !== 0) {
+      const jobClass = Math.floor(this._playerJob / 100);
+      const classMatches = [1, 2, 3, 4].includes(item.classField) && jobClass === item.classField;
+      if (!classMatches) return false;
+    }
+    return true;
+  }
+
   private _decodeSaleTables(stock: Uint8Array, limitGoods: Uint8Array, zeroGoods: Uint8Array): void {
     this._stockStates.clear();
     const stockView = new DataView(stock.buffer, stock.byteOffset, stock.byteLength);
@@ -697,17 +763,9 @@ export class CashShopStage extends Stage {
     this._clearDynamic();
     this._g.clear();
 
-    // Full background
-    this._g.rect(0, 0, CS_W, CS_H).fill({ color: COL_BG });
-
-    // Draw WZ background if available
-    if (this._bg) {
-      this._drawWzSprite(this._bg, 0, 0);
-    }
-
     this._drawCharacterPreview();
     this._drawTabBar();
-    if (this._oneADayItemSN > 0) this._drawOneADay();
+    if (this._activeTab === 8 && this._oneADayItemSN > 0) this._drawOneADay();
     else this._drawItemGrid();
     this._drawBestPanel();
     this._drawLockerPanel();
@@ -729,6 +787,7 @@ export class CashShopStage extends Stage {
   onResize(windowW: number, _windowH: number): void {
     this._prevW = windowW;
     this._root.x = Math.floor((windowW - CS_W) / 2);
+    this._staticRoot.x = this._root.x;
   }
 
   // ── Character preview (m_pLayer) — LEFT COLUMN ──
@@ -749,7 +808,7 @@ export class CashShopStage extends Stage {
       this._drawWzSprite(previewBg, CHAR_X, CHAR_Y);
     }
 
-    if (this._charLook) {
+    if (this._charLook && this._previewEnabled) {
       this._charLook.Update(1 / 60, { x: 0, y: 0 }, false, false);
       this._charLook.RebuildDisplay();
       const container = this._charLook.container;
@@ -760,9 +819,8 @@ export class CashShopStage extends Stage {
     // PreviewOnOff toggle button
     const toggleY = CHAR_Y + 4;
     const toggleX = CHAR_X + CHAR_W - 36;
-    if (this._previewOff) {
-      this._drawWzSprite(this._previewOff, toggleX, toggleY);
-    }
+    const previewToggle = this._previewEnabled ? this._previewOn : this._previewOff;
+    if (previewToggle) this._drawWzSprite(previewToggle, toggleX, toggleY);
 
     const avatarButtons = [
       [this._btBuyAvatar, 17],
@@ -895,7 +953,7 @@ export class CashShopStage extends Stage {
           this._addText(item.name.slice(0, 14), px + 70, py + 10, COL_TEXT_WHITE, 11);
 
           // Price
-          const price = item.discountRate > 0 ? Math.floor(item.price * (100 - item.discountRate) / 100) : item.price;
+          const price = this._getSalePrice(item);
           this._addText(`${price} NX`, px + 70, py + 28, COL_TEXT_GOLD, 11);
 
           // Discount badge — use WZ digit sprites if available
@@ -1007,6 +1065,7 @@ export class CashShopStage extends Stage {
         const buyX = todayX + todayW - 80;
         const buyY = todayY + 65;
         if (this._oneADayBuy) this._drawWzSprite(this._oneADayBuy, buyX, buyY);
+        if (this._oneADayGift) this._drawWzSprite(this._oneADayGift, buyX, buyY - 22);
       } else {
         // SN exists but commodity not loaded yet
         this._addText(`Item SN: ${this._oneADayItemSN}`, todayX + 80, todayY + 40, COL_TEXT_DIM, 11);
@@ -1111,9 +1170,7 @@ export class CashShopStage extends Stage {
           // OG Draw: name at (8, itemTop+36), font FONT_BASIC_BLACK
           this._addText(comm.name.slice(0, 10), BEST_X + 8, by + 36, COL_TEXT_WHITE, 8);
           // OG Draw: price at (8, itemTop+53), font FONT_BASIC_WHITE
-          const price = comm.discountRate > 0
-            ? Math.floor(comm.price * (100 - comm.discountRate) / 100)
-            : comm.price;
+          const price = this._getSalePrice(comm);
           this._addText(`${price} NX`, BEST_X + 8, by + 53, COL_TEXT_GOLD, 8);
         }
       }
@@ -1138,8 +1195,8 @@ export class CashShopStage extends Stage {
     for (let row = 0; row < LOCKER_ROWS; row++) {
       for (let col = 0; col < LOCKER_COLS; col++) {
         const idx = startIdx + row * LOCKER_COLS + col;
-        const cx = LOCKER_X + 10 + col * LOCKER_COL_STEP;
-        const cy = LOCKER_Y + 20 + row * LOCKER_COL_STEP;
+         const cx = LOCKER_X + 21 + col * LOCKER_COL_STEP;
+         const cy = LOCKER_Y + 30 + row * LOCKER_COL_STEP;
 
         if (idx < this._lockerItems.length) {
           const item = this._lockerItems[idx];
@@ -1155,7 +1212,7 @@ export class CashShopStage extends Stage {
 
     // OG scrollbar: job-dependent X position, at Y=229 (relative to panel), size 29×67
     const scrollbarX = this._getLockerScrollbarX();
-    const maxScroll = Math.max(0, Math.ceil(this._lockerItems.length / (LOCKER_COLS * LOCKER_ROWS)) - 1);
+    const maxScroll = Math.max(0, Math.ceil(Math.max(0, this._lockerItems.length - LOCKER_COLS * LOCKER_ROWS) / LOCKER_COLS));
     if (this._lockerScrollbar) {
       this._lockerScrollbar.container.x = scrollbarX;
       this._lockerScrollbar.setRange(maxScroll);
@@ -1217,8 +1274,8 @@ export class CashShopStage extends Stage {
       for (let col = 0; col < INV_COLS; col++) {
         const cellIdx = row * INV_COLS + col;
         const slotIdx = startIdx + cellIdx;
-        const cx = INV_X + 10 + col * INV_COL_STEP;
-        const cy = INV_Y + 30 + row * INV_COL_STEP;
+         const cx = INV_X + 22 + col * INV_COL_STEP;
+         const cy = INV_Y + 55 + row * INV_COL_STEP;
         const isSelected = cellIdx === this._selectedInvCell;
 
         // Cell background
@@ -1253,6 +1310,7 @@ export class CashShopStage extends Stage {
         }
       }
     }
+    if (this._btRebate) this._drawWzSprite(this._btRebate, LOCKER_X + 160, LOCKER_Y + 82);
     this._inventoryScrollbar?.setRange(Math.max(0, items.length - 12));
   }
 
@@ -1353,17 +1411,14 @@ export class CashShopStage extends Stage {
     this._g.rect(0, 0, CS_W, CS_H).fill({ color: 0x000000, alpha: 0.5 });
 
     // Dialog box centered
-    const dlgW = 400;
-    const dlgH = 260;
+    const dlgW = 473;
+    const dlgH = 169;
     const dlgX = Math.floor((CS_W - dlgW) / 2);
     const dlgY = Math.floor((CS_H - dlgH) / 2);
 
     // Dialog background — use WZ if available
     if (this._bgGift) {
-      this._drawWzSprite(this._bgGift, dlgX, dlgY);
-    } else {
-      this._g.rect(dlgX, dlgY, dlgW, dlgH).fill({ color: 0x0E1226 });
-      this._g.rect(dlgX, dlgY, dlgW, dlgH).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 2 });
+      this._drawWzSprite(this._bgGiftWide ?? this._bgGift, dlgX, dlgY);
     }
 
     // Title
@@ -1371,9 +1426,7 @@ export class CashShopStage extends Stage {
 
     // Item name and price
     this._addText(`Item: ${this._giftItem.name}`, dlgX + 20, dlgY + 44, COL_TEXT_WHITE, 11);
-    const price = this._giftItem.discountRate > 0
-      ? Math.floor(this._giftItem.price * (100 - this._giftItem.discountRate) / 100)
-      : this._giftItem.price;
+    const price = this._getSalePrice(this._giftItem);
     this._addText(`Price: ${price} NX`, dlgX + 20, dlgY + 64, COL_TEXT_GOLD, 11);
 
     // Receiver name field
@@ -1419,26 +1472,18 @@ export class CashShopStage extends Stage {
     if (!this._confirmBuyItem) return;
 
     const commodity = this._confirmBuyItem;
-    const price = commodity.discountRate > 0
-      ? Math.floor(commodity.price * (100 - commodity.discountRate) / 100)
-      : commodity.price;
+    const price = this._getSalePrice(commodity);
 
     // Semi-transparent overlay
     this._g.rect(0, 0, CS_W, CS_H).fill({ color: 0x000000, alpha: 0.5 });
 
     // Dialog box centered
-    const dlgW = 340;
-    const dlgH = 260;
+    const dlgW = 305;
+    const dlgH = 157;
     const dlgX = Math.floor((CS_W - dlgW) / 2);
     const dlgY = Math.floor((CS_H - dlgH) / 2);
 
-    // Dialog background — use WZ if available
-    if (this._bgGift) {
-      this._drawWzSprite(this._bgGift, dlgX, dlgY);
-    } else {
-      this._g.rect(dlgX, dlgY, dlgW, dlgH).fill({ color: 0x0E1226 });
-      this._g.rect(dlgX, dlgY, dlgW, dlgH).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 2 });
-    }
+    if (this._confirmNotice) this._drawWzSprite(this._confirmNotice, dlgX, dlgY);
 
     // Title
     this._addText('Confirm Purchase', dlgX + 100, dlgY + 10, COL_TEXT_GOLD, 14);
@@ -1456,15 +1501,15 @@ export class CashShopStage extends Stage {
     const acceptsMaplePoint = commodity.limit !== 2;
     const payX = dlgX + 30;
     const payW = dlgW - 60;
-    const payH = 24;
-    const payStartY = dlgY + 84;
-    const payStep = 30;
+    const payH = 15;
+    const payStartY = dlgY + 58;
+    const payStep = 15;
 
     const payLabels = ['NX Credit', 'Maple Point', 'Prepaid NX'];
     const payAvail = [
-      commodity.price <= this._nxCredit,                                      // NX Credit
-      acceptsMaplePoint && commodity.price <= this._maplePoints,              // Maple Point
-      commodity.price <= this._nxPrepaid,                                     // Prepaid NX
+      price <= this._nxCredit,                                                // NX Credit
+      acceptsMaplePoint && price <= this._maplePoints,                        // Maple Point
+      price <= this._nxPrepaid,                                               // Prepaid NX
     ];
     const payBalances = [this._nxCredit, this._maplePoints, this._nxPrepaid];
 
@@ -1482,31 +1527,26 @@ export class CashShopStage extends Stage {
       // Radio indicator
       const radioX = payX + 6;
       const radioY = py + 5;
-      this._g.circle(radioX, radioY, 6).stroke({ color: isAvail ? COL_TEXT_WHITE : 0x666666, width: 1 });
+      this._g.circle(radioX, radioY, 4).stroke({ color: isAvail ? COL_TEXT_WHITE : 0x666666, width: 1 });
       if (isSelected) {
-        this._g.circle(radioX, radioY, 3).fill({ color: isAvail ? COL_TEXT_GREEN : 0x666666 });
+        this._g.circle(radioX, radioY, 2).fill({ color: isAvail ? COL_TEXT_GREEN : 0x666666 });
       }
 
       // Label
       const textColor = !isAvail ? 0x666666 : isSelected ? COL_TEXT_GREEN : COL_TEXT_WHITE;
-      this._addText(payLabels[i], payX + 20, py + 5, textColor, 11);
+      this._addText(payLabels[i], payX + 14, py + 2, textColor, 9);
 
       // Balance display on right side
-      this._addText(`${payBalances[i]}`, payX + payW - 80, py + 5, isAvail ? COL_TEXT_DIM : 0x555555, 10);
+      this._addText(`${payBalances[i]}`, payX + payW - 60, py + 2, isAvail ? COL_TEXT_DIM : 0x555555, 9);
     }
 
     // OK button
     const okX = dlgX + 40;
-    const okY = dlgY + dlgH - 40;
-    this._g.rect(okX, okY, 100, 28).fill({ color: COL_TAB_ACTIVE });
-    this._g.rect(okX, okY, 100, 28).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
-    this._addText('OK', okX + 40, okY + 7, COL_TEXT_WHITE, 12);
+    const okY = dlgY + dlgH - 37;
+    if (this._confirmOk) this._drawWzSprite(this._confirmOk, dlgX + 157, okY);
 
     // Cancel button
-    const cancelX = dlgX + dlgW - 140;
-    this._g.rect(cancelX, okY, 100, 28).fill({ color: 0x3C1A1A });
-    this._g.rect(cancelX, okY, 100, 28).stroke({ color: 0x8B4444, width: 1 });
-    this._addText('Cancel', cancelX + 24, okY + 7, COL_TEXT_WHITE, 12);
+    if (this._confirmNo) this._drawWzSprite(this._confirmNo, dlgX + 207, okY);
   }
 
   // ── Name Change Dialog (OG: CUINameChangeDlg) ──
@@ -1621,6 +1661,20 @@ export class CashShopStage extends Stage {
   // ═══════════════════════════════════════════════════════════════════════════
 
   onKeyPress(key: string): void {
+    if (this._couponVisible) {
+      if (key === 'Escape') {
+        this._couponVisible = false;
+        this._couponValue = '';
+      } else if (key === 'Backspace') {
+        this._couponValue = this._couponValue.slice(0, -1);
+      } else if (key === 'Enter') {
+        if (this._couponValue.length > 0) this.game?.session.send(GameSender.CashShopUseCoupon(this._couponValue));
+        this._couponVisible = false;
+      } else if (key.length === 1 && this._couponValue.length < 30) {
+        this._couponValue += key;
+      }
+      return;
+    }
     // Gift dialog input mode — capture typing
     if (this._giftVisible) {
       if (key === 'Escape') {
@@ -1671,10 +1725,11 @@ export class CashShopStage extends Stage {
         const comm = this._confirmBuyItem;
         if (comm) {
           const acceptsMaplePoint = comm.limit !== 2;
+          const price = this._getSalePrice(comm);
           const payAvail = [
-            comm.price <= this._nxCredit,
-            acceptsMaplePoint && comm.price <= this._maplePoints,
-            comm.price <= this._nxPrepaid,
+            price <= this._nxCredit,
+            acceptsMaplePoint && price <= this._maplePoints,
+            price <= this._nxPrepaid,
           ];
           let next = (this._confirmBuyPaymentType + 1) % 3;
           for (let tries = 0; tries < 3; tries++) {
@@ -1690,10 +1745,11 @@ export class CashShopStage extends Stage {
         const comm = this._confirmBuyItem;
         if (comm) {
           const acceptsMaplePoint = comm.limit !== 2;
+          const price = this._getSalePrice(comm);
           const payAvail = [
-            comm.price <= this._nxCredit,
-            acceptsMaplePoint && comm.price <= this._maplePoints,
-            comm.price <= this._nxPrepaid,
+            price <= this._nxCredit,
+            acceptsMaplePoint && price <= this._maplePoints,
+            price <= this._nxPrepaid,
           ];
           let prev = (this._confirmBuyPaymentType + 2) % 3;
           for (let tries = 0; tries < 3; tries++) {
@@ -1847,7 +1903,7 @@ export class CashShopStage extends Stage {
     }
 
     // Buy/Gift buttons on plates
-    if (this._activeTab !== 9) {
+    if (this._activeTab !== 8) {
       const items = this._getCurrentPageItems();
       const offset = this._page * PLATES_PER_PAGE;
       for (let row = 0; row < PLATE_ROWS; row++) {
@@ -1879,14 +1935,36 @@ export class CashShopStage extends Stage {
       return;
     }
 
-    if (this._oneADayItemSN > 0 && this._handleOneADayClick(lx, ly)) return;
+    if (this._activeTab === 8 && this._oneADayItemSN > 0 && this._handleOneADayClick(lx, ly)) return;
     if (this._inventoryScrollbar?.handleMouseButton(lx - INV_X, ly - INV_Y - 160, down)) return;
     if (this._lockerScrollbar?.handleMouseButton(lx - this._getLockerScrollbarX(), ly - 229, down)) return;
 
+    if (ly >= STATUS_Y && ly < STATUS_Y + 49) {
+      if (lx >= STATUS_X + 248 && lx < STATUS_X + 289) {
+        this._statusMessage = 'Cash charge opened.';
+        return;
+      }
+      if (lx >= STATUS_X + 289 && lx < STATUS_X + 330) {
+        const items = this._getCurrentPageItems();
+        const selected = this._selectedPlate >= 0 ? items[this._page * PLATES_PER_PAGE + this._selectedPlate] : undefined;
+        if (selected) this.game?.session.send(GameSender.CashShopPurchaseRecord(selected.sn));
+        return;
+      }
+      if (lx >= STATUS_X + 330 && lx < STATUS_X + 371) {
+        this._couponVisible = true;
+        this._couponValue = '';
+        return;
+      }
+      if (lx >= STATUS_X + 378 && lx < STATUS_X + 546) {
+        this._exit();
+        return;
+      }
+    }
+
     // Gift dialog click handling
     if (this._giftVisible) {
-      const dlgW = 400;
-      const dlgH = 260;
+      const dlgW = 473;
+      const dlgH = 169;
       const dlgX = Math.floor((CS_W - dlgW) / 2);
       const dlgY = Math.floor((CS_H - dlgH) / 2);
 
@@ -1938,8 +2016,8 @@ export class CashShopStage extends Stage {
 
     // Confirm buy dialog click handling
     if (this._confirmBuyVisible && this._confirmBuyItem) {
-      const dlgW = 340;
-      const dlgH = 260;
+      const dlgW = 305;
+      const dlgH = 157;
       const dlgX = Math.floor((CS_W - dlgW) / 2);
       const dlgY = Math.floor((CS_H - dlgH) / 2);
 
@@ -1953,14 +2031,15 @@ export class CashShopStage extends Stage {
       // Payment type buttons (3 buttons stacked, each 280×24, starting at dlgY+84)
       const payX = dlgX + 30;
       const payW = dlgW - 60;
-      const payH = 24;
-      const payStartY = dlgY + 84;
-      const payStep = 30;
+      const payH = 15;
+      const payStartY = dlgY + 58;
+      const payStep = 15;
       const comm = this._confirmBuyItem;
+      const price = comm ? this._getSalePrice(comm) : 0;
       const payAvail = [
-        this._nxCredit >= (comm?.price ?? 0),
-        this._maplePoints >= (comm?.price ?? 0) && (comm?.onSaleFlag ?? 0) !== 2,
-        this._nxPrepaid >= (comm?.price ?? 0),
+        this._nxCredit >= price,
+        this._maplePoints >= price && (comm?.onSaleFlag ?? 0) !== 2,
+        this._nxPrepaid >= price,
       ];
       for (let i = 0; i < 3; i++) {
         const py = payStartY + i * payStep;
@@ -1972,16 +2051,16 @@ export class CashShopStage extends Stage {
       }
 
       // OK button (bottom-left area)
-      const okX = dlgX + 40;
-      const okY = dlgY + dlgH - 40;
-      if (lx >= okX && lx < okX + 100 && ly >= okY && ly < okY + 28) {
+      const okX = dlgX + 157;
+      const okY = dlgY + dlgH - 37;
+      if (lx >= okX && lx < okX + 40 && ly >= okY && ly < okY + 16) {
         this._executeBuy();
         return;
       }
 
       // Cancel button (bottom-right area)
-      const cancelX = dlgX + dlgW - 140;
-      if (lx >= cancelX && lx < cancelX + 100 && ly >= okY && ly < okY + 28) {
+      const cancelX = dlgX + 207;
+      if (lx >= cancelX && lx < cancelX + 57 && ly >= okY && ly < okY + 16) {
         this._confirmBuyVisible = false;
         this._confirmBuyItem = null;
         return;
@@ -1991,8 +2070,10 @@ export class CashShopStage extends Stage {
       return;
     }
 
+    if (this._activeDialog !== 'none' && this._handleActiveDialogClick(lx, ly)) return;
+
     // Exit button (OG: CCSWnd_Status nId=1003 — in status bar at bottom)
-    const exitX = STATUS_X + STATUS_W - 40;
+    const exitX = STATUS_X + 378;
     const exitY = STATUS_Y;
     if (lx >= exitX && lx < exitX + 168 && ly >= exitY && ly < exitY + 49) {
       this._exit();
@@ -2061,6 +2142,10 @@ export class CashShopStage extends Stage {
         return;
       }
     }
+    if (lx >= CHAR_X + CHAR_W - 36 && lx < CHAR_X + CHAR_W && ly >= CHAR_Y + 4 && ly < CHAR_Y + 27) {
+      this._previewEnabled = !this._previewEnabled;
+      return;
+    }
 
     // Tab clicks (OG: CCSWnd_Tab — HORIZONTAL CCtrlSelector)
     const tabItemW = Math.floor(TAB_W / TAB_COUNT);
@@ -2076,7 +2161,7 @@ export class CashShopStage extends Stage {
     }
 
     // One-a-Day plate clicks (tab 9)
-    if (this._activeTab === 9) {
+    if (this._activeTab === 8 && this._oneADayItemSN > 0) {
       // Today's item "Free" buy button
       const todayX = LIST_X + 10;
       const todayY = LIST_Y + 28;
@@ -2187,8 +2272,8 @@ export class CashShopStage extends Stage {
     // Locker cell clicks (OG: CCSWnd_Locker — MoveLtoS)
     for (let row = 0; row < LOCKER_ROWS; row++) {
       for (let col = 0; col < LOCKER_COLS; col++) {
-        const cx = LOCKER_X + 10 + col * LOCKER_COL_STEP;
-        const cy = LOCKER_Y + 20 + row * LOCKER_COL_STEP;
+         const cx = LOCKER_X + 21 + col * LOCKER_COL_STEP;
+         const cy = LOCKER_Y + 30 + row * LOCKER_COL_STEP;
         if (lx >= cx && lx < cx + LOCKER_CELL && ly >= cy && ly < cy + LOCKER_CELL) {
           const idx = this._lockerScroll * LOCKER_COLS + row * LOCKER_COLS + col;
           if (idx < this._lockerItems.length) {
@@ -2210,7 +2295,7 @@ export class CashShopStage extends Stage {
         if (lx < LOCKER_X + LOCKER_COLS * LOCKER_COL_STEP / 2 && this._lockerScroll > 0) {
           this._lockerScroll--;
         } else {
-          const maxScroll = Math.ceil(this._lockerItems.length / (LOCKER_COLS * LOCKER_ROWS)) - 1;
+           const maxScroll = Math.max(0, Math.ceil(Math.max(0, this._lockerItems.length - LOCKER_COLS * LOCKER_ROWS) / LOCKER_COLS));
           if (this._lockerScroll < maxScroll) this._lockerScroll++;
         }
         return;
@@ -2218,12 +2303,47 @@ export class CashShopStage extends Stage {
     }
 
     // Inventory cell clicks
+    const expansionButtons = [
+      [176, 27, 1],
+      [176, 54, 2],
+      [176, 81, 3],
+      [176, 108, 4],
+    ] as const;
+    for (const [bx, by, invType] of expansionButtons) {
+      if (lx >= INV_X + bx && lx < INV_X + bx + 64 && ly >= INV_Y + by && ly < INV_Y + by + 22) {
+        this.game?.session.send(GameSender.CashShopIncSlotCount(invType));
+        return;
+      }
+    }
+    if (lx >= INV_X + 176 && lx < INV_X + 240 && ly >= INV_Y + 135 && ly < INV_Y + 157) {
+      this.game?.session.send(GameSender.CashShopIncTrunkCount());
+      return;
+    }
+
+    if (lx >= LOCKER_X + 160 && lx < LOCKER_X + 246 && ly >= LOCKER_Y + 82 && ly < LOCKER_Y + 101) {
+      const item = this._lockerItems[this._lockerScroll * LOCKER_COLS];
+      if (item) this.game?.session.send(GameSender.CashShopRebate(item.sn));
+      return;
+    }
+
+    // Inventory cell clicks
     for (let row = 0; row < INV_ROWS; row++) {
       for (let col = 0; col < INV_COLS; col++) {
-        const cx = INV_X + 10 + col * INV_COL_STEP;
-        const cy = INV_Y + 30 + row * INV_COL_STEP;
+         const cx = INV_X + 22 + col * INV_COL_STEP;
+         const cy = INV_Y + 55 + row * INV_COL_STEP;
         if (lx >= cx && lx < cx + INV_CELL && ly >= cy && ly < cy + INV_CELL) {
-          this._selectedInvCell = row * INV_COLS + col;
+          const cell = row * INV_COLS + col;
+          const items = this._getInvItems();
+          const item = items[this._invFirstPosition + cell];
+          this._selectedInvCell = cell;
+          const now = Date.now();
+          const isDoubleClick = cell === this._lastInventoryClickCell && now - this._lastInventoryClickAt < 400;
+          this._lastInventoryClickCell = cell;
+          this._lastInventoryClickAt = now;
+          if (isDoubleClick && item?.cashSN && this._invItemTI === 4) {
+            this.game?.session.send(GameSender.CashShopMoveStoL(item.cashSN));
+            this._statusMessage = 'Moving cash item to locker...';
+          }
           return;
         }
       }
@@ -2241,6 +2361,62 @@ export class CashShopStage extends Stage {
         return;
       }
     }
+  }
+
+  private _handleActiveDialogClick(lx: number, ly: number): boolean {
+    let dlgW = 300;
+    let dlgH = 160;
+    if (this._activeDialog === 'nameChange') { dlgW = 266; dlgH = 124; }
+    else if (this._activeDialog === 'worldTransfer') {
+      dlgW = this._worldTransferNames.length > 0 ? 406 : 209;
+      dlgH = this._worldTransferNames.length > 0 ? 424 : 101;
+    } else if (this._activeDialog === 'equipSlotExt') dlgH = 200;
+
+    const dlgX = Math.floor((CS_W - dlgW) / 2);
+    const dlgY = Math.floor((CS_H - dlgH) / 2);
+    if (lx < dlgX || lx >= dlgX + dlgW || ly < dlgY || ly >= dlgY + dlgH) {
+      this._activeDialog = 'none';
+      return true;
+    }
+
+    if (this._activeDialog === 'worldTransfer' && this._worldTransferNames.length > 0) {
+      for (let i = 0; i < this._worldTransferNames.length; i++) {
+        const y = dlgY + 60 + i * 22;
+        if (ly >= y && ly < y + 20) {
+          this._worldTransferSelected = i;
+          return true;
+        }
+      }
+    }
+    if (this._activeDialog === 'equipSlotExt' && ly >= dlgY + 60 && ly < dlgY + 116) {
+      const col = Math.floor((lx - dlgX - 20) / 70);
+      const row = Math.floor((ly - dlgY - 60) / 28);
+      if (col >= 0 && col < 4 && row >= 0 && row < 2) {
+        this._equipSlotExtBodyPart = row * 4 + col;
+        return true;
+      }
+    }
+
+    const okY = dlgY + dlgH - 40;
+    if (ly >= okY && ly < okY + 28) {
+      if (lx >= dlgX + 40 && lx < dlgX + 140) {
+        switch (this._activeDialog) {
+          case 'nameChange': this._confirmNameChange(); break;
+          case 'worldTransfer': this._confirmWorldTransfer(); break;
+          case 'coupleName': this._confirmCoupleName(); break;
+          case 'friendName': this._confirmFriendName(); break;
+          case 'equipSlotExt': this._confirmEquipSlotExt(); break;
+        }
+        return true;
+      }
+      if (lx >= dlgX + dlgW - 140 && lx < dlgX + dlgW - 40) {
+        this._activeDialog = 'none';
+        this._buyPending = false;
+        return true;
+      }
+    }
+
+    return true;
   }
 
   private _handleOneADayClick(lx: number, ly: number): boolean {
@@ -2264,6 +2440,11 @@ export class CashShopStage extends Stage {
           this._processBuy(item);
           this._statusMessage = `Buying ${item.name}...`;
         }
+        return true;
+      }
+      if (lx >= todayX + todayW - 80 && lx < todayX + todayW - 10 && ly >= buyY - 22 && ly < buyY - 4) {
+        const item = this._commodities.find(c => c.sn === this._oneADayItemSN);
+        if (item) this._onGiftClick(item);
         return true;
       }
       return lx >= LIST_X && lx < LIST_X + LIST_W && ly >= LIST_Y && ly < LIST_Y + LIST_H;
@@ -2318,9 +2499,8 @@ export class CashShopStage extends Stage {
       return;
     }
 
-    // Level restriction (OG: nReqLevel check)
-    if (commodity.reqLevel > 0 && this._playerLevel < commodity.reqLevel) {
-      this._statusMessage = 'Character level too low.';
+    if (!this._isCommodityUsable(commodity)) {
+      this._statusMessage = 'Character restrictions prevent this purchase.';
       return;
     }
 
@@ -2335,9 +2515,10 @@ export class CashShopStage extends Stage {
     const acceptsMaplePoint = commodity.limit !== 2;
 
     // Check per-payment-type balance (OG: tries Credit bit0, MaplePoint bit1, Prepaid bit2)
-    const canAfford = commodity.price <= this._nxCredit
-      || (acceptsMaplePoint && commodity.price <= this._maplePoints)
-      || commodity.price <= this._nxPrepaid;
+    const price = this._getSalePrice(commodity);
+    const canAfford = price <= this._nxCredit
+      || (acceptsMaplePoint && price <= this._maplePoints)
+      || price <= this._nxPrepaid;
     if (!canAfford) {
       this._statusMessage = 'Not enough NX.';
       return;
@@ -2349,11 +2530,11 @@ export class CashShopStage extends Stage {
     // Prepaid NX: always if balance > 0
 
     // Auto-select the first available payment type
-    if (commodity.price <= this._nxCredit) {
+    if (price <= this._nxCredit) {
       this._confirmBuyPaymentType = 0; // NX Credit
-    } else if (acceptsMaplePoint && commodity.price <= this._maplePoints) {
+    } else if (acceptsMaplePoint && price <= this._maplePoints) {
       this._confirmBuyPaymentType = 1; // Maple Point
-    } else if (commodity.price <= this._nxPrepaid) {
+    } else if (price <= this._nxPrepaid) {
       this._confirmBuyPaymentType = 2; // Prepaid NX
     }
 
@@ -2488,6 +2669,7 @@ export class CashShopStage extends Stage {
 
     // Route through ProcessBuy (OG: CCashShop::ProcessBuy)
     this._processBuy(commodity);
+    if (this._activeDialog !== 'none') this._buyPending = false;
     this._statusMessage = `Buying ${commodity.name}...`;
   }
 
@@ -2726,11 +2908,24 @@ export class CashShopStage extends Stage {
         break;
       case 0x6D: this._statusMessage = `Inventory expanded to ${args.newSlotCount}`; break;
       case 0x6F: this._statusMessage = `Storage expanded to ${args.trunkCount}`; break;
-      case 0x77: this._statusMessage = 'Item moved to locker'; break;
-      case 0x79:
-        this._appendCashItem(args.itemBytes);
+      case 0x77: {
+        const item = this._parseCashItem(args.itemBytes);
+        if (item) {
+          this._lockerItems = this._lockerItems.filter(value => value.sn !== item.sn);
+          this._appendCashItem(args.itemBytes);
+        }
         this._statusMessage = 'Item moved to inventory';
         break;
+      }
+      case 0x79: {
+        const item = this._parseCashItem(args.itemBytes);
+        if (item) {
+          this._cashInventoryItems = this._cashInventoryItems.filter(value => value.sn !== item.sn);
+          this._lockerItems.push({ sn: item.sn, itemId: item.itemId, name: this._getItemName(item.itemId) });
+        }
+        this._statusMessage = 'Item moved to locker';
+        break;
+      }
       case 0x9A:
         this._buyPending = false;
         for (let i = 0; i < args.itemCount; i++) {
@@ -2852,7 +3047,7 @@ export class CashShopStage extends Stage {
       if (this._activeTab === 0 || this._activeTab === 8) return true;
 
       // Tab 9 (One-a-Day) — filter by one-a-day flag (placeholder)
-      if (this._activeTab === 9) return false;
+      if (this._activeTab === 8) return false;
 
       // Tab 1-7 filter by category
       return c.category === this._activeTab;
@@ -2934,6 +3129,18 @@ export class CashShopStage extends Stage {
       } catch { return null; }
     };
 
+    const tryLoadImage = (image: string, path: string): WzSprite | null => {
+      try {
+        const pkg = this._ui!.GetItem(image) as any;
+        const items = pkg?.Root?.Items as Record<string, unknown> | undefined;
+        if (!items) return null;
+        const parts = path.split('/');
+        let node: any = items[parts[0]];
+        for (let i = 1; i < parts.length && node; i++) node = node.Items?.[parts[i]];
+        return node instanceof WzCanvas ? this._loader!.Load(node) : null;
+      } catch { return null; }
+    };
+
     this._oneADayBase = tryLoadOneADay('CSOneADay/Base01');
     this._oneADayItemBox = tryLoadOneADay('CSOneADay/ItemBoxBig');
     this._oneADayBuy = tryLoadOneADay('CSOneADay/BtBuy/normal');
@@ -2985,6 +3192,7 @@ export class CashShopStage extends Stage {
     this._btExInstall = tryLoad('CSInventory/BtExInstall/normal');
     this._btExEtc = tryLoad('CSInventory/BtExEtc/normal');
     this._btExTrunk = tryLoad('CSInventory/BtExTrunk/normal');
+    this._btRebate = tryLoad('CSLocker/BtRebate/normal');
 
     // List background (200×80 plate canvas)
     this._bgList = tryLoad('CSList/Base');
@@ -3010,10 +3218,17 @@ export class CashShopStage extends Stage {
     this._bgStatus = null;
     this._bgBest = null;
     this._bgGift = tryLoad('CSGift/backgrnd');
+    this._bgGiftWide = tryLoad('CSGift/backgrnd1');
+    this._btGiftBuddy = tryLoad('CSGift/BtBuddy/normal');
+    this._btGiftGuild = tryLoad('CSGift/BtGuild/normal');
+    this._btGiftHide = tryLoad('CSGift/BtHide/normal');
     this._bgNameChange = tryLoad('CSChangeName/Base/backgrnd');
     this._bgNameChangeNotice = tryLoad('CSChangeName/Base/backgrndnotice');
     this._bgTransferWorld = tryLoad('CSTransferWorld/Base/backgrnd');
     this._bgTransferWorldNotice = tryLoad('CSTransferWorld/Base/backgrndnotice');
     this._btNameCheck = tryLoad('CSChangeName/BtCheck/normal');
+    this._confirmNotice = tryLoadImage('UIWindow2.img', 'UtilDlgEx/notice');
+    this._confirmOk = tryLoadImage('UIWindow2.img', 'UtilDlgEx/BtOK/normal');
+    this._confirmNo = tryLoadImage('UIWindow2.img', 'UtilDlgEx/BtNo/normal');
   }
 }
