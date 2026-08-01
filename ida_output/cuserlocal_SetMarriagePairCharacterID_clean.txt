@@ -1,0 +1,76 @@
+// cuserlocal::SetMarriagePairCharacterID
+
+void __thiscall CUserLocal::SetMarriagePairCharacterID(CUserLocal *this)
+{
+  char *m_pStr; // ebx
+  char *p_m_uTableSize; // esi
+  volatile LONG *p_m_uCount; // edi
+  int *v5; // esi
+  TSecType<long> *v6; // eax
+  int Data; // eax
+  GW_MarriageRecord *Next; // eax
+  unsigned int dwGroomID; // edx
+  unsigned int m_dwMarriageCharacterID; // ecx
+  __POSITION *pos; // [esp+10h] [ebp-Ch] BYREF
+  ZRef<CharacterData> result; // [esp+14h] [ebp-8h] BYREF
+
+  if ( this->m_dwMarriagePairCharacterID ) /*0x9089b7*/
+    CUserPool::OnMarriageRecordRemove( /*0x9089cf*/
+      (CUserPool *)TSingleton<CUserPool>::ms_pInstance.m_pInterface,
+      this->m_dwCharacterId);
+  m_pStr = TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x9089d4*/
+  pos = (__POSITION *)CWvsContext::GetCharacterData( /*0x9089ed*/
+                        (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+                        &result)->p;
+  if ( result.p ) /*0x9089f3*/
+  {
+    p_m_uTableSize = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x9089f5*/
+    p_m_uCount = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount; /*0x9089f8*/
+    if ( !InterlockedDecrement(p_m_uCount) ) /*0x9089fc*/
+    {
+      InterlockedIncrement(p_m_uCount); /*0x908a07*/
+      if ( p_m_uTableSize ) /*0x908a0f*/
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1); /*0x908a19*/
+    }
+    result.p = nullptr; /*0x908a1b*/
+  }
+  v5 = g_anRingBodyPart; /*0x908a23*/
+  while ( 1 ) /*0x908a32*/
+  {
+    v6 = *(TSecType<long> **)&m_pStr[8 * *v5 + 14452]; /*0x908a32*/
+    if ( v6 ) /*0x908a3b*/
+    {
+      Data = TSecType<long>::GetData(v6 + 1); /*0x908a40*/
+      if ( Data == 1112803 || Data == 1112806 || Data == 1112807 || Data == 1112809 ) /*0x908a5f*/
+        break; /*0x908a5f*/
+    }
+    if ( (int)++v5 >= (int)g_anPetAbilBodyPart ) /*0x908a6a*/
+      goto LABEL_15; /*0x908a6a*/
+  }
+  pos = *(__POSITION **)&pos[1609]; /*0x908a8a*/
+  if ( !pos ) /*0x908a90*/
+  {
+LABEL_15:
+    this->m_dwMarriageCharacterID = 0; /*0x908a6c*/
+    this->m_dwMarriagePairCharacterID = 0; /*0x908a72*/
+    return; /*0x908a7f*/
+  }
+  Next = ZList<GW_MarriageRecord>::GetNext(&pos); /*0x908a97*/
+  if ( *((_DWORD *)m_pStr + 2061) ) /*0x908a9f*/
+  {
+    this->m_dwMarriageCharacterID = Next->dwBrideID; /*0x908ab8*/
+    dwGroomID = Next->dwGroomID; /*0x908abe*/
+  }
+  else
+  {
+    this->m_dwMarriageCharacterID = Next->dwGroomID; /*0x908aaa*/
+    dwGroomID = Next->dwBrideID; /*0x908ab0*/
+  }
+  m_dwMarriageCharacterID = this->m_dwMarriageCharacterID; /*0x908ac1*/
+  this->m_dwMarriagePairCharacterID = dwGroomID; /*0x908ac7*/
+  CUserPool::OnMarriageRecordAdd( /*0x908ad9*/
+    (CUserPool *)TSingleton<CUserPool>::ms_pInstance.m_pInterface,
+    m_dwMarriageCharacterID,
+    this,
+    Next->nGroomItemID);
+}

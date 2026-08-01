@@ -1,0 +1,3 @@
+// CUser::IsAdminHide @ 0x4bbfe0
+
+{"addr":"0x4bbfe0","code":"int __thiscall CUser::IsAdminHide(CUser *this)\n{\n  return 0; /*0x4bbfe2*/\n}"}

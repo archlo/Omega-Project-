@@ -1,0 +1,40 @@
+// cuserlocal::ApplyInvicibleOption
+
+void __thiscall CUserLocal::ApplyInvicibleOption(
+        CUserLocal *this,
+        int nItemOptionID,
+        int nLevel,
+        int *nInvincible_inc,
+        int *nInvincible_prob,
+        int *nInvincible)
+{
+  ItemOptionInfo *p; // ecx
+  ItemOptionLevelData *v7; // eax
+  ItemOptionInfo *v8; // esi
+  volatile LONG *p_nReqLevel; // edi
+  ZRef<ItemOptionInfo> pOption; // [esp+Ch] [ebp-14h] BYREF
+  int v11; // [esp+1Ch] [ebp-4h]
+
+  CItemOptionInfo::GetItemOption(TSingleton<CItemOptionInfo>::ms_pInstance, &pOption, nItemOptionID); /*0x9094c5*/
+  p = pOption.p; /*0x9094ca*/
+  if ( pOption.p ) /*0x9094d0*/
+  {
+    v7 = &pOption.p->aLevelData.a[nLevel]; /*0x9094dc*/
+    if ( nItemOptionID == 20366 || nItemOptionID == 30366 ) /*0x9094ed*/
+      *nInvincible_inc = 1000 * v7->nTime; /*0x9094fc*/
+    if ( nItemOptionID == 30371 ) /*0x909504*/
+    {
+      *nInvincible_prob = v7->nProb; /*0x90950c*/
+      *nInvincible = 1000 * v7->nTime; /*0x90951b*/
+    }
+    v8 = p - 1; /*0x90951d*/
+    p_nReqLevel = &p[-1].nReqLevel; /*0x909520*/
+    v11 = -1; /*0x909524*/
+    if ( !InterlockedDecrement(p_nReqLevel) ) /*0x90952c*/
+    {
+      InterlockedIncrement(p_nReqLevel); /*0x909537*/
+      if ( v8 ) /*0x90953f*/
+        (*(void (__thiscall **)(ItemOptionInfo *, int))v8->nItemOptionID)(v8, 1); /*0x909549*/
+    }
+  }
+}

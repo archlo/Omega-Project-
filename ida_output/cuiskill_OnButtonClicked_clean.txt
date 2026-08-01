@@ -1,0 +1,30 @@
+// CUISkill::OnButtonClicked
+// Decompiled from v95 IDB
+
+void __thiscall CUISkill::OnButtonClicked(CUISkill *this, unsigned int nId)
+{
+  if ( nId - 2010 > 3 ) /*0x851491*/
+  {
+    if ( nId == 2023 ) /*0x8514aa*/
+    {
+      CUISkill::ShiftMacroUIState(this); /*0x8514ac*/
+      CUIWnd::OnButtonClicked(this, 0x7E7u); /*0x8514b4*/
+    }
+    else
+    {
+      if ( nId - 3001 <= 3 ) /*0x8514c7*/
+        CUISkill::OpenSkillGuide(this, (_bstr_t *)(nId - 3000)); /*0x8514d2*/
+      CUIWnd::OnButtonClicked(this, nId); /*0x8514da*/
+    }
+  }
+  else
+  {
+    CUISkill::OnSkillLevelUpButton(this, nId - 2010); /*0x85149a*/
+  }
+}
+
+// References:
+//   ?ShiftMacroUIState@CUISkill@@QAEXXZ @ 0x84a040
+//   ?OnButtonClicked@CUIWnd@@UAEXI@Z @ 0x8dd520
+//   ?OpenSkillGuide@CUISkill@@QAEXJ@Z @ 0x8513d0
+//   ?OnSkillLevelUpButton@CUISkill@@IAEXJ@Z @ 0x84d660

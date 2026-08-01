@@ -1,0 +1,19 @@
+// 0x697a30
+int __thiscall CPersonalShopDlg::HitTest(CPersonalShopDlg *this, int rx, unsigned int ry, CCtrlWnd **ppCtrl)
+{
+  int result; // eax
+
+  result = CWnd::HitTest(this, rx, ry, ppCtrl); /*0x697a42*/
+  if ( result == 2 ) /*0x697a4a*/
+  {
+    if ( rx >= 232 && (int)ry >= 368 ) /*0x697a5a*/
+      return 0; /*0x697a61*/
+  }
+  else if ( !result ) /*0x697a66*/
+  {
+    return result; /*0x697a66*/
+  }
+  if ( !ppCtrl || !*ppCtrl ) /*0x697a6c*/
+    return (ry > 0x9C) + 1; /*0x697a7c*/
+  return result; /*0x697a5c*/
+}

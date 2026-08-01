@@ -1,0 +1,883 @@
+// CUtilDlgEx::Draw
+// Address: 0x986c20
+
+void __thiscall CUtilDlgEx::Draw(CUtilDlgEx *this, const tagRECT *pRect)
+{
+  int BasicCTWidth; // eax
+  IWzCanvas *v4; // edx
+  unsigned int v5; // ecx
+  CT_INFO *a; // eax
+  CT_INFO *v7; // edi
+  CT_INFO **v8; // eax
+  int nTop; // eax
+  int m_nScrollPos; // ecx
+  int nSelect; // eax
+  const char **p_m_pStr; // ebx
+  const unsigned __int16 *v13; // eax
+  void *v14; // esp
+  char *v15; // ecx
+  int m_nCurDisplayTextItemPos; // ebx
+  int v17; // eax
+  wchar_t *v18; // eax
+  void *v19; // esp
+  wchar_t *v20; // eax
+  const char *v21; // eax
+  int v22; // ecx
+  IWzFont *v23; // eax
+  const char *v24; // eax
+  int v25; // eax
+  int v26; // ecx
+  int v27; // ebx
+  int v28; // eax
+  int v29; // ecx
+  int v30; // eax
+  void (__stdcall *v31)(VARIANTARG *); // ebx
+  HRESULT v32; // eax
+  IWzFont *m_pInterface; // eax
+  const char *m_pStr; // eax
+  int v35; // ecx
+  unsigned int Lo32; // eax
+  Ztl_variant_t *v37; // edx
+  int m_nCurDisplayItemIndex; // eax
+  _bstr_t::Data_t *v39; // edx
+  int v40; // edx
+  int v41; // eax
+  _bstr_t::Data_t *v42; // edx
+  int v43; // edx
+  int v44; // eax
+  int v45; // ecx
+  int v46; // ebx
+  CT_INFO *nMapNo; // eax
+  unsigned int nFuncCode; // eax
+  CT_INFO *v49; // eax
+  int v50; // eax
+  Ztl_variant_t *ObjectA; // eax
+  IUnknown *Unknown; // eax
+  int v53; // eax
+  int m_ctTop; // ecx
+  IWzCanvas *v55; // ebx
+  int v56; // edx
+  int v57; // ecx
+  int nLeft; // eax
+  int v59; // eax
+  IWzCanvas *v60; // eax
+  int v61; // edx
+  int v62; // ecx
+  int m_ctLeft; // edx
+  CT_INFO *v64; // eax
+  CUtilDlgEx::PET_INFO *v65; // edi
+  _bstr_t::Data_t *v66; // ecx
+  const char *v67; // eax
+  IWzFont *v68; // ecx
+  signed int v69; // edi
+  void (__stdcall *v70)(VARIANTARG *); // ebx
+  HRESULT v71; // eax
+  HRESULT v72; // eax
+  char *v73; // eax
+  _bstr_t::Data_t *v74; // ecx
+  StringPool *Instance; // eax
+  char *v76; // eax
+  HRESULT v77; // eax
+  _bstr_t::Data_t *v78; // ecx
+  IWzFont *v79; // ecx
+  signed int v80; // edi
+  void (__stdcall *v81)(VARIANTARG *); // ebx
+  HRESULT v82; // eax
+  HRESULT v83; // eax
+  IWzFont *v84; // eax
+  StringPool *v85; // eax
+  char *v86; // eax
+  HRESULT v87; // eax
+  _bstr_t::Data_t *v88; // ecx
+  IWzFont *v89; // ecx
+  signed int v90; // edi
+  void (__stdcall *v91)(VARIANTARG *); // ebx
+  HRESULT v92; // eax
+  HRESULT v93; // eax
+  IWzFont *v94; // esi
+  unsigned int (__stdcall *Release)(IUnknown *); // edx
+  _bstr_t v96; // [esp-18h] [ebp-F4h] BYREF
+  _bstr_t v97; // [esp-14h] [ebp-F0h] BYREF
+  _bstr_t v98; // [esp-10h] [ebp-ECh] BYREF
+  unsigned int p_vAux; // [esp-Ch] [ebp-E8h]
+  _bstr_t v100; // [esp-8h] [ebp-E4h] BYREF
+  const Ztl_variant_t *p_pvarg; // [esp-4h] [ebp-E0h]
+  wchar_t v102[8]; // [esp+0h] [ebp-DCh] BYREF
+  Ztl_variant_t v103; // [esp+10h] [ebp-CCh] BYREF
+  Ztl_variant_t v104; // [esp+20h] [ebp-BCh] BYREF
+  Ztl_variant_t vAux; // [esp+30h] [ebp-ACh] BYREF
+  Ztl_variant_t vAlpha; // [esp+40h] [ebp-9Ch] BYREF
+  Ztl_variant_t vParam; // [esp+50h] [ebp-8Ch] BYREF
+  Ztl_variant_t vTabOrg; // [esp+60h] [ebp-7Ch] BYREF
+  Ztl_variant_t nWidth; // [esp+70h] [ebp-6Ch] BYREF
+  Ztl_variant_t v110; // [esp+80h] [ebp-5Ch] BYREF
+  Ztl_variant_t nAlpha; // [esp+90h] [ebp-4Ch] BYREF
+  Ztl_variant_t v112; // [esp+A0h] [ebp-3Ch] BYREF
+  Ztl_variant_t vClip; // [esp+B0h] [ebp-2Ch] BYREF
+  VARIANTARG pvargDest; // [esp+C0h] [ebp-1Ch] BYREF
+  int v115; // [esp+D8h] [ebp-4h]
+  Ztl_variant_t bTemp; // [esp+DCh] [ebp+0h] BYREF
+  VARIANTARG pvarg; // [esp+ECh] [ebp+10h] BYREF
+  ZXString<unsigned short> v118; // [esp+FCh] [ebp+20h] BYREF
+  ZXString<unsigned short> result; // [esp+100h] [ebp+24h] BYREF
+  Ztl_bstr_t bsIcon; // [esp+104h] [ebp+28h] BYREF
+  Ztl_variant_t v121; // [esp+108h] [ebp+2Ch] BYREF
+  CUtilDlgEx::PET_INFO *pi; // [esp+118h] [ebp+3Ch] BYREF
+  int idx; // [esp+11Ch] [ebp+40h]
+  Ztl_variant_t v124; // [esp+120h] [ebp+44h] BYREF
+  int bUserWithOneSelect; // [esp+130h] [ebp+54h]
+  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > pDot; // [esp+134h] [ebp+58h] BYREF
+  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > pCanvas; // [esp+138h] [ebp+5Ch] BYREF
+  ZXString<char> sFormat; // [esp+13Ch] [ebp+60h] BYREF
+
+  CWnd::Draw(this, pRect); /*0x986c59*/
+  CWnd::GetCanvas(this, &pCanvas); /*0x986c64*/
+  bTemp.vt = 3; /*0x986c7a*/
+  bTemp.decVal.Lo32 = 1; /*0x986c7e*/
+  v115 = 1; /*0x986c84*/
+  if ( !pCanvas.m_pInterface ) /*0x986c89*/
+LABEL_2:
+    _com_issue_error(-2147467261); /*0x986c8b*/
+  v100.m_Data = (_bstr_t::Data_t *)this->m_scrHeight; /*0x986c9f*/
+  BasicCTWidth = CUtilDlgEx::GetBasicCTWidth(this); /*0x986ca2*/
+  IWzCanvas::SetClipRect(v4, &vClip, this->m_ctLeft + 1, this->m_ctTop + 1, BasicCTWidth - 2, (int)v100.m_Data, &bTemp); /*0x986cc3*/
+  LOBYTE(v115) = 3; /*0x986ccd*/
+  if ( bTemp.vt == 8 ) /*0x986cd1*/
+  {
+    bTemp.vt = 0; /*0x986cd8*/
+    if ( bTemp.decVal.Lo32 ) /*0x986cde*/
+      ZAPI.CoTaskMemFree((void *)(bTemp.decVal.Lo32 - 4)); /*0x986ce4*/
+  }
+  else
+  {
+    VariantClear(&bTemp); /*0x986cf0*/
+  }
+  v5 = 0; /*0x986cf6*/
+  while ( 1 ) /*0x986cf8*/
+  {
+    a = this->m_aCT.a; /*0x986cf8*/
+    idx = v5; /*0x986cfe*/
+    if ( !a || v5 >= a[-1].nMapNo ) /*0x986d0c*/
+      break; /*0x986d0c*/
+    v7 = &this->m_aCT.a[v5]; /*0x986d26*/
+    if ( (this->m_bParam & 2) == 0 /*0x986d3b*/
+      || (v8 = this->m_apListCT.a) == nullptr
+      || (bUserWithOneSelect = 1, *(v8 - 1) != (CT_INFO *)1) )
+    {
+      bUserWithOneSelect = 0; /*0x986d3d*/
+    }
+    nTop = v7->nTop; /*0x986d44*/
+    m_nScrollPos = this->m_nScrollPos; /*0x986d47*/
+    if ( nTop - m_nScrollPos < -48 || nTop - m_nScrollPos >= this->m_scrHeight + 24 ) /*0x986d65*/
+    {
+LABEL_96:
+      v5 = idx + 1; /*0x98752c*/
+    }
+    else
+    {
+      switch ( v7->nType ) /*0x986d76*/
+      {
+        case 0: /*0x986d76*/
+          nSelect = v7->nSelect; /*0x986d7d*/
+          if ( nSelect != -1 ) /*0x986d83*/
+          {
+            if ( nSelect == this->m_apListCT.a[this->m_nListFocus]->nSelect && !bUserWithOneSelect ) /*0x987003*/
+            {
+              v26 = v7->nWidth + 8; /*0x98700c*/
+              if ( v26 / 3 > 0 ) /*0x98701f*/
+              {
+                v27 = 0; /*0x987024*/
+                bUserWithOneSelect = ((unsigned int)(v26 / 3 - 1) >> 1) + 1; /*0x987027*/
+                do /*0x98708d*/
+                {
+                  Ztl_variant_t::Ztl_variant_t(&nWidth, &vtMissing); /*0x987038*/
+                  v28 = this->m_ctTop + v7->nTop - this->m_nScrollPos + v7->nUnderLine; /*0x987052*/
+                  v29 = this->m_ctLeft + v27 + v7->nLeft; /*0x98705c*/
+                  LOBYTE(v115) = 4; /*0x987071*/
+                  IWzCanvas::DrawLine(pCanvas.m_pInterface, v29, v28, v29 + 3, v28, 0xFF919191, &nWidth); /*0x987075*/
+                  LOBYTE(v115) = 3; /*0x98707d*/
+                  Ztl_variant_t::~Ztl_variant_t(&nWidth); /*0x987081*/
+                  v27 += 6; /*0x987086*/
+                  --bUserWithOneSelect; /*0x987089*/
+                }
+                while ( bUserWithOneSelect ); /*0x98708d*/
+              }
+            }
+LABEL_44:
+            v30 = v7->nSelect; /*0x98708f*/
+            if ( v30 != -1 && v30 == this->m_nSelect ) /*0x98709d*/
+              IWzCanvas::DrawRectangle( /*0x9870cd*/
+                pCanvas.m_pInterface,
+                this->m_ctLeft + v7->nLeft,
+                this->m_ctTop + v7->nTop + v7->nUnderLine - this->m_nScrollPos,
+                v7->nWidth + 8,
+                1u,
+                0xFF000000);
+            v31 = VariantInit; /*0x9870d2*/
+            VariantInit(&pvarg); /*0x9870dc*/
+            v32 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing); /*0x9870e7*/
+            if ( v32 < 0 ) /*0x9870f1*/
+              goto LABEL_107; /*0x9870f1*/
+            LOBYTE(v115) = 5; /*0x9870fb*/
+            v31(&pvargDest); /*0x9870ff*/
+            v32 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing); /*0x98710a*/
+            if ( v32 < 0 ) /*0x987114*/
+              goto LABEL_107; /*0x987114*/
+            m_pInterface = v7->pFont.m_pInterface; /*0x98711a*/
+            p_pvarg = (const Ztl_variant_t *)&pvarg; /*0x987120*/
+            v100.m_Data = (_bstr_t::Data_t *)&pvargDest; /*0x987124*/
+            p_vAux = (unsigned int)m_pInterface; /*0x987125*/
+            m_pStr = v7->sText._m_pStr; /*0x987126*/
+            v98.m_Data = (_bstr_t::Data_t *)&pvarg; /*0x987129*/
+            bUserWithOneSelect = (int)&v98; /*0x98712a*/
+            LOBYTE(v115) = 6; /*0x987130*/
+            _bstr_t::_bstr_t(&v98, m_pStr); /*0x987134*/
+            v35 = this->m_ctLeft + v7->nLeft; /*0x98714b*/
+            v97.m_Data = (_bstr_t::Data_t *)(this->m_ctTop + v7->nTop - this->m_nScrollPos); /*0x987151*/
+            LOBYTE(v115) = 6; /*0x98715a*/
+            IWzCanvas::DrawTextA( /*0x98715e*/
+              pCanvas.m_pInterface,
+              v35,
+              (int)v97.m_Data,
+              (Ztl_bstr_t)v98.m_Data,
+              (IWzFont *)p_vAux,
+              (const Ztl_variant_t *)v100.m_Data,
+              p_pvarg);
+            LOBYTE(v115) = 5; /*0x987168*/
+            if ( pvargDest.vt == 8 ) /*0x987170*/
+            {
+              pvargDest.vt = 0; /*0x987177*/
+              if ( pvargDest.decVal.Lo32 ) /*0x98717d*/
+                ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4)); /*0x987183*/
+            }
+            else
+            {
+              VariantClear(&pvargDest); /*0x98718f*/
+            }
+            LOBYTE(v115) = 3; /*0x987195*/
+            if ( pvarg.vt == 8 ) /*0x98719d*/
+            {
+              Lo32 = pvarg.decVal.Lo32; /*0x98719f*/
+              pvarg.vt = 0; /*0x9871a4*/
+LABEL_55:
+              if ( Lo32 ) /*0x9871aa*/
+                ZAPI.CoTaskMemFree((void *)(Lo32 - 4)); /*0x9871b0*/
+            }
+            else
+            {
+              v37 = (Ztl_variant_t *)&pvarg; /*0x9871b8*/
+LABEL_58:
+              VariantClear(v37); /*0x9871bb*/
+            }
+LABEL_59:
+            m_nCurDisplayItemIndex = this->m_nCurDisplayItemIndex; /*0x9871c2*/
+            if ( m_nCurDisplayItemIndex == idx ) /*0x9871cb*/
+            {
+              this->m_nCurDisplayItemIndex = m_nCurDisplayItemIndex + 1; /*0x9871d2*/
+              this->m_nCurDisplayTextItemPos = 0; /*0x9871d8*/
+            }
+            goto LABEL_90; /*0x9871e2*/
+          }
+          if ( v7->bReward ) /*0x986d89*/
+            goto LABEL_44; /*0x986d8d*/
+          if ( this->m_bNoNPC ) /*0x986d93*/
+            goto LABEL_37; /*0x986d93*/
+          if ( idx > this->m_nCurDisplayItemIndex ) /*0x986daa*/
+            goto LABEL_90; /*0x986daa*/
+          if ( idx != this->m_nCurDisplayItemIndex ) /*0x986dc0*/
+          {
+LABEL_37:
+            Ztl_variant_t::Ztl_variant_t(&v110, &vtMissing); /*0x986f5d*/
+            LOBYTE(v115) = 14; /*0x986f6d*/
+            Ztl_variant_t::Ztl_variant_t(&v104, &vtMissing); /*0x986f71*/
+            p_pvarg = &v110; /*0x986f79*/
+            v23 = v7->pFont.m_pInterface; /*0x986f7a*/
+            v100.m_Data = (_bstr_t::Data_t *)&v104; /*0x986f83*/
+            p_vAux = (unsigned int)v23; /*0x986f84*/
+            v24 = v7->sText._m_pStr; /*0x986f85*/
+            v98.m_Data = (_bstr_t::Data_t *)&v104; /*0x986f88*/
+            bUserWithOneSelect = (int)&v98; /*0x986f8b*/
+            LOBYTE(v115) = 15; /*0x986f8f*/
+            Ztl_bstr_t::Ztl_bstr_t((Ztl_bstr_t *)&v98, v24); /*0x986f93*/
+            v25 = this->m_ctLeft + v7->nLeft; /*0x986faa*/
+            v97.m_Data = (_bstr_t::Data_t *)(this->m_ctTop + v7->nTop - this->m_nScrollPos); /*0x986fb3*/
+            LOBYTE(v115) = 15; /*0x986fb9*/
+            IWzCanvas::DrawTextA( /*0x986fbd*/
+              pCanvas.m_pInterface,
+              v25,
+              (int)v97.m_Data,
+              (Ztl_bstr_t)v98.m_Data,
+              (IWzFont *)p_vAux,
+              (const Ztl_variant_t *)v100.m_Data,
+              p_pvarg);
+            Ztl_variant_t::~Ztl_variant_t(&v104); /*0x986fc8*/
+            LOBYTE(v115) = 3; /*0x986fd0*/
+            Ztl_variant_t::~Ztl_variant_t(&v110); /*0x986fd4*/
+          }
+          else
+          {
+            p_m_pStr = (const char **)&v7->sText._m_pStr; /*0x986dc6*/
+            if ( ZXString<char>::IsEmpty(&v7->sText) ) /*0x986dcb*/
+            {
+              v13 = &sDefault; /*0x986dd4*/
+            }
+            else
+            {
+              v14 = alloca(ZStrUtil::_ConvReqSize(*p_m_pStr, nullptr, -1)); /*0x986dea*/
+              v13 = ZStrUtil::_Conv(*p_m_pStr, v102, -1); /*0x986df7*/
+            }
+            ZXString<unsigned short>::ZXString<unsigned short>((ZXString<unsigned short> *)&sFormat, v13, -1); /*0x986e05*/
+            v15 = sFormat._m_pStr; /*0x986e0a*/
+            m_nCurDisplayTextItemPos = this->m_nCurDisplayTextItemPos; /*0x986e0d*/
+            LOBYTE(v115) = 8; /*0x986e13*/
+            if ( sFormat._m_pStr ) /*0x986e19*/
+              v17 = *((_DWORD *)sFormat._m_pStr - 1) >> 1; /*0x986e1e*/
+            else
+              v17 = 0; /*0x986e22*/
+            if ( m_nCurDisplayTextItemPos > v17 ) /*0x986e26*/
+            {
+              ++this->m_nCurDisplayItemIndex; /*0x986e28*/
+              m_nCurDisplayTextItemPos = 0; /*0x986e2e*/
+              this->m_nCurDisplayTextItemPos = 0; /*0x986e30*/
+              if ( v15 ) /*0x986e38*/
+                m_nCurDisplayTextItemPos = *((_DWORD *)v15 - 1) >> 1; /*0x986e3d*/
+            }
+            Ztl_variant_t::Ztl_variant_t(&vTabOrg, &vtMissing); /*0x986e47*/
+            LOBYTE(v115) = 9; /*0x986e57*/
+            Ztl_variant_t::Ztl_variant_t(&vAlpha, &vtMissing); /*0x986e5b*/
+            LOBYTE(v115) = 10; /*0x986e68*/
+            v18 = ZXString<unsigned short>::Left( /*0x986e71*/
+                    (ZXString<unsigned short> *)&sFormat,
+                    &result,
+                    m_nCurDisplayTextItemPos)->_m_pStr;
+            LOBYTE(v115) = 11; /*0x986e78*/
+            v19 = alloca(ZStrUtil::_ConvReqSize(v18, nullptr, -1)); /*0x986e84*/
+            bUserWithOneSelect = (int)v102; /*0x986e89*/
+            p_pvarg = &vTabOrg; /*0x986e8f*/
+            v100.m_Data = (_bstr_t::Data_t *)&vAlpha; /*0x986e96*/
+            p_vAux = (unsigned int)v7->pFont.m_pInterface; /*0x986e9a*/
+            v20 = ZXString<unsigned short>::Left((ZXString<unsigned short> *)&sFormat, &v118, m_nCurDisplayTextItemPos)->_m_pStr; /*0x986eab*/
+            LOBYTE(v115) = 12; /*0x986eb1*/
+            v21 = ZStrUtil::_Conv(v20, (char *)bUserWithOneSelect, -1); /*0x986eb5*/
+            bUserWithOneSelect = (int)&v98; /*0x986ebf*/
+            Ztl_bstr_t::Ztl_bstr_t((Ztl_bstr_t *)&v98, v21); /*0x986ec3*/
+            v22 = this->m_ctLeft + v7->nLeft; /*0x986eda*/
+            v97.m_Data = (_bstr_t::Data_t *)(this->m_ctTop + v7->nTop - this->m_nScrollPos); /*0x986ee0*/
+            LOBYTE(v115) = 12; /*0x986ee9*/
+            IWzCanvas::DrawTextA( /*0x986eed*/
+              pCanvas.m_pInterface,
+              v22,
+              (int)v97.m_Data,
+              (Ztl_bstr_t)v98.m_Data,
+              (IWzFont *)p_vAux,
+              (const Ztl_variant_t *)v100.m_Data,
+              p_pvarg);
+            LOBYTE(v115) = 11; /*0x986ef5*/
+            if ( v118._m_pStr ) /*0x986efb*/
+              ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)v118._m_pStr - 1); /*0x986f01*/
+            LOBYTE(v115) = 10; /*0x986f0c*/
+            if ( result._m_pStr ) /*0x986f12*/
+              ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)result._m_pStr - 1); /*0x986f18*/
+            Ztl_variant_t::~Ztl_variant_t(&vAlpha); /*0x986f26*/
+            Ztl_variant_t::~Ztl_variant_t(&vTabOrg); /*0x986f2e*/
+            LOBYTE(v115) = 3; /*0x986f37*/
+            if ( sFormat._m_pStr ) /*0x986f3b*/
+              ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)sFormat._m_pStr - 1); /*0x986f48*/
+          }
+LABEL_90:
+          if ( v7->nSelect || v7->nLine ) /*0x9874a9*/
+            goto LABEL_96; /*0x9874ad*/
+          v124.vt = 3; /*0x9874b4*/
+          v124.decVal.Lo32 = 255; /*0x9874b8*/
+          v60 = this->m_pCanvasLine.m_pInterface; /*0x9874bf*/
+          v61 = v7->nTop - this->m_nScrollPos; /*0x9874c8*/
+          p_pvarg = &v124; /*0x9874d1*/
+          v100.m_Data = (_bstr_t::Data_t *)v60; /*0x9874d2*/
+          v62 = v61 + this->m_ctTop - 10; /*0x9874d9*/
+          m_ctLeft = this->m_ctLeft; /*0x9874dd*/
+          LOBYTE(v115) = 29; /*0x9874e8*/
+          IWzCanvas::Copy(pCanvas.m_pInterface, m_ctLeft, v62, v60, &v124); /*0x9874ec*/
+          LOBYTE(v115) = 3; /*0x9874f6*/
+          if ( v124.vt != 8 ) /*0x9874fa*/
+          {
+            VariantClear(&v124); /*0x987526*/
+            goto LABEL_96; /*0x987526*/
+          }
+          v124.vt = 0; /*0x9874fe*/
+          if ( !v124.decVal.Lo32 ) /*0x987507*/
+            goto LABEL_96; /*0x987507*/
+          ZAPI.CoTaskMemFree((void *)(v124.decVal.Lo32 - 4)); /*0x98750d*/
+          v5 = idx + 1; /*0x98751b*/
+          break; /*0x98751d*/
+        case 1: /*0x986d76*/
+          if ( v7->nSelect != -1 || v7->bReward || idx <= this->m_nCurDisplayItemIndex ) /*0x9871fc*/
+          {
+            nAlpha.vt = 3; /*0x987203*/
+            nAlpha.decVal.Lo32 = 255; /*0x987207*/
+            v39 = (_bstr_t::Data_t *)v7->pIcon.m_pInterface; /*0x98720e*/
+            p_pvarg = &nAlpha; /*0x987214*/
+            v100.m_Data = v39; /*0x987215*/
+            v40 = nTop + this->m_ctTop - m_nScrollPos; /*0x987221*/
+            v41 = this->m_ctLeft + v7->nLeft; /*0x987226*/
+            LOBYTE(v115) = 17; /*0x98722e*/
+            IWzCanvas::Copy(pCanvas.m_pInterface, v41, v40, (IWzCanvas *)v100.m_Data, &nAlpha); /*0x987232*/
+            LOBYTE(v115) = 3; /*0x987239*/
+            Ztl_variant_t::~Ztl_variant_t(&nAlpha); /*0x98723d*/
+          }
+          goto LABEL_59; /*0x987242*/
+        case 2: /*0x986d76*/
+          v121.vt = 3; /*0x98724c*/
+          v121.decVal.Lo32 = 255; /*0x987250*/
+          v42 = (_bstr_t::Data_t *)v7->pIcon.m_pInterface; /*0x987257*/
+          p_pvarg = &v121; /*0x98725d*/
+          v100.m_Data = v42; /*0x98725e*/
+          v43 = nTop + this->m_ctTop - m_nScrollPos; /*0x98726a*/
+          v44 = this->m_ctLeft + v7->nLeft; /*0x98726f*/
+          LOBYTE(v115) = 18; /*0x987277*/
+          IWzCanvas::Copy(pCanvas.m_pInterface, v44, v43, (IWzCanvas *)v100.m_Data, &v121); /*0x98727b*/
+          LOBYTE(v115) = 3; /*0x987285*/
+          if ( v121.vt == 8 ) /*0x987289*/
+          {
+            Lo32 = v121.decVal.Lo32; /*0x98728b*/
+            v121.vt = 0; /*0x987290*/
+            goto LABEL_55; /*0x987294*/
+          }
+          v37 = &v121; /*0x987299*/
+          goto LABEL_58; /*0x98729c*/
+        case 3: /*0x986d76*/
+          v45 = this->m_nCurDisplayItemIndex; /*0x9872a1*/
+          v46 = idx; /*0x9872a7*/
+          if ( idx == v45 ) /*0x9872ac*/
+            goto LABEL_72; /*0x9872ac*/
+          nMapNo = this->m_aCT.a; /*0x9872ae*/
+          if ( nMapNo ) /*0x9872b6*/
+            nMapNo = (CT_INFO *)nMapNo[-1].nMapNo; /*0x9872b8*/
+          if ( (CT_INFO *)v45 == nMapNo ) /*0x9872bd*/
+          {
+LABEL_72:
+            nFuncCode = v7->nFuncCode; /*0x9872c3*/
+            if ( nFuncCode < 4 ) /*0x9872c8*/
+              CUIStatusBar::SetButtonBlink((CUIStatusBar *)TSingleton<CUIStatusBar>::ms_pInstance._m_pStr, nFuncCode, 1); /*0x9872d8*/
+            v49 = this->m_aCT.a; /*0x9872dd*/
+            if ( v49 ) /*0x9872e5*/
+              v49 = (CT_INFO *)v49[-1].nMapNo; /*0x9872e7*/
+            if ( (CT_INFO *)v46 != v49 ) /*0x9872ec*/
+            {
+              ++this->m_nCurDisplayItemIndex; /*0x9872f2*/
+              this->m_nCurDisplayTextItemPos = 0; /*0x9872f8*/
+            }
+          }
+          goto LABEL_90; /*0x987302*/
+        case 4: /*0x986d76*/
+          if ( bUserWithOneSelect ) /*0x98730b*/
+            goto LABEL_90; /*0x98730b*/
+          _bstr_t::_bstr_t(&bsIcon, L"UI/UIWindow2.img/UtilDlgEx/dot0"); /*0x987319*/
+          v50 = v7->nSelect; /*0x98731e*/
+          LOBYTE(v115) = 19; /*0x987321*/
+          if ( v50 == this->m_nSelect || v50 == this->m_apListCT.a[this->m_nListFocus]->nSelect ) /*0x98733f*/
+          {
+            _bstr_t::_bstr_t((_bstr_t *)&pi, L"UI/UIWindow2.img/UtilDlgEx/dot1"); /*0x987349*/
+            Ztl_bstr_t::operator=(&bsIcon, (const Ztl_bstr_t *)&pi); /*0x987355*/
+            if ( pi ) /*0x98735f*/
+            {
+              _bstr_t::Data_t::Release((_bstr_t::Data_t *)pi); /*0x987361*/
+              pi = nullptr; /*0x987366*/
+            }
+          }
+          Ztl_variant_t::Ztl_variant_t(&vAux, &vtMissing); /*0x987378*/
+          LOBYTE(v115) = 20; /*0x987388*/
+          Ztl_variant_t::Ztl_variant_t(&vParam, &vtMissing); /*0x98738c*/
+          p_pvarg = nullptr; /*0x987391*/
+          v100.m_Data = nullptr; /*0x987393*/
+          p_vAux = (unsigned int)&vAux; /*0x98739b*/
+          v98.m_Data = (_bstr_t::Data_t *)&vParam; /*0x9873a2*/
+          v97.m_Data = (_bstr_t::Data_t *)&vParam; /*0x9873a3*/
+          bUserWithOneSelect = (int)&v97; /*0x9873a9*/
+          Ztl_bstr_t::Ztl_bstr_t((Ztl_bstr_t *)&v97, &bsIcon); /*0x9873ad*/
+          LOBYTE(v115) = 22; /*0x9873b9*/
+          if ( !g_rm.m_pInterface ) /*0x9873bd*/
+            goto LABEL_2; /*0x9873bd*/
+          LOBYTE(v115) = 21; /*0x9873c9*/
+          ObjectA = IWzResMan::GetObjectA( /*0x9873d4*/
+                      g_rm.m_pInterface,
+                      &v103,
+                      (Ztl_bstr_t)v97.m_Data,
+                      (const Ztl_variant_t *)v98.m_Data,
+                      (const Ztl_variant_t *)p_vAux);
+          LOBYTE(v115) = 23; /*0x9873db*/
+          Unknown = Ztl_variant_t::GetUnknown(ObjectA, (bool)v100.m_Data, (bool)p_pvarg); /*0x9873df*/
+          _com_ptr_t<_com_IIID<IWzCanvas,&__s_GUID const _GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e>>::_com_ptr_t<_com_IIID<IWzCanvas,&__s_GUID const _GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e>>( /*0x9873e8*/
+            &pDot,
+            Unknown);
+          Ztl_variant_t::~Ztl_variant_t(&v103); /*0x9873f3*/
+          Ztl_variant_t::~Ztl_variant_t(&vParam); /*0x9873fe*/
+          Ztl_variant_t::~Ztl_variant_t(&vAux); /*0x987409*/
+          v112.vt = 3; /*0x987413*/
+          v112.decVal.Lo32 = 255; /*0x987417*/
+          v53 = v7->nTop - this->m_nScrollPos; /*0x987421*/
+          m_ctTop = this->m_ctTop; /*0x987427*/
+          v55 = pDot.m_pInterface; /*0x98742d*/
+          p_pvarg = &v112; /*0x987433*/
+          v56 = v53 + m_ctTop + 2; /*0x987434*/
+          v57 = this->m_ctLeft; /*0x987438*/
+          nLeft = v7->nLeft; /*0x98743e*/
+          LOBYTE(v115) = 28; /*0x98744b*/
+          IWzCanvas::Copy(pCanvas.m_pInterface, nLeft + v57 + 10, v56, pDot.m_pInterface, &v112); /*0x98744f*/
+          Ztl_variant_t::~Ztl_variant_t(&v112); /*0x987457*/
+          v59 = this->m_nCurDisplayItemIndex; /*0x98745c*/
+          if ( v59 == idx ) /*0x987465*/
+          {
+            this->m_nCurDisplayItemIndex = v59 + 1; /*0x987468*/
+            this->m_nCurDisplayTextItemPos = 0; /*0x98746e*/
+          }
+          LOBYTE(v115) = 19; /*0x987478*/
+          if ( v55 ) /*0x98747e*/
+            ((void (__cdecl *)(IWzCanvas *))v55->Release)(v55); /*0x987486*/
+          LOBYTE(v115) = 3; /*0x98748b*/
+          if ( bsIcon.m_Data ) /*0x987491*/
+          {
+            _bstr_t::Data_t::Release(bsIcon.m_Data); /*0x987493*/
+            bsIcon.m_Data = nullptr; /*0x987498*/
+          }
+          goto LABEL_90; /*0x987498*/
+        default:
+          goto LABEL_90;
+      }
+    }
+  }
+  v64 = this->m_aCT.a; /*0x98753b*/
+  if ( v64 ) /*0x987543*/
+    v64 = (CT_INFO *)v64[-1].nMapNo; /*0x987545*/
+  if ( this->m_nCurDisplayItemIndex >= (unsigned int)v64 ) /*0x98754e*/
+    this->m_bFinishShow = 1; /*0x987550*/
+  LOBYTE(v115) = 0; /*0x98755b*/
+  if ( vClip.vt == 8 ) /*0x98755f*/
+  {
+    vClip.vt = 0; /*0x987566*/
+    if ( vClip.decVal.Lo32 ) /*0x98756c*/
+      ZAPI.CoTaskMemFree((void *)(vClip.decVal.Lo32 - 4)); /*0x987572*/
+  }
+  else
+  {
+    VariantClear(&vClip); /*0x98757e*/
+  }
+  if ( this->m_dlgType == 6 ) /*0x98758b*/
+  {
+    sFormat._m_pStr = nullptr; /*0x987591*/
+    v65 = &this->m_aPetInfo.a[this->m_nPetIndex]; /*0x9875aa*/
+    LOBYTE(v115) = 30; /*0x9875ae*/
+    pi = v65; /*0x9875b2*/
+    VariantInit(&v124); /*0x9875b5*/
+    v32 = ZComAPI::ZComVariantCopy(&v124, &vtMissing); /*0x9875c4*/
+    if ( v32 < 0 ) /*0x9875ce*/
+LABEL_107:
+      _com_issue_error(v32); /*0x9875d0*/
+    v67 = v65->sName._m_pStr; /*0x9875d6*/
+    p_pvarg = &v124; /*0x9875dc*/
+    v100.m_Data = v66; /*0x9875dd*/
+    result._m_pStr = (wchar_t *)&v100; /*0x9875de*/
+    LOBYTE(v115) = 31; /*0x9875e6*/
+    _bstr_t::_bstr_t(&v100, v67); /*0x9875e9*/
+    LOBYTE(v115) = 32; /*0x9875f4*/
+    v68 = get_basic_font( /*0x987600*/
+            (_com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> > *)&pDot,
+            FONT_SMALL_WHITE)->m_pInterface;
+    LOBYTE(v115) = 33; /*0x987602*/
+    if ( !v68 ) /*0x987608*/
+      _com_issue_error(-2147467261); /*0x98760f*/
+    LOBYTE(v115) = 34; /*0x987614*/
+    v69 = IWzFont::CalcTextWidth(v68, (Ztl_bstr_t)v100.m_Data, p_pvarg); /*0x98761d*/
+    LOBYTE(v115) = 31; /*0x987622*/
+    if ( pDot.m_pInterface ) /*0x987627*/
+      ((void (__cdecl *)(IWzCanvas *))pDot.m_pInterface->Release)(pDot.m_pInterface); /*0x98762f*/
+    LOBYTE(v115) = 30; /*0x987636*/
+    if ( v124.vt == 8 ) /*0x98763a*/
+    {
+      v124.vt = 0; /*0x98763e*/
+      if ( v124.decVal.Lo32 ) /*0x987647*/
+        ZAPI.CoTaskMemFree((void *)(v124.decVal.Lo32 - 4)); /*0x98764d*/
+    }
+    else
+    {
+      VariantClear(&v124); /*0x987659*/
+    }
+    v70 = VariantInit; /*0x98765f*/
+    VariantInit(&v121); /*0x987669*/
+    v71 = ZComAPI::ZComVariantCopy(&v121, &vtMissing); /*0x987674*/
+    if ( v71 < 0 ) /*0x98767e*/
+      _com_issue_error(v71); /*0x987681*/
+    LOBYTE(v115) = 35; /*0x98768a*/
+    v70(&v124); /*0x98768e*/
+    v72 = ZComAPI::ZComVariantCopy(&v124, &vtMissing); /*0x987699*/
+    if ( v72 < 0 ) /*0x9876a3*/
+      _com_issue_error(v72); /*0x9876a6*/
+    v100.m_Data = (_bstr_t::Data_t *)&v121; /*0x9876ae*/
+    p_vAux = (unsigned int)&v124; /*0x9876b2*/
+    LOBYTE(v115) = 36; /*0x9876b9*/
+    v98.m_Data = (_bstr_t::Data_t *)get_basic_font( /*0x9876c7*/
+                                      (_com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> > *)&pDot,
+                                      FONT_SMALL_WHITE)->m_pInterface;
+    v73 = pi->sName._m_pStr; /*0x9876cb*/
+    v97.m_Data = v74; /*0x9876ce*/
+    result._m_pStr = (wchar_t *)&v97; /*0x9876cf*/
+    LOBYTE(v115) = 37; /*0x9876d7*/
+    _bstr_t::_bstr_t(&v97, v73); /*0x9876da*/
+    LOBYTE(v115) = 37; /*0x9876fa*/
+    IWzCanvas::DrawTextA( /*0x9876fd*/
+      pCanvas.m_pInterface,
+      188 - v69 / 2,
+      195,
+      (Ztl_bstr_t)v97.m_Data,
+      (IWzFont *)v98.m_Data,
+      (const Ztl_variant_t *)p_vAux,
+      (const Ztl_variant_t *)v100.m_Data);
+    LOBYTE(v115) = 36; /*0x987705*/
+    if ( pDot.m_pInterface ) /*0x98770b*/
+      ((void (__cdecl *)(IWzCanvas *))pDot.m_pInterface->Release)(pDot.m_pInterface); /*0x987713*/
+    LOBYTE(v115) = 35; /*0x98771a*/
+    if ( v124.vt == 8 ) /*0x987722*/
+    {
+      v124.vt = 0; /*0x987729*/
+      if ( v124.decVal.Lo32 ) /*0x98772f*/
+        ZAPI.CoTaskMemFree((void *)(v124.decVal.Lo32 - 4)); /*0x987735*/
+    }
+    else
+    {
+      VariantClear(&v124); /*0x987741*/
+    }
+    LOBYTE(v115) = 30; /*0x987747*/
+    if ( v121.vt == 8 ) /*0x98774f*/
+    {
+      v121.vt = 0; /*0x987753*/
+      if ( v121.decVal.Lo32 ) /*0x98775c*/
+        ZAPI.CoTaskMemFree((void *)(v121.decVal.Lo32 - 4)); /*0x987762*/
+    }
+    else
+    {
+      VariantClear(&v121); /*0x98776e*/
+    }
+    p_vAux = 6677; /*0x987777*/
+    v98.m_Data = (_bstr_t::Data_t *)&pDot; /*0x98777c*/
+    Instance = StringPool::GetInstance(); /*0x98777d*/
+    v76 = StringPool::GetString(Instance, (ZXString<char> *)v98.m_Data, p_vAux)->_m_pStr; /*0x98778f*/
+    p_vAux = pi->nLevel; /*0x987791*/
+    LOBYTE(v115) = 39; /*0x987797*/
+    ZXString<char>::Format(&sFormat, v76, p_vAux); /*0x98779b*/
+    LOBYTE(v115) = 30; /*0x9877a6*/
+    if ( pDot.m_pInterface ) /*0x9877ac*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&pDot.m_pInterface[-3]); /*0x9877b2*/
+    VariantInit(&v124); /*0x9877be*/
+    v77 = ZComAPI::ZComVariantCopy(&v124, &vtMissing); /*0x9877cd*/
+    if ( v77 < 0 ) /*0x9877d7*/
+      _com_issue_error(v77); /*0x9877da*/
+    p_vAux = (unsigned int)&v124; /*0x9877e5*/
+    v98.m_Data = v78; /*0x9877e6*/
+    pDot.m_pInterface = (IWzCanvas *)&v98; /*0x9877e7*/
+    LOBYTE(v115) = 40; /*0x9877ef*/
+    _bstr_t::_bstr_t(&v98, sFormat._m_pStr); /*0x9877f2*/
+    v79 = this->m_pFontPet.m_pInterface; /*0x9877f7*/
+    LOBYTE(v115) = 41; /*0x9877fd*/
+    if ( !v79 ) /*0x987803*/
+      _com_issue_error(-2147467261); /*0x98780a*/
+    LOBYTE(v115) = 40; /*0x98780f*/
+    v80 = IWzFont::CalcTextWidth(v79, (Ztl_bstr_t)v98.m_Data, (const Ztl_variant_t *)p_vAux); /*0x98781c*/
+    LOBYTE(v115) = 30; /*0x98781e*/
+    if ( v124.vt == 8 ) /*0x987822*/
+    {
+      v124.vt = 0; /*0x987826*/
+      if ( v124.decVal.Lo32 ) /*0x98782f*/
+        ZAPI.CoTaskMemFree((void *)(v124.decVal.Lo32 - 4)); /*0x987835*/
+    }
+    else
+    {
+      VariantClear(&v124); /*0x987841*/
+    }
+    v81 = VariantInit; /*0x987847*/
+    VariantInit(&v121); /*0x987851*/
+    v82 = ZComAPI::ZComVariantCopy(&v121, &vtMissing); /*0x98785c*/
+    if ( v82 < 0 ) /*0x987866*/
+      _com_issue_error(v82); /*0x987869*/
+    LOBYTE(v115) = 42; /*0x987872*/
+    v81(&v124); /*0x987876*/
+    v83 = ZComAPI::ZComVariantCopy(&v124, &vtMissing); /*0x987881*/
+    if ( v83 < 0 ) /*0x98788b*/
+      _com_issue_error(v83); /*0x98788e*/
+    p_vAux = (unsigned int)&v121; /*0x987899*/
+    v84 = this->m_pFontPet.m_pInterface; /*0x98789a*/
+    v98.m_Data = (_bstr_t::Data_t *)&v124; /*0x9878a3*/
+    v97.m_Data = (_bstr_t::Data_t *)v84; /*0x9878a4*/
+    v96.m_Data = (_bstr_t::Data_t *)&v124; /*0x9878a5*/
+    pDot.m_pInterface = (IWzCanvas *)&v96; /*0x9878a6*/
+    LOBYTE(v115) = 43; /*0x9878ae*/
+    _bstr_t::_bstr_t(&v96, sFormat._m_pStr); /*0x9878b1*/
+    LOBYTE(v115) = 43; /*0x9878d1*/
+    IWzCanvas::DrawTextA( /*0x9878d4*/
+      pCanvas.m_pInterface,
+      166 - v80 / 2,
+      212,
+      (Ztl_bstr_t)v96.m_Data,
+      (IWzFont *)v97.m_Data,
+      (const Ztl_variant_t *)v98.m_Data,
+      (const Ztl_variant_t *)p_vAux);
+    LOBYTE(v115) = 42; /*0x9878de*/
+    if ( v124.vt == 8 ) /*0x9878e2*/
+    {
+      v124.vt = 0; /*0x9878e9*/
+      if ( v124.decVal.Lo32 ) /*0x9878ef*/
+        ZAPI.CoTaskMemFree((void *)(v124.decVal.Lo32 - 4)); /*0x9878f5*/
+    }
+    else
+    {
+      VariantClear(&v124); /*0x987901*/
+    }
+    LOBYTE(v115) = 30; /*0x98790c*/
+    if ( v121.vt == 8 ) /*0x987910*/
+    {
+      v121.vt = 0; /*0x987917*/
+      if ( v121.decVal.Lo32 ) /*0x98791d*/
+        ZAPI.CoTaskMemFree((void *)(v121.decVal.Lo32 - 4)); /*0x987923*/
+    }
+    else
+    {
+      VariantClear(&v121); /*0x98792f*/
+    }
+    p_vAux = 6677; /*0x987938*/
+    v98.m_Data = (_bstr_t::Data_t *)&pDot; /*0x98793d*/
+    v85 = StringPool::GetInstance(); /*0x98793e*/
+    v86 = StringPool::GetString(v85, (ZXString<char> *)v98.m_Data, p_vAux)->_m_pStr; /*0x987950*/
+    p_vAux = pi->nTameness; /*0x987952*/
+    LOBYTE(v115) = 45; /*0x987958*/
+    ZXString<char>::Format(&sFormat, v86, p_vAux); /*0x98795c*/
+    LOBYTE(v115) = 30; /*0x987967*/
+    if ( pDot.m_pInterface ) /*0x98796d*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&pDot.m_pInterface[-3]); /*0x987973*/
+    VariantInit(&v124); /*0x98797f*/
+    v87 = ZComAPI::ZComVariantCopy(&v124, &vtMissing); /*0x98798e*/
+    if ( v87 < 0 ) /*0x987998*/
+      _com_issue_error(v87); /*0x98799b*/
+    p_vAux = (unsigned int)&v124; /*0x9879a6*/
+    v98.m_Data = v88; /*0x9879a7*/
+    pDot.m_pInterface = (IWzCanvas *)&v98; /*0x9879a8*/
+    LOBYTE(v115) = 46; /*0x9879b0*/
+    _bstr_t::_bstr_t(&v98, sFormat._m_pStr); /*0x9879b3*/
+    v89 = this->m_pFontPet.m_pInterface; /*0x9879b8*/
+    LOBYTE(v115) = 47; /*0x9879be*/
+    if ( !v89 ) /*0x9879c4*/
+      _com_issue_error(-2147467261); /*0x9879cb*/
+    LOBYTE(v115) = 46; /*0x9879d0*/
+    v90 = IWzFont::CalcTextWidth(v89, (Ztl_bstr_t)v98.m_Data, (const Ztl_variant_t *)p_vAux); /*0x9879dd*/
+    LOBYTE(v115) = 30; /*0x9879df*/
+    if ( v124.vt == 8 ) /*0x9879e3*/
+    {
+      v124.vt = 0; /*0x9879e7*/
+      if ( v124.decVal.Lo32 ) /*0x9879f0*/
+        ZAPI.CoTaskMemFree((void *)(v124.decVal.Lo32 - 4)); /*0x9879f6*/
+    }
+    else
+    {
+      VariantClear(&v124); /*0x987a02*/
+    }
+    v91 = VariantInit; /*0x987a08*/
+    VariantInit(&v121); /*0x987a12*/
+    v92 = ZComAPI::ZComVariantCopy(&v121, &vtMissing); /*0x987a1d*/
+    if ( v92 < 0 ) /*0x987a27*/
+      _com_issue_error(v92); /*0x987a2a*/
+    LOBYTE(v115) = 48; /*0x987a33*/
+    v91(&v124); /*0x987a37*/
+    v93 = ZComAPI::ZComVariantCopy(&v124, &vtMissing); /*0x987a42*/
+    if ( v93 < 0 ) /*0x987a4c*/
+      _com_issue_error(v93); /*0x987a4f*/
+    v94 = this->m_pFontPet.m_pInterface; /*0x987a54*/
+    p_vAux = (unsigned int)&v121; /*0x987a60*/
+    v98.m_Data = (_bstr_t::Data_t *)&v124; /*0x987a64*/
+    v97.m_Data = (_bstr_t::Data_t *)v94; /*0x987a65*/
+    v96.m_Data = (_bstr_t::Data_t *)&v124; /*0x987a66*/
+    pDot.m_pInterface = (IWzCanvas *)&v96; /*0x987a67*/
+    LOBYTE(v115) = 49; /*0x987a6f*/
+    _bstr_t::_bstr_t(&v96, sFormat._m_pStr); /*0x987a72*/
+    LOBYTE(v115) = 49; /*0x987a92*/
+    IWzCanvas::DrawTextA( /*0x987a95*/
+      pCanvas.m_pInterface,
+      252 - v90 / 2,
+      212,
+      (Ztl_bstr_t)v96.m_Data,
+      (IWzFont *)v97.m_Data,
+      (const Ztl_variant_t *)v98.m_Data,
+      (const Ztl_variant_t *)p_vAux);
+    LOBYTE(v115) = 48; /*0x987a9f*/
+    if ( v124.vt == 8 ) /*0x987aa3*/
+    {
+      v124.vt = 0; /*0x987aaa*/
+      if ( v124.decVal.Lo32 ) /*0x987ab0*/
+        ZAPI.CoTaskMemFree((void *)(v124.decVal.Lo32 - 4)); /*0x987ab6*/
+    }
+    else
+    {
+      VariantClear(&v124); /*0x987ac2*/
+    }
+    LOBYTE(v115) = 30; /*0x987acd*/
+    if ( v121.vt == 8 ) /*0x987ad1*/
+    {
+      v121.vt = 0; /*0x987ad8*/
+      if ( v121.decVal.Lo32 ) /*0x987ade*/
+        ZAPI.CoTaskMemFree((void *)(v121.decVal.Lo32 - 4)); /*0x987ae4*/
+    }
+    else
+    {
+      VariantClear(&v121); /*0x987af0*/
+    }
+    LOBYTE(v115) = 0; /*0x987af9*/
+    if ( sFormat._m_pStr ) /*0x987aff*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sFormat._m_pStr - 1); /*0x987b05*/
+  }
+  Release = pCanvas.m_pInterface->Release; /*0x987b12*/
+  v115 = -1; /*0x987b16*/
+  ((void (__cdecl *)(IWzCanvas *))Release)(pCanvas.m_pInterface); /*0x987b1d*/
+}
+
+// References:
+//   ?Draw@CWnd@@UAEXPBUtagRECT@@@Z @ 0x9ae5c0
+//   ?GetCanvas@CWnd@@QAE?AV?$_com_ptr_t@V?$_com_IIID@UIWzCanvas@@$1?_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e@@3U__s_GUID@@B@@@@XZ @ 0x42b170
+//   ?_com_issue_error@@YGXJ@Z @ 0xa2fd00
+//   ?GetBasicCTWidth@CUtilDlgEx@@IAEJXZ @ 0x97add0
+//   ?SetClipRect@IWzCanvas@@QAE?AVZtl_variant_t@@JJJJABV2@@Z @ 0x587430
+//   ?ZAPI@@3U_ZAPIProcAddress@@A @ 0xc6d758
+//   __imp__VariantClear@4 @ 0xb1428c
+//   ??0Ztl_variant_t@@QAE@ABV_variant_t@@@Z @ 0x401a10
+//   ?vtMissing@@3V_variant_t@@A @ 0xc626e8
+//   ?DrawLine@IWzCanvas@@QAEJJJJJKABVZtl_variant_t@@@Z @ 0x6e3880
+//   ??1Ztl_variant_t@@QAE@XZ @ 0x401b90
+//   ?DrawRectangle@IWzCanvas@@QAEJJJKKK@Z @ 0x438640
+//   __imp__VariantInit@4 @ 0xb14290
+//   ?ZComVariantCopy@ZComAPI@@YAJPAUtagVARIANT@@0@Z @ 0x401730
+//   ??0_bstr_t@@QAE@PBD@Z @ 0x403260
+//   ?DrawTextA@IWzCanvas@@QAEKJJVZtl_bstr_t@@PAUIWzFont@@ABVZtl_variant_t@@2@Z @ 0x42d8b0
+//   ??0Ztl_bstr_t@@QAE@PBD@Z @ 0x404890
+//   sDefault @ 0xb476f4
+//   ?_ConvReqSize@ZStrUtil@@YAHPBDPAGH@Z @ 0x401150
+//   ?_Conv@ZStrUtil@@YAPAGPBDPAGH@Z @ 0x401170
+//   ?IsEmpty@?$ZXString@D@@QBEHXZ @ 0x4297c0
+//   ??$?0G@?$ZXString@G@@QAE@PBGH@Z @ 0x416d00
+//   ?Left@?$ZXString@G@@QBE?AV1@H@Z @ 0x4a2d50
+//   ?_ConvReqSize@ZStrUtil@@YAHPBGPADH@Z @ 0x406230
+//   ?_Conv@ZStrUtil@@YAPADPBGPADH@Z @ 0x406250
+//   ?_Release@?$ZXString@G@@KAXPAU_ZXStringData@1@@Z @ 0x4034b0
+//   ?Copy@IWzCanvas@@QAEJJJPAU1@ABVZtl_variant_t@@@Z @ 0x401cf0
+//   ?SetButtonBlink@CUIStatusBar@@QAEXJH@Z @ 0x86da90
+//   ?ms_pInstance@?$TSingleton@VCUIStatusBar@@@@1PAVCUIStatusBar@@A @ 0xc68ac8
+//   ??0_bstr_t@@QAE@PBG@Z @ 0x4032f0
+//   aUiUiwindow2Img_347 @ 0xbab8f8  "䥕唯坉湩潤㉷椮杭唯楴䑬杬硅搯瑯�"
+//   aUiUiwindow2Img_445 @ 0xbab8b8  "䥕唯坉湩潤㉷椮杭唯楴䑬杬硅搯瑯�"
+//   ??4Ztl_bstr_t@@QAEAAV0@ABV0@@Z @ 0x4048f0
+//   ?Release@Data_t@_bstr_t@@QAEKXZ @ 0x403ae0
+//   ??0Ztl_bstr_t@@QAE@ABV0@@Z @ 0x404b90
+//   ?g_rm@@3V?$_com_ptr_t@V?$_com_IIID@UIWzResMan@@$1?_GUID_57dfe40b_3e20_4dbc_97e8_805a50f381bf@@3U__s_GUID@@B@@@@A @ 0xc6f434
+//   ?GetObjectA@IWzResMan@@QAE?AVZtl_variant_t@@VZtl_bstr_t@@ABV2@1@Z @ 0x404aa0
+//   ?GetUnknown@Ztl_variant_t@@QBEPAUIUnknown@@_N0@Z @ 0x401a60
+//   ??$?0UIUnknown@@@?$_com_ptr_t@V?$_com_IIID@UIWzCanvas@@$1?_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e@@3U__s_GUID@@B@@@@QAE@PAUIUnknown@@@Z @ 0x411370
+//   ?get_basic_font@@YA?AV?$_com_ptr_t@V?$_com_IIID@UIWzFont@@$1?_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac@@3U__s_GUID@@B@@@@W4FONT_TYPE@@@Z @ 0x95f9d0
+//   ?CalcTextWidth@IWzFont@@QAEKVZtl_bstr_t@@ABVZtl_variant_t@@@Z @ 0x42d990
+//   ?GetInstance@StringPool@@SAAAV1@XZ @ 0x7466a0
+//   ?GetString@StringPool@@QAE?AV?$ZXString@D@@I@Z @ 0x403b30
+//   ?Format@?$ZXString@D@@QAAAAV1@PBDZZ @ 0x443c70
+//   ?_Release@?$ZXString@D@@KAXPAU_ZXStringData@1@@Z @ 0x403460

@@ -1,0 +1,17 @@
+// CUtilDlgEx::GetWndHeight
+// Address: 0x97ada0
+
+int __thiscall CUtilDlgEx::GetWndHeight(CUtilDlgEx *this)
+{
+  int m_dlgType; // eax
+
+  m_dlgType = this->m_dlgType; /*0x97ada0*/
+  if ( m_dlgType >= 5 ) /*0x97ada9*/
+  {
+    if ( m_dlgType <= 6 ) /*0x97adae*/
+      return 259; /*0x97adc0*/
+    if ( m_dlgType == 9 ) /*0x97adb3*/
+      return 348; /*0x97adba*/
+  }
+  return 0; /*0x97adba*/
+}

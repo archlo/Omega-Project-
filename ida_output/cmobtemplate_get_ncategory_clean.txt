@@ -1,0 +1,7 @@
+// _ZtlSecureGet_nCategory
+// Address: 0x721a00
+
+int __fastcall CMobTemplate::_ZtlSecureGet_nCategory(CMobTemplate *this)
+{
+  return _ZtlSecureFuse<long>(this->_ZtlSecureTear_nCategory, this->_ZtlSecureTear_nCategory_CS); /*0x721a16*/
+}

@@ -1,0 +1,4 @@
+void __thiscall CITC::OnMouseButton(CITC *this, unsigned int msg, unsigned int wParam, int rx, int ry)
+{
+  ;
+}

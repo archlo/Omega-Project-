@@ -1,0 +1,162 @@
+// cuserlocal::TryConsumePetMP
+
+void __thiscall CUserLocal::TryConsumePetMP(CUserLocal *this, int nDamage, _DWORD *bForce, unsigned __int8 bBuffSkill)
+{
+  CUserLocal *v4; // ebx
+  char *m_pStr; // esi
+  CharacterData *p; // ebp
+  char *p_m_uTableSize; // edi
+  volatile LONG *p_m_uCount; // ebx
+  CPet *v9; // eax
+  int v10; // eax
+  int v11; // edi
+  int v12; // eax
+  int v13; // eax
+  int v14; // ecx
+  int v15; // esi
+  CPet *v16; // ecx
+  ZRef<GW_ItemSlotBase> *a; // eax
+  int v18; // esi
+  int v19; // edi
+  GW_ItemSlotBase *v20; // ebx
+  int Data; // eax
+  int v22; // esi
+  StringPool *Instance; // eax
+  ZXString<char> *String; // eax
+  _DWORD v25[7]; // [esp-8h] [ebp-40h] BYREF
+  CUserLocal *v26; // [esp+14h] [ebp-24h]
+  CPet *pPet; // [esp+18h] [ebp-20h]
+  ZRef<GW_ItemSlotBase> v28; // [esp+1Ch] [ebp-1Ch] BYREF
+  ZRef<CharacterData> result; // [esp+24h] [ebp-14h] BYREF
+  int v30; // [esp+34h] [ebp-4h]
+
+  v4 = this; /*0x90dbe7*/
+  v26 = this; /*0x90dbe9*/
+  if ( this->m_bConsumePetMP ) /*0x90dbed*/
+  {
+    m_pStr = TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x90dbfa*/
+    p = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &result)->p; /*0x90dc0c*/
+    if ( result.p ) /*0x90dc15*/
+    {
+      p_m_uTableSize = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x90dc17*/
+      p_m_uCount = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount; /*0x90dc1a*/
+      if ( !InterlockedDecrement(p_m_uCount) ) /*0x90dc1e*/
+      {
+        InterlockedIncrement(p_m_uCount); /*0x90dc29*/
+        if ( p_m_uTableSize ) /*0x90dc31*/
+          (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1); /*0x90dc3b*/
+      }
+      v4 = v26; /*0x90dc3d*/
+      result.p = nullptr; /*0x90dc41*/
+    }
+    v9 = v4->m_apPet.a->p; /*0x90dc4f*/
+    if ( v9 ) /*0x90dc54*/
+    {
+      if ( _ZtlSecureFuse<int>(v9->_ZtlSecureTear_m_bConsumeMP, v9->_ZtlSecureTear_m_bConsumeMP_CS) ) /*0x90dc67*/
+      {
+        v10 = (int)v4->GetSecondaryStat(v4); /*0x90dc7e*/
+        if ( !_ZtlSecureFuse<long>((const int *)(v10 + 1704), *(_DWORD *)(v10 + 1712)) ) /*0x90dc8d*/
+        {
+          if ( (v11 = _ZtlSecureFuse<long>(p->characterStat._ZtlSecureTear_nMP, p->characterStat._ZtlSecureTear_nMP_CS), /*0x90dcef*/
+                v12 = _ZtlSecureFuse<long>((const int *)m_pStr + 2127, *((_DWORD *)m_pStr + 2129)),
+                v13 = 100 * (v11 - nDamage) / v12,
+                (v14 = 5 * *((_DWORD *)TSingleton<CConfig>::ms_pInstance._m_pStr + 35)) != 0)
+            && v13 < v14
+            || bForce )
+          {
+            nDamage = TSingleton<CFuncKeyMappedMan>::ms_pInstance->m_nPetConsumeMPItemID; /*0x90dd00*/
+            if ( nDamage ) /*0x90dd06*/
+            {
+              v15 = 0; /*0x90dd0c*/
+              while ( 1 ) /*0x90dd16*/
+              {
+                v16 = v4->m_apPet.a[v15].p; /*0x90dd16*/
+                if ( !v16 ) /*0x90dd1c*/
+                  return; /*0x90dd1c*/
+                if ( CPet::CanConsumeMP(v16) ) /*0x90dd22*/
+                  break; /*0x90dd22*/
+                if ( ++v15 >= 3 ) /*0x90dd2f*/
+                  return; /*0x90dd2f*/
+              }
+              pPet = v4->m_apPet.a[v15].p; /*0x90dd40*/
+              if ( pPet ) /*0x90dd46*/
+              {
+                a = p->aaItemSlot[2].a; /*0x90dd4c*/
+                if ( a ) /*0x90dd54*/
+                  a = (ZRef<GW_ItemSlotBase> *)a[-1].p; /*0x90dd56*/
+                v18 = (int)&a[-1].p + 3; /*0x90dd59*/
+                v19 = 1; /*0x90dd5c*/
+                bForce = (GW_ItemSlotBase **)((char *)&a[-1].p + 3); /*0x90dd63*/
+                if ( (int)&a[-1].p + 3 < 1 ) /*0x90dd67*/
+                {
+LABEL_34:
+                  if ( ++v4->m_nPetMPConsumeFailed <= 3 ) /*0x90ddfd*/
+                    CUser::PetAutoSpeaking(v4, 5); /*0x90de03*/
+                  Instance = StringPool::GetInstance(); /*0x90de12*/
+                  String = StringPool::GetString(Instance, (ZXString<char> *)&nDamage, 0xD8Au); /*0x90de19*/
+                  v30 = 0; /*0x90de20*/
+                  if ( TSingleton<CUIStatusBar>::ms_pInstance._m_pStr ) /*0x90de2a*/
+                  {
+                    bForce = v25; /*0x90de31*/
+                    v25[1] = 0; /*0x90de38*/
+                    CUIStatusBar::ChatLogAdd( /*0x90de46*/
+                      (CUIStatusBar *)TSingleton<CUIStatusBar>::ms_pInstance._m_pStr,
+                      String->_m_pStr,
+                      12,
+                      -1,
+                      0,
+                      (ZRef<GW_ItemSlotBase>)v25[0]);
+                  }
+                  v30 = -1; /*0x90de4f*/
+                  if ( nDamage ) /*0x90de59*/
+                    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(nDamage - 12)); /*0x90de5f*/
+                  return; /*0x90de5f*/
+                }
+                while ( 1 ) /*0x90dd7f*/
+                {
+                  v20 = CharacterData::GetItem(p, &v28, 2, v19)->p; /*0x90dd7f*/
+                  if ( v28.p ) /*0x90dd88*/
+                  {
+                    if ( !InterlockedDecrement(&v28.p->_m_nRef) ) /*0x90dd8e*/
+                    {
+                      InterlockedIncrement(&v28.p->_m_nRef); /*0x90dda0*/
+                      if ( v28.p ) /*0x90ddac*/
+                        ((void (__thiscall *)(GW_ItemSlotBase *, int))v28.p->dtr_ZRefCounted)(v28.p, 1); /*0x90ddb4*/
+                    }
+                    v28.p = nullptr; /*0x90ddb6*/
+                  }
+                  if ( v20 ) /*0x90ddc0*/
+                  {
+                    Data = TSecType<long>::GetData(&v20->nItemID); /*0x90ddc5*/
+                    v22 = nDamage; /*0x90ddca*/
+                    if ( Data == nDamage && !v20->IsProtectedItem(v20) ) /*0x90dddd*/
+                    {
+                      if ( !v19 ) /*0x90de7f*/
+                      {
+LABEL_33:
+                        v4 = v26; /*0x90ddec*/
+                        goto LABEL_34; /*0x90ddec*/
+                      }
+                      CWvsContext::SendStatChangeItemUseRequestByPetQ( /*0x90dea8*/
+                        (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+                        pPet->m_liPetLockerSN,
+                        v19,
+                        v22,
+                        1,
+                        bBuffSkill,
+                        1);
+                      return; /*0x90dea8*/
+                    }
+                    v18 = (int)bForce; /*0x90dde3*/
+                  }
+                  if ( ++v19 > v18 ) /*0x90ddea*/
+                    goto LABEL_33; /*0x90ddea*/
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

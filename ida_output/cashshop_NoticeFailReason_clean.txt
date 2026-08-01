@@ -1,0 +1,470 @@
+// cashshop::NoticeFailReason
+
+void __thiscall CCashShop::NoticeFailReason(CCashShop *this, int nReason)
+{
+  StringPool *Instance; // eax
+  unsigned int v3; // [esp-18h] [ebp-18h]
+  ZXString<char> v4; // [esp-14h] [ebp-14h] BYREF
+  const wchar_t *v5; // [esp-10h] [ebp-10h]
+  ZRef<CDialog> *v6; // [esp-Ch] [ebp-Ch]
+  int v7; // [esp-8h] [ebp-8h]
+  int v8; // [esp-4h] [ebp-4h]
+
+  switch ( nReason ) /*0x495bce*/
+  {
+    case 1: /*0x495bce*/
+      v8 = 0; /*0x495bd5*/
+      v7 = 0; /*0x495bd7*/
+      v6 = nullptr; /*0x495bd9*/
+      v5 = nullptr; /*0x495bdb*/
+      v4._m_pStr = (char *)this; /*0x495bdd*/
+      v3 = 552; /*0x495be4*/
+      goto LABEL_58; /*0x495bea*/
+    case 3: /*0x495bce*/
+      v8 = 0; /*0x495bef*/
+      v7 = 0; /*0x495bf1*/
+      v6 = nullptr; /*0x495bf3*/
+      v5 = nullptr; /*0x495bf5*/
+      v4._m_pStr = (char *)this; /*0x495bf7*/
+      v3 = 553; /*0x495bfe*/
+      goto LABEL_58; /*0x495c03*/
+    case 4: /*0x495bce*/
+      v8 = 0; /*0x495c08*/
+      v7 = 0; /*0x495c0a*/
+      v6 = nullptr; /*0x495c0c*/
+      v5 = nullptr; /*0x495c0e*/
+      v4._m_pStr = (char *)this; /*0x495c10*/
+      v3 = 554; /*0x495c17*/
+      goto LABEL_58; /*0x495c1d*/
+    case 5: /*0x495bce*/
+      v8 = 0; /*0x495c22*/
+      v7 = 0; /*0x495c24*/
+      v6 = nullptr; /*0x495c26*/
+      v5 = nullptr; /*0x495c28*/
+      v4._m_pStr = (char *)this; /*0x495c2a*/
+      v3 = 555; /*0x495c31*/
+      goto LABEL_58; /*0x495c37*/
+    case 6: /*0x495bce*/
+      v8 = 0; /*0x496064*/
+      v7 = 0; /*0x496066*/
+      v6 = nullptr; /*0x496068*/
+      v5 = nullptr; /*0x49606a*/
+      v4._m_pStr = (char *)this; /*0x49606c*/
+      v3 = 4553; /*0x496073*/
+      goto LABEL_58; /*0x496079*/
+    case 7: /*0x495bce*/
+      v8 = 0; /*0x49607e*/
+      v7 = 0; /*0x496080*/
+      v6 = nullptr; /*0x496082*/
+      v5 = nullptr; /*0x496084*/
+      v4._m_pStr = (char *)this; /*0x496086*/
+      v3 = 4554; /*0x49608d*/
+      goto LABEL_58; /*0x496093*/
+    case 8: /*0x495bce*/
+      v8 = 0; /*0x496098*/
+      v7 = 0; /*0x49609a*/
+      v6 = nullptr; /*0x49609c*/
+      v5 = nullptr; /*0x49609e*/
+      v4._m_pStr = (char *)this; /*0x4960a0*/
+      v3 = 4555; /*0x4960a7*/
+      goto LABEL_58; /*0x4960ac*/
+    case 9: /*0x495bce*/
+      v8 = 0; /*0x4960b1*/
+      v7 = 0; /*0x4960b3*/
+      v6 = nullptr; /*0x4960b5*/
+      v5 = nullptr; /*0x4960b7*/
+      v4._m_pStr = (char *)this; /*0x4960b9*/
+      v3 = 4556; /*0x4960c0*/
+      goto LABEL_58; /*0x4960c6*/
+    case 10: /*0x495bce*/
+      v8 = 0; /*0x495c3c*/
+      v7 = 0; /*0x495c3e*/
+      v6 = nullptr; /*0x495c40*/
+      v5 = nullptr; /*0x495c42*/
+      v4._m_pStr = (char *)this; /*0x495c44*/
+      v3 = 556; /*0x495c4b*/
+      goto LABEL_58; /*0x495c50*/
+    case 11: /*0x495bce*/
+      v8 = 0; /*0x495c55*/
+      v7 = 0; /*0x495c57*/
+      v6 = nullptr; /*0x495c59*/
+      v5 = nullptr; /*0x495c5b*/
+      v4._m_pStr = (char *)this; /*0x495c5d*/
+      v3 = 557; /*0x495c64*/
+      goto LABEL_58; /*0x495c6a*/
+    case 14: /*0x495bce*/
+      v8 = 0; /*0x495d23*/
+      v7 = 0; /*0x495d25*/
+      v6 = nullptr; /*0x495d27*/
+      v5 = nullptr; /*0x495d29*/
+      v4._m_pStr = (char *)this; /*0x495d2b*/
+      v3 = 565; /*0x495d32*/
+      goto LABEL_58; /*0x495d37*/
+    case 16: /*0x495bce*/
+      v8 = 0; /*0x495cbc*/
+      v7 = 0; /*0x495cbe*/
+      v6 = nullptr; /*0x495cc0*/
+      v5 = nullptr; /*0x495cc2*/
+      v4._m_pStr = (char *)this; /*0x495cc4*/
+      v3 = 561; /*0x495ccb*/
+      goto LABEL_58; /*0x495cd1*/
+    case 17: /*0x495bce*/
+      v8 = 0; /*0x495ca2*/
+      v7 = 0; /*0x495ca4*/
+      v6 = nullptr; /*0x495ca6*/
+      v5 = nullptr; /*0x495ca8*/
+      v4._m_pStr = (char *)this; /*0x495caa*/
+      v3 = 560; /*0x495cb1*/
+      goto LABEL_58; /*0x495cb7*/
+    case 18: /*0x495bce*/
+      v8 = 0; /*0x495cd6*/
+      v7 = 0; /*0x495cd8*/
+      v6 = nullptr; /*0x495cda*/
+      v5 = nullptr; /*0x495cdc*/
+      v4._m_pStr = (char *)this; /*0x495cde*/
+      v3 = 562; /*0x495ce5*/
+      goto LABEL_58; /*0x495cea*/
+    case 19: /*0x495bce*/
+      v8 = 0; /*0x495cef*/
+      v7 = 0; /*0x495cf1*/
+      v6 = nullptr; /*0x495cf3*/
+      v5 = nullptr; /*0x495cf5*/
+      v4._m_pStr = (char *)this; /*0x495cf7*/
+      v3 = 563; /*0x495cfe*/
+      goto LABEL_58; /*0x495d04*/
+    case 20: /*0x495bce*/
+      v8 = 0; /*0x495d09*/
+      v7 = 0; /*0x495d0b*/
+      v6 = nullptr; /*0x495d0d*/
+      v5 = nullptr; /*0x495d0f*/
+      v4._m_pStr = (char *)this; /*0x495d11*/
+      v3 = 564; /*0x495d18*/
+      goto LABEL_58; /*0x495d1e*/
+    case 21: /*0x495bce*/
+      v8 = 0; /*0x495e70*/
+      v7 = 0; /*0x495e72*/
+      v6 = nullptr; /*0x495e74*/
+      v5 = nullptr; /*0x495e76*/
+      v4._m_pStr = (char *)this; /*0x495e78*/
+      v3 = 3307; /*0x495e7f*/
+      goto LABEL_58; /*0x495e85*/
+    case 22: /*0x495bce*/
+      v8 = 0; /*0x495c89*/
+      v7 = 0; /*0x495c8b*/
+      v6 = nullptr; /*0x495c8d*/
+      v5 = nullptr; /*0x495c8f*/
+      v4._m_pStr = (char *)this; /*0x495c91*/
+      v3 = 559; /*0x495c98*/
+      goto LABEL_58; /*0x495c9d*/
+    case 23: /*0x495bce*/
+      v8 = 0; /*0x495d3c*/
+      v7 = 0; /*0x495d3e*/
+      v6 = nullptr; /*0x495d40*/
+      v5 = nullptr; /*0x495d42*/
+      v4._m_pStr = (char *)this; /*0x495d44*/
+      v3 = 569; /*0x495d4b*/
+      goto LABEL_58; /*0x495d51*/
+    case 24: /*0x495bce*/
+      v8 = 0; /*0x495d56*/
+      v7 = 0; /*0x495d58*/
+      v6 = nullptr; /*0x495d5a*/
+      v5 = nullptr; /*0x495d5c*/
+      v4._m_pStr = (char *)this; /*0x495d5e*/
+      v3 = 570; /*0x495d65*/
+      goto LABEL_58; /*0x495d6b*/
+    case 25: /*0x495bce*/
+      v8 = 0; /*0x495d70*/
+      v7 = 0; /*0x495d72*/
+      v6 = nullptr; /*0x495d74*/
+      v5 = nullptr; /*0x495d76*/
+      v4._m_pStr = (char *)this; /*0x495d78*/
+      v3 = 870; /*0x495d7f*/
+      goto LABEL_58; /*0x495d84*/
+    case 26: /*0x495bce*/
+      v8 = 0; /*0x495d89*/
+      v7 = 0; /*0x495d8b*/
+      v6 = nullptr; /*0x495d8d*/
+      v5 = nullptr; /*0x495d8f*/
+      v4._m_pStr = (char *)this; /*0x495d91*/
+      v3 = 571; /*0x495d98*/
+      goto LABEL_58; /*0x495d9e*/
+    case 27: /*0x495bce*/
+      v8 = 0; /*0x495da3*/
+      v7 = 0; /*0x495da5*/
+      v6 = nullptr; /*0x495da7*/
+      v5 = nullptr; /*0x495da9*/
+      v4._m_pStr = (char *)this; /*0x495dab*/
+      v3 = 572; /*0x495db2*/
+      goto LABEL_58; /*0x495db8*/
+    case 28: /*0x495bce*/
+      v8 = 0; /*0x495dbd*/
+      v7 = 0; /*0x495dbf*/
+      v6 = nullptr; /*0x495dc1*/
+      v5 = nullptr; /*0x495dc3*/
+      v4._m_pStr = (char *)this; /*0x495dc5*/
+      v3 = 600; /*0x495dcc*/
+      goto LABEL_58; /*0x495dd1*/
+    case 29: /*0x495bce*/
+      v8 = 0; /*0x495dd6*/
+      v7 = 0; /*0x495dd8*/
+      v6 = nullptr; /*0x495dda*/
+      v5 = nullptr; /*0x495ddc*/
+      v4._m_pStr = (char *)this; /*0x495dde*/
+      v3 = 2546; /*0x495de5*/
+      goto LABEL_58; /*0x495deb*/
+    case 30: /*0x495bce*/
+      v8 = 0; /*0x495df0*/
+      v7 = 0; /*0x495df2*/
+      v6 = nullptr; /*0x495df4*/
+      v5 = nullptr; /*0x495df6*/
+      v4._m_pStr = (char *)this; /*0x495df8*/
+      v3 = 2547; /*0x495dff*/
+      goto LABEL_58; /*0x495e05*/
+    case 31: /*0x495bce*/
+      v8 = 0; /*0x495e0a*/
+      v7 = 0; /*0x495e0c*/
+      v6 = nullptr; /*0x495e0e*/
+      v5 = nullptr; /*0x495e10*/
+      v4._m_pStr = (char *)this; /*0x495e12*/
+      v3 = 573; /*0x495e19*/
+      goto LABEL_58; /*0x495e1e*/
+    case 32: /*0x495bce*/
+      v8 = 0; /*0x495e23*/
+      v7 = 0; /*0x495e25*/
+      v6 = nullptr; /*0x495e27*/
+      v5 = nullptr; /*0x495e29*/
+      v4._m_pStr = (char *)this; /*0x495e2b*/
+      v3 = 6795; /*0x495e32*/
+      goto LABEL_58; /*0x495e38*/
+    case 33: /*0x495bce*/
+      v8 = 0; /*0x495e3d*/
+      v7 = 0; /*0x495e3f*/
+      v6 = nullptr; /*0x495e41*/
+      v5 = nullptr; /*0x495e43*/
+      v4._m_pStr = (char *)this; /*0x495e45*/
+      v3 = 574; /*0x495e4c*/
+      goto LABEL_58; /*0x495e52*/
+    case 34: /*0x495bce*/
+      v8 = 0; /*0x495e57*/
+      v7 = 0; /*0x495e59*/
+      v6 = nullptr; /*0x495e5b*/
+      v5 = nullptr; /*0x495e5d*/
+      v4._m_pStr = (char *)this; /*0x495e5f*/
+      v3 = 531; /*0x495e66*/
+      goto LABEL_58; /*0x495e6b*/
+    case 37: /*0x495bce*/
+      v8 = 0; /*0x495e8a*/
+      v7 = 0; /*0x495e8c*/
+      v6 = nullptr; /*0x495e8e*/
+      v5 = nullptr; /*0x495e90*/
+      v4._m_pStr = (char *)this; /*0x495e92*/
+      v3 = 3308; /*0x495e99*/
+      goto LABEL_58; /*0x495e9f*/
+    case 38: /*0x495bce*/
+      v8 = 0; /*0x495ea4*/
+      v7 = 0; /*0x495ea6*/
+      v6 = nullptr; /*0x495ea8*/
+      v5 = nullptr; /*0x495eaa*/
+      v4._m_pStr = (char *)this; /*0x495eac*/
+      v3 = 3594; /*0x495eb3*/
+      goto LABEL_58; /*0x495eb8*/
+    case 43: /*0x495bce*/
+    case 68: /*0x495bce*/
+      v8 = 0; /*0x495c6f*/
+      v7 = 0; /*0x495c71*/
+      v6 = nullptr; /*0x495c73*/
+      v5 = nullptr; /*0x495c75*/
+      v4._m_pStr = (char *)this; /*0x495c77*/
+      v3 = 558; /*0x495c7e*/
+      goto LABEL_58; /*0x495c84*/
+    case 46: /*0x495bce*/
+      v8 = 0; /*0x495ebd*/
+      v7 = 0; /*0x495ebf*/
+      v6 = nullptr; /*0x495ec1*/
+      v5 = nullptr; /*0x495ec3*/
+      v4._m_pStr = (char *)this; /*0x495ec5*/
+      v3 = 4475; /*0x495ecc*/
+      goto LABEL_58; /*0x495ed2*/
+    case 48: /*0x495bce*/
+      v8 = 0; /*0x495ed7*/
+      v7 = 0; /*0x495ed9*/
+      v6 = nullptr; /*0x495edb*/
+      v5 = nullptr; /*0x495edd*/
+      v4._m_pStr = (char *)this; /*0x495edf*/
+      ZXString<char>::ZXString<char>(&v4, aTheCouponSyste, -1); /*0x495eed*/
+      CUtilDlg::Notice(v4, v5, v6, v7, v8); /*0x495ef2*/
+      return; /*0x495efa*/
+    case 49: /*0x495bce*/
+      v8 = 0; /*0x495efd*/
+      v7 = 0; /*0x495eff*/
+      v6 = nullptr; /*0x495f01*/
+      v5 = nullptr; /*0x495f03*/
+      v4._m_pStr = (char *)this; /*0x495f05*/
+      v3 = 3789; /*0x495f0c*/
+      goto LABEL_58; /*0x495f12*/
+    case 50: /*0x495bce*/
+      v8 = 0; /*0x495f17*/
+      v7 = 0; /*0x495f19*/
+      v6 = nullptr; /*0x495f1b*/
+      v5 = nullptr; /*0x495f1d*/
+      v4._m_pStr = (char *)this; /*0x495f1f*/
+      v3 = 4033; /*0x495f26*/
+      goto LABEL_58; /*0x495f2b*/
+    case 51: /*0x495bce*/
+      v8 = 0; /*0x495f30*/
+      v7 = 0; /*0x495f32*/
+      v6 = nullptr; /*0x495f34*/
+      v5 = nullptr; /*0x495f36*/
+      v4._m_pStr = (char *)this; /*0x495f38*/
+      v3 = 4034; /*0x495f3f*/
+      goto LABEL_58; /*0x495f45*/
+    case 52: /*0x495bce*/
+      v8 = 0; /*0x495f4a*/
+      v7 = 0; /*0x495f4c*/
+      v6 = nullptr; /*0x495f4e*/
+      v5 = nullptr; /*0x495f50*/
+      v4._m_pStr = (char *)this; /*0x495f52*/
+      v3 = 4035; /*0x495f59*/
+      goto LABEL_58; /*0x495f5f*/
+    case 53: /*0x495bce*/
+      v8 = 0; /*0x495f64*/
+      v7 = 0; /*0x495f66*/
+      v6 = nullptr; /*0x495f68*/
+      v5 = nullptr; /*0x495f6a*/
+      v4._m_pStr = (char *)this; /*0x495f6c*/
+      v3 = 4036; /*0x495f73*/
+      goto LABEL_58; /*0x495f78*/
+    case 54: /*0x495bce*/
+      v8 = 0; /*0x495f7d*/
+      v7 = 0; /*0x495f7f*/
+      v6 = nullptr; /*0x495f81*/
+      v5 = nullptr; /*0x495f83*/
+      v4._m_pStr = (char *)this; /*0x495f85*/
+      v3 = 4037; /*0x495f8c*/
+      goto LABEL_58; /*0x495f92*/
+    case 55: /*0x495bce*/
+      v8 = 0; /*0x495f97*/
+      v7 = 0; /*0x495f99*/
+      v6 = nullptr; /*0x495f9b*/
+      v5 = nullptr; /*0x495f9d*/
+      v4._m_pStr = (char *)this; /*0x495f9f*/
+      v3 = 4038; /*0x495fa6*/
+      goto LABEL_58; /*0x495fac*/
+    case 56: /*0x495bce*/
+      v8 = 0; /*0x495fb1*/
+      v7 = 0; /*0x495fb3*/
+      v6 = nullptr; /*0x495fb5*/
+      v5 = nullptr; /*0x495fb7*/
+      v4._m_pStr = (char *)this; /*0x495fb9*/
+      v3 = 4039; /*0x495fc0*/
+      goto LABEL_58; /*0x495fc5*/
+    case 57: /*0x495bce*/
+      v8 = 0; /*0x495fca*/
+      v7 = 0; /*0x495fcc*/
+      v6 = nullptr; /*0x495fce*/
+      v5 = nullptr; /*0x495fd0*/
+      v4._m_pStr = (char *)this; /*0x495fd2*/
+      v3 = 4043; /*0x495fd9*/
+      goto LABEL_58; /*0x495fdf*/
+    case 58: /*0x495bce*/
+      v8 = 0; /*0x495fe4*/
+      v7 = 0; /*0x495fe6*/
+      v6 = nullptr; /*0x495fe8*/
+      v5 = nullptr; /*0x495fea*/
+      v4._m_pStr = (char *)this; /*0x495fec*/
+      v3 = 4046; /*0x495ff3*/
+      goto LABEL_58; /*0x495ff9*/
+    case 59: /*0x495bce*/
+      v8 = 0; /*0x495ffe*/
+      v7 = 0; /*0x496000*/
+      v6 = nullptr; /*0x496002*/
+      v5 = nullptr; /*0x496004*/
+      v4._m_pStr = (char *)this; /*0x496006*/
+      v3 = 4047; /*0x49600d*/
+      goto LABEL_58; /*0x496012*/
+    case 60: /*0x495bce*/
+      v8 = 0; /*0x496017*/
+      v7 = 0; /*0x496019*/
+      v6 = nullptr; /*0x49601b*/
+      v5 = nullptr; /*0x49601d*/
+      v4._m_pStr = (char *)this; /*0x49601f*/
+      v3 = 4048; /*0x496026*/
+      goto LABEL_58; /*0x49602c*/
+    case 61: /*0x495bce*/
+      v8 = 0; /*0x496031*/
+      v7 = 0; /*0x496033*/
+      v6 = nullptr; /*0x496035*/
+      v5 = nullptr; /*0x496037*/
+      v4._m_pStr = (char *)this; /*0x496039*/
+      v3 = 4049; /*0x496040*/
+      goto LABEL_58; /*0x496046*/
+    case 62: /*0x495bce*/
+      v8 = 0; /*0x49604b*/
+      v7 = 0; /*0x49604d*/
+      v6 = nullptr; /*0x49604f*/
+      v5 = nullptr; /*0x496051*/
+      v4._m_pStr = (char *)this; /*0x496053*/
+      v3 = 4061; /*0x49605a*/
+      goto LABEL_58; /*0x49605f*/
+    case 63: /*0x495bce*/
+      v8 = 0; /*0x4960cb*/
+      v7 = 0; /*0x4960cd*/
+      v6 = nullptr; /*0x4960cf*/
+      v5 = nullptr; /*0x4960d1*/
+      v4._m_pStr = (char *)this; /*0x4960d3*/
+      v3 = 5083; /*0x4960da*/
+      goto LABEL_58; /*0x4960e0*/
+    case 64: /*0x495bce*/
+      v8 = 0; /*0x4960e5*/
+      v7 = 0; /*0x4960e7*/
+      v6 = nullptr; /*0x4960e9*/
+      v5 = nullptr; /*0x4960eb*/
+      v4._m_pStr = (char *)this; /*0x4960ed*/
+      v3 = 5084; /*0x4960f4*/
+      goto LABEL_58; /*0x4960f9*/
+    case 65: /*0x495bce*/
+      v8 = 0; /*0x49612c*/
+      v7 = 1; /*0x49612e*/
+      v6 = nullptr; /*0x496130*/
+      v5 = nullptr; /*0x496132*/
+      v4._m_pStr = (char *)this; /*0x496134*/
+      v3 = 5792; /*0x49613b*/
+      goto LABEL_58; /*0x496140*/
+    case 66: /*0x495bce*/
+      v8 = 0; /*0x4960fe*/
+      v7 = 0; /*0x496100*/
+      v6 = nullptr; /*0x496102*/
+      v5 = nullptr; /*0x496104*/
+      v4._m_pStr = (char *)this; /*0x496106*/
+      v3 = 6765; /*0x49610d*/
+      goto LABEL_58; /*0x496113*/
+    case 67: /*0x495bce*/
+      v8 = 0; /*0x496115*/
+      v7 = 0; /*0x496117*/
+      v6 = nullptr; /*0x496119*/
+      v5 = nullptr; /*0x49611b*/
+      v4._m_pStr = (char *)this; /*0x49611d*/
+      v3 = 6766; /*0x496124*/
+      goto LABEL_58; /*0x49612a*/
+    case 69: /*0x495bce*/
+      v8 = 0; /*0x496159*/
+      v7 = 0; /*0x49615b*/
+      v6 = nullptr; /*0x49615d*/
+      v5 = nullptr; /*0x49615f*/
+      v4._m_pStr = (char *)this; /*0x496161*/
+      v3 = 5832; /*0x496168*/
+      goto LABEL_58; /*0x49616e*/
+    default:
+      v8 = 0; /*0x496170*/
+      v7 = 0; /*0x496172*/
+      v6 = nullptr; /*0x496174*/
+      v5 = nullptr; /*0x496176*/
+      v4._m_pStr = (char *)this; /*0x496178*/
+      v3 = 575; /*0x49617f*/
+LABEL_58:
+      Instance = StringPool::GetInstance(); /*0x496185*/
+      StringPool::GetString(Instance, &v4, v3); /*0x49618c*/
+      CUtilDlg::Notice(v4, v5, v6, v7, v8); /*0x496191*/
+      return;
+  }
+}

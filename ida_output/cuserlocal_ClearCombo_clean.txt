@@ -1,0 +1,52 @@
+// cuserlocal::ClearCombo
+
+void __thiscall CUserLocal::ClearCombo(CUserLocal *this)
+{
+  int v2; // eax
+  IWzGr2DLayer *m_pInterface; // eax
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *m_apLayerComboDigit; // edi
+  int v5; // ebx
+  IWzGr2DLayer *v6; // eax
+  IWzGr2DLayer *v7; // eax
+  IWzGr2DLayer *v8; // eax
+
+  if ( !this->m_bHoldCombo )
+  {
+    this->m_nCombo = 0; /*0x905672*/
+    this->m_tLastSetCombo = get_update_time(); /*0x90567d*/
+    v2 = this->GetJobCode(this); /*0x90568a*/
+    CUserLocal::SendSkillCancelRequest(this, v2 != 2000 ? 21000000 : 20000017);
+    m_pInterface = this->m_pLayerCombo.m_pInterface; /*0x9056a7*/
+    if ( m_pInterface ) /*0x9056af*/
+    {
+      this->m_pLayerCombo.m_pInterface = nullptr; /*0x9056b1*/
+      m_pInterface->Release(m_pInterface); /*0x9056bd*/
+    }
+    m_apLayerComboDigit = this->m_apLayerComboDigit; /*0x9056c1*/
+    v5 = 5; /*0x9056c7*/
+    do /*0x9056e6*/
+    {
+      v6 = m_apLayerComboDigit->m_pInterface; /*0x9056d0*/
+      if ( m_apLayerComboDigit->m_pInterface ) /*0x9056d0*/
+      {
+        m_apLayerComboDigit->m_pInterface = nullptr; /*0x9056d6*/
+        v6->Release(v6); /*0x9056de*/
+      }
+      ++m_apLayerComboDigit; /*0x9056e0*/
+      --v5; /*0x9056e3*/
+    }
+    while ( v5 ); /*0x9056e6*/
+    v7 = this->m_pLayerComboSkillCommand_Attack.m_pInterface; /*0x9056e8*/
+    if ( v7 ) /*0x9056f2*/
+    {
+      this->m_pLayerComboSkillCommand_Attack.m_pInterface = nullptr; /*0x9056f4*/
+      v7->Release(v7); /*0x905700*/
+    }
+    v8 = this->m_pLayerComboSkillCommand_Buff.m_pInterface; /*0x905702*/
+    if ( v8 ) /*0x90570a*/
+    {
+      this->m_pLayerComboSkillCommand_Buff.m_pInterface = nullptr; /*0x90570c*/
+      v8->Release(v8); /*0x905718*/
+    }
+  }
+}

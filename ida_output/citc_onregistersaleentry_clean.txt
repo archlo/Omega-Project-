@@ -1,0 +1,148 @@
+int __thiscall CITC::OnRegisterSaleEntry(
+        CITC *this,
+        unsigned int nRegType,
+        unsigned int nTI,
+        int nSlotNo,
+        GW_ItemSlotBase *pItem)
+{
+  unsigned int v6; // ebx
+  GW_ItemSlotBase *v7; // esi
+  int v8; // ebp
+  int Data; // eax
+  const CItemInfo::EQUIPITEM *EquipItem; // ebx
+  char *v11; // ecx
+  StringPool *v12; // eax
+  char *v13; // ecx
+  StringPool *Instance; // eax
+  StringPool *v16; // eax
+  ZXString<char> v17; // [esp-14h] [ebp-54h] BYREF
+  const wchar_t *v18; // [esp-10h] [ebp-50h]
+  ZRef<CDialog> *v19; // [esp-Ch] [ebp-4Ch]
+  int v20; // [esp-8h] [ebp-48h]
+  int v21; // [esp-4h] [ebp-44h]
+  int nSaleCount; // [esp+14h] [ebp-2Ch] BYREF
+  int nRegFeeOption; // [esp+18h] [ebp-28h] BYREF
+  int nBidRange; // [esp+1Ch] [ebp-24h] BYREF
+  ZXString<char> *v25; // [esp+20h] [ebp-20h]
+  COutPacket oPacket; // [esp+24h] [ebp-1Ch] BYREF
+  int v27; // [esp+3Ch] [ebp-4h]
+
+  if ( this->m_bITCRequestSent )
+    return 0;
+  v6 = nSlotNo;
+  if ( nSlotNo <= 0 )
+    return 0;
+  v7 = pItem;
+  if ( IsITCTradeLimitItem(pItem) )
+    return 0;
+  v8 = nTI;
+  if ( nTI != 1 )
+  {
+LABEL_8:
+    COutPacket::COutPacket(&oPacket, 308);
+    v27 = 0;
+    if ( nRegType )
+    {
+      if ( nRegType != 1 )
+      {
+LABEL_19:
+        this->m_bITCRequestSent = 1;
+        v27 = -1;
+        ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff);
+        return 1;
+      }
+      if ( CRegisterAuctionEntryDlg::Confirm(
+             v8,
+             v7,
+             this,
+             (int *)&nTI,
+             (int *)&nRegType,
+             &nSaleCount,
+             (unsigned __int8 *)&pItem,
+             (unsigned __int8 *)&nRegFeeOption,
+             &nBidRange) == 1 )
+      {
+        if ( this->m_nAuctionDurationMin > (unsigned __int8)pItem
+          || this->m_nAuctionDurationMax < (unsigned __int8)pItem )
+        {
+          v21 = 0;
+          v20 = 0;
+          v19 = nullptr;
+          v18 = nullptr;
+          v17._m_pStr = v13;
+          v25 = &v17;
+          Instance = StringPool::GetInstance();
+          StringPool::GetString(Instance, &v17, 0x12B2u);
+          CUtilDlg::Notice(v17, v18, v19, v20, v21);
+          v27 = -1;
+          ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff);
+          return 4;
+        }
+        COutPacket::Encode1(&oPacket, 0x12u);
+        GW_ItemSlotBase::Encode(v7, &oPacket);
+        COutPacket::Encode4(&oPacket, v6);
+        COutPacket::Encode4(&oPacket, nSaleCount);
+        COutPacket::Encode4(&oPacket, nTI);
+        COutPacket::Encode4(&oPacket, nRegType);
+        COutPacket::Encode1(&oPacket, (unsigned __int8)pItem);
+        COutPacket::Encode1(&oPacket, nRegFeeOption);
+        COutPacket::Encode4(&oPacket, nBidRange);
+        goto LABEL_18;
+      }
+    }
+    else if ( CRegisterSaleEntryDlg::Confirm(
+                v8,
+                v7,
+                this,
+                &nSlotNo,
+                &nSaleCount,
+                (unsigned __int8 *)&pItem,
+                (unsigned __int8 *)&nRegFeeOption) == 1 )
+    {
+      if ( nSlotNo - 110 <= (unsigned int)&loc_989611 )
+      {
+        COutPacket::Encode1(&oPacket, 2u);
+        GW_ItemSlotBase::Encode(v7, &oPacket);
+        COutPacket::Encode4(&oPacket, v6);
+        COutPacket::Encode4(&oPacket, nSaleCount);
+        COutPacket::Encode4(&oPacket, nSlotNo);
+        COutPacket::Encode1(&oPacket, (unsigned __int8)pItem);
+        COutPacket::Encode1(&oPacket, nRegFeeOption);
+LABEL_18:
+        CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket);
+        goto LABEL_19;
+      }
+      v21 = 0;
+      v20 = 0;
+      v19 = nullptr;
+      v18 = nullptr;
+      v17._m_pStr = (char *)(nSlotNo - 110);
+      v25 = &v17;
+      v16 = StringPool::GetInstance();
+      StringPool::GetString(v16, &v17, 0x1A5Cu);
+      CUtilDlg::Notice(v17, v18, v19, v20, v21);
+    }
+    v27 = -1;
+    ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff);
+    return 0;
+  }
+  Data = TSecType<long>::GetData(&v7->nItemID);
+  EquipItem = CItemInfo::GetEquipItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, Data);
+  if ( _ZtlSecureFuse<long>(
+         (const int *)((char *)&v7[5].dateExpire.dwHighDateTime + 1),
+         *(int *)((char *)&v7[6]._m_nRef + 1)) == EquipItem->nDurability )
+  {
+    v6 = nSlotNo;
+    goto LABEL_8;
+  }
+  v21 = 0;
+  v20 = 0;
+  v19 = nullptr;
+  v18 = nullptr;
+  v17._m_pStr = v11;
+  v25 = &v17;
+  v12 = StringPool::GetInstance();
+  StringPool::GetString(v12, &v17, 0x1636u);
+  CUtilDlg::Notice(v17, v18, v19, v20, v21);
+  return 0;
+}

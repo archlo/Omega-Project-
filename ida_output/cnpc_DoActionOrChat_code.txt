@@ -1,0 +1,69 @@
+﻿int __thiscall CNpc::DoActionOrChat(CNpc *this, int *nAction, int *nChatIdx)
+{
+  CAvatar *p; // ecx
+  unsigned int v6; // eax
+  CNpcTemplate *m_pTemplate; // ecx
+  CNpcTemplate::ACT *a; // eax
+  char *v9; // eax
+  Ztl_bstr_t *m_Data; // ecx
+  char *v11; // ebx
+  unsigned int v12; // edi
+  unsigned int v14; // eax
+  CNpcTemplate *v15; // esi
+  signed int v16; // edx
+  int nShop; // eax
+  int v18; // edi
+  Ztl_bstr_t *v19; // eax
+  _bstr_t::Data_t *v20; // esi
+  unsigned int v21; // edx
+
+  *nChatIdx = -1; /*0x6702ba*/
+  *nAction = -1; /*0x6702c3*/
+  if ( this->m_tWaitTimeForNextActionOrChat > 0 || this->m_chatBalloon.m_pLayerChat.m_pInterface ) /*0x6702d6*/
+    return 0; /*0x6702d6*/
+  p = this->m_pImitatedLook.p; /*0x6702e0*/
+  if ( p ? CAvatar::GetOneTimeAction(p) > -1 : this->m_nOneTimeAction > -1 )
+    return 0; /*0x6703fe*/
+  v6 = CRand32::Random(&g_rand); /*0x670314*/
+  m_pTemplate = this->m_pTemplate; /*0x670322*/
+  this->m_tWaitTimeForNextActionOrChat = v6 % 0x1770 + 3000; /*0x67032e*/
+  a = m_pTemplate->aAct.a; /*0x670334*/
+  if ( a ) /*0x670339*/
+    a = (CNpcTemplate::ACT *)a[-1].lbsSpeak._m_pTail; /*0x67033b*/
+  v9 = (char *)a - m_pTemplate->nSpecialAct; /*0x67033e*/
+  m_Data = m_pTemplate->absSpeak.a; /*0x670341*/
+  v11 = v9; /*0x670345*/
+  if ( m_Data ) /*0x670349*/
+    m_Data = (Ztl_bstr_t *)m_Data[-1].m_Data; /*0x67034b*/
+  v12 = (unsigned int)&v9[(_DWORD)m_Data]; /*0x67034f*/
+  if ( !&v9[(_DWORD)m_Data] ) /*0x67034f*/
+    return 0; /*0x670359*/
+  v14 = CRand32::Random(&g_rand); /*0x670364*/
+  v15 = this->m_pTemplate; /*0x670372*/
+  v16 = v14 % 0x32 % v12; /*0x67037c*/
+  nShop = v15->nShop; /*0x67037e*/
+  if ( nShop <= 0 ) /*0x670383*/
+    nShop = -1; /*0x670385*/
+  if ( v16 >= (int)v11 || (v18 = v16 + 2, v16 + 2 == nShop) ) /*0x670391*/
+  {
+    *nChatIdx = v16 - (_DWORD)v11; /*0x6703f1*/
+    return 1; /*0x6703f4*/
+  }
+  else
+  {
+    v19 = v15->aAct.a[v16].absSpeak.a; /*0x67039d*/
+    if ( v19 && (v20 = v19[-1].m_Data) != nullptr ) /*0x6703a8*/
+    {
+      v21 = CRand32::Random(&g_rand) % 0x32 % (unsigned int)v20; /*0x6703c1*/
+      *nAction = v18; /*0x6703c7*/
+      *nChatIdx = v21; /*0x6703cf*/
+      return 1; /*0x6703cc*/
+    }
+    else
+    {
+      *nAction = v18; /*0x6703da*/
+      *nChatIdx = -1; /*0x6703e2*/
+      return 1; /*0x6703e5*/
+    }
+  }
+}

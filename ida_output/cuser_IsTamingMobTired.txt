@@ -1,0 +1,3 @@
+// CUser::IsTamingMobTired @ 0x8de210
+
+{"addr":"0x8de210","code":"BOOL __thiscall CUser::IsTamingMobTired(CUser *this)\n{\n  return 10 * (this->m_nTamingMobLevel / 3) + 95 <= this->m_nTamingMobFatigue; /*0x8de236*/\n}"}

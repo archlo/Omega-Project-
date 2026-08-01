@@ -1,0 +1,11 @@
+int __thiscall CAvatar::GetCurCharacterAction(CAvatar *this, int *pnDir)
+{
+  int v3; // edi
+  int OneTimeAction; // eax
+
+  v3 = CAvatar::MoveAction2RawAction(this, this->m_nMoveAction, pnDir);
+  if ( CAvatar::GetOneTimeAction(this) <= -1 )
+    return CAvatar::ConvertCharacterAction(this, v3);
+  OneTimeAction = CAvatar::GetOneTimeAction(this);
+  return CAvatar::ConvertCharacterAction(this, OneTimeAction);
+}

@@ -1,0 +1,3 @@
+// CUserLocal::IsStopPortion @ 0x903c30
+
+{"addr":"0x903c30","code":"BOOL __thiscall CUserLocal::IsStopPortion(CUserLocal *this)\n{\n  const SecondaryStat *v1; // eax\n\n  v1 = this->GetSecondaryStat(this); /*0x903c35*/\n  return _ZtlSecureFuse<long>(v1->_ZtlSecureTear_nStopPortion_, v1->_ZtlSecureTear_nStopPortion__CS) != 0; /*0x903c52*/\n}","refs":[{"addr":"0x407520","name":"??$_ZtlSecureFuse@J@@YAJQBJI@Z"}]}

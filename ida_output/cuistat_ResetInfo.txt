@@ -1,0 +1,4 @@
+// CUIStat::ResetInfo @ 0x862380
+// Decompiled from v95 IDB
+
+{"addr":"0x862380","code":"void __thiscall CUIStat::ResetInfo(CUIStat *this)\n{\n  CUIStatDetail *p; // ecx\n\n  CUIStat::RestoreButtons(this); /*0x862383*/\n  CUIStat::EnableApUpButton(this); /*0x86238a*/\n  CWnd::InvalidateRect(this, nullptr); /*0x862393*/\n  p = this->m_pUIStatDetail.p; /*0x862398*/\n  if ( p ) /*0x8623a1*/\n    CWnd::InvalidateRect(p, nullptr); /*0x8623a5*/\n}","refs":[{"addr":"0x861aa0","name":"?RestoreButtons@CUIStat@@IAEXXZ"},{"addr":"0x861860","name":"?EnableApUpButton@CUIStat@@IAEXXZ"},{"addr":"0x9ad3f0","name":"?InvalidateRect@CWnd@@QAEXPBUtagRECT@@@Z"}]}

@@ -10,6 +10,7 @@ function makeField() {
   const fh = new Foothold();
   fh.Id = 1; fh.X1 = -200; fh.Y1 = 200; fh.X2 = 200; fh.Y2 = 200;
   fh.Prev = 0; fh.Next = 0;
+  fh.InitVectors();
 
   const footholds: Record<number, Foothold> = { 1: fh };
 
@@ -180,13 +181,23 @@ describe('PlayerController', () => {
       pc.Spawn({ x: 50, y: 200 });
       // First frame: JumpPressed
       pc.Update({ Left: false, Right: false, Up: false, Down: false, JumpPressed: true }, 0.05);
-      const yAfterJump = pc.Position.y; // ~177
+      const yAfterJump = pc.Position.y;
       expect(yAfterJump).toBeLessThan(200); // went up
       // Second frame: JumpPressed still true (held) → NOT a new jump edge
       // Velocity should just get gravity added, not reset to -jumpSpeed
       pc.Update({ Left: false, Right: false, Up: false, Down: false, JumpPressed: true }, 0.05);
       // Still moving up (momentum), without extra jump boost. Should not snap upward.
       expect(pc.Position.y).toBeLessThanOrEqual(yAfterJump);
+    });
+
+    it('jump vy uses -jumpSpeed (OG formula requires different velocity units)', () => {
+      const pc = new PlayerController(makeField());
+      pc.Spawn({ x: 50, y: 200 });
+      // Jump vy = -jumpSpeed = -555 (OG uses pixels-per-tick, we use dt-based)
+      // After 0.05s: y = 200 + (-555 * 0.05) = 172.25
+      pc.Update({ Left: false, Right: false, Up: false, Down: false, JumpPressed: true }, 0.05);
+      expect(pc.Position.y).toBeLessThan(200);
+      expect(pc.Position.y).toBeGreaterThan(150); // Should move ~28 pixels up
     });
   });
 
@@ -197,12 +208,14 @@ describe('PlayerController', () => {
       const ledge = new Foothold();
       ledge.Id = 2; ledge.X1 = 0; ledge.Y1 = 50; ledge.X2 = 30; ledge.Y2 = 50;
       ledge.Next = 0; ledge.Prev = 0;
+      ledge.InitVectors();
       field._footholds = { 2: ledge };
 
       // Landing platform below
       const landing = new Foothold();
       landing.Id = 3; landing.X1 = -300; landing.Y1 = 600; landing.X2 = 300; landing.Y2 = 600;
       landing.Next = 0; landing.Prev = 0;
+      landing.InitVectors();
       field._footholds[3] = landing;
 
       const pc = new PlayerController(field);

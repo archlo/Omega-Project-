@@ -1,0 +1,24 @@
+// CUtilDlgEx::MakeUOLByUIType
+// Address: 0x97dd70
+
+wchar_t *__thiscall CUtilDlgEx::MakeUOLByUIType(
+        CUtilDlgEx *this,
+        ZXString<unsigned short> *sOut,
+        const wchar_t *sUOL,
+        const wchar_t *sUOL2)
+{
+  ZXString<unsigned short> *v4; // eax
+
+  ZXString<unsigned short>::operator=<unsigned short>(sOut, sUOL); /*0x97dd7d*/
+  if ( sUOL2 ) /*0x97dd88*/
+  {
+    v4 = ZXString<unsigned short>::_Cat(sOut, L"/", 1); /*0x97dd93*/
+    ZXString<unsigned short>::_Cat(v4, sUOL2, wcslen(sUOL2)); /*0x97ddb3*/
+  }
+  return sOut->_m_pStr; /*0x97ddbb*/
+}
+
+// References:
+//   ??$?4G@?$ZXString@G@@QAEAAV0@PBG@Z @ 0x415ef0
+//   ?_Cat@?$ZXString@G@@IAEAAV1@PBGH@Z @ 0x4a2280
+//   asc_B4FBF8 @ 0xb4fbf8  "�"

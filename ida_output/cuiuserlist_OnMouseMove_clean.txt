@@ -1,0 +1,92 @@
+// cuiuserlist::OnMouseMove
+
+int __thiscall CUIUserList::OnMouseMove(CUIUserList *this, char *rx, char *ry)
+{
+  char *v4; // edi
+  CCtrlScrollBar *p; // eax
+  const ZXString<char> *ToolTipString; // eax
+  char *m_pStr; // eax
+  const ZXString<char> *v8; // eax
+  const ZXString<char> *v9; // eax
+  const ZXString<char> *v10; // eax
+  const ZXString<char> *v11; // eax
+  ZXString<char> v13[5]; // [esp-4h] [ebp-34h] BYREF
+  ZXString<char> sToolTip; // [esp+10h] [ebp-20h] BYREF
+  ZXString<char> result; // [esp+14h] [ebp-1Ch] BYREF
+  ZXString<char> v16; // [esp+18h] [ebp-18h] BYREF
+  ZXString<char> v17; // [esp+1Ch] [ebp-14h] BYREF
+  ZXString<char> *v18; // [esp+20h] [ebp-10h]
+  int v19; // [esp+2Ch] [ebp-4h]
+
+  v4 = nullptr; /*0x8bff98*/
+  sToolTip._m_pStr = nullptr; /*0x8bff9c*/
+  p = this->m_pSB.p; /*0x8bffa0*/
+  v19 = 0; /*0x8bffa6*/
+  switch ( (unsigned int)p ) /*0x8bffaf*/
+  {
+    case 0u: /*0x8bffaf*/
+      ToolTipString = CTabFriend::GetToolTipString( /*0x8bffcb*/
+                        (CTabFriend *)this->m_sCurGroup._m_pStr,
+                        (ZXString<char> *)&ry,
+                        (int)rx,
+                        (int)ry);
+      LOBYTE(v19) = 1; /*0x8bffd5*/
+      ZXString<char>::operator=(&sToolTip, ToolTipString); /*0x8bffda*/
+      m_pStr = ry; /*0x8bffdf*/
+      LOBYTE(v19) = 0; /*0x8bffe3*/
+      goto LABEL_3; /*0x8bffe3*/
+    case 1u: /*0x8bffaf*/
+      v8 = CTabParty::GetToolTipString((CTabParty *)this->m_pTabFriend, (ZXString<char> *)&rx, (int)rx, (int)ry); /*0x8c002c*/
+      LOBYTE(v19) = 2; /*0x8c0036*/
+      ZXString<char>::operator=(&sToolTip, v8); /*0x8c003b*/
+      m_pStr = rx; /*0x8c0040*/
+      LOBYTE(v19) = 0; /*0x8c0044*/
+      goto LABEL_3; /*0x8c0048*/
+    case 2u: /*0x8bffaf*/
+      ((void (__thiscall *)(CTabBlackList *, char *, char *))this->m_pTabBlackList->__vftable[11].dtr_CTabBlackList)( /*0x8c0101*/
+        this->m_pTabBlackList,
+        rx,
+        ry);
+      CUIToolTip::ClearToolTip((CUIToolTip *)&this->m_pBtClose.p); /*0x8c0109*/
+      break; /*0x8c010e*/
+    case 3u: /*0x8bffaf*/
+      v9 = CTabGuild::GetToolTipString((CTabGuild *)this->m_pTabParty, &result, (int)rx, (int)ry); /*0x8c005f*/
+      LOBYTE(v19) = 3; /*0x8c0069*/
+      ZXString<char>::operator=(&sToolTip, v9); /*0x8c006e*/
+      m_pStr = result._m_pStr; /*0x8c0073*/
+      LOBYTE(v19) = 0; /*0x8c0077*/
+      goto LABEL_3; /*0x8c007b*/
+    case 4u: /*0x8bffaf*/
+      v11 = CTabGuildAlliance::GetToolTipString((CTabGuildAlliance *)this->m_pTabGuild, &v17, (int)rx, (int)ry); /*0x8c00cb*/
+      LOBYTE(v19) = 5; /*0x8c00d5*/
+      ZXString<char>::operator=(&sToolTip, v11); /*0x8c00da*/
+      m_pStr = v17._m_pStr; /*0x8c00df*/
+      LOBYTE(v19) = 0; /*0x8c00e3*/
+      goto LABEL_3; /*0x8c00e7*/
+    case 5u: /*0x8bffaf*/
+      v10 = CTabBlackList::GetToolTipString((CTabBlackList *)this->m_pWndGuildGrade, &v16, (int)rx, (int)ry); /*0x8c0095*/
+      LOBYTE(v19) = 4; /*0x8c009f*/
+      ZXString<char>::operator=(&sToolTip, v10); /*0x8c00a4*/
+      m_pStr = v16._m_pStr; /*0x8c00a9*/
+      LOBYTE(v19) = 0; /*0x8c00ad*/
+LABEL_3:
+      if ( m_pStr ) /*0x8bffe9*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)m_pStr - 1); /*0x8bffef*/
+      v4 = sToolTip._m_pStr; /*0x8bfff7*/
+      if ( !sToolTip._m_pStr || !*sToolTip._m_pStr ) /*0x8bffff*/
+        goto LABEL_7; /*0x8c0001*/
+      v18 = v13; /*0x8c0117*/
+      v13[0]._m_pStr = nullptr; /*0x8c011c*/
+      ZXString<char>::operator=(v13, &sToolTip); /*0x8c011e*/
+      CUIUserList::SetTooltipStr((CUIUserList *)((char *)this - 4), v13[0]); /*0x8c0126*/
+      break; /*0x8c0126*/
+    default:
+LABEL_7:
+      CUIToolTip::ClearToolTip((CUIToolTip *)&this->m_pBtClose.p); /*0x8c0007*/
+      break; /*0x8c0012*/
+  }
+  v19 = -1; /*0x8c012b*/
+  if ( v4 ) /*0x8c0135*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v4 - 1); /*0x8c013b*/
+  return 1; /*0x8c0148*/
+}

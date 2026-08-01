@@ -1,0 +1,10 @@
+int __thiscall CMob::GetOneTimeActionRemain(CMob *this)
+{
+  int v3; // edi
+
+  if ( _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nOneTimeAction, this->_ZtlSecureTear_m_nOneTimeAction_CS) <= -1 ) /*0x63e6ec*/
+    return 0; /*0x63e6ee*/
+  v3 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_tCurFrameRemain, this->_ZtlSecureTear_m_tCurFrameRemain_CS); /*0x63e714*/
+  return v3 /*0x63e6f0*/
+       + _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_tNextFramesRemain, this->_ZtlSecureTear_m_tNextFramesRemain_CS);
+}

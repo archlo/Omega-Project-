@@ -1,0 +1,36 @@
+﻿int __thiscall CMob::MoveAction2RawAction(CMob *this, int nMA, int *pnDir)
+{
+  int result; // eax
+
+  if ( pnDir )
+    *pnDir = nMA & 1;
+  switch ( nMA >> 1 )
+  {
+    case 1:
+      result = 0;
+      break;
+    case 2:
+      result = 1;
+      break;
+    case 3:
+      result = 2;
+      break;
+    case 6:
+      result = 3;
+      break;
+    case 8:
+      result = 4;
+      break;
+    case 16:
+      result = 39;
+      break;
+    default:
+      result = 2
+             * (_ZtlSecureFuse<long>(
+                  this->m_pTemplate->_ZtlSecureTear_nMoveAbility,
+                  this->m_pTemplate->_ZtlSecureTear_nMoveAbility_CS) == 4)
+             + 1;
+      break;
+  }
+  return result;
+}

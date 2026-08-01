@@ -1,0 +1,3 @@
+﻿=== 0x4647a0 ===
+{"addr":"0x4647a0","code":"int __thiscall CAvatar::CanUseBareHand(CAvatar *this)\n{\n  return 0; /*0x4647a2*/\n}"}
+

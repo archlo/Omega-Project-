@@ -1,0 +1,78 @@
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "[{\"addr\":\"0x898f70\",\"xrefs\":[{\"addr\":\"0x75d434\",\"type\":\"code\",\"fn\":{\"addr\":\"0x75d310\",\"name\":\"?ShowToolTip@CTemporaryStatView@@QAEHAAVCUIToolTip@@ABUtagPOINT@@JJ@Z\",\"size\":\"0x244\"}},{\"addr\":\"0x7a5236\",\"type\":\"code\",\"fn\":{\"addr\":\"0x7a4f50\",\"name\":\"?OnMouseMove@CUIPetEquip@@UAEHJJ@Z\",\"size\":\"0x3c8\"}},{\"addr\":\"0x7a52e4\",\"type\":\"code\",\"fn\":{\"addr\":\"0x7a4f50\",\"name\":\"?OnMouseMove@CUIPetEquip@@UAEHJJ@Z\",\"size\":\"0x3c8\"}},{\"addr\":\"0x7d922d\",\"type\":\"code\",\"fn\":{\"addr\":\"0x7d90d0\",\"name\":\"?OnMouseMove@CUIKeyConfig@@MAEHJJ@Z\",\"size\":\"0x1a1\"}},{\"addr\":\"0x87addf\",\"type\":\"code\",\"fn\":{\"addr\":\"0x87a7b0\",\"name\":\"?OnMouseMove@CUIStatusBar@@UAEHJJ@Z\",\"size\":\"0x705\"}},{\"addr\":\"0x8a9533\",\"type\":\"code\",\"fn\":{\"addr\":\"0x8a9300\",\"name\":\"?ShowItemToolTip@CUIToolTip@@QAEXJJPAUGW_ItemSlotBase@@PAUItemToolTipParam@1@PAUCS_LIMITGOODS@@HJW4eITCToolTip@1@@Z\",\"size\":\"0x2f5\"}}],\"more\":false,\"xref_count\":6}]"
+      }
+    ],
+    "structuredContent": {
+      "result": [
+        {
+          "addr": "0x898f70",
+          "xrefs": [
+            {
+              "addr": "0x75d434",
+              "type": "code",
+              "fn": {
+                "addr": "0x75d310",
+                "name": "?ShowToolTip@CTemporaryStatView@@QAEHAAVCUIToolTip@@ABUtagPOINT@@JJ@Z",
+                "size": "0x244"
+              }
+            },
+            {
+              "addr": "0x7a5236",
+              "type": "code",
+              "fn": {
+                "addr": "0x7a4f50",
+                "name": "?OnMouseMove@CUIPetEquip@@UAEHJJ@Z",
+                "size": "0x3c8"
+              }
+            },
+            {
+              "addr": "0x7a52e4",
+              "type": "code",
+              "fn": {
+                "addr": "0x7a4f50",
+                "name": "?OnMouseMove@CUIPetEquip@@UAEHJJ@Z",
+                "size": "0x3c8"
+              }
+            },
+            {
+              "addr": "0x7d922d",
+              "type": "code",
+              "fn": {
+                "addr": "0x7d90d0",
+                "name": "?OnMouseMove@CUIKeyConfig@@MAEHJJ@Z",
+                "size": "0x1a1"
+              }
+            },
+            {
+              "addr": "0x87addf",
+              "type": "code",
+              "fn": {
+                "addr": "0x87a7b0",
+                "name": "?OnMouseMove@CUIStatusBar@@UAEHJJ@Z",
+                "size": "0x705"
+              }
+            },
+            {
+              "addr": "0x8a9533",
+              "type": "code",
+              "fn": {
+                "addr": "0x8a9300",
+                "name": "?ShowItemToolTip@CUIToolTip@@QAEXJJPAUGW_ItemSlotBase@@PAUItemToolTipParam@1@PAUCS_LIMITGOODS@@HJW4eITCToolTip@1@@Z",
+                "size": "0x2f5"
+              }
+            }
+          ],
+          "more": false,
+          "xref_count": 6
+        }
+      ]
+    },
+    "isError": false
+  },
+  "id": 2
+}

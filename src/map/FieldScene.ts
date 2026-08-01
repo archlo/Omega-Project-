@@ -149,7 +149,6 @@ export class FieldScene {
     this._loadInfo(root);
     this._loadMiniMap(root);
     this._loadFootholds(root);
-    this._assignZMass();
     this._computeBounds();
     this._loadPortals(root);
     this._loadLadderRope(root);
@@ -194,6 +193,65 @@ export class FieldScene {
     mi.OnUserEnter = (info.Get('onUserEnter') as string) ?? '';
     mi.FieldType = this._readInt(info, 'fieldType');
     mi.Effect = (info.Get('effect') as string) ?? '';
+
+    // OG: Restore* fields — read from Map.wz info/children
+    // RestoreForbiddenSkill (0x532FB0): reads `noskill` node
+    const noSkillNode = info.Get('noskill');
+    if (noSkillNode instanceof WzProperty) {
+      for (const key of Object.keys(noSkillNode.Items)) {
+        const val = noSkillNode.Get(key);
+        if (typeof val === 'number') mi.ForbiddenSkills.push(val);
+      }
+    }
+
+    // RestoreAllowedItem (0x532AB0): reads `alloweditem` node
+    const allowedItemNode = info.Get('alloweditem');
+    if (allowedItemNode instanceof WzProperty) {
+      for (const key of Object.keys(allowedItemNode.Items)) {
+        const val = allowedItemNode.Get(key);
+        if (typeof val === 'number') mi.AllowedItems.push(val);
+      }
+    }
+
+    // RestoreHelpMsg (0x52FF40): reads `help` node (count of help messages)
+    const helpNode = info.Get('help');
+    if (helpNode instanceof WzProperty) {
+      mi.HelpMsgCount = Object.keys(helpNode.Items).length;
+    }
+
+    // RestoreClock (0x533AB0): reads `clock` node
+    const clockNode = info.Get('clock');
+    if (clockNode instanceof WzProperty) {
+      mi.ClockType = this._readInt(clockNode, 'type');
+      mi.ClockDuration = this._readInt(clockNode, 'duration');
+    }
+
+    // RestoreWeatherMsg (0x53CF80): reads `weather` node
+    mi.WeatherMsg = (info.Get('weather') as string) ?? '';
+
+    // RestorePhaseBG (0x532DD0): reads `phase` node
+    mi.PhaseBG = (info.Get('phase') as string) ?? '';
+
+    // RestoreOption (0x53B070): reads `option` node
+    mi.FieldOption = this._readInt(info, 'option');
+
+    // RestoreUserInfo (0x53FA30): reads `userInfo` node
+    mi.UserInfo = (info.Get('userInfo') as string) ?? '';
+
+    // RestorePeculiarInfo (0x546560): reads `peculiarInfo` node
+    mi.PeculiarInfo = (info.Get('peculiarInfo') as string) ?? '';
+
+    // RestoreSwinArea (0x5330E0): reads `swimArea` node
+    const swimAreaNode = info.Get('swimArea');
+    if (swimAreaNode instanceof WzProperty) {
+      mi.SwimAreaRect = {
+        left: this._readInt(swimAreaNode, 'l'),
+        top: this._readInt(swimAreaNode, 't'),
+        right: this._readInt(swimAreaNode, 'r'),
+        bottom: this._readInt(swimAreaNode, 'b'),
+      };
+    }
+
     this._info = mi;
   }
 
@@ -296,47 +354,44 @@ export class FieldScene {
           fh.Y2 = this._readInt(entryNode, 'y2');
           fh.Prev = this._readInt(entryNode, 'prev');
           fh.Next = this._readInt(entryNode, 'next');
-          fh.Force = this._readInt(entryNode, 'force');
+          // OG CWvsPhysicalSpace2D::Load (0xA18AA0): force/drag are WZ ints used as
+          // nForce/100.0 doubles by CVecCtrl::CalcWalk (0x992BA0) — store scaled.
+          fh.Force = this._readInt(entryNode, 'force') / 100;
+          fh.Drag = this._readInt(entryNode, 'drag') / 100;
+          // OG: ZMass = _wtoi of the group key (CWvsPhysicalSpace2D::Load line 388-391)
+          fh.ZMass = groupIdx;
           fh.CantThrough = this._readInt(entryNode, 'cantThrough') !== 0;
           fh.ForbidFallDown = this._readInt(entryNode, 'forbidFallDown') !== 0;
+          fh.InitVectors(); // Compute m_uvx, m_uvy, m_len from endpoints
           this._footholds[id] = fh;
         }
       }
     }
   }
 
-  private _assignZMass(): void {
-    const groups = new Map<string, number>();
-    let next = 0;
-    for (const fh of Object.values(this._footholds)) {
-      const key = `${fh.Layer}_${fh.Group}`;
-      if (!groups.has(key)) groups.set(key, ++next);
-      fh.ZMass = groups.get(key)!;
-    }
-  }
-
   private _computeBounds(): void {
-    if (this._info.VRLeft !== 0 || this._info.VRRight !== 0) {
-      this._bounds = {
-        left: this._info.VRLeft,
-        top: this._info.VRTop,
-        right: this._info.VRRight,
-        bottom: this._info.VRBottom,
-      };
-      return;
-    }
     const fhArr = Object.values(this._footholds);
     if (fhArr.length === 0) return;
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    // OG CWvsPhysicalSpace2D::Load (0xA18AA0) — aggregate m_rcMBR from footholds:
+    // left = min(xMin + 30), right = max(xMax - 30), top = min(yMin - 300),
+    // bottom = max(yMax + 10, non-vertical only). Then clamp with the info VR
+    // rect when present (VRLeft+20, VRRight-4, VRTop+65, VRBottom).
+    let left = Infinity, right = -Infinity, top = Infinity, bottom = -Infinity;
     for (const fh of fhArr) {
-      minX = Math.min(minX, fh.LeftEdgeX);
-      maxX = Math.max(maxX, fh.RightEdgeX);
-      minY = Math.min(minY, Math.min(fh.Y1, fh.Y2));
-      maxY = Math.max(maxY, Math.max(fh.Y1, fh.Y2));
+      left = Math.min(left, Math.min(fh.X1, fh.X2) + 30);
+      right = Math.max(right, Math.max(fh.X1, fh.X2) - 30);
+      top = Math.min(top, Math.min(fh.Y1, fh.Y2) - 300);
+      if (fh.X1 !== fh.X2) {
+        bottom = Math.max(bottom, Math.max(fh.Y1, fh.Y2) + 10);
+      }
     }
-    minX += 25; maxX -= 25; minY -= 300; maxY += 100;
-    if (maxX <= minX || maxY <= minY) return;
-    this._bounds = { left: minX, top: minY, right: maxX, bottom: maxY };
+    const info = this._info;
+    if (info.VRLeft !== 0) left = Math.max(left, info.VRLeft + 20);
+    if (info.VRRight !== 0) right = Math.min(right, info.VRRight - 4);
+    if (info.VRTop !== 0) top = Math.max(top, info.VRTop + 65);
+    if (info.VRBottom !== 0) bottom = Math.min(bottom, info.VRBottom);
+    if (right <= left || bottom <= top) return;
+    this._bounds = { left, top, right, bottom };
   }
 
   private _loadPortals(root: WzProperty): void {
@@ -770,10 +825,12 @@ export class FieldScene {
   }
 
   GetFootholdBelow(x: number, y: number): Foothold | null {
+    // OG: CWvsPhysicalSpace2D::GetFootholdUnderneath (0xA16430) — non-vertical
+    // footholds only (m_x1 < m_x2), interpolated gy >= y, min gy wins.
     let best: Foothold | null = null;
     let bestY = Infinity;
     for (const fh of Object.values(this._footholds)) {
-      if (fh.IsWall || fh.State === 0) continue;
+      if (fh.X1 >= fh.X2 || fh.State === 0) continue;
       const gy = fh.YAt(x);
       if (gy === null) continue;
       if (gy >= y && gy < bestY) { bestY = gy; best = fh; }
@@ -782,29 +839,42 @@ export class FieldScene {
   }
 
   GetFootholdAbove(x: number, yTop: number, yBottom: number): Foothold | null {
+    // OG: CWvsPhysicalSpace2D::GetFootholdAbove (0xA16320) — non-vertical only,
+    // interpolated gy in (yTop, yBottom], max gy wins. No CantThrough filter in
+    // the query — callers check CantThrough on the returned foothold.
+    if (yTop > yBottom) return null;
+    let best: Foothold | null = null;
+    let bestY = yTop;
     for (const fh of Object.values(this._footholds)) {
-      if (fh.IsWall || fh.State === 0 || !fh.CantThrough) continue;
+      if (fh.X1 >= fh.X2 || fh.State === 0) continue;
       const gy = fh.YAt(x);
       if (gy === null) continue;
-      if (gy >= yTop && gy <= yBottom) return fh;
+      if (gy > yTop && gy <= yBottom && gy > bestY) { bestY = gy; best = fh; }
     }
-    return null;
+    return best;
   }
 
   GetClosestFoothold(x: number, y: number): Foothold | null {
+    // OG: CWvsPhysicalSpace2D::GetFootholdClosest (0xA14270) — skips degenerate
+    // spans (m_x1 + 8 > m_x2), distance to foothold midpoint wins.
     let best: Foothold | null = null;
     let bestDist = Infinity;
     for (const fh of Object.values(this._footholds)) {
-      if (fh.IsWall || fh.State === 0) continue;
-      const d = fh.DistanceSquaredTo(x, y);
+      if (fh.State === 0 || fh.X1 + 8 > fh.X2) continue;
+      const cx = Math.trunc((fh.X1 + fh.X2) / 2);
+      const cy = Math.trunc((fh.Y1 + fh.Y2) / 2);
+      const dx = cx - x, dy = cy - y;
+      const d = dx * dx + dy * dy;
       if (d < bestDist) { bestDist = d; best = fh; }
     }
     return best;
   }
 
   GetLadderOrRope(x: number, y: number): LadderRope | null {
+    // OG: CField::GetLadderOrRope — checks X distance and Y range
+    // The OG uses a wider range for easier grabbing
     for (const lr of this._ladderRopes) {
-      if (Math.abs(x - lr.X) <= 10 && y >= lr.Top - 12 && y <= lr.Bottom + 12) return lr;
+      if (Math.abs(x - lr.X) <= 15 && y >= lr.Top - 20 && y <= lr.Bottom + 20) return lr;
     }
     return null;
   }
@@ -825,7 +895,7 @@ export class FieldScene {
     const lo = Math.min(fromX, toX), hi = Math.max(fromX, toX);
     let best: number | null = null;
     for (const fh of Object.values(this._footholds)) {
-      if (!fh.IsWall || fh.ZMass !== zmass) continue;
+      if (fh.X1 >= fh.X2 || fh.ZMass !== zmass) continue;
       const wx = fh.X1;
       if (wx < lo || wx > hi) continue;
       const wTop = Math.min(fh.Y1, fh.Y2), wBot = Math.max(fh.Y1, fh.Y2);

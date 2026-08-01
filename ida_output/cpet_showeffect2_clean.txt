@@ -1,0 +1,151 @@
+﻿void __thiscall CPet::ShowEffect(CPet *this, int nType, tagPOINT ptOld, tagPOINT ptNew)
+{
+  wchar_t *v5; // esi
+  StringPool *v6; // eax
+  const ZXString<unsigned short> *v7; // eax
+  StringPool *v8; // eax
+  const ZXString<unsigned short> *v9; // eax
+  wchar_t *m_pStr; // eax
+  IWzVector2D *m_pInterface; // eax
+  wchar_t *v12; // edi
+  StringPool *Instance; // eax
+  const ZXString<unsigned short> *StringW; // eax
+  StringPool *v15; // eax
+  const ZXString<unsigned short> *v16; // eax
+  StringPool *v17; // eax
+  const ZXString<unsigned short> *v18; // eax
+  StringPool *v19; // eax
+  wchar_t *v20; // eax
+  wchar_t *v21; // esi
+  int m_nMoveAction; // eax
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v23; // [esp-14h] [ebp-50h] BYREF
+  tagPOINT v24; // [esp-10h] [ebp-4Ch]
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v25; // [esp-8h] [ebp-44h] BYREF
+  signed int dwTemplateID; // [esp-4h] [ebp-40h]
+  ZXString<unsigned short> sEffect; // [esp+10h] [ebp-2Ch] BYREF
+  ZXString<unsigned short> sSound; // [esp+14h] [ebp-28h] BYREF
+  ZXString<unsigned short> result; // [esp+18h] [ebp-24h] BYREF
+  ZXString<unsigned short> v30; // [esp+1Ch] [ebp-20h] BYREF
+  ZXString<unsigned short> v31; // [esp+20h] [ebp-1Ch] BYREF
+  ZXString<unsigned short> v32; // [esp+24h] [ebp-18h] BYREF
+  ZXString<unsigned short> v33; // [esp+28h] [ebp-14h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v34; // [esp+2Ch] [ebp-10h]
+  int v35; // [esp+38h] [ebp-4h]
+
+  sEffect._m_pStr = nullptr;
+  v5 = nullptr;
+  sSound._m_pStr = nullptr;
+  v35 = 1;
+  switch ( nType )
+  {
+    case 0:
+      Instance = StringPool::GetInstance();
+      StringW = StringPool::GetStringW(Instance, &v30, 0x6C1u);
+      LOBYTE(v35) = 4;
+      ZXString<unsigned short>::operator=(&sEffect, StringW);
+      LOBYTE(v35) = 1;
+      if ( v30._m_pStr )
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)v30._m_pStr - 1);
+      v15 = StringPool::GetInstance();
+      v16 = StringPool::GetStringW(v15, &v31, 0x1A4Cu);
+      LOBYTE(v35) = 5;
+      ZXString<unsigned short>::operator=(&sSound, v16);
+      m_pStr = v31._m_pStr;
+      LOBYTE(v35) = 1;
+      goto LABEL_5;
+    case 1:
+      v17 = StringPool::GetInstance();
+      v18 = StringPool::GetStringW(v17, &v32, 0x6C2u);
+      LOBYTE(v35) = 6;
+      ZXString<unsigned short>::operator=(&sEffect, v18);
+      LOBYTE(v35) = 1;
+      if ( v32._m_pStr )
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)v32._m_pStr - 1);
+      goto LABEL_8;
+    case 2:
+      v19 = StringPool::GetInstance();
+      v20 = StringPool::GetStringW(v19, &v33, 0x6C4u)->_m_pStr;
+      dwTemplateID = this->m_pTemplate->dwTemplateID;
+      LOBYTE(v35) = 7;
+      ZXString<unsigned short>::Format(&sEffect, v20, dwTemplateID);
+      LOBYTE(v35) = 1;
+      if ( v33._m_pStr )
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)v33._m_pStr - 1);
+      dwTemplateID = -1073343324;
+      v34 = &v25;
+      v25.m_pInterface = nullptr;
+      v21 = sEffect._m_pStr;
+      v24 = ptOld;
+      v23.m_pInterface = nullptr;
+      m_nMoveAction = this->m_nMoveAction;
+      v34 = (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v23;
+      LOBYTE(v35) = 1;
+      CAnimationDisplayer::Effect_General(
+        TSingleton<CAnimationDisplayer>::ms_pInstance,
+        sEffect._m_pStr,
+        m_nMoveAction & 1,
+        0,
+        ptOld.x,
+        ptOld.y,
+        0,
+        -1073343324);
+      v35 = -1;
+      if ( !v21 )
+        return;
+      dwTemplateID = (signed int)(v21 - 6);
+      goto LABEL_17;
+    case 3:
+      v6 = StringPool::GetInstance();
+      v7 = StringPool::GetStringW(v6, (ZXString<unsigned short> *)&nType, 0x6C3u);
+      LOBYTE(v35) = 2;
+      ZXString<unsigned short>::operator=(&sEffect, v7);
+      LOBYTE(v35) = 1;
+      if ( nType )
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(nType - 12));
+      v8 = StringPool::GetInstance();
+      v9 = StringPool::GetStringW(v8, &result, 0x1A4Cu);
+      LOBYTE(v35) = 3;
+      ZXString<unsigned short>::operator=(&sSound, v9);
+      m_pStr = result._m_pStr;
+      LOBYTE(v35) = 1;
+LABEL_5:
+      if ( m_pStr )
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)m_pStr - 1);
+      v5 = sSound._m_pStr;
+      goto LABEL_8;
+    default:
+LABEL_8:
+      dwTemplateID = -1073343324;
+      v34 = &v25;
+      v24.y = 0;
+      v24.x = 0;
+      v25.m_pInterface = nullptr;
+      m_pInterface = this->m_pvc.m_pInterface;
+      v34 = (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v23;
+      v23.m_pInterface = m_pInterface;
+      if ( m_pInterface )
+        m_pInterface->AddRef(m_pInterface);
+      v12 = sEffect._m_pStr;
+      CAnimationDisplayer::Effect_General(
+        TSingleton<CAnimationDisplayer>::ms_pInstance,
+        sEffect._m_pStr,
+        0,
+        v23,
+        v24.x,
+        v24.y,
+        v25,
+        dwTemplateID);
+      if ( v5 && *v5 )
+        play_game_sound(v5, 0x64u);
+      LOBYTE(v35) = 0;
+      if ( v5 )
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)v5 - 1);
+      v35 = -1;
+      if ( !v12 )
+        return;
+      dwTemplateID = (signed int)(v12 - 6);
+LABEL_17:
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)dwTemplateID);
+      return;
+  }
+}

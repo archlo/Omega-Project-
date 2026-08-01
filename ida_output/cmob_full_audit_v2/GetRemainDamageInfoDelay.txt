@@ -1,0 +1,23 @@
+﻿int __thiscall CMob::GetRemainDamageInfoDelay(CMob *this)
+{
+  int update_time; // edi
+  int v4; // esi
+  CMob::DAMAGEINFO *Next; // eax
+  int v6; // eax
+  __POSITION *pos; // [esp+4h] [ebp-4h] BYREF
+
+  if ( !this->m_lDamageInfo._m_uCount )
+    return 0;
+  update_time = get_update_time();
+  v4 = 1;
+  pos = (__POSITION *)this->m_lDamageInfo._m_pHead;
+  while ( pos )
+  {
+    Next = ZList<CMob::DAMAGEINFO>::GetNext(&pos);
+    v6 = _ZtlSecureFuse<long>(Next->_ZtlSecureTear_tDelayedProcess, Next->_ZtlSecureTear_tDelayedProcess_CS)
+       - update_time;
+    if ( v6 >= v4 )
+      v4 = v6;
+  }
+  return v4;
+}

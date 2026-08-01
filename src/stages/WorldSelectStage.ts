@@ -186,6 +186,7 @@ export class WorldSelectStage extends Stage {
     if (button !== MouseButton.Left) return;
 
     if (this._btBack?.handleMouseButton(x, y, down)) return;
+    if (this._btViewAll?.handleMouseButton(x, y, down)) return;
 
     if (this._subScreen === 'world') {
       for (const bt of this._worldButtons) {

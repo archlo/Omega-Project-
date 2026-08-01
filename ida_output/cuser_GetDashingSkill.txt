@@ -1,0 +1,3 @@
+// CUser::GetDashingSkill @ 0x8de380
+
+{"addr":"0x8de380","code":"char *__thiscall CUser::GetDashingSkill(CUser *this)\n{\n  int v2; // edi\n  int v3; // eax\n  char *result; // eax\n  bool v5; // zf\n\n  this->GetSecondaryStat(this); /*0x8de38a*/\n  v2 = this->GetJobCode(this); /*0x8de395*/\n  v3 = this->GetJobCode(this) % 1000 / 100; /*0x8de3cc*/\n  if ( v3 == 5 )\n    return &byte_E4E5AB[v2 / 1000 != 1 ? 0xFF676982 : 0];\n  v5 = v3 == 4; /*0x8de3f9*/\n  result = (_BYTE *)(&loc_41EEE4 + 4); /*0x8de3fc*/\n  if ( !v5 ) /*0x8de401*/\n    return nullptr; /*0x8de403*/\n  return result; /*0x8de3eb*/\n}","refs":[{"addr":"0xe4e5ab","name":"byte_E4E5AB"},{"addr":"0x41eee4","name":"loc_41EEE4"}]}

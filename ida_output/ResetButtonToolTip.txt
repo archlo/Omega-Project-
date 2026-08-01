@@ -1,0 +1,17 @@
+﻿void __thiscall CUIStatusBar::SendClaim(CUIStatusBar *this)
+{
+  ZArray<ZXString<char> > *ChatLog; // eax
+  ZXString<char> v2; // [esp-4h] [ebp-1Ch] BYREF
+  ZArray<ZXString<char> > result; // [esp+4h] [ebp-14h] BYREF
+  ZXString<char> *v4; // [esp+8h] [ebp-10h]
+  int v5; // [esp+14h] [ebp-4h]
+
+  v4 = &v2; /*0x877996*/
+  v2._m_pStr = nullptr; /*0x87799a*/
+  v5 = 0; /*0x8779a5*/
+  ChatLog = CUIStatusBar::GetChatLog(this, &result); /*0x8779ad*/
+  LOBYTE(v5) = 2; /*0x8779b7*/
+  CWvsContext::SendClaimRequest((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, ChatLog, v2); /*0x8779c3*/
+  v5 = -1; /*0x8779cc*/
+  ZArray<ZXString<char>>::RemoveAll(&result); /*0x8779d4*/
+}

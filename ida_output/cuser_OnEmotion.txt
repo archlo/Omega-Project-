@@ -1,0 +1,3 @@
+// CUser::OnEmotion @ 0x8e0150
+
+{"addr":"0x8e0150","code":"void __thiscall CUser::OnEmotion(CUser *this, CInPacket *iPacket)\n{\n  int v3; // ebx\n  int v4; // ebp\n\n  v3 = CInPacket::Decode4(iPacket); /*0x8e0163*/\n  v4 = CInPacket::Decode4(iPacket); /*0x8e016c*/\n  this->m_bEmotionByItemOption = CInPacket::Decode1(iPacket); /*0x8e017e*/\n  CAvatar::SetEmotion(&this->CAvatar, v3, v4); /*0x8e0184*/\n}","refs":[{"addr":"0x409870","name":"?Decode4@CInPacket@@QAEKXZ"},{"addr":"0x4097d0","name":"?Decode1@CInPacket@@QAEEXZ"},{"addr":"0x466b00","name":"?SetEmotion@CAvatar@@QAEXJJ@Z"}]}

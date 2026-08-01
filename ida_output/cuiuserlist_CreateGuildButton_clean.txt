@@ -1,0 +1,101 @@
+// cuiuserlist::CreateGuildButton
+
+int __thiscall CUIUserList::CreateGuildButton(
+        CUIUserList *this,
+        int bOnline,
+        const CTabGuild::SectionData *sdOnOff,
+        const tagRECT *rc,
+        int nPos)
+{
+  int result; // eax
+  int y; // edx
+  int v9; // ebp
+  const wchar_t *v10; // eax
+  CCtrlButton *v11; // eax
+  CCtrlButton *v12; // eax
+  ZRef<CCtrlButton> *v13; // eax
+  ZRefCounted **v14; // ebp
+  CCtrlButton *v15; // eax
+  CCtrlButton *v16; // eax
+  ZRef<CCtrlButton> *v17; // eax
+  CCtrlButton *v18; // eax
+  CCtrlButton *v19; // eax
+  ZRef<CCtrlButton> *v20; // eax
+  int pt; // [esp+3Ch] [ebp-24h]
+  int pta; // [esp+3Ch] [ebp-24h]
+  int pt_4; // [esp+40h] [ebp-20h]
+  int pt_4a; // [esp+40h] [ebp-20h]
+  CCtrlButton::CREATEPARAM paramButton; // [esp+44h] [ebp-1Ch] BYREF
+  int v26; // [esp+5Ch] [ebp-4h]
+  BOOL i; // [esp+68h] [ebp+8h]
+  int ia; // [esp+68h] [ebp+8h]
+
+  result = ZAPI.PtInRect(rc, sdOnOff->m_ptBtMaxMin); /*0x8c01ba*/
+  if ( result )
+  {
+    y = sdOnOff->m_ptBtMaxMin.y; /*0x8c01cf*/
+    pt = sdOnOff->m_ptBtMaxMin.x + 10; /*0x8c01dc*/
+    paramButton.bAcceptFocus = 1; /*0x8c01e9*/
+    v9 = 20 * (5 - nPos); /*0x8c01f6*/
+    i = bOnline == 0; /*0x8c01fc*/
+    pt_4 = v9 + y; /*0x8c0200*/
+    memset(&paramButton.bDrawBack, 0, 12); /*0x8c0208*/
+    v26 = 0; /*0x8c0210*/
+    if ( !this->m_pBtGuild_Dynamic[i].p ) /*0x8c0214*/
+    {
+      v10 = aUiUiwindow2Img_213; /*0x8c0223*/
+      if ( !sdOnOff->m_bMaximized ) /*0x8c0221*/
+        v10 = aUiUiwindow2Img_340; /*0x8c022a*/
+      ZXString<unsigned short>::operator=<unsigned short>(&paramButton.sUOL, v10); /*0x8c0234*/
+      v11 = (CCtrlButton *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0xADCu); /*0x8c0243*/
+      LOBYTE(v26) = 1; /*0x8c024c*/
+      if ( v11 ) /*0x8c0253*/
+        v12 = CCtrlButton::CCtrlButton(v11); /*0x8c0257*/
+      else
+        v12 = nullptr; /*0x8c025e*/
+      LOBYTE(v26) = 0; /*0x8c026c*/
+      v13 = ZRef<CCtrlButton>::operator=(&this->m_pBtGuild_Dynamic[i], v12); /*0x8c0271*/
+      v13->p->CreateCtrl_2(v13->p, this, 2071 - (bOnline != 0), pt + 95, pt_4, 0, &paramButton); /*0x8c029f*/
+    }
+    pta = sdOnOff->m_ptBtPage.x + 10; /*0x8c02b5*/
+    pt_4a = v9 + sdOnOff->m_ptBtPage.y; /*0x8c02b9*/
+    v14 = &this->_m_pPrev + 4 * (bOnline == 0) + 713; /*0x8c02c9*/
+    ia = 2 * (bOnline == 0) + 2; /*0x8c02d0*/
+    if ( !*v14 )
+    {
+      ZXString<unsigned short>::operator=<unsigned short>(&paramButton.sUOL, L"UI/UIWindow2.img/UserList/BtPre"); /*0x8c02e3*/
+      v15 = (CCtrlButton *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0xADCu); /*0x8c02f2*/
+      LOBYTE(v26) = 2; /*0x8c02fb*/
+      v16 = v15 ? CCtrlButton::CCtrlButton(v15) : nullptr;
+      LOBYTE(v26) = 0; /*0x8c031b*/
+      v17 = ZRef<CCtrlButton>::operator=(&this->m_pBtGuild_Dynamic[ia], v16); /*0x8c0320*/
+      v17->p->CreateCtrl_2(v17->p, this, 2 * (bOnline == 0) + 2072, pta, pt_4a, 0, &paramButton); /*0x8c034e*/
+      if ( sdOnOff->m_nPage == 1 ) /*0x8c0354*/
+        (*(void (__thiscall **)($84DC0C167E88C9AE1D0BFE03B5B31051 *, _DWORD))((*v14)->_m_nRef + 28))(&(*v14)->___u1, 0); /*0x8c0364*/
+    }
+    if ( !this->m_pBtGuild_Dynamic[ia + 1].p )
+    {
+      ZXString<unsigned short>::operator=<unsigned short>(&paramButton.sUOL, L"UI/UIWindow2.img/UserList/BtNext"); /*0x8c0388*/
+      v18 = (CCtrlButton *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0xADCu); /*0x8c0397*/
+      LOBYTE(v26) = 3; /*0x8c03a0*/
+      v19 = v18 ? CCtrlButton::CCtrlButton(v18) : nullptr;
+      LOBYTE(v26) = 0; /*0x8c03c0*/
+      v20 = ZRef<CCtrlButton>::operator=(&this->m_pBtGuild_Dynamic[ia + 1], v19); /*0x8c03c5*/
+      v20->p->CreateCtrl_2( /*0x8c03f6*/
+        v20->p,
+        this,
+        2 * (bOnline == 0) + 2073,
+        pta + sdOnOff->m_nPageBtSpace,
+        pt_4a,
+        0,
+        &paramButton);
+      if ( sdOnOff->m_nPage == sdOnOff->m_nMaxPage ) /*0x8c03fe*/
+        this->m_pBtGuild_Dynamic[ia + 1].p->SetEnable(&this->m_pBtGuild_Dynamic[ia + 1].p->IUIMsgHandler, 0); /*0x8c040e*/
+    }
+    v26 = -1; /*0x8c0414*/
+    if ( paramButton.sUOL._m_pStr ) /*0x8c041e*/
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)paramButton.sUOL._m_pStr - 1); /*0x8c0424*/
+    return 1; /*0x8c042c*/
+  }
+  return result; /*0x8c0431*/
+}

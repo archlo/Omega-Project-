@@ -1,0 +1,71 @@
+// cuserlocal::TryDoingMine
+
+void __thiscall CUserLocal::TryDoingMine(CUserLocal *this)
+{
+  const SecondaryStat *v2; // eax
+  _DWORD *v3; // eax
+  IWzVector2D *m_pInterface; // eax
+  CVecCtrl *v5; // ebx
+  int v6; // edi
+  double v7; // st7
+  CharacterData *p; // edi
+  int SkillLevel; // eax
+  const SKILLENTRY *pSkill; // [esp+4h] [ebp-Ch] BYREF
+  ZRef<CharacterData> nInputY; // [esp+8h] [ebp-8h] BYREF
+
+  v2 = this->GetSecondaryStat(this); /*0x907d7b*/
+  if ( !_ZtlSecureFuse<long>(v2->_ZtlSecureTear_nMine_, v2->_ZtlSecureTear_nMine__CS) ) /*0x907d8a*/
+    goto LABEL_5; /*0x907d8a*/
+  v3 = (_DWORD *)(RIDING_WILDHUNTER_JAGUAR_189 + 4); /*0x907d9c*/
+  while ( *v3 != this->m_nRidingVehicleID ) /*0x907da3*/
+  {
+    if ( (int)++v3 >= (int)&DB_DATE_19000101_195 ) /*0x907dad*/
+      goto LABEL_5; /*0x907dad*/
+  }
+  if ( g_pStage.p && g_pStage.p->IsKindOf(&g_pStage.p->IUIMsgHandler, &CField::ms_RTTI_CField) && !get_field()->m_bTown ) /*0x907de0*/
+  {
+    m_pInterface = this->m_pvc.m_pInterface; /*0x907de9*/
+    if ( m_pInterface ) /*0x907df3*/
+      v5 = (CVecCtrl *)&m_pInterface[-3]; /*0x907df5*/
+    else
+      v5 = nullptr; /*0x907dfa*/
+    CVecCtrl::GetInput(v5, (int *)&pSkill, (int *)&nInputY); /*0x907e08*/
+    if ( (int)pSkill <= 0 ) /*0x907e13*/
+      v6 = ((int)pSkill >= 0) - 1; /*0x907e24*/
+    else
+      v6 = 1; /*0x907e15*/
+    if ( CVecCtrl::IsStopped(v5) ) /*0x907e28*/
+      v6 = 0; /*0x907e31*/
+    if ( !this->m_nMineState && v6 ) /*0x907e3e*/
+    {
+      this->m_tMineMoveStart = get_update_time() - 1000; /*0x907e4a*/
+      this->m_nMineState = v6; /*0x907e50*/
+    }
+    if ( v6 != this->m_nMineState ) /*0x907e5c*/
+    {
+      this->m_tMineMoveStart = get_update_time(); /*0x907e63*/
+      this->m_nMineState = v6; /*0x907e69*/
+    }
+    if ( this->m_nMineState ) /*0x907e6f*/
+    {
+      *(_DWORD *)&nInputY.gap0 = get_update_time() - this->m_tMineMoveStart; /*0x907e83*/
+      v7 = (double)*(int *)&nInputY.gap0; /*0x907e87*/
+      if ( *(int *)&nInputY.gap0 < 0 ) /*0x907e8d*/
+        v7 = v7 + DOUBLE_4_294967296e9; /*0x907e8f*/
+      if ( v7 >= DOUBLE_1500_0 ) /*0x907ea0*/
+      {
+        pSkill = nullptr; /*0x907ead*/
+        p = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &nInputY)->p; /*0x907eba*/
+        ZRef<CharacterData>::~ZRef<CharacterData>(&nInputY); /*0x907ec1*/
+        SkillLevel = CSkillInfo::GetSkillLevel(TSingleton<CSkillInfo>::ms_pInstance, p, 33101008, &pSkill); /*0x907ed7*/
+        CUserLocal::DoActiveSkill_Summon(this, pSkill, SkillLevel); /*0x907ee4*/
+        this->m_tMineMoveStart = get_update_time(); /*0x907eee*/
+      }
+    }
+  }
+  else
+  {
+LABEL_5:
+    this->m_nMineState = 0; /*0x907daf*/
+  }
+}

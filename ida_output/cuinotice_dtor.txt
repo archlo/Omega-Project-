@@ -1,0 +1,39 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"addr\":\"0x7800f0\",\"code\":\"void __thiscall CUINoticePremium::~CUINoticePremium(CUINoticePremium *this)\\n{\\n  ZRef<CCtrlButton> *p_m_pBtClose; // edi\\n\\n  this->CDialog::CWnd::IGObj::__vftable = (CUINoticePremium_vtbl *)&CUINoticePremium::`vftable'{for `IGObj'}; /*0x780119*/\\n  this->CDialog::CWnd::IUIMsgHandler::__vftable = (IUIMsgHandler_vtbl *)&CUINoticePremium::`vftable'{for `IUIMsgHandler'}; /*0x78011f*/\\n  this->CDialog::CWnd::ZRefCounted::__vftable = (ZRefCounted_vtbl *)&CUINoticePremium::`vftable'{for `ZRefCounted'}; /*0x780126*/\\n  p_m_pBtClose = &this->m_pBtClose; /*0x780134*/\\n  if ( this->m_pBtClose.p ) /*0x78012d*/\\n  {\\n    ZRef<CCtrlButton>::_ReleaseRaw(&this->m_pBtClose, nullptr); /*0x780148*/\\n    p_m_pBtClose->p = nullptr; /*0x78014d*/\\n  }\\n  TSingleton<CUINoticePremium>::ms_pInstance = nullptr; /*0x780156*/\\n  CDialog::~CDialog(this); /*0x780168*/\\n}\",\"refs\":[{\"addr\":\"0xb999a4\",\"name\":\"??_7CUINoticePremium@@6BIGObj@@@\"},{\"addr\":\"0xb99958\",\"name\":\"??_7CUINoticePremium@@6BIUIMsgHandler@@@\"},{\"addr\":\"0xb99954\",\"name\":\"??_7CUINoticePremium@@6BZRefCounted@@@\"},{\"addr\":\"0x429d70\",\"name\":\"?_ReleaseRaw@?$ZRef@VCCtrlButton@@@@AAEXPAVZRefCounted@@@Z\"},{\"addr\":\"0xc6e7a0\",\"name\":\"?ms_pInstance@?$TSingleton@VCUINoticePremium@@@@1PAVCUINoticePremium@@A\"},{\"addr\":\"0x4fe950\",\"name\":\"??1CDialog@@UAE@XZ\"}]}"
+    }
+  ],
+  "structuredContent": {
+    "addr": "0x7800f0",
+    "code": "void __thiscall CUINoticePremium::~CUINoticePremium(CUINoticePremium *this)\n{\n  ZRef<CCtrlButton> *p_m_pBtClose; // edi\n\n  this->CDialog::CWnd::IGObj::__vftable = (CUINoticePremium_vtbl *)&CUINoticePremium::`vftable'{for `IGObj'}; /*0x780119*/\n  this->CDialog::CWnd::IUIMsgHandler::__vftable = (IUIMsgHandler_vtbl *)&CUINoticePremium::`vftable'{for `IUIMsgHandler'}; /*0x78011f*/\n  this->CDialog::CWnd::ZRefCounted::__vftable = (ZRefCounted_vtbl *)&CUINoticePremium::`vftable'{for `ZRefCounted'}; /*0x780126*/\n  p_m_pBtClose = &this->m_pBtClose; /*0x780134*/\n  if ( this->m_pBtClose.p ) /*0x78012d*/\n  {\n    ZRef<CCtrlButton>::_ReleaseRaw(&this->m_pBtClose, nullptr); /*0x780148*/\n    p_m_pBtClose->p = nullptr; /*0x78014d*/\n  }\n  TSingleton<CUINoticePremium>::ms_pInstance = nullptr; /*0x780156*/\n  CDialog::~CDialog(this); /*0x780168*/\n}",
+    "refs": [
+      {
+        "addr": "0xb999a4",
+        "name": "??_7CUINoticePremium@@6BIGObj@@@"
+      },
+      {
+        "addr": "0xb99958",
+        "name": "??_7CUINoticePremium@@6BIUIMsgHandler@@@"
+      },
+      {
+        "addr": "0xb99954",
+        "name": "??_7CUINoticePremium@@6BZRefCounted@@@"
+      },
+      {
+        "addr": "0x429d70",
+        "name": "?_ReleaseRaw@?$ZRef@VCCtrlButton@@@@AAEXPAVZRefCounted@@@Z"
+      },
+      {
+        "addr": "0xc6e7a0",
+        "name": "?ms_pInstance@?$TSingleton@VCUINoticePremium@@@@1PAVCUINoticePremium@@A"
+      },
+      {
+        "addr": "0x4fe950",
+        "name": "??1CDialog@@UAE@XZ"
+      }
+    ]
+  },
+  "isError": false
+}

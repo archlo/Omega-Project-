@@ -1,0 +1,94 @@
+// cuserlocal::TryDoingSwallowMobWriggle
+
+void __thiscall CUserLocal::TryDoingSwallowMobWriggle(CUserLocal *this)
+{
+  int update_time; // eax
+  int v3; // ecx
+  unsigned int m_dwSwallowMobID; // edx
+  CMob *Mob; // esi
+  CharacterData *p; // ebx
+  int SkillLevel; // eax
+  int IsMobChaseAttack; // ebx
+  int RandomHitAction; // ebp
+  _bstr_t::Data_t *v10; // ecx
+  unsigned int m_dwCharacterId; // edi
+  int IsLeft; // eax
+  tagPOINT v13; // [esp-24h] [ebp-70h]
+  _bstr_t v14; // [esp-1Ch] [ebp-68h] BYREF
+  int v15; // [esp-18h] [ebp-64h]
+  tagRECT v16; // [esp-14h] [ebp-60h] BYREF
+  int v17; // [esp-4h] [ebp-50h]
+  const SKILLENTRY *pSkill; // [esp+14h] [ebp-38h] BYREF
+  int tCur; // [esp+18h] [ebp-34h]
+  _bstr_t *v20; // [esp+1Ch] [ebp-30h]
+  tagPOINT ptHit; // [esp+20h] [ebp-2Ch] BYREF
+  ZRef<CharacterData> result; // [esp+28h] [ebp-24h] BYREF
+  tagRECT mobRect; // [esp+30h] [ebp-1Ch] BYREF
+  int v24; // [esp+48h] [ebp-4h]
+
+  if ( this->m_preparingSkill.nSkillID == 33101005 ) /*0x93f533*/
+  {
+    if ( this->m_dwSwallowMobID ) /*0x93f539*/
+    {
+      update_time = get_update_time(); /*0x93f546*/
+      v3 = update_time - this->m_tSwallowLastMobWriggle; /*0x93f54d*/
+      tCur = update_time; /*0x93f553*/
+      if ( v3 >= 500 ) /*0x93f55d*/
+      {
+        m_dwSwallowMobID = this->m_dwSwallowMobID; /*0x93f563*/
+        this->m_tSwallowLastMobWriggle = update_time; /*0x93f569*/
+        Mob = CMobPool::GetMob(TSingleton<CMobPool>::ms_pInstance, m_dwSwallowMobID); /*0x93f57b*/
+        if ( Mob ) /*0x93f57f*/
+        {
+          p = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &result)->p; /*0x93f5b1*/
+          ZRef<CharacterData>::~ZRef<CharacterData>(&result); /*0x93f5b8*/
+          pSkill = CSkillInfo::GetSkill(TSingleton<CSkillInfo>::ms_pInstance, 33101005); /*0x93f5d8*/
+          SkillLevel = CSkillInfo::GetSkillLevel(TSingleton<CSkillInfo>::ms_pInstance, p, pSkill->nSkillID, &pSkill); /*0x93f5e0*/
+          IsMobChaseAttack = CSkillInfo::IsMobChaseAttack(pSkill, SkillLevel); /*0x93f5f5*/
+          RandomHitAction = CMob::GetRandomHitAction(Mob); /*0x93f605*/
+          CMob::GetBodyRect(Mob, &mobRect, 1); /*0x93f607*/
+          v16.top = mobRect.left; /*0x93f619*/
+          v16.right = mobRect.top; /*0x93f61f*/
+          v16.bottom = mobRect.right; /*0x93f626*/
+          v16.left = (int)&ptHit; /*0x93f630*/
+          CMob::GetHitPoint(Mob, v16); /*0x93f633*/
+          v17 = 0; /*0x93f638*/
+          memset(&v16.top, 0, 12); /*0x93f63e*/
+          v16.left = 13; /*0x93f640*/
+          v15 = IsMobChaseAttack; /*0x93f642*/
+          v14.m_Data = v10; /*0x93f643*/
+          v20 = &v14; /*0x93f644*/
+          _bstr_t::_bstr_t(&v14, &sDefault); /*0x93f64f*/
+          m_dwCharacterId = this->m_dwCharacterId; /*0x93f65c*/
+          v13 = ptHit; /*0x93f663*/
+          v24 = 0; /*0x93f66c*/
+          IsLeft = CMob::IsLeft(Mob); /*0x93f674*/
+          v24 = -1; /*0x93f68d*/
+          CMob::AddDamageInfo( /*0x93f698*/
+            Mob,
+            m_dwCharacterId,
+            33101005,
+            tCur,
+            RandomHitAction,
+            IsLeft == 0,
+            0,
+            0,
+            0,
+            v13,
+            (Ztl_bstr_t)v14.m_Data,
+            v15,
+            v16.left,
+            v16.top,
+            v16.right,
+            v16.bottom,
+            v17);
+          Mob->_ZtlSecureTear_m_nSuspended_CS = _ZtlSecureTear<int>(4, Mob->_ZtlSecureTear_m_nSuspended); /*0x93f6ad*/
+        }
+        else
+        {
+          CUserLocal::SendSkillCancelRequest(this, 33101005); /*0x93f588*/
+        }
+      }
+    }
+  }
+}

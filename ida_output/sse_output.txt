@@ -1,0 +1,3 @@
+event: endpoint
+data: /sse?session=40a1a35c-91df-47a9-8be5-44dddb1edd42
+

@@ -319,6 +319,9 @@ export class ItemInventory extends GamePanel implements DragTarget {
     }, { loader: opts.loader!, uiWz: opts.uiWz ?? null });
     this._root.addChild(this._scrollBar.container);
     this._rebuild();
+
+    // OG: CUIWnd close button — load from Basic.img/BtClose
+    this.createCloseButton(opts.loader ?? null, opts.uiWz ?? null, 1, PANEL_W);
   }
 
   private _makeButton(loader: WzTextureLoader, root: WzProperty, name: string, onClick: () => void): Button | null {

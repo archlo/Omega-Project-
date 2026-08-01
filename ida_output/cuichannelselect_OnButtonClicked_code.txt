@@ -1,0 +1,7 @@
+﻿void __thiscall CUIChannelSelect::OnButtonClicked(CUIChannelSelect *this, unsigned int nId)
+{
+  CUIChannelSelect *v2; // ecx
+
+  if ( CUIChannelSelect::IsRequestValid(this) && nId == 1000 && v2->m_nSelect >= 0 ) /*0x60360b*/
+    CUIChannelSelect::EnterChannel(v2, v2->m_nSelect); /*0x603611*/
+}

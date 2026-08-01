@@ -21,11 +21,11 @@ import {
 export { MapleStat } from '../protocol/Enums.js';
 
 export enum ChatGroupType {
-  Friend = 0,
-  Party = 1,
-  Guild = 2,
-  Alliance = 3,
-  Expedition = 6,
+  Friend = 3,      // server ChatType.GROUPFRIEND = 3
+  Party = 2,       // server ChatType.GROUPPARTY = 2
+  Guild = 4,       // server ChatType.GROUPGUILD = 4
+  Alliance = 5,    // server ChatType.GROUPALLIANCE = 5
+  Expedition = 6,  // server ChatType.EXPEDITION = 26 but OG nChatTarget=6
 }
 
 export interface SkillMacroSaveEntry {
@@ -529,14 +529,39 @@ export class GameSender {
     left: boolean,
     movePathBlob: Uint8Array,
     chasing = false,
+    targetInfo = 0,
+    multiTargetForBall: [number, number][] = [],
+    randTimeForAreaAttack: number[] = [],
   ): OutPacket {
     const p = OutPacket.Of(InHeader.MobMove);
     p.writeInt(mobId);
     p.writeShort(mobCtrlSn);
-    p.writeByte(0);
-    p.writeByte((action << 1) | (left ? 1 : 0));
+    p.writeByte(0); // actionMask
+    p.writeByte((action << 1) | (left ? 1 : 0)); // actionAndDir
+    // Server expects these fields BEFORE MovePath
+    p.writeInt(targetInfo);
+    p.writeInt(multiTargetForBall.length);
+    for (const [x, y] of multiTargetForBall) {
+      p.writeInt(x);
+      p.writeInt(y);
+    }
+    p.writeInt(randTimeForAreaAttack.length);
+    for (const t of randTimeForAreaAttack) {
+      p.writeInt(t);
+    }
+    p.writeByte(0); // bActive
+    p.writeInt(0); // HackedCode
+    p.writeInt(0); // ptTarget.x
+    p.writeInt(0); // ptTarget.y
+    p.writeInt(0); // dwHackedCodeCRC
+    // Now the MovePath blob
     p.writeBytes(movePathBlob);
-    p.writeByte(chasing ? 1 : 0);
+    // Chasing fields
+    p.writeByte(chasing ? 1 : 0); // bChasing
+    p.writeByte(0); // pTarget != 0
+    p.writeByte(0); // pvcActive->bChasing
+    p.writeByte(0); // pvcActive->bChasingHack
+    p.writeInt(0); // pvcActive->tChaseDuration
     return p;
   }
 
@@ -1477,7 +1502,8 @@ export class GameSender {
 
   static GroupChat(type: ChatGroupType, memberIds: number[], text: string): OutPacket {
     const p = OutPacket.Of(InHeader.GroupMessage);
-    p.writeInt(0);
+    // OG SendGroupMessage: encode str(update_time), byte(nChatTarget), byte(nMemberCnt), int[](memberIDs), str(text)
+    p.writeString(String(Date.now()));
     p.writeByte(type);
     p.writeByte(memberIds.length);
     for (const id of memberIds) {
@@ -1489,8 +1515,7 @@ export class GameSender {
 
   static Whisper(targetName: string, text: string): OutPacket {
     const p = OutPacket.Of(InHeader.Whisper);
-    p.writeByte(WhisperSendBit.SendOnly);
-    p.writeInt(0);
+    // OG SendChatMsgWhisper: encode str(targetName), str(text)
     p.writeString(targetName);
     p.writeString(text);
     return p;
@@ -1632,6 +1657,14 @@ export class GameSender {
     return p;
   }
 
+  // OG: CTabFriend::ChangeBlockOption (0x8B7280) — block/unblock friend
+  static FriendBlock(friendId: number, block: boolean): OutPacket {
+    const p = OutPacket.Of(InHeader.FriendRequest);
+    p.writeByte(block ? 8 : 9);  // 8=block, 9=unblock
+    p.writeInt(friendId);
+    return p;
+  }
+
   /** FriendRequestAction.CapacityChange = 7. Adjusts the friend-list capacity. */
   static FriendCapacityChange(delta: number): OutPacket {
     const p = OutPacket.Of(InHeader.FriendRequest);
@@ -1760,6 +1793,22 @@ export class GameSender {
   static EntrustedShopWithdrawMoney(): OutPacket {
     const p = OutPacket.Of(InHeader.MiniRoom);
     p.writeByte(MiniRoomProtocolFull.ESP_WithdrawMoney);
+    return p;
+  }
+
+  // OG: CEntrustedShopDlg::OnArrange (0x51E400 case 0x3F7) — sort items
+  static EntrustedShopArrange(): OutPacket {
+    const p = OutPacket.Of(InHeader.MiniRoom);
+    p.writeByte(MiniRoomProtocolFull.ESP_ArrangeItem);
+    return p;
+  }
+
+  // OG: CEntrustedShopDlg visitor buy — ESP_BuyItem (0x22)
+  static EntrustedShopBuyItem(index: number, count: number): OutPacket {
+    const p = OutPacket.Of(InHeader.MiniRoom);
+    p.writeByte(MiniRoomProtocolFull.ESP_BuyItem);
+    p.writeByte(index);
+    p.writeShort(count);
     return p;
   }
 

@@ -1,0 +1,300 @@
+// Address: 0x87fde0
+// Function: ?OnKey@CUIStatusBar@@UAEXII@Z
+
+void __thiscall CUIStatusBar::OnKey(CUIStatusBar *this, GW_ItemSlotBase **wParam, const char *lParam)
+{
+  CCtrlEdit *v4; // ecx
+  IUIMsgHandler *v5; // eax
+  GW_ItemSlotBase **v6; // edi
+  ZXString<char> *WhisperTarget; // eax
+  int v8; // ecx
+  int IsEmpty; // edi
+  BYTE *Buffer; // esi
+  ZXString<char> *v11; // eax
+  const char *v12; // eax
+  StringPool *Instance; // eax
+  CField *field; // ebx
+  bool v15; // zf
+  GW_ItemSlotBase *v16; // ecx
+  GW_ItemSlotBase *v17; // ecx
+  _bstr_t::Data_t *m_Data; // edi
+  int i; // esi
+  wchar_t *v20; // eax
+  StringPool *v21; // eax
+  ZXString<char> *String; // eax
+  unsigned int EmotionKey; // eax
+  char *m_pStr; // eax
+  BOOL v25; // esi
+  char *v26; // [esp-18h] [ebp-40h]
+  ZRef<GW_ItemSlotBase> v27[3]; // [esp-8h] [ebp-30h] BYREF
+  ZXString<char> result; // [esp+14h] [ebp-14h] BYREF
+  GW_ItemSlotBase **p_p; // [esp+18h] [ebp-10h]
+  int v30; // [esp+24h] [ebp-4h]
+
+  v4 = *(CCtrlEdit **)&this->m_pEditChatInput.gap0;
+  if ( v4 )
+    v5 = &v4->IUIMsgHandler;
+  else
+    v5 = nullptr;
+  if ( TSingleton<CWndMan>::ms_pInstance->m_pFocus != v5 || (int)lParam < 0 )
+    return;
+  v6 = wParam;
+  if ( wParam == (GW_ItemSlotBase **)9 )
+  {
+    switch ( (unsigned int)this->m_paramEdit.sEmptyImageUOL._m_pStr )
+    {
+      case 0u:
+        CUIStatusBar::SetChatTarget((CUIStatusBar *)((char *)this - 4), 6);
+        CCtrlWnd::InvalidateRect(*(CCtrlWnd **)&this->m_pCBChatTarget.gap0);
+        break;
+      case 1u:
+        CUIStatusBar::SetChatTarget((CUIStatusBar *)((char *)this - 4), 2);
+        CCtrlWnd::InvalidateRect(*(CCtrlWnd **)&this->m_pCBChatTarget.gap0);
+        break;
+      case 2u:
+        CUIStatusBar::SetChatTarget((CUIStatusBar *)((char *)this - 4), 3);
+        CCtrlWnd::InvalidateRect(*(CCtrlWnd **)&this->m_pCBChatTarget.gap0);
+        break;
+      case 3u:
+        CUIStatusBar::SetChatTarget((CUIStatusBar *)((char *)this - 4), 4);
+        CCtrlWnd::InvalidateRect(*(CCtrlWnd **)&this->m_pCBChatTarget.gap0);
+        break;
+      case 4u:
+        CUIStatusBar::SetChatTarget((CUIStatusBar *)((char *)this - 4), 5);
+        CCtrlWnd::InvalidateRect(*(CCtrlWnd **)&this->m_pCBChatTarget.gap0);
+        break;
+      case 5u:
+        WhisperTarget = CUIStatusBar::GetWhisperTarget((CUIStatusBar *)((char *)this - 4), (ZXString<char> *)&lParam);
+        IsEmpty = ZXString<char>::IsEmpty(WhisperTarget);
+        if ( lParam )
+          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)lParam - 1);
+        if ( !IsEmpty )
+        {
+          v27[0].p = nullptr;
+          *(_DWORD *)&v27[0].gap0 = v8;
+          result._m_pStr = (char *)v27;
+          CUIStatusBar::GetWhisperTarget((CUIStatusBar *)((char *)this - 4), (ZXString<char> *)v27);
+          CUIStatusBar::SetWhisperTarget(
+            (CUIStatusBar *)((char *)this - 4),
+            *(ZXString<char> *)&v27[0].gap0,
+            (int)v27[0].p);
+          CUIStatusBar::StartChat((CUIStatusBar *)((char *)this - 4), nullptr);
+          goto LABEL_21;
+        }
+        v27[0].p = (GW_ItemSlotBase *)7;
+        this->m_ptChatWnd.y = 1;
+        CUIStatusBar::SetChatTarget((CUIStatusBar *)((char *)this - 4), (int)v27[0].p);
+        CCtrlWnd::InvalidateRect(*(CCtrlWnd **)&this->m_pCBChatTarget.gap0);
+        break;
+      case 6u:
+        CUIStatusBar::SetChatTarget((CUIStatusBar *)((char *)this - 4), 1);
+        CCtrlWnd::InvalidateRect(*(CCtrlWnd **)&this->m_pCBChatTarget.gap0);
+        break;
+      case 7u:
+        CUIStatusBar::SetChatTarget((CUIStatusBar *)((char *)this - 4), 8);
+        CCtrlWnd::InvalidateRect(*(CCtrlWnd **)&this->m_pCBChatTarget.gap0);
+        break;
+      case 8u:
+        CUIStatusBar::SetChatTarget((CUIStatusBar *)((char *)this - 4), 0);
+        CCtrlWnd::InvalidateRect(*(CCtrlWnd **)&this->m_pCBChatTarget.gap0);
+        break;
+      default:
+LABEL_21:
+        CCtrlWnd::InvalidateRect(*(CCtrlWnd **)&this->m_pCBChatTarget.gap0);
+        break;
+    }
+    return;
+  }
+  if ( wParam != (GW_ItemSlotBase **)13 )
+  {
+    if ( wParam == (GW_ItemSlotBase **)27 )
+    {
+      CCtrlEdit::SetText(v4, nullptr);
+    }
+    else
+    {
+      if ( wParam != (GW_ItemSlotBase **)37 && wParam != (GW_ItemSlotBase **)39 )
+        goto LABEL_75;
+      m_pStr = CCtrlEdit::GetText(v4, (ZXString<char> *)&lParam)->_m_pStr;
+      v25 = !m_pStr || !*m_pStr;
+      if ( lParam )
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)lParam - 1);
+      if ( !v25 )
+      {
+LABEL_75:
+        if ( v6 == (GW_ItemSlotBase **)38 )
+        {
+          CChatHelper::HistoryUp((CChatHelper *)&this->m_sFriendGroupTarget, (ZXString<char> *)&lParam);
+          v30 = 5;
+          if ( !ZXString<char>::IsEmpty((ZXString<char> *)&lParam) )
+            CCtrlEdit::SetText(*(CCtrlEdit **)&this->m_pEditChatInput.gap0, lParam);
+          v12 = lParam;
+        }
+        else
+        {
+          if ( v6 != (GW_ItemSlotBase **)40 )
+            return;
+          CChatHelper::HistoryDown((CChatHelper *)&this->m_sFriendGroupTarget, (ZXString<char> *)&wParam);
+          v30 = 6;
+          if ( !ZXString<char>::IsEmpty((ZXString<char> *)&wParam) )
+            CCtrlEdit::SetText(*(CCtrlEdit **)&this->m_pEditChatInput.gap0, (const char *)wParam);
+          v12 = (const char *)wParam;
+        }
+        goto LABEL_83;
+      }
+    }
+    CUIStatusBar::EndChat((CUIStatusBar *)((char *)this - 4));
+    return;
+  }
+  CCtrlEdit::GetText(v4, (ZXString<char> *)&lParam);
+  v30 = 0;
+  wParam = (GW_ItemSlotBase **)((char *)this - 4);
+  CUIStatusBar::EndChat((CUIStatusBar *)((char *)this - 4));
+  Buffer = (BYTE *)ZXString<char>::GetBuffer((ZXString<char> *)&lParam, 1024, 1);
+  while ( *Buffer )
+  {
+    if ( IsDBCSLeadByte(*Buffer) )
+    {
+      Buffer[1] = 32;
+      *Buffer = 32;
+      Buffer += 2;
+    }
+    else
+    {
+      if ( (char)*Buffer < 32 || *Buffer == 127 )
+        *Buffer = 32;
+      ++Buffer;
+    }
+  }
+  ZXString<char>::ReleaseBuffer((ZXString<char> *)&lParam, -1);
+  v11 = ZXString<char>::TrimRight((ZXString<char> *)&lParam, nullptr);
+  ZXString<char>::TrimLeft(v11, nullptr);
+  v12 = lParam;
+  if ( lParam && *lParam )
+  {
+    if ( *lParam != 47 )
+    {
+      if ( ZXString<char>::IsEmpty((ZXString<char> *)&this->m_dwLastScrolled) )
+      {
+        if ( this->m_paramEdit.sEmptyImageUOL._m_pStr == (wchar_t *)7 )
+        {
+          p_p = (GW_ItemSlotBase **)v27;
+          v27[0].p = nullptr;
+          LOBYTE(v30) = 1;
+          Instance = StringPool::GetInstance();
+          v26 = StringPool::GetString(Instance, &result, 0xAFDu)->_m_pStr;
+          LOBYTE(v30) = 3;
+          CUIStatusBar::ChatLogAdd((CUIStatusBar *)((char *)this - 4), v26, 12, -1, 0, v27[0]);
+          LOBYTE(v30) = 0;
+          if ( result._m_pStr )
+            ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1);
+        }
+      }
+    }
+    CUIStatusBar::StartChat((CUIStatusBar *)wParam, nullptr);
+    CCtrlEdit::SetText(*(CCtrlEdit **)&this->m_pEditChatInput.gap0, nullptr);
+    field = get_field();
+    if ( field )
+    {
+      v15 = *lParam == 47;
+      v27[0].p = (GW_ItemSlotBase *)&lParam;
+      if ( v15 )
+      {
+        CField::SendChatMsgSlash(field, (const ZXString<char> *)v27[0].p);
+        v27[0].p = v16;
+        wParam = &v27[0].p;
+        ZXString<char>::ZXString<char>((ZXString<char> *)&v27[0].p, (const ZXString<char> *)&lParam);
+        CChatHelper::HistoryAddforCommand((CChatHelper *)&this->m_sFriendGroupTarget, (ZXString<char>)v27[0].p);
+        v12 = lParam;
+      }
+      else if ( CChatHelper::TryChat((CChatHelper *)&this->m_sFriendGroupTarget, (ZXString<char> *)v27[0].p) )
+      {
+        if ( ZXString<char>::IsEmpty((ZXString<char> *)&this->m_dwLastScrolled) )
+        {
+          m_Data = TSingleton<CUserLocal>::ms_pInstance.m_Data;
+          if ( TSingleton<CUserLocal>::ms_pInstance.m_Data )
+          {
+            if ( !*((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 3609)
+              && ((int)TSingleton<CUserLocal>::ms_pInstance.m_Data[133].m_str & 0xFFFFFFFE) != 0x12 )
+            {
+              for ( i = 0; i < 12; i += 4 )
+              {
+                if ( *(_DWORD *)&m_Data[987].m_wstr[i + 2] )
+                {
+                  v27[0].p = v17;
+                  p_p = &v27[0].p;
+                  ZXString<char>::ZXString<char>((ZXString<char> *)&v27[0].p, (const ZXString<char> *)&lParam);
+                  CPet::ParseCommand(*(CPet **)&m_Data[987].m_wstr[i + 2], (ZXString<char>)v27[0].p);
+                }
+              }
+            }
+            v20 = this->m_paramEdit.sEmptyImageUOL._m_pStr;
+            switch ( (unsigned int)v20 )
+            {
+              case 0u:
+              case 1u:
+              case 2u:
+              case 3u:
+              case 4u:
+              case 5u:
+                CUIStatusBar::SendGroupMessage((CUIStatusBar *)wParam, (const int)v20, (const ZXString<char> *)&lParam);
+                break;
+              case 6u:
+                CUIStatusBar::SendCoupleMessage((CUIStatusBar *)wParam, (const ZXString<char> *)&lParam);
+                break;
+              case 8u:
+                CField::SendChatMsg(field, (const ZXString<char> *)&lParam, 0);
+                if ( this->m_apBtChatFilter[5].p )
+                {
+                  v27[0].p = (GW_ItemSlotBase *)6445;
+                  *(_DWORD *)&v27[0].gap0 = &result;
+                  v21 = StringPool::GetInstance();
+                  String = StringPool::GetString(v21, *(ZXString<char> **)&v27[0].gap0, (unsigned int)v27[0].p);
+                  LOBYTE(v30) = 4;
+                  CHATLOG_ADD(String, 0xCu);
+                  LOBYTE(v30) = 0;
+                  if ( result._m_pStr )
+                    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1);
+                }
+                break;
+              default:
+                break;
+            }
+            EmotionKey = CUIStatusBar::GetEmotionKey((CUIStatusBar *)wParam, (ZXString<char> *)&lParam);
+            if ( EmotionKey )
+              CWvsContext::SendEmotionChange(
+                (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+                EmotionKey - 111,
+                0,
+                -1);
+            v12 = lParam;
+          }
+          else
+          {
+            v12 = lParam;
+          }
+        }
+        else
+        {
+          CField::SendChatMsgWhisper(
+            field,
+            (const ZXString<char> *)&lParam,
+            (const ZXString<char> *)&this->m_dwLastScrolled);
+          v12 = lParam;
+        }
+      }
+      else
+      {
+        v12 = lParam;
+      }
+    }
+    else
+    {
+      v12 = lParam;
+    }
+  }
+LABEL_83:
+  v30 = -1;
+  if ( v12 )
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v12 - 1);
+}

@@ -1,0 +1,4 @@
+int __thiscall CAvatar::GetWeaponItemID(CAvatar *this)
+{
+  return this->m_nWeaponItemID;
+}

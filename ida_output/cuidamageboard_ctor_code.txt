@@ -1,0 +1,11 @@
+﻿CUIDamageBoard *__thiscall CUIDamageBoard::CUIDamageBoard(CUIDamageBoard *this)
+{
+  CWnd::CWnd(this); /*0x4f0cd8*/
+  this->CWnd::IGObj::__vftable = (CUIDamageBoard_vtbl *)&CUIDamageBoard::`vftable'{for `IGObj'}; /*0x4f0cfe*/
+  this->CWnd::IUIMsgHandler::__vftable = (IUIMsgHandler_vtbl *)&CUIDamageBoard::`vftable'{for `IUIMsgHandler'}; /*0x4f0d04*/
+  this->CWnd::ZRefCounted::__vftable = (ZRefCounted_vtbl *)&CUIDamageBoard::`vftable'{for `ZRefCounted'}; /*0x4f0d0b*/
+  this->m_nAverageDamage = 0; /*0x4f0d12*/
+  this->m_nMaxAverageDamage = 0; /*0x4f0d18*/
+  CWnd::CreateWnd(this, 200, 100, 400, 300, 10, 1, nullptr, 1, Origin_LT); /*0x4f0d1e*/
+  return this; /*0x4f0d25*/
+}

@@ -1,0 +1,9 @@
+// cuserlocal::OnNotifyHPDecByField
+
+void __thiscall CUserLocal::OnNotifyHPDecByField(CUserLocal *this, CInPacket *iPacket)
+{
+  int v3; // eax
+
+  v3 = CInPacket::Decode4(iPacket); /*0x90fedb*/
+  CUserLocal::TryConsumePetHP(this, v3, nullptr, 0); /*0x90fee3*/
+}

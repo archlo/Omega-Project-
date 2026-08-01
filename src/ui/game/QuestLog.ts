@@ -92,6 +92,8 @@ export class QuestLog extends GamePanel {
     this._root.addChild(this._tabText);
 
     this._setupFilterButtons();
+    // OG: CUIWnd close button
+    this.createCloseButton(null, null, 1, 300);
   }
 
   private _setupFilterButtons(): void {

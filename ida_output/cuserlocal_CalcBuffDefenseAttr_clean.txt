@@ -1,0 +1,56 @@
+// cuserlocal::CalcBuffDefenseAttr
+
+int __thiscall CUserLocal::CalcBuffDefenseAttr(CUserLocal *this, char nElemAttr, int nDamage)
+{
+  char *v3; // esi
+  char v4; // al
+  int v5; // edx
+  bool v6; // zf
+  char v7; // al
+  char v8; // al
+  char v9; // al
+  int result; // eax
+
+  v3 = TSingleton<CWvsContext>::ms_pInstance._m_pStr + 8520; /*0x90412d*/
+  switch ( nElemAttr ) /*0x90413c*/
+  {
+    case 1: /*0x90413c*/
+      v4 = _ZtlSecureFuse<char>( /*0x904151*/
+             (const char *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 11196,
+             *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 2800));
+      v5 = 0; /*0x904159*/
+      v6 = v4 == 73; /*0x90415b*/
+      goto LABEL_6; /*0x90415d*/
+    case 2: /*0x90413c*/
+      v7 = _ZtlSecureFuse<char>( /*0x90416d*/
+             (const char *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 11196,
+             *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 2800));
+      v5 = 0; /*0x904175*/
+      v6 = v7 == 70; /*0x904177*/
+      goto LABEL_6; /*0x904179*/
+    case 3: /*0x90413c*/
+      v8 = _ZtlSecureFuse<char>( /*0x904189*/
+             (const char *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 11196,
+             *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 2800));
+      v5 = 0; /*0x904191*/
+      v6 = v8 == 76; /*0x904193*/
+      goto LABEL_6; /*0x904195*/
+    case 4: /*0x90413c*/
+      v9 = _ZtlSecureFuse<char>( /*0x9041a5*/
+             (const char *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 11196,
+             *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 2800));
+      v5 = 0; /*0x9041ad*/
+      v6 = v9 == 83; /*0x9041af*/
+LABEL_6:
+      LOBYTE(v5) = v6; /*0x9041b1*/
+      if ( !v5 ) /*0x9041b8*/
+        goto LABEL_8; /*0x9041b8*/
+      result = nDamage * _ZtlSecureFuse<long>((const int *)v3 + 671, *((_DWORD *)v3 + 673)) / -100 + nDamage; /*0x9041ec*/
+      break; /*0x9041ef*/
+    default:
+LABEL_8:
+      result = nDamage; /*0x9041f2*/
+      break; /*0x9041f6*/
+  }
+  return result; /*0x9041ee*/
+}

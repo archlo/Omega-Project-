@@ -1,0 +1,4 @@
+﻿BOOL __thiscall CMob::IsSuspended(CMob *this)
+{
+  return _ZtlSecureFuse<int>(this->_ZtlSecureTear_m_nSuspended, this->_ZtlSecureTear_m_nSuspended_CS) != 0;
+}

@@ -1,0 +1,16 @@
+﻿BOOL __thiscall CMob::IsRisingByToss(CMob *this)
+{
+  IWzVector2D *m_pInterface; // ecx
+  int v2; // eax
+  BOOL result; // eax
+
+  result = false;
+  if ( this->m_stat.nRiseByToss_ || this->m_bWaitingToBeSetTossed )
+  {
+    m_pInterface = this->m_pvc.m_pInterface;
+    v2 = m_pInterface ? (int)&m_pInterface[-3] : 0;
+    if ( !*(_DWORD *)(v2 + 416) )
+      return true;
+  }
+  return result;
+}

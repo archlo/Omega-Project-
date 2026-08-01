@@ -25,3 +25,46 @@ describe('StatusBar warning flash', () => {
     expect((bar as any)._hpFlashTime).toBe(0);
   });
 });
+
+describe('StatusBar gauge fill (OG CGauge::SetVal 0x86DEA0)', () => {
+  it('fills exactly to gauge length at 100%, never overshoots, min 1px', () => {
+    // nLen = max(1, floor(len * pct))
+    expect(StatusBar.gaugeFillLength(138, 1)).toBe(138);   // full = exactly full
+    expect(StatusBar.gaugeFillLength(138, 0.5)).toBe(69);
+    expect(StatusBar.gaugeFillLength(138, 0)).toBe(1);     // OG: min 1px center
+    expect(StatusBar.gaugeFillLength(308, 0.9998)).toBe(307); // EXP 99.98% clamp: never fully full
+    expect(StatusBar.gaugeFillLength(138, 1.5)).toBe(138); // clamped, no overshoot
+  });
+
+  it('animates toward the target exponentially (per-frame retarget) without overshoot', () => {
+    const bar = new StatusBar(new WzTextureLoader(), null, new BuiltInFont());
+    bar.hp = 50; bar.maxHp = 50;
+    bar.update(1); // k = min(1, 1/0.7) = 1 -> snap
+    expect((bar as any)._hpPct).toBe(1);
+
+    bar.hp = 0;
+    bar.update(1);
+    expect((bar as any)._hpPct).toBe(0);
+
+    bar.hp = 50; bar.maxHp = 50;
+    bar.update(0.35); // k = 0.5: 0 -> 0.5
+    expect((bar as any)._hpPct).toBeCloseTo(0.5);
+    bar.update(0.35); // 0.5 -> 0.75
+    expect((bar as any)._hpPct).toBeCloseTo(0.75);
+    bar.update(10);   // converge
+    expect((bar as any)._hpPct).toBe(1);
+    expect((bar as any)._hpPct).toBeLessThanOrEqual(1);
+  });
+
+  it('clamps EXP to 99.98% and formats the text like OG "%d[%0.2f%%]"', () => {
+    const bar = new StatusBar(new WzTextureLoader(), null, new BuiltInFont());
+    bar.exp = 50; bar.nextExp = 100;
+    bar.update(1);
+    expect((bar as any)._expPct).toBe(0.5);
+    expect((bar as any)._lastExpText).toBe('50[50.00%]');
+
+    bar.exp = 100; bar.nextExp = 100;
+    bar.update(1);
+    expect((bar as any)._lastExpText).toBe('100[99.98%]');
+  });
+});

@@ -173,11 +173,11 @@ export class CharacterRenderer {
     const bodyId = `00002${skin.toString().padStart(3, '0')}.img`;
     const headId = `00012${skin.toString().padStart(3, '0')}.img`;
 
-    const body = this._loadPart(`${bodyId}/${st}/${frame}/body`);
-    const arm = this._loadPart(`${bodyId}/${st}/${frame}/arm`);
-    const armOverHair = this._loadPart(`${bodyId}/${st}/${frame}/armOverHair`);
-    const hand = this._loadPart(`${bodyId}/${st}/${frame}/hand`);
-    const head = this._loadPart(`${headId}/${st}/${frame}/head`);
+    const body = this._loadBodyPart(skin, st, frame, 'body');
+    const arm = this._loadBodyPart(skin, st, frame, 'arm');
+    const armOverHair = this._loadBodyPart(skin, st, frame, 'armOverHair');
+    const hand = this._loadBodyPart(skin, st, frame, 'hand');
+    const head = this._loadHeadPart(skin, st, frame, 'head');
     const face = this._loadFace(look.face, emotionId, emotionFrame);
 
     let hairBelow: AvatarPart | null, hairShade: AvatarPart | null, hair: AvatarPart | null, hairOver: AvatarPart | null;
@@ -471,7 +471,14 @@ export class CharacterRenderer {
   }
 
   private _loadEquip(category: string, itemId: number, st: string, frame: number, vslot: string): AvatarPart | null {
-    return this._loadPart(`${category}/${itemId.toString().padStart(8, '0')}.img/${st}/${frame}/${vslot}`);
+    let part = this._loadPart(`${category}/${itemId.toString().padStart(8, '0')}.img/${st}/${frame}/${vslot}`);
+    // OG fallback: if equip doesn't have the requested action, try stand1
+    // This ensures equips remain visible during hit/skill animations
+    if (part === null && st !== 'stand1' && st !== 'walk1') {
+      part = this._loadPart(`${category}/${itemId.toString().padStart(8, '0')}.img/stand1/${frame}/${vslot}`)
+        ?? this._loadPart(`${category}/${itemId.toString().padStart(8, '0')}.img/walk1/${frame}/${vslot}`);
+    }
+    return part;
   }
 
   private _loadAccessory(itemId: number, emotionId: number, emotionFrame: number): AvatarPart | null {
@@ -484,8 +491,18 @@ export class CharacterRenderer {
 
   private _loadWeapon(itemId: number, st: string, frame: number): AvatarPart | null {
     const wt = Math.floor(itemId / 10000) % 100;
-    return this._loadPart(`Weapon/${itemId.toString().padStart(8, '0')}.img/${wt}/${st}/${frame}/weapon`)
+    // Try loading weapon with category prefix first, then without
+    let part = this._loadPart(`Weapon/${itemId.toString().padStart(8, '0')}.img/${wt}/${st}/${frame}/weapon`)
       ?? this._loadPart(`Weapon/${itemId.toString().padStart(8, '0')}.img/${st}/${frame}/weapon`);
+    // OG fallback: if weapon doesn't have the requested action, try stand1/walk1
+    // This ensures weapons remain visible during hit/skill animations
+    if (part === null && st !== 'stand1' && st !== 'walk1') {
+      part = this._loadPart(`Weapon/${itemId.toString().padStart(8, '0')}.img/${wt}/stand1/${frame}/weapon`)
+        ?? this._loadPart(`Weapon/${itemId.toString().padStart(8, '0')}.img/stand1/${frame}/weapon`)
+        ?? this._loadPart(`Weapon/${itemId.toString().padStart(8, '0')}.img/${wt}/walk1/${frame}/weapon`)
+        ?? this._loadPart(`Weapon/${itemId.toString().padStart(8, '0')}.img/walk1/${frame}/weapon`);
+    }
+    return part;
   }
 
   private _visibleWeaponId(look: AvatarLook): number {
@@ -513,6 +530,30 @@ export class CharacterRenderer {
     }
     this._partCache.set(path, part);
     return part;
+  }
+
+  /** Load body part with fallback to stand1/walk1 if action doesn't exist */
+  private _loadBodyPart(skin: number, st: string, frame: number, part: string): AvatarPart | null {
+    const bodyId = `00002${skin.toString().padStart(3, '0')}.img`;
+    let result = this._loadPart(`${bodyId}/${st}/${frame}/${part}`);
+    // OG fallback: if body part doesn't have the requested action, try stand1
+    if (result === null && st !== 'stand1' && st !== 'walk1') {
+      result = this._loadPart(`${bodyId}/stand1/${frame}/${part}`)
+        ?? this._loadPart(`${bodyId}/walk1/${frame}/${part}`);
+    }
+    return result;
+  }
+
+  /** Load head part with fallback to stand1/walk1 if action doesn't exist */
+  private _loadHeadPart(skin: number, st: string, frame: number, part: string): AvatarPart | null {
+    const headId = `00012${skin.toString().padStart(3, '0')}.img`;
+    let result = this._loadPart(`${headId}/${st}/${frame}/${part}`);
+    // OG fallback: if head part doesn't have the requested action, try stand1
+    if (result === null && st !== 'stand1' && st !== 'walk1') {
+      result = this._loadPart(`${headId}/stand1/${frame}/${part}`)
+        ?? this._loadPart(`${headId}/walk1/${frame}/${part}`);
+    }
+    return result;
   }
 
   private _align(

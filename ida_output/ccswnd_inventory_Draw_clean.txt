@@ -1,0 +1,241 @@
+// CCSWnd_Inventory::Draw @ 0x4be710
+// Decompiled from v95 IDB
+
+void __thiscall CCSWnd_Inventory::Draw(CCSWnd_Inventory *this, const tagRECT *pRect)
+{
+  CharacterData *p; // ebx
+  char *p_m_uTableSize; // esi
+  volatile LONG *p_m_uCount; // edi
+  int m_nSelectedNo; // esi
+  int m_nItemTI; // eax
+  ZRef<GW_ItemSlotBase> *a; // ecx
+  GW_ItemSlotBase *v9; // edi
+  IWzCanvas *m_pInterface; // esi
+  HRESULT v11; // eax
+  ZRef<GW_ItemSlotBase> *v12; // eax
+  int m_nFirstPosition; // ecx
+  int v14; // edx
+  int v15; // eax
+  GW_ItemSlotPet *v16; // edi
+  IWzCanvas *Data; // ebx
+  int v18; // eax
+  void (*AddRef)(void); // eax
+  void (*v20)(void); // ecx
+  int v21; // eax
+  int v22; // eax
+  int v23; // ecx
+  IWzProperty *v24; // edi
+  IWzProperty *v25; // eax
+  void (*v26)(void); // eax
+  HRESULT v27; // eax
+  HRESULT v28; // eax
+  HRESULT v29; // eax
+  HRESULT v30; // eax
+  HRESULT v31; // eax
+  HRESULT v32; // eax
+  unsigned int (__stdcall *Release)(IUnknown *); // edx
+  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > v34; // [esp+24h] [ebp-84h]
+  IWzCanvas *v35; // [esp+28h] [ebp-80h] BYREF
+  IWzCanvas *v36; // [esp+2Ch] [ebp-7Ch]
+  int top; // [esp+30h] [ebp-78h]
+  int v38; // [esp+34h] [ebp-74h]
+  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > v39; // [esp+38h] [ebp-70h]
+  IWzCanvas *v40; // [esp+3Ch] [ebp-6Ch] BYREF
+  int IsDead; // [esp+40h] [ebp-68h]
+  int v42; // [esp+44h] [ebp-64h]
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > v43; // [esp+48h] [ebp-60h]
+  IWzProperty *v44; // [esp+4Ch] [ebp-5Ch] BYREF
+  int v45; // [esp+50h] [ebp-58h]
+  int nPos; // [esp+64h] [ebp-44h]
+  const CharacterData *cd; // [esp+68h] [ebp-40h]
+  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > pCanvas; // [esp+6Ch] [ebp-3Ch] BYREF
+  ZRef<GW_ItemSlotBase> *v49; // [esp+70h] [ebp-38h]
+  ZRef<GW_ItemSlotBase> v50; // [esp+74h] [ebp-34h] BYREF
+  ZRef<GW_ItemSlotBase> v51; // [esp+7Ch] [ebp-2Ch] BYREF
+  ZRef<CharacterData> result; // [esp+84h] [ebp-24h] BYREF
+  tagRECT rcSlot; // [esp+8Ch] [ebp-1Ch] BYREF
+  int nItemID; // [esp+9Ch] [ebp-Ch]
+  int v55; // [esp+A4h] [ebp-4h]
+
+  p = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &result)->p; /*0x4be749*/
+  cd = p; /*0x4be750*/
+  if ( result.p ) /*0x4be756*/
+  {
+    p_m_uTableSize = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x4be758*/
+    p_m_uCount = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount; /*0x4be75b*/
+    if ( !InterlockedDecrement(p_m_uCount) ) /*0x4be75f*/
+    {
+      InterlockedIncrement(p_m_uCount); /*0x4be76a*/
+      if ( p_m_uTableSize ) /*0x4be772*/
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1); /*0x4be77c*/
+    }
+    result.p = nullptr; /*0x4be77e*/
+  }
+  CWnd::GetCanvas(this, &pCanvas); /*0x4be78d*/
+  m_nSelectedNo = this->m_nSelectedNo; /*0x4be792*/
+  v55 = 0; /*0x4be798*/
+  this->m_nSelectedNo = -1; /*0x4be7a0*/
+  if ( m_nSelectedNo >= 0 ) /*0x4be7ac*/
+  {
+    m_nItemTI = this->m_nItemTI; /*0x4be7ae*/
+    a = p->aaItemSlot[m_nItemTI].a; /*0x4be7b4*/
+    if ( a ) /*0x4be7bd*/
+      a = (ZRef<GW_ItemSlotBase> *)a[-1].p; /*0x4be7bf*/
+    if ( m_nSelectedNo < (int)&a[-1].p + 3 ) /*0x4be7c5*/
+    {
+      v9 = CharacterData::GetItem(p, &v50, m_nItemTI, m_nSelectedNo)->p; /*0x4be7d5*/
+      if ( v50.p ) /*0x4be7de*/
+      {
+        if ( !InterlockedDecrement(&v50.p->_m_nRef) ) /*0x4be7e4*/
+        {
+          InterlockedIncrement(&v50.p->_m_nRef); /*0x4be7f6*/
+          if ( v50.p ) /*0x4be802*/
+            ((void (__thiscall *)(GW_ItemSlotBase *, int))v50.p->dtr_ZRefCounted)(v50.p, 1); /*0x4be80a*/
+        }
+        v50.p = nullptr; /*0x4be80c*/
+      }
+      if ( v9 && v9->liCashItemSN.QuadPart ) /*0x4be818*/
+        this->m_nSelectedNo = m_nSelectedNo; /*0x4be820*/
+    }
+  }
+  m_pInterface = pCanvas.m_pInterface; /*0x4be826*/
+  if ( !pCanvas.m_pInterface ) /*0x4be82c*/
+    _com_issue_error(-2147467261); /*0x4be833*/
+  v11 = pCanvas.m_pInterface->raw_DrawRectangle(pCanvas.m_pInterface, 0, 52, 160u, 212u, (unsigned int)&byte_FFFFFF); /*0x4be854*/
+  if ( v11 < 0 ) /*0x4be858*/
+    _com_issue_errorex(v11, m_pInterface, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x4be861*/
+  v12 = p->aaItemSlot[this->m_nItemTI].a; /*0x4be873*/
+  if ( v12 ) /*0x4be877*/
+    v12 = (ZRef<GW_ItemSlotBase> *)v12[-1].p; /*0x4be879*/
+  m_nFirstPosition = this->m_nFirstPosition; /*0x4be87c*/
+  v14 = (int)v12; /*0x4be882*/
+  nPos = m_nFirstPosition; /*0x4be884*/
+  v49 = v12; /*0x4be888*/
+  while ( 1 ) /*0x4be896*/
+  {
+    v15 = this->m_nFirstPosition + 12; /*0x4be896*/
+    if ( v15 >= v14 ) /*0x4be89b*/
+      v15 = v14; /*0x4be89d*/
+    if ( m_nFirstPosition >= v15 ) /*0x4be8a1*/
+      break; /*0x4be8a1*/
+    v16 = (GW_ItemSlotPet *)CharacterData::GetItem(p, &v51, this->m_nItemTI, m_nFirstPosition)->p; /*0x4be8bb*/
+    if ( v51.p ) /*0x4be8c4*/
+    {
+      if ( !InterlockedDecrement(&v51.p->_m_nRef) ) /*0x4be8ca*/
+      {
+        InterlockedIncrement(&v51.p->_m_nRef); /*0x4be8dc*/
+        if ( v51.p ) /*0x4be8e8*/
+          ((void (__thiscall *)(GW_ItemSlotBase *, int))v51.p->dtr_ZRefCounted)(v51.p, 1); /*0x4be8f0*/
+      }
+      v51.p = nullptr; /*0x4be8f2*/
+    }
+    if ( v16 ) /*0x4be8fc*/
+    {
+      Data = (IWzCanvas *)TSecType<long>::GetData(&v16->nItemID); /*0x4be916*/
+      CCSWnd_Inventory::GetItemSlotRect(this, nPos, &rcSlot); /*0x4be918*/
+      v18 = ((int (__thiscall *)(GW_ItemSlotPet *, int))v16->GetType)(v16, v45); /*0x4be924*/
+      v45 = 2; /*0x4be926*/
+      v44 = nullptr; /*0x4be928*/
+      v43.m_pInterface = nullptr; /*0x4be92a*/
+      v42 = 0; /*0x4be92c*/
+      if ( v18 == 3 ) /*0x4be931*/
+      {
+        IsDead = GW_ItemSlotPet::IsDead(v16); /*0x4be93e*/
+        v40 = nullptr; /*0x4be943*/
+        v39.m_pInterface = nullptr; /*0x4be945*/
+        v38 = nItemID; /*0x4be947*/
+        top = rcSlot.top; /*0x4be948*/
+        v36 = Data; /*0x4be949*/
+        v35 = m_pInterface; /*0x4be94d*/
+        AddRef = (void (*)(void))m_pInterface->AddRef; /*0x4be951*/
+        v50.p = (GW_ItemSlotBase *)&v35; /*0x4be954*/
+        v34.m_pInterface = m_pInterface; /*0x4be958*/
+        AddRef(); /*0x4be959*/
+      }
+      else
+      {
+        IsDead = 0; /*0x4be965*/
+        v40 = nullptr; /*0x4be967*/
+        v39.m_pInterface = nullptr; /*0x4be969*/
+        v38 = nItemID; /*0x4be96b*/
+        top = rcSlot.top; /*0x4be96c*/
+        v36 = Data; /*0x4be96d*/
+        v35 = m_pInterface; /*0x4be971*/
+        v20 = (void (*)(void))m_pInterface->AddRef; /*0x4be975*/
+        v50.p = (GW_ItemSlotBase *)&v35; /*0x4be978*/
+        v34.m_pInterface = m_pInterface; /*0x4be97c*/
+        v20(); /*0x4be97d*/
+      }
+      CItemInfo::DrawItemIconForSlot( /*0x4be985*/
+        (CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr,
+        v34,
+        (int)v35,
+        v36,
+        top,
+        v38,
+        (int)v39.m_pInterface,
+        (int)v40,
+        IsDead,
+        v42,
+        (int)v43.m_pInterface,
+        (int)v44);
+      v21 = this->m_nItemTI; /*0x4be98a*/
+      if ( v21 == 2 /*0x4be9ad*/
+        || v21 == 3
+        || v21 == 4
+        || get_consume_cash_item_type((int)Data)
+        || get_etc_cash_item_type((int)Data) )
+      {
+        v22 = ((int (__thiscall *)(GW_ItemSlotPet *, int))v16->GetItemNumber)(v16, v45); /*0x4be9c0*/
+        v45 = 0; /*0x4be9c2*/
+        v44 = (IWzProperty *)v23; /*0x4be9c4*/
+        v24 = (IWzProperty *)v22; /*0x4be9c5*/
+        v25 = this->m_pImgFontNumber.m_pInterface; /*0x4be9c7*/
+        v50.p = (GW_ItemSlotBase *)&v44; /*0x4be9cf*/
+        v44 = v25; /*0x4be9d3*/
+        if ( v25 ) /*0x4be9d7*/
+          v25->AddRef(v25); /*0x4be9df*/
+        v43.m_pInterface = v24; /*0x4be9e9*/
+        v42 = nItemID - 12; /*0x4be9ed*/
+        IsDead = rcSlot.top; /*0x4be9ee*/
+        v40 = m_pInterface; /*0x4be9f2*/
+        v26 = (void (*)(void))m_pInterface->AddRef; /*0x4be9f6*/
+        v50.p = (GW_ItemSlotBase *)&v40; /*0x4be9f9*/
+        v39.m_pInterface = m_pInterface; /*0x4be9fd*/
+        v26(); /*0x4be9fe*/
+        draw_number_by_image(v39, (int)v40, IsDead, v42, v43, (int)v44); /*0x4bea00*/
+      }
+      if ( !CItemInfo::IsCashItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, (int)Data) ) /*0x4bea0f*/
+      {
+        v27 = m_pInterface->raw_DrawRectangle(m_pInterface, rcSlot.left, rcSlot.top, 32u, 32u, 1916155446u); /*0x4bea34*/
+        if ( v27 < 0 ) /*0x4bea38*/
+          _com_issue_errorex(v27, m_pInterface, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x4bea41*/
+      }
+      if ( nPos == this->m_nSelectedNo ) /*0x4bea50*/
+      {
+        v28 = m_pInterface->raw_DrawRectangle(m_pInterface, rcSlot.left, rcSlot.top, 32u, 32u, 1074802892u); /*0x4bea72*/
+        if ( v28 < 0 ) /*0x4bea76*/
+          _com_issue_errorex(v28, m_pInterface, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x4bea7f*/
+        v29 = m_pInterface->raw_DrawRectangle(m_pInterface, rcSlot.left, rcSlot.top - 1, 32u, 2u, -1441779508u); /*0x4beaa1*/
+        if ( v29 < 0 ) /*0x4beaa5*/
+          _com_issue_errorex(v29, m_pInterface, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x4beaae*/
+        v30 = m_pInterface->raw_DrawRectangle(m_pInterface, rcSlot.left, rcSlot.bottom - 1, 32u, 2u, -1441779508u); /*0x4bead0*/
+        if ( v30 < 0 ) /*0x4bead4*/
+          _com_issue_errorex(v30, m_pInterface, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x4beadd*/
+        v31 = m_pInterface->raw_DrawRectangle(m_pInterface, rcSlot.left - 1, rcSlot.top, 2u, 32u, -1441779508u); /*0x4beaff*/
+        if ( v31 < 0 ) /*0x4beb03*/
+          _com_issue_errorex(v31, m_pInterface, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x4beb0c*/
+        v32 = m_pInterface->raw_DrawRectangle(m_pInterface, rcSlot.right - 1, rcSlot.top, 2u, 32u, -1441779508u); /*0x4beb2e*/
+        if ( v32 < 0 ) /*0x4beb32*/
+          _com_issue_errorex(v32, m_pInterface, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x4beb3b*/
+      }
+      p = (CharacterData *)cd; /*0x4beb40*/
+    }
+    ++nPos; /*0x4beb44*/
+    v14 = (int)v49; /*0x4beb48*/
+    m_nFirstPosition = nPos; /*0x4beb4c*/
+  }
+  Release = m_pInterface->Release; /*0x4beb57*/
+  v55 = -1; /*0x4beb5b*/
+  Release(m_pInterface); /*0x4beb63*/
+}

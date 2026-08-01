@@ -1,0 +1,876 @@
+// CUser::ShowAffectedSkillAni(long) @ 0x8eb860
+// Decompiled via IDA headless
+
+// bad sp value at call has been detected, the output may be wrong!
+void __thiscall CUser::ShowAffectedSkillAni(CUser *this, int tCur)
+{
+  CUser *v2; // ebp
+  CUser::AFFECTEDSKILLENTRY *Next; // ecx
+  int tStart; // eax
+  int nSkillID; // esi
+  IWzVector2D *v6; // ecx
+  _bstr_t::Data_t *m_Data; // esi
+  _bstr_t::Data_t *v8; // edi
+  const wchar_t *m_wstr; // eax
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzGr2DLayer *v11; // esi
+  void (__stdcall *v12)(VARIANTARG *); // esi
+  HRESULT v13; // eax
+  IWzGr2DLayer *v14; // ecx
+  unsigned int Lo32; // eax
+  VARIANTARG *p_pvarg; // ecx
+  IWzVector2D *v17; // ecx
+  _bstr_t::Data_t *v18; // esi
+  const wchar_t *v19; // eax
+  IWzGr2DLayer *v20; // eax
+  IWzGr2DLayer *v21; // esi
+  void (__stdcall *v22)(VARIANTARG *); // esi
+  IWzGr2DLayer *v23; // ecx
+  IWzVector2D *v24; // ecx
+  _bstr_t::Data_t *v25; // esi
+  const wchar_t *v26; // eax
+  IWzGr2DLayer *v27; // eax
+  IWzGr2DLayer *v28; // esi
+  void (__stdcall *v29)(VARIANTARG *); // esi
+  IWzGr2DLayer *v30; // ecx
+  IWzVector2D *v31; // ecx
+  wchar_t *v32; // eax
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v33; // eax
+  IWzGr2DLayer **p_m_pInterface; // esi
+  IWzGr2DLayer *v35; // ecx
+  SKILLENTRY *Skill; // esi
+  int v37; // eax
+  int v38; // eax
+  int v39; // eax
+  SecondaryStat *v40; // eax
+  int v41; // eax
+  SecondaryStat *v42; // eax
+  SecondaryStat *v43; // eax
+  const Ztl_bstr_t *v44; // eax
+  CUser *v45; // ebp
+  int v46; // edi
+  int v47; // esi
+  const MOBSKILLENTRY *MobSkill; // eax
+  MOBSKILLLEVELDATA *a; // ecx
+  unsigned int v50; // ecx
+  MOBSKILLLEVELDATA *v51; // esi
+  Ztl_bstr_t *AffectedUOL; // eax
+  unsigned int v53; // ebp
+  const Ztl_bstr_t *v54; // eax
+  StringPool *Instance; // eax
+  const ZXString<char> *String; // eax
+  char *m_pStr; // eax
+  StringPool *v58; // eax
+  const ZXString<char> *v59; // eax
+  StringPool *v60; // eax
+  const ZXString<char> *v61; // eax
+  StringPool *v62; // eax
+  const ZXString<char> *v63; // eax
+  StringPool *v64; // eax
+  const ZXString<char> *v65; // eax
+  StringPool *v66; // eax
+  const ZXString<char> *v67; // eax
+  StringPool *v68; // eax
+  const ZXString<char> *v69; // eax
+  StringPool *v70; // eax
+  const ZXString<char> *v71; // eax
+  StringPool *v72; // eax
+  const ZXString<char> *v73; // eax
+  StringPool *v74; // eax
+  const ZXString<char> *v75; // eax
+  StringPool *v76; // eax
+  const ZXString<char> *v77; // eax
+  CField *field; // eax
+  StringPool *v79; // eax
+  ZXString<char> *v80; // eax
+  const char *v81; // esi
+  const SecondaryStat *(__thiscall *GetSecondaryStat)(CUser *); // edx
+  SecondaryStat *v83; // eax
+  int nFrozen; // eax
+  const ZXString<char> *v85; // eax
+  StringPool *v86; // eax
+  int *v87; // eax
+  const ZXString<char> *v88; // eax
+  Ztl_variant_t *ObjectA; // eax
+  IUnknown *Unknown; // eax
+  _bstr_t::Data_t *v91; // ecx
+  const _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v92; // edi
+  int v93; // esi
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *m_pTail; // eax
+  IWzGr2DLayer *v95; // eax
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *v96; // eax
+  IWzVector2D *v97; // eax
+  IWzGr2DLayer *v98; // eax
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *v99; // eax
+  IWzVector2D *v100; // eax
+  __POSITION *v101; // eax
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v102; // [esp-18h] [ebp-1BCh] BYREF
+  int v103; // [esp-14h] [ebp-1B8h]
+  Ztl_bstr_t v104; // [esp-10h] [ebp-1B4h] BYREF
+  Ztl_bstr_t v105; // [esp-Ch] [ebp-1B0h] BYREF
+  int p_vAux; // [esp-8h] [ebp-1ACh]
+  int p_pvargDest; // [esp-4h] [ebp-1A8h]
+  int p_Hi32; // [esp+0h] [ebp-1A4h]
+  Ztl_bstr_t v109; // [esp+14h] [ebp-190h] BYREF
+  ZXString<char> sText; // [esp+18h] [ebp-18Ch] BYREF
+  Ztl_bstr_t sAffected; // [esp+1Ch] [ebp-188h] BYREF
+  CUser::AFFECTEDSKILLENTRY *as; // [esp+20h] [ebp-184h]
+  CUser *v113; // [esp+24h] [ebp-180h]
+  Ztl_bstr_t *v114; // [esp+28h] [ebp-17Ch]
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pProp; // [esp+2Ch] [ebp-178h] BYREF
+  _bstr_t v116; // [esp+30h] [ebp-174h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *v117; // [esp+34h] [ebp-170h]
+  _bstr_t v118; // [esp+38h] [ebp-16Ch] BYREF
+  __POSITION *pos; // [esp+3Ch] [ebp-168h] BYREF
+  ZXString<char> v120; // [esp+40h] [ebp-164h] BYREF
+  _bstr_t v121; // [esp+44h] [ebp-160h] BYREF
+  ZXString<char> v122; // [esp+48h] [ebp-15Ch] BYREF
+  _bstr_t v123; // [esp+4Ch] [ebp-158h] BYREF
+  ZXString<char> v124; // [esp+50h] [ebp-154h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v125; // [esp+54h] [ebp-150h] BYREF
+  int v126; // [esp+58h] [ebp-14Ch]
+  Ztl_bstr_t v127; // [esp+5Ch] [ebp-148h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v128; // [esp+60h] [ebp-144h] BYREF
+  Ztl_bstr_t v129; // [esp+64h] [ebp-140h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v130; // [esp+68h] [ebp-13Ch] BYREF
+  ZXString<char> v131; // [esp+6Ch] [ebp-138h] BYREF
+  ZXString<char> v132; // [esp+70h] [ebp-134h] BYREF
+  ZXString<char> v133; // [esp+74h] [ebp-130h] BYREF
+  ZXString<char> v134; // [esp+78h] [ebp-12Ch] BYREF
+  ZXString<char> v135; // [esp+7Ch] [ebp-128h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > result; // [esp+80h] [ebp-124h] BYREF
+  ZXString<char> v137; // [esp+84h] [ebp-120h] BYREF
+  ZXString<char> v138; // [esp+88h] [ebp-11Ch] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v139; // [esp+8Ch] [ebp-118h] BYREF
+  ZXString<char> v140; // [esp+90h] [ebp-114h] BYREF
+  Ztl_bstr_t v141; // [esp+94h] [ebp-110h] BYREF
+  ZXString<char> v142; // [esp+98h] [ebp-10Ch] BYREF
+  VARIANTARG pvargDest; // [esp+9Ch] [ebp-108h] BYREF
+  VARIANTARG v144; // [esp+ACh] [ebp-F8h] BYREF
+  VARIANTARG pvarg; // [esp+BCh] [ebp-E8h] BYREF
+  VARIANTARG v146; // [esp+CCh] [ebp-D8h] BYREF
+  VARIANTARG v147; // [esp+DCh] [ebp-C8h] BYREF
+  VARIANTARG v148; // [esp+ECh] [ebp-B8h] BYREF
+  Ztl_variant_t vRepeat; // [esp+104h] [ebp-A0h] BYREF
+  Ztl_variant_t v150; // [esp+114h] [ebp-90h] BYREF
+  Ztl_variant_t v151; // [esp+124h] [ebp-80h] BYREF
+  Ztl_variant_t vParam; // [esp+138h] [ebp-6Ch] BYREF
+  Ztl_variant_t vDelayRate; // [esp+154h] [ebp-50h] BYREF
+  Ztl_variant_t nType; // [esp+164h] [ebp-40h] BYREF
+  Ztl_variant_t vAux; // [esp+178h] [ebp-2Ch] BYREF
+  Ztl_variant_t Destination; // [esp+188h] [ebp-1Ch] BYREF
+  int v157; // [esp+198h] [ebp-Ch]
+  char v158; // [esp+19Ch] [ebp-8h]
+  int v159; // [esp+1A0h] [ebp-4h]
+
+  v2 = this;
+  v113 = this;
+  if ( !this->m_bDelayedLoad )
+  {
+    pos = (__POSITION *)this->m_lAffectedSkillEntry._m_pHead;
+    if ( pos )
+    {
+      while ( 1 )
+      {
+        Next = ZList<CUser::AFFECTEDSKILLENTRY>::GetNext(&pos);
+        tStart = Next->tStart;
+        as = Next;
+        if ( !tStart || tStart - tCur > 0 )
+          goto LABEL_38;
+        pProp.m_pInterface = nullptr;
+        v159 = 0;
+        sAffected.m_Data = nullptr;
+        nSkillID = Next->nSkillID;
+        LOBYTE(v159) = 1;
+        switch ( nSkillID )
+        {
+          case 0:
+            _bstr_t::_bstr_t(&v118, aEf_3);
+            m_Data = v118.m_Data;
+            v8 = v118.m_Data;
+            sAffected.m_Data = v118.m_Data;
+            if ( v118.m_Data )
+            {
+              InterlockedIncrement((volatile LONG *)&v118.m_Data->m_RefCount);
+              _bstr_t::Data_t::Release(m_Data);
+              v118.m_Data = nullptr;
+            }
+            p_Hi32 = 0;
+            p_pvargDest = 255;
+            p_vAux = -1073343324;
+            v117 = (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&v105;
+            v105.m_Data = nullptr;
+            v104.m_Data = nullptr;
+            v103 = 0;
+            v102.m_pInterface = v6;
+            v114 = (Ztl_bstr_t *)&v102;
+            LOBYTE(v159) = 2;
+            CUser::GetVecCtrl(v2, &v102);
+            if ( v8 )
+              m_wstr = v8->m_wstr;
+            else
+              m_wstr = nullptr;
+            LOBYTE(v159) = 1;
+            m_pInterface = CAnimationDisplayer::LoadLayer(
+                             &result,
+                             m_wstr,
+                             nullptr,
+                             v102,
+                             v103,
+                             (IWzGr2DLayer *)v104.m_Data,
+                             (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> >)v105.m_Data,
+                             (_bstr_t::Data_t *)p_vAux,
+                             (const Ztl_variant_t *)p_pvargDest,
+                             (IUnknown *)p_Hi32)->m_pInterface;
+            v11 = v2->m_pLayerEffect.m_pInterface;
+            if ( v11 != m_pInterface )
+            {
+              v2->m_pLayerEffect.m_pInterface = m_pInterface;
+              if ( m_pInterface )
+                ((void (__cdecl *)(IWzGr2DLayer *))m_pInterface->AddRef)(m_pInterface);
+              if ( v11 )
+                ((void (__cdecl *)(IWzGr2DLayer *))v11->Release)(v11);
+            }
+            if ( v134._m_pStr )
+              (*(void (__cdecl **)(char *))(*(_DWORD *)v134._m_pStr + 8))(v134._m_pStr);
+            if ( !v2->m_pLayerEffect.m_pInterface )
+              goto LABEL_34;
+            v12 = VariantInit;
+            VariantInit(&pvarg);
+            v13 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing);
+            if ( v13 < 0 )
+              goto LABEL_166;
+            *((_BYTE *)&Destination.__s11 + 12) = 3;
+            v12(&pvargDest);
+            v13 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing);
+            if ( v13 < 0 )
+              goto LABEL_166;
+            v14 = v2->m_pLayerEffect.m_pInterface;
+            *((_BYTE *)&Destination.__s11 + 12) = 4;
+            if ( !v14 )
+              goto $LN717_9;
+            IWzGr2DLayer::Animate(v14, GA_REPEAT, (const Ztl_variant_t *)&pvargDest, (const Ztl_variant_t *)&pvarg);
+            *((_BYTE *)&Destination.__s11 + 12) = 3;
+            if ( pvargDest.vt == 8 )
+            {
+              pvargDest.vt = 0;
+              if ( pvargDest.decVal.Lo32 )
+                ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4));
+            }
+            else
+            {
+              VariantClear(&pvargDest);
+            }
+            *((_BYTE *)&Destination.__s11 + 12) = 1;
+            if ( pvarg.vt != 8 )
+            {
+              p_pvarg = &pvarg;
+              goto LABEL_33;
+            }
+            pvarg.vt = 0;
+            Lo32 = pvarg.decVal.Lo32;
+            goto LABEL_30;
+          case 1:
+            _bstr_t::_bstr_t(&v121, aEf_10);
+            v18 = v121.m_Data;
+            v8 = v121.m_Data;
+            sAffected.m_Data = v121.m_Data;
+            if ( v121.m_Data )
+            {
+              InterlockedIncrement((volatile LONG *)&v121.m_Data->m_RefCount);
+              _bstr_t::Data_t::Release(v18);
+              v121.m_Data = nullptr;
+            }
+            p_Hi32 = 0;
+            p_pvargDest = 255;
+            p_vAux = -1073343324;
+            v114 = &v105;
+            v105.m_Data = nullptr;
+            v104.m_Data = nullptr;
+            v103 = 0;
+            v102.m_pInterface = v17;
+            v117 = &v102;
+            LOBYTE(v159) = 5;
+            CUser::GetVecCtrl(v2, &v102);
+            if ( v8 )
+              v19 = v8->m_wstr;
+            else
+              v19 = nullptr;
+            LOBYTE(v159) = 1;
+            v20 = CAnimationDisplayer::LoadLayer(
+                    &v128,
+                    v19,
+                    nullptr,
+                    v102,
+                    v103,
+                    (IWzGr2DLayer *)v104.m_Data,
+                    (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> >)v105.m_Data,
+                    (_bstr_t::Data_t *)p_vAux,
+                    (const Ztl_variant_t *)p_pvargDest,
+                    (IUnknown *)p_Hi32)->m_pInterface;
+            v21 = v2->m_pLayerEffect.m_pInterface;
+            if ( v21 != v20 )
+            {
+              v2->m_pLayerEffect.m_pInterface = v20;
+              if ( v20 )
+                ((void (__cdecl *)(IWzGr2DLayer *))v20->AddRef)(v20);
+              if ( v21 )
+                ((void (__cdecl *)(IWzGr2DLayer *))v21->Release)(v21);
+            }
+            if ( v126 )
+              (*(void (__cdecl **)(int))(*(_DWORD *)v126 + 8))(v126);
+            if ( !v2->m_pLayerEffect.m_pInterface )
+              goto LABEL_34;
+            v22 = VariantInit;
+            VariantInit(&v144);
+            v13 = ZComAPI::ZComVariantCopy(&v144, &vtMissing);
+            if ( v13 < 0 )
+              goto LABEL_166;
+            *((_BYTE *)&Destination.__s11 + 12) = 6;
+            v22(&v147);
+            v13 = ZComAPI::ZComVariantCopy(&v147, &vtMissing);
+            if ( v13 < 0 )
+              goto LABEL_166;
+            v23 = v2->m_pLayerEffect.m_pInterface;
+            *((_BYTE *)&Destination.__s11 + 12) = 7;
+            if ( !v23 )
+              goto $LN717_9;
+            IWzGr2DLayer::Animate(v23, GA_REPEAT, (const Ztl_variant_t *)&v147, (const Ztl_variant_t *)&v144);
+            *((_BYTE *)&Destination.__s11 + 12) = 6;
+            if ( v147.vt == 8 )
+            {
+              v147.vt = 0;
+              if ( v147.decVal.Lo32 )
+                ZAPI.CoTaskMemFree((void *)(v147.decVal.Lo32 - 4));
+            }
+            else
+            {
+              VariantClear(&v147);
+            }
+            *((_BYTE *)&Destination.__s11 + 12) = 1;
+            if ( v144.vt != 8 )
+            {
+              p_pvarg = &v144;
+              goto LABEL_33;
+            }
+            v144.vt = 0;
+            Lo32 = v144.decVal.Lo32;
+LABEL_30:
+            if ( Lo32 )
+              ZAPI.CoTaskMemFree((void *)(Lo32 - 4));
+            goto LABEL_34;
+          case 2:
+            _bstr_t::_bstr_t(&v123, aEf_15);
+            v25 = v123.m_Data;
+            v8 = v123.m_Data;
+            sAffected.m_Data = v123.m_Data;
+            if ( v123.m_Data )
+            {
+              InterlockedIncrement((volatile LONG *)&v123.m_Data->m_RefCount);
+              _bstr_t::Data_t::Release(v25);
+              v123.m_Data = nullptr;
+            }
+            p_Hi32 = 0;
+            p_pvargDest = 255;
+            p_vAux = -1073343324;
+            v114 = &v105;
+            v105.m_Data = nullptr;
+            v104.m_Data = nullptr;
+            v103 = 0;
+            v102.m_pInterface = v24;
+            v117 = &v102;
+            LOBYTE(v159) = 8;
+            CUser::GetVecCtrl(v2, &v102);
+            if ( v8 )
+              v26 = v8->m_wstr;
+            else
+              v26 = nullptr;
+            LOBYTE(v159) = 1;
+            v27 = CAnimationDisplayer::LoadLayer(
+                    &v130,
+                    v26,
+                    nullptr,
+                    v102,
+                    v103,
+                    (IWzGr2DLayer *)v104.m_Data,
+                    (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> >)v105.m_Data,
+                    (_bstr_t::Data_t *)p_vAux,
+                    (const Ztl_variant_t *)p_pvargDest,
+                    (IUnknown *)p_Hi32)->m_pInterface;
+            v28 = v2->m_pLayerEffect.m_pInterface;
+            if ( v28 != v27 )
+            {
+              v2->m_pLayerEffect.m_pInterface = v27;
+              if ( v27 )
+                ((void (__cdecl *)(IWzGr2DLayer *))v27->AddRef)(v27);
+              if ( v28 )
+                ((void (__cdecl *)(IWzGr2DLayer *))v28->Release)(v28);
+            }
+            if ( v128.m_pInterface )
+              ((void (__cdecl *)(IWzGr2DLayer *))v128.m_pInterface->Release)(v128.m_pInterface);
+            if ( v2->m_pLayerEffect.m_pInterface )
+            {
+              v29 = VariantInit;
+              VariantInit(&v148);
+              v13 = ZComAPI::ZComVariantCopy(&v148, &vtMissing);
+              if ( v13 < 0
+                || (*((_BYTE *)&Destination.__s11 + 12) = 9,
+                    v29(&v146),
+                    v13 = ZComAPI::ZComVariantCopy(&v146, &vtMissing),
+                    v13 < 0) )
+              {
+LABEL_166:
+                _com_issue_error(v13);
+              }
+              v30 = v2->m_pLayerEffect.m_pInterface;
+              *((_BYTE *)&Destination.__s11 + 12) = 10;
+              if ( !v30 )
+                goto $LN717_9;
+              IWzGr2DLayer::Animate(v30, GA_REPEAT, (const Ztl_variant_t *)&v146, (const Ztl_variant_t *)&v148);
+              *((_BYTE *)&Destination.__s11 + 12) = 9;
+              if ( v146.vt == 8 )
+              {
+                v146.vt = 0;
+                if ( v146.decVal.Lo32 )
+                  ZAPI.CoTaskMemFree((void *)(v146.decVal.Lo32 - 4));
+              }
+              else
+              {
+                VariantClear(&v146);
+              }
+              *((_BYTE *)&Destination.__s11 + 12) = 1;
+              if ( v148.vt == 8 )
+              {
+                v148.vt = 0;
+                Lo32 = v148.decVal.Lo32;
+                goto LABEL_30;
+              }
+              p_pvarg = &v148;
+LABEL_33:
+              VariantClear(p_pvarg);
+            }
+LABEL_34:
+            v109.m_Data->m_str = nullptr;
+LABEL_35:
+            if ( v8 )
+              _bstr_t::Data_t::Release(v8);
+LABEL_37:
+            Destination.decVal.Mid32 = -1;
+            goto LABEL_38;
+          case 3:
+            _bstr_t::_bstr_t(&v116, aEf_16);
+            Ztl_bstr_t::operator=(&sAffected, (const Ztl_bstr_t *)&v116);
+            v31 = (IWzVector2D *)v116.m_Data;
+            if ( v116.m_Data )
+            {
+              _bstr_t::Data_t::Release(v116.m_Data);
+              v116.m_Data = nullptr;
+            }
+            p_Hi32 = 0;
+            p_pvargDest = 255;
+            p_vAux = -1073343324;
+            v114 = &v105;
+            v105.m_Data = nullptr;
+            v104.m_Data = nullptr;
+            v103 = 0;
+            v102.m_pInterface = v31;
+            v117 = &v102;
+            LOBYTE(v159) = 11;
+            CUser::GetVecCtrl(v2, &v102);
+            v8 = sAffected.m_Data;
+            if ( sAffected.m_Data )
+              v32 = sAffected.m_Data->m_wstr;
+            else
+              v32 = nullptr;
+            LOBYTE(v159) = 1;
+            v33 = CAnimationDisplayer::LoadLayer(
+                    &v139,
+                    v32,
+                    nullptr,
+                    v102,
+                    v103,
+                    (IWzGr2DLayer *)v104.m_Data,
+                    (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> >)v105.m_Data,
+                    (_bstr_t::Data_t *)p_vAux,
+                    (const Ztl_variant_t *)p_pvargDest,
+                    (IUnknown *)p_Hi32);
+            p_m_pInterface = &v2->m_pLayerEffect.m_pInterface;
+            _com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::operator=(
+              &v2->m_pLayerEffect,
+              v33);
+            if ( v139.m_pInterface )
+              ((void (__cdecl *)(IWzGr2DLayer *))v139.m_pInterface->Release)(v139.m_pInterface);
+            if ( *p_m_pInterface )
+            {
+              Ztl_variant_t::Ztl_variant_t(&vRepeat, &vtMissing);
+              v158 = 12;
+              Ztl_variant_t::Ztl_variant_t(&vDelayRate, &vtMissing);
+              v35 = *p_m_pInterface;
+              v158 = 13;
+              if ( !v35 )
+                goto $LN717_9;
+              IWzGr2DLayer::Animate(v35, GA_REPEAT, &vDelayRate, &vRepeat);
+              Ztl_variant_t::~Ztl_variant_t(&vDelayRate);
+              Ztl_variant_t::~Ztl_variant_t(&vRepeat);
+            }
+            sAffected.m_Data->m_str = nullptr;
+            goto LABEL_35;
+        }
+        if ( !is_bmage_aura_skill(nSkillID) )
+        {
+          v46 = (unsigned __int16)nSkillID;
+          p_Hi32 = (unsigned __int16)nSkillID;
+          v47 = nSkillID >> 16;
+          MobSkill = CSkillInfo::GetMobSkill(TSingleton<CSkillInfo>::ms_pInstance, p_Hi32);
+          if ( !MobSkill || v47 <= 0 )
+            goto LABEL_37;
+          a = MobSkill->aLevelData.a;
+          v50 = a ? (unsigned int)a[-1].adwTemplateID.a : 0;
+          if ( v47 > v50 )
+            goto LABEL_37;
+          v51 = &MobSkill->aLevelData.a[v47 - 1];
+          AffectedUOL = MOBSKILLLEVELDATA::GetAffectedUOL(v51, &v141);
+          v53 = _bstr_t::length(AffectedUOL);
+          Ztl_bstr_t::~Ztl_bstr_t(&v141);
+          if ( v53 )
+          {
+            v54 = MOBSKILLLEVELDATA::GetAffectedUOL(v51, &v129);
+            Ztl_bstr_t::operator=(&sAffected, v54);
+            Ztl_bstr_t::~Ztl_bstr_t(&v129);
+          }
+          v45 = v113;
+          if ( v113->IsLocalUser(v113) && !as->bEnterField )
+          {
+            ZXString<char>::ZXString<char>(&sText, sStrDefault, -1);
+            LOBYTE(v159) = 14;
+            switch ( v46 )
+            {
+              case 120:
+                p_Hi32 = 2959;
+                p_pvargDest = (int)&pvargDest;
+                Instance = StringPool::GetInstance();
+                String = StringPool::GetString(Instance, (ZXString<char> *)p_pvargDest, p_Hi32);
+                LOBYTE(v159) = 15;
+                ZXString<char>::operator=(&sText, String);
+                m_pStr = *(char **)&pvargDest.vt;
+                goto LABEL_145;
+              case 121:
+                p_Hi32 = 2963;
+                p_pvargDest = (int)&v134;
+                v64 = StringPool::GetInstance();
+                v65 = StringPool::GetString(v64, (ZXString<char> *)p_pvargDest, p_Hi32);
+                LOBYTE(v159) = 19;
+                ZXString<char>::operator=(&sText, v65);
+                m_pStr = v134._m_pStr;
+                goto LABEL_145;
+              case 122:
+                p_Hi32 = 2960;
+                p_pvargDest = (int)&v131;
+                v58 = StringPool::GetInstance();
+                v59 = StringPool::GetString(v58, (ZXString<char> *)p_pvargDest, p_Hi32);
+                LOBYTE(v159) = 16;
+                ZXString<char>::operator=(&sText, v59);
+                m_pStr = v131._m_pStr;
+                goto LABEL_145;
+              case 123:
+                p_Hi32 = 2961;
+                p_pvargDest = (int)&pvargDest.lVal;
+                v60 = StringPool::GetInstance();
+                v61 = StringPool::GetString(v60, (ZXString<char> *)p_pvargDest, p_Hi32);
+                LOBYTE(v159) = 17;
+                ZXString<char>::operator=(&sText, v61);
+                m_pStr = pvargDest.pcVal;
+                goto LABEL_145;
+              case 124:
+                p_Hi32 = 2962;
+                p_pvargDest = (int)&v142;
+                v62 = StringPool::GetInstance();
+                v63 = StringPool::GetString(v62, (ZXString<char> *)p_pvargDest, p_Hi32);
+                LOBYTE(v159) = 18;
+                ZXString<char>::operator=(&sText, v63);
+                m_pStr = v142._m_pStr;
+                goto LABEL_145;
+              case 125:
+                p_Hi32 = 2964;
+                p_pvargDest = (int)&v140;
+                v66 = StringPool::GetInstance();
+                v67 = StringPool::GetString(v66, (ZXString<char> *)p_pvargDest, p_Hi32);
+                LOBYTE(v159) = 20;
+                ZXString<char>::operator=(&sText, v67);
+                m_pStr = v140._m_pStr;
+                goto LABEL_145;
+              case 128:
+                p_Hi32 = 3818;
+                p_pvargDest = (int)&v124;
+                v68 = StringPool::GetInstance();
+                v69 = StringPool::GetString(v68, (ZXString<char> *)p_pvargDest, p_Hi32);
+                LOBYTE(v159) = 21;
+                ZXString<char>::operator=(&sText, v69);
+                m_pStr = v124._m_pStr;
+                goto LABEL_145;
+              case 133:
+                p_Hi32 = 3819;
+                p_pvargDest = (int)&pvargDest.decVal.Hi32;
+                v70 = StringPool::GetInstance();
+                v71 = StringPool::GetString(v70, (ZXString<char> *)p_pvargDest, p_Hi32);
+                LOBYTE(v159) = 22;
+                ZXString<char>::operator=(&sText, v71);
+                m_pStr = (char *)pvargDest.decVal.Hi32;
+                goto LABEL_145;
+              case 134:
+                p_Hi32 = 5469;
+                p_pvargDest = (int)&v138;
+                v72 = StringPool::GetInstance();
+                v73 = StringPool::GetString(v72, (ZXString<char> *)p_pvargDest, p_Hi32);
+                LOBYTE(v159) = 23;
+                ZXString<char>::operator=(&sText, v73);
+                m_pStr = v138._m_pStr;
+                goto LABEL_145;
+              case 135:
+                p_Hi32 = 5470;
+                p_pvargDest = (int)&v132;
+                v74 = StringPool::GetInstance();
+                v75 = StringPool::GetString(v74, (ZXString<char> *)p_pvargDest, p_Hi32);
+                LOBYTE(v159) = 24;
+                ZXString<char>::operator=(&sText, v75);
+                m_pStr = v132._m_pStr;
+                goto LABEL_145;
+              case 136:
+                p_Hi32 = 5471;
+                p_pvargDest = (int)&v133;
+                v76 = StringPool::GetInstance();
+                v77 = StringPool::GetString(v76, (ZXString<char> *)p_pvargDest, p_Hi32);
+                LOBYTE(v159) = 25;
+                ZXString<char>::operator=(&sText, v77);
+                LOBYTE(v159) = 14;
+                if ( v133._m_pStr )
+                  ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v133._m_pStr - 1);
+                field = get_field();
+                if ( field )
+                  CField::OnFearEffect(field);
+                break;
+              case 137:
+                p_Hi32 = 5566;
+                p_pvargDest = (int)&v135;
+                v79 = StringPool::GetInstance();
+                v80 = StringPool::GetString(v79, (ZXString<char> *)p_pvargDest, p_Hi32);
+                v120._m_pStr = nullptr;
+                v81 = v80->_m_pStr;
+                GetSecondaryStat = v45->GetSecondaryStat;
+                LOBYTE(v159) = 27;
+                v83 = (SecondaryStat *)GetSecondaryStat(v45);
+                nFrozen = SecondaryStat::_ZtlSecureGet_nFrozen_(v83);
+                v85 = ZXString<char>::Format(&v120, v81, nFrozen);
+                ZXString<char>::operator=(&sText, v85);
+                LOBYTE(v159) = 26;
+                if ( v120._m_pStr )
+                  ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v120._m_pStr - 1);
+                m_pStr = v135._m_pStr;
+                goto LABEL_145;
+              case 162:
+                p_Hi32 = 6123;
+                p_pvargDest = (int)&v137;
+                v86 = StringPool::GetInstance();
+                v87 = (int *)StringPool::GetString(v86, (ZXString<char> *)p_pvargDest, p_Hi32);
+                v122._m_pStr = nullptr;
+                p_Hi32 = *v87;
+                LOBYTE(v159) = 29;
+                v88 = ZXString<char>::Format(&v122, (const char *)p_Hi32);
+                ZXString<char>::operator=(&sText, v88);
+                LOBYTE(v159) = 28;
+                if ( v122._m_pStr )
+                  ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v122._m_pStr - 1);
+                m_pStr = v137._m_pStr;
+LABEL_145:
+                LOBYTE(v159) = 14;
+                if ( m_pStr )
+                  ZXString<char>::_Release((ZXString<char>::_ZXStringData *)m_pStr - 1);
+                break;
+              default:
+                break;
+            }
+            if ( !ZXString<char>::IsEmpty(&sText) )
+              CHATLOG_ADD(&sText, 7u);
+            LOBYTE(v159) = 1;
+            if ( sText._m_pStr )
+              ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sText._m_pStr - 1);
+          }
+          goto LABEL_151;
+        }
+        Skill = (SKILLENTRY *)CSkillInfo::GetSkill(TSingleton<CSkillInfo>::ms_pInstance, nSkillID);
+        if ( Skill )
+          break;
+LABEL_164:
+        *((_DWORD *)sText._m_pStr + 1) = 0;
+        Ztl_bstr_t::~Ztl_bstr_t(&v109);
+        v157 = -1;
+        if ( v113 )
+          ((void (__cdecl *)(CUser *))v113->GetSecondaryStat)(v113);
+LABEL_38:
+        if ( !v116.m_Data )
+          return;
+        v2 = (CUser *)sText._m_pStr;
+      }
+      v37 = as->nSkillID;
+      if ( as->nSkillID > 32110000 )
+      {
+        v41 = v37 - 32120000;
+        if ( v41 )
+        {
+          if ( v41 != 1 )
+            goto LABEL_113;
+          goto LABEL_111;
+        }
+      }
+      else
+      {
+        if ( as->nSkillID == 32110000 )
+          goto LABEL_108;
+        v38 = v37 - 32001003;
+        if ( v38 )
+        {
+          v39 = v38 - 99999;
+          if ( v39 )
+          {
+            if ( v39 != 1 )
+            {
+LABEL_113:
+              v44 = SKILLENTRY::GetAffectedUOL(Skill, &v127);
+              Ztl_bstr_t::operator=(&sAffected, v44);
+              Ztl_bstr_t::~Ztl_bstr_t(&v127);
+              v45 = v113;
+LABEL_151:
+              if ( sAffected.m_Data && sAffected.m_Data->m_wstr && *((_DWORD *)sAffected.m_Data->m_wstr - 1) >> 1 )
+              {
+                Ztl_variant_t::Ztl_variant_t(&vAux, &vtMissing);
+                LOBYTE(v159) = 30;
+                Ztl_variant_t::Ztl_variant_t(&vParam, &vtMissing);
+                p_Hi32 = 0;
+                p_pvargDest = 0;
+                p_vAux = (int)&vAux;
+                v105.m_Data = (_bstr_t::Data_t *)&vParam;
+                v104.m_Data = (_bstr_t::Data_t *)&vAux;
+                v114 = &v104;
+                Ztl_bstr_t::Ztl_bstr_t(&v104, &sAffected);
+                LOBYTE(v159) = 32;
+                if ( !g_rm.m_pInterface )
+$LN717_9:
+                  _com_issue_error(-2147467261);
+                LOBYTE(v159) = 31;
+                ObjectA = IWzResMan::GetObjectA(
+                            g_rm.m_pInterface,
+                            &Destination,
+                            v104,
+                            (const Ztl_variant_t *)v105.m_Data,
+                            (const Ztl_variant_t *)p_vAux);
+                LOBYTE(v159) = 33;
+                Unknown = Ztl_variant_t::GetUnknown(ObjectA, p_pvargDest, p_Hi32);
+                _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::operator=<IUnknown>(
+                  &pProp,
+                  Unknown);
+                Ztl_variant_t::~Ztl_variant_t(&Destination);
+                Ztl_variant_t::~Ztl_variant_t(&vParam);
+                LOBYTE(v159) = 1;
+                Ztl_variant_t::~Ztl_variant_t(&vAux);
+                if ( !pProp.m_pInterface )
+                {
+                  _bstr_t::Data_t::Release(sAffected.m_Data);
+                  return;
+                }
+                v92 = (const _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)as;
+                p_Hi32 = 0;
+                p_pvargDest = (int)&as->l;
+                p_vAux = 0;
+                v105.m_Data = v91;
+                v114 = &v105;
+                v104.m_Data = (_bstr_t::Data_t *)&sAffected;
+                as->posList = nullptr;
+                Ztl_bstr_t::Ztl_bstr_t(&v105, (const Ztl_bstr_t *)v104.m_Data);
+                if ( CUser::LoadLayer(v45, v105, p_vAux, (USERLAYER *)p_pvargDest, (int *)p_Hi32) )
+                {
+                  v93 = v92[4].m_pInterface != (IWzGr2DLayer *)1;
+                  if ( v45->m_lpLayerAffected.a[v93]._m_uCount )
+                  {
+                    Ztl_variant_t::Ztl_variant_t((Ztl_variant_t *)&v151.gap0[4], &vtMissing);
+                    LOBYTE(v159) = 34;
+                    Ztl_variant_t::Ztl_variant_t((Ztl_variant_t *)&v150.gap0[4], &vtMissing);
+                    m_pTail = v45->m_lpLayerAffected.a[v93]._m_pTail;
+                    p_Hi32 = (int)&v125;
+                    LOBYTE(v159) = 35;
+                    v95 = _com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::operator->(m_pTail);
+                    v96 = IWzGr2DLayer::Getalpha(
+                            v95,
+                            (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)p_Hi32);
+                    p_Hi32 = (int)&v151.decVal.Hi32;
+                    p_pvargDest = (int)&v150.decVal.Hi32;
+                    p_vAux = 0;
+                    v105.m_Data = nullptr;
+                    LOBYTE(v159) = 36;
+                    v97 = _com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>::operator->(v96);
+                    IWzVector2D::RelMove(
+                      v97,
+                      (int)v105.m_Data,
+                      p_vAux,
+                      (const Ztl_variant_t *)p_pvargDest,
+                      (const Ztl_variant_t *)p_Hi32);
+                    LOBYTE(v159) = 35;
+                    if ( v125.m_pInterface )
+                      ((void (__cdecl *)(IWzVector2D *))v125.m_pInterface->Release)(v125.m_pInterface);
+                    Ztl_variant_t::~Ztl_variant_t(&v150);
+                    v158 = 1;
+                    Ztl_variant_t::~Ztl_variant_t(&v151);
+                    Ztl_variant_t::Ztl_variant_t(&nType, &vtMissing);
+                    v158 = 37;
+                    Ztl_variant_t::Ztl_variant_t((Ztl_variant_t *)(&vParam.__s11 + 1), &vtMissing);
+                    p_pvargDest = (int)&v125;
+                    v158 = 38;
+                    v98 = _com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::operator->((_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v92[5]);
+                    v99 = IWzGr2DLayer::Getalpha(
+                            v98,
+                            (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)p_pvargDest);
+                    p_pvargDest = (int)&nType;
+                    p_vAux = (int)&vParam.cyVal.Hi;
+                    v105.m_Data = nullptr;
+                    v104.m_Data = nullptr;
+                    v158 = 39;
+                    v100 = _com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>::operator->(v99);
+                    IWzVector2D::RelMove(
+                      v100,
+                      (int)v104.m_Data,
+                      (int)v105.m_Data,
+                      (const Ztl_variant_t *)p_vAux,
+                      (const Ztl_variant_t *)p_pvargDest);
+                    v158 = 38;
+                    if ( v125.m_pInterface )
+                      ((void (__cdecl *)(IWzVector2D *))v125.m_pInterface->Release)(v125.m_pInterface);
+                    Ztl_variant_t::~Ztl_variant_t((Ztl_variant_t *)&vParam.boolVal);
+                    LOBYTE(v157) = 1;
+                    Ztl_variant_t::~Ztl_variant_t((Ztl_variant_t *)(&vDelayRate.__s11 + 1));
+                  }
+                  v101 = ZList<_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>>::AddTail(
+                           &v45->m_lpLayerAffected.a[v93],
+                           v92 + 5);
+                  p_vAux = 1;
+                  v92[2].m_pInterface = (IWzGr2DLayer *)v101;
+                  CUser::ShiftAffectedSkillAnimation(v45, p_vAux);
+                }
+              }
+              goto LABEL_164;
+            }
+LABEL_111:
+            v42 = (SecondaryStat *)v113->GetSecondaryStat(v113);
+            SecondaryStat::_ZtlSecureGet_cYellowAura_(v42);
+            goto LABEL_113;
+          }
+LABEL_108:
+          v40 = (SecondaryStat *)v113->GetSecondaryStat(v113);
+          SecondaryStat::_ZtlSecureGet_cBlueAura_(v40);
+          goto LABEL_113;
+        }
+      }
+      v43 = (SecondaryStat *)v113->GetSecondaryStat(v113);
+      SecondaryStat::_ZtlSecureGet_cDarkAura_(v43);
+      goto LABEL_113;
+    }
+  }
+}

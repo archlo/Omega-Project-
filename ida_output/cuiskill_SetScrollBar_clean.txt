@@ -1,0 +1,25 @@
+// CUISkill::SetScrollBar
+// Decompiled from v95 IDB
+
+void __thiscall CUISkill::SetScrollBar(CUISkill *this)
+{
+  const SKILLROOT *SkillRootVisible; // eax
+  ZRef<SKILLENTRY> *a; // eax
+
+  if ( this->m_pTab.p->m_lTabInfo._m_uCount && (SkillRootVisible = CUISkill::GetSkillRootVisible(this, 0)) != nullptr ) /*0x84b1d8*/
+  {
+    a = SkillRootVisible->aSkill.a; /*0x84b1da*/
+    if ( a ) /*0x84b1df*/
+      CCtrlScrollBar::SetScrollRange(this->m_pSBSkill.p, (int)&a[-1].p[-1].apCanvas[2].m_pInterface + 1); /*0x84b201*/
+    else
+      CCtrlScrollBar::SetScrollRange(this->m_pSBSkill.p, -3); /*0x84b1ed*/
+  }
+  else
+  {
+    CCtrlScrollBar::SetScrollRange(this->m_pSBSkill.p, 0); /*0x84b211*/
+  }
+}
+
+// References:
+//   ?SetScrollRange@CCtrlScrollBar@@QAEXJ@Z @ 0x4e9b70
+//   ?GetSkillRootVisible@CUISkill@@IAEPBUSKILLROOT@@H@Z @ 0x84a6f0

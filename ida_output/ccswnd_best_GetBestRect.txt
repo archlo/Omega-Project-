@@ -1,0 +1,3 @@
+// CCSWnd_Best::GetBestRect @ 0x4c6470
+
+{"addr":"0x4c6470","code":"tagRECT *__thiscall CCSWnd_Best::GetBestRect(CCSWnd_Best *this, tagRECT *result, int nBest)\n{\n  result->top = 69 * nBest; /*0x4c647b*/\n  result->left = 0; /*0x4c6481*/\n  result->right = 90; /*0x4c6487*/\n  result->bottom = 69 * nBest + 68; /*0x4c648e*/\n  return result; /*0x4c6491*/\n}"}

@@ -1,0 +1,25 @@
+// cuserlocal::SetMonsterCardCount
+
+void __cdecl CUserLocal::SetMonsterCardCount(int nCardID, int nCardCount)
+{
+  CharacterData *p; // esi
+  volatile LONG *p_m_uTableSize; // esi
+  ZRef<CharacterData> pcd; // [esp+Ch] [ebp-14h] BYREF
+  int v5; // [esp+1Ch] [ebp-4h]
+
+  CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &pcd); /*0x916ef0*/
+  p = pcd.p; /*0x916efd*/
+  v5 = 0; /*0x916f04*/
+  CMonsterBookAccessor::SetCount(pcd.p, nCardID, nCardCount); /*0x916f0c*/
+  v5 = -1; /*0x916f14*/
+  if ( p ) /*0x916f1e*/
+  {
+    p_m_uTableSize = (volatile LONG *)&p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x916f20*/
+    if ( !InterlockedDecrement(p_m_uTableSize + 1) ) /*0x916f27*/
+    {
+      InterlockedIncrement(p_m_uTableSize + 1); /*0x916f32*/
+      if ( p_m_uTableSize ) /*0x916f3a*/
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)((char *)p_m_uTableSize, 1); /*0x916f44*/
+    }
+  }
+}

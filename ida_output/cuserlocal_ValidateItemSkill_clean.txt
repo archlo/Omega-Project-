@@ -1,0 +1,399 @@
+// cuserlocal::ValidateItemSkill
+
+void __thiscall CUserLocal::ValidateItemSkill(CUserLocal *this)
+{
+  ZList<ZRef<CItemInfo::ItemSkill> > *p_m_lpItemSkill; // ebp
+  __POSITION *v2; // edi
+  int v3; // ebx
+  GW_ItemSlotBase *v4; // esi
+  int Data; // eax
+  int IsGrowthItem; // eax
+  TSecType<long> *p_nItemID; // ecx
+  int v8; // eax
+  char *m_pStr; // ebp
+  int v10; // edi
+  int v11; // eax
+  CItemInfo::LevelInfo::Ability *p; // eax
+  unsigned int *p_m_uTableSize; // edi
+  volatile LONG *p_m_uCount; // ebp
+  int v15; // eax
+  int v16; // eax
+  const CItemInfo::EQUIPITEM *EquipItem; // eax
+  ZMap<long,EQUIPPED_SETITEM,long> *p_m_mEquippedSetItem; // ebx
+  char *p_liCashItemSN; // esi
+  volatile LONG *p_HighPart; // edi
+  volatile LONG *v21; // esi
+  CItemInfo::LevelInfo::Ability *v22; // ebp
+  ZList<ZRef<CItemInfo::ItemSkill> > *p_lpItemSkill; // esi
+  int nPartsCount; // edi
+  __POSITION *v25; // edi
+  LONG (__stdcall *v26)(volatile LONG *); // ebx
+  GW_ItemSlotBase *v27; // esi
+  int v28; // eax
+  int v29; // eax
+  TSecType<long> *v30; // ecx
+  int v31; // eax
+  char *v32; // ebp
+  int v33; // edi
+  int v34; // eax
+  CItemInfo::LevelInfo::Ability *v35; // eax
+  unsigned int *v36; // edi
+  volatile LONG *v37; // ebp
+  int v38; // eax
+  int v39; // eax
+  const CItemInfo::EQUIPITEM *v40; // eax
+  int v41; // ebx
+  GW_ItemSlotBase *v42; // esi
+  int v43; // eax
+  int v44; // eax
+  TSecType<long> *v45; // ecx
+  int v46; // eax
+  char *v47; // ebp
+  int v48; // edi
+  int v49; // eax
+  CItemInfo::LevelInfo::Ability *v50; // eax
+  unsigned int *v51; // edi
+  volatile LONG *v52; // ebp
+  int v53; // eax
+  int v54; // eax
+  const CItemInfo::EQUIPITEM *v55; // eax
+  int v56; // [esp-4h] [ebp-58h]
+  int v57; // [esp-4h] [ebp-58h]
+  int v58; // [esp-4h] [ebp-58h]
+  ZList<ZRef<CItemInfo::ItemSkill> > *v59; // [esp+18h] [ebp-3Ch]
+  ZMap<long,EQUIPPED_SETITEM,long> *mEquippedSetItem; // [esp+1Ch] [ebp-38h]
+  ZMap<long,EQUIPPED_SETITEM,long> *mEquippedSetItema; // [esp+1Ch] [ebp-38h]
+  ZMap<long,EQUIPPED_SETITEM,long> *mEquippedSetItemb; // [esp+1Ch] [ebp-38h]
+  ZMap<long,EQUIPPED_SETITEM,long> *mEquippedSetItemc; // [esp+1Ch] [ebp-38h]
+  __POSITION *pos; // [esp+20h] [ebp-34h] BYREF
+  int i; // [esp+24h] [ebp-30h]
+  ZRef<CItemInfo::LevelInfo::Ability> pAbility; // [esp+28h] [ebp-2Ch] BYREF
+  ZRef<GW_ItemSlotBase> pItem; // [esp+30h] [ebp-24h] BYREF
+  EQUIPPED_SETITEM equippedSetItem; // [esp+38h] [ebp-1Ch] BYREF
+  int v69; // [esp+50h] [ebp-4h]
+
+  p_m_lpItemSkill = &this->m_lpItemSkill; /*0x91b56d*/
+  v59 = &this->m_lpItemSkill; /*0x91b575*/
+  ZList<ZRef<CItemInfo::ItemSkill>>::RemoveAll(&this->m_lpItemSkill); /*0x91b579*/
+  if ( TSingleton<CWvsContext>::ms_pInstance._m_pStr ) /*0x91b585*/
+    v2 = (__POSITION *)(TSingleton<CWvsContext>::ms_pInstance._m_pStr + 14448); /*0x91b587*/
+  else
+    v2 = nullptr; /*0x91b58f*/
+  pos = v2; /*0x91b594*/
+  v3 = 1; /*0x91b598*/
+  mEquippedSetItem = (ZMap<long,EQUIPPED_SETITEM,long> *)&v2[12]; /*0x91b59d*/
+  do /*0x91b707*/
+  {
+    if ( !v2 ) /*0x91b5a3*/
+      break; /*0x91b5a3*/
+    v4 = (GW_ItemSlotBase *)mEquippedSetItem->__vftable; /*0x91b5ad*/
+    pItem.p = v4; /*0x91b5af*/
+    if ( v4 ) /*0x91b5b5*/
+      InterlockedIncrement(&v4->_m_nRef); /*0x91b5bb*/
+    v69 = 0; /*0x91b5c1*/
+    if ( v4 ) /*0x91b5cb*/
+    {
+      Data = TSecType<long>::GetData(&v4->nItemID); /*0x91b5df*/
+      IsGrowthItem = CItemInfo::IsGrowthItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, Data); /*0x91b5eb*/
+      p_nItemID = &v4->nItemID; /*0x91b5f0*/
+      if ( IsGrowthItem ) /*0x91b5f4*/
+      {
+        v8 = TSecType<long>::GetData(p_nItemID); /*0x91b5fa*/
+        m_pStr = TSingleton<CItemInfo>::ms_pInstance._m_pStr; /*0x91b5ff*/
+        v10 = v8; /*0x91b605*/
+        v56 = v4->GetLevelUpType(v4); /*0x91b610*/
+        v11 = v4->GetLevel(v4); /*0x91b618*/
+        CItemInfo::GetLevelAbilityInfo((CItemInfo *)m_pStr, &pAbility, v10, v11, v56); /*0x91b623*/
+        p = pAbility.p; /*0x91b628*/
+        LOBYTE(v69) = 1; /*0x91b62c*/
+        if ( pAbility.p && pAbility.p->lpItemSkill._m_uCount ) /*0x91b635*/
+        {
+          ZList<ZRef<CItemInfo::ItemSkill>>::AddTail(v59, &pAbility.p->lpItemSkill); /*0x91b643*/
+          p = pAbility.p; /*0x91b648*/
+        }
+        LOBYTE(v69) = 0; /*0x91b64c*/
+        if ( p ) /*0x91b653*/
+        {
+          p_m_uTableSize = &p[-1].mSkillLevelBonus._m_uTableSize; /*0x91b655*/
+          p_m_uCount = (volatile LONG *)&p[-1].mSkillLevelBonus._m_uCount; /*0x91b658*/
+          if ( !InterlockedDecrement(p_m_uCount) ) /*0x91b65c*/
+          {
+            InterlockedIncrement(p_m_uCount); /*0x91b667*/
+            if ( p_m_uTableSize ) /*0x91b66f*/
+              (*(void (__thiscall **)(unsigned int *, int))*p_m_uTableSize)(p_m_uTableSize, 1); /*0x91b679*/
+          }
+          pAbility.p = nullptr; /*0x91b67b*/
+        }
+      }
+      else
+      {
+        v15 = TSecType<long>::GetData(p_nItemID); /*0x91b685*/
+        if ( CItemInfo::IsEpicItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, v15) ) /*0x91b691*/
+        {
+          v16 = TSecType<long>::GetData(&v4->nItemID); /*0x91b69c*/
+          EquipItem = CItemInfo::GetEquipItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, v16); /*0x91b6a8*/
+          if ( EquipItem ) /*0x91b6af*/
+          {
+            if ( EquipItem->lpItemSkill._m_uCount ) /*0x91b6b1*/
+              ZList<ZRef<CItemInfo::ItemSkill>>::AddTail(p_m_lpItemSkill, &EquipItem->lpItemSkill); /*0x91b6c2*/
+          }
+        }
+      }
+      v69 = -1; /*0x91b6cb*/
+      if ( !InterlockedDecrement(&v4->_m_nRef) ) /*0x91b6d3*/
+      {
+        InterlockedIncrement(&v4->_m_nRef); /*0x91b6de*/
+        ((void (__thiscall *)(GW_ItemSlotBase *, int))v4->dtr_ZRefCounted)(v4, 1); /*0x91b6ec*/
+      }
+      p_m_lpItemSkill = v59; /*0x91b6ee*/
+      v2 = pos; /*0x91b6f2*/
+      pItem.p = nullptr; /*0x91b6f6*/
+    }
+    else
+    {
+      v69 = -1; /*0x91b5cd*/
+    }
+    mEquippedSetItem = (ZMap<long,EQUIPPED_SETITEM,long> *)((char *)mEquippedSetItem + 8); /*0x91b6fe*/
+    ++v3; /*0x91b703*/
+  }
+  while ( v3 < 60 ); /*0x91b707*/
+  i = (int)(TSingleton<CItemInfo>::ms_pInstance._m_pStr + 156); /*0x91b71d*/
+  p_m_mEquippedSetItem = &CWvsContext::GetCharacterData( /*0x91b730*/
+                            (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+                            (ZRef<CharacterData> *)&pItem)->p->m_mEquippedSetItem;
+  mEquippedSetItema = p_m_mEquippedSetItem; /*0x91b73a*/
+  if ( pItem.p ) /*0x91b740*/
+  {
+    p_liCashItemSN = (char *)&pItem.p[-1].liCashItemSN; /*0x91b742*/
+    p_HighPart = &pItem.p[-1].liCashItemSN.HighPart; /*0x91b745*/
+    if ( !InterlockedDecrement(p_HighPart) ) /*0x91b749*/
+    {
+      InterlockedIncrement(p_HighPart); /*0x91b754*/
+      if ( p_liCashItemSN ) /*0x91b75c*/
+        (**(void (__thiscall ***)(char *, int))p_liCashItemSN)(p_liCashItemSN, 1); /*0x91b766*/
+    }
+    pItem.p = nullptr; /*0x91b768*/
+  }
+  pos = ZMap<long,EQUIPPED_SETITEM,long>::GetHeadPosition(p_m_mEquippedSetItem); /*0x91b777*/
+  if ( pos ) /*0x91b77d*/
+  {
+    while ( 1 ) /*0x91b785*/
+    {
+      pAbility.p = nullptr; /*0x91b785*/
+      v69 = 3; /*0x91b789*/
+      memset(&equippedSetItem, 0, sizeof(equippedSetItem)); /*0x91b795*/
+      ZMap<long,EQUIPPED_SETITEM,long>::GetNext(p_m_mEquippedSetItem, &pos, &equippedSetItem); /*0x91b7ae*/
+      if ( ZMap<long,ZRef<CItemInfo::SETITEMINFO>,long>::GetAt( /*0x91b7c1*/
+             (ZMap<long,ZRef<CItemInfo::SETITEMINFO>,long> *)i,
+             &equippedSetItem.nSetItemID,
+             (ZRef<CItemInfo::SETITEMINFO> *)&pAbility) )
+      {
+        break; /*0x91b7c1*/
+      }
+      LOBYTE(v69) = 2; /*0x91b7ce*/
+      ZArray<long>::RemoveAll(&equippedSetItem.nItemID); /*0x91b7d3*/
+      v69 = -1; /*0x91b7dc*/
+      if ( pAbility.p ) /*0x91b7e6*/
+      {
+        v21 = (volatile LONG *)&pAbility.p[-1].mSkillLevelBonus._m_uTableSize; /*0x91b7ec*/
+LABEL_45:
+        if ( !InterlockedDecrement(v21 + 1) ) /*0x91b84b*/
+        {
+          InterlockedIncrement(v21 + 1); /*0x91b856*/
+          if ( v21 ) /*0x91b85e*/
+            (**(void (__thiscall ***)(char *, int))v21)((char *)v21, 1); /*0x91b868*/
+        }
+        pAbility.p = nullptr; /*0x91b86a*/
+      }
+LABEL_49:
+      if ( !pos ) /*0x91b877*/
+        goto LABEL_50; /*0x91b877*/
+    }
+    v22 = pAbility.p; /*0x91b7f5*/
+    if ( equippedSetItem.nPartsCount > 0 ) /*0x91b7fb*/
+    {
+      p_lpItemSkill = &pAbility.p->lpItemSkill; /*0x91b801*/
+      nPartsCount = equippedSetItem.nPartsCount; /*0x91b804*/
+      do /*0x91b824*/
+      {
+        if ( p_lpItemSkill->__vftable && p_lpItemSkill->__vftable[12].dtr_ZList<ZRef<CItemInfo::ItemSkill> > ) /*0x91b80d*/
+          ZList<ZRef<CItemInfo::ItemSkill>>::AddTail( /*0x91b819*/
+            v59,
+            (const ZList<ZRef<CItemInfo::ItemSkill> > *)&p_lpItemSkill->__vftable[10]);
+        p_lpItemSkill = (ZList<ZRef<CItemInfo::ItemSkill> > *)((char *)p_lpItemSkill + 8); /*0x91b81e*/
+        --nPartsCount; /*0x91b821*/
+      }
+      while ( nPartsCount ); /*0x91b824*/
+      p_m_mEquippedSetItem = mEquippedSetItema; /*0x91b826*/
+    }
+    LOBYTE(v69) = 2; /*0x91b82e*/
+    ZArray<long>::RemoveAll(&equippedSetItem.nItemID); /*0x91b833*/
+    v69 = -1; /*0x91b838*/
+    if ( !v22 ) /*0x91b842*/
+      goto LABEL_49; /*0x91b842*/
+    v21 = (volatile LONG *)&v22[-1].mSkillLevelBonus._m_uTableSize; /*0x91b844*/
+    goto LABEL_45; /*0x91b844*/
+  }
+LABEL_50:
+  if ( TSingleton<CWvsContext>::ms_pInstance._m_pStr ) /*0x91b886*/
+    v25 = (__POSITION *)(TSingleton<CWvsContext>::ms_pInstance._m_pStr + 15408); /*0x91b888*/
+  else
+    v25 = nullptr; /*0x91b890*/
+  v26 = InterlockedIncrement; /*0x91b892*/
+  pos = v25; /*0x91b89b*/
+  i = 0; /*0x91b89f*/
+  mEquippedSetItemb = (ZMap<long,EQUIPPED_SETITEM,long> *)&v25[4]; /*0x91b8a3*/
+  do /*0x91ba04*/
+  {
+    if ( !v25 ) /*0x91b8a9*/
+      break; /*0x91b8a9*/
+    v27 = (GW_ItemSlotBase *)mEquippedSetItemb->__vftable; /*0x91b8b3*/
+    pItem.p = v27; /*0x91b8b5*/
+    if ( v27 ) /*0x91b8bb*/
+      v26(&v27->_m_nRef); /*0x91b8c1*/
+    v69 = 4; /*0x91b8c3*/
+    if ( v27 ) /*0x91b8cd*/
+    {
+      v28 = TSecType<long>::GetData(&v27->nItemID); /*0x91b8e1*/
+      v29 = CItemInfo::IsGrowthItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, v28); /*0x91b8ed*/
+      v30 = &v27->nItemID; /*0x91b8f2*/
+      if ( v29 ) /*0x91b8f6*/
+      {
+        v31 = TSecType<long>::GetData(v30); /*0x91b8fc*/
+        v32 = TSingleton<CItemInfo>::ms_pInstance._m_pStr; /*0x91b903*/
+        v33 = v31; /*0x91b909*/
+        v57 = v27->GetLevelUpType(v27); /*0x91b914*/
+        v34 = v27->GetLevel(v27); /*0x91b91a*/
+        CItemInfo::GetLevelAbilityInfo((CItemInfo *)v32, &pAbility, v33, v34, v57); /*0x91b925*/
+        v35 = pAbility.p; /*0x91b92a*/
+        LOBYTE(v69) = 5; /*0x91b92e*/
+        if ( pAbility.p && pAbility.p->lpItemSkill._m_uCount ) /*0x91b937*/
+        {
+          ZList<ZRef<CItemInfo::ItemSkill>>::AddTail(v59, &pAbility.p->lpItemSkill); /*0x91b945*/
+          v35 = pAbility.p; /*0x91b94a*/
+        }
+        LOBYTE(v69) = 4; /*0x91b94e*/
+        if ( v35 ) /*0x91b955*/
+        {
+          v36 = &v35[-1].mSkillLevelBonus._m_uTableSize; /*0x91b957*/
+          v37 = (volatile LONG *)&v35[-1].mSkillLevelBonus._m_uCount; /*0x91b95a*/
+          if ( !InterlockedDecrement(v37) ) /*0x91b95e*/
+          {
+            v26(v37); /*0x91b969*/
+            if ( v36 ) /*0x91b96d*/
+              (*(void (__thiscall **)(unsigned int *, int))*v36)(v36, 1); /*0x91b977*/
+          }
+          pAbility.p = nullptr; /*0x91b979*/
+        }
+      }
+      else
+      {
+        v38 = TSecType<long>::GetData(v30); /*0x91b983*/
+        if ( CItemInfo::IsEpicItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, v38) ) /*0x91b98f*/
+        {
+          v39 = TSecType<long>::GetData(&v27->nItemID); /*0x91b99a*/
+          v40 = CItemInfo::GetEquipItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, v39); /*0x91b9a6*/
+          if ( v40 ) /*0x91b9ad*/
+          {
+            if ( v40->lpItemSkill._m_uCount ) /*0x91b9af*/
+              ZList<ZRef<CItemInfo::ItemSkill>>::AddTail(v59, &v40->lpItemSkill); /*0x91b9c1*/
+          }
+        }
+      }
+      v69 = -1; /*0x91b9ca*/
+      if ( !InterlockedDecrement(&v27->_m_nRef) ) /*0x91b9d2*/
+      {
+        v26(&v27->_m_nRef); /*0x91b9dd*/
+        ((void (__thiscall *)(GW_ItemSlotBase *, int))v27->dtr_ZRefCounted)(v27, 1); /*0x91b9e7*/
+      }
+      v25 = pos; /*0x91b9e9*/
+      pItem.p = nullptr; /*0x91b9ef*/
+    }
+    else
+    {
+      v69 = -1; /*0x91b8cf*/
+    }
+    mEquippedSetItemb = (ZMap<long,EQUIPPED_SETITEM,long> *)((char *)mEquippedSetItemb + 8); /*0x91b9f7*/
+    ++i; /*0x91ba00*/
+  }
+  while ( i < 4 ); /*0x91ba04*/
+  if ( TSingleton<CWvsContext>::ms_pInstance._m_pStr ) /*0x91ba11*/
+    mEquippedSetItemc = (ZMap<long,EQUIPPED_SETITEM,long> *)(TSingleton<CWvsContext>::ms_pInstance._m_pStr + 15440); /*0x91ba18*/
+  else
+    mEquippedSetItemc = nullptr; /*0x91ba1e*/
+  v41 = 0; /*0x91ba26*/
+  pos = (__POSITION *)&mEquippedSetItemc->_m_apTable; /*0x91ba2b*/
+  do /*0x91bb92*/
+  {
+    if ( !mEquippedSetItemc ) /*0x91ba34*/
+      break; /*0x91ba34*/
+    v42 = *(GW_ItemSlotBase **)pos; /*0x91ba3e*/
+    pItem.p = v42; /*0x91ba40*/
+    if ( v42 ) /*0x91ba46*/
+      InterlockedIncrement(&v42->_m_nRef); /*0x91ba4c*/
+    v69 = 6; /*0x91ba52*/
+    if ( v42 ) /*0x91ba5c*/
+    {
+      v43 = TSecType<long>::GetData(&v42->nItemID); /*0x91ba70*/
+      v44 = CItemInfo::IsGrowthItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, v43); /*0x91ba7c*/
+      v45 = &v42->nItemID; /*0x91ba81*/
+      if ( v44 ) /*0x91ba85*/
+      {
+        v46 = TSecType<long>::GetData(v45); /*0x91ba8b*/
+        v47 = TSingleton<CItemInfo>::ms_pInstance._m_pStr; /*0x91ba92*/
+        v48 = v46; /*0x91ba98*/
+        v58 = v42->GetLevelUpType(v42); /*0x91baa3*/
+        v49 = v42->GetLevel(v42); /*0x91baa9*/
+        CItemInfo::GetLevelAbilityInfo((CItemInfo *)v47, &pAbility, v48, v49, v58); /*0x91bab4*/
+        v50 = pAbility.p; /*0x91bab9*/
+        LOBYTE(v69) = 7; /*0x91babd*/
+        if ( pAbility.p && pAbility.p->lpItemSkill._m_uCount ) /*0x91bac6*/
+        {
+          ZList<ZRef<CItemInfo::ItemSkill>>::AddTail(v59, &pAbility.p->lpItemSkill); /*0x91bad4*/
+          v50 = pAbility.p; /*0x91bad9*/
+        }
+        LOBYTE(v69) = 6; /*0x91badd*/
+        if ( v50 ) /*0x91bae4*/
+        {
+          v51 = &v50[-1].mSkillLevelBonus._m_uTableSize; /*0x91bae6*/
+          v52 = (volatile LONG *)&v50[-1].mSkillLevelBonus._m_uCount; /*0x91bae9*/
+          if ( !InterlockedDecrement(v52) ) /*0x91baed*/
+          {
+            InterlockedIncrement(v52); /*0x91baf8*/
+            if ( v51 ) /*0x91bb00*/
+              (*(void (__thiscall **)(unsigned int *, int))*v51)(v51, 1); /*0x91bb0a*/
+          }
+          pAbility.p = nullptr; /*0x91bb0c*/
+        }
+      }
+      else
+      {
+        v53 = TSecType<long>::GetData(v45); /*0x91bb16*/
+        if ( CItemInfo::IsEpicItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, v53) ) /*0x91bb22*/
+        {
+          v54 = TSecType<long>::GetData(&v42->nItemID); /*0x91bb2d*/
+          v55 = CItemInfo::GetEquipItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, v54); /*0x91bb39*/
+          if ( v55 ) /*0x91bb40*/
+          {
+            if ( v55->lpItemSkill._m_uCount ) /*0x91bb42*/
+              ZList<ZRef<CItemInfo::ItemSkill>>::AddTail(v59, &v55->lpItemSkill); /*0x91bb55*/
+          }
+        }
+      }
+      v69 = -1; /*0x91bb5e*/
+      if ( !InterlockedDecrement(&v42->_m_nRef) ) /*0x91bb66*/
+      {
+        InterlockedIncrement(&v42->_m_nRef); /*0x91bb71*/
+        ((void (__thiscall *)(GW_ItemSlotBase *, int))v42->dtr_ZRefCounted)(v42, 1); /*0x91bb7f*/
+      }
+      pItem.p = nullptr; /*0x91bb81*/
+    }
+    else
+    {
+      v69 = -1; /*0x91ba5e*/
+    }
+    pos += 8; /*0x91bb89*/
+    ++v41; /*0x91bb8e*/
+  }
+  while ( v41 < 5 ); /*0x91bb92*/
+}

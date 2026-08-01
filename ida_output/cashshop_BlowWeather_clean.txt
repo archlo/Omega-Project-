@@ -1,0 +1,6 @@
+// cashshop::BlowWeather
+
+void __thiscall CCashShop::BlowWeather(CCashShop *this, int nItemID)
+{
+  CCSWnd_Char::BlowWeather(&this->m_wndChar, nItemID); /*0x47d396*/
+}

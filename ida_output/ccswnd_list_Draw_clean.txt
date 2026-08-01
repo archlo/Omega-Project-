@@ -1,0 +1,39 @@
+// CCSWnd_List::Draw @ 0x4cda10
+// Decompiled from v95 IDB
+
+void __thiscall CCSWnd_List::Draw(CCSWnd_List *this, const tagRECT *pRect)
+{
+  CCSWnd_List *v2; // edi
+  IWzCanvas *m_pInterface; // esi
+  HRESULT v4; // eax
+  BOOL v5; // eax
+  CCashShop *m_pCashShop; // eax
+  void (__stdcall *v7)(VARIANTARG *); // ebx
+  CCSWnd_List::PICTURE_PLATE *a; // eax
+  int i; // esi
+  CCSWnd_List::PICTURE_PLATE *v10; // eax
+  int *p_nX; // edi
+  HRESULT v12; // eax
+  const wchar_t *v13; // eax
+  Ztl_variant_t *ObjectA; // eax
+  IUnknown *Unknown; // eax
+  IWzCanvas *v16; // ebx
+  int v17; // edx
+  int v18; // eax
+  CCSWnd_List *v19; // esi
+  _bstr_t::Data_t *v20; // edx
+  IWzCanvas *left; // ebx
+  int top; // edi
+  IWzCanvas_vtbl *v23; // eax
+  HRESULT v24; // eax
+  IWzCanvas *v25; // edx
+  IWzCanvas_vtbl *v26; // esi
+  HRESULT (__stdcall *raw_Copy)(IWzCanvas *, int, int, IWzCanvas *, tagVARIANT); // ecx
+  HRESULT v28; // eax
+  int v29; // edi
+  CCSWnd_List *v30; // esi
+  IWzCanvas *v31; // ebx
+  int Data; // eax
+  int v33; // esi
+  int v34; // edi
+  void (*Ad... [92430 chars total]

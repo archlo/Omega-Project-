@@ -1,0 +1,957 @@
+import { Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
+import { GamePanel } from './GamePanel.js';
+import { WzTextureLoader } from '../../render/WzTextureLoader.js';
+import { WzPackage } from '../../wz/WzPackage.js';
+
+// OG v95: CUIStatusBar coordinates in 800×600 client area.
+// From IDA MakeCtrlEdit (0x870BA0):
+//   Edit:     CreateCtrl(id=1011, x=75, y=524, w=409, h=12)
+//   ComboBox: CreateCtrl_2(id=1012, x=3, y=519, w=68, h=21)
+// From IDA SetChatType (0x879C00):
+//   Display:  m_ptChatWnd.y = 515 - height (type 3), y=492 (type 2), y=518 (type 1)
+//   Width:    577 (type 2/3) or 502 (type 1)
+// ChatBar root positioned at (0, 0) in 800×600 frame — all coordinates are absolute.
+const DISPLAY_X = 95;
+const DISPLAY_Y_DEFAULT = 445; // type 3 with height=70: y = 515 - 70 = 445
+const DISPLAY_W_EXPANDED = 577;
+const DISPLAY_W_MINIMAL = 502;
+const DISPLAY_H = 70;
+const EDIT_X = 75;
+const EDIT_Y = 524;
+const EDIT_W = 409;
+const EDIT_H = 12;
+const COMBO_X = 3;
+const COMBO_Y = 519;
+const COMBO_W = 68;
+const COMBO_H = 21;
+const LINE_H = 13;
+const MAX_STORED = 100;
+const SCROLLBAR_W = 8;
+const CHAT_W = DISPLAY_X + DISPLAY_W_EXPANDED; // 95 + 577 = 672
+const CHAT_H = EDIT_Y + EDIT_H; // 524 + 12 = 536
+const CHAT_TARGETS = ['All', 'Whisper', 'Party', 'Buddy', 'Guild', 'Alliance', 'Find'];
+const DROPDOWN_ROW_H = 16;
+
+// Tab bar — overlays top of display area
+const TAB_H = 18;
+const TAB_NAMES = ['All', 'Party', 'Buddy', 'Guild', 'Alliance', 'System'];
+const TAB_STEP = DISPLAY_W_EXPANDED / TAB_NAMES.length;
+
+// Chat window types (OG CUIStatusBar)
+// Type 1: collapsed (minimal) — height=24, y=518, 1 line, no scrollbar
+// Type 2: small — height=24, y=492, 1 line, no scrollbar
+// Type 3: expanded — height=26-489, y=515-height, multiple lines, scrollbar, filter tabs
+const CHAT_TYPE_MINIMAL = 1;
+const CHAT_TYPE_SMALL = 2;
+const CHAT_TYPE_EXPANDED = 3;
+const MINIMAL_HEIGHT = 24;
+const MINIMAL_LINES = 1;
+const EXPANDED_DEFAULT_H = 70;
+const CHAT_LINE_H = 13;
+const CHAT_MIN_H = 26;
+const CHAT_MAX_H = 489;
+const CHAT_MINIMAL_Y = 518;
+const CHAT_SMALL_Y = 492;
+
+// Filter flags (OG m_dwChatFilterFlag) — verified from OnButtonClicked
+// 0x3F6: flag=0 (All), 0x3F7: flag=8 (Friend), 0x3F8: flag=4 (Guild)
+// 0x3F9: flag=0x10 (Alliance), 0x3FA: flag=0x20 (System), 0x3FB: flag=0x4000000 (Expedition)
+export const FILTER_ALL = 0;
+export const FILTER_FRIEND = 8;
+export const FILTER_GUILD = 4;
+export const FILTER_ALLIANCE = 0x10;
+export const FILTER_SYSTEM = 0x20;
+export const FILTER_EXPEDITION = 0x4000000;
+// Party is not a separate filter in OG — party messages are filtered by channel
+export const FILTER_PARTY = 0;
+const FILTER_FLAGS = [FILTER_ALL, FILTER_FRIEND, FILTER_GUILD, FILTER_ALLIANCE, FILTER_SYSTEM, FILTER_EXPEDITION];
+
+const _chatStyle = new TextStyle({ fill: '#FFF', fontSize: 11, fontFamily: 'monospace' });
+const _inputStyle = new TextStyle({ fill: '#FFD', fontSize: 11, fontFamily: 'monospace' });
+const _comboStyle = new TextStyle({ fill: '#FFF', fontSize: 11, fontFamily: 'monospace' });
+const _tabStyle = new TextStyle({ fill: '#CCC', fontSize: 10, fontFamily: 'monospace' });
+const _tabActiveStyle = new TextStyle({ fill: '#FFF', fontSize: 10, fontFamily: 'monospace' });
+
+export class ChatBar extends GamePanel {
+  onSendChat: ((msg: string) => void) | null = null;
+  onItemLink: ((itemId: number) => void) | null = null;
+  onChatTargetChange: ((target: string) => void) | null = null;
+  onTabChange: ((tab: number) => void) | null = null;
+
+  private _bg: Graphics;
+  private _inputBg: Graphics;
+  private _lines: Text[] = [];
+  private _stored: { text: string; links: { itemId: number; start: number; end: number }[]; filterType: number }[] = [];
+  private _sentHistory: string[] = [];
+  private _historyIndex = -1;
+  private _inputText: Text;
+  private _cursor: Graphics;
+  private _input = '';
+  private _isFocused = false;
+  private _blinkTimer = 0;
+  private _cursorVisible = true;
+
+  // Chat window type — OG: m_nChatWndType (starts minimal)
+  private _chatType = CHAT_TYPE_MINIMAL;
+  private _chatHeight = MINIMAL_HEIGHT;
+  private _maxLines = MINIMAL_LINES;
+
+  // OG: m_bDragChatWnd + m_nCurPtY — drag resize state
+  private _draggingResize = false;
+  private _dragStartY = 0;
+  private _dragStartH = 0;
+
+  // Scrollbar
+  private _scrollGfx: Graphics;
+  private _scroll = 0;
+  private _isDraggingScroll = false;
+  private _dragScrollY = 0;
+
+  // WZ layers for toggle (chatSpace, chatSpace2, chatEnter, chatCover)
+  private _layerSpace: Sprite | null = null;
+  private _layerSpace2: Sprite | null = null;
+  private _layerEnter: Sprite | null = null;
+  private _layerCover: Sprite | null = null;
+
+  // Combo box
+  private _comboBg: Graphics;
+  private _comboLabel: Text;
+  private _comboTriangle: Graphics;
+  private _comboSprite: Sprite | null = null;
+  private _chatTarget = 0;
+  private _comboOpen = false;
+  private _dropdownContainer: Container;
+  private _dropdownGfx: Graphics[] = [];
+  private _dropdownLabels: Text[] = [];
+
+  // Tab bar
+  private _tabBarGfx: Graphics;
+  private _tabBarSprites: (Sprite | null)[] = [];
+  private _tabGraphics: Graphics[] = [];
+  private _tabLabels: Text[] = [];
+  private _activeTab = 0;
+  private _filterFlags = 0; // bitmask of active filters
+  private _lastScrolled = 0; // OG: m_dwLastScrolled — last scroll timestamp
+
+  constructor() {
+    super();
+    this.isVisible = true;
+    this.draggable = false;
+    // ChatBar root at (0,0) — all elements use absolute 800×600 frame coords
+    this._root.x = 0;
+    this._root.y = 0;
+
+    // OG: starts in minimal mode (type 1) — no display, no tabs, just input line
+    this._chatType = CHAT_TYPE_MINIMAL;
+    this._chatHeight = MINIMAL_HEIGHT;
+    this._maxLines = MINIMAL_LINES;
+
+    // Display background — hidden by default (minimal mode)
+    // OG: m_ptChatWnd.y = 515 - height (type 3), display at (95, 445) for height=70
+    this._bg = new Graphics();
+    this._bg.rect(DISPLAY_X, DISPLAY_Y_DEFAULT, DISPLAY_W_EXPANDED, DISPLAY_H).fill({ color: '#000', alpha: 0.55 });
+    this._bg.rect(DISPLAY_X, DISPLAY_Y_DEFAULT, DISPLAY_W_EXPANDED, DISPLAY_H).stroke({ color: '#444', width: 1 });
+    this._bg.visible = false;
+    this._root.addChild(this._bg);
+
+    // Tab bar — overlays top of display, hidden by default
+    this._tabBarGfx = new Graphics();
+    this._tabBarGfx.rect(DISPLAY_X, DISPLAY_Y_DEFAULT, DISPLAY_W_EXPANDED, TAB_H).fill({ color: '#222', alpha: 0.7 });
+    this._tabBarGfx.visible = false;
+    this._root.addChild(this._tabBarGfx);
+
+    for (let i = 0; i < TAB_NAMES.length; i++) {
+      const g = new Graphics();
+      const tx = DISPLAY_X + i * TAB_STEP;
+      this._tabGraphics.push(g);
+      this._root.addChild(g);
+
+      const t = new Text({ text: TAB_NAMES[i], style: _tabStyle });
+      t.x = tx + TAB_STEP / 2 - t.width / 2;
+      t.y = DISPLAY_Y_DEFAULT + 2;
+      t.visible = false;
+      this._tabLabels.push(t);
+      this._root.addChild(t);
+      this._tabBarSprites.push(null);
+    }
+    this._refreshTabs();
+
+    // Chat log lines — shifted down by TAB_H so tabs don't overlap
+    for (let i = 0; i < this._maxLines; i++) {
+      const t = new Text({ text: '', style: _chatStyle });
+      t.x = DISPLAY_X + 4;
+      t.y = DISPLAY_Y_DEFAULT + TAB_H + 2 + i * LINE_H;
+      t.visible = false;
+      this._lines.push(t);
+      this._root.addChild(t);
+    }
+
+    // Scrollbar
+    this._scrollGfx = new Graphics();
+    this._scrollGfx.visible = false;
+    this._root.addChild(this._scrollGfx);
+
+    // Input area background — OG: CreateCtrl(id=1011, x=75, y=524, w=409, h=12)
+    this._inputBg = new Graphics();
+    this._inputBg.rect(EDIT_X, EDIT_Y, EDIT_W, EDIT_H).fill({ color: '#111', alpha: 0.8 });
+    this._inputBg.rect(EDIT_X, EDIT_Y, EDIT_W, EDIT_H).stroke({ color: '#555', width: 1 });
+    this._root.addChild(this._inputBg);
+
+    this._inputText = new Text({ text: '', style: _inputStyle });
+    this._inputText.x = EDIT_X + 4; this._inputText.y = EDIT_Y + 1;
+    this._root.addChild(this._inputText);
+
+    this._cursor = new Graphics();
+    this._cursor.rect(0, 0, 1, 11).fill({ color: '#FFF' });
+    this._cursor.x = EDIT_X + 4; this._cursor.y = EDIT_Y + 1;
+    this._cursor.visible = false;
+    this._root.addChild(this._cursor);
+
+    // Combo box — OG: CreateCtrl_2(id=1012, x=3, y=519, w=68, h=21)
+    this._comboBg = new Graphics();
+    this._comboBg.rect(COMBO_X, COMBO_Y, COMBO_W, COMBO_H).fill({ color: '#111', alpha: 0.8 });
+    this._comboBg.rect(COMBO_X, COMBO_Y, COMBO_W, COMBO_H).stroke({ color: '#555', width: 1 });
+    this._root.addChild(this._comboBg);
+
+    this._comboLabel = new Text({ text: CHAT_TARGETS[0], style: _comboStyle });
+    this._comboLabel.x = COMBO_X + 4;
+    this._comboLabel.y = COMBO_Y + 3;
+    this._root.addChild(this._comboLabel);
+
+    this._comboTriangle = new Graphics();
+    this._updateComboTriangle();
+    this._root.addChild(this._comboTriangle);
+
+    this._dropdownContainer = new Container();
+    this._dropdownContainer.visible = false;
+    this._root.addChild(this._dropdownContainer);
+  }
+
+  private _calcY(): number {
+    // OG: coordinates are absolute in 800×600 frame, no offset needed
+    return 0;
+  }
+
+  relayout(_viewW: number, _viewH: number): void {
+    // OG: ChatBar uses absolute frame coords, position never changes
+  }
+
+  // --- Chat window type management (OG SetChatType) ---
+
+  get chatType(): number { return this._chatType; }
+  get chatHeight(): number { return this._chatHeight; }
+
+  setChatType(type: number, height?: number): void {
+    if (type === this._chatType) return;
+    this._chatType = type;
+
+    if (type === CHAT_TYPE_MINIMAL) {
+      this._chatHeight = MINIMAL_HEIGHT;
+      this._maxLines = MINIMAL_LINES;
+      this._scroll = 0;
+    } else if (type === CHAT_TYPE_SMALL) {
+      this._chatHeight = MINIMAL_HEIGHT;
+      this._maxLines = MINIMAL_LINES;
+      this._scroll = 0;
+    } else {
+      this._chatHeight = height ?? EXPANDED_DEFAULT_H;
+      this._chatHeight = Math.max(CHAT_MIN_H, Math.min(CHAT_MAX_H, this._chatHeight));
+      this._maxLines = Math.floor(this._chatHeight / CHAT_LINE_H);
+    }
+    // Recalculate Y position relative to StatusBar
+    this._root.y = this._calcY();
+
+    this._rebuildDisplay();
+    this._syncLines();
+    this._updateWzVisibility();
+  }
+
+  /** OG: m_ptChatWnd.y — display Y depends on chat type */
+  private _getDisplayY(): number {
+    if (this._chatType === CHAT_TYPE_MINIMAL) return 518;
+    if (this._chatType === CHAT_TYPE_SMALL) return 492;
+    // Type 3: y = 515 - height
+    return 515 - this._chatHeight;
+  }
+
+  private _rebuildDisplay(): void {
+    // Remove old line texts
+    for (const line of this._lines) {
+      line.removeFromParent();
+      line.destroy();
+    }
+    this._lines = [];
+
+    const displayY = this._getDisplayY();
+    const displayW = this._chatType === CHAT_TYPE_MINIMAL ? DISPLAY_W_MINIMAL : DISPLAY_W_EXPANDED;
+
+    // Recreate lines for current maxLines
+    for (let i = 0; i < this._maxLines; i++) {
+      const t = new Text({ text: '', style: _chatStyle });
+      t.x = DISPLAY_X + 4;
+      t.y = displayY + 2 + i * LINE_H;
+      t.visible = false;
+      this._lines.push(t);
+      this._root.addChild(t);
+    }
+
+    // Show/hide tab bar and scrollbar based on type
+    const showTabs = this._chatType === CHAT_TYPE_EXPANDED;
+    const showScrollbar = this._chatType === CHAT_TYPE_EXPANDED && this._stored.length > this._maxLines;
+
+    this._tabBarGfx.visible = showTabs;
+    for (let i = 0; i < TAB_NAMES.length; i++) {
+      this._tabGraphics[i].visible = showTabs;
+      this._tabLabels[i].visible = showTabs;
+      if (this._tabBarSprites[i]) this._tabBarSprites[i]!.visible = showTabs && i === this._activeTab;
+    }
+    this._scrollGfx.visible = showScrollbar;
+
+    // Update display background — hide if WZ layer is available
+    const hasWzBg = !!(this._layerSpace || this._layerSpace2);
+    this._bg.clear();
+    if (!hasWzBg) {
+      this._bg.rect(DISPLAY_X, displayY, displayW, this._chatHeight)
+        .fill({ color: '#000', alpha: 0.55 });
+      this._bg.rect(DISPLAY_X, displayY, displayW, this._chatHeight)
+        .stroke({ color: '#444', width: 1 });
+    }
+    this._bg.visible = !hasWzBg;
+  }
+
+  // OG: MakeCtrlEdit visibility — determined by chat type, NOT focus state
+  // bCreate=0 (Type 1): chatEnter=false, chatCover=false, chatSpace=true, chatSpace2=true
+  // bCreate=1 (Type 2/3): chatEnter=true, chatCover=true, chatSpace=false, chatSpace2=false
+  private _updateWzVisibility(): void {
+    const bCreate = this._chatType !== CHAT_TYPE_MINIMAL;
+    if (this._layerSpace) this._layerSpace.visible = !bCreate;
+    if (this._layerSpace2) this._layerSpace2.visible = !bCreate;
+    if (this._layerEnter) this._layerEnter.visible = bCreate;
+    if (this._layerCover) this._layerCover.visible = bCreate;
+  }
+
+  // OG: _ResetChatBarPos — reposition chat layer and filter buttons
+  // Moves m_pLayerChatBar to (0, m_ptChatWnd.y - 2)
+  // Repositions 6 filter buttons at (v8, m_ptChatWnd.y - 19) with 46px spacing
+  resetChatBarPos(): void {
+    // Position WZ tap bar layer
+    if (this._layerSpace) {
+      this._layerSpace.position.set(DISPLAY_X, this._chatHeight - 2);
+    }
+    // Position filter buttons
+    const filterBtnX = DISPLAY_X + 1;
+    const filterBtnY = this._chatHeight - 19;
+    for (let i = 0; i < this._tabBarSprites.length; i++) {
+      if (this._tabBarSprites[i]) {
+        this._tabBarSprites[i]!.position.set(filterBtnX + i * 46, filterBtnY);
+      }
+    }
+  }
+
+  // OG: _RefreshChatLog — auto-scroll with 5s timeout
+  refreshChatLog(): void {
+    const filtered = this._stored.filter((l) => this._isLineVisible(l));
+    const scrollRange = Math.max(0, filtered.length - this._maxLines + 1);
+    const atBottom = this._scroll >= scrollRange - 1;
+    const idle = performance.now() - (this._lastScrolled ?? 0) > 5000;
+
+    if (scrollRange <= 2 || atBottom || idle) {
+      this._scroll = Math.max(0, scrollRange - 1);
+    } else {
+      this._scroll = Math.max(0, this._scroll);
+    }
+    this._syncLines();
+    this._drawScrollbar();
+  }
+
+  // --- Scrollbar ---
+
+  private _drawScrollbar(): void {
+    const showScrollbar = this._chatType === CHAT_TYPE_EXPANDED && this._stored.length > this._maxLines;
+    this._scrollGfx.visible = showScrollbar;
+    if (!showScrollbar) return;
+
+    this._scrollGfx.clear();
+    const trackX = DISPLAY_X + DISPLAY_W_EXPANDED - SCROLLBAR_W;
+    const displayY = this._getDisplayY();
+    const trackTop = displayY + TAB_H;
+    const trackH = this._chatHeight - TAB_H - 2;
+    const totalLines = this._stored.length;
+
+    // Track background
+    this._scrollGfx.rect(trackX, trackTop, SCROLLBAR_W, trackH).fill({ color: 0x333333, alpha: 0.6 });
+
+    // Thumb
+    const thumbH = Math.max(12, Math.floor(trackH * this._maxLines / Math.max(1, totalLines)));
+    const span = trackH - thumbH;
+    const maxScroll = Math.max(0, totalLines - this._maxLines);
+    const frac = maxScroll > 0 ? this._scroll / maxScroll : 0;
+    const ty = trackTop + Math.floor(span * Math.max(0, Math.min(1, frac)));
+    this._scrollGfx.rect(trackX + 1, ty, SCROLLBAR_W - 2, thumbH).fill({ color: 0x888888 });
+  }
+
+  scrollBy(delta: number): void {
+    const maxScroll = Math.max(0, this._stored.length - this._maxLines);
+    this._scroll = Math.max(0, Math.min(maxScroll, this._scroll + delta));
+    this._syncLines();
+    this._drawScrollbar();
+  }
+
+  // --- Combo box ---
+
+  private _updateComboTriangle(): void {
+    const g = this._comboTriangle;
+    g.clear();
+    g.poly([
+      COMBO_X + COMBO_W - 12, COMBO_Y + 6,
+      COMBO_X + COMBO_W - 4, COMBO_Y + 6,
+      COMBO_X + COMBO_W - 8, COMBO_Y + 14,
+    ]).fill({ color: '#AAA' });
+  }
+
+  initWzAssets(loader: WzTextureLoader, ui: WzPackage): void {
+    const bar = ui.GetItem('StatusBar2.img/mainBar');
+    // NxProperty extends WzProperty but instanceof check may fail due to module isolation
+    // Use duck-typing: check for Get/Items methods instead
+    if (!bar || typeof (bar as any).Get !== 'function') {
+      console.warn('[ChatBar] StatusBar2.img/mainBar not a property:', typeof bar);
+      return;
+    }
+    const barProp = bar as any;
+
+    // Helper: load a WZ resource and add as sprite
+    // Flow: raw WZ node → loader.Load() → WzSprite → .ToPixi() → PixiJS Sprite
+    const loadLayer = (uol: string, x: number, y: number, visible = true): Sprite | null => {
+      try {
+        const node = ui.GetItem(uol);
+        if (!node) return null;
+        // loader.Load() accepts WzCanvas/NxCanvas and returns WzSprite
+        // If node is a property, try to get its canvas child first
+        let canvasNode = node;
+        if (typeof (node as any).Get === 'function' && typeof (node as any).ToPixi !== 'function') {
+          const inner = (node as any).Get('0') ?? (node as any).Get('bmp');
+          if (inner) canvasNode = inner;
+        }
+        const wzSprite = loader.Load(canvasNode as any);
+        if (!wzSprite) return null;
+        const s = wzSprite.ToPixi();
+        if (s) { s.anchor.set(0, 0); s.position.set(x, y); s.visible = visible; this._root.addChild(s); return s; }
+      } catch {}
+      return null;
+    };
+
+    this._layerSpace = loadLayer('StatusBar2.img/mainBar/chatSpace', DISPLAY_X, DISPLAY_Y_DEFAULT);
+    this._layerSpace2 = loadLayer('StatusBar2.img/mainBar/chatSpace2', DISPLAY_X, DISPLAY_Y_DEFAULT);
+    this._layerEnter = loadLayer('StatusBar2.img/mainBar/chatEnter', EDIT_X, EDIT_Y, false);
+    this._layerCover = loadLayer('StatusBar2.img/mainBar/chatCover', DISPLAY_X + DISPLAY_W_EXPANDED - 82, EDIT_Y, false);
+
+    // Combo box background — OG: UI/StatusBar.img/base/chatTarget
+    let ctNode: any = null;
+    for (const path of ['StatusBar.img/base/chatTarget', 'StatusBar2.img/mainBar/chatTarget']) {
+      const node = ui.GetItem(path);
+      if (!node) continue;
+      // Try loading directly, or get canvas child first
+      let canvasNode = node;
+      if (typeof (node as any).Get === 'function' && typeof (node as any).ToPixi !== 'function') {
+        const inner = (node as any).Get('bmp') ?? (node as any).Get('0');
+        if (inner) canvasNode = inner;
+      }
+      const wzSprite = loader.Load(canvasNode as any);
+      if (wzSprite) { ctNode = wzSprite; break; }
+    }
+    if (ctNode) {
+      const s = ctNode.ToPixi();
+      if (s) {
+        s.anchor.set(0, 0);
+        s.position.set(COMBO_X, COMBO_Y);
+        this._comboSprite = s;
+        this._comboBg.visible = false;
+        this._comboTriangle.visible = false;
+        this._root.addChildAt(s, this._root.getChildIndex(this._comboLabel) - 1);
+      }
+    }
+
+    // Tab bar and filter buttons — OG loads from StatusBar2.img/chat/Tap/*
+    // OG OnButtonClicked IDs: 0x3F6..0x3FB with XOR filter flags
+    const filterNames = ['all', 'friend', 'party', 'guild', 'association', 'expedition'];
+    for (let i = 0; i < Math.min(TAB_NAMES.length, 6); i++) {
+      const tapPath = `StatusBar2.img/chat/Tap/${filterNames[i]}`;
+      const tapNode = ui.GetItem(tapPath);
+      if (tapNode && typeof (tapNode as any).Get === 'function') {
+        const normal = (tapNode as any).Get('normal/0') ?? (tapNode as any).Get('normal');
+        if (normal) {
+          const wzSprite = loader.Load(normal as any);
+          if (wzSprite) {
+            const s = wzSprite.ToPixi();
+            if (s) {
+              s.anchor.set(0, 0);
+              s.position.set(DISPLAY_X + i * TAB_STEP, DISPLAY_Y_DEFAULT);
+              this._tabBarSprites[i] = s;
+              this._root.addChild(s);
+            }
+          }
+        }
+      }
+    }
+    this._refreshTabs();
+
+    // Hide Graphics fallbacks when WZ layers are available
+    if (this._layerEnter) this._inputBg.visible = false;
+    if (this._layerSpace || this._layerSpace2) this._bg.visible = false;
+
+    this._updateWzVisibility();
+  }
+
+  private _refreshTabs(): void {
+    for (let i = 0; i < TAB_NAMES.length; i++) {
+      this._tabBarSprites[i]?.removeFromParent();
+      this._tabGraphics[i].clear();
+
+      const tx = DISPLAY_X + i * TAB_STEP;
+      const active = i === this._activeTab;
+
+      // OG: Use WZ filter button sprites from StatusBar2.img/chat/Tap/0-5
+      if (this._tabBarSprites[i]) {
+        this._tabBarSprites[i]!.position.set(tx, DISPLAY_Y_DEFAULT);
+        this._root.addChild(this._tabBarSprites[i]!);
+      } else {
+        const w = Math.floor(TAB_STEP) + (i < TAB_NAMES.length - 1 ? 0 : DISPLAY_W_EXPANDED % TAB_NAMES.length);
+        this._tabGraphics[i].rect(tx, DISPLAY_Y_DEFAULT, w, TAB_H).fill({
+          color: active ? '#3C4164' : '#1A1A2E',
+          alpha: 0.5,
+        });
+      }
+
+      this._tabLabels[i].text = TAB_NAMES[i];
+      this._tabLabels[i].style = active ? _tabActiveStyle : _tabStyle;
+      this._tabLabels[i].x = tx + TAB_STEP / 2 - this._tabLabels[i].width / 2;
+    }
+  }
+
+  // --- Filter logic ---
+
+  private _getFilterTypeForLine(line: { filterType: number }): number {
+    return line.filterType;
+  }
+
+  private _isLineVisible(line: { filterType: number }): boolean {
+    // Tab 0 (All) or no filters active — show everything
+    if (this._activeTab === 0 || this._filterFlags === 0) return true;
+    // System messages always visible
+    if (line.filterType === FILTER_SYSTEM) return true;
+    // OG: line is visible if its filterType matches any active filter bit
+    return (line.filterType & this._filterFlags) !== 0;
+  }
+
+  addLine(text: string, links: { itemId: number; start: number; end: number }[] = [], filterType = FILTER_ALL): void {
+    this._stored.push({ text, links, filterType });
+    if (this._stored.length > MAX_STORED) this._stored.shift();
+    this._lastScrolled = performance.now();
+    this.refreshChatLog();
+  }
+
+  addMapleLine(text: string, itemName: (itemId: number) => string | null | undefined, filterType = FILTER_ALL): void {
+    const links: { itemId: number; start: number; end: number }[] = [];
+    let displayLen = 0;
+    let lastOffset = 0;
+    const display = text.replace(/#[ive](\d+)#/g, (match, id, offset) => {
+      displayLen += text.slice(lastOffset, offset).length;
+      const itemId = Number(id);
+      const label = `[${itemName(itemId) ?? id}]`;
+      const start = displayLen;
+      links.push({ itemId, start, end: start + label.length });
+      displayLen += label.length;
+      lastOffset = offset + match.length;
+      return label;
+    });
+    this.addLine(display, links, filterType);
+  }
+
+  get chatTarget(): string {
+    // Map display names back to internal target names
+    const target = CHAT_TARGETS[this._chatTarget];
+    if (target === 'TO ALL') return 'all';
+    return target;
+  }
+  get activeTab(): number { return this._activeTab; }
+  get isComboOpen(): boolean { return this._comboOpen; }
+
+  private _syncLines(): void {
+    // Filter stored lines by active tab
+    const filtered = this._stored.filter((l) => this._isLineVisible(l));
+    const start = Math.max(0, filtered.length - this._maxLines);
+    const scrollOffset = Math.max(0, start - this._scroll);
+    const viewStart = Math.max(0, this._scroll);
+
+    for (let i = 0; i < this._maxLines; i++) {
+      const idx = viewStart + i;
+      if (idx < filtered.length) {
+        this._lines[i].text = filtered[idx].text;
+        this._lines[i].visible = true;
+      } else {
+        this._lines[i].text = '';
+        this._lines[i].visible = false;
+      }
+    }
+  }
+
+  update(dt: number): void {
+    if (!this._isFocused) return;
+    this._blinkTimer += dt;
+    if (this._blinkTimer > 0.5) {
+      this._blinkTimer = 0;
+      this._cursorVisible = !this._cursorVisible;
+      this._cursor.visible = this._cursorVisible;
+    }
+  }
+
+  handleMouseButton(x: number, y: number, down: boolean): boolean {
+    const lx = x - this._root.x;
+    const ly = y - this._root.y;
+    const displayY = this._getDisplayY();
+    const displayW = this._chatType === CHAT_TYPE_MINIMAL ? DISPLAY_W_MINIMAL : DISPLAY_W_EXPANDED;
+
+    // Hit-test areas
+    const inCombo = lx >= COMBO_X && lx < COMBO_X + COMBO_W && ly >= COMBO_Y && ly < COMBO_Y + COMBO_H;
+    const dropdownOpen = this._comboOpen;
+    const dropdownH = CHAT_TARGETS.length * DROPDOWN_ROW_H;
+    const inDropdown = dropdownOpen && lx >= COMBO_X && lx < COMBO_X + COMBO_W
+      && ly >= COMBO_Y - dropdownH && ly < COMBO_Y;
+    const inTabs = this._chatType === CHAT_TYPE_EXPANDED
+      && lx >= DISPLAY_X && lx < DISPLAY_X + displayW && ly >= displayY && ly < displayY + TAB_H;
+    const inDisplay = lx >= DISPLAY_X && lx < DISPLAY_X + displayW
+      && ly >= displayY + (this._chatType === CHAT_TYPE_EXPANDED ? TAB_H : 0)
+      && ly < displayY + this._chatHeight;
+    const inInput = lx >= EDIT_X && lx < EDIT_X + EDIT_W && ly >= EDIT_Y && ly < EDIT_Y + EDIT_H;
+    const inScrollbar = this._scrollGfx.visible
+      && lx >= DISPLAY_X + displayW - SCROLLBAR_W && lx < DISPLAY_X + displayW
+      && ly >= displayY + TAB_H && ly < displayY + this._chatHeight;
+    const inMain = lx >= 0 && lx < CHAT_W && ly >= 0 && ly < CHAT_H;
+
+    if (!inCombo && !inDropdown && !inTabs && !inDisplay && !inInput && !inScrollbar && !inMain) {
+      // Only close dropdown if clicking outside both combo AND dropdown
+      if (down && !inCombo && !inDropdown) this._comboOpen = false;
+      if (down) this._blur();
+      this._syncDropdown();
+      return false;
+    }
+
+    if (!down) return true;
+
+    // Scrollbar drag
+    if (inScrollbar) {
+      this._isDraggingScroll = true;
+      this._dragScrollY = ly;
+      return true;
+    }
+
+    // OG: m_bDragChatWnd — drag resize when clicking near bottom edge
+    if (this._chatType === CHAT_TYPE_EXPANDED && ly >= displayY + this._chatHeight - 4 && ly < displayY + this._chatHeight + 4) {
+      this._draggingResize = true;
+      this._dragStartY = y;
+      this._dragStartH = this._chatHeight;
+      return true;
+    }
+
+    // Dropdown item click — opens upward
+    if (inDropdown) {
+      const idx = Math.floor((ly - (COMBO_Y - dropdownH)) / DROPDOWN_ROW_H);
+      if (idx >= 0 && idx < CHAT_TARGETS.length) {
+        this._chatTarget = idx;
+        this._comboLabel.text = CHAT_TARGETS[idx];
+        this._comboOpen = false;
+        this._syncDropdown();
+        this.onChatTargetChange?.(CHAT_TARGETS[idx]);
+        return true;
+      }
+    }
+
+    // Combo box click
+    if (inCombo) {
+      this._comboOpen = !this._comboOpen;
+      this._syncDropdown();
+      return true;
+    }
+
+    // Close dropdown on any non-combo click
+    if (dropdownOpen) {
+      this._comboOpen = false;
+      this._syncDropdown();
+    }
+
+    // Tab click — OG uses XOR on m_dwChatFilterFlag
+    if (inTabs) {
+      const tab = Math.floor((lx - DISPLAY_X) / TAB_STEP);
+      if (tab >= 0 && tab < TAB_NAMES.length) {
+        this._activeTab = tab;
+        // OG: filter buttons toggle via XOR on m_dwChatFilterFlag
+        if (tab < FILTER_FLAGS.length) {
+          this._filterFlags ^= FILTER_FLAGS[tab];
+        }
+        this._refreshTabs();
+        this.refreshChatLog();
+        this.onTabChange?.(tab);
+      }
+      return true;
+    }
+
+    // Item link click in display area
+    if (inDisplay) {
+      const lineOffset = this._chatType === CHAT_TYPE_EXPANDED ? TAB_H : 0;
+      const lineIndex = Math.floor((ly - (displayY + lineOffset + 2)) / LINE_H);
+      if (lineIndex >= 0 && lineIndex < this._maxLines) {
+        const filtered = this._stored.filter((l) => this._isLineVisible(l));
+        const viewStart = Math.min(this._scroll, Math.max(0, filtered.length - this._maxLines));
+        const storedIndex = viewStart + lineIndex;
+        const line = filtered[storedIndex];
+        if (line) {
+          const charIndex = Math.floor((lx - (DISPLAY_X + 4)) / 7);
+          const link = line.links.find((l) => charIndex >= l.start && charIndex < l.end);
+          if (link) { this.onItemLink?.(link.itemId); return true; }
+        }
+      }
+    }
+
+    // Click in display area (not on link) — focus input
+    if (inDisplay) {
+      this.focus();
+      return true;
+    }
+
+    // Click in input area
+    if (inInput) {
+      this.focus();
+      return true;
+    }
+
+    return true;
+  }
+
+  handleMouseMove(x: number, y: number): void {
+    if (this._isDraggingScroll) {
+      const ly = y - this._root.y;
+      const delta = ly - this._dragScrollY;
+      this._dragScrollY = ly;
+      const trackH = this._chatHeight - TAB_H - 2;
+      const totalLines = this._stored.length;
+      const lineDelta = Math.round(delta * totalLines / trackH);
+      if (lineDelta !== 0) {
+        this.scrollBy(lineDelta);
+      }
+      return;
+    }
+    // OG: ChangeChatWndSize — drag resize (13px grid, min 26, max 489)
+    if (this._draggingResize) {
+      const dy = this._dragStartY - y;
+      const steps = Math.round(dy / CHAT_LINE_H);
+      if (steps !== 0) {
+        let newH = this._dragStartH + steps * CHAT_LINE_H;
+        newH = Math.max(CHAT_MIN_H, Math.min(CHAT_MAX_H, newH));
+        if (newH !== this._chatHeight) {
+          this._chatHeight = newH;
+          this._maxLines = Math.floor(newH / CHAT_LINE_H);
+          this._rebuildDisplay();
+          this._syncLines();
+        }
+      }
+    }
+  }
+
+  onMouseMove(x: number, y: number): void {
+    this.handleMouseMove(x, y);
+  }
+
+  handleMouseButtonGlobal(_x: number, _y: number, down: boolean): void {
+    if (!down) {
+      if (this._isDraggingScroll) this._isDraggingScroll = false;
+      if (this._draggingResize) this._draggingResize = false;
+    }
+  }
+
+  private _syncDropdown(): void {
+    this._dropdownContainer.removeChildren();
+    this._dropdownContainer.visible = this._comboOpen;
+    if (!this._comboOpen) return;
+
+    // OG: dropdown opens UPWARD from the combo box
+    const dropdownH = CHAT_TARGETS.length * DROPDOWN_ROW_H;
+    // Background for entire dropdown
+    const bg = new Graphics();
+    bg.rect(COMBO_X, COMBO_Y - dropdownH, COMBO_W, dropdownH)
+      .fill({ color: '#0F0F19', alpha: 0.95 });
+    bg.rect(COMBO_X, COMBO_Y - dropdownH, COMBO_W, dropdownH)
+      .stroke({ color: '#504632', width: 1 });
+    this._dropdownContainer.addChild(bg);
+
+    for (let i = 0; i < CHAT_TARGETS.length; i++) {
+      const iy = COMBO_Y - dropdownH + i * DROPDOWN_ROW_H;
+      const isSelected = i === this._chatTarget;
+
+      // Highlight selected row
+      if (isSelected) {
+        const hl = new Graphics();
+        hl.rect(COMBO_X + 1, iy + 1, COMBO_W - 2, DROPDOWN_ROW_H - 1)
+          .fill({ color: '#3C4164' });
+        this._dropdownContainer.addChild(hl);
+      }
+
+      // Checkmark for selected
+      if (isSelected) {
+        const check = new Graphics();
+        check.rect(COMBO_X + 3, iy + 4, 8, 8).fill({ color: '#64DC64' });
+        this._dropdownContainer.addChild(check);
+      }
+
+      const t = new Text({ text: CHAT_TARGETS[i], style: _comboStyle });
+      t.x = COMBO_X + 14;
+      t.y = iy + 3;
+      this._dropdownContainer.addChild(t);
+    }
+  }
+
+  onKeyPress(key: string): boolean {
+    if (!this._isFocused) return false;
+    if (key === 'Escape') { this._blur(); return true; }
+    if (key === 'Enter') {
+      this._sendInput();
+      return true;
+    }
+    if (key === 'Backspace') {
+      this._input = this._input.slice(0, -1);
+      this._syncInput();
+      return true;
+    }
+    if (key === 'Tab') {
+      // OG: Tab cycles through 9 chat targets
+      // 0→6→2→3→4→5→whisper→8→0
+      const targets = [0, 6, 2, 3, 4, 5, -1, 8, 0]; // -1 = whisper
+      const currentIdx = targets.indexOf(this._chatTarget);
+      const nextIdx = (currentIdx + 1) % targets.length;
+      this._chatTarget = targets[nextIdx];
+      this._comboLabel.text = CHAT_TARGETS[this._chatTarget] ?? 'whisper';
+      this.onChatTargetChange?.(CHAT_TARGETS[this._chatTarget] ?? 'whisper');
+      this._comboOpen = false;
+      this._syncDropdown();
+      return true;
+    }
+    if (key === 'ArrowUp') {
+      // OG: CChatHelper::HistoryUp — index 0 = most recent
+      if (this._historyIndex < this._sentHistory.length - 1) {
+        this._historyIndex++;
+      }
+      this._input = this._historyIndex >= 0 && this._historyIndex < this._sentHistory.length
+        ? this._sentHistory[this._historyIndex] : '';
+      this._syncInput();
+      return true;
+    }
+    if (key === 'ArrowDown') {
+      // OG: CChatHelper::HistoryDown — decrement toward newer
+      if (this._historyIndex >= 0) {
+        this._historyIndex--;
+      }
+      this._input = this._historyIndex >= 0 && this._historyIndex < this._sentHistory.length
+        ? this._sentHistory[this._historyIndex] : '';
+      this._syncInput();
+      return true;
+    }
+    if (key === 'PageUp') {
+      this.scrollBy(-this._maxLines);
+      return true;
+    }
+    if (key === 'PageDown') {
+      this.scrollBy(this._maxLines);
+      return true;
+    }
+    if (key.length === 1) {
+      if (this._input.length < 60) {
+        this._input += key;
+        this._syncInput();
+      }
+      return true;
+    }
+    return false;
+  }
+
+  focus(): void {
+    // OG: StartChat — if minimal (type 1), switch to small (type 2)
+    if (this._chatType === CHAT_TYPE_MINIMAL) {
+      this.setChatType(CHAT_TYPE_SMALL);
+    }
+    this._isFocused = true;
+    this._cursor.visible = true;
+    // Hide input Graphics fallback when WZ chatEnter layer is available
+    if (!this._layerEnter) {
+      this._inputBg.rect(EDIT_X, EDIT_Y, EDIT_W, EDIT_H).stroke({ color: '#8AF', width: 1 });
+    } else {
+      this._inputBg.visible = false;
+    }
+    this._updateWzVisibility();
+  }
+
+  // OG: StartChat(sText) — switch to small mode, focus input, set text
+  startChat(text?: string): void {
+    if (this._chatType === CHAT_TYPE_MINIMAL) {
+      this.setChatType(CHAT_TYPE_SMALL);
+    }
+    this.focus();
+    if (text !== undefined) this.setInput(text);
+  }
+
+  // OG: EndChat — if small (type 2), switch back to minimal (type 1)
+  endChat(): void {
+    if (this._chatType === CHAT_TYPE_SMALL) {
+      this.setChatType(CHAT_TYPE_MINIMAL);
+    }
+    this._blur();
+  }
+
+  private _blur(): void {
+    // OG: EndChat — if small (type 2), switch back to minimal (type 1)
+    if (this._chatType === CHAT_TYPE_SMALL) {
+      this.setChatType(CHAT_TYPE_MINIMAL);
+    }
+    this._isFocused = false;
+    this._cursor.visible = false;
+    this._historyIndex = -1;
+    this._input = '';
+    this._syncInput();
+    this._inputBg.clear();
+    // Show input Graphics fallback only when WZ chatEnter layer is NOT available
+    if (!this._layerEnter) {
+      this._inputBg.rect(EDIT_X, EDIT_Y, EDIT_W, EDIT_H).fill({ color: '#111', alpha: 0.8 });
+      this._inputBg.rect(EDIT_X, EDIT_Y, EDIT_W, EDIT_H).stroke({ color: '#555', width: 1 });
+      this._inputBg.visible = true;
+    } else {
+      this._inputBg.visible = false;
+    }
+    this._updateWzVisibility();
+  }
+
+  private _sendInput(): void {
+    const msg = this._input.trim();
+    if (msg.length > 0) {
+      this.onSendChat?.(msg);
+      this.addLine(`> ${msg}`, [], FILTER_ALL);
+      this._sentHistory.unshift(msg);
+      if (this._sentHistory.length > MAX_STORED) this._sentHistory.pop();
+    }
+    this._historyIndex = -1;
+    this._input = '';
+    this._syncInput();
+  }
+
+  private _applyHistory(): void {
+    this._input = this._historyIndex < 0 ? '' : this._sentHistory[this._historyIndex];
+    this._syncInput();
+  }
+
+  setInput(text: string): void {
+    this._input = text;
+    this._syncInput();
+  }
+
+  private _syncInput(): void {
+    this._inputText.text = this._input;
+    this._cursor.x = EDIT_X + 4 + this._inputText.width;
+  }
+}

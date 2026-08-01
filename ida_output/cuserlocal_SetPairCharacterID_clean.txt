@@ -1,0 +1,94 @@
+// cuserlocal::SetPairCharacterID
+
+void __thiscall CUserLocal::SetPairCharacterID(CUserLocal *this)
+{
+  char *m_pStr; // ebp
+  char *p_m_uTableSize; // esi
+  volatile LONG *p_m_uCount; // edi
+  int *v5; // edi
+  TSecType<long> *v6; // esi
+  int Data; // ecx
+  __POSITION *v8; // esi
+  GW_CoupleRecord *Next; // eax
+  int HighPart; // edx
+  int FakePtr2; // edx
+  __POSITION *pos; // [esp+Ch] [ebp-14h] BYREF
+  _LARGE_INTEGER liSN; // [esp+10h] [ebp-10h]
+  ZRef<CharacterData> result; // [esp+18h] [ebp-8h] BYREF
+
+  if ( this->m_liPairItemSN.QuadPart ) /*0x908686*/
+    CUserPool::OnCoupleRecordRemove( /*0x9086a3*/
+      (CUserPool *)TSingleton<CUserPool>::ms_pInstance.m_pInterface,
+      &this->m_liCoupleItemSN);
+  m_pStr = TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x9086a9*/
+  pos = (__POSITION *)CWvsContext::GetCharacterData( /*0x9086be*/
+                        (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+                        &result)->p;
+  if ( result.p ) /*0x9086c8*/
+  {
+    p_m_uTableSize = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x9086ca*/
+    p_m_uCount = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount; /*0x9086cd*/
+    if ( !InterlockedDecrement(p_m_uCount) ) /*0x9086d1*/
+    {
+      InterlockedIncrement(p_m_uCount); /*0x9086dc*/
+      if ( p_m_uTableSize ) /*0x9086e4*/
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1); /*0x9086ee*/
+    }
+    result.p = nullptr; /*0x9086f0*/
+  }
+  liSN.QuadPart = 0; /*0x9086fa*/
+  v5 = g_anRingBodyPart; /*0x908702*/
+  while ( 1 ) /*0x908712*/
+  {
+    v6 = *(TSecType<long> **)&m_pStr[8 * *v5 + 14932]; /*0x908712*/
+    if ( v6 ) /*0x90871b*/
+    {
+      Data = TSecType<long>::GetData(v6 + 1); /*0x908725*/
+      if ( Data / 100 == 11120 && Data != 1112000 ) /*0x908745*/
+        break; /*0x908745*/
+    }
+    if ( (int)++v5 >= (int)g_anPetAbilBodyPart ) /*0x908750*/
+    {
+      v8 = pos; /*0x908752*/
+      goto LABEL_14; /*0x908752*/
+    }
+  }
+  FakePtr2 = v6[2].FakePtr2; /*0x9087be*/
+  liSN.LowPart = v6[2].FakePtr1; /*0x9087c1*/
+  liSN.HighPart = FakePtr2; /*0x9087c8*/
+  v8 = (__POSITION *)TSecType<long>::GetData(v6 + 1); /*0x9087d1*/
+LABEL_14:
+  pos = *(__POSITION **)&pos[1549]; /*0x908756*/
+  if ( pos ) /*0x908767*/
+  {
+    while ( 1 ) /*0x908775*/
+    {
+      Next = ZList<GW_CoupleRecord>::GetNext(&pos); /*0x908775*/
+      if ( Next->liSN.LowPart == liSN.LowPart ) /*0x908786*/
+      {
+        HighPart = liSN.HighPart; /*0x90878b*/
+        if ( Next->liSN.HighPart == liSN.HighPart ) /*0x908791*/
+          break; /*0x908791*/
+      }
+      if ( !pos ) /*0x908798*/
+        goto LABEL_18; /*0x908798*/
+    }
+    this->m_liCoupleItemSN.LowPart = liSN.LowPart; /*0x9087db*/
+    this->m_liCoupleItemSN.HighPart = HighPart; /*0x9087dd*/
+    this->m_liPairItemSN.LowPart = Next->liPairSN.LowPart; /*0x9087e4*/
+    this->m_liPairItemSN.HighPart = Next->liPairSN.HighPart; /*0x9087ee*/
+    CUserPool::OnCoupleRecordAdd( /*0x9087fb*/
+      (CUserPool *)TSingleton<CUserPool>::ms_pInstance.m_pInterface,
+      &this->m_liCoupleItemSN,
+      this,
+      (int)v8);
+  }
+  else
+  {
+LABEL_18:
+    this->m_liCoupleItemSN.LowPart = 0; /*0x90879a*/
+    this->m_liCoupleItemSN.HighPart = 0; /*0x9087a4*/
+    this->m_liPairItemSN.LowPart = 0; /*0x9087aa*/
+    this->m_liPairItemSN.HighPart = 0; /*0x9087b0*/
+  }
+}

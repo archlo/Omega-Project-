@@ -1,0 +1,40 @@
+int __thiscall CMob::GetHitPointHeightRand(CMob *this, tagRECT rcAttack, int rcAttack_12)
+{
+  int v3; // esi
+  unsigned int v4; // ecx
+  tagRECT rcIntersect; // [esp+4h] [ebp-20h] BYREF
+  tagRECT rcBody; // [esp+14h] [ebp-10h] BYREF
+
+  *(_DWORD *)rcAttack.left = 0; /*0x64231f*/
+  *(_DWORD *)(rcAttack.left + 4) = 0; /*0x642325*/
+  if ( CMob::GetBodyRect(this, &rcBody, 0) ) /*0x64232c*/
+  {
+    if ( rcAttack.top < rcBody.right ) /*0x642341*/
+    {
+      if ( rcAttack.bottom <= rcBody.left ) /*0x642352*/
+        rcAttack.bottom = rcBody.left + 1; /*0x642355*/
+    }
+    else
+    {
+      rcAttack.top = rcBody.right - 1; /*0x642344*/
+    }
+    if ( rcAttack.right < rcBody.bottom ) /*0x642361*/
+    {
+      if ( rcAttack_12 <= rcBody.top ) /*0x642372*/
+        rcAttack_12 = rcBody.top + 1; /*0x642375*/
+    }
+    else
+    {
+      rcAttack.right = rcBody.bottom - 1; /*0x642364*/
+    }
+    ZAPI.IntersectRect(&rcIntersect, (const tagRECT *)&rcAttack.top, &rcBody); /*0x642389*/
+    *(_DWORD *)rcAttack.left = (rcIntersect.right + rcIntersect.left) / 2; /*0x64239f*/
+    v3 = (int)abs32(rcIntersect.bottom - rcIntersect.top) / 2; /*0x6423b3*/
+    if ( v3 ) /*0x6423b5*/
+      v4 = CRand32::Random(&g_rand) % v3; /*0x6423c5*/
+    else
+      v4 = 0; /*0x6423c9*/
+    *(_DWORD *)(rcAttack.left + 4) = (rcIntersect.top + rcIntersect.bottom) / 2 + 3 * (v4 - v3 / 2); /*0x6423e8*/
+  }
+  return rcAttack.left; /*0x6423ee*/
+}

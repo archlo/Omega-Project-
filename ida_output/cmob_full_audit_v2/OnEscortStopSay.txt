@@ -1,0 +1,116 @@
+﻿void __thiscall CMob::OnEscortStopSay(CMob *this, CInPacket *iPacket)
+{
+  CInPacket *v3; // edi
+  signed int v4; // ebp
+  StringPool *Instance; // eax
+  ZXString<char> *String; // eax
+  CMobTemplate *m_pTemplate; // edx
+  const char *m_pStr; // eax
+  int v9; // eax
+  int m_nEscortStopAct; // ecx
+  IWzVector2D *m_pInterface; // eax
+  IWzGr2DLayer *v12; // eax
+  _bstr_t::Data_t *v13; // ecx
+  _bstr_t v14; // [esp-1Ch] [ebp-50h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v15; // [esp-18h] [ebp-4Ch] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v16; // [esp-14h] [ebp-48h] BYREF
+  int v17; // [esp-10h] [ebp-44h]
+  int v18; // [esp-Ch] [ebp-40h]
+  const int *ZtlSecureTear_m_nOneTimeAction; // [esp-8h] [ebp-3Ch] BYREF
+  CInPacket *ZtlSecureTear_m_nOneTimeAction_CS; // [esp-4h] [ebp-38h]
+  ZXString<char> sText; // [esp+14h] [ebp-20h] BYREF
+  ZXString<char> result; // [esp+18h] [ebp-1Ch] BYREF
+  int bWeather; // [esp+1Ch] [ebp-18h]
+  int nFadeDelay; // [esp+20h] [ebp-14h]
+  int nChatBalloon; // [esp+24h] [ebp-10h]
+  int v26; // [esp+30h] [ebp-4h]
+
+  v3 = iPacket;
+  v4 = CInPacket::Decode4(iPacket);
+  nChatBalloon = CInPacket::Decode4(v3);
+  bWeather = CInPacket::Decode1(v3);
+  if ( CInPacket::Decode1(v3) )
+  {
+    sText._m_pStr = nullptr;
+    v26 = 1;
+    CInPacket::DecodeStr(v3, (ZXString<char> *)&iPacket);
+    Instance = StringPool::GetInstance();
+    String = StringPool::GetString(Instance, &result, 0x72Du);
+    m_pTemplate = this->m_pTemplate;
+    m_pStr = String->_m_pStr;
+    ZtlSecureTear_m_nOneTimeAction_CS = iPacket;
+    ZtlSecureTear_m_nOneTimeAction = (const int *)m_pTemplate->sName._m_pStr;
+    LOBYTE(v26) = 2;
+    ZXString<char>::Format(&sText, m_pStr, ZtlSecureTear_m_nOneTimeAction, iPacket);
+    LOBYTE(v26) = 1;
+    if ( result._m_pStr )
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1);
+    if ( TSingleton<CUIStatusBar>::ms_pInstance._m_pStr )
+    {
+      nFadeDelay = (int)&ZtlSecureTear_m_nOneTimeAction;
+      CUIStatusBar::ChatLogAdd(
+        (CUIStatusBar *)TSingleton<CUIStatusBar>::ms_pInstance._m_pStr,
+        sText._m_pStr,
+        25,
+        -1,
+        0,
+        (ZRef<GW_ItemSlotBase>)(unsigned int)ZtlSecureTear_m_nOneTimeAction);
+    }
+    nFadeDelay = v4 / 4;
+    this->m_tEscortStopActTime = v4 + get_update_time();
+    v9 = CInPacket::Decode4(v3);
+    ZtlSecureTear_m_nOneTimeAction_CS = (CInPacket *)this->_ZtlSecureTear_m_nOneTimeAction_CS;
+    ZtlSecureTear_m_nOneTimeAction = this->_ZtlSecureTear_m_nOneTimeAction;
+    this->m_nEscortStopAct = v9;
+    if ( _ZtlSecureFuse<long>(ZtlSecureTear_m_nOneTimeAction, (unsigned int)ZtlSecureTear_m_nOneTimeAction_CS) <= -1 )
+    {
+      m_nEscortStopAct = this->m_nEscortStopAct;
+      if ( m_nEscortStopAct != -1 )
+      {
+        this->_ZtlSecureTear_m_nOneTimeAction_CS = _ZtlSecureTear<long>(
+                                                     m_nEscortStopAct,
+                                                     this->_ZtlSecureTear_m_nOneTimeAction);
+        CMob::PrepareActionLayer(this);
+      }
+    }
+    if ( !bWeather )
+    {
+      ZtlSecureTear_m_nOneTimeAction_CS = nullptr;
+      ZtlSecureTear_m_nOneTimeAction = (const int *)nFadeDelay;
+      v18 = nChatBalloon;
+      m_pInterface = this->m_pvc.m_pInterface;
+      v17 = 3 * v4 / 4;
+      nChatBalloon = (int)&v16;
+      v16.m_pInterface = m_pInterface;
+      if ( m_pInterface )
+        m_pInterface->AddRef(m_pInterface);
+      v12 = this->m_pLayerAction.m_pInterface;
+      v13 = (_bstr_t::Data_t *)&v15;
+      LOBYTE(v26) = 3;
+      nFadeDelay = (int)&v15;
+      v15.m_pInterface = v12;
+      if ( v12 )
+        v12->AddRef(v12);
+      v14.m_Data = v13;
+      bWeather = (int)&v14;
+      LOBYTE(v26) = 4;
+      _bstr_t::_bstr_t(&v14, (const char *)iPacket);
+      LOBYTE(v26) = 1;
+      CChatBalloon::MakeMobBalloon(
+        &this->m_chatBalloon,
+        (Ztl_bstr_t)v14.m_Data,
+        v15,
+        v16,
+        v17,
+        v18,
+        (int)ZtlSecureTear_m_nOneTimeAction,
+        (int)ZtlSecureTear_m_nOneTimeAction_CS);
+    }
+    LOBYTE(v26) = 0;
+    if ( iPacket )
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&iPacket[-1].m_uLength);
+    v26 = -1;
+    if ( sText._m_pStr )
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sText._m_pStr - 1);
+  }
+}

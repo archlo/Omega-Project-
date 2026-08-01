@@ -1,0 +1,26 @@
+// 0x697b10
+void __thiscall CPersonalShopDlg::OnEnter(CPersonalShopDlg *this, int nSlot, CInPacket *iPacket)
+{
+  int v3; // edi
+  int v5; // eax
+  int pExceptionObject; // [esp+8h] [ebp-4h] BYREF
+
+  v3 = nSlot; /*0x697b13*/
+  if ( (unsigned int)(nSlot - 1) > 2 ) /*0x697b1f*/
+  {
+    CMSException::CMSException((CMSException *)&nSlot, 553648131); /*0x697b72*/
+    pExceptionObject = nSlot; /*0x697b85*/
+    _CxxThrowException(&pExceptionObject, &_TI3_AVCDisconnectException__); /*0x697b89*/
+  }
+  if ( !this->m_nMyPosition ) /*0x697b21*/
+  {
+    (*(void (__thiscall **)(int, int))(*(_DWORD *)(*((_DWORD *)&this->m_pBtBuy.p + 2 * nSlot) + 4) + 36))( /*0x697b3c*/
+      *((_DWORD *)&this->m_pBtBuy.p + 2 * nSlot) + 4,
+      1);
+    v5 = ZAPI.timeGetTime(); /*0x697b3e*/
+    *(&this->m_nItemMaxCount + v3) = v5; /*0x697b44*/
+    if ( !v5 ) /*0x697b4d*/
+      *(&this->m_nItemMaxCount + v3) = 1; /*0x697b4f*/
+  }
+  CWnd::InvalidateRect(this, nullptr); /*0x697b5e*/
+}

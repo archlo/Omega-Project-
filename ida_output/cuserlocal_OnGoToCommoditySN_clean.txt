@@ -1,0 +1,7 @@
+// cuserlocal::OnGoToCommoditySN
+
+void __thiscall CUserLocal::OnGoToCommoditySN(CUserLocal *this, CInPacket *iPacket)
+{
+  *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 4147) = CInPacket::Decode4(iPacket); /*0x90576f*/
+  CWvsContext::SendMigrateToShopRequest((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, 0); /*0x905783*/
+}

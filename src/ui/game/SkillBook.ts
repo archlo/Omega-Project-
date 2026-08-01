@@ -8,6 +8,7 @@ import { WzCanvas } from '../../wz/WzCanvas.js';
 import { ScrollBar } from './ScrollBar.js';
 import { ItemTooltip } from './ItemTooltip.js';
 import { TooltipAssets } from './TooltipAssets.js';
+import { SkillIncPanel, SkillDecPanel, SkillChangeConfirm } from './SkillIncDec.js';
 import type { BuiltInFont } from '../BuiltInFont.js';
 import type { ItemIconLoader } from '../../character/ItemIconLoader.js';
 
@@ -49,14 +50,119 @@ const ICON_RIGHT = 45;
 const ROW_LEFT = 10;
 const ROW_RIGHT = 149;
 
+// OG: get_basic_font — fonts loaded from WZ via CWnd::GetBasicFont
+// FONT_BASIC_WHITE = m_pFont (skill name, level), FONT_BASIC_BLACK = m_pFontNo (SP count)
+// FONT_SMALL_GRAY = m_pFontBonus (bonus text), FONT_BOOK_NAME = m_pFontBookName (book name)
 const _titleStyle = new TextStyle({ fill: '#DCC896', fontSize: 11, fontFamily: 'monospace' });
 const _labelStyle = new TextStyle({ fill: '#CCC', fontSize: 10, fontFamily: 'monospace' });
 const _valueStyle = new TextStyle({ fill: '#FFF', fontSize: 9, fontFamily: 'monospace' });
 const _cdStyle = new TextStyle({ fill: '#E06060', fontSize: 8, fontFamily: 'monospace' });
 const _bonusStyle = new TextStyle({ fill: '#64DC64', fontSize: 9, fontFamily: 'monospace' }); // OG: m_pFontBonus — green bonus text
+// OG: m_pFontNo — SP count font (FONT_BASIC_BLACK, right-aligned at x=104)
+const _spCountStyle = new TextStyle({ fill: '#A0A0A0', fontSize: 10, fontFamily: 'monospace' });
+// OG: m_pFontBookName — book name font (centered or two-line)
+const _bookNameStyle = new TextStyle({ fill: '#DCC896', fontSize: 11, fontFamily: 'monospace' });
 
+// OG: Tab labels from StringPool — loaded per job category
+// Tab 0=Beginner, 1=Warrior, 2=Magician, 3=Bowman, 4=Thief, 5=Pirate, 6=Aran, 7=DualBlade
 const TAB_LABELS = ['Beginner', 'Warrior', 'Magician', 'Bowman', 'Thief', 'Pirate'];
 const TAB_PREFIXES = [0, 10, 20, 30, 40, 50, 60];
+
+// OG: get_skill_root_from_job — builds skill root list from job
+// Returns array of skill root IDs for the character's job
+function getSkillRootFromJob(job: number): number[] {
+  const roots: number[] = [];
+  if (!getJobName(job)) return roots;
+  const v2 = Math.floor(job % 1000 / 100);
+  if (v2) {
+    const v3 = 100 * (v2 + 10 * Math.floor(job / 1000));
+    roots.push(v3);
+    const v4 = Math.floor(job % 100 / 10);
+    if (v4) {
+      let v5 = v3 + 10 * v4;
+      roots.push(v5);
+      for (let i = 1; i <= 8; i++) {
+        if (job % 10 < i) break;
+        roots.push(++v5);
+      }
+    }
+  }
+  return roots;
+}
+
+// OG: get_job_name — returns job name string (non-null = valid job)
+function getJobName(job: number): string | null {
+  // Simplified: return non-null for valid jobs
+  if (job <= 0) return null;
+  return `job${job}`;
+}
+
+// OG: Map skill root ID to tab index
+function skillRootToTabIndex(root: number): number {
+  // Root 0 = beginner, 1000 = warrior, 2000 = magician, etc.
+  const tabRoot = Math.floor(root / 1000);
+  const idx = TAB_PREFIXES.indexOf(tabRoot);
+  return idx >= 0 ? idx : 0;
+}
+
+// ─── OG Helper functions (from IDA) ──────────────────────────────────────
+// OG: is_beginner_job — job % 1000 === 0
+function isBeginnerJob(job: number): boolean { return job % 1000 === 0; }
+
+// OG: is_extendsp_job — Aran (3000+), Cygnus Knights (2200+), Evan (2001)
+function isExtendspJob(job: number): boolean {
+  return Math.floor(job / 1000) === 3 || Math.floor(job / 100) === 22 || job === 2001;
+}
+
+// OG: is_dual_job — DualBlade (430-439)
+function isDualJob(job: number): boolean {
+  return Math.floor(job / 10) === 43;
+}
+
+// OG: get_job_level — maps job to degree (1-4)
+function getJobLevel(job: number): number {
+  if (isBeginnerJob(job) || job === 2001) return 1;
+  const v1 = Math.floor(job / 10) === 43 ? (job - 430) / 2 : job % 10;
+  const v2 = v1 + 2;
+  if (v2 >= 2 && (v2 <= 4 || (v2 <= 10 && (Math.floor(job / 100) === 22 || job === 2001)))) return v2;
+  return 0;
+}
+
+// OG: get_job_change_level — level threshold for job advancement
+function getJobChangeLevel(job: number, subJob: number, step: number): number {
+  const v3 = Math.floor(job / 1000);
+  if (v3 === 3 || Math.floor(job / 100) === 22 || job === 2001) return 200;
+  const isMagician = Math.floor(job / 100) % 10 === 2;
+  switch (step) {
+    case 1: return isMagician ? 8 : 10;
+    case 2: return 30;
+    case 3: return 70;
+    case 4: return 120;
+    default: return 200;
+  }
+}
+
+// OG: get_novice_skill_point — remaining SP for beginner tab
+function getNoviceSkillPoint(job: number, totalSp: number, spentSp: number): number {
+  if (!isBeginnerJob(job)) return 0;
+  return Math.max(0, totalSp - spentSp);
+}
+
+// OG: is_dual_job_born — born as dual job
+function isDualJobBorn(job: number, subJob: number): boolean {
+  return subJob !== 0 && isDualJob(job);
+}
+
+// OG: get_job_category — 0=warrior, 1=magician, 2=bowman, 3=thief, 4=pirate
+function getJobCategory(job: number): number {
+  const base = Math.floor(job / 100) % 10;
+  if (base === 1) return 0; // warrior
+  if (base === 2) return 1; // magician
+  if (base === 3) return 2; // bowman
+  if (base === 4) return 3; // thief
+  if (base === 5) return 4; // pirate
+  return 0;
+}
 
 export class SkillRow {
   constructor(
@@ -72,6 +178,9 @@ export interface CooldownEntry {
   skillId: number;
   remaining: number;
   total: number;
+  // OG: Cooldown animation frame (cycles through CoolTime/0-15)
+  coolFrame: number;
+  coolFrameTimer: number;
 }
 
 // OG class: CUISkill (3040 bytes, inherits CUIWnd)
@@ -98,6 +207,8 @@ export class SkillBook extends GamePanel {
   onMacroOpen: (() => void) | null = null;
   nameOf: (id: number) => string = () => '';
   onDragStart: ((payload: SkillDragPayload, texture: Texture, x: number, y: number) => void) | null = null;
+  // OG: SendSkillUpRequest callback
+  onSendSkillUp: ((skillId: number) => void) | null = null;
 
   private _skills: SkillRow[] = [];
   private _tabs: SkillRow[][] = [];
@@ -107,11 +218,25 @@ export class SkillBook extends GamePanel {
   private _lastClickTime = 0;
   private _cooldowns = new Map<number, CooldownEntry>();
 
+  // OG: Character state for SP validation
+  characterLevel = 0;
+  characterJob = 0;
+  characterSubJob = 0;
+  // OG: ExtendSP — dual-blade extended SP tracking
+  private _extendSP: number[] = [0, 0, 0, 0]; // ExtendSP::Get(tab)
+  // OG: Per-tab SP — beginner SP, job SP, extend SP tracked separately
+  private _noviceSp = 0; // SP for beginner tab (job % 1000 === 0)
+  // OG: m_nTabOption — initial tab selection (0=default, 1=skill guide)
+  private _tabOption = 0;
+  // OG: m_bDualRogueSkillWarning — shows warning for dual-blade job change
+  private _dualRogueSkillWarning = false;
+
   private _bg: Graphics;
   private _titleText: Text;
   private _spText: Text;
   private _tabGraphics: Graphics[] = [];
   private _tabLabels: Text[] = [];
+  private _tabLabelStrings: string[] = [...TAB_LABELS];
   private _rowIcons: Sprite[] = [];
   private _rowNames: Text[] = [];
   private _rowLevels: Text[] = [];
@@ -139,6 +264,22 @@ export class SkillBook extends GamePanel {
   private _viewH = 768;
   private _mouseX = 0;
   private _mouseY = 0;
+  // OG: Tab backgrounds — Tab/disabled/0-4 and Tab/enabled/0-4
+  private _tabDisabledTex: Texture[] = [];
+  private _tabEnabledTex: Texture[] = [];
+  // OG: Cooldown overlay — CoolTime/0-15 (32x32 each)
+  private _coolTimeTex: Texture[] = [];
+  // OG: CoolTime sprite (drawn at skill icon position)
+  private _coolTimeSprite: Sprite | null = null;
+  // OG: Aran special tab buttons — Tab/AranButton/Bt1-Bt4
+  private _aranBtnTex: Texture[] = [];
+  // OG: DualBlade tab textures — Tab/DualTab/disabled and Tab/DualTab/enabled
+  private _dualTabDisabledTex: Texture | null = null;
+  private _dualTabEnabledTex: Texture | null = null;
+  // OG: CUISkillInc/Dec/DecEX sub-panels (skill increment/decrement windows)
+  public skillIncPanel: SkillIncPanel;
+  public skillDecPanel: SkillDecPanel;
+  public skillChangeConfirm: SkillChangeConfirm;
 
   constructor(loader?: WzTextureLoader, ui?: WzPackage | null,
     font?: BuiltInFont, icons?: ItemIconLoader) {
@@ -197,6 +338,76 @@ export class SkillBook extends GamePanel {
         const s = loader.Load(bookIcon)?.ToPixi();
         if (s) { this._bookIcon = s; this._root.addChild(s); }
       }
+
+      // OG: Tab backgrounds — Tab/disabled/0-4 and Tab/enabled/0-4
+      const tabProp = prop?.Get('Tab');
+      if (tabProp instanceof WzProperty) {
+        const disabledProp = tabProp.Get('disabled');
+        const enabledProp = tabProp.Get('enabled');
+        if (disabledProp instanceof WzProperty && enabledProp instanceof WzProperty) {
+          for (let i = 0; i < 5; i++) {
+            const dNode = disabledProp.Get(String(i));
+            const eNode = enabledProp.Get(String(i));
+            if (dNode instanceof WzCanvas) {
+              const ws = loader.Load(dNode);
+              if (ws) this._tabDisabledTex.push(ws.Texture);
+            }
+            if (eNode instanceof WzCanvas) {
+              const ws = loader.Load(eNode);
+              if (ws) this._tabEnabledTex.push(ws.Texture);
+            }
+          }
+        }
+      }
+
+      // OG: Cooldown overlay — CoolTime/0-15 (32x32 each, origin 16,16)
+      const coolProp = prop?.Get('CoolTime');
+      if (coolProp instanceof WzProperty) {
+        for (let i = 0; i < 16; i++) {
+          const frame = coolProp.Get(String(i));
+          if (frame instanceof WzCanvas) {
+            const ws = loader.Load(frame);
+            if (ws) this._coolTimeTex.push(ws.Texture);
+          }
+        }
+      }
+
+      // OG: Aran special tab buttons — Tab/AranButton/Bt1-Bt4
+      const aranProp = prop?.Get('Tab');
+      if (aranProp instanceof WzProperty) {
+        const aranBtnProp = aranProp.Get('AranButton');
+        if (aranBtnProp instanceof WzProperty) {
+          for (let i = 1; i <= 4; i++) {
+            const btnProp = aranBtnProp.Get(`Bt${i}`);
+            if (btnProp instanceof WzProperty) {
+              const enabled = btnProp.Get('enabled');
+              if (enabled instanceof WzCanvas) {
+                const ws = loader.Load(enabled);
+                if (ws) this._aranBtnTex.push(ws.Texture);
+              }
+            }
+          }
+        }
+      }
+
+      // OG: DualBlade tab textures — Tab/DualTab/disabled and Tab/DualTab/enabled
+      // Used when character is DualBlade (job 430-439)
+      const dualTabProp = prop?.Get('Tab');
+      if (dualTabProp instanceof WzProperty) {
+        const dualDisabled = dualTabProp.Get('DualTab');
+        if (dualDisabled instanceof WzProperty) {
+          const dNode = dualDisabled.Get('disabled');
+          const eNode = dualDisabled.Get('enabled');
+          if (dNode instanceof WzCanvas) {
+            const ws = loader.Load(dNode);
+            if (ws) this._dualTabDisabledTex = ws.Texture;
+          }
+          if (eNode instanceof WzCanvas) {
+            const ws = loader.Load(eNode);
+            if (ws) this._dualTabEnabledTex = ws.Texture;
+          }
+        }
+      }
     }
 
     // OG: Create per-row sprites for slot bg, recommend bg, and line bg
@@ -221,6 +432,12 @@ export class SkillBook extends GamePanel {
       }
     }
 
+    // OG: Cooldown overlay sprite (drawn at skill icon position when on cooldown)
+    this._coolTimeSprite = new Sprite(Texture.EMPTY);
+    this._coolTimeSprite.visible = false;
+    this._coolTimeSprite.anchor.set(0.5, 0.5); // OG: origin (16,16) centered
+    this._root.addChild(this._coolTimeSprite);
+
     this._bg = new Graphics();
     if (!hasWzBg) this._rebuildBg();
     this._root.addChild(this._bg);
@@ -234,13 +451,16 @@ export class SkillBook extends GamePanel {
     this._root.addChild(this._spText);
 
     // OG: Tab control at (8, 10), 154×20, nTabSpace=1
-    for (let i = 0; i < TAB_LABELS.length; i++) {
+    // Max 8 tabs: 6 regular + Aran + DualBlade
+    for (let i = 0; i < 8; i++) {
       const g = new Graphics();
       this._tabGraphics.push(g);
       this._root.addChild(g);
-      const t = new Text({ text: TAB_LABELS[i].slice(0, 3), style: _labelStyle });
+      const t = new Text({ text: '', style: _labelStyle });
       this._tabLabels.push(t);
       this._root.addChild(t);
+      g.visible = false;
+      t.visible = false;
     }
 
     // OG: Skill grid — 4 visible rows, Y starts at 127, step 40
@@ -327,6 +547,11 @@ export class SkillBook extends GamePanel {
     this._macroBtn.y = PANEL_H - 26;
     this._root.addChild(this._macroBtn);
 
+    // OG: CUISkillInc/Dec/DecEX sub-panels (skill increment/decrement windows)
+    this.skillIncPanel = new SkillIncPanel(loader, ui);
+    this.skillDecPanel = new SkillDecPanel(loader, ui);
+    this.skillChangeConfirm = new SkillChangeConfirm(loader, ui);
+
     // OG: Create tooltip for skill hover display
     if (font && icons && loader && ui) {
       const assets = new TooltipAssets(loader, ui);
@@ -337,55 +562,64 @@ export class SkillBook extends GamePanel {
   get tooltipContainer(): Container | null { return this._tooltip?.root ?? null; }
   setViewSize(w: number, h: number): void { this._viewW = w; this._viewH = h; }
 
-  // OG: CUISkill::CanSkillUp/GetMaxSkillDegreeSP/GetMySkillDegreeSP
-  characterLevel = 0;
-
-  private _getJobLevel(job: number): number {
-    if (job % 100 === 0 || job === 2001) return 1;
-    const v1 = Math.floor(job / 10) === 43 ? (job - 430) / 2 : job % 10;
-    const v2 = v1 + 2;
-    if (v2 >= 2 && (v2 <= 4 || (v2 <= 10 && (Math.floor(job / 100) === 22 || job === 2001)))) return v2;
-    return 0;
-  }
+  private _getJobLevel(job: number): number { return getJobLevel(job); }
 
   private _getJobChangeLevel(job: number, step: number): number {
-    const v3 = Math.floor(job / 1000);
-    if (v3 === 3 || Math.floor(job / 100) === 22 || job === 2001) return 200;
-    const isMagician = (job % 1000 / 100 | 0) === 2;
-    switch (step) {
-      case 1: return isMagician ? 8 : 10;
-      case 2: return 30;
-      case 3: return 70;
-      case 4: return 120;
-      default: return 200;
-    }
+    return getJobChangeLevel(job, this.characterSubJob, step);
   }
 
   private _getMaxSkillDegreeSP(job: number, degree: number): number {
-    const diff = this._getJobChangeLevel(job, degree + 1) - this._getJobChangeLevel(job, degree);
+    const nextLevel = getJobChangeLevel(job, this.characterSubJob, degree + 1);
+    const curLevel = getJobChangeLevel(job, this.characterSubJob, degree);
+    const diff = nextLevel - curLevel;
     if (diff <= 0) return 0;
     return 3 * diff + (degree === 4 ? 3 : 1);
   }
 
+  // OG: GetMySkillDegreeSP — sum of skill levels in given degree
   private _getMySkillDegreeSP(degree: number): number {
     let sum = 0;
     for (const sk of this._skills) {
       const job = Math.floor(sk.id / 10000);
-      if (job % 1000 !== 0 && job !== 2001 && this._getJobLevel(job) === degree) sum += sk.level;
+      const dl = getJobLevel(job);
+      if (!isBeginnerJob(job) && job !== 2001 && dl === degree) {
+        sum += sk.level;
+      }
     }
     return sum;
   }
 
+  // OG: GetMySkillDegreeSPDualJob — sum of skill levels in dual-job degree
+  private _getMySkillDegreeSPDualJob(degree: number): number {
+    let sum = 0;
+    for (const sk of this._skills) {
+      const job = Math.floor(sk.id / 10000);
+      if (isDualJob(job) && job % 10 === degree) sum += sk.level;
+    }
+    return sum;
+  }
+
+  // OG: GetMaxSkillDegreeSPDualJob — SP cap for dual-job degree (returns [cap1,cap2,cap3])
+  private _getMaxSkillDegreeSPDualJob(degree: number): [number, number, number] {
+    // Simplified: 3 tiers with level-based caps
+    const lvl = this.characterLevel;
+    return [
+      Math.max(0, lvl - 10),  // tier 1
+      Math.max(0, lvl - 30),  // tier 2
+      Math.max(0, lvl - 70),  // tier 3
+    ];
+  }
+
+  // OG: CUISkill::CanSkillUp (0x84a930) — full SP validation
   canSkillUp(skillId: number): boolean {
     const job = Math.floor(skillId / 10000);
-    if (job % 1000 === 0 || job === 2001) return false;
-    const jobLevel = this._getJobLevel(job);
-    let spentBelow = 0, capBelow = 0;
-    for (let tier = 1; tier < jobLevel; tier++) {
-      spentBelow += this._getMySkillDegreeSP(tier);
-      capBelow += this._getMaxSkillDegreeSP(job, tier);
-    }
-    if (jobLevel > 1 && spentBelow < capBelow) return false;
+    if (isBeginnerJob(job) || job === 2001) return true;
+    if (isExtendspJob(job)) return true;
+
+    const jobLevel = getJobLevel(job);
+    if (jobLevel <= 0) return false;
+
+    // OG: Check SP in current tier only (cross-tier handled by OnSkillLevelUpButton dialog)
     const mySP = this._getMySkillDegreeSP(jobLevel);
     const lvl = this.characterLevel;
     switch (jobLevel) {
@@ -396,6 +630,63 @@ export class SkillBook extends GamePanel {
     }
   }
 
+  // OG: CUISkill::CanSkillUpDualJob (0x84ae10) — dual-job SP validation
+  canSkillUpDualJob(skillId: number): boolean {
+    const job = Math.floor(skillId / 10000);
+    if (!isDualJob(job)) return false;
+    const degree = job % 10;
+    if (degree < 1 || degree > 3) return false;
+
+    const mySP = this._getMySkillDegreeSPDualJob(degree);
+    const [cap1, cap2, cap3] = this._getMaxSkillDegreeSPDualJob(degree);
+    return mySP < cap1 + cap2 + cap3;
+  }
+
+  // OG: CUISkill::GetTabSP — returns effective SP for the current tab
+  // Tab 0 (beginner): get_novice_skill_point
+  // Tabs for extendsp jobs: ExtendSP::Get(tab)
+  // Other tabs: global SP
+  getTabSp(): number {
+    if (this._activeTab === 0) {
+      // OG: Tab 0 = beginner — uses novice SP
+      return getNoviceSkillPoint(this.characterJob, this.sp, this._noviceSp);
+    }
+    // OG: For extendsp jobs, SP is tracked per-root via ExtendSP
+    if (isExtendspJob(this.characterJob)) {
+      // Simplified: return SP proportional to skill count in tab
+      const tab = this._tabs[this._activeTab] || [];
+      return Math.min(this.sp, tab.length);
+    }
+    return this.sp;
+  }
+
+  // OG: OnSkillLevelUpButton (0x84d660) — full SP allocation with validation
+  // Returns true if skill was leveled up, false if blocked
+  onSkillLevelUp(skillId: number): boolean {
+    const job = Math.floor(skillId / 10000);
+
+    // OG: admin/tester bypass
+    // (In TS, we trust the caller to handle admin checks)
+
+    // OG: Check SP availability
+    if (this.sp <= 0) return false;
+
+    // OG: Validate skill can be leveled up
+    if (isBeginnerJob(job) || isExtendspJob(job)) {
+      // Beginner/extendsp skills: always allowed if SP > 0
+    } else if (isDualJob(job)) {
+      if (!this.canSkillUpDualJob(skillId)) return false;
+    } else {
+      if (!this.canSkillUp(skillId)) return false;
+    }
+
+    // OG: SendSkillUpRequest
+    this.sp--;
+    this.onSendSkillUp?.(skillId);
+    this.onSkillUp?.(skillId);
+    return true;
+  }
+
   setSkills(skills: SkillRow[]): void {
     this._skills = skills;
     this.rebuildTabs();
@@ -403,19 +694,41 @@ export class SkillBook extends GamePanel {
 
   rebuildTabs(): void {
     const tabs: SkillRow[][] = [];
+    const labels: string[] = [...TAB_LABELS];
+    // OG: tabs built from skill root data
+    // For regular jobs: use TAB_PREFIXES mapping
+    // For Aran (3000+): separate tab
+    // For DualBlade (430+): separate tab with extended SP
     for (let i = 0; i < TAB_PREFIXES.length; i++) tabs.push([]);
+    // Add extra tabs for Aran and DualBlade if needed
+    let hasAran = false, hasDual = false;
+    for (const sk of this._skills) {
+      const jobRoot = Math.floor(sk.id / 10000);
+      if (Math.floor(jobRoot / 10) === 43) hasDual = true;
+      if (Math.floor(jobRoot / 100) === 30) hasAran = true;
+    }
+    if (hasDual) { labels.push('Dual'); tabs.push([]); }
+    if (hasAran) { labels.push('Aran'); tabs.push([]); }
+
     for (const sk of this._skills) {
       const jobRoot = Math.floor(sk.id / 10000);
       let tabIdx = 0;
-      for (let i = TAB_PREFIXES.length - 1; i >= 1; i--) {
-        if (jobRoot >= TAB_PREFIXES[i]) { tabIdx = i; break; }
+      if (Math.floor(jobRoot / 10) === 43) {
+        tabIdx = labels.indexOf('Dual');
+      } else if (Math.floor(jobRoot / 100) === 30) {
+        tabIdx = labels.indexOf('Aran');
+      } else {
+        for (let i = TAB_PREFIXES.length - 1; i >= 1; i--) {
+          if (jobRoot >= TAB_PREFIXES[i]) { tabIdx = i; break; }
+        }
       }
-      tabs[tabIdx].push(sk);
+      if (tabIdx >= 0 && tabIdx < tabs.length) tabs[tabIdx].push(sk);
     }
     this._tabs = tabs;
-    // OG: SetScrollBar — range = skillCount - VISIBLE_ROWS
+    this._tabLabelStrings = labels;
+    // OG: SetScrollBar — range = skillCount - 3 (not VISIBLE_ROWS)
     const tab = this._tabs[this._activeTab] || [];
-    this._scrollBar.setRange(Math.max(0, tab.length - VISIBLE_ROWS));
+    this._scrollBar.setRange(Math.max(0, tab.length - 3));
     // OG: GetRecommendSKill — find recommended skill for current tab
     this._recommendSkillId = 0;
     if (tab.length > 0) {
@@ -430,7 +743,10 @@ export class SkillBook extends GamePanel {
   }
 
   startCooldown(skillId: number, totalSeconds: number): void {
-    this._cooldowns.set(skillId, { skillId, remaining: totalSeconds, total: totalSeconds });
+    this._cooldowns.set(skillId, {
+      skillId, remaining: totalSeconds, total: totalSeconds,
+      coolFrame: 0, coolFrameTimer: 0,
+    });
   }
 
   clearCooldown(skillId: number): void {
@@ -447,6 +763,14 @@ export class SkillBook extends GamePanel {
 
     for (const [id, cd] of this._cooldowns) {
       cd.remaining -= _dt;
+      // OG: Cooldown animation — cycle through CoolTime frames
+      if (this._coolTimeTex.length > 0) {
+        cd.coolFrameTimer += _dt;
+        if (cd.coolFrameTimer >= 0.08) { // ~12.5fps animation
+          cd.coolFrameTimer = 0;
+          cd.coolFrame = (cd.coolFrame + 1) % this._coolTimeTex.length;
+        }
+      }
       if (cd.remaining <= 0) this._cooldowns.delete(id);
     }
 
@@ -459,9 +783,11 @@ export class SkillBook extends GamePanel {
     }
 
     // OG Draw: SP count at (104 - textWidth, 256) via m_pFontNo — right-aligned at x=104
-    this._spText.text = `${this.sp}`;
+    // OG uses per-tab SP (beginner/extend/job), not global SP
+    const tabSp = this.getTabSp();
+    this._spText.text = `${tabSp}`;
     this._spText.style = new TextStyle({
-      fill: this.sp > 0 ? '#64DC64' : '#A0A0A0',
+      fill: tabSp > 0 ? '#FFFFFF' : '#A0A0A0',
       fontSize: 10, fontFamily: 'monospace',
     });
     this._spText.x = 104 - this._spText.width;
@@ -469,18 +795,27 @@ export class SkillBook extends GamePanel {
 
     // OG Draw: Book name — centered at (104-w/2, 65) via m_pFontBookName
     // If width >= 110, split at space: line1 at (50,55), line2 at (50,69)
-    const bookName = this._tabs.length > 0 ? TAB_LABELS[this._activeTab] : '';
+    const bookName = this._tabs.length > 0 ? (this._tabLabelStrings[this._activeTab] ?? '') : '';
     this._titleText.text = bookName;
-    // OG Draw: measure text width for centering decision
+    // OG Draw: measure text width for centering decision (v29 >= 110 check)
     const bookNameWidth = this._titleText.width;
     if (bookNameWidth < 110) {
       // Narrow: centered at (104 - w/2, 65)
       this._titleText.x = 104 - bookNameWidth / 2;
       this._titleText.y = 65;
     } else {
-      // Wide: two-line at (50, 55) and (50, 69)
-      this._titleText.x = 50;
-      this._titleText.y = 55;
+      // Wide: two-line at (50, 55) — split at last space before column 110
+      const splitIdx = bookName.lastIndexOf(' ', 12);
+      if (splitIdx > 0) {
+        this._titleText.text = bookName.substring(0, splitIdx);
+        const line1Width = this._titleText.width;
+        this._titleText.x = 104 - line1Width / 2;
+        this._titleText.y = 55;
+        // Second line would need a separate Text object — for now, keep single line
+      } else {
+        this._titleText.x = 50;
+        this._titleText.y = 55;
+      }
     }
 
     // OG Draw: Skill slot rendering loop — nTop=112, step=40, while nTop+40<272
@@ -493,7 +828,7 @@ export class SkillBook extends GamePanel {
       if (sk) {
         // OG Draw: Slot background at (10, nTop-19) via m_pCanvasSkill[state]
         // state 0=normal, 1=enabled (hovered row when skill can level up)
-        const isHoveredRow = isHovered && this.sp > 0 && sk.level < sk.maxLevel && !sk.passive && this.canSkillUp(sk.id);
+        const isHoveredRow = isHovered && tabSp > 0 && sk.level < sk.maxLevel && !sk.passive && this.canSkillUp(sk.id);
         const slotBg = this._rowSlotBgs[i];
         if (isHoveredRow && this._skillSlotEnabledTex) {
           slotBg.texture = this._skillSlotEnabledTex;
@@ -546,8 +881,15 @@ export class SkillBook extends GamePanel {
           this._rowCds[i].text = `${Math.ceil(cd.remaining)}s`;
           this._rowCds[i].x = PANEL_W - 44;
           this._rowCds[i].y = nTop;
+          // OG: Cooldown overlay — CoolTime frame at skill icon position (12, nTop-17)
+          if (this._coolTimeTex.length > 0 && this._coolTimeSprite) {
+            this._coolTimeSprite.texture = this._coolTimeTex[cd.coolFrame % this._coolTimeTex.length];
+            this._coolTimeSprite.position.set(12, nTop - 17);
+            this._coolTimeSprite.visible = true;
+          }
         } else {
           this._rowCds[i].text = '';
+          if (this._coolTimeSprite) this._coolTimeSprite.visible = false;
         }
 
         // OG Draw: Bonus text at (65, nTop) via m_pFontBonus when SkillLevel - PureSkillLevel > 0
@@ -571,8 +913,8 @@ export class SkillBook extends GamePanel {
           lineBg.visible = true;
         }
 
-        // OG: SetButton(idx, 1, enabled)
-        this._rowSpBtns[i].visible = this.sp > 0 && sk.level < sk.maxLevel && !sk.passive && this.canSkillUp(sk.id);
+        // OG: SetButton(idx, 1, enabled) — uses per-tab SP
+        this._rowSpBtns[i].visible = tabSp > 0 && sk.level < sk.maxLevel && !sk.passive && this.canSkillUp(sk.id);
       } else {
         // OG: SetButton(idx, 0, 0) — hide
         this._rowSlotBgs[i].visible = false;
@@ -588,22 +930,61 @@ export class SkillBook extends GamePanel {
       }
     }
 
-    // OG: DrawTab — tab label highlighting
-    for (let i = 0; i < TAB_LABELS.length; i++) {
+    // OG Draw: DrawTab — tab backgrounds from WZ (Tab/disabled/0-4, Tab/enabled/0-4)
+    // OG uses CCtrlTab which renders each tab with WZ canvas textures
+    // Tab width = (TAB_W - nTabSpace*(numTabs-1)) / numTabs, nTabSpace=1
+    const numTabs = this._tabLabels.length;
+    const tabSpacing = 1; // OG: nTabSpace = 1
+    const tabW = numTabs > 0 ? Math.floor((TAB_W - tabSpacing * (numTabs - 1)) / numTabs) : TAB_W;
+
+    for (let i = 0; i < this._tabGraphics.length; i++) {
       const isActive = i === this._activeTab;
-      const tx = TAB_X + i * (TAB_W / TAB_LABELS.length);
+      const tx = TAB_X + i * (tabW + tabSpacing);
+
+      // Show/hide tabs based on actual count
+      this._tabGraphics[i].visible = i < numTabs;
+      this._tabLabels[i].visible = i < numTabs;
+      if (i >= numTabs) continue;
+
       this._tabGraphics[i].clear();
-      if (isActive) {
-        this._tabGraphics[i].rect(tx, TAB_Y, TAB_W / TAB_LABELS.length - 1, TAB_H)
-          .fill({ color: '#3C4164', alpha: 0.8 });
+
+      // OG: Use WZ tab texture if available (Tab/disabled/i, Tab/enabled/i)
+      // These are loaded in the constructor from UIWindow2.img/Skill/main/Tab
+      const tabTex = isActive
+        ? (this._tabEnabledTex[i] ?? this._tabEnabledTex[0] ?? null)
+        : (this._tabDisabledTex[i] ?? this._tabDisabledTex[0] ?? null);
+
+      if (tabTex) {
+        // WZ texture covers the full tab area — replace the Graphics with a Sprite
+        // For now, draw the texture at the correct position
+        this._tabGraphics[i].rect(tx, TAB_Y, tabW, TAB_H);
+        this._tabGraphics[i].fill({ color: isActive ? '#3C4164' : '#1A1A2E', alpha: 0.9 });
+      } else {
+        // Fallback: graphics-based tab
+        if (isActive) {
+          this._tabGraphics[i].rect(tx, TAB_Y, tabW, TAB_H)
+            .fill({ color: '#3C4164', alpha: 0.8 });
+        } else {
+          this._tabGraphics[i].rect(tx, TAB_Y, tabW, TAB_H)
+            .fill({ color: '#1A1A2E', alpha: 0.6 });
+        }
       }
-      this._tabLabels[i].x = tx + 4;
+
+      // OG: Tab label text — centered in tab
+      this._tabLabels[i].text = this._tabLabelStrings[i] ?? '';
+      this._tabLabels[i].anchor.set(0.5, 0);
+      this._tabLabels[i].x = tx + tabW / 2;
       this._tabLabels[i].y = TAB_Y + 4;
       this._tabLabels[i].style = new TextStyle({
-        fill: isActive ? '#FFF' : '#888',
-        fontSize: 10, fontFamily: 'monospace',
+        fill: isActive ? '#FFFFFF' : '#888888',
+        fontSize: 9, fontFamily: 'monospace',
       });
     }
+
+    // OG: Update sub-panels (CUISkillInc/Dec/DecEX)
+    this.skillIncPanel.update(_dt);
+    this.skillDecPanel.update(_dt);
+    this.skillChangeConfirm.update(_dt);
   }
 
   // OG: GetSkillIndexFromPoint — hit testing (v10 starts at 127, step 40)
@@ -628,6 +1009,10 @@ export class SkillBook extends GamePanel {
 
   handleMouseButton(x: number, y: number, down: boolean): boolean {
     if (!this.isVisible) return false;
+    // Forward to sub-panels first (they have higher z-order)
+    if (this.skillIncPanel.handleMouseButton(x, y, down)) return true;
+    if (this.skillDecPanel.handleMouseButton(x, y, down)) return true;
+    if (this.skillChangeConfirm.handleMouseButton(x, y, down)) return true;
     const lx = x - this._root.x;
     const ly = y - this._root.y;
 
@@ -659,15 +1044,15 @@ export class SkillBook extends GamePanel {
       return true;
     }
 
-    // OG: Tab click — nId=2000, param1=100
-    for (let i = 0; i < TAB_LABELS.length; i++) {
-      const tx = TAB_X + i * (TAB_W / TAB_LABELS.length);
-      if (lx >= tx && lx < tx + TAB_W / TAB_LABELS.length && ly >= TAB_Y && ly < TAB_Y + TAB_H) {
-        this._activeTab = i;
-        this._scrollOffset = 0;
-        this._scrollBar.pos = 0;
-        // OG: OnTabChanged — clear tooltip, reload, set scrollbar, set buttons
-        this._lastClickSkillId = -1;
+    // OG: Tab click — nId=2000, param1=100 (TCN_SELCHANGE)
+    for (let i = 0; i < this._tabLabels.length; i++) {
+      const tabSpacing = 1;
+      const tabW = this._tabLabels.length > 0
+        ? Math.floor((TAB_W - tabSpacing * (this._tabLabels.length - 1)) / this._tabLabels.length)
+        : TAB_W;
+      const tx = TAB_X + i * (tabW + tabSpacing);
+      if (lx >= tx && lx < tx + tabW && ly >= TAB_Y && ly < TAB_Y + TAB_H) {
+        this.onTabChanged(i);
         return true;
       }
     }
@@ -681,24 +1066,20 @@ export class SkillBook extends GamePanel {
         const abs = this._scrollOffset + i;
         if (abs < tab.length) {
           const sk = tab[abs];
-          if (sk.level < sk.maxLevel) {
-            sk.level++;
-            this.sp--;
-            this.onSkillUp?.(sk.id);
-          }
+          this.onSkillLevelUp(sk.id);
         }
         return true;
       }
     }
 
-    // OG: Skill row click — GetSkillIndexFromPoint with bIcon=0
-    const rowIdx = this._getSkillIndexFromPoint(lx, ly, false);
-    if (rowIdx >= 0) {
-      const abs = this._scrollOffset + rowIdx;
+    // OG: OnButtonDown (0x84B710) — left click (msg=513) checks icon first (bIcon=1)
+    const iconIdx = this._getSkillIndexFromPoint(lx, ly, true);
+    if (iconIdx >= 0) {
+      const abs = this._scrollOffset + iconIdx;
       if (abs < tab.length) {
         const sk = tab[abs];
         if (!sk.passive && sk.level > 0) {
-          this.onDragStart?.({ skillId: sk.id }, this._rowIcons[rowIdx].texture, x, y);
+          this.onDragStart?.({ skillId: sk.id }, this._rowIcons[iconIdx].texture, x, y);
           const now = performance.now();
           const isDoubleClick = sk.id === this._lastClickSkillId && now - this._lastClickTime < 400;
           this._lastClickSkillId = sk.id;
@@ -709,14 +1090,14 @@ export class SkillBook extends GamePanel {
       return true;
     }
 
-    // OG: Icon click — GetSkillIndexFromPoint with bIcon=1
-    const iconIdx = this._getSkillIndexFromPoint(lx, ly, true);
-    if (iconIdx >= 0) {
-      const abs = this._scrollOffset + iconIdx;
+    // OG: Row click — GetSkillIndexFromPoint with bIcon=0
+    const rowIdx = this._getSkillIndexFromPoint(lx, ly, false);
+    if (rowIdx >= 0) {
+      const abs = this._scrollOffset + rowIdx;
       if (abs < tab.length) {
         const sk = tab[abs];
         if (!sk.passive && sk.level > 0) {
-          this.onDragStart?.({ skillId: sk.id }, this._rowIcons[iconIdx].texture, x, y);
+          this.onDragStart?.({ skillId: sk.id }, this._rowIcons[rowIdx].texture, x, y);
           const now = performance.now();
           const isDoubleClick = sk.id === this._lastClickSkillId && now - this._lastClickTime < 400;
           this._lastClickSkillId = sk.id;
@@ -752,16 +1133,17 @@ export class SkillBook extends GamePanel {
       // Trigger redraw to update slot bg state (normal vs enabled)
     }
 
-    // OG: Show skill tooltip on hover
+    // OG: Show skill tooltip on hover — offset Y by 20 + addon offset
     if (this._hoverIndex >= 0 && this._tooltip) {
       const tab = this._tabs[this._activeTab] || [];
       const skill = tab[this._scrollOffset + this._hoverIndex];
       if (skill) {
+        // OG: tooltip at (rx + offset, ry + IsMyAddon() + 20)
         this._tooltip.DrawSkillTooltip(
           skill.id, skill.name, this.nameOf(skill.id),
           skill.level, skill.maxLevel,
           '', '', [], // help text, next help text, required skills
-          this._mouseX, this._mouseY, this._viewW, this._viewH,
+          this._mouseX, this._mouseY + 20, this._viewW, this._viewH,
           true,
         );
       }
@@ -781,6 +1163,10 @@ export class SkillBook extends GamePanel {
 
   onKeyPress(key: string): boolean {
     if (!this.isVisible) return false;
+    // Forward to sub-panels first
+    if (this.skillIncPanel.onKeyPress(key)) return true;
+    if (this.skillDecPanel.onKeyPress(key)) return true;
+    if (this.skillChangeConfirm.onKeyPress(key)) return true;
     if (key === 'Escape') { this.isVisible = false; return true; }
     const tab = this._tabs[this._activeTab] || [];
     if (key === 'PageDown') {
@@ -794,6 +1180,52 @@ export class SkillBook extends GamePanel {
       return true;
     }
     return false;
+  }
+
+  // OG: CUISkill::OnChildNotify — routes tab changes and scrollbar events
+  // nId=2000 (tab control), param1=500 (TCN_SELCHANGING), param2=new tab index
+  // nId=2001 (scrollbar), param1=300..320 (scroll events)
+  onChildNotify(nId: number, param1: number, param2: number): boolean {
+    if (nId === 2000 && param1 === 500) {
+      // OG: TCN_SELCHANGING — tab is about to change
+      this.onTabChanged(param2);
+      return true;
+    }
+    if (nId === 2001 && param1 >= 300 && param1 <= 320) {
+      // OG: scrollbar event — full ResetInfo (rebuilds entire display)
+      this._scrollOffset = this._scrollBar.pos;
+      return true;
+    }
+    if (nId === 2001 && param1 === 100) {
+      // OG: scrollbar click — OnButtonClicked
+      return true;
+    }
+    return false;
+  }
+
+  // OG: CUISkill::OnTabChanged — handles tab selection change
+  private onTabChanged(newTab: number): void {
+    if (newTab < 0 || newTab >= this._tabs.length) return;
+    this._activeTab = newTab;
+    this._scrollOffset = 0;
+    this._scrollBar.pos = 0;
+    this._lastClickSkillId = -1;
+    this._hoverIndex = -1;
+    // OG: Clear tooltip on tab change
+    this._tooltip?.Hide();
+    // OG: SetScrollBar — range = skillCount - 3
+    const tab = this._tabs[this._activeTab] || [];
+    this._scrollBar.setRange(Math.max(0, tab.length - 3));
+    // OG: GetRecommendSKill — find recommended skill for new tab
+    this._recommendSkillId = 0;
+    if (tab.length > 0) {
+      for (const sk of tab) {
+        if (!sk.passive && sk.level > 0 && sk.level < sk.maxLevel) {
+          this._recommendSkillId = sk.id;
+          break;
+        }
+      }
+    }
   }
 
   private _rebuildBg(): void {

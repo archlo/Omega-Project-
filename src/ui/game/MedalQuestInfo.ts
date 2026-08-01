@@ -30,6 +30,8 @@ export class MedalQuestInfo extends GamePanel {
     this._log.setQuests(groups);
     this._log.isVisible = true;
     this.isVisible = true;
+    // OG: CUIWnd close button
+    this.createCloseButton(null, null, 1, 280);
   }
 
   private _syncNameResolver(): void {

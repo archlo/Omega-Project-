@@ -1,0 +1,191 @@
+void __thiscall CMob::AnimateAngerIndicator(CMob *this)
+{
+  int update_time; // eax
+  bool v3; // cc
+  IWzGr2DLayer *m_pInterface; // ecx
+  IWzGr2DLayer *v5; // ecx
+  void (__stdcall *v6)(VARIANTARG *); // edi
+  HRESULT v7; // eax
+  HRESULT v8; // eax
+  HRESULT v9; // eax
+  HRESULT v10; // eax
+  HRESULT v11; // eax
+  IWzGr2DLayer *v12; // ecx
+  IWzCanvas *v13; // eax
+  HRESULT (__stdcall *v14)(VARIANTARG *); // edi
+  int v15; // ecx
+  int v16; // edx
+  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > result; // [esp+28h] [ebp-84h] BYREF
+  int tCur; // [esp+2Ch] [ebp-80h]
+  Ztl_variant_t vIndex; // [esp+30h] [ebp-7Ch] BYREF
+  VARIANTARG v20; // [esp+40h] [ebp-6Ch] BYREF
+  VARIANTARG v21; // [esp+50h] [ebp-5Ch] BYREF
+  VARIANTARG v22; // [esp+60h] [ebp-4Ch] BYREF
+  VARIANTARG pvargDest; // [esp+70h] [ebp-3Ch] BYREF
+  VARIANTARG pvarg; // [esp+80h] [ebp-2Ch] BYREF
+  Ztl_variant_t v25; // [esp+90h] [ebp-1Ch] BYREF
+  int v26; // [esp+A8h] [ebp-4h]
+
+  update_time = get_update_time(); /*0x63d08c*/
+  v3 = this->m_nCurrIndicatorIndex <= 0; /*0x63d091*/
+  tCur = update_time; /*0x63d098*/
+  if ( v3 && this->m_pLayerAngerTag.m_pInterface ) /*0x63d0a2*/
+  {
+    vIndex.vt = 3; /*0x63d0be*/
+    vIndex.decVal.Lo32 = -2; /*0x63d0c3*/
+    m_pInterface = this->m_pLayerAngerTag.m_pInterface; /*0x63d0cb*/
+    v26 = 0; /*0x63d0d1*/
+    if ( !m_pInterface ) /*0x63d0de*/
+      _com_issue_error(-2147467261); /*0x63d0e5*/
+    IWzGr2DLayer::RemoveCanvas(m_pInterface, &result, &vIndex); /*0x63d0f4*/
+    if ( result.m_pInterface ) /*0x63d0ff*/
+      result.m_pInterface->Release(result.m_pInterface); /*0x63d107*/
+    v26 = -1; /*0x63d10f*/
+    if ( vIndex.vt == 8 ) /*0x63d11a*/
+    {
+      vIndex.vt = 0; /*0x63d11e*/
+      if ( vIndex.decVal.Lo32 ) /*0x63d129*/
+        ZAPI.CoTaskMemFree((void *)(vIndex.decVal.Lo32 - 4)); /*0x63d133*/
+    }
+    else
+    {
+      VariantClear(&vIndex); /*0x63d143*/
+    }
+  }
+  else if ( this->m_pLayerAngerTag.m_pInterface ) /*0x63d14e*/
+  {
+    vIndex.vt = 3; /*0x63d16a*/
+    vIndex.decVal.Lo32 = -2; /*0x63d16f*/
+    v5 = this->m_pLayerAngerTag.m_pInterface; /*0x63d177*/
+    v26 = 1; /*0x63d17d*/
+    if ( !v5 ) /*0x63d18a*/
+      _com_issue_error(-2147467261); /*0x63d191*/
+    IWzGr2DLayer::RemoveCanvas(v5, &result, &vIndex); /*0x63d1a0*/
+    if ( result.m_pInterface ) /*0x63d1ab*/
+      result.m_pInterface->Release(result.m_pInterface); /*0x63d1b3*/
+    v26 = -1; /*0x63d1ba*/
+    if ( vIndex.vt == 8 ) /*0x63d1ca*/
+    {
+      vIndex.vt = 0; /*0x63d1ce*/
+      if ( vIndex.decVal.Lo32 ) /*0x63d1d9*/
+        ZAPI.CoTaskMemFree((void *)(vIndex.decVal.Lo32 - 4)); /*0x63d1df*/
+    }
+    else
+    {
+      VariantClear(&vIndex); /*0x63d1ec*/
+    }
+    v6 = VariantInit; /*0x63d1f2*/
+    VariantInit(&pvarg); /*0x63d1fd*/
+    v7 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing); /*0x63d209*/
+    if ( v7 < 0 ) /*0x63d213*/
+      _com_issue_error(v7); /*0x63d216*/
+    v26 = 2; /*0x63d220*/
+    v6(&pvargDest); /*0x63d22b*/
+    v8 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing); /*0x63d237*/
+    if ( v8 < 0 ) /*0x63d241*/
+      _com_issue_error(v8); /*0x63d244*/
+    LOBYTE(v26) = 3; /*0x63d24e*/
+    v6(&v22); /*0x63d256*/
+    v9 = ZComAPI::ZComVariantCopy(&v22, &vtMissing); /*0x63d262*/
+    if ( v9 < 0 ) /*0x63d26c*/
+      _com_issue_error(v9); /*0x63d26f*/
+    LOBYTE(v26) = 4; /*0x63d279*/
+    v6(&v21); /*0x63d281*/
+    v10 = ZComAPI::ZComVariantCopy(&v21, &vtMissing); /*0x63d28d*/
+    if ( v10 < 0 ) /*0x63d297*/
+      _com_issue_error(v10); /*0x63d29a*/
+    LOBYTE(v26) = 5; /*0x63d2a6*/
+    v6(&v20); /*0x63d2ad*/
+    v11 = ZComAPI::ZComVariantCopy(&v20, &vtMissing); /*0x63d2b9*/
+    if ( v11 < 0 ) /*0x63d2c3*/
+      _com_issue_error(v11); /*0x63d2c6*/
+    v12 = this->m_pLayerAngerTag.m_pInterface; /*0x63d2e3*/
+    v13 = this->m_pCanvasAngerIndicatorArray.a[this->m_nCurrIndicatorIndex - 1].a[this->m_nAngerGaugeCount].m_pInterface; /*0x63d2ec*/
+    LOBYTE(v26) = 6; /*0x63d2ee*/
+    if ( !v12 ) /*0x63d2f8*/
+      _com_issue_error(-2147467261); /*0x63d2ff*/
+    IWzGr2DLayer::InsertCanvas( /*0x63d326*/
+      v12,
+      &v25,
+      v13,
+      (const Ztl_variant_t *)&v20,
+      (const Ztl_variant_t *)&v21,
+      (const Ztl_variant_t *)&v22,
+      (const Ztl_variant_t *)&pvargDest,
+      (const Ztl_variant_t *)&pvarg);
+    if ( v25.vt == 8 ) /*0x63d330*/
+    {
+      v25.vt = 0; /*0x63d33b*/
+      if ( v25.decVal.Lo32 ) /*0x63d342*/
+        ZAPI.CoTaskMemFree((void *)(v25.decVal.Lo32 - 4)); /*0x63d348*/
+      v14 = VariantClear; /*0x63d34e*/
+    }
+    else
+    {
+      v14 = VariantClear; /*0x63d37d*/
+      VariantClear(&v25); /*0x63d388*/
+    }
+    LOBYTE(v26) = 5; /*0x63d354*/
+    if ( v20.vt == 8 ) /*0x63d360*/
+    {
+      v20.vt = 0; /*0x63d364*/
+      if ( v20.decVal.Lo32 ) /*0x63d36f*/
+        ZAPI.CoTaskMemFree((void *)(v20.decVal.Lo32 - 4)); /*0x63d375*/
+    }
+    else
+    {
+      v14(&v20); /*0x63d391*/
+    }
+    LOBYTE(v26) = 4; /*0x63d393*/
+    if ( v21.vt == 8 ) /*0x63d3a0*/
+    {
+      v21.vt = 0; /*0x63d3a8*/
+      if ( v21.decVal.Lo32 ) /*0x63d3af*/
+        ZAPI.CoTaskMemFree((void *)(v21.decVal.Lo32 - 4)); /*0x63d3b5*/
+    }
+    else
+    {
+      v14(&v21); /*0x63d3c2*/
+    }
+    LOBYTE(v26) = 3; /*0x63d3c4*/
+    if ( v22.vt == 8 ) /*0x63d3d1*/
+    {
+      v22.vt = 0; /*0x63d3d9*/
+      if ( v22.decVal.Lo32 ) /*0x63d3e0*/
+        ZAPI.CoTaskMemFree((void *)(v22.decVal.Lo32 - 4)); /*0x63d3e6*/
+    }
+    else
+    {
+      v14(&v22); /*0x63d3f3*/
+    }
+    LOBYTE(v26) = 2; /*0x63d3f5*/
+    if ( pvargDest.vt == 8 ) /*0x63d402*/
+    {
+      pvargDest.vt = 0; /*0x63d406*/
+      if ( pvargDest.decVal.Lo32 ) /*0x63d411*/
+        ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4)); /*0x63d417*/
+    }
+    else
+    {
+      v14(&pvargDest); /*0x63d424*/
+    }
+    v26 = -1; /*0x63d426*/
+    if ( pvarg.vt == 8 ) /*0x63d436*/
+    {
+      pvarg.vt = 0; /*0x63d43e*/
+      if ( pvarg.decVal.Lo32 ) /*0x63d445*/
+        ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x63d44b*/
+    }
+    else
+    {
+      v14(&pvarg); /*0x63d458*/
+    }
+    v15 = tCur; /*0x63d45a*/
+    if ( tCur - this->m_nUpdateTime >= 100 ) /*0x63d469*/
+    {
+      v16 = ++this->m_nAngerGaugeCount % this->m_pCanvasAngerIndicatorArrayCount.a[this->m_nCurrIndicatorIndex - 1]; /*0x63d484*/
+      this->m_nUpdateTime = v15; /*0x63d488*/
+      this->m_nAngerGaugeCount = v16; /*0x63d48e*/
+    }
+  }
+}

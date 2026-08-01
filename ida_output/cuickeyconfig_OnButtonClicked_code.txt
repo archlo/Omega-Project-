@@ -1,0 +1,66 @@
+﻿void __thiscall CUIKeyConfig::OnButtonClicked(CUIKeyConfig *this, unsigned int nId)
+{
+  CUIKeyConfig::CNoticeDlg *v3; // eax
+  CUIKeyConfig::CNoticeDlg *v4; // eax
+  CUIKeyConfig::CNoticeDlg *v5; // eax
+  CUIKeyConfig::CNoticeDlg *v6; // eax
+
+  CUIWnd::OnButtonClicked(this, nId); /*0x7dddb9*/
+  if ( nId > 0x7D0 ) /*0x7dddc4*/
+  {
+    if ( nId == 2001 ) /*0x7ddeaf*/
+    {
+      v5 = (CUIKeyConfig::CNoticeDlg *)ZAllocEx<ZAllocAnonSelector>::Alloc( /*0x7ddedf*/
+                                         &ZAllocEx<ZAllocAnonSelector>::_s_alloc,
+                                         0xAECu);
+      if ( v5 ) /*0x7ddef2*/
+        v6 = CUIKeyConfig::CNoticeDlg::CNoticeDlg(v5, this, 1); /*0x7ddef9*/
+      else
+        v6 = nullptr; /*0x7ddf00*/
+      if ( CDialog::DoModal(v6) == 1 ) /*0x7ddf14*/
+      {
+        memset(&TSingleton<CFuncKeyMappedMan>::ms_pInstance->m_aFuncKeyMapped[0].nType, 0, 0x1BDu); /*0x7ddf26*/
+        CUIKeyConfig::ResetPaletteItems(this); /*0x7ddf30*/
+        CWnd::InvalidateRect((CWnd *)TSingleton<CUIStatusBar>::ms_pInstance._m_pStr, nullptr); /*0x7ddf3d*/
+        goto LABEL_20; /*0x7ddf3d*/
+      }
+    }
+    else if ( nId == 2002 ) /*0x7ddeb4*/
+    {
+      CUIKeyConfig::OnQuickslotKeyConf(this); /*0x7ddebc*/
+    }
+  }
+  else
+  {
+    if ( nId != 2000 ) /*0x7dddca*/
+    {
+      if ( nId == 1 ) /*0x7dddcf*/
+      {
+        CFuncKeyMappedMan::SaveFuncKeyMap(TSingleton<CFuncKeyMappedMan>::ms_pInstance); /*0x7dde0d*/
+        CQuickslotKeyMappedMan::SaveQuickslotKeyMap(TSingleton<CQuickslotKeyMappedMan>::ms_pInstance); /*0x7dde18*/
+        CWvsContext::UI_Close((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, 5); /*0x7dde25*/
+      }
+      else if ( nId == 2 ) /*0x7dddd4*/
+      {
+        CWnd::InvalidateRect((CWnd *)TSingleton<CUIStatusBar>::ms_pInstance._m_pStr, nullptr); /*0x7ddde1*/
+        CWvsContext::UI_Close((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, 5); /*0x7dddee*/
+      }
+      return; /*0x7dde04*/
+    }
+    v3 = (CUIKeyConfig::CNoticeDlg *)ZAllocEx<ZAllocAnonSelector>::Alloc( /*0x7dde48*/
+                                       &ZAllocEx<ZAllocAnonSelector>::_s_alloc,
+                                       0xAECu);
+    if ( v3 ) /*0x7dde5b*/
+      v4 = CUIKeyConfig::CNoticeDlg::CNoticeDlg(v3, this, 0); /*0x7dde62*/
+    else
+      v4 = nullptr; /*0x7dde69*/
+    if ( CDialog::DoModal(v4) == 1 ) /*0x7dde7d*/
+    {
+      CFuncKeyMappedMan::DefaultFuncKeyMap(TSingleton<CFuncKeyMappedMan>::ms_pInstance); /*0x7dde89*/
+      CQuickslotKeyMappedMan::DefaultQuickslotKeyMap(TSingleton<CQuickslotKeyMappedMan>::ms_pInstance); /*0x7dde94*/
+      CUIStatusBar::ReDrawQuickslot((CUIStatusBar *)TSingleton<CUIStatusBar>::ms_pInstance._m_pStr); /*0x7dde9f*/
+LABEL_20:
+      CWnd::InvalidateRect(this, nullptr); /*0x7ddf42*/
+    }
+  }
+}

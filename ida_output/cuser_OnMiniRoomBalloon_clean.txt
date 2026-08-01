@@ -1,0 +1,123 @@
+// cuser::OnMiniRoomBalloon
+
+void __thiscall CUser::OnMiniRoomBalloon(CUser *this, CInPacket *iPacket)
+{
+  CInPacket *v3; // edi
+  unsigned __int8 v4; // al
+  const ZXString<char> *v5; // eax
+  unsigned __int8 v6; // al
+  bool v7; // zf
+  int m_nMaxUsers; // ecx
+  int m_nGameKind; // edx
+  int m_bPrivate; // eax
+  IWzVector2D *m_pInterface; // eax
+  IWzGr2DLayer *v12; // ecx
+  IWzCanvas *v13; // edi
+  HRESULT (__stdcall *get_cy)(IWzCanvas *, int *); // edx
+  HRESULT v15; // eax
+  _bstr_t::Data_t *v16; // ecx
+  char *m_pStr; // eax
+  int m_nMiniRoomType; // [esp-24h] [ebp-5Ch]
+  _bstr_t v19; // [esp-20h] [ebp-58h] BYREF
+  CInPacket *v20; // [esp-1Ch] [ebp-54h]
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v21; // [esp-18h] [ebp-50h] BYREF
+  int v22; // [esp-14h] [ebp-4Ch]
+  int v23; // [esp-10h] [ebp-48h]
+  int v24; // [esp-Ch] [ebp-44h]
+  int m_nCurUsers; // [esp-8h] [ebp-40h]
+  int v26; // [esp-4h] [ebp-3Ch]
+  ZXString<char> result; // [esp+10h] [ebp-28h] BYREF
+  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > v28; // [esp+14h] [ebp-24h] BYREF
+  _bstr_t *v29; // [esp+18h] [ebp-20h]
+  Ztl_variant_t vIndex; // [esp+1Ch] [ebp-1Ch] BYREF
+  int v31; // [esp+34h] [ebp-4h]
+
+  v3 = iPacket; /*0x8e8d58*/
+  v4 = CInPacket::Decode1(iPacket); /*0x8e8d5e*/
+  this->m_nMiniRoomType = v4; /*0x8e8d66*/
+  if ( v4 ) /*0x8e8d6e*/
+  {
+    this->m_dwMiniRoomSN = CInPacket::Decode4(v3); /*0x8e8d7b*/
+    v5 = CInPacket::DecodeStr(v3, &result); /*0x8e8d88*/
+    v31 = 0; /*0x8e8d96*/
+    ZXString<char>::operator=(&this->m_sMiniRoomTitle, v5); /*0x8e8d9e*/
+    v31 = -1; /*0x8e8da7*/
+    if ( result._m_pStr ) /*0x8e8db1*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x8e8db7*/
+    this->m_bPrivate = CInPacket::Decode1(v3); /*0x8e8dc9*/
+    this->m_nGameKind = CInPacket::Decode1(v3); /*0x8e8ddb*/
+    this->m_nCurUsers = CInPacket::Decode1(v3); /*0x8e8deb*/
+    this->m_nMaxUsers = CInPacket::Decode1(v3); /*0x8e8df9*/
+    v6 = CInPacket::Decode1(v3); /*0x8e8e01*/
+    v7 = this->m_bDelayedLoad == 0; /*0x8e8e06*/
+    this->m_bGameOn = v6; /*0x8e8e10*/
+    if ( v7 ) /*0x8e8e16*/
+    {
+      vIndex.vt = 3; /*0x8e8e21*/
+      vIndex.decVal.Lo32 = 0; /*0x8e8e26*/
+      m_nMaxUsers = this->m_nMaxUsers; /*0x8e8e2e*/
+      m_nGameKind = this->m_nGameKind; /*0x8e8e34*/
+      v26 = v6; /*0x8e8e3a*/
+      m_nCurUsers = this->m_nCurUsers; /*0x8e8e41*/
+      m_bPrivate = this->m_bPrivate; /*0x8e8e42*/
+      v24 = m_nMaxUsers; /*0x8e8e48*/
+      v23 = m_nGameKind; /*0x8e8e49*/
+      v22 = m_bPrivate; /*0x8e8e4a*/
+      m_pInterface = this->m_pvc.m_pInterface; /*0x8e8e4b*/
+      v31 = 1; /*0x8e8e54*/
+      result._m_pStr = (char *)&v21; /*0x8e8e5c*/
+      v21.m_pInterface = m_pInterface; /*0x8e8e60*/
+      if ( m_pInterface ) /*0x8e8e64*/
+        m_pInterface->AddRef(m_pInterface); /*0x8e8e6c*/
+      v12 = this->m_pLayerUnderFace.m_pInterface; /*0x8e8e6e*/
+      LOBYTE(v31) = 2; /*0x8e8e74*/
+      if ( !v12 ) /*0x8e8e7b*/
+        _com_issue_error(-2147467261); /*0x8e8e82*/
+      v13 = IWzGr2DLayer::Getcanvas(v12, &v28, &vIndex)->m_pInterface; /*0x8e8e96*/
+      LOBYTE(v31) = 3; /*0x8e8e98*/
+      if ( !v13 ) /*0x8e8e9f*/
+        _com_issue_error(-2147467261); /*0x8e8ea6*/
+      get_cy = v13->get_cy; /*0x8e8ead*/
+      iPacket = nullptr; /*0x8e8eb6*/
+      v15 = get_cy(v13, (int *)&iPacket); /*0x8e8ebe*/
+      if ( v15 < 0 ) /*0x8e8ec2*/
+        _com_issue_errorex(v15, v13, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x8e8ecb*/
+      v20 = iPacket; /*0x8e8ed4*/
+      m_pStr = this->m_sMiniRoomTitle._m_pStr; /*0x8e8ed5*/
+      v19.m_Data = v16; /*0x8e8ed8*/
+      v29 = &v19; /*0x8e8ed9*/
+      _bstr_t::_bstr_t(&v19, m_pStr); /*0x8e8ee0*/
+      m_nMiniRoomType = this->m_nMiniRoomType; /*0x8e8eeb*/
+      LOBYTE(v31) = 4; /*0x8e8eef*/
+      CChatBalloon::MakeMiniRoomBalloon( /*0x8e8ef4*/
+        &this->m_chatBalloon,
+        m_nMiniRoomType,
+        (Ztl_bstr_t)v19.m_Data,
+        (int)v20,
+        v21,
+        v22,
+        v23,
+        v24,
+        m_nCurUsers,
+        v26);
+      LOBYTE(v31) = 1; /*0x8e8efd*/
+      if ( v28.m_pInterface ) /*0x8e8f04*/
+        v28.m_pInterface->Release(v28.m_pInterface); /*0x8e8f0c*/
+      v31 = -1; /*0x8e8f14*/
+      if ( vIndex.vt == 8 ) /*0x8e8f1c*/
+      {
+        vIndex.vt = 0; /*0x8e8f24*/
+        if ( vIndex.decVal.Lo32 ) /*0x8e8f2b*/
+          ZAPI.CoTaskMemFree((void *)(vIndex.decVal.Lo32 - 4)); /*0x8e8f31*/
+      }
+      else
+      {
+        VariantClear(&vIndex); /*0x8e8f51*/
+      }
+    }
+  }
+  else
+  {
+    CChatBalloon::DestroyMiniRoomBalloon(&this->m_chatBalloon); /*0x8e8f6f*/
+  }
+}

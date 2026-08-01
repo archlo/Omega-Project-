@@ -1,0 +1,181 @@
+// CUtilDlgEx::OnCreate_PET
+// Address: 0x981ac0
+
+void __thiscall CUtilDlgEx::OnCreate_PET(CUtilDlgEx *this)
+{
+  CLayoutMan *p_m_lm; // ebx
+  CCtrlOriginButton *p; // eax
+  ZRefCounted *v4; // eax
+  CCtrlButton *v5; // esi
+  CCtrlButton *v6; // eax
+  CCtrlOriginButton *v7; // eax
+  ZRefCounted *v8; // eax
+  CCtrlButton *v9; // esi
+  CCtrlButton *v10; // eax
+  CCtrlOriginButton *v11; // eax
+  ZRefCounted *v12; // eax
+  CCtrlButton *v13; // esi
+  CCtrlButton *v14; // eax
+  CCtrlOriginButton *v15; // eax
+  ZRefCounted *v16; // eax
+  CCtrlButton *v17; // esi
+  CCtrlButton *v18; // eax
+  StringPool *Instance; // eax
+  wchar_t *m_pStr; // eax
+  HRESULT v21; // eax
+  _bstr_t::Data_t *v22; // ecx
+  StringPool *v23; // eax
+  IWzFont *m_pInterface; // ecx
+  Ztl_bstr_t v25; // [esp-10h] [ebp-48h] BYREF
+  unsigned int v26; // [esp-Ch] [ebp-44h]
+  unsigned int v27; // [esp-8h] [ebp-40h]
+  const Ztl_variant_t *v28; // [esp-4h] [ebp-3Ch]
+  ZRef<CCtrlOriginButton> result; // [esp+14h] [ebp-24h] BYREF
+  tagVARIANT v30; // [esp+1Ch] [ebp-1Ch] BYREF
+  int v31; // [esp+34h] [ebp-4h]
+
+  p_m_lm = &this->m_lm; /*0x981afd*/
+  p = CLayoutMan::AddButton(&this->m_lm, &result, L"UI/UIWindow2.img/UtilDlgEx_Pet/BtPrev", 0x2000u, 0, 0, nullptr)->p; /*0x981b0b*/
+  v31 = 0; /*0x981b0e*/
+  if ( p && (v4 = &p->ZRefCounted) != nullptr ) /*0x981b21*/
+  {
+    v5 = (CCtrlButton *)&v4[-1].___u1; /*0x981b27*/
+    if ( v4 != (ZRefCounted *)8 ) /*0x981b2c*/
+      InterlockedIncrement(&v5->_m_nRef); /*0x981b32*/
+  }
+  else
+  {
+    v5 = nullptr; /*0x981d55*/
+  }
+  v6 = this->m_apButton[0].p; /*0x981b38*/
+  this->m_apButton[0].p = v5; /*0x981b3e*/
+  v30.decVal.Hi32 = (unsigned int)v6; /*0x981b44*/
+  if ( v6 ) /*0x981b4a*/
+    ZRef<CCtrlButton>::_ReleaseRaw((ZRef<CCtrlButton> *)&v30, nullptr); /*0x981b52*/
+  v31 = -1; /*0x981b5f*/
+  if ( result.p ) /*0x981b63*/
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&result, nullptr); /*0x981b6b*/
+  v7 = CLayoutMan::AddButton(p_m_lm, &result, L"UI/UIWindow2.img/UtilDlgEx_Pet/BtNext", 0x2001u, 0, 0, nullptr)->p; /*0x981b8c*/
+  v31 = 1; /*0x981b8f*/
+  if ( v7 && (v8 = &v7->ZRefCounted) != nullptr ) /*0x981ba2*/
+  {
+    v9 = (CCtrlButton *)&v8[-1].___u1; /*0x981ba8*/
+    if ( v8 != (ZRefCounted *)8 ) /*0x981bad*/
+      InterlockedIncrement(&v9->_m_nRef); /*0x981bb3*/
+  }
+  else
+  {
+    v9 = nullptr; /*0x981d5c*/
+  }
+  v10 = this->m_apButton[1].p; /*0x981bb9*/
+  this->m_apButton[1].p = v9; /*0x981bbf*/
+  v30.decVal.Hi32 = (unsigned int)v10; /*0x981bc5*/
+  if ( v10 ) /*0x981bcb*/
+    ZRef<CCtrlButton>::_ReleaseRaw((ZRef<CCtrlButton> *)&v30, nullptr); /*0x981bd3*/
+  v31 = -1; /*0x981bdd*/
+  if ( result.p ) /*0x981be1*/
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&result, nullptr); /*0x981be9*/
+  v11 = CLayoutMan::AddButton(p_m_lm, &result, L"UI/UIWindow2.img/UtilDlgEx_Pet/BtOK", 1u, 0, 0, nullptr)->p; /*0x981c07*/
+  v31 = 2; /*0x981c0a*/
+  if ( v11 && (v12 = &v11->ZRefCounted) != nullptr ) /*0x981c1d*/
+  {
+    v13 = (CCtrlButton *)&v12[-1].___u1; /*0x981c23*/
+    if ( v12 != (ZRefCounted *)8 ) /*0x981c28*/
+      InterlockedIncrement(&v13->_m_nRef); /*0x981c2e*/
+  }
+  else
+  {
+    v13 = nullptr; /*0x981d63*/
+  }
+  v14 = this->m_apButton[2].p; /*0x981c34*/
+  this->m_apButton[2].p = v13; /*0x981c3a*/
+  v30.decVal.Hi32 = (unsigned int)v14; /*0x981c40*/
+  if ( v14 ) /*0x981c46*/
+    ZRef<CCtrlButton>::_ReleaseRaw((ZRef<CCtrlButton> *)&v30, nullptr); /*0x981c4e*/
+  v31 = -1; /*0x981c58*/
+  if ( result.p ) /*0x981c5c*/
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&result, nullptr); /*0x981c64*/
+  v15 = CLayoutMan::AddButton(p_m_lm, &result, L"UI/UIWindow2.img/UtilDlgEx_Pet/BtCancle", 2u, 0, 0, nullptr)->p; /*0x981c82*/
+  v31 = 3; /*0x981c85*/
+  if ( v15 && (v16 = &v15->ZRefCounted) != nullptr ) /*0x981c98*/
+  {
+    v17 = (CCtrlButton *)&v16[-1].___u1; /*0x981c9e*/
+    if ( v16 != (ZRefCounted *)8 ) /*0x981ca3*/
+      InterlockedIncrement(&v17->_m_nRef); /*0x981ca9*/
+  }
+  else
+  {
+    v17 = nullptr; /*0x981d6a*/
+  }
+  v18 = this->m_apButton[3].p; /*0x981caf*/
+  this->m_apButton[3].p = v17; /*0x981cb5*/
+  v30.decVal.Hi32 = (unsigned int)v18; /*0x981cbb*/
+  if ( v18 ) /*0x981cc1*/
+    ZRef<CCtrlButton>::_ReleaseRaw((ZRef<CCtrlButton> *)&v30, nullptr); /*0x981cc9*/
+  v31 = -1; /*0x981cd3*/
+  if ( result.p ) /*0x981cd7*/
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&result, nullptr); /*0x981cdf*/
+  Instance = StringPool::GetInstance(); /*0x981cee*/
+  m_pStr = StringPool::GetStringW(Instance, (ZXString<unsigned short> *)&result, 0x5AFu)->_m_pStr; /*0x981cfa*/
+  v31 = 4; /*0x981d06*/
+  PcCreateObject<_com_ptr_t<_com_IIID<IWzFont,&__s_GUID const _GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac>>>( /*0x981d0e*/
+    m_pStr,
+    &this->m_pFontPet,
+    nullptr);
+  v31 = -1; /*0x981d1a*/
+  if ( *(_DWORD *)&result.gap0 ) /*0x981d20*/
+    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(*(_DWORD *)&result.gap0 - 12)); /*0x981d26*/
+  VariantInit(&v30); /*0x981d33*/
+  v21 = ZComAPI::ZComVariantCopy(&v30, &vtMissing); /*0x981d43*/
+  if ( v21 < 0 ) /*0x981d4d*/
+    _com_issue_error(v21); /*0x981d50*/
+  v28 = (const Ztl_variant_t *)&v30; /*0x981d75*/
+  v27 = -16777216; /*0x981d76*/
+  v26 = 11; /*0x981d7b*/
+  v25.m_Data = v22; /*0x981d7d*/
+  *(_DWORD *)&result.gap0 = &v25; /*0x981d80*/
+  v31 = 5; /*0x981d8f*/
+  v23 = StringPool::GetInstance(); /*0x981d93*/
+  StringPool::GetBSTR(v23, &v25, 0x1A25u); /*0x981d9a*/
+  m_pInterface = this->m_pFontPet.m_pInterface; /*0x981d9f*/
+  LOBYTE(v31) = 6; /*0x981da1*/
+  if ( !m_pInterface ) /*0x981da8*/
+    _com_issue_error(-2147467261); /*0x981daf*/
+  LOBYTE(v31) = 5; /*0x981db4*/
+  IWzFont::Create(m_pInterface, v25, v26, v27, v28); /*0x981db8*/
+  v31 = -1; /*0x981dc3*/
+  if ( v30.vt == 8 ) /*0x981dc7*/
+  {
+    v30.vt = 0; /*0x981dcf*/
+    if ( v30.decVal.Lo32 ) /*0x981dd6*/
+      ZAPI.CoTaskMemFree((void *)(v30.decVal.Lo32 - 4)); /*0x981ddc*/
+  }
+  else
+  {
+    VariantClear(&v30); /*0x981de9*/
+  }
+  CUtilDlgEx::MakePet(this); /*0x981df1*/
+}
+
+// References:
+//   ?AddButton@CLayoutMan@@QAE?AV?$ZRef@VCCtrlOriginButton@@@@PBGIJJPAUCREATEPARAM@CCtrlButton@@@Z @ 0x5cf210
+//   aUiUiwindow2Img_62 @ 0xbab590  "䥕唯坉湩潤㉷椮杭唯楴䑬杬硅偟瑥䈯側敲�"
+//   __imp__InterlockedIncrement@4 @ 0xb14074
+//   ?_ReleaseRaw@?$ZRef@VCCtrlButton@@@@AAEXPAVZRefCounted@@@Z @ 0x429d70
+//   ?_ReleaseRaw@?$ZRef@VCCtrlOriginButton@@@@AAEXPAVZRefCounted@@@Z @ 0x429e90
+//   aUiUiwindow2Img_370 @ 0xbab540  "䥕唯坉湩潤㉷椮杭唯楴䑬杬硅偟瑥䈯乴硥�"
+//   aUiUiwindow2Img_373 @ 0xbab4f8  "䥕唯坉湩潤㉷椮杭唯楴䑬杬硅偟瑥䈯佴�"
+//   aUiUiwindow2Img_405 @ 0xbab4a8  "䥕唯坉湩潤㉷椮杭唯楴䑬杬硅偟瑥䈯䍴湡汣�"
+//   ?GetInstance@StringPool@@SAAAV1@XZ @ 0x7466a0
+//   ?GetStringW@StringPool@@QAE?AV?$ZXString@G@@I@Z @ 0x403b60
+//   ??$PcCreateObject@V?$_com_ptr_t@V?$_com_IIID@UIWzFont@@$1?_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac@@3U__s_GUID@@B@@@@@@YAXPBGAAV?$_com_ptr_t@V?$_com_IIID@UIWzFont@@$1?_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac@@3U__s_GUID@@B@@@@PAUIUnknown@@@Z @ 0x471480
+//   ?_Release@?$ZXString@G@@KAXPAU_ZXStringData@1@@Z @ 0x4034b0
+//   __imp__VariantInit@4 @ 0xb14290
+//   ?ZComVariantCopy@ZComAPI@@YAJPAUtagVARIANT@@0@Z @ 0x401730
+//   ?vtMissing@@3V_variant_t@@A @ 0xc626e8
+//   ?_com_issue_error@@YGXJ@Z @ 0xa2fd00
+//   ?GetBSTR@StringPool@@QAE?AVZtl_bstr_t@@I@Z @ 0x404bb0
+//   ?Create@IWzFont@@QAEJVZtl_bstr_t@@KKABVZtl_variant_t@@@Z @ 0x471dd0
+//   ?ZAPI@@3U_ZAPIProcAddress@@A @ 0xc6d758
+//   __imp__VariantClear@4 @ 0xb1428c
+//   ?MakePet@CUtilDlgEx@@IAEXXZ @ 0x97c330

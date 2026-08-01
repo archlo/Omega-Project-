@@ -1,0 +1,6 @@
+// cuser::GetCharacterId
+
+unsigned int __thiscall CUser::GetCharacterId(CUser *this)
+{
+  return this->m_dwCharacterId; /*0x50abc6*/
+}

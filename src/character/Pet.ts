@@ -139,6 +139,8 @@ export interface PetCallbacks {
   ) => void;
   /** CPet::SendUpdateExceptionListRequest sends opcode 204. */
   onPetExceptionList: (petLockerSN: bigint, itemIds: number[]) => void;
+  /** CPet::UpdatePetAbility — reads combined dwPetAbilityFlag from pet equipment. */
+  getEquipAbilityFlag: (petIdx: number) => number;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -157,9 +159,6 @@ export class Pet {
 
   /** Callback to play a WZ effect at the pet's position. Set by GameStage. */
   PlayEffectCallback: ((effectPath: string) => void) | null = null;
-
-  /** Callback to read pet equipment ability flags from inventory. Set by GameStage. */
-  GetEquipAbilityFlag: ((petIdx: number) => number) | null = null;
 
   /** Callback to display a message in the chat bar. Set by GameStage. */
   ChatMessageCallback: ((msg: string) => void) | null = null;
@@ -824,6 +823,20 @@ export class Pet {
   // OG: CPet::CursedChatCommand (0x6a4080)
   // ═══════════════════════════════════════════════════════════════════════════
 
+  /** Check if chat text matches any slang word in the pet's template data. */
+  _hasSlangReaction(text: string): boolean {
+    if (!this._templateData) return false;
+    const level = this.GetLevel();
+    const lower = text.toLowerCase();
+    for (const slang of this._templateData.slangReactions) {
+      if (level < slang.levelMin || level > slang.levelMax) continue;
+      for (const word of slang.words) {
+        if (lower.includes(word.toLowerCase())) return true;
+      }
+    }
+    return false;
+  }
+
   CursedChatCommand(): void {
     // Look up slang reaction from template
     if (this._templateData && this._templateData.slangReactions.length > 0) {
@@ -916,7 +929,7 @@ export class Pet {
   UpdatePetAbility(): void {
     // OG: iterates pet equipment body parts (21-29, 46) and reads dwPetAbilityFlag
     // from each equipped pet item. Also reads pet ring equipment for name tag/balloon.
-    const equipFlag = this.GetEquipAbilityFlag?.(this.PetIndex) ?? 0;
+    const equipFlag = this.Callbacks?.getEquipAbilityFlag?.(this.PetIndex) ?? 0;
     const attr = this.PetAttribute | equipFlag;
 
     this._bPickupMeso = this.TemplatebPickUpItem || (attr & 0x01) !== 0;

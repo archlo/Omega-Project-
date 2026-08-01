@@ -1,0 +1,177 @@
+// 0x69a300
+void __thiscall CPersonalShopDlg::OnBuyResult(CPersonalShopDlg *this, CInPacket *iPacket)
+{
+  unsigned __int8 v3; // al
+  StringPool *v4; // eax
+  const ZXString<char> *v5; // eax
+  char *m_pStr; // eax
+  StringPool *v7; // eax
+  const ZXString<char> *v8; // eax
+  StringPool *v9; // eax
+  const ZXString<char> *v10; // eax
+  StringPool *Instance; // eax
+  const ZXString<char> *String; // eax
+  StringPool *v13; // eax
+  const ZXString<char> *v14; // eax
+  StringPool *v15; // eax
+  const ZXString<char> *v16; // eax
+  StringPool *v17; // eax
+  const ZXString<char> *v18; // eax
+  StringPool *v19; // eax
+  const ZXString<char> *v20; // eax
+  StringPool *v21; // eax
+  const ZXString<char> *v22; // eax
+  StringPool *v23; // eax
+  const ZXString<char> *v24; // eax
+  StringPool *v25; // eax
+  const ZXString<char> *v26; // eax
+  StringPool *v27; // eax
+  const ZXString<char> *v28; // eax
+  StringPool *v29; // eax
+  const ZXString<char> *v30; // eax
+  StringPool *v31; // eax
+  const ZXString<char> *v32; // eax
+  ZXString<char> v33; // [esp-14h] [ebp-68h] BYREF
+  const wchar_t *v34; // [esp-10h] [ebp-64h]
+  ZRef<CDialog> *p_m_pChildModal; // [esp-Ch] [ebp-60h]
+  int v36; // [esp-8h] [ebp-5Ch]
+  int v37; // [esp-4h] [ebp-58h]
+  ZXString<char> result; // [esp+Ch] [ebp-48h] BYREF
+  ZXString<char> v39; // [esp+10h] [ebp-44h] BYREF
+  ZXString<char> v40; // [esp+14h] [ebp-40h] BYREF
+  ZXString<char> v41; // [esp+18h] [ebp-3Ch] BYREF
+  ZXString<char> v42; // [esp+1Ch] [ebp-38h] BYREF
+  ZXString<char> v43; // [esp+20h] [ebp-34h] BYREF
+  ZXString<char> v44; // [esp+24h] [ebp-30h] BYREF
+  ZXString<char> v45; // [esp+28h] [ebp-2Ch] BYREF
+  ZXString<char> v46; // [esp+2Ch] [ebp-28h] BYREF
+  ZXString<char> v47; // [esp+30h] [ebp-24h] BYREF
+  ZXString<char> v48; // [esp+34h] [ebp-20h] BYREF
+  ZXString<char> v49; // [esp+38h] [ebp-1Ch] BYREF
+  ZXString<char> v50; // [esp+3Ch] [ebp-18h] BYREF
+  ZXString<char> v51; // [esp+40h] [ebp-14h] BYREF
+  ZXString<char> *v52; // [esp+44h] [ebp-10h]
+  int v53; // [esp+50h] [ebp-4h]
+
+  v3 = CInPacket::Decode1(iPacket); /*0x69a332*/
+  iPacket = nullptr; /*0x69a335*/
+  v53 = 0; /*0x69a339*/
+  switch ( v3 ) /*0x69a346*/
+  {
+    case 0u: /*0x69a346*/
+      return;
+    case 1u: /*0x69a346*/
+      Instance = StringPool::GetInstance(); /*0x69a3e1*/
+      String = StringPool::GetString(Instance, &v41, 0x365u); /*0x69a3e8*/
+      LOBYTE(v53) = 4; /*0x69a3f2*/
+      ZXString<char>::operator=((ZXString<char> *)&iPacket, String); /*0x69a3f7*/
+      m_pStr = v41._m_pStr; /*0x69a3fc*/
+      goto LABEL_16; /*0x69a400*/
+    case 2u: /*0x69a346*/
+      v4 = StringPool::GetInstance(); /*0x69a357*/
+      v5 = StringPool::GetString(v4, &result, 0x1A8Bu); /*0x69a35e*/
+      LOBYTE(v53) = 1; /*0x69a368*/
+      ZXString<char>::operator=((ZXString<char> *)&iPacket, v5); /*0x69a36d*/
+      m_pStr = result._m_pStr; /*0x69a372*/
+      goto LABEL_16; /*0x69a376*/
+    case 3u: /*0x69a346*/
+      v9 = StringPool::GetInstance(); /*0x69a3b3*/
+      v10 = StringPool::GetString(v9, &v40, 0xB9Du); /*0x69a3ba*/
+      LOBYTE(v53) = 3; /*0x69a3c4*/
+      ZXString<char>::operator=((ZXString<char> *)&iPacket, v10); /*0x69a3c9*/
+      m_pStr = v40._m_pStr; /*0x69a3ce*/
+      goto LABEL_16; /*0x69a3d2*/
+    case 4u: /*0x69a346*/
+      v7 = StringPool::GetInstance(); /*0x69a385*/
+      v8 = StringPool::GetString(v7, &v39, 0xB9Cu); /*0x69a38c*/
+      LOBYTE(v53) = 2; /*0x69a396*/
+      ZXString<char>::operator=((ZXString<char> *)&iPacket, v8); /*0x69a39b*/
+      m_pStr = v39._m_pStr; /*0x69a3a0*/
+      goto LABEL_16; /*0x69a3a4*/
+    case 5u: /*0x69a346*/
+      v13 = StringPool::GetInstance(); /*0x69a40f*/
+      v14 = StringPool::GetString(v13, &v42, 0x366u); /*0x69a416*/
+      LOBYTE(v53) = 5; /*0x69a420*/
+      ZXString<char>::operator=((ZXString<char> *)&iPacket, v14); /*0x69a425*/
+      m_pStr = v42._m_pStr; /*0x69a42a*/
+      goto LABEL_16; /*0x69a42e*/
+    case 6u: /*0x69a346*/
+      v15 = StringPool::GetInstance(); /*0x69a43d*/
+      v16 = StringPool::GetString(v15, &v43, 0x367u); /*0x69a444*/
+      LOBYTE(v53) = 6; /*0x69a44e*/
+      ZXString<char>::operator=((ZXString<char> *)&iPacket, v16); /*0x69a453*/
+      m_pStr = v43._m_pStr; /*0x69a458*/
+      goto LABEL_16; /*0x69a45c*/
+    case 7u: /*0x69a346*/
+      v17 = StringPool::GetInstance(); /*0x69a46b*/
+      v18 = StringPool::GetString(v17, &v44, 0x1A2Bu); /*0x69a472*/
+      LOBYTE(v53) = 7; /*0x69a47c*/
+      ZXString<char>::operator=((ZXString<char> *)&iPacket, v18); /*0x69a481*/
+      m_pStr = v44._m_pStr; /*0x69a486*/
+      goto LABEL_16; /*0x69a48a*/
+    case 8u: /*0x69a346*/
+      v19 = StringPool::GetInstance(); /*0x69a499*/
+      v20 = StringPool::GetString(v19, &v45, 0x1A6Du); /*0x69a4a0*/
+      LOBYTE(v53) = 8; /*0x69a4aa*/
+      ZXString<char>::operator=((ZXString<char> *)&iPacket, v20); /*0x69a4af*/
+      m_pStr = v45._m_pStr; /*0x69a4b4*/
+      goto LABEL_16; /*0x69a4b8*/
+    case 9u: /*0x69a346*/
+      v21 = StringPool::GetInstance(); /*0x69a4c7*/
+      v22 = StringPool::GetString(v21, &v46, 0x14B1u); /*0x69a4ce*/
+      LOBYTE(v53) = 9; /*0x69a4d8*/
+      ZXString<char>::operator=((ZXString<char> *)&iPacket, v22); /*0x69a4dd*/
+      m_pStr = v46._m_pStr; /*0x69a4e2*/
+      goto LABEL_16; /*0x69a4e6*/
+    case 0xAu: /*0x69a346*/
+      v23 = StringPool::GetInstance(); /*0x69a4f5*/
+      v24 = StringPool::GetString(v23, &v47, 0x14B0u); /*0x69a4fc*/
+      LOBYTE(v53) = 10; /*0x69a506*/
+      ZXString<char>::operator=((ZXString<char> *)&iPacket, v24); /*0x69a50b*/
+      m_pStr = v47._m_pStr; /*0x69a510*/
+      goto LABEL_16; /*0x69a514*/
+    case 0xBu: /*0x69a346*/
+      v25 = StringPool::GetInstance(); /*0x69a523*/
+      v26 = StringPool::GetString(v25, &v48, 0x19Eu); /*0x69a52a*/
+      LOBYTE(v53) = 11; /*0x69a534*/
+      ZXString<char>::operator=((ZXString<char> *)&iPacket, v26); /*0x69a539*/
+      m_pStr = v48._m_pStr; /*0x69a53e*/
+      goto LABEL_16; /*0x69a542*/
+    case 0xCu: /*0x69a346*/
+      v27 = StringPool::GetInstance(); /*0x69a54e*/
+      v28 = StringPool::GetString(v27, &v49, 0x1A67u); /*0x69a555*/
+      LOBYTE(v53) = 12; /*0x69a55f*/
+      ZXString<char>::operator=((ZXString<char> *)&iPacket, v28); /*0x69a564*/
+      m_pStr = v49._m_pStr; /*0x69a569*/
+      goto LABEL_16; /*0x69a56d*/
+    case 0xEu: /*0x69a346*/
+      v29 = StringPool::GetInstance(); /*0x69a579*/
+      v30 = StringPool::GetString(v29, &v50, 0xFB2u); /*0x69a580*/
+      LOBYTE(v53) = 13; /*0x69a58a*/
+      ZXString<char>::operator=((ZXString<char> *)&iPacket, v30); /*0x69a58f*/
+      m_pStr = v50._m_pStr; /*0x69a594*/
+      goto LABEL_16; /*0x69a598*/
+    default:
+      v31 = StringPool::GetInstance(); /*0x69a5a4*/
+      v32 = StringPool::GetString(v31, &v51, 0x369u); /*0x69a5ab*/
+      LOBYTE(v53) = 14; /*0x69a5b5*/
+      ZXString<char>::operator=((ZXString<char> *)&iPacket, v32); /*0x69a5ba*/
+      m_pStr = v51._m_pStr; /*0x69a5bf*/
+LABEL_16:
+      LOBYTE(v53) = 0; /*0x69a5c3*/
+      if ( m_pStr ) /*0x69a5c9*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)m_pStr - 1); /*0x69a5cf*/
+      v37 = 0; /*0x69a5d7*/
+      v36 = 0; /*0x69a5d8*/
+      p_m_pChildModal = &this->m_pChildModal; /*0x69a5df*/
+      v34 = nullptr; /*0x69a5e0*/
+      v52 = &v33; /*0x69a5e8*/
+      v33._m_pStr = nullptr; /*0x69a5ed*/
+      ZXString<char>::operator=(&v33, (const ZXString<char> *)&iPacket); /*0x69a5ef*/
+      CUtilDlg::Notice(v33, v34, p_m_pChildModal, v36, v37); /*0x69a5f4*/
+      v53 = -1; /*0x69a600*/
+      if ( iPacket ) /*0x69a60a*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&iPacket[-1].m_uLength); /*0x69a610*/
+      return;
+  }
+}

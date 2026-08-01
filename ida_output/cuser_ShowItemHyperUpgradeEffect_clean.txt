@@ -1,0 +1,251 @@
+// cuser::ShowItemHyperUpgradeEffect
+
+void __thiscall CUser::ShowItemHyperUpgradeEffect(CUser *this, CInPacket *iPacket)
+{
+  int v2; // ebx
+  CInPacket *v3; // esi
+  int v4; // ebp
+  int v5; // edi
+  int v6; // eax
+  CUser *v7; // esi
+  CUser_vtbl *v8; // edx
+  StringPool *Instance; // eax
+  const ZXString<char> *String; // eax
+  StringPool *v11; // eax
+  StringPool *v12; // eax
+  StringPool *v13; // eax
+  const ZXString<char> *v14; // eax
+  StringPool *v15; // eax
+  StringPool *v16; // eax
+  StringPool *v17; // eax
+  ZXString<unsigned short> *StringW; // eax
+  int v19; // ebx
+  const wchar_t *m_pStr; // eax
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzVector2D *v22; // ecx
+  IUnknown *v23; // esi
+  const wchar_t *v24; // eax
+  unsigned int (__stdcall *Release)(IUnknown *); // eax
+  HRESULT v26; // eax
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v27; // [esp-10h] [ebp-54h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v28; // [esp-Ch] [ebp-50h] BYREF
+  int v29; // [esp-8h] [ebp-4Ch]
+  int v30; // [esp-4h] [ebp-48h]
+  int v31; // [esp+14h] [ebp-30h]
+  int bEnchantSkill; // [esp+18h] [ebp-2Ch]
+  CUser *pExceptionObject; // [esp+1Ch] [ebp-28h] BYREF
+  int nEnchantCategory; // [esp+20h] [ebp-24h] BYREF
+  ZXString<char> v35; // [esp+24h] [ebp-20h] BYREF
+  ZXString<char> v36; // [esp+28h] [ebp-1Ch] BYREF
+  ZXString<char> result; // [esp+2Ch] [ebp-18h] BYREF
+  ZXString<char> v38; // [esp+30h] [ebp-14h] BYREF
+  ZXString<char> v39; // [esp+34h] [ebp-10h] BYREF
+  int v40; // [esp+40h] [ebp-4h]
+
+  pExceptionObject = this; /*0x8e7687*/
+  v2 = 0; /*0x8e768b*/
+  v31 = 0; /*0x8e768d*/
+  if ( this->m_bDelayedLoad ) /*0x8e7691*/
+    return; /*0x8e7697*/
+  v3 = iPacket; /*0x8e769d*/
+  v4 = (char)CInPacket::Decode1(iPacket); /*0x8e76aa*/
+  v5 = CInPacket::Decode1(v3); /*0x8e76b4*/
+  bEnchantSkill = CInPacket::Decode1(v3); /*0x8e76c1*/
+  v6 = CInPacket::Decode4(v3); /*0x8e76c5*/
+  v7 = pExceptionObject; /*0x8e76ca*/
+  v8 = pExceptionObject->CLife::IGObj::__vftable; /*0x8e76ce*/
+  nEnchantCategory = v6; /*0x8e76d0*/
+  if ( v8->IsLocalUser(pExceptionObject) ) /*0x8e76d9*/
+  {
+    if ( bEnchantSkill ) /*0x8e76e7*/
+    {
+      if ( !TSingleton<CUniqueModeless>::ms_pInstance /*0x8e770e*/
+        || !TSingleton<CUniqueModeless>::ms_pInstance->IsKindOf(
+              &TSingleton<CUniqueModeless>::ms_pInstance->IUIMsgHandler,
+              &CUIEnchantDlg::ms_RTTI_CUIEnchantDlg)
+        || !TSingleton<CUniqueModeless>::ms_pInstance )
+      {
+        CMSException::CMSException((CMSException *)&nEnchantCategory, 553648131); /*0x8e7719*/
+        pExceptionObject = (CUser *)nEnchantCategory; /*0x8e772c*/
+        _CxxThrowException(&pExceptionObject, &_TI3_AVCDisconnectException__); /*0x8e7730*/
+      }
+      CUIEnchantDlg::SetResult((CUIEnchantDlg *)TSingleton<CUniqueModeless>::ms_pInstance, v4, v5, nEnchantCategory, 0); /*0x8e773e*/
+    }
+    else
+    {
+      if ( v4 ) /*0x8e774a*/
+      {
+        Instance = StringPool::GetInstance(); /*0x8e7756*/
+        String = StringPool::GetString(Instance, &result, 0x192u); /*0x8e775d*/
+        v40 = 0; /*0x8e7762*/
+        v2 = 1; /*0x8e776a*/
+      }
+      else if ( v5 ) /*0x8e7773*/
+      {
+        v11 = StringPool::GetInstance(); /*0x8e777f*/
+        String = StringPool::GetString(v11, &v36, 0x194u); /*0x8e7786*/
+        v40 = 1; /*0x8e778b*/
+        v2 = 2; /*0x8e7793*/
+      }
+      else
+      {
+        v12 = StringPool::GetInstance(); /*0x8e77a4*/
+        String = StringPool::GetString(v12, &v35, 0x193u); /*0x8e77ab*/
+        v40 = 2; /*0x8e77b0*/
+        v2 = 4; /*0x8e77b8*/
+      }
+      v31 = v2; /*0x8e77c2*/
+      iPacket = nullptr; /*0x8e77c6*/
+      ZXString<char>::operator=((ZXString<char> *)&iPacket, String); /*0x8e77ce*/
+      v40 = 4; /*0x8e77d3*/
+      if ( (v2 & 4) != 0 ) /*0x8e77de*/
+      {
+        v2 &= ~4u; /*0x8e77e4*/
+        v31 = v2; /*0x8e77e7*/
+        if ( v35._m_pStr ) /*0x8e77ed*/
+          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v35._m_pStr - 1); /*0x8e77f3*/
+      }
+      LOBYTE(v40) = 5; /*0x8e77fb*/
+      if ( (v2 & 2) != 0 ) /*0x8e7803*/
+      {
+        v2 &= ~2u; /*0x8e7809*/
+        v31 = v2; /*0x8e780c*/
+        if ( v36._m_pStr ) /*0x8e7812*/
+          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v36._m_pStr - 1); /*0x8e7818*/
+      }
+      LOBYTE(v40) = 6; /*0x8e7820*/
+      if ( (v2 & 1) != 0 ) /*0x8e7828*/
+      {
+        v2 &= ~1u; /*0x8e782e*/
+        v31 = v2; /*0x8e7831*/
+        if ( result._m_pStr ) /*0x8e7837*/
+          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x8e783d*/
+      }
+      if ( (nEnchantCategory & 2) != 0 ) /*0x8e784a*/
+      {
+        if ( v4 ) /*0x8e7852*/
+        {
+          v13 = StringPool::GetInstance(); /*0x8e785e*/
+          v14 = StringPool::GetString(v13, &v39, 0x17F4u); /*0x8e7865*/
+          LOBYTE(v40) = 7; /*0x8e786a*/
+          v2 |= 8u; /*0x8e786f*/
+        }
+        else if ( v5 ) /*0x8e7876*/
+        {
+          v15 = StringPool::GetInstance(); /*0x8e7882*/
+          v14 = StringPool::GetString(v15, &v38, 0x17F6u); /*0x8e7889*/
+          v40 = 8; /*0x8e788e*/
+          v2 |= 0x10u; /*0x8e7896*/
+        }
+        else
+        {
+          v16 = StringPool::GetInstance(); /*0x8e78a5*/
+          v14 = StringPool::GetString(v16, (ZXString<char> *)&nEnchantCategory, 0x17F5u); /*0x8e78ac*/
+          v40 = 9; /*0x8e78b1*/
+          v2 |= 0x20u; /*0x8e78b9*/
+        }
+        v31 = v2; /*0x8e78c1*/
+        ZXString<char>::operator=((ZXString<char> *)&iPacket, v14); /*0x8e78c5*/
+        v40 = 8; /*0x8e78ca*/
+        if ( (v2 & 0x20) != 0 ) /*0x8e78d5*/
+        {
+          v2 &= ~0x20u; /*0x8e78db*/
+          v31 = v2; /*0x8e78de*/
+          if ( nEnchantCategory ) /*0x8e78e4*/
+            ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(nEnchantCategory - 12)); /*0x8e78ea*/
+        }
+        v40 = 7; /*0x8e78f2*/
+        if ( (v2 & 0x10) != 0 ) /*0x8e78fd*/
+        {
+          v2 &= ~0x10u; /*0x8e7903*/
+          v31 = v2; /*0x8e7906*/
+          if ( v38._m_pStr ) /*0x8e790c*/
+            ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v38._m_pStr - 1); /*0x8e7912*/
+        }
+        v40 = 6; /*0x8e791a*/
+        if ( (v2 & 8) != 0 ) /*0x8e7925*/
+        {
+          v2 &= ~8u; /*0x8e792b*/
+          v31 = v2; /*0x8e792e*/
+          if ( v39._m_pStr ) /*0x8e7934*/
+            ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v39._m_pStr - 1); /*0x8e793a*/
+        }
+      }
+      CHATLOG_ADD((ZXString<char> *)&iPacket, 0xCu); /*0x8e7949*/
+      v40 = -1; /*0x8e7955*/
+      if ( iPacket ) /*0x8e795f*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&iPacket[-1].m_uLength); /*0x8e7965*/
+    }
+  }
+  if ( pExceptionObject->IsLocalUser(pExceptionObject) ) /*0x8e7974*/
+  {
+    if ( bEnchantSkill ) /*0x8e797f*/
+      return; /*0x8e797f*/
+  }
+  else if ( bEnchantSkill ) /*0x8e798c*/
+  {
+    v24 = aEnchantsuccess; /*0x8e7a8b*/
+    if ( !v4 ) /*0x8e7a92*/
+      v24 = aEnchantfailure; /*0x8e7a94*/
+    play_game_sound(v24, 0x64u); /*0x8e7a9c*/
+    goto LABEL_54; /*0x8e7aa4*/
+  }
+  v17 = StringPool::GetInstance(); /*0x8e79a5*/
+  if ( v4 ) /*0x8e7999*/
+  {
+    StringW = StringPool::GetStringW(v17, (ZXString<unsigned short> *)&v38, 0x507u); /*0x8e79ac*/
+    v40 = 10; /*0x8e79b1*/
+    v19 = v2 | 0x40; /*0x8e79b5*/
+  }
+  else
+  {
+    StringW = StringPool::GetStringW(v17, (ZXString<unsigned short> *)&v39, 0x508u); /*0x8e79cb*/
+    v40 = 11; /*0x8e79d0*/
+    v19 = v2 | 0x80; /*0x8e79d8*/
+  }
+  m_pStr = StringW->_m_pStr; /*0x8e79de*/
+  v31 = v19; /*0x8e79e3*/
+  play_game_sound(m_pStr, 0x64u); /*0x8e79e7*/
+  v40 = 10; /*0x8e79ef*/
+  if ( (v19 & 0x80u) != 0 ) /*0x8e79f5*/
+  {
+    v19 &= ~0x80u; /*0x8e79fb*/
+    v31 = v19; /*0x8e7a01*/
+    if ( v39._m_pStr ) /*0x8e7a07*/
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)v39._m_pStr - 1); /*0x8e7a0d*/
+  }
+  v40 = -1; /*0x8e7a15*/
+  if ( (v19 & 0x40) != 0 && v38._m_pStr ) /*0x8e7a28*/
+    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)v38._m_pStr - 1); /*0x8e7a2e*/
+  v7 = pExceptionObject; /*0x8e7a36*/
+LABEL_54:
+  v30 = bEnchantSkill; /*0x8e7a3a*/
+  m_pInterface = v7->m_pLayerUnderFace.m_pInterface; /*0x8e7a3f*/
+  v29 = v4; /*0x8e7a45*/
+  v22 = (IWzVector2D *)&v28; /*0x8e7a47*/
+  v39._m_pStr = (char *)&v28; /*0x8e7a49*/
+  v28.m_pInterface = m_pInterface; /*0x8e7a4d*/
+  if ( m_pInterface ) /*0x8e7a51*/
+    m_pInterface->AddRef(m_pInterface); /*0x8e7a59*/
+  v27.m_pInterface = v22; /*0x8e7a5b*/
+  v38._m_pStr = (char *)&v27; /*0x8e7a5e*/
+  v40 = 12; /*0x8e7a65*/
+  CUser::GetVecCtrl(v7, &v27); /*0x8e7a6d*/
+  v23 = v7->m_pLayerUnderFace.m_pInterface; /*0x8e7a72*/
+  LOBYTE(v40) = 13; /*0x8e7a78*/
+  if ( !v23 ) /*0x8e7a7f*/
+    _com_issue_error(-2147467261); /*0x8e7a86*/
+  Release = v23->__vftable[17].Release; /*0x8e7aa8*/
+  iPacket = nullptr; /*0x8e7ab4*/
+  v26 = ((int (__stdcall *)(IUnknown *, CInPacket **))Release)(v23, &iPacket); /*0x8e7abc*/
+  if ( v26 < 0 ) /*0x8e7ac0*/
+    _com_issue_errorex(v26, v23, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x8e7ac9*/
+  v40 = -1; /*0x8e7ad3*/
+  CAnimationDisplayer::Effect_ItemUpgrade( /*0x8e7ae1*/
+    TSingleton<CAnimationDisplayer>::ms_pInstance,
+    (int)iPacket,
+    v27,
+    v28,
+    v29,
+    v30);
+}

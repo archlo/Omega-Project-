@@ -1,0 +1,64 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"addr\":\"0x7928a0\",\"code\":\"CUINoticePremium *__thiscall CUINoticePremium::CUINoticePremium(CUINoticePremium *this)\\n{\\n  _bstr_t::Data_t *v2; // ecx\\n  IWzCanvas *m_pInterface; // edi\\n  HRESULT (__stdcall *get_height)(IWzCanvas *, unsigned int *); // edx\\n  HRESULT v5; // eax\\n  IWzCanvas *v6; // edi\\n  HRESULT (__stdcall *get_width)(IWzCanvas *, unsigned int *); // eax\\n  HRESULT v8; // eax\\n  IWzCanvas *v9; // edi\\n  HRESULT (__stdcall *v10)(IWzCanvas *, unsigned int *); // ecx\\n  HRESULT v11; // eax\\n  IWzCanvas *v12; // edi\\n  int v13; // ebx\\n  HRESULT (__stdcall *v14)(IWzCanvas *, unsigned int *); // ecx\\n  HRESULT v15; // eax\\n  _bstr_t v17; // [esp-18h] [ebp-54h] BYREF\\n  int v18; // [esp-14h] [ebp-50h]\\n  int v19; // [esp-10h] [ebp-4Ch]\\n  int v20; // [esp-Ch] [ebp-48h]\\n  int v21; // [esp-8h] [ebp-44h]\\n  int v22; // [esp-4h] [ebp-40h]\\n  int v23; // [esp+14h] [ebp-28h] BYREF\\n  int v24; // [esp+18h] [ebp-24h] BYREF\\n  int v25; // [esp+1Ch] [ebp-20h] BYREF\\n  int v26; // [esp+20h] [ebp-1Ch] BYREF\\n  int h; // [esp+24h] [ebp-18h]\\n  int w; // [esp+28h] [ebp-14h]\\n  CUINoticePremium *v29; // [esp+2Ch] [ebp-10h]\\n  int v30; // [esp+38h] [ebp-4h]\\n\\n  v29 = this; /*0x7928c9*/\\n  CDialog::CDialog(this); /*0x7928cd*/\\n  v30 = 0; /*0x7928da*/\\n  if ( this == (CUINoticePremium *)-145 ) /*0x7928e0*/\\n    TSingleton<CUINoticePremium>::ms_pInstance = nullptr; /*0x7928ee*/\\n  else\\n    TSingleton<CUINoticePremium>::ms_pInstance = this; /*0x7928e7*/\\n  this->CDialog::CWnd::IGObj::__vftable = (CUINoticePremium_vtbl *)&CUINoticePremium::`vftable'{for `IGObj'}; /*0x7928f4*/\\n  this->CDialog::CWnd::IUIMsgHandler::__vftable = (IUIMsgHandler_vtbl *)&CUINoticePremium::`vftable'{for `IUIMsgHandler'}; /*0x7928fa*/\\n  this->CDialog::CWnd::ZRefCounted::__vftable = (ZRefCounted_vtbl *)&CUINoticePremium::`vftable'{for `ZRefCounted'}; /*0x792901*/\\n  this->m_pBtClose.p = nullptr; /*0x792908*/\\n  v22 = 0; /*0x79290e*/\\n  v21 = 0; /*0x79290f*/\\n  v20 = 0; /*0x792910*/\\n  v19 = 0; /*0x792911*/\\n  v18 = 0; /*0x792912*/\\n  v17.m_Data = v2; /*0x792913*/\\n  w = (int)&v17; /*0x792914*/\\n  LOBYTE(v30) = 2; /*0x79291f*/\\n  _bstr_t::_bstr_t(&v17, L\\\"UI/UIWindow2.img/Notice/3\\\"); /*0x792924*/\\n  CWnd::SetBackgrnd(this, (Ztl_bstr_t)v17.m_Data, v18, v19, v20, v21, v22); /*0x79292b*/\\n  m_pInterface = this->m_pBackgrnd.m_pInterface; /*0x792930*/\\n  if ( !m_pInterface ) /*0x792935*/\\n    _com_issue_error(-2147467261); /*0x79293c*/\\n  get_height = m_pInterface->get_height; /*0x792943*/\\n  v23 = 0; /*0x79294c*/\\n  v5 = get_height(m_pInterface, (unsigned int *)&v23); /*0x792950*/\\n  if ( v5 < 0 ) /*0x792954*/\\n    _com_issue_errorex(v5, m_pInterface, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x79295d*/\\n  v6 = this->m_pBackgrnd.m_pInterface; /*0x792962*/\\n  h = v23; /*0x792969*/\\n  if ( !v6 ) /*0x79296f*/\\n    _com_issue_error(-2147467261); /*0x792976*/\\n  get_width = v6->get_width; /*0x79297d*/\\n  v24 = 0; /*0x792986*/\\n  v8 = get_width(v6, (unsigned int *)&v24); /*0x79298a*/\\n  if ( v8 < 0 ) /*0x79298e*/\\n    _com_issue_errorex(v8, v6, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x792997*/\\n  v9 = this->m_pBackgrnd.m_pInterface; /*0x79299c*/\\n  w = v24; /*0x7929a3*/\\n  if ( !v9 ) /*0x7929a9*/\\n    _com_issue_error(-2147467261); /*0x7929b0*/\\n  v10 = v9->get_height; /*0x7929b7*/\\n  v25 = 0; /*0x7929c0*/\\n  v11 = v10(v9, (unsigned int *)&v25); /*0x7929c4*/\\n  if ( v11 < 0 ) /*0x7929c8*/\\n    _com_issue_errorex(v11, v9, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x7929d1*/\\n  v12 = this->m_pBackgrnd.m_pInterface; /*0x7929d6*/\\n  v13 = v25; /*0x7929d9*/\\n  if ( !v12 ) /*0x7929df*/\\n    _com_issue_error(-2147467261); /*0x7929e6*/\\n  v14 = v12->get_width; /*0x7929ed*/\\n  v26 = 0; /*0x7929f6*/\\n  v15 = v14(v12, (unsigned int *)&v26); /*0x7929fa*/\\n  if ( v15 < 0 ) /*0x7929fe*/\\n    _com_issue_errorex(v15, v12, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x792a07*/\\n  CWnd::CreateWnd(this, v26 / -2, v13 / -2, w, h, 10, 1, nullptr, 1, Origin_CC); /*0x792a37*/\\n  return this; /*0x792a3e*/\\n}\",\"refs\":[{\"addr\":\"0x4fe900\",\"name\":\"??0CDialog@@QAE@XZ\"},{\"addr\":\"0xc6e7a0\",\"name\":\"?ms_pInstance@?$TSingleton@VCUINoticePremium@@@@1PAVCUINoticePremium@@A\"},{\"addr\":\"0xb999a4\",\"name\":\"??_7CUINoticePremium@@6BIGObj@@@\"},{\"addr\":\"0xb99958\",\"name\":\"??_7CUINoticePremium@@6BIUIMsgHandler@@@\"},{\"addr\":\"0xb99954\",\"name\":\"??_7CUINoticePremium@@6BZRefCounted@@@\"},{\"addr\":\"0x4032f0\",\"name\":\"??0_bstr_t@@QAE@PBG@Z\"},{\"addr\":\"0xb9a8a0\",\"name\":\"aUiUiwindow2Img_198\",\"string\":\"\\u4955\\u552f\\u5749\\u6e69\\u6f64\\u3277\\u692e\\u676d\\u4e2f\\u746f\\u6369\\u2f65\\ufffd\"},{\"addr\":\"0x9afeb0\",\"name\":\"?SetBackgrnd@CWnd@@IAEXVZtl_bstr_t@@JJHJJ@Z\"},{\"addr\":\"0xa2fd00\",\"name\":\"?_com_issue_error@@YGXJ@Z\"},{\"addr\":\"0xa2fd20\",\"name\":\"?_com_issue_errorex@@YGXJPAUIUnknown@@ABU_GUID@@@Z\"},{\"addr\":\"0xb46950\",\"name\":\"__GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e\"},{\"addr\":\"0x9ad8f0\",\"name\":\"?CreateWnd@CWnd@@QAEXJJJJJHPAXHW4UIOrigin@1@@Z\"}]}"
+    }
+  ],
+  "structuredContent": {
+    "addr": "0x7928a0",
+    "code": "CUINoticePremium *__thiscall CUINoticePremium::CUINoticePremium(CUINoticePremium *this)\n{\n  _bstr_t::Data_t *v2; // ecx\n  IWzCanvas *m_pInterface; // edi\n  HRESULT (__stdcall *get_height)(IWzCanvas *, unsigned int *); // edx\n  HRESULT v5; // eax\n  IWzCanvas *v6; // edi\n  HRESULT (__stdcall *get_width)(IWzCanvas *, unsigned int *); // eax\n  HRESULT v8; // eax\n  IWzCanvas *v9; // edi\n  HRESULT (__stdcall *v10)(IWzCanvas *, unsigned int *); // ecx\n  HRESULT v11; // eax\n  IWzCanvas *v12; // edi\n  int v13; // ebx\n  HRESULT (__stdcall *v14)(IWzCanvas *, unsigned int *); // ecx\n  HRESULT v15; // eax\n  _bstr_t v17; // [esp-18h] [ebp-54h] BYREF\n  int v18; // [esp-14h] [ebp-50h]\n  int v19; // [esp-10h] [ebp-4Ch]\n  int v20; // [esp-Ch] [ebp-48h]\n  int v21; // [esp-8h] [ebp-44h]\n  int v22; // [esp-4h] [ebp-40h]\n  int v23; // [esp+14h] [ebp-28h] BYREF\n  int v24; // [esp+18h] [ebp-24h] BYREF\n  int v25; // [esp+1Ch] [ebp-20h] BYREF\n  int v26; // [esp+20h] [ebp-1Ch] BYREF\n  int h; // [esp+24h] [ebp-18h]\n  int w; // [esp+28h] [ebp-14h]\n  CUINoticePremium *v29; // [esp+2Ch] [ebp-10h]\n  int v30; // [esp+38h] [ebp-4h]\n\n  v29 = this; /*0x7928c9*/\n  CDialog::CDialog(this); /*0x7928cd*/\n  v30 = 0; /*0x7928da*/\n  if ( this == (CUINoticePremium *)-145 ) /*0x7928e0*/\n    TSingleton<CUINoticePremium>::ms_pInstance = nullptr; /*0x7928ee*/\n  else\n    TSingleton<CUINoticePremium>::ms_pInstance = this; /*0x7928e7*/\n  this->CDialog::CWnd::IGObj::__vftable = (CUINoticePremium_vtbl *)&CUINoticePremium::`vftable'{for `IGObj'}; /*0x7928f4*/\n  this->CDialog::CWnd::IUIMsgHandler::__vftable = (IUIMsgHandler_vtbl *)&CUINoticePremium::`vftable'{for `IUIMsgHandler'}; /*0x7928fa*/\n  this->CDialog::CWnd::ZRefCounted::__vftable = (ZRefCounted_vtbl *)&CUINoticePremium::`vftable'{for `ZRefCounted'}; /*0x792901*/\n  this->m_pBtClose.p = nullptr; /*0x792908*/\n  v22 = 0; /*0x79290e*/\n  v21 = 0; /*0x79290f*/\n  v20 = 0; /*0x792910*/\n  v19 = 0; /*0x792911*/\n  v18 = 0; /*0x792912*/\n  v17.m_Data = v2; /*0x792913*/\n  w = (int)&v17; /*0x792914*/\n  LOBYTE(v30) = 2; /*0x79291f*/\n  _bstr_t::_bstr_t(&v17, L\"UI/UIWindow2.img/Notice/3\"); /*0x792924*/\n  CWnd::SetBackgrnd(this, (Ztl_bstr_t)v17.m_Data, v18, v19, v20, v21, v22); /*0x79292b*/\n  m_pInterface = this->m_pBackgrnd.m_pInterface; /*0x792930*/\n  if ( !m_pInterface ) /*0x792935*/\n    _com_issue_error(-2147467261); /*0x79293c*/\n  get_height = m_pInterface->get_height; /*0x792943*/\n  v23 = 0; /*0x79294c*/\n  v5 = get_height(m_pInterface, (unsigned int *)&v23); /*0x792950*/\n  if ( v5 < 0 ) /*0x792954*/\n    _com_issue_errorex(v5, m_pInterface, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x79295d*/\n  v6 = this->m_pBackgrnd.m_pInterface; /*0x792962*/\n  h = v23; /*0x792969*/\n  if ( !v6 ) /*0x79296f*/\n    _com_issue_error(-2147467261); /*0x792976*/\n  get_width = v6->get_width; /*0x79297d*/\n  v24 = 0; /*0x792986*/\n  v8 = get_width(v6, (unsigned int *)&v24); /*0x79298a*/\n  if ( v8 < 0 ) /*0x79298e*/\n    _com_issue_errorex(v8, v6, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x792997*/\n  v9 = this->m_pBackgrnd.m_pInterface; /*0x79299c*/\n  w = v24; /*0x7929a3*/\n  if ( !v9 ) /*0x7929a9*/\n    _com_issue_error(-2147467261); /*0x7929b0*/\n  v10 = v9->get_height; /*0x7929b7*/\n  v25 = 0; /*0x7929c0*/\n  v11 = v10(v9, (unsigned int *)&v25); /*0x7929c4*/\n  if ( v11 < 0 ) /*0x7929c8*/\n    _com_issue_errorex(v11, v9, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x7929d1*/\n  v12 = this->m_pBackgrnd.m_pInterface; /*0x7929d6*/\n  v13 = v25; /*0x7929d9*/\n  if ( !v12 ) /*0x7929df*/\n    _com_issue_error(-2147467261); /*0x7929e6*/\n  v14 = v12->get_width; /*0x7929ed*/\n  v26 = 0; /*0x7929f6*/\n  v15 = v14(v12, (unsigned int *)&v26); /*0x7929fa*/\n  if ( v15 < 0 ) /*0x7929fe*/\n    _com_issue_errorex(v15, v12, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x792a07*/\n  CWnd::CreateWnd(this, v26 / -2, v13 / -2, w, h, 10, 1, nullptr, 1, Origin_CC); /*0x792a37*/\n  return this; /*0x792a3e*/\n}",
+    "refs": [
+      {
+        "addr": "0x4fe900",
+        "name": "??0CDialog@@QAE@XZ"
+      },
+      {
+        "addr": "0xc6e7a0",
+        "name": "?ms_pInstance@?$TSingleton@VCUINoticePremium@@@@1PAVCUINoticePremium@@A"
+      },
+      {
+        "addr": "0xb999a4",
+        "name": "??_7CUINoticePremium@@6BIGObj@@@"
+      },
+      {
+        "addr": "0xb99958",
+        "name": "??_7CUINoticePremium@@6BIUIMsgHandler@@@"
+      },
+      {
+        "addr": "0xb99954",
+        "name": "??_7CUINoticePremium@@6BZRefCounted@@@"
+      },
+      {
+        "addr": "0x4032f0",
+        "name": "??0_bstr_t@@QAE@PBG@Z"
+      },
+      {
+        "addr": "0xb9a8a0",
+        "name": "aUiUiwindow2Img_198",
+        "string": "䥕唯坉湩潤㉷椮杭丯瑯捩⽥�"
+      },
+      {
+        "addr": "0x9afeb0",
+        "name": "?SetBackgrnd@CWnd@@IAEXVZtl_bstr_t@@JJHJJ@Z"
+      },
+      {
+        "addr": "0xa2fd00",
+        "name": "?_com_issue_error@@YGXJ@Z"
+      },
+      {
+        "addr": "0xa2fd20",
+        "name": "?_com_issue_errorex@@YGXJPAUIUnknown@@ABU_GUID@@@Z"
+      },
+      {
+        "addr": "0xb46950",
+        "name": "__GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e"
+      },
+      {
+        "addr": "0x9ad8f0",
+        "name": "?CreateWnd@CWnd@@QAEXJJJJJHPAXHW4UIOrigin@1@@Z"
+      }
+    ]
+  },
+  "isError": false
+}

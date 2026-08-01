@@ -1,0 +1,25 @@
+void __thiscall CMob::UpdateEscortStopActRepeat(CMob *this)
+{
+  int m_nEscortStopAct; // edx
+
+  if ( this->m_tEscortStopActTime && this->m_nEscortStopAct && this->m_pTemplate->nEscortType == 1 ) /*0x64c752*/
+  {
+    if ( this->m_tEscortStopActTime >= get_update_time() ) /*0x64c75f*/
+    {
+      if ( !CMob::IsOnPlayingOneTimeAction(this) ) /*0x64c779*/
+      {
+        m_nEscortStopAct = this->m_nEscortStopAct; /*0x64c782*/
+        if ( m_nEscortStopAct != -1 ) /*0x64c78b*/
+        {
+          CMob::_ZtlSecurePut_m_nOneTimeAction(this, m_nEscortStopAct); /*0x64c78f*/
+          CMob::PrepareActionLayer(this); /*0x64c797*/
+        }
+      }
+    }
+    else
+    {
+      this->m_tEscortStopActTime = 0; /*0x64c761*/
+      this->m_nEscortStopAct = 0; /*0x64c76b*/
+    }
+  }
+}

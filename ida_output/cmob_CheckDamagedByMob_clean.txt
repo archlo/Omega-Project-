@@ -1,0 +1,24 @@
+int __thiscall CMob::CheckDamagedByMob(CMob *this, unsigned int dwTemplateID)
+{
+  CMobTemplate *m_pTemplate; // edx
+  unsigned int *a; // eax
+  unsigned int i; // ecx
+  unsigned int *v6; // eax
+
+  m_pTemplate = this->m_pTemplate; /*0x63d4b0*/
+  if ( m_pTemplate->bDamagedByMob ) /*0x63d4b6*/
+  {
+    a = m_pTemplate->m_aDamagedBySelectedMob.a; /*0x63d4c0*/
+    if ( !a || !*(a - 1) ) /*0x63d4ca*/
+      return 1; /*0x63d4d6*/
+    for ( i = 0; ; ++i ) /*0x63d4dd*/
+    {
+      v6 = m_pTemplate->m_aDamagedBySelectedMob.a; /*0x63d4e0*/
+      if ( !v6 || i >= *(v6 - 1) ) /*0x63d4ed*/
+        break; /*0x63d4ed*/
+      if ( v6[i] == dwTemplateID ) /*0x63d4f2*/
+        return 1; /*0x63d4f2*/
+    }
+  }
+  return 0; /*0x63d4d5*/
+}

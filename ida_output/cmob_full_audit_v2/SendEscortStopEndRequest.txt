@@ -1,0 +1,19 @@
+﻿void __thiscall CMob::SendEscortStopEndRequest(CMob *this)
+{
+  unsigned int v2; // eax
+  unsigned int ZtlSecureTear_m_dwMobID_CS; // [esp-4h] [ebp-28h]
+  COutPacket oPacket; // [esp+8h] [ebp-1Ch] BYREF
+  int v5; // [esp+20h] [ebp-4h]
+
+  if ( CMob::IsActive(this) )
+  {
+    COutPacket::COutPacket(&oPacket, 238);
+    ZtlSecureTear_m_dwMobID_CS = this->_ZtlSecureTear_m_dwMobID_CS;
+    v5 = 0;
+    v2 = _ZtlSecureFuse<unsigned long>(this->_ZtlSecureTear_m_dwMobID, ZtlSecureTear_m_dwMobID_CS);
+    COutPacket::Encode4(&oPacket, v2);
+    CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket);
+    v5 = -1;
+    ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff);
+  }
+}

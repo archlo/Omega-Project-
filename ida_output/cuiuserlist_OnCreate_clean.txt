@@ -1,0 +1,835 @@
+// CUIUserList::OnCreate @ 0x8db080
+
+void __thiscall CUIUserList::OnCreate(CUIUserList *this, void *pData)
+{
+  wchar_t *v3; // eax
+  IWzFont *v4; // eax
+  CTabFriend *v5; // eax
+  IWzFont *v6; // eax
+  CTabParty *v7; // edi
+  IWzFont *v8; // eax
+  CTabGuild *v9; // eax
+  IWzFont *v10; // eax
+  CTabGuildAlliance *v11; // eax
+  IWzFont *v12; // eax
+  CTabBlackList *v13; // edi
+  IWzFont *v14; // eax
+  TabExpedition *v15; // eax
+  CTabFriend *m_pTabFriend; // ecx
+  IWzFont *v17; // eax
+  CCtrlTab *v18; // eax
+  ZRefCounted *v19; // eax
+  CCtrlTab *v20; // edi
+  CCtrlTab *p; // eax
+  void (__stdcall *v22)(VARIANTARG *); // edi
+  HRESULT v23; // eax
+  HRESULT v24; // eax
+  _bstr_t::Data_t *v25; // ecx
+  Ztl_variant_t *ObjectA; // eax
+  IUnknown *Unknown; // eax
+  HRESULT v28; // eax
+  HRESULT v29; // eax
+  HRESULT v30; // eax
+  Ztl_variant_t *v31; // eax
+  IUnknown *v32; // eax
+  HRESULT v33; // eax
+  IWzProperty *m_pInterface; // ebx
+  void *v35; // esp
+  void *v36; // esp
+  char *v37; // eax
+  Ztl_variant_t *v38; // eax
+  IUnknown *v39; // eax
+  HRESULT v40; // ebx
+  char *v41; // eax
+  Ztl_variant_t *v42; // eax
+  IWzCanvas *v43; // eax
+  int (**v44)(void); // ecx
+  IWzCanvas v45; // edx
+  CCtrlTab *v46; // ecx
+  CCtrlTab *v47; // eax
+  CCtrlScrollBar *v48; // eax
+  ZRefCounted *v49; // eax
+  CCtrlScrollBar *v50; // edi
+  CCtrlScrollBar *v51; // eax
+  ZRefCounted *v52; // edi
+  IWzFont *v53; // eax
+  IWzFont *v54; // edi
+  IWzFont *v55; // eax
+  IWzFont *v56; // edi
+  IWzFont *v57; // eax
+  IWzFont *v58; // edi
+  IWzFont *v59; // eax
+  IWzFont *v60; // edi
+  StringPool *Instance; // eax
+  wchar_t *m_pStr; // eax
+  StringPool *v63; // eax
+  wchar_t *v64; // eax
+  StringPool *v65; // eax
+  wchar_t *v66; // eax
+  StringPool *v67; // eax
+  wchar_t *v68; // eax
+  StringPool *v69; // eax
+  wchar_t *v70; // eax
+  StringPool *v71; // eax
+  wchar_t *v72; // eax
+  HRESULT v73; // eax
+  StringPool *v74; // eax
+  IWzFont *v75; // ecx
+  void (__stdcall *v76)(VARIANTARG *); // edi
+  HRESULT v77; // eax
+  StringPool *v78; // eax
+  IWzFont *v79; // ecx
+  HRESULT v80; // eax
+  StringPool *v81; // eax
+  IWzFont *v82; // ecx
+  HRESULT v83; // eax
+  StringPool *v84; // eax
+  IWzFont *v85; // ecx
+  HRESULT v86; // eax
+  StringPool *v87; // eax
+  IWzFont *v88; // ecx
+  HRESULT v89; // eax
+  StringPool *v90; // eax
+  IWzFont *v91; // ecx
+  unsigned int (__stdcall *Release)(IUnknown *); // edx
+  unsigned int (__stdcall *v93)(IUnknown *); // edx
+  Ztl_bstr_t v94; // [esp-C4h] [ebp-128h] BYREF
+  unsigned int v95; // [esp-C0h] [ebp-124h]
+  unsigned int v96; // [esp-BCh] [ebp-120h]
+  const Ztl_variant_t *p_sStyle; // [esp-B8h] [ebp-11Ch]
+  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > v98; // [esp-90h] [ebp-F4h]
+  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > v99; // [esp-8Ch] [ebp-F0h]
+  _bstr_t v100; // [esp-88h] [ebp-ECh] BYREF
+  _com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> > *v101; // [esp-84h] [ebp-E8h]
+  IWzCanvas *v102; // [esp-80h] [ebp-E4h] BYREF
+  _bstr_t v103; // [esp-74h] [ebp-D8h] BYREF
+  BOOL v104; // [esp-70h] [ebp-D4h]
+  _DWORD v105[2]; // [esp-6Ch] [ebp-D0h] BYREF
+  int v106; // [esp-64h] [ebp-C8h] BYREF
+  char v107; // [esp-44h] [ebp-A8h] BYREF
+  _bstr_t v108; // [esp-38h] [ebp-9Ch] BYREF
+  const Ztl_variant_t *p_pvargDest; // [esp-34h] [ebp-98h]
+  const Ztl_variant_t *p_pvarg; // [esp-30h] [ebp-94h]
+  BOOL v111; // [esp-2Ch] [ebp-90h]
+  BOOL v112; // [esp-28h] [ebp-8Ch]
+  IWzFont *v113; // [esp-14h] [ebp-78h]
+  unsigned int v114; // [esp-10h] [ebp-74h]
+  int v115; // [esp-Ch] [ebp-70h]
+  ZXString<unsigned short> v116; // [esp-8h] [ebp-6Ch] BYREF
+  int v117; // [esp-4h] [ebp-68h]
+  Ztl_variant_t Destination; // [esp+10h] [ebp-54h] BYREF
+  Ztl_variant_t result; // [esp+20h] [ebp-44h] BYREF
+  Ztl_variant_t v120; // [esp+30h] [ebp-34h] BYREF
+  _DWORD paramTab[2]; // [esp+40h] [ebp-24h] BYREF
+  VARIANTARG v122; // [esp+48h] [ebp-1Ch] BYREF
+  int v123; // [esp+60h] [ebp-4h]
+  VARIANTARG pvargDest; // [esp+64h] [ebp+0h] BYREF
+  VARIANTARG v125; // [esp+74h] [ebp+10h] BYREF
+  VARIANTARG pvarg; // [esp+84h] [ebp+20h] BYREF
+  int v127; // [esp+94h] [ebp+30h] BYREF
+  Ztl_bstr_t *v128; // [esp+98h] [ebp+34h]
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pPropNormalList; // [esp+9Ch] [ebp+38h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pPropSelectedList; // [esp+A0h] [ebp+3Ch] BYREF
+  int i; // [esp+A4h] [ebp+40h]
+  ZRef<CCtrlTab> v132; // [esp+A8h] [ebp+44h] BYREF
+  char *Buffer; // [esp+B0h] [ebp+4Ch]
+  Ztl_variant_t sStyle; // [esp+B4h] [ebp+50h] BYREF
+  _com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> > v135; // [esp+C4h] [ebp+60h] BYREF
+
+  v117 = 1;
+  v135.m_pInterface = (IWzFont *)&v116;
+  v116._m_pStr = nullptr;
+  v3 = ZXString<unsigned short>::GetBuffer(&v116, 39, 0);
+  memcpy(v3, aUiUiwindow2Img_410, 0x4Eu);
+  ZXString<unsigned short>::ReleaseBuffer(&v116, 39);
+  CUIWnd::OnCreate(this, pData, v116, v117);
+  CLayoutMan::Init(&this->m_lm, this, 0, 0);
+  v4 = (IWzFont *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0xB4u);
+  v135.m_pInterface = v4;
+  v123 = 0;
+  if ( v4 )
+    v5 = CTabFriend::CTabFriend((CTabFriend *)v4, this);
+  else
+    v5 = nullptr;
+  v117 = 92;
+  v123 = -1;
+  this->m_pTabFriend = v5;
+  v6 = (IWzFont *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, v117);
+  v7 = (CTabParty *)v6;
+  v135.m_pInterface = v6;
+  v123 = 1;
+  if ( v6 )
+  {
+    v117 = (int)ZRef<CCtrlButton>::~ZRef<CCtrlButton>;
+    v116._m_pStr = (wchar_t *)ZRef<CCtrlButton>::ZRef<CCtrlButton>;
+    v115 = 9;
+    v114 = 8;
+    v113 = v6 + 1;
+    v6->__vftable = (IWzFont_vtbl *)&CTabParty::`vftable';
+    `eh vector constructor iterator'(
+      v113,
+      v114,
+      v115,
+      (void (__thiscall *)(void *))v116._m_pStr,
+      (void (__thiscall *)(void *))v117);
+    v7->m_aSameMap.a = nullptr;
+    v7->m_aOffLine.a = nullptr;
+    v7->m_aElseWhere.a = nullptr;
+    v7->m_pUIUserList = this;
+  }
+  else
+  {
+    v7 = nullptr;
+  }
+  v117 = 420;
+  v123 = -1;
+  this->m_pTabParty = v7;
+  v8 = (IWzFont *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, v117);
+  v135.m_pInterface = v8;
+  v123 = 2;
+  if ( v8 )
+    v9 = CTabGuild::CTabGuild((CTabGuild *)v8, this);
+  else
+    v9 = nullptr;
+  v117 = 840;
+  v123 = -1;
+  this->m_pTabGuild = v9;
+  v10 = (IWzFont *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, v117);
+  v135.m_pInterface = v10;
+  v123 = 3;
+  if ( v10 )
+    v11 = CTabGuildAlliance::CTabGuildAlliance((CTabGuildAlliance *)v10, this);
+  else
+    v11 = nullptr;
+  v117 = 28;
+  v123 = -1;
+  this->m_pTabGuildAlliance = v11;
+  v12 = (IWzFont *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, v117);
+  v13 = (CTabBlackList *)v12;
+  v135.m_pInterface = v12;
+  v123 = 4;
+  if ( v12 )
+  {
+    v117 = (int)ZRef<CCtrlButton>::~ZRef<CCtrlButton>;
+    v116._m_pStr = (wchar_t *)ZRef<CCtrlButton>::ZRef<CCtrlButton>;
+    v115 = 2;
+    v114 = 8;
+    v113 = v12 + 1;
+    v12->__vftable = (IWzFont_vtbl *)&CTabBlackList::`vftable';
+    `eh vector constructor iterator'(
+      v113,
+      v114,
+      v115,
+      (void (__thiscall *)(void *))v116._m_pStr,
+      (void (__thiscall *)(void *))v117);
+    v13->m_BlackList.a = nullptr;
+    v13->m_pUIUserList = this;
+  }
+  else
+  {
+    v13 = nullptr;
+  }
+  v117 = 112;
+  v123 = -1;
+  this->m_pTabBlackList = v13;
+  v14 = (IWzFont *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, v117);
+  v135.m_pInterface = v14;
+  v123 = 5;
+  if ( v14 )
+    v15 = TabExpedition::TabExpedition((TabExpedition *)v14, this);
+  else
+    v15 = nullptr;
+  m_pTabFriend = this->m_pTabFriend;
+  v123 = -1;
+  this->m_pTabExpedition = v15;
+  CTabFriend::OnCreate(m_pTabFriend);
+  CTabGuild::OnCreate(this->m_pTabGuild);
+  CTabGuildAlliance::OnCreate(this->m_pTabGuildAlliance);
+  this->m_pTabExpedition->OnCreate(this->m_pTabExpedition, nullptr);
+  this->m_bGuildGradeShown = 0;
+  this->m_pWndGuildGrade = nullptr;
+  this->m_bAllianceGradeShown = 0;
+  if ( this->m_nCurTab == -1 )
+    this->m_nCurTab = this->m_nOption;
+  if ( this->m_nCurTab >= 6u )
+  {
+    this->m_nOption = 0;
+    this->m_nCurTab = 0;
+  }
+  this->m_nOption = this->m_nCurTab;
+  paramTab[0] = 0;
+  paramTab[1] = 1;
+  v17 = (IWzFont *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0x70u);
+  v135.m_pInterface = v17;
+  v123 = 6;
+  if ( v17 )
+    v18 = CCtrlTab::CCtrlTab((CCtrlTab *)v17);
+  else
+    v18 = nullptr;
+  v123 = -1;
+  if ( v18 && (v19 = &v18->ZRefCounted) != nullptr )
+  {
+    v20 = (CCtrlTab *)&v19[-1].___u1;
+    if ( v19 != (ZRefCounted *)8 )
+      InterlockedIncrement(&v20->_m_nRef);
+  }
+  else
+  {
+    v20 = nullptr;
+  }
+  p = this->m_pTab.p;
+  this->m_pTab.p = v20;
+  v132.p = p;
+  if ( p )
+    ZRef<CCtrlTab>::_ReleaseRaw(&v132, nullptr);
+  this->m_pTab.p->CreateCtrl_2(this->m_pTab.p, this, 2001u, 8, 9, 25, 250, 19, paramTab);
+  v22 = VariantInit;
+  VariantInit(&pvarg);
+  v23 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing);
+  if ( v23 < 0 )
+    _com_issue_error(v23);
+  v123 = 7;
+  v22(&pvargDest);
+  v24 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing);
+  if ( v24 < 0 )
+    _com_issue_error(v24);
+  v112 = 0;
+  v111 = 0;
+  p_pvarg = (const Ztl_variant_t *)&pvarg;
+  p_pvargDest = (const Ztl_variant_t *)&pvargDest;
+  v108.m_Data = v25;
+  v135.m_pInterface = (IWzFont *)&v108;
+  LOBYTE(v123) = 8;
+  _bstr_t::_bstr_t(&v108, L"UI/UIWindow2.img/UserList/Main/Tab/enabled");
+  LOBYTE(v123) = 9;
+  if ( !g_rm.m_pInterface )
+LABEL_38:
+    _com_issue_error(-2147467261);
+  LOBYTE(v123) = 8;
+  ObjectA = IWzResMan::GetObjectA(g_rm.m_pInterface, &result, (Ztl_bstr_t)v108.m_Data, p_pvargDest, p_pvarg);
+  LOBYTE(v123) = 10;
+  Unknown = Ztl_variant_t::GetUnknown(ObjectA, v111, v112);
+  pPropSelectedList.m_pInterface = nullptr;
+  v28 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+          &pPropSelectedList,
+          Unknown);
+  if ( v28 < 0 && v28 != -2147467262 )
+    _com_issue_error(v28);
+  LOBYTE(v123) = 12;
+  if ( result.vt == 8 )
+  {
+    result.vt = 0;
+    if ( result.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(result.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&result);
+  }
+  LOBYTE(v123) = 13;
+  if ( pvargDest.vt == 8 )
+  {
+    pvargDest.vt = 0;
+    if ( pvargDest.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&pvargDest);
+  }
+  LOBYTE(v123) = 14;
+  if ( pvarg.vt == 8 )
+  {
+    pvarg.vt = 0;
+    if ( pvarg.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&pvarg);
+  }
+  v22(&v122);
+  v29 = ZComAPI::ZComVariantCopy(&v122, &vtMissing);
+  if ( v29 < 0 )
+    _com_issue_error(v29);
+  LOBYTE(v123) = 15;
+  v22(&v125);
+  v30 = ZComAPI::ZComVariantCopy(&v125, &vtMissing);
+  if ( v30 < 0 )
+    _com_issue_error(v30);
+  v112 = 0;
+  v111 = 0;
+  p_pvarg = (const Ztl_variant_t *)&v122;
+  p_pvargDest = (const Ztl_variant_t *)&v125;
+  v108.m_Data = (_bstr_t::Data_t *)&v125;
+  v135.m_pInterface = (IWzFont *)&v108;
+  LOBYTE(v123) = 16;
+  _bstr_t::_bstr_t(&v108, L"UI/UIWindow2.img/UserList/Main/Tab/disabled");
+  LOBYTE(v123) = 17;
+  if ( !g_rm.m_pInterface )
+    _com_issue_error(-2147467261);
+  LOBYTE(v123) = 16;
+  v31 = IWzResMan::GetObjectA(g_rm.m_pInterface, &v120, (Ztl_bstr_t)v108.m_Data, p_pvargDest, p_pvarg);
+  LOBYTE(v123) = 18;
+  v32 = Ztl_variant_t::GetUnknown(v31, v111, v112);
+  pPropNormalList.m_pInterface = nullptr;
+  v33 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+          &pPropNormalList,
+          v32);
+  if ( v33 < 0 && v33 != -2147467262 )
+    _com_issue_error(v33);
+  LOBYTE(v123) = 20;
+  if ( v120.vt == 8 )
+  {
+    v120.vt = 0;
+    if ( v120.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v120.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v120);
+  }
+  LOBYTE(v123) = 21;
+  if ( v125.vt == 8 )
+  {
+    v125.vt = 0;
+    if ( v125.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v125.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v125);
+  }
+  LOBYTE(v123) = 22;
+  if ( v122.vt == 8 )
+  {
+    v122.vt = 0;
+    if ( v122.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v122.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v122);
+  }
+  for ( i = 0; i < 6; ++i )
+  {
+    m_pInterface = pPropSelectedList.m_pInterface;
+    v35 = alloca(32);
+    v36 = alloca(32);
+    Buffer = (char *)&v106;
+    v105[1] = 1;
+    v105[0] = 0;
+    v104 = 0;
+    v37 = itoa(i, &v107, 10);
+    v128 = (Ztl_bstr_t *)&v103;
+    _bstr_t::_bstr_t(&v103, v37);
+    LOBYTE(v123) = 23;
+    if ( !m_pInterface )
+      goto LABEL_38;
+    LOBYTE(v123) = 22;
+    v38 = IWzProperty::Getitem(m_pInterface, &Destination, (Ztl_bstr_t)v103.m_Data);
+    LOBYTE(v123) = 24;
+    v39 = Ztl_variant_t::GetUnknown(v38, v104, v105[0]);
+    v132.p = (CCtrlTab *)v105;
+    v105[0] = 0;
+    if ( v39 )
+    {
+      v40 = ((int (__cdecl *)(IUnknown *, GUID *, int *))v39->QueryInterface)(
+              v39,
+              &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e,
+              &v127);
+      v128 = v40 < 0 ? nullptr : (Ztl_bstr_t *)v127;
+      if ( v105[0] )
+        (*(void (__cdecl **)(_DWORD))(*(_DWORD *)v105[0] + 8))(v105[0]);
+      v105[0] = v128;
+      if ( v40 < 0 && v40 != -2147467262 )
+        goto LABEL_99;
+    }
+    v102 = nullptr;
+    v101 = nullptr;
+    LOBYTE(v123) = 25;
+    v41 = itoa(i, Buffer, 10);
+    Buffer = (char *)&v100;
+    _bstr_t::_bstr_t(&v100, v41);
+    LOBYTE(v123) = 26;
+    if ( !pPropNormalList.m_pInterface )
+      goto LABEL_38;
+    LOBYTE(v123) = 25;
+    v42 = IWzProperty::Getitem(pPropNormalList.m_pInterface, &sStyle, (Ztl_bstr_t)v100.m_Data);
+    LOBYTE(v123) = 27;
+    v43 = (IWzCanvas *)Ztl_variant_t::GetUnknown(v42, (bool)v101, (bool)v102);
+    Buffer = (char *)&v102;
+    v102 = nullptr;
+    if ( v43 )
+    {
+      v44 = (int (**)(void))v43->__vftable;
+      v101 = &v135;
+      v100.m_Data = (_bstr_t::Data_t *)&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e;
+      v99.m_pInterface = v43;
+      v40 = (*v44)();
+      Buffer = v40 < 0 ? nullptr : (char *)v135.m_pInterface;
+      if ( v102 )
+      {
+        v45.__vftable = v102->__vftable;
+        v98.m_pInterface = v102;
+        ((void (*)(void))v45.Release)();
+      }
+      v102 = (IWzCanvas *)Buffer;
+      if ( v40 < 0 && v40 != -2147467262 )
+LABEL_99:
+        _com_issue_error(v40);
+    }
+    v46 = this->m_pTab.p;
+    LOBYTE(v123) = 28;
+    CCtrlTab::AddItem_Canvas(v46, v98, v99, (int)v100.m_Data);
+    LOBYTE(v123) = 24;
+    if ( sStyle.vt == 8 )
+    {
+      sStyle.vt = 0;
+      if ( sStyle.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(sStyle.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&sStyle);
+    }
+    LOBYTE(v123) = 22;
+    if ( Destination.vt == 8 )
+    {
+      Destination.vt = 0;
+      if ( Destination.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&Destination);
+    }
+  }
+  v47 = (CCtrlTab *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0x74u);
+  v132.p = v47;
+  LOBYTE(v123) = 29;
+  if ( v47 )
+    v48 = CCtrlScrollBar::CCtrlScrollBar((CCtrlScrollBar *)v47);
+  else
+    v48 = nullptr;
+  LOBYTE(v123) = 22;
+  if ( v48 && (v49 = &v48->ZRefCounted) != nullptr )
+  {
+    v50 = (CCtrlScrollBar *)&v49[-1].___u1;
+    if ( v49 != (ZRefCounted *)8 )
+      InterlockedIncrement(&v50->_m_nRef);
+  }
+  else
+  {
+    v50 = nullptr;
+  }
+  v51 = this->m_pSB.p;
+  this->m_pSB.p = v50;
+  if ( v51 )
+  {
+    v52 = &v51->ZRefCounted;
+    if ( !InterlockedDecrement(&v51->_m_nRef) )
+    {
+      InterlockedIncrement(&v52->_m_nRef);
+      if ( v52 )
+        ((void (__thiscall *)(ZRefCounted *, int))v52->dtr_ZRefCounted)(v52, 1);
+    }
+  }
+  CUIUserList::SetScrollBar(this, 1);
+  CTabFriend::CreateButton(this->m_pTabFriend);
+  CTabParty::CreateButton(this->m_pTabParty);
+  CTabGuild::CreateButton(this->m_pTabGuild);
+  CTabGuildAlliance::CreateButton(this->m_pTabGuildAlliance);
+  CTabBlackList::CreateButton(this->m_pTabBlackList);
+  v53 = get_basic_font(&v135, FONT_DODOOMCHE_11_WHITE)->m_pInterface;
+  v54 = this->m_pFontWhite.m_pInterface;
+  if ( v54 != v53 )
+  {
+    this->m_pFontWhite.m_pInterface = v53;
+    if ( v53 )
+      ((void (__cdecl *)(IWzFont *))v53->AddRef)(v53);
+    if ( v54 )
+      ((void (__cdecl *)(IWzFont *))v54->Release)(v54);
+  }
+  if ( v135.m_pInterface )
+    ((void (__cdecl *)(IWzFont *))v135.m_pInterface->Release)(v135.m_pInterface);
+  v55 = get_basic_font(&v135, FONT_DODOOMCHE_11_BLACK)->m_pInterface;
+  v56 = this->m_pFontBlack.m_pInterface;
+  if ( v56 != v55 )
+  {
+    this->m_pFontBlack.m_pInterface = v55;
+    if ( v55 )
+      ((void (__cdecl *)(IWzFont *))v55->AddRef)(v55);
+    if ( v56 )
+      ((void (__cdecl *)(IWzFont *))v56->Release)(v56);
+  }
+  if ( v135.m_pInterface )
+    ((void (__cdecl *)(IWzFont *))v135.m_pInterface->Release)(v135.m_pInterface);
+  v57 = get_basic_font(&v135, FONT_DODOOMCHE_11_GRAY90)->m_pInterface;
+  v58 = this->m_pFontGray.m_pInterface;
+  if ( v58 != v57 )
+  {
+    this->m_pFontGray.m_pInterface = v57;
+    if ( v57 )
+      ((void (__cdecl *)(IWzFont *))v57->AddRef)(v57);
+    if ( v58 )
+      ((void (__cdecl *)(IWzFont *))v58->Release)(v58);
+  }
+  if ( v135.m_pInterface )
+    ((void (__cdecl *)(IWzFont *))v135.m_pInterface->Release)(v135.m_pInterface);
+  v59 = this->m_pFontWhite.m_pInterface;
+  v60 = this->m_pFontGroupName.m_pInterface;
+  if ( v60 != v59 )
+  {
+    this->m_pFontGroupName.m_pInterface = v59;
+    if ( v59 )
+      ((void (__cdecl *)(IWzFont *))v59->AddRef)(v59);
+    if ( v60 )
+      ((void (__cdecl *)(IWzFont *))v60->Release)(v60);
+  }
+  Instance = StringPool::GetInstance();
+  m_pStr = StringPool::GetStringW(Instance, (ZXString<unsigned short> *)&v135, 0x5AFu)->_m_pStr;
+  LOBYTE(v123) = 30;
+  PcCreateObject<_com_ptr_t<_com_IIID<IWzFont,&__s_GUID const _GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac>>>(
+    m_pStr,
+    &this->m_pFontBlocked,
+    nullptr);
+  LOBYTE(v123) = 22;
+  if ( v135.m_pInterface )
+    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&v135.m_pInterface[-3]);
+  v63 = StringPool::GetInstance();
+  v64 = StringPool::GetStringW(v63, (ZXString<unsigned short> *)&v135, 0x5AFu)->_m_pStr;
+  LOBYTE(v123) = 31;
+  PcCreateObject<_com_ptr_t<_com_IIID<IWzFont,&__s_GUID const _GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac>>>(
+    v64,
+    &this->m_pFontOnline,
+    nullptr);
+  LOBYTE(v123) = 22;
+  if ( v135.m_pInterface )
+    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&v135.m_pInterface[-3]);
+  v65 = StringPool::GetInstance();
+  v66 = StringPool::GetStringW(v65, (ZXString<unsigned short> *)&v135, 0x5AFu)->_m_pStr;
+  LOBYTE(v123) = 32;
+  PcCreateObject<_com_ptr_t<_com_IIID<IWzFont,&__s_GUID const _GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac>>>(
+    v66,
+    &this->m_pFontOffline,
+    nullptr);
+  LOBYTE(v123) = 22;
+  if ( v135.m_pInterface )
+    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&v135.m_pInterface[-3]);
+  v67 = StringPool::GetInstance();
+  v68 = StringPool::GetStringW(v67, (ZXString<unsigned short> *)&v135, 0x5AFu)->_m_pStr;
+  LOBYTE(v123) = 33;
+  PcCreateObject<_com_ptr_t<_com_IIID<IWzFont,&__s_GUID const _GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac>>>(
+    v68,
+    &this->m_pFontLocation,
+    nullptr);
+  LOBYTE(v123) = 22;
+  if ( v135.m_pInterface )
+    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&v135.m_pInterface[-3]);
+  v69 = StringPool::GetInstance();
+  v70 = StringPool::GetStringW(v69, (ZXString<unsigned short> *)&v135, 0x5AFu)->_m_pStr;
+  LOBYTE(v123) = 34;
+  PcCreateObject<_com_ptr_t<_com_IIID<IWzFont,&__s_GUID const _GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac>>>(
+    v70,
+    &this->m_pFontGray_B5,
+    nullptr);
+  LOBYTE(v123) = 22;
+  if ( v135.m_pInterface )
+    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&v135.m_pInterface[-3]);
+  v71 = StringPool::GetInstance();
+  v72 = StringPool::GetStringW(v71, (ZXString<unsigned short> *)&v135, 0x5AFu)->_m_pStr;
+  LOBYTE(v123) = 35;
+  PcCreateObject<_com_ptr_t<_com_IIID<IWzFont,&__s_GUID const _GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac>>>(
+    v72,
+    &this->m_pFontGray_77,
+    nullptr);
+  LOBYTE(v123) = 22;
+  if ( v135.m_pInterface )
+    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&v135.m_pInterface[-3]);
+  VariantInit(&sStyle);
+  v73 = ZComAPI::ZComVariantCopy(&sStyle, &vtMissing);
+  if ( v73 < 0 )
+    _com_issue_error(v73);
+  p_sStyle = &sStyle;
+  v96 = -3080192;
+  v95 = 11;
+  v94.m_Data = (_bstr_t::Data_t *)&sStyle;
+  v132.p = (CCtrlTab *)&v94;
+  LOBYTE(v123) = 36;
+  v74 = StringPool::GetInstance();
+  StringPool::GetBSTR(v74, &v94, 0x1A25u);
+  v75 = this->m_pFontBlocked.m_pInterface;
+  LOBYTE(v123) = 37;
+  if ( !v75 )
+    _com_issue_error(-2147467261);
+  LOBYTE(v123) = 36;
+  IWzFont::Create(v75, v94, v95, v96, p_sStyle);
+  LOBYTE(v123) = 22;
+  if ( sStyle.vt == 8 )
+  {
+    sStyle.vt = 0;
+    if ( sStyle.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(sStyle.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&sStyle);
+  }
+  v76 = VariantInit;
+  VariantInit(&sStyle);
+  v77 = ZComAPI::ZComVariantCopy(&sStyle, &vtMissing);
+  if ( v77 < 0 )
+    _com_issue_error(v77);
+  p_sStyle = &sStyle;
+  v96 = -11184811;
+  v95 = 11;
+  v94.m_Data = (_bstr_t::Data_t *)&sStyle;
+  v132.p = (CCtrlTab *)&v94;
+  LOBYTE(v123) = 38;
+  v78 = StringPool::GetInstance();
+  StringPool::GetBSTR(v78, &v94, 0x1A25u);
+  v79 = this->m_pFontOnline.m_pInterface;
+  LOBYTE(v123) = 39;
+  if ( !v79 )
+    _com_issue_error(-2147467261);
+  LOBYTE(v123) = 38;
+  IWzFont::Create(v79, v94, v95, v96, p_sStyle);
+  LOBYTE(v123) = 22;
+  if ( sStyle.vt == 8 )
+  {
+    sStyle.vt = 0;
+    if ( sStyle.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(sStyle.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&sStyle);
+  }
+  v76(&sStyle);
+  v80 = ZComAPI::ZComVariantCopy(&sStyle, &vtMissing);
+  if ( v80 < 0 )
+    _com_issue_error(v80);
+  p_sStyle = &sStyle;
+  v96 = -3421237;
+  v95 = 11;
+  v94.m_Data = (_bstr_t::Data_t *)&sStyle;
+  v132.p = (CCtrlTab *)&v94;
+  LOBYTE(v123) = 40;
+  v81 = StringPool::GetInstance();
+  StringPool::GetBSTR(v81, &v94, 0x1A25u);
+  v82 = this->m_pFontOffline.m_pInterface;
+  LOBYTE(v123) = 41;
+  if ( !v82 )
+    _com_issue_error(-2147467261);
+  LOBYTE(v123) = 40;
+  IWzFont::Create(v82, v94, v95, v96, p_sStyle);
+  LOBYTE(v123) = 22;
+  if ( sStyle.vt == 8 )
+  {
+    sStyle.vt = 0;
+    if ( sStyle.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(sStyle.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&sStyle);
+  }
+  v76(&sStyle);
+  v83 = ZComAPI::ZComVariantCopy(&sStyle, &vtMissing);
+  if ( v83 < 0 )
+    _com_issue_error(v83);
+  p_sStyle = &sStyle;
+  v96 = -10066330;
+  v95 = 11;
+  v94.m_Data = (_bstr_t::Data_t *)&sStyle;
+  v132.p = (CCtrlTab *)&v94;
+  LOBYTE(v123) = 42;
+  v84 = StringPool::GetInstance();
+  StringPool::GetBSTR(v84, &v94, 0x1A25u);
+  v85 = this->m_pFontLocation.m_pInterface;
+  LOBYTE(v123) = 43;
+  if ( !v85 )
+    _com_issue_error(-2147467261);
+  LOBYTE(v123) = 42;
+  IWzFont::Create(v85, v94, v95, v96, p_sStyle);
+  LOBYTE(v123) = 22;
+  if ( sStyle.vt == 8 )
+  {
+    sStyle.vt = 0;
+    if ( sStyle.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(sStyle.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&sStyle);
+  }
+  v76(&sStyle);
+  v86 = ZComAPI::ZComVariantCopy(&sStyle, &vtMissing);
+  if ( v86 < 0 )
+    _com_issue_error(v86);
+  p_sStyle = &sStyle;
+  v96 = -4868683;
+  v95 = 11;
+  v94.m_Data = (_bstr_t::Data_t *)&sStyle;
+  v132.p = (CCtrlTab *)&v94;
+  LOBYTE(v123) = 44;
+  v87 = StringPool::GetInstance();
+  StringPool::GetBSTR(v87, &v94, 0x1A25u);
+  v88 = this->m_pFontGray_B5.m_pInterface;
+  LOBYTE(v123) = 45;
+  if ( !v88 )
+    _com_issue_error(-2147467261);
+  LOBYTE(v123) = 44;
+  IWzFont::Create(v88, v94, v95, v96, p_sStyle);
+  LOBYTE(v123) = 22;
+  if ( sStyle.vt == 8 )
+  {
+    sStyle.vt = 0;
+    if ( sStyle.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(sStyle.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&sStyle);
+  }
+  v76(&sStyle);
+  v89 = ZComAPI::ZComVariantCopy(&sStyle, &vtMissing);
+  if ( v89 < 0 )
+    _com_issue_error(v89);
+  p_sStyle = &sStyle;
+  v96 = -8947849;
+  v95 = 11;
+  v94.m_Data = (_bstr_t::Data_t *)&sStyle;
+  v132.p = (CCtrlTab *)&v94;
+  LOBYTE(v123) = 46;
+  v90 = StringPool::GetInstance();
+  StringPool::GetBSTR(v90, &v94, 0x1A25u);
+  v91 = this->m_pFontGray_77.m_pInterface;
+  LOBYTE(v123) = 47;
+  if ( !v91 )
+    _com_issue_error(-2147467261);
+  LOBYTE(v123) = 46;
+  IWzFont::Create(v91, v94, v95, v96, p_sStyle);
+  LOBYTE(v123) = 22;
+  if ( sStyle.vt == 8 )
+  {
+    sStyle.vt = 0;
+    if ( sStyle.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(sStyle.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&sStyle);
+  }
+  CCtrlTab::SetTab(this->m_pTab.p, this->m_nCurTab);
+  CUIUserList::SetButton(this);
+  CWnd::InvalidateRect(this, nullptr);
+  *ZArray<CUIWnd *>::InsertBefore((ZArray<CUIWnd *> *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 4136, -1) = this;
+  Release = pPropNormalList.m_pInterface->Release;
+  LOBYTE(v123) = 14;
+  ((void (__cdecl *)(IWzProperty *))Release)(pPropNormalList.m_pInterface);
+  v93 = pPropSelectedList.m_pInterface->Release;
+  v123 = -1;
+  ((void (__cdecl *)(IWzProperty *))v93)(pPropSelectedList.m_pInterface);
+}

@@ -1,0 +1,294 @@
+﻿int __thiscall CAvatar::MoveAction2RawAction(CAvatar *this, int nMA, int *pnDir)
+{
+  int v4; // edi
+  int m_nMechanicMode; // eax
+  int result; // eax
+  int m_nChairHeight; // eax
+
+  if ( pnDir ) /*0x45fa3e*/
+    *pnDir = nMA & 1; /*0x45fa45*/
+  v4 = nMA >> 1; /*0x45fa50*/
+  m_nMechanicMode = this->m_nMechanicMode; /*0x45fa52*/
+  if ( this->m_dwMorphTemplateID )
+  {
+    if ( CAvatar::IsMonsterMorphed(this) ) /*0x45fa60*/
+    {
+      switch ( v4 ) /*0x45fa7c*/
+      {
+        case 2: /*0x45fa7c*/
+        case 4: /*0x45fa7c*/
+        case 10: /*0x45fa7c*/
+          goto $LN119_0;
+        case 3: /*0x45fa7c*/
+          goto $LN116;
+        case 5: /*0x45fa7c*/
+          goto $LN105_1;
+        case 6: /*0x45fa7c*/
+        case 17: /*0x45fa7c*/
+        case 18: /*0x45fa7c*/
+          goto $LN117;
+        case 7: /*0x45fa7c*/
+          goto $LN115;
+        case 8: /*0x45fa7c*/
+          goto $LN114;
+        case 9: /*0x45fa7c*/
+          goto $LN113_1;
+        default:
+          return 0;
+      }
+    }
+    if ( this->m_dwMorphTemplateID && CMorphTemplate::IsHideMorphed(this->m_dwMorphTemplateID) ) /*0x45faca*/
+    {
+      switch ( v4 ) /*0x45fae9*/
+      {
+        case 2: /*0x45fae9*/
+        case 4: /*0x45fae9*/
+        case 10: /*0x45fae9*/
+          goto $LN119_0;
+        case 3: /*0x45fae9*/
+          goto $LN116;
+        case 5: /*0x45fae9*/
+          goto $LN105_1;
+        case 6: /*0x45fae9*/
+          goto $LN117;
+        case 7: /*0x45fae9*/
+          goto $LN115;
+        case 8: /*0x45fae9*/
+          goto $LN114;
+        case 9: /*0x45fae9*/
+          goto $LN113_1;
+        case 17: /*0x45fae9*/
+          goto $LN99;
+        case 18: /*0x45fae9*/
+          goto $LN98_0;
+        default:
+          return 0;
+      }
+    }
+    if ( this->m_dwMorphTemplateID && CMorphTemplate::IsSuperMan(this->m_dwMorphTemplateID) ) /*0x45fb19*/
+    {
+      switch ( v4 ) /*0x45fb31*/
+      {
+        case 2: /*0x45fb31*/
+          goto $LN119_0;
+        case 3: /*0x45fb31*/
+          goto $LN116;
+        case 4: /*0x45fb31*/
+          goto $LN90;
+        case 5: /*0x45fb31*/
+          goto $LN105_1;
+        case 6: /*0x45fb31*/
+          goto $LN117;
+        case 7: /*0x45fb31*/
+          goto $LN115;
+        case 8: /*0x45fb31*/
+          goto $LN114;
+        case 9: /*0x45fb31*/
+          goto $LN113_1;
+        case 10: /*0x45fb31*/
+          goto $LN72_0;
+        case 17: /*0x45fb31*/
+          goto $LN99;
+        case 18: /*0x45fb31*/
+          goto $LN98_0;
+        default:
+          return 0;
+      }
+    }
+    if ( CAvatar::IsAttackableMorphed(this) ) /*0x45fb44*/
+    {
+      switch ( v4 ) /*0x45fb5d*/
+      {
+        case 2: /*0x45fb5d*/
+$LN119_0: /*0x45fa83*/
+          result = 1; /*0x45fa83*/
+          break; /*0x45fa8a*/
+        case 3: /*0x45fb5d*/
+$LN116: /*0x45fa97*/
+          result = 2; /*0x45fa97*/
+          break; /*0x45fa9e*/
+        case 4: /*0x45fb5d*/
+$LN90: /*0x45fb38*/
+          result = 3; /*0x45fb38*/
+          break; /*0x45fb3f*/
+        case 5: /*0x45fb5d*/
+$LN105_1: /*0x45faf0*/
+          result = 8; /*0x45faf0*/
+          break; /*0x45faf7*/
+        case 6: /*0x45fb5d*/
+$LN117: /*0x45fa8d*/
+          result = 7; /*0x45fa8d*/
+          break; /*0x45fa94*/
+        case 7: /*0x45fb5d*/
+$LN115: /*0x45faa1*/
+          result = 9; /*0x45faa1*/
+          break; /*0x45faa8*/
+        case 8: /*0x45fb5d*/
+$LN114: /*0x45faab*/
+          result = 10; /*0x45faab*/
+          break; /*0x45fab2*/
+        case 9: /*0x45fb5d*/
+$LN113_1: /*0x45fab5*/
+          result = 11; /*0x45fab5*/
+          break; /*0x45fabc*/
+        case 10: /*0x45fb5d*/
+$LN72_0: /*0x45fb64*/
+          result = 12; /*0x45fb64*/
+          break; /*0x45fb6b*/
+        case 17: /*0x45fb5d*/
+$LN99: /*0x45fafa*/
+          result = 41; /*0x45fafa*/
+          break; /*0x45fb01*/
+        case 18: /*0x45fb5d*/
+          goto $LN98_0;
+        default:
+          return 0;
+      }
+    }
+    else
+    {
+      return 0; /*0x45fd66*/
+    }
+  }
+  else if ( this->m_nGhostIndex )
+  {
+    switch ( v4 ) /*0x45fb7f*/
+    {
+      case 1: /*0x45fb7f*/
+        result = 124; /*0x45fb87*/
+        break; /*0x45fb8d*/
+      case 3: /*0x45fb7f*/
+        result = 126; /*0x45fbaf*/
+        break; /*0x45fbb5*/
+      case 5: /*0x45fb7f*/
+        result = 127; /*0x45fb9b*/
+        break; /*0x45fba1*/
+      case 6: /*0x45fb7f*/
+        result = 128; /*0x45fba5*/
+        break; /*0x45fbab*/
+      case 7: /*0x45fb7f*/
+        result = 129; /*0x45fbb9*/
+        break; /*0x45fbbf*/
+      case 8: /*0x45fb7f*/
+        result = 130; /*0x45fbc3*/
+        break; /*0x45fbc9*/
+      case 9: /*0x45fb7f*/
+        goto $LN51_0;
+      case 10: /*0x45fb7f*/
+        result = 131; /*0x45fbd7*/
+        break; /*0x45fbdd*/
+      default:
+        result = 125; /*0x45fb91*/
+        break; /*0x45fb97*/
+    }
+  }
+  else
+  {
+    switch ( m_nMechanicMode )
+    {
+      case 35111004:
+        return 217; /*0x45fbe8*/
+      case 35121005:
+        if ( this->m_bRocketBoosterStart || this->m_bRocketBoosterLoop ) /*0x45fc01*/
+        {
+          return 210; /*0x45fc3e*/
+        }
+        else
+        {
+          switch ( v4 ) /*0x45fc19*/
+          {
+            case 1: /*0x45fc19*/
+              result = 223; /*0x45fc21*/
+              break; /*0x45fc27*/
+            case 5: /*0x45fc19*/
+              result = 56; /*0x45fc35*/
+              break; /*0x45fc3b*/
+            case 20: /*0x45fc19*/
+              return 210;
+            default:
+              result = 221; /*0x45fc2b*/
+              break; /*0x45fc31*/
+          }
+        }
+        break;
+      case 35121013:
+        return 227; /*0x45fc50*/
+      case 35001001:
+        return 234; /*0x45fc61*/
+      case 35101009:
+        return 237; /*0x45fc72*/
+      default:
+        switch ( v4 )
+        {
+          case 1:
+            result = this->m_nWalkType != 1; /*0x45fc98*/
+            break; /*0x45fc9c*/
+          case 2:
+            result = (this->m_nStandType != 1) + 2; /*0x45fcad*/
+            break; /*0x45fcb0*/
+          case 3:
+            result = 44; /*0x45fcc8*/
+            break; /*0x45fcce*/
+          case 4:
+            result = 4; /*0x45fcb4*/
+            break; /*0x45fcba*/
+          case 5:
+$LN98_0: /*0x45fb04*/
+            result = 42; /*0x45fb04*/
+            break; /*0x45fb0b*/
+          case 6:
+            result = 43; /*0x45fcbe*/
+            break; /*0x45fcc4*/
+          case 7:
+            result = 45; /*0x45fcd2*/
+            break; /*0x45fcd8*/
+          case 8:
+            result = 46; /*0x45fcdc*/
+            break; /*0x45fce2*/
+          case 9:
+$LN51_0: /*0x45fbcc*/
+            result = 47; /*0x45fbcc*/
+            break; /*0x45fbd3*/
+          case 10:
+            m_nChairHeight = this->m_nChairHeight; /*0x45fce5*/
+            switch ( m_nChairHeight )
+            {
+              case 1:
+                result = 49; /*0x45fcf1*/
+                break;
+              case 2:
+                result = 50; /*0x45fd00*/
+                break;
+              case 3:
+                result = 51; /*0x45fd0f*/
+                break;
+              case 4:
+                result = 52; /*0x45fd1e*/
+                break;
+              case 5:
+                result = 53; /*0x45fd2d*/
+                break;
+              default:
+                result = m_nChairHeight != 6 ? 48 : 54;
+                break;
+            }
+            break; /*0x45fcf7*/
+          case 17:
+            result = 270; /*0x45fd49*/
+            break; /*0x45fd4f*/
+          case 18:
+            result = 271; /*0x45fd53*/
+            break; /*0x45fd59*/
+          case 19:
+            result = 80; /*0x45fd5d*/
+            break; /*0x45fd63*/
+          case 20:
+            return 210;
+          default:
+            return 0;
+        }
+        break;
+    }
+  }
+  return result; /*0x45fa83*/
+}

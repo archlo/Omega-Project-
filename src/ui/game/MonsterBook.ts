@@ -49,6 +49,8 @@ export class MonsterBook extends GamePanel {
     const title = new Text({ text: 'Monster Book', style: _titleStyle });
     title.x = 8; title.y = 5;
     this.container.addChild(title);
+    // OG: CUIWnd close button
+    this.createCloseButton(null, null, 1, 280);
   }
 
   Open(cards: MonsterCard[], total: number, caught: number): void {

@@ -123,6 +123,16 @@ export class UserList extends GamePanel {
   onGuildLevel: ((charId: number, level: number) => void) | null = null;
   onFriendAdd: ((name: string) => void) | null = null;
   onFriendDelete: ((charId: number) => void) | null = null;
+  // OG: CTabFriend::OnWhisper (0x8D4CC0) — whisper to selected friend
+  onFriendWhisper: ((name: string) => void) | null = null;
+  // OG: CTabFriend::OnGroupWhisper (0x8B7250) — whisper to friend group
+  onGroupWhisper: ((groupName: string) => void) | null = null;
+  // OG: CTabFriend::ChangeBlockOption (0x8B7280) — block/unblock friend
+  onFriendBlock: ((charId: number, block: boolean) => void) | null = null;
+  // OG: CTabFriend::OnToggleView (0x8B9DC0) — toggle online/all view
+  onToggleOnlineOnly: ((onlineOnly: boolean) => void) | null = null;
+  // OG: CTabFriend::OnFindFriendView (0x8B7270) — open find friend dialog
+  onFindFriend: (() => void) | null = null;
   getInviteName: () => string = () => '';
   getGuildName: () => string = () => '';
   onGuildCreate: ((name: string) => void) | null = null;
@@ -215,6 +225,9 @@ export class UserList extends GamePanel {
     this._root.addChild(this._scrollBar.container);
 
     this._rebuild();
+
+    // OG: CUIWnd close button
+    this.createCloseButton(null, null, 1, 265);
   }
 
   setUsers(users: UserEntry[]): void { this._users = users; this._selFriend = -1; this._scrollOffset = 0; this._rebuild(); }
@@ -557,6 +570,14 @@ export class UserList extends GamePanel {
       case TAB_INDICES.FRIEND:
         add('Add', () => { const n = this.getInviteName(); if (n) this.onFriendAdd?.(n); });
         add('Delete', () => { if (this._selFriend >= 0) this.onFriendDelete?.(this._users[this._selFriend]?.charId); });
+        // OG: CTabFriend::OnWhisper (0x8D4CC0)
+        add('Whisper', () => { if (this._selFriend >= 0) this.onFriendWhisper?.(this._users[this._selFriend]?.name); });
+        // OG: CTabFriend::OnGroupWhisper (0x8B7250)
+        add('Group', () => { this.onGroupWhisper?.('all'); });
+        // OG: CTabFriend::ChangeBlockOption (0x8B7280)
+        add('Block', () => { if (this._selFriend >= 0) this.onFriendBlock?.(this._users[this._selFriend]?.charId, true); });
+        // OG: CTabFriend::OnFindFriendView (0x8B7270)
+        add('Find', () => { this.onFindFriend?.(); });
         break;
       case TAB_INDICES.PARTY:
         add('Create', () => this.onPartyCreate?.());

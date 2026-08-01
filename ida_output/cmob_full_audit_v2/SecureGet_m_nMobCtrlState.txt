@@ -1,0 +1,4 @@
+﻿int __fastcall CMob::_ZtlSecureGet_m_nMobCtrlState(CMob *this)
+{
+  return _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nMobCtrlState, this->_ZtlSecureTear_m_nMobCtrlState_CS);
+}

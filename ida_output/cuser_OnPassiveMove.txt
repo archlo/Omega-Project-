@@ -1,0 +1,3 @@
+// CUser::OnPassiveMove @ 0x8dea10
+
+{"addr":"0x8dea10","code":"void __thiscall CUser::OnPassiveMove(CUser *this, CInPacket *iPacket)\n{\n  IWzVector2D *m_pInterface; // eax\n\n  if ( this->m_dwDriverID ) /*0x8dea10*/\n  {\n    m_pInterface = this->m_pvc.m_pInterface; /*0x8dea19*/\n    if ( m_pInterface ) /*0x8dea21*/\n      CMovePath::OnMovePacket((CMovePath *)&m_pInterface[142], iPacket, 1); /*0x8dea30*/\n  }\n}","refs":[{"addr":"0x6683f0","name":"?OnMovePacket@CMovePath@@QAEXAAVCInPacket@@H@Z"}]}

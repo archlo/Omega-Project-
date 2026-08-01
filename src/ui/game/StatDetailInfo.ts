@@ -52,6 +52,8 @@ export class StatDetailInfo extends GamePanel {
     this._bg2 = detailProp?.Get('backgrnd2') instanceof WzCanvas ? loader.Load(detailProp!.Get('backgrnd2') as WzCanvas) : null;
     this._bg3 = detailProp?.Get('backgrnd3') instanceof WzCanvas ? loader.Load(detailProp!.Get('backgrnd3') as WzCanvas) : null;
     this._btHpUp = detailProp?.Get('BtHpUp') instanceof WzProperty ? new Button('HP Up') : null;
+    // OG: CUIWnd close button
+    this.createCloseButton(null, null, 1, 184);
   }
 
   update(_dt: number): void {

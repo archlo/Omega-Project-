@@ -1,0 +1,111 @@
+// cuser::ShowEffectRocketBoosterAttack
+
+void __thiscall CUser::ShowEffectRocketBoosterAttack(CUser *this, _bstr_t::Data_t *pSkill, int nSLV)
+{
+  SKILLENTRY *v4; // ebx
+  CAvatar *v5; // esi
+  unsigned int v6; // eax
+  Ztl_bstr_t *EffectUOL; // eax
+  _bstr_t::Data_t *m_Data; // esi
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzVector2D *v10; // ecx
+  IWzGr2DLayer *v11; // edi
+  HRESULT (__stdcall *get_flip)(IWzGr2DLayer *, int *); // eax
+  HRESULT v13; // eax
+  const wchar_t *m_wstr; // edx
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v15; // [esp-20h] [ebp-50h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v16; // [esp-1Ch] [ebp-4Ch] BYREF
+  int v17; // [esp-18h] [ebp-48h]
+  int v18; // [esp-14h] [ebp-44h]
+  int v19; // [esp-10h] [ebp-40h]
+  int v20; // [esp-Ch] [ebp-3Ch]
+  int v21; // [esp-8h] [ebp-38h]
+  int v22; // [esp-4h] [ebp-34h]
+  Ztl_bstr_t result; // [esp+14h] [ebp-1Ch] BYREF
+  _bstr_t v24; // [esp+18h] [ebp-18h] BYREF
+  Ztl_bstr_t sEffect; // [esp+1Ch] [ebp-14h]
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *v26; // [esp+20h] [ebp-10h]
+  int v27; // [esp+2Ch] [ebp-4h]
+
+  v4 = (SKILLENTRY *)pSkill; /*0x8ef949*/
+  if ( pSkill )
+  {
+    v5 = &this->CAvatar; /*0x8ef957*/
+    if ( CAvatar::GetOneTimeAction(&this->CAvatar) > -1 ) /*0x8ef969*/
+    {
+      this->m_nOneTimeAction = -1; /*0x8ef96b*/
+      this->m_nTamingMobOneTimeAction = -1; /*0x8ef971*/
+      CAvatar::ClearActionLayer(&this->CAvatar, 1); /*0x8ef97b*/
+    }
+    v6 = this->m_nMechanicMode != 35121005 ? 0xFFFFFFCB : 0;
+    v22 = 0; /*0x8ef997*/
+    this->m_nOneTimeAction = v6 + 264; /*0x8ef998*/
+    v5->PrepareActionLayer(&this->CAvatar, 6, 100, v22); /*0x8ef9a9*/
+    _bstr_t::_bstr_t(&v24, a0_0); /*0x8ef9b4*/
+    v27 = 0; /*0x8ef9c5*/
+    EffectUOL = SKILLENTRY::GetEffectUOL(v4, &result, nSLV); /*0x8ef9c9*/
+    LOBYTE(v27) = 1; /*0x8ef9da*/
+    m_Data = Ztl_bstr_t::operator+(EffectUOL, (_bstr_t *)&pSkill, (const Ztl_bstr_t *)&v24)->m_Data; /*0x8ef9e4*/
+    sEffect.m_Data = m_Data; /*0x8ef9e6*/
+    if ( m_Data ) /*0x8ef9ec*/
+      InterlockedIncrement((volatile LONG *)&m_Data->m_RefCount); /*0x8ef9f2*/
+    if ( pSkill ) /*0x8ef9fe*/
+    {
+      _bstr_t::Data_t::Release(pSkill); /*0x8efa00*/
+      pSkill = nullptr; /*0x8efa05*/
+    }
+    if ( result.m_Data ) /*0x8efa0f*/
+    {
+      _bstr_t::Data_t::Release(result.m_Data); /*0x8efa11*/
+      result.m_Data = nullptr; /*0x8efa16*/
+    }
+    LOBYTE(v27) = 4; /*0x8efa20*/
+    if ( v24.m_Data ) /*0x8efa26*/
+      _bstr_t::Data_t::Release(v24.m_Data); /*0x8efa28*/
+    if ( m_Data && m_Data->m_wstr && *((_DWORD *)m_Data->m_wstr - 1) >> 1 ) /*0x8efa4a*/
+    {
+      m_pInterface = this->m_pLayerUnderFace.m_pInterface; /*0x8efa54*/
+      v22 = 0; /*0x8efa5a*/
+      v21 = 0; /*0x8efa5b*/
+      v20 = 0; /*0x8efa5c*/
+      v19 = 3; /*0x8efa5d*/
+      v18 = 0x7FFFFFFF; /*0x8efa5f*/
+      v17 = 1000; /*0x8efa64*/
+      v10 = (IWzVector2D *)&v16; /*0x8efa6a*/
+      v24.m_Data = (_bstr_t::Data_t *)&v16; /*0x8efa6c*/
+      v16.m_pInterface = m_pInterface; /*0x8efa70*/
+      if ( m_pInterface ) /*0x8efa74*/
+        m_pInterface->AddRef(m_pInterface); /*0x8efa7c*/
+      v15.m_pInterface = v10; /*0x8efa7e*/
+      v26 = &v15; /*0x8efa81*/
+      LOBYTE(v27) = 5; /*0x8efa88*/
+      CUser::GetVecCtrl(this, &v15); /*0x8efa8d*/
+      v11 = this->m_pLayerUnderFace.m_pInterface; /*0x8efa92*/
+      LOBYTE(v27) = 6; /*0x8efa98*/
+      if ( !v11 ) /*0x8efa9f*/
+        _com_issue_error(-2147467261); /*0x8efaa6*/
+      get_flip = v11->get_flip; /*0x8efaad*/
+      nSLV = 0; /*0x8efab9*/
+      v13 = get_flip(v11, &nSLV); /*0x8efabd*/
+      if ( v13 < 0 ) /*0x8efac1*/
+        _com_issue_errorex(v13, v11, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x8efaca*/
+      m_wstr = m_Data->m_wstr; /*0x8efad3*/
+      LOBYTE(v27) = 4; /*0x8efad6*/
+      CAnimationDisplayer::Effect_SkillUse( /*0x8efae1*/
+        TSingleton<CAnimationDisplayer>::ms_pInstance,
+        m_wstr,
+        nSLV,
+        v15,
+        v16,
+        v17,
+        v18,
+        v19,
+        v20,
+        v21,
+        v22);
+    }
+    play_skill_sound(35101004, SE_SKILL_USE2, 0); /*0x8efaee*/
+    if ( m_Data ) /*0x8efaf8*/
+      _bstr_t::Data_t::Release(m_Data); /*0x8efafc*/
+  }
+}

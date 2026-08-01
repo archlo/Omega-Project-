@@ -1,0 +1,30 @@
+int __thiscall CSkillInfo::LoadLevelDataCommon(
+        CSkillInfo *this,
+        int nSkillID,
+        _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pCommon,
+        _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pStrSR,
+        IWzShape2D *common,
+        Ztl_bstr_t *nMaxLevel)
+{
+  Ztl_variant_t *v7; // eax
+  int v8; // eax
+  _bstr_t::Data_t *v9; // ecx
+  HRESULT (__stdcall *v10)(VARIANTARG *); // ebx
+  StringPool *Instance; // eax
+  Ztl_variant_t *v12; // eax
+  const wchar_t *bstrVal; // eax
+  SKILLLEVELDATACommon *v14; // ebp
+  _bstr_t::Data_t *v15; // ecx
+  StringPool *v16; // eax
+  Ztl_variant_t *v17; // eax
+  const wchar_t *v18; // eax
+  _bstr_t::Data_t *v19; // ecx
+  StringPool *v20; // eax
+  Ztl_variant_t *v21; // eax
+  const wchar_t *v22; // eax
+  _bstr_t::Data_t *v23; // ecx
+  StringPool *v24; // eax
+  Ztl_variant_t *v25; // eax
+  const wchar_t *v26; // eax
+  _bstr_t::Data_t *v27; // ecx
+  StringPool *v28; //... [86801 chars total]

@@ -1,0 +1,35 @@
+﻿void __thiscall CMapLoadable::MakeBack(
+        CMapLoadable *this,
+        int nPageIdx,
+        _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pPiece,
+        unsigned int ulColor,
+        int bSetXY,
+        int nX,
+        _bstr_t::Data_t *nY,
+        int nRX,
+        int nRY)
+{
+  StringPool *Instance; // eax
+  Ztl_variant_t *v10; // eax
+  _bstr_t::Data_t *m_Data; // esi
+  IWzProperty *m_pInterface; // eax
+  bool v13; // zf
+  StringPool *v14; // eax
+  const wchar_t *m_wstr; // edx
+  wchar_t *v16; // eax
+  _WORD *v17; // esi
+  void (__stdcall *v19)(VARIANTARG *); // esi
+  HRESULT v20; // eax
+  HRESULT v21; // eax
+  unsigned int v22; // ecx
+  Ztl_variant_t *ObjectA; // eax
+  IUnknown *Unknown; // eax
+  HRESULT v25; // eax
+  _bstr_t::Data_t *v26; // ecx
+  HRESULT (__stdcall *v27)(VARIANTARG *); // esi
+  StringPool *v28; // eax
+  Ztl_variant_t *v29; // eax
+  _bstr_t::Data_t *v30; // ecx
+  StringPool *v31; // eax
+  Ztl_variant_t *v32; // eax
+  _bstr_t::D... [65441 chars total]

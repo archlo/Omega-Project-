@@ -1,0 +1,6 @@
+// cuser::SetTargetID
+
+void __thiscall CUser::SetTargetID(CUser *this, unsigned int nTargetID)
+{
+  this->m_nTargetID = nTargetID; /*0x903364*/
+}

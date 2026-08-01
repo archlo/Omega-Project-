@@ -79,6 +79,8 @@ export class GoldHammer extends GamePanel implements DragTarget {
     const title = new Text({ text: 'Gold Hammer', style: _titleStyle });
     title.x = 8; title.y = 5;
     this.container.addChild(title);
+    // OG: CUIWnd close button
+    this.createCloseButton(null, null, 1, 200);
   }
 
   Open(): void { this.isVisible = true; }

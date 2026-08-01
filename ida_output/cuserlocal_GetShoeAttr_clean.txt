@@ -1,0 +1,67 @@
+// cuserlocal::GetShoeAttr
+
+const ZRef<CAttrShoe> *__thiscall CUserLocal::GetShoeAttr(CUserLocal *this, const ZRef<CAttrShoe> *result)
+{
+  char *m_pStr; // esi
+  CStage *p; // esi
+  CAttrShoe *v5; // esi
+  int m_nPartyHP; // eax
+  int v7; // ecx
+  int v8; // eax
+  CAttrShoe *v9; // esi
+  LONG (__stdcall *v10)(volatile LONG *); // ebx
+  CAttrShoe *v12; // eax
+  ZRef<CAttrShoe> pAttrShoe; // [esp+10h] [ebp-14h] BYREF
+  int v14; // [esp+20h] [ebp-4h]
+
+  *(_DWORD *)&pAttrShoe.gap0 = 0; /*0x90a868*/
+  m_pStr = TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x90a870*/
+  if ( (TSecType<unsigned char>::GetData((TSecType<unsigned char> *)(TSingleton<CWvsContext>::ms_pInstance._m_pStr + 8248)) /*0x90a889*/
+      & 1) != 0
+    || *((_DWORD *)m_pStr + 2087) )
+  {
+    goto LABEL_18; /*0x90a889*/
+  }
+  p = g_pStage.p; /*0x90a897*/
+  if ( !g_pStage.p || !g_pStage.p->IsKindOf(&g_pStage.p->IUIMsgHandler, &CField::ms_RTTI_CField) ) /*0x90a8af*/
+    p = nullptr; /*0x90a8b5*/
+  if ( (p[15]._m_nRef & 2) == 0 ) /*0x90a8be*/
+  {
+LABEL_18:
+    v12 = *(CAttrShoe **)&this->m_pAttrShoe.gap0; /*0x90a958*/
+    result->p = v12; /*0x90a962*/
+    if ( v12 ) /*0x90a967*/
+      InterlockedIncrement(&v12->_m_nRef); /*0x90a96d*/
+    return result; /*0x90a973*/
+  }
+  else
+  {
+    v5 = (CAttrShoe *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0x90u); /*0x90a8d3*/
+    *(_DWORD *)&pAttrShoe.gap0 = v5; /*0x90a8d5*/
+    v14 = 0; /*0x90a8d9*/
+    if ( v5 ) /*0x90a8e3*/
+    {
+      m_nPartyHP = this->m_nPartyHP; /*0x90a8e5*/
+      if ( m_nPartyHP ) /*0x90a8ed*/
+        v7 = m_nPartyHP - 12; /*0x90a8ef*/
+      else
+        v7 = 0; /*0x90a8f4*/
+      v8 = (*(int (__thiscall **)(int))(*(_DWORD *)v7 + 8))(v7); /*0x90a8fb*/
+      v9 = CAttrShoe::CAttrShoe(v5, v8); /*0x90a905*/
+    }
+    else
+    {
+      v9 = nullptr; /*0x90a909*/
+    }
+    v10 = InterlockedIncrement; /*0x90a90b*/
+    v14 = -1; /*0x90a911*/
+    pAttrShoe.p = v9; /*0x90a919*/
+    if ( v9 ) /*0x90a91f*/
+      InterlockedIncrement(&v9->_m_nRef); /*0x90a925*/
+    result->p = v9; /*0x90a92b*/
+    if ( v9 ) /*0x90a930*/
+      v10(&v9->_m_nRef); /*0x90a936*/
+    ZRef<CAttrShoe>::~ZRef<CAttrShoe>(&pAttrShoe); /*0x90a93c*/
+    return result; /*0x90a941*/
+  }
+}

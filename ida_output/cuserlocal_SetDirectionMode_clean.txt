@@ -1,0 +1,15 @@
+// cuserlocal::SetDirectionMode
+
+void __thiscall CUserLocal::SetPetsAngry(CUserLocal *this)
+{
+  int i; // esi
+  CPet *p; // ecx
+
+  for ( i = 0; i < 3; ++i ) /*0x9042a4*/
+  {
+    p = this->m_apPet.a[i].p; /*0x9042b6*/
+    if ( !p ) /*0x9042bc*/
+      break; /*0x9042bc*/
+    CPet::SetAngryAction(p); /*0x9042be*/
+  }
+}

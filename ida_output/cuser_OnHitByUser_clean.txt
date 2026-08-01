@@ -1,0 +1,14 @@
+// cuser::OnHitByUser
+
+void __thiscall CUser::OnHitByUser(CUser *this, CInPacket *iPacket)
+{
+  int v3; // esi
+
+  v3 = CInPacket::Decode4(iPacket); /*0x8e11bd*/
+  if ( v3 > 0 ) /*0x8e11c1*/
+  {
+    CAvatar::SetEmotion(&this->CAvatar, 1, 1500); /*0x8e11d0*/
+    this->m_tAlertRemain = 5000; /*0x8e11d5*/
+  }
+  CUser::MakeIncDecHPEffect(this, -v3, 0); /*0x8e11e6*/
+}

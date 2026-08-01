@@ -1,0 +1,245 @@
+﻿ZXString<unsigned short> *__cdecl get_equip_data_path(ZXString<unsigned short> *result, int nItemID)
+{
+  int v2; // ebp
+  int v3; // ecx
+  StringPool *Instance; // eax
+  const ZXString<unsigned short> *StringW; // eax
+  wchar_t *m_pStr; // eax
+  StringPool *v7; // eax
+  const ZXString<unsigned short> *v8; // eax
+  StringPool *v9; // eax
+  const ZXString<unsigned short> *v10; // eax
+  StringPool *v11; // eax
+  const ZXString<unsigned short> *v12; // eax
+  StringPool *v13; // eax
+  const ZXString<unsigned short> *v14; // eax
+  StringPool *v15; // eax
+  const ZXString<unsigned short> *v16; // eax
+  StringPool *v17; // eax
+  const ZXString<unsigned short> *v18; // eax
+  StringPool *v19; // eax
+  const ZXString<unsigned short> *v20; // eax
+  StringPool *v21; // eax
+  const ZXString<unsigned short> *v22; // eax
+  StringPool *v23; // eax
+  const ZXString<unsigned short> *v24; // eax
+  StringPool *v25; // eax
+  const ZXString<unsigned short> *v26; // eax
+  StringPool *v27; // eax
+  const ZXString<unsigned short> *v28; // eax
+  StringPool *v29; // eax
+  const ZXString<unsigned short> *v30; // eax
+  StringPool *v31; // eax
+  const ZXString<unsigned short> *v32; // eax
+  StringPool *v33; // eax
+  const ZXString<unsigned short> *v34; // eax
+  StringPool *v35; // eax
+  const ZXString<unsigned short> *v36; // eax
+  StringPool *v37; // eax
+  const ZXString<unsigned short> *v38; // eax
+  StringPool *v39; // eax
+  const ZXString<unsigned short> *v40; // eax
+  StringPool *v41; // eax
+  const ZXString<unsigned short> *v42; // eax
+  int v43; // eax
+  StringPool *v44; // eax
+  const ZXString<unsigned short> *v45; // eax
+  wchar_t *v46; // eax
+  ZXString<unsigned short> v48; // [esp+14h] [ebp-58h] BYREF
+  ZXString<unsigned short> v49; // [esp+18h] [ebp-54h] BYREF
+  ZXString<unsigned short> v50; // [esp+1Ch] [ebp-50h] BYREF
+  ZXString<unsigned short> v51; // [esp+20h] [ebp-4Ch] BYREF
+  ZXString<unsigned short> v52; // [esp+24h] [ebp-48h] BYREF
+  ZXString<unsigned short> v53; // [esp+28h] [ebp-44h] BYREF
+  ZXString<unsigned short> v54; // [esp+2Ch] [ebp-40h] BYREF
+  ZXString<unsigned short> v55; // [esp+30h] [ebp-3Ch] BYREF
+  ZXString<unsigned short> v56; // [esp+34h] [ebp-38h] BYREF
+  ZXString<unsigned short> v57; // [esp+38h] [ebp-34h] BYREF
+  ZXString<unsigned short> v58; // [esp+3Ch] [ebp-30h] BYREF
+  ZXString<unsigned short> v59; // [esp+40h] [ebp-2Ch] BYREF
+  ZXString<unsigned short> v60; // [esp+44h] [ebp-28h] BYREF
+  ZXString<unsigned short> v61; // [esp+48h] [ebp-24h] BYREF
+  ZXString<unsigned short> v62; // [esp+4Ch] [ebp-20h] BYREF
+  ZXString<unsigned short> v63; // [esp+50h] [ebp-1Ch] BYREF
+  ZXString<unsigned short> v64; // [esp+54h] [ebp-18h] BYREF
+  ZXString<unsigned short> v65; // [esp+58h] [ebp-14h] BYREF
+  ZXString<unsigned short> v66; // [esp+5Ch] [ebp-10h] BYREF
+  int v67; // [esp+68h] [ebp-4h]
+
+  result->_m_pStr = nullptr; /*0x5a6090*/
+  v2 = nItemID; /*0x5a6092*/
+  v3 = nItemID / 10000; /*0x5a60a5*/
+  v67 = 0; /*0x5a60a7*/
+  switch ( nItemID / 10000 ) /*0x5a60c6*/
+  {
+    case 0: /*0x5a60c6*/
+    case 1: /*0x5a60c6*/
+      Instance = StringPool::GetInstance(); /*0x5a60d7*/
+      StringW = StringPool::GetStringW(Instance, (ZXString<unsigned short> *)&nItemID, 0x93Eu); /*0x5a60de*/
+      v67 = 1; /*0x5a60e6*/
+      ZXString<unsigned short>::operator=(result, StringW); /*0x5a60ee*/
+      m_pStr = (wchar_t *)nItemID; /*0x5a60f3*/
+      goto LABEL_26; /*0x5a60f7*/
+    case 2: /*0x5a60c6*/
+      v7 = StringPool::GetInstance(); /*0x5a6106*/
+      v8 = StringPool::GetStringW(v7, &v48, 0x93Fu); /*0x5a610d*/
+      v67 = 2; /*0x5a6115*/
+      ZXString<unsigned short>::operator=(result, v8); /*0x5a611d*/
+      m_pStr = v48._m_pStr; /*0x5a6122*/
+      goto LABEL_26; /*0x5a6126*/
+    case 3: /*0x5a60c6*/
+      v9 = StringPool::GetInstance(); /*0x5a6135*/
+      v10 = StringPool::GetStringW(v9, &v49, 0x940u); /*0x5a613c*/
+      v67 = 3; /*0x5a6144*/
+      ZXString<unsigned short>::operator=(result, v10); /*0x5a614c*/
+      m_pStr = v49._m_pStr; /*0x5a6151*/
+      goto LABEL_26; /*0x5a6155*/
+    case 100: /*0x5a60c6*/
+      v11 = StringPool::GetInstance(); /*0x5a6164*/
+      v12 = StringPool::GetStringW(v11, &v50, 0x941u); /*0x5a616b*/
+      v67 = 4; /*0x5a6173*/
+      ZXString<unsigned short>::operator=(result, v12); /*0x5a617b*/
+      m_pStr = v50._m_pStr; /*0x5a6180*/
+      goto LABEL_26; /*0x5a6184*/
+    case 101: /*0x5a60c6*/
+    case 102: /*0x5a60c6*/
+    case 103: /*0x5a60c6*/
+    case 112: /*0x5a60c6*/
+    case 113: /*0x5a60c6*/
+    case 114: /*0x5a60c6*/
+    case 115: /*0x5a60c6*/
+      v13 = StringPool::GetInstance(); /*0x5a6193*/
+      v14 = StringPool::GetStringW(v13, &v51, 0x942u); /*0x5a619a*/
+      v67 = 5; /*0x5a61a2*/
+      ZXString<unsigned short>::operator=(result, v14); /*0x5a61aa*/
+      m_pStr = v51._m_pStr; /*0x5a61af*/
+      goto LABEL_26; /*0x5a61b3*/
+    case 104: /*0x5a60c6*/
+      v15 = StringPool::GetInstance(); /*0x5a61c2*/
+      v16 = StringPool::GetStringW(v15, &v52, 0x943u); /*0x5a61c9*/
+      v67 = 6; /*0x5a61d1*/
+      ZXString<unsigned short>::operator=(result, v16); /*0x5a61d9*/
+      m_pStr = v52._m_pStr; /*0x5a61de*/
+      goto LABEL_26; /*0x5a61e2*/
+    case 105: /*0x5a60c6*/
+      v17 = StringPool::GetInstance(); /*0x5a61f1*/
+      v18 = StringPool::GetStringW(v17, &v53, 0x944u); /*0x5a61f8*/
+      v67 = 7; /*0x5a6200*/
+      ZXString<unsigned short>::operator=(result, v18); /*0x5a6208*/
+      m_pStr = v53._m_pStr; /*0x5a620d*/
+      goto LABEL_26; /*0x5a6211*/
+    case 106: /*0x5a60c6*/
+      v19 = StringPool::GetInstance(); /*0x5a6220*/
+      v20 = StringPool::GetStringW(v19, &v54, 0x945u); /*0x5a6227*/
+      v67 = 8; /*0x5a622f*/
+      ZXString<unsigned short>::operator=(result, v20); /*0x5a6237*/
+      m_pStr = v54._m_pStr; /*0x5a623c*/
+      goto LABEL_26; /*0x5a6240*/
+    case 107: /*0x5a60c6*/
+      v21 = StringPool::GetInstance(); /*0x5a624f*/
+      v22 = StringPool::GetStringW(v21, &v55, 0x946u); /*0x5a6256*/
+      v67 = 9; /*0x5a625e*/
+      ZXString<unsigned short>::operator=(result, v22); /*0x5a6266*/
+      m_pStr = v55._m_pStr; /*0x5a626b*/
+      goto LABEL_26; /*0x5a626f*/
+    case 108: /*0x5a60c6*/
+      v23 = StringPool::GetInstance(); /*0x5a627e*/
+      v24 = StringPool::GetStringW(v23, &v56, 0x947u); /*0x5a6285*/
+      v67 = 10; /*0x5a628d*/
+      ZXString<unsigned short>::operator=(result, v24); /*0x5a6295*/
+      m_pStr = v56._m_pStr; /*0x5a629a*/
+      goto LABEL_26; /*0x5a629e*/
+    case 109: /*0x5a60c6*/
+    case 119: /*0x5a60c6*/
+      v25 = StringPool::GetInstance(); /*0x5a62ad*/
+      v26 = StringPool::GetStringW(v25, &v57, 0x948u); /*0x5a62b4*/
+      v67 = 11; /*0x5a62bc*/
+      ZXString<unsigned short>::operator=(result, v26); /*0x5a62c4*/
+      m_pStr = v57._m_pStr; /*0x5a62c9*/
+      goto LABEL_26; /*0x5a62cd*/
+    case 110: /*0x5a60c6*/
+      v27 = StringPool::GetInstance(); /*0x5a62dc*/
+      v28 = StringPool::GetStringW(v27, &v58, 0x949u); /*0x5a62e3*/
+      v67 = 12; /*0x5a62eb*/
+      ZXString<unsigned short>::operator=(result, v28); /*0x5a62f3*/
+      m_pStr = v58._m_pStr; /*0x5a62f8*/
+      goto LABEL_26; /*0x5a62fc*/
+    case 111: /*0x5a60c6*/
+      v29 = StringPool::GetInstance(); /*0x5a630b*/
+      v30 = StringPool::GetStringW(v29, &v59, 0x94Au); /*0x5a6312*/
+      v67 = 13; /*0x5a631a*/
+      ZXString<unsigned short>::operator=(result, v30); /*0x5a6322*/
+      m_pStr = v59._m_pStr; /*0x5a6327*/
+      goto LABEL_26; /*0x5a632b*/
+    case 161: /*0x5a60c6*/
+    case 162: /*0x5a60c6*/
+    case 163: /*0x5a60c6*/
+    case 164: /*0x5a60c6*/
+    case 165: /*0x5a60c6*/
+      v37 = StringPool::GetInstance(); /*0x5a63c7*/
+      v38 = StringPool::GetStringW(v37, &v63, 0x18FAu); /*0x5a63ce*/
+      v67 = 17; /*0x5a63d6*/
+      ZXString<unsigned short>::operator=(result, v38); /*0x5a63de*/
+      m_pStr = v63._m_pStr; /*0x5a63e3*/
+      goto LABEL_26; /*0x5a63e7*/
+    case 180: /*0x5a60c6*/
+      v31 = StringPool::GetInstance(); /*0x5a633a*/
+      v32 = StringPool::GetStringW(v31, &v60, 0x94Bu); /*0x5a6341*/
+      v67 = 14; /*0x5a6349*/
+      ZXString<unsigned short>::operator=(result, v32); /*0x5a6351*/
+      m_pStr = v60._m_pStr; /*0x5a6356*/
+      goto LABEL_26; /*0x5a635a*/
+    case 181: /*0x5a60c6*/
+    case 182: /*0x5a60c6*/
+    case 183: /*0x5a60c6*/
+      v41 = StringPool::GetInstance(); /*0x5a6422*/
+      v42 = StringPool::GetStringW(v41, &v65, 0x94Bu); /*0x5a6429*/
+      v67 = 19; /*0x5a6431*/
+      ZXString<unsigned short>::operator=(result, v42); /*0x5a6439*/
+      m_pStr = v65._m_pStr; /*0x5a643e*/
+      goto LABEL_26; /*0x5a6442*/
+    case 190: /*0x5a60c6*/
+      v33 = StringPool::GetInstance(); /*0x5a6369*/
+      v34 = StringPool::GetStringW(v33, &v61, 0x94Du); /*0x5a6370*/
+      v67 = 15; /*0x5a6378*/
+      ZXString<unsigned short>::operator=(result, v34); /*0x5a6380*/
+      m_pStr = v61._m_pStr; /*0x5a6385*/
+      goto LABEL_26; /*0x5a6389*/
+    case 191: /*0x5a60c6*/
+    case 193: /*0x5a60c6*/
+    case 198: /*0x5a60c6*/
+      v35 = StringPool::GetInstance(); /*0x5a6398*/
+      v36 = StringPool::GetStringW(v35, &v62, 0x94Du); /*0x5a639f*/
+      v67 = 16; /*0x5a63a7*/
+      ZXString<unsigned short>::operator=(result, v36); /*0x5a63af*/
+      m_pStr = v62._m_pStr; /*0x5a63b4*/
+      goto LABEL_26; /*0x5a63b8*/
+    case 194: /*0x5a60c6*/
+    case 195: /*0x5a60c6*/
+    case 196: /*0x5a60c6*/
+    case 197: /*0x5a60c6*/
+      v39 = StringPool::GetInstance(); /*0x5a63f6*/
+      v40 = StringPool::GetStringW(v39, &v64, 0x94Fu); /*0x5a63fd*/
+      v67 = 18; /*0x5a6405*/
+      ZXString<unsigned short>::operator=(result, v40); /*0x5a640d*/
+      m_pStr = v64._m_pStr; /*0x5a6412*/
+      goto LABEL_26; /*0x5a6416*/
+    default:
+      v43 = v3 / 10; /*0x5a6453*/
+      if ( v3 / 10 != 13 && v43 != 14 && v43 != 16 && v43 != 17 ) /*0x5a6467*/
+        return result; /*0x5a6467*/
+      v44 = StringPool::GetInstance(); /*0x5a6473*/
+      v45 = StringPool::GetStringW(v44, &v66, 0x94Cu); /*0x5a647a*/
+      v67 = 20; /*0x5a6482*/
+      ZXString<unsigned short>::operator=(result, v45); /*0x5a648a*/
+      m_pStr = v66._m_pStr; /*0x5a648f*/
+LABEL_26:
+      LOBYTE(v67) = 0; /*0x5a6493*/
+      if ( m_pStr ) /*0x5a6499*/
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)m_pStr - 1); /*0x5a649f*/
+      v46 = result->_m_pStr; /*0x5a64a7*/
+      if ( result->_m_pStr && *v46 ) /*0x5a64ad*/
+        ZXString<unsigned short>::Format(result, v46, v2); /*0x5a64b5*/
+      return result;
+  }
+}

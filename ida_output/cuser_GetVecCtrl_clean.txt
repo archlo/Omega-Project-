@@ -1,0 +1,14 @@
+// cuser::GetVecCtrl
+
+_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *__thiscall CUser::GetVecCtrl(
+        CUser *this,
+        _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *result)
+{
+  IWzVector2D *m_pInterface; // eax
+
+  m_pInterface = this->m_pvc.m_pInterface; /*0x4bbed1*/
+  result->m_pInterface = m_pInterface; /*0x4bbee4*/
+  if ( m_pInterface ) /*0x4bbee8*/
+    m_pInterface->AddRef(m_pInterface); /*0x4bbef0*/
+  return result; /*0x4bbef4*/
+}

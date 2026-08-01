@@ -1,0 +1,670 @@
+// cuserlocal::ValidateSkillBonus
+
+void __thiscall CUserLocal::ValidateSkillBonus(CUserLocal *this)
+{
+  ZRef<GW_ItemSlotBase> *CharacterData; // eax
+  GW_ItemSlotBase *p; // esi
+  int v3; // ebx
+  CharacterData *v4; // eax
+  _LARGE_INTEGER *p_liCashItemSN; // esi
+  volatile LONG *p_m_uTableSize; // esi
+  char *m_pStr; // esi
+  ZRef<GW_ItemSlotBase> *v8; // eax
+  int v9; // esi
+  int (__thiscall *v10)(int); // eax
+  int Data; // eax
+  const CItemInfo::EQUIPITEM *EquipItem; // eax
+  int v13; // edi
+  __int16 v14; // ax
+  CUserLocal *v15; // ebx
+  __int16 v16; // ax
+  __int16 v17; // ax
+  int v18; // ebx
+  ZMap<long,long,long> *p_mSkillRecord; // edi
+  int v20; // ecx
+  int v21; // eax
+  int v22; // eax
+  int IsGrowthItem; // eax
+  TSecType<long> *v24; // ecx
+  int v25; // eax
+  char *v26; // ebp
+  int v27; // edi
+  int v28; // eax
+  CItemInfo::LevelInfo::Ability *v29; // edi
+  volatile LONG *v30; // edi
+  int v31; // eax
+  int v32; // eax
+  const CItemInfo::EQUIPITEM *v33; // eax
+  ZMap<long,long,long> *p_mSkillLevelBonus; // edi
+  char *v35; // esi
+  volatile LONG *p_HighPart; // edi
+  int v37; // esi
+  int v38; // ebx
+  int v39; // esi
+  int nPartsCount; // edi
+  int v41; // ebx
+  GW_ItemSlotBase *v42; // esi
+  int v43; // eax
+  int v44; // eax
+  TSecType<long> *p_nItemID; // ecx
+  int v46; // eax
+  char *v47; // ebp
+  int v48; // edi
+  int v49; // eax
+  CItemInfo::LevelInfo::Ability *v50; // edi
+  volatile LONG *v51; // edi
+  int v52; // eax
+  int v53; // eax
+  const CItemInfo::EQUIPITEM *v54; // eax
+  ZMap<long,long,long> *v55; // edi
+  int v56; // ebx
+  GW_ItemSlotBase *v57; // esi
+  int v58; // eax
+  int v59; // eax
+  TSecType<long> *v60; // ecx
+  int v61; // eax
+  char *v62; // ebp
+  int v63; // edi
+  int v64; // eax
+  CItemInfo::LevelInfo::Ability *v65; // edi
+  volatile LONG *v66; // edi
+  int v67; // eax
+  int v68; // eax
+  const CItemInfo::EQUIPITEM *v69; // eax
+  ZMap<long,long,long> *v70; // edi
+  int *ZtlSecureTear_nCombatOrders; // edi
+  int v72; // eax
+  CharacterData *v73; // ebx
+  int v74; // ecx
+  int v75; // eax
+  int v76; // eax
+  unsigned int ZtlSecureTear_nrLevel_CS; // [esp+0h] [ebp-A0h]
+  int v78; // [esp+0h] [ebp-A0h]
+  int v79; // [esp+0h] [ebp-A0h]
+  int v80; // [esp+0h] [ebp-A0h]
+  int nVal; // [esp+1Ch] [ebp-84h] BYREF
+  int nSLV; // [esp+20h] [ebp-80h] BYREF
+  int v83; // [esp+24h] [ebp-7Ch]
+  ZRef<GW_ItemSlotBase> *ppRealDragonEquip; // [esp+28h] [ebp-78h] BYREF
+  ZRef<GW_ItemSlotBase> *ppRealMechanicEquip; // [esp+2Ch] [ebp-74h] BYREF
+  const SecondaryStat *v86; // [esp+30h] [ebp-70h]
+  const SKILLENTRY *pSkill; // [esp+34h] [ebp-6Ch] BYREF
+  int nSkillID; // [esp+38h] [ebp-68h] BYREF
+  __POSITION *pos; // [esp+3Ch] [ebp-64h] BYREF
+  int i; // [esp+40h] [ebp-60h] BYREF
+  CUserLocal *v91; // [esp+44h] [ebp-5Ch] BYREF
+  int nCurSLV; // [esp+48h] [ebp-58h] BYREF
+  ZRef<CharacterData> pCD; // [esp+4Ch] [ebp-54h]
+  ZRef<CItemInfo::LevelInfo::Ability> pAbility; // [esp+54h] [ebp-4Ch] BYREF
+  ZRef<GW_ItemSlotBase> pItem; // [esp+5Ch] [ebp-44h] BYREF
+  ZRef<CharacterData> result; // [esp+64h] [ebp-3Ch] BYREF
+  EQUIPPED_SETITEM equippedSetItem; // [esp+6Ch] [ebp-34h] BYREF
+  ZMap<long,long,long> mSkillBonus; // [esp+78h] [ebp-28h] BYREF
+  int v99; // [esp+9Ch] [ebp-4h]
+
+  v91 = this; /*0x90c500*/
+  i = 0; /*0x90c506*/
+  if ( TSingleton<CWvsContext>::ms_pInstance._m_pStr ) /*0x90c512*/
+  {
+    CharacterData = (ZRef<GW_ItemSlotBase> *)CWvsContext::GetCharacterData( /*0x90c519*/
+                                               (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+                                               &result);
+    p = pItem.p; /*0x90c51e*/
+    v3 = 1; /*0x90c522*/
+  }
+  else
+  {
+    p = nullptr; /*0x90c527*/
+    pItem.p = nullptr; /*0x90c529*/
+    CharacterData = &pItem; /*0x90c52d*/
+    v3 = 2; /*0x90c531*/
+  }
+  v4 = (CharacterData *)CharacterData->p; /*0x90c534*/
+  pCD.p = v4; /*0x90c537*/
+  if ( v4 ) /*0x90c53d*/
+    InterlockedIncrement((volatile LONG *)&v4[-1].m_mVisitorQuestLog._m_uCount); /*0x90c543*/
+  v99 = 1; /*0x90c549*/
+  if ( (v3 & 2) != 0 ) /*0x90c557*/
+  {
+    v3 &= ~2u; /*0x90c559*/
+    i = v3; /*0x90c55c*/
+    if ( p ) /*0x90c562*/
+    {
+      p_liCashItemSN = &p[-1].liCashItemSN; /*0x90c564*/
+      if ( !InterlockedDecrement(&p_liCashItemSN->HighPart) ) /*0x90c56b*/
+      {
+        InterlockedIncrement(&p_liCashItemSN->HighPart); /*0x90c576*/
+        if ( p_liCashItemSN ) /*0x90c57e*/
+          (*(void (__thiscall **)(_LARGE_INTEGER *, int))p_liCashItemSN->LowPart)(p_liCashItemSN, 1); /*0x90c588*/
+      }
+    }
+  }
+  LOBYTE(v99) = 2; /*0x90c58a*/
+  if ( (v3 & 1) != 0 && result.p ) /*0x90c59d*/
+  {
+    p_m_uTableSize = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x90c59f*/
+    if ( !InterlockedDecrement((volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount) ) /*0x90c5a6*/
+    {
+      InterlockedIncrement(p_m_uTableSize + 1); /*0x90c5b1*/
+      if ( p_m_uTableSize ) /*0x90c5b9*/
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)((char *)p_m_uTableSize, 1); /*0x90c5c3*/
+    }
+    result.p = nullptr; /*0x90c5c5*/
+  }
+  m_pStr = TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x90c5c9*/
+  v86 = (const SecondaryStat *)(TSingleton<CWvsContext>::ms_pInstance._m_pStr + 8520); /*0x90c5d5*/
+  mSkillBonus.__vftable = (ZMap<long,long,long>_vtbl *)&ZMap<long,long,long>::`vftable'; /*0x90c5df*/
+  mSkillBonus._m_apTable = nullptr; /*0x90c5e7*/
+  mSkillBonus._m_uTableSize = 31; /*0x90c5eb*/
+  mSkillBonus._m_uCount = 0; /*0x90c5f6*/
+  ZMap<long,long,long>::_CalcAutoGrow(&mSkillBonus, 0x64u); /*0x90c5fd*/
+  LOBYTE(v99) = 3; /*0x90c602*/
+  if ( m_pStr ) /*0x90c60c*/
+    v8 = (ZRef<GW_ItemSlotBase> *)(m_pStr + 14448); /*0x90c60e*/
+  else
+    v8 = nullptr; /*0x90c616*/
+  ppRealMechanicEquip = v8; /*0x90c61b*/
+  i = 1; /*0x90c61f*/
+  ppRealDragonEquip = (ZRef<GW_ItemSlotBase> *)((char *)v8 + 12); /*0x90c627*/
+  while ( v8 ) /*0x90c636*/
+  {
+    v9 = *(_DWORD *)&ppRealDragonEquip->gap0; /*0x90c640*/
+    pItem.p = (GW_ItemSlotBase *)v9; /*0x90c642*/
+    if ( v9 ) /*0x90c648*/
+      InterlockedIncrement((volatile LONG *)(v9 + 4)); /*0x90c64e*/
+    LOBYTE(v99) = 4; /*0x90c654*/
+    if ( !v9 ) /*0x90c65e*/
+    {
+      LOBYTE(v99) = 3; /*0x90c660*/
+      goto LABEL_64; /*0x90c668*/
+    }
+    nVal = 0; /*0x90c66d*/
+    nSLV = 0; /*0x90c671*/
+    if ( pCD.p ) /*0x90c679*/
+    {
+      equippedSetItem.nPartsCount = v9; /*0x90c683*/
+      InterlockedIncrement((volatile LONG *)(v9 + 4)); /*0x90c687*/
+      v10 = *(int (__thiscall **)(int))(*(_DWORD *)v9 + 120); /*0x90c68f*/
+      LOBYTE(v99) = 5; /*0x90c694*/
+      if ( v10(v9) ) /*0x90c69c*/
+      {
+        Data = TSecType<long>::GetData((TSecType<long> *)(v9 + 12)); /*0x90c6a9*/
+        EquipItem = CItemInfo::GetEquipItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, Data); /*0x90c6b5*/
+        if ( EquipItem ) /*0x90c6bc*/
+        {
+          ZtlSecureTear_nrLevel_CS = EquipItem->_ZtlSecureTear_nrLevel_CS; /*0x90c6c5*/
+          nVal = 0; /*0x90c6ca*/
+          v13 = (_ZtlSecureFuse<long>(EquipItem->_ZtlSecureTear_nrLevel, ZtlSecureTear_nrLevel_CS) - 1) / 10; /*0x90c6f2*/
+          v14 = _ZtlSecureFuse<short>((const __int16 *)(v9 + 273), *(_DWORD *)(v9 + 277)); /*0x90c702*/
+          v15 = v91; /*0x90c707*/
+          CUserLocal::ApplyAllSkillLevelUP(v91, v14, v13, &nVal); /*0x90c714*/
+          v16 = _ZtlSecureFuse<short>((const __int16 *)(v9 + 281), *(_DWORD *)(v9 + 285)); /*0x90c72d*/
+          CUserLocal::ApplyAllSkillLevelUP(v15, v16, v13, &nVal); /*0x90c739*/
+          v17 = _ZtlSecureFuse<short>((const __int16 *)(v9 + 289), *(_DWORD *)(v9 + 293)); /*0x90c752*/
+          CUserLocal::ApplyAllSkillLevelUP(v15, v17, v13, &nVal); /*0x90c760*/
+          v18 = nVal; /*0x90c765*/
+          if ( nVal ) /*0x90c76b*/
+          {
+            p_mSkillRecord = &pCD.p->mSkillRecord; /*0x90c775*/
+            pos = ZMap<long,long,long>::GetHeadPosition(&pCD.p->mSkillRecord); /*0x90c782*/
+            while ( pos ) /*0x90c788*/
+            {
+              v20 = *ZMap<long,long,long>::GetNext(p_mSkillRecord, &pos, &nCurSLV); /*0x90c7a1*/
+              v21 = v20 / 10000; /*0x90c7b2*/
+              nSkillID = v20; /*0x90c7b4*/
+              if ( v20 / 10000 ) /*0x90c7b2*/
+              {
+                if ( v21 != 1000 && v21 != 2000 && v21 != 2001 && v21 != 3000 ) /*0x90c7d4*/
+                {
+                  pSkill = nullptr; /*0x90c7e7*/
+                  if ( CSkillInfo::GetSkillLevel(TSingleton<CSkillInfo>::ms_pInstance, pCD.p, v20, &pSkill) ) /*0x90c7ef*/
+                  {
+                    if ( pSkill ) /*0x90c7fd*/
+                    {
+                      ZMap<long,long,long>::GetAt(&mSkillBonus, &nSkillID, &nSLV); /*0x90c80d*/
+                      nCurSLV = v18 + nSLV; /*0x90c826*/
+                      ZMap<long,long,long>::Insert(&mSkillBonus, &nSkillID, &nCurSLV); /*0x90c82a*/
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      LOBYTE(v99) = 4; /*0x90c83b*/
+      if ( !InterlockedDecrement((volatile LONG *)(v9 + 4)) ) /*0x90c843*/
+      {
+        InterlockedIncrement((volatile LONG *)(v9 + 4)); /*0x90c84e*/
+        (**(void (__thiscall ***)(int, int))v9)(v9, 1); /*0x90c85c*/
+      }
+      equippedSetItem.nPartsCount = 0; /*0x90c85e*/
+    }
+    v22 = TSecType<long>::GetData((TSecType<long> *)(v9 + 12)); /*0x90c86d*/
+    IsGrowthItem = CItemInfo::IsGrowthItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, v22); /*0x90c879*/
+    v24 = (TSecType<long> *)(v9 + 12); /*0x90c87e*/
+    if ( IsGrowthItem ) /*0x90c882*/
+    {
+      v25 = TSecType<long>::GetData(v24); /*0x90c888*/
+      v26 = TSingleton<CItemInfo>::ms_pInstance._m_pStr; /*0x90c88d*/
+      v27 = v25; /*0x90c893*/
+      v78 = (*(int (__thiscall **)(int))(*(_DWORD *)v9 + 36))(v9); /*0x90c89e*/
+      v28 = (*(int (__thiscall **)(int))(*(_DWORD *)v9 + 40))(v9); /*0x90c8a6*/
+      CItemInfo::GetLevelAbilityInfo((CItemInfo *)v26, &pAbility, v27, v28, v78); /*0x90c8b1*/
+      v29 = pAbility.p; /*0x90c8b6*/
+      LOBYTE(v99) = 6; /*0x90c8ba*/
+      if ( !pAbility.p ) /*0x90c8c4*/
+      {
+        LOBYTE(v99) = 3; /*0x90c8ca*/
+        if ( !InterlockedDecrement((volatile LONG *)(v9 + 4)) ) /*0x90c8d2*/
+        {
+          InterlockedIncrement((volatile LONG *)(v9 + 4)); /*0x90c8dd*/
+          (**(void (__thiscall ***)(int, int))v9)(v9, 1); /*0x90c8eb*/
+        }
+        pItem.p = nullptr; /*0x90c8ed*/
+        goto LABEL_64; /*0x90c8f7*/
+      }
+      for ( nSkillID = (int)ZMap<long,long,long>::GetHeadPosition(&pAbility.p->mSkillLevelBonus); nSkillID; v29 = pAbility.p ) /*0x90c90a*/
+      {
+        pos = (__POSITION *)*ZMap<long,long,long>::GetNext(&v29->mSkillLevelBonus, (__POSITION **)&nSkillID, &nVal); /*0x90c932*/
+        ZMap<long,long,long>::GetAt(&mSkillBonus, (const int *)&pos, &nSLV); /*0x90c936*/
+        nCurSLV = nVal + nSLV; /*0x90c94e*/
+        ZMap<long,long,long>::Insert(&mSkillBonus, (const int *)&pos, &nCurSLV); /*0x90c957*/
+      }
+      LOBYTE(v99) = 4; /*0x90c967*/
+      if ( v29 ) /*0x90c971*/
+      {
+        v30 = (volatile LONG *)&v29[-1].mSkillLevelBonus._m_uTableSize; /*0x90c977*/
+        if ( !InterlockedDecrement(v30 + 1) ) /*0x90c97e*/
+        {
+          InterlockedIncrement(v30 + 1); /*0x90c989*/
+          if ( v30 ) /*0x90c991*/
+            (**(void (__thiscall ***)(char *, int))v30)((char *)v30, 1); /*0x90c99b*/
+        }
+        pAbility.p = nullptr; /*0x90c99d*/
+      }
+    }
+    else
+    {
+      v31 = TSecType<long>::GetData(v24); /*0x90c9aa*/
+      if ( CItemInfo::IsEpicItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, v31) ) /*0x90c9b6*/
+      {
+        v32 = TSecType<long>::GetData((TSecType<long> *)(v9 + 12)); /*0x90c9c5*/
+        v33 = CItemInfo::GetEquipItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, v32); /*0x90c9d1*/
+        if ( !v33 ) /*0x90c9d8*/
+        {
+          LOBYTE(v99) = 3; /*0x90c9de*/
+          ZRef<GW_ItemSlotBase>::~ZRef<GW_ItemSlotBase>(&pItem); /*0x90c9e6*/
+          goto LABEL_64; /*0x90c9eb*/
+        }
+        p_mSkillLevelBonus = &v33->mSkillLevelBonus; /*0x90c9f0*/
+        nSkillID = (int)ZMap<long,long,long>::GetHeadPosition(&v33->mSkillLevelBonus); /*0x90c9fd*/
+        while ( nSkillID ) /*0x90ca03*/
+        {
+          pos = (__POSITION *)*ZMap<long,long,long>::GetNext(p_mSkillLevelBonus, (__POSITION **)&nSkillID, &nVal); /*0x90ca26*/
+          ZMap<long,long,long>::GetAt(&mSkillBonus, (const int *)&pos, &nSLV); /*0x90ca2a*/
+          nCurSLV = nVal + nSLV; /*0x90ca42*/
+          ZMap<long,long,long>::Insert(&mSkillBonus, (const int *)&pos, &nCurSLV); /*0x90ca4b*/
+        }
+      }
+    }
+    LOBYTE(v99) = 3; /*0x90ca5a*/
+    if ( !InterlockedDecrement((volatile LONG *)(v9 + 4)) ) /*0x90ca62*/
+    {
+      InterlockedIncrement((volatile LONG *)(v9 + 4)); /*0x90ca6d*/
+      (**(void (__thiscall ***)(int, int))v9)(v9, 1); /*0x90ca7b*/
+    }
+    pItem.p = nullptr; /*0x90ca7f*/
+LABEL_64:
+    ++ppRealDragonEquip; /*0x90ca83*/
+    if ( ++i >= 60 ) /*0x90ca94*/
+      break; /*0x90ca94*/
+    v8 = ppRealMechanicEquip; /*0x90c630*/
+  }
+  nCurSLV = (int)(TSingleton<CItemInfo>::ms_pInstance._m_pStr + 156); /*0x90ca9a*/
+  pos = nullptr; /*0x90cab5*/
+  nSkillID = 0; /*0x90cab9*/
+  i = (int)&CWvsContext::GetCharacterData( /*0x90caca*/
+              (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+              (ZRef<CharacterData> *)&pItem)->p->m_mEquippedSetItem;
+  if ( pItem.p ) /*0x90cad4*/
+  {
+    v35 = (char *)&pItem.p[-1].liCashItemSN; /*0x90cad6*/
+    p_HighPart = &pItem.p[-1].liCashItemSN.HighPart; /*0x90cad9*/
+    if ( !InterlockedDecrement(p_HighPart) ) /*0x90cadd*/
+    {
+      InterlockedIncrement(p_HighPart); /*0x90cae8*/
+      if ( v35 ) /*0x90caf0*/
+        (**(void (__thiscall ***)(char *, int))v35)(v35, 1); /*0x90cafa*/
+    }
+    pItem.p = nullptr; /*0x90cafc*/
+  }
+  ppRealDragonEquip = (ZRef<GW_ItemSlotBase> *)ZMap<long,EQUIPPED_SETITEM,long>::GetHeadPosition((ZMap<long,EQUIPPED_SETITEM,long> *)i); /*0x90cb09*/
+  if ( ppRealDragonEquip ) /*0x90cb0f*/
+  {
+    while ( 1 ) /*0x90cb15*/
+    {
+      v83 = 0; /*0x90cb15*/
+      memset(&equippedSetItem, 0, sizeof(equippedSetItem)); /*0x90cb1d*/
+      LOBYTE(v99) = 8; /*0x90cb33*/
+      ZMap<long,EQUIPPED_SETITEM,long>::GetNext( /*0x90cb3b*/
+        (ZMap<long,EQUIPPED_SETITEM,long> *)i,
+        (__POSITION **)&ppRealDragonEquip,
+        &equippedSetItem);
+      if ( ZMap<long,ZRef<CItemInfo::SETITEMINFO>,long>::GetAt( /*0x90cb4e*/
+             (ZMap<long,ZRef<CItemInfo::SETITEMINFO>,long> *)nCurSLV,
+             &equippedSetItem.nSetItemID,
+             (ZRef<CItemInfo::SETITEMINFO> *)&nSLV) )
+      {
+        break; /*0x90cb4e*/
+      }
+      LOBYTE(v99) = 7; /*0x90cb5b*/
+      ZArray<long>::RemoveAll(&equippedSetItem.nItemID); /*0x90cb63*/
+      LOBYTE(v99) = 3; /*0x90cb6c*/
+      if ( v83 ) /*0x90cb76*/
+      {
+        v37 = v83 - 16; /*0x90cb7c*/
+LABEL_82:
+        if ( !InterlockedDecrement((volatile LONG *)(v37 + 4)) ) /*0x90cc30*/
+        {
+          InterlockedIncrement((volatile LONG *)(v37 + 4)); /*0x90cc3b*/
+          if ( v37 ) /*0x90cc43*/
+            (**(void (__thiscall ***)(int, int))v37)(v37, 1); /*0x90cc4d*/
+        }
+        v83 = 0; /*0x90cc4f*/
+      }
+LABEL_86:
+      if ( !ppRealDragonEquip ) /*0x90cc57*/
+        goto LABEL_87; /*0x90cc57*/
+    }
+    v38 = v83; /*0x90cb8a*/
+    if ( equippedSetItem.nPartsCount > 0 ) /*0x90cb8e*/
+    {
+      v39 = v83 + 12; /*0x90cb90*/
+      nPartsCount = equippedSetItem.nPartsCount; /*0x90cb93*/
+      do /*0x90cc0a*/
+      {
+        if ( *(_DWORD *)v39 ) /*0x90cb95*/
+        {
+          ppRealMechanicEquip = (ZRef<GW_ItemSlotBase> *)ZMap<long,long,long>::GetHeadPosition((ZMap<long,long,long> *)(*(_DWORD *)v39 + 60)); /*0x90cba3*/
+          while ( ppRealMechanicEquip ) /*0x90cba9*/
+          {
+            pSkill = (const SKILLENTRY *)*ZMap<long,long,long>::GetNext( /*0x90cbd4*/
+                                            (ZMap<long,long,long> *)(*(_DWORD *)v39 + 60),
+                                            (__POSITION **)&ppRealMechanicEquip,
+                                            (int *)&pos);
+            ZMap<long,long,long>::GetAt(&mSkillBonus, (const int *)&pSkill, &nSkillID); /*0x90cbd8*/
+            v91 = (CUserLocal *)&pos[nSkillID]; /*0x90cbf0*/
+            ZMap<long,long,long>::Insert(&mSkillBonus, (const int *)&pSkill, (const int *)&v91); /*0x90cbf9*/
+          }
+        }
+        v39 += 8; /*0x90cc04*/
+        --nPartsCount; /*0x90cc07*/
+      }
+      while ( nPartsCount ); /*0x90cc0a*/
+    }
+    LOBYTE(v99) = 7; /*0x90cc10*/
+    ZArray<long>::RemoveAll(&equippedSetItem.nItemID); /*0x90cc18*/
+    LOBYTE(v99) = 3; /*0x90cc1d*/
+    if ( !v38 ) /*0x90cc27*/
+      goto LABEL_86; /*0x90cc27*/
+    v37 = v38 - 16; /*0x90cc29*/
+    goto LABEL_82; /*0x90cc29*/
+  }
+LABEL_87:
+  if ( TSingleton<CWvsContext>::ms_pInstance._m_pStr ) /*0x90cc64*/
+    ppRealDragonEquip = (ZRef<GW_ItemSlotBase> *)(TSingleton<CWvsContext>::ms_pInstance._m_pStr + 15408); /*0x90cc6b*/
+  else
+    ppRealDragonEquip = nullptr; /*0x90cc71*/
+  v41 = 0; /*0x90cc79*/
+  ppRealMechanicEquip = (ZRef<GW_ItemSlotBase> *)&ppRealDragonEquip->p; /*0x90cc7e*/
+  while ( ppRealDragonEquip ) /*0x90cc86*/
+  {
+    v42 = *(GW_ItemSlotBase **)&ppRealMechanicEquip->gap0; /*0x90cc90*/
+    pItem.p = v42; /*0x90cc92*/
+    if ( v42 ) /*0x90cc98*/
+      InterlockedIncrement(&v42->_m_nRef); /*0x90cc9e*/
+    LOBYTE(v99) = 9; /*0x90cca4*/
+    if ( v42 ) /*0x90ccae*/
+    {
+      nSLV = 0; /*0x90ccc2*/
+      nVal = 0; /*0x90ccc6*/
+      v43 = TSecType<long>::GetData(&v42->nItemID); /*0x90ccca*/
+      v44 = CItemInfo::IsGrowthItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, v43); /*0x90ccd6*/
+      p_nItemID = &v42->nItemID; /*0x90ccdb*/
+      if ( v44 ) /*0x90ccdf*/
+      {
+        v46 = TSecType<long>::GetData(p_nItemID); /*0x90cce5*/
+        v47 = TSingleton<CItemInfo>::ms_pInstance._m_pStr; /*0x90ccec*/
+        v48 = v46; /*0x90ccf2*/
+        v79 = v42->GetLevelUpType(v42); /*0x90ccfd*/
+        v49 = v42->GetLevel(v42); /*0x90cd03*/
+        CItemInfo::GetLevelAbilityInfo((CItemInfo *)v47, &pAbility, v48, v49, v79); /*0x90cd0e*/
+        v50 = pAbility.p; /*0x90cd13*/
+        LOBYTE(v99) = 10; /*0x90cd17*/
+        if ( !pAbility.p ) /*0x90cd21*/
+        {
+          LOBYTE(v99) = 3; /*0x90cd27*/
+          if ( !InterlockedDecrement(&v42->_m_nRef) ) /*0x90cd2f*/
+          {
+            InterlockedIncrement(&v42->_m_nRef); /*0x90cd3a*/
+            ((void (__thiscall *)(GW_ItemSlotBase *, int))v42->dtr_ZRefCounted)(v42, 1); /*0x90cd48*/
+          }
+          pItem.p = nullptr; /*0x90cd4a*/
+          goto LABEL_117; /*0x90cd54*/
+        }
+        for ( pos = ZMap<long,long,long>::GetHeadPosition(&pAbility.p->mSkillLevelBonus); pos; v50 = pAbility.p ) /*0x90cd67*/
+        {
+          i = *ZMap<long,long,long>::GetNext(&v50->mSkillLevelBonus, &pos, &nSLV); /*0x90cd92*/
+          ZMap<long,long,long>::GetAt(&mSkillBonus, &i, &nVal); /*0x90cd96*/
+          nCurSLV = nSLV + nVal; /*0x90cdae*/
+          ZMap<long,long,long>::Insert(&mSkillBonus, &i, &nCurSLV); /*0x90cdb7*/
+        }
+        LOBYTE(v99) = 9; /*0x90cdc7*/
+        if ( v50 ) /*0x90cdd1*/
+        {
+          v51 = (volatile LONG *)&v50[-1].mSkillLevelBonus._m_uTableSize; /*0x90cdd7*/
+          if ( !InterlockedDecrement(v51 + 1) ) /*0x90cdde*/
+          {
+            InterlockedIncrement(v51 + 1); /*0x90cde9*/
+            if ( v51 ) /*0x90cdf1*/
+              (**(void (__thiscall ***)(char *, int))v51)((char *)v51, 1); /*0x90cdfb*/
+          }
+          pAbility.p = nullptr; /*0x90cdfd*/
+        }
+LABEL_114:
+        LOBYTE(v99) = 3; /*0x90ced1*/
+        if ( !InterlockedDecrement(&v42->_m_nRef) ) /*0x90cedd*/
+          goto LABEL_115; /*0x90cee5*/
+      }
+      else
+      {
+        v52 = TSecType<long>::GetData(p_nItemID); /*0x90ce0a*/
+        if ( !CItemInfo::IsEpicItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, v52) ) /*0x90ce1d*/
+          goto LABEL_114; /*0x90ce1d*/
+        v53 = TSecType<long>::GetData(&v42->nItemID); /*0x90ce25*/
+        v54 = CItemInfo::GetEquipItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, v53); /*0x90ce31*/
+        if ( v54 ) /*0x90ce38*/
+        {
+          v55 = &v54->mSkillLevelBonus; /*0x90ce6a*/
+          pos = ZMap<long,long,long>::GetHeadPosition(&v54->mSkillLevelBonus); /*0x90ce77*/
+          while ( pos ) /*0x90ce7d*/
+          {
+            i = *ZMap<long,long,long>::GetNext(v55, &pos, &nSLV); /*0x90cea1*/
+            ZMap<long,long,long>::GetAt(&mSkillBonus, &i, &nVal); /*0x90cea5*/
+            nCurSLV = nSLV + nVal; /*0x90cebd*/
+            ZMap<long,long,long>::Insert(&mSkillBonus, &i, &nCurSLV); /*0x90cec6*/
+          }
+          goto LABEL_114; /*0x90cecf*/
+        }
+        LOBYTE(v99) = 3; /*0x90ce3e*/
+        if ( !InterlockedDecrement(&v42->_m_nRef) ) /*0x90ce46*/
+        {
+LABEL_115:
+          InterlockedIncrement(&v42->_m_nRef); /*0x90cee7*/
+          ((void (__thiscall *)(GW_ItemSlotBase *, int))v42->dtr_ZRefCounted)(v42, 1); /*0x90cef6*/
+        }
+      }
+      pItem.p = nullptr; /*0x90cefa*/
+      goto LABEL_117; /*0x90cefa*/
+    }
+    LOBYTE(v99) = 3; /*0x90ccb0*/
+LABEL_117:
+    ++ppRealMechanicEquip; /*0x90cefe*/
+    if ( ++v41 >= 4 ) /*0x90cf07*/
+      break; /*0x90cf07*/
+  }
+  if ( TSingleton<CWvsContext>::ms_pInstance._m_pStr ) /*0x90cf14*/
+    ppRealMechanicEquip = (ZRef<GW_ItemSlotBase> *)(TSingleton<CWvsContext>::ms_pInstance._m_pStr + 15440); /*0x90cf1b*/
+  else
+    ppRealMechanicEquip = nullptr; /*0x90cf21*/
+  v56 = 0; /*0x90cf29*/
+  ppRealDragonEquip = (ZRef<GW_ItemSlotBase> *)&ppRealMechanicEquip->p; /*0x90cf2e*/
+  while ( ppRealMechanicEquip ) /*0x90cf36*/
+  {
+    v57 = *(GW_ItemSlotBase **)&ppRealDragonEquip->gap0; /*0x90cf40*/
+    pItem.p = v57; /*0x90cf42*/
+    if ( v57 ) /*0x90cf48*/
+      InterlockedIncrement(&v57->_m_nRef); /*0x90cf4e*/
+    LOBYTE(v99) = 11; /*0x90cf54*/
+    if ( v57 ) /*0x90cf5e*/
+    {
+      nSLV = 0; /*0x90cf72*/
+      nVal = 0; /*0x90cf76*/
+      v58 = TSecType<long>::GetData(&v57->nItemID); /*0x90cf7a*/
+      v59 = CItemInfo::IsGrowthItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, v58); /*0x90cf86*/
+      v60 = &v57->nItemID; /*0x90cf8b*/
+      if ( v59 ) /*0x90cf8f*/
+      {
+        v61 = TSecType<long>::GetData(v60); /*0x90cf95*/
+        v62 = TSingleton<CItemInfo>::ms_pInstance._m_pStr; /*0x90cf9c*/
+        v63 = v61; /*0x90cfa2*/
+        v80 = v57->GetLevelUpType(v57); /*0x90cfad*/
+        v64 = v57->GetLevel(v57); /*0x90cfb3*/
+        CItemInfo::GetLevelAbilityInfo((CItemInfo *)v62, &pAbility, v63, v64, v80); /*0x90cfbe*/
+        v65 = pAbility.p; /*0x90cfc3*/
+        LOBYTE(v99) = 12; /*0x90cfc7*/
+        if ( !pAbility.p ) /*0x90cfd1*/
+        {
+          LOBYTE(v99) = 3; /*0x90cfd7*/
+          if ( !InterlockedDecrement(&v57->_m_nRef) ) /*0x90cfdf*/
+          {
+            InterlockedIncrement(&v57->_m_nRef); /*0x90cfea*/
+            ((void (__thiscall *)(GW_ItemSlotBase *, int))v57->dtr_ZRefCounted)(v57, 1); /*0x90cff8*/
+          }
+          pItem.p = nullptr; /*0x90cffa*/
+          goto LABEL_148; /*0x90d004*/
+        }
+        for ( pos = ZMap<long,long,long>::GetHeadPosition(&pAbility.p->mSkillLevelBonus); pos; v65 = pAbility.p ) /*0x90d017*/
+        {
+          i = *ZMap<long,long,long>::GetNext(&v65->mSkillLevelBonus, &pos, &nSLV); /*0x90d042*/
+          ZMap<long,long,long>::GetAt(&mSkillBonus, &i, &nVal); /*0x90d046*/
+          nCurSLV = nSLV + nVal; /*0x90d05e*/
+          ZMap<long,long,long>::Insert(&mSkillBonus, &i, &nCurSLV); /*0x90d067*/
+        }
+        LOBYTE(v99) = 11; /*0x90d077*/
+        if ( v65 ) /*0x90d081*/
+        {
+          v66 = (volatile LONG *)&v65[-1].mSkillLevelBonus._m_uTableSize; /*0x90d087*/
+          if ( !InterlockedDecrement(v66 + 1) ) /*0x90d08e*/
+          {
+            InterlockedIncrement(v66 + 1); /*0x90d099*/
+            if ( v66 ) /*0x90d0a1*/
+              (**(void (__thiscall ***)(char *, int))v66)((char *)v66, 1); /*0x90d0ab*/
+          }
+          pAbility.p = nullptr; /*0x90d0ad*/
+        }
+LABEL_145:
+        LOBYTE(v99) = 3; /*0x90d181*/
+        if ( !InterlockedDecrement(&v57->_m_nRef) ) /*0x90d18d*/
+          goto LABEL_146; /*0x90d195*/
+      }
+      else
+      {
+        v67 = TSecType<long>::GetData(v60); /*0x90d0ba*/
+        if ( !CItemInfo::IsEpicItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, v67) ) /*0x90d0cd*/
+          goto LABEL_145; /*0x90d0cd*/
+        v68 = TSecType<long>::GetData(&v57->nItemID); /*0x90d0d5*/
+        v69 = CItemInfo::GetEquipItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, v68); /*0x90d0e1*/
+        if ( v69 ) /*0x90d0e8*/
+        {
+          v70 = &v69->mSkillLevelBonus; /*0x90d11a*/
+          pos = ZMap<long,long,long>::GetHeadPosition(&v69->mSkillLevelBonus); /*0x90d127*/
+          while ( pos ) /*0x90d12d*/
+          {
+            i = *ZMap<long,long,long>::GetNext(v70, &pos, &nSLV); /*0x90d151*/
+            ZMap<long,long,long>::GetAt(&mSkillBonus, &i, &nVal); /*0x90d155*/
+            nCurSLV = nSLV + nVal; /*0x90d16d*/
+            ZMap<long,long,long>::Insert(&mSkillBonus, &i, &nCurSLV); /*0x90d176*/
+          }
+          goto LABEL_145; /*0x90d17f*/
+        }
+        LOBYTE(v99) = 3; /*0x90d0ee*/
+        if ( !InterlockedDecrement(&v57->_m_nRef) ) /*0x90d0f6*/
+        {
+LABEL_146:
+          InterlockedIncrement(&v57->_m_nRef); /*0x90d197*/
+          ((void (__thiscall *)(GW_ItemSlotBase *, int))v57->dtr_ZRefCounted)(v57, 1); /*0x90d1a6*/
+        }
+      }
+      pItem.p = nullptr; /*0x90d1aa*/
+      goto LABEL_148; /*0x90d1aa*/
+    }
+    LOBYTE(v99) = 3; /*0x90cf60*/
+LABEL_148:
+    ++ppRealDragonEquip; /*0x90d1ae*/
+    if ( ++v56 >= 5 ) /*0x90d1b7*/
+      break; /*0x90d1b7*/
+  }
+  ZtlSecureTear_nCombatOrders = v86->_ZtlSecureTear_nCombatOrders_; /*0x90d1bd*/
+  v72 = _ZtlSecureFuse<long>(v86->_ZtlSecureTear_nCombatOrders_, v86->_ZtlSecureTear_nCombatOrders__CS); /*0x90d1cf*/
+  v73 = pCD.p; /*0x90d1d4*/
+  if ( v72 <= 0 ) /*0x90d1dd*/
+    goto LABEL_162; /*0x90d1dd*/
+  if ( pCD.p ) /*0x90d1e5*/
+  {
+    pos = nullptr; /*0x90d1f3*/
+    pSkill = (const SKILLENTRY *)ZMap<long,long,long>::GetHeadPosition(&pCD.p->mSkillRecord); /*0x90d1fc*/
+    while ( pSkill ) /*0x90d202*/
+    {
+      v74 = *ZMap<long,long,long>::GetNext(&v73->mSkillRecord, (__POSITION **)&pSkill, &nCurSLV); /*0x90d221*/
+      v75 = v74 / 10000; /*0x90d232*/
+      nSkillID = v74; /*0x90d234*/
+      if ( v74 / 10000 ) /*0x90d232*/
+      {
+        if ( v75 != 1000 && v75 != 2000 && v75 != 2001 && v75 != 3000 && v74 != 1211011 ) /*0x90d264*/
+        {
+          i = 0; /*0x90d273*/
+          if ( CSkillInfo::GetSkillLevel(TSingleton<CSkillInfo>::ms_pInstance, v73, v74, (const SKILLENTRY **)&i) ) /*0x90d277*/
+          {
+            if ( i ) /*0x90d284*/
+            {
+              ZMap<long,long,long>::GetAt(&mSkillBonus, &nSkillID, (int *)&pos); /*0x90d294*/
+              v76 = _ZtlSecureFuse<long>(ZtlSecureTear_nCombatOrders, v86->_ZtlSecureTear_nCombatOrders__CS); /*0x90d2a5*/
+              nCurSLV = (int)&pos[v76]; /*0x90d2b7*/
+              ZMap<long,long,long>::Insert(&mSkillBonus, &nSkillID, &nCurSLV); /*0x90d2c5*/
+            }
+          }
+        }
+      }
+    }
+LABEL_162:
+    if ( v73 ) /*0x90d2d6*/
+    {
+      v73->nCombatOrders = _ZtlSecureFuse<long>(ZtlSecureTear_nCombatOrders, v86->_ZtlSecureTear_nCombatOrders__CS); /*0x90d2e9*/
+      ZMap<long,long,long>::operator=(&v73->mSkillRecordEx, &mSkillBonus); /*0x90d2fd*/
+    }
+  }
+  LOBYTE(v99) = 2; /*0x90d306*/
+  mSkillBonus.__vftable = (ZMap<long,long,long>_vtbl *)&ZMap<long,long,long>::`vftable'; /*0x90d30e*/
+  ZMap<long,long,long>::RemoveAll(&mSkillBonus); /*0x90d316*/
+  v99 = -1; /*0x90d31b*/
+  if ( v73 && !InterlockedDecrement((volatile LONG *)&v73[-1].m_mVisitorQuestLog._m_uCount) ) /*0x90d331*/
+  {
+    InterlockedIncrement((volatile LONG *)&v73[-1].m_mVisitorQuestLog._m_uCount); /*0x90d33c*/
+    if ( v73 != (CharacterData *)16 ) /*0x90d344*/
+      (*(void (__thiscall **)(unsigned int *, int))v73[-1].m_mVisitorQuestLog._m_uTableSize)( /*0x90d34e*/
+        &v73[-1].m_mVisitorQuestLog._m_uTableSize,
+        1);
+  }
+}

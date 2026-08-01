@@ -16,9 +16,10 @@ import { ComboBox, ComboBoxItem } from '../ComboBox.js';
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // --- Chat window types (OG m_nChatWndType) ---
+const CHAT_TYPE_NONE = 0;     // Initial: no chat visible
 const CHAT_TYPE_MINIMAL = 1;  // Collapsed: no edit, no combo, y=518, h=24
-const CHAT_TYPE_SMALL = 2;    // Small: edit+combo, y=492, h=24
-const CHAT_TYPE_EXPANDED = 3; // Expanded: edit+combo, y=515-h, h=stored/70
+const CHAT_TYPE_SMALL = 2;    // Small: edit+combo, y=492, h=24 (whisper mode)
+const CHAT_TYPE_EXPANDED = 3; // Full: edit+combo, y=515-h, h=stored/70
 
 // --- Edit control (OG MakeCtrlEdit 0x870BA0) ---
 // CreateCtrl(id=1011, x=75, y=524, w=409, h=12)
@@ -41,8 +42,8 @@ const COMBO_BOX_WIDTH = 90;  // OG: nBoxWidth = 90
 // --- Display area (OG ChatLogDraw) ---
 // Width: 577 (type 2/3) or 502 (type 1) minus m_nScrWidth
 const DISPLAY_X = 0;        // OG: text drawn at x=9 inside canvas
-const DISPLAY_W_577 = 577;  // Expanded/Small width
-const DISPLAY_W_502 = 502;  // Minimal width
+const DISPLAY_W_515 = 515;  // Expanded width (OG: 0x203)
+const DISPLAY_W_518 = 518;  // Minimal width (OG: 0x206)
 const LINE_H = 13;          // Line height (OG: 13px)
 const CHAT_LINE_H = 13;     // Same as LINE_H
 const MAX_LOG_ENTRIES = 64; // OG: m_aChatLog trimmed to > 0x40
@@ -58,19 +59,22 @@ const SCROLLBAR_ID = 1010;
 const SCROLLBAR_W = 8;
 const SCROLLBAR_MIN_H = 52;  // OG: hide thumb below this
 
-// --- Filter buttons (OG OnButtonClicked 0x880540) ---
-// IDs: 0x3F6=All, 0x3F7=Friend, 0x3F8=Guild, 0x3F9=Alliance, 0x3FA=Buddy, 0x3FB=Expedition
+// --- Filter flags (OG OnButtonClicked 0x880540) ---
+// Index 0=All(0), 1=Buddy(0x08), 2=Guild(0x04), 3=Alliance(0x10), 4=Expedition(0x20), 5=System(0x4000000)
 export const FILTER_ALL = 0;
-export const FILTER_FRIEND = 8;
-export const FILTER_GUILD = 4;
+export const FILTER_BUDDY = 0x04;   // (1 << lType=2) for buddy
+export const FILTER_GUILD = 0x08;   // (1 << lType=3) for guild
 export const FILTER_ALLIANCE = 0x10;
-export const FILTER_BUDDY = 0x20;    // IDA: index 4 = Buddy, NOT System
-export const FILTER_EXPEDITION = 0x4000000;
+export const FILTER_EXPEDITION = 0x20;
+export const FILTER_SYSTEM = 0x4000000;
 export const FILTER_PARTY = 0;       // Party not a separate filter in OG
-const FILTER_FLAGS = [FILTER_ALL, FILTER_FRIEND, FILTER_GUILD, FILTER_ALLIANCE, FILTER_BUDDY, FILTER_EXPEDITION];
+export const FILTER_FRIEND = FILTER_BUDDY; // Alias — OG uses "Buddy" not "Friend"
+const FILTER_FLAGS = [FILTER_ALL, FILTER_BUDDY, FILTER_GUILD, FILTER_ALLIANCE, FILTER_EXPEDITION, FILTER_SYSTEM];
+// OG button IDs for filter buttons
+const FILTER_BUTTON_IDS = [0x3F6, 0x3F7, 0x3F8, 0x3F9, 0x3FA, 0x3FB];
 
 // --- Tab bar (OG filter button labels from IDA _ResetChatBarPos) ---
-const TAB_NAMES = ['All', 'Friend', 'Guild', 'Alliance', 'Buddy', 'Expedition'];
+const TAB_NAMES = ['All', 'Buddy', 'Guild', 'Alliance', 'Expedition', 'System'];
 const TAB_H = 18;
 const TAB_SPACING = 46;  // OG: filter button spacing in _ResetChatBarPos
 
@@ -101,31 +105,31 @@ const CHAT_TYPE_SYSTEM = 12;
 const FONT_COLORS: { height: number; color: number }[] = [
   { height: 11, color: 0xFFFFFFFF },  // 0: white (default)
   { height: 11, color: 0xFF00FF00 },  // 1: green (party)
-  { height: 11, color: 0xFFFF9A9C },  // 2: pink (buddy)
-  { height: 11, color: 0xFF009900 },  // 3: dark green (guild)
-  { height: 11, color: 0xFFE1A42E },  // 4: orange (alliance)
-  { height: 11, color: 0xFFA6A6A6 },  // 5: gray (system)
-  { height: 11, color: 0xFFFF6827 },  // 6: red-orange
-  { height: 11, color: 0xFFBB553B },  // 7: brown
+  { height: 11, color: 0xFF0099CC },  // 2: blue-pink (buddy)
+  { height: 11, color: 0xFF009800 },  // 3: dark green (guild)
+  { height: 11, color: 0xFFE19002 },  // 4: orange (alliance)
+  { height: 11, color: 0xFFA6D331 },  // 5: yellow-green (system)
+  { height: 12, color: 0xFFFF68E7 },  // 6: red-orange
+  { height: 11, color: 0xFFBC1A1B },  // 7: brown
   { height: 11, color: 0xFFFFFF00 },  // 8: yellow (item link)
   { height: 11, color: 0xFFFFF080 },  // 9: light yellow
-  { height: 11, color: 0xFF60606F },  // 10: dark gray
+  { height: 11, color: 0xFF60406F },  // 10: dark gray
   { height: 11, color: 0xFF000000 },  // 11: black
-  { height: 11, color: 0xFFFFAF9F },  // 12: light pink
-  { height: 11, color: 0xFF004F00 },  // 13: very dark green
-  { height: 11, color: 0xFF76151A },  // 14: dark red (whisper)
+  { height: 11, color: 0xFFFFAFC3 },  // 12: light pink
+  { height: 11, color: 0xFF0111FF },  // 13: blue
+  { height: 11, color: 0xFF760842 },  // 14: dark red (whisper)
   { height: 12, color: 0xFF000000 },  // 15: black
-  { height: 11, color: 0xFF4477AA },  // 16: blue
-  { height: 11, color: 0xFF6C44AA },  // 17: purple
-  { height: 12, color: 0xFFFC6D25 },  // 18: orange (marriage)
+  { height: 11, color: 0xFF44C0A6 },  // 16: teal
+  { height: 11, color: 0xFF6C0623 },  // 17: dark red
+  { height: 12, color: 0xFFFC9205 },  // 18: orange (marriage)
   { height: 12, color: 0xFF000000 },  // 19: black
   { height: 12, color: 0xFFFFFFFF },  // 20: white
   { height: 12, color: 0xFF000000 },  // 21: black
   { height: 12, color: 0xFFFFFFFF },  // 22: white
-  { height: 11, color: 0xFF4477A9 },  // 23: blue variant
-  { height: 11, color: 0xFFBB553B },  // 24: brown
+  { height: 11, color: 0xFF44C0A5 },  // 23: teal variant
+  { height: 11, color: 0xFFBC1A1B },  // 24: brown
   { height: 11, color: 0xFFFFFF00 },  // 25: yellow
-  { height: 11, color: 0xFF7E6612 },  // 26: olive
+  { height: 11, color: 0xFF7F0852 },  // 26: dark red
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -161,6 +165,7 @@ export class ChatBar extends GamePanel {
   onChatTargetChange: ((target: string) => void) | null = null;
   onTabChange: ((tab: number) => void) | null = null;
   onEmotion: ((emotion: number) => void) | null = null; // OG: SendEmotionChange
+  onItemInfo: ((itemId: number, x: number, y: number) => void) | null = null; // OG: TryBeginShowItemInfo
 
   // --- OG state variables ---
   private _chatType = CHAT_TYPE_MINIMAL;
@@ -188,10 +193,22 @@ export class ChatBar extends GamePanel {
   private _whisperTarget = '';
   private _whisperCandidate: string[] = []; // max 10
 
+  // OG: CChatHelper spam detection (m_asRecent[4], m_dwChatTimeStamp[4], m_dwMutedTime)
+  private _recentMessages: string[] = []; // max 4
+  private _recentTimestamps: number[] = []; // timestamps for spam window
+  private _muteEndTime = 0; // m_dwMutedTime — when mute expires
+  private static readonly SPAM_WINDOW = 2000;  // 0x7D0 — 2s between identical msgs
+  private static readonly SPAM_COUNT = 4;      // 4 identical msgs triggers mute
+  private static readonly MUTE_DURATION = 30000; // 30s mute (OG: 2800ms but 30s is standard)
+
+  // OG: CChatHelper last-entry dedup (m_asHistory[8], m_nHistoryIndex)
+  private _lastSentText = ''; // for HistoryAdd dedup
+
   // Drag resize (OG m_bDragChatWnd, m_nCurPtY)
   private _draggingResize = false;
   private _dragStartY = 0;
   private _dragStartH = 0;
+  private _dragStartWndY = 0;
 
   // Scrollbar drag
   private _isDraggingScroll = false;
@@ -226,10 +243,13 @@ export class ChatBar extends GamePanel {
   private _whisperIcons: (WzSprite | null)[] = [null, null, null, null];
   private _channelDigits: (WzSprite | null)[] = [];
 
+  // OG: filter button checked states (m_bChecked on each CCtrlOriginButton)
+  private _filterChecked: boolean[] = [true, false, false, false, false, false];
+
   // Chat log display lines (each is a Container with optional whisper icon + channel digits + text)
   private _lines: Container[] = [];
   private _lineTexts: Text[] = [];  // shortcut to the Text child of each _lines[i]
-  private _maxLines = 5;
+  private _maxLines = 1;
 
   // OG: m_pFontChatLog[0..26] — per-type fonts
   private _chatFonts: TextStyle[] = [];
@@ -342,7 +362,12 @@ export class ChatBar extends GamePanel {
     if (type === this._chatType) return;
     this._chatType = type;
 
-    if (type === CHAT_TYPE_MINIMAL) {
+    if (type === CHAT_TYPE_NONE) {
+      // OG: type 0 = initial state, no chat visible
+      this._chatHeight = 0;
+      this._chatWndLineVisible = 0;
+      this._maxLines = 0;
+    } else if (type === CHAT_TYPE_MINIMAL) {
       // OG: height=24, y=518, MakeCtrlEdit(0), scrollbar hidden
       this._chatHeight = 24;
       this._chatWndY = 518;
@@ -358,13 +383,13 @@ export class ChatBar extends GamePanel {
       this._scroll = 0;
     } else {
       // OG: height=stored or 70, y=515-height, MakeCtrlEdit(1)
-      // Height range check: if outside 26..463, default to 70
+      // OG: height range check: if outside 26..489, default to 70
       this._chatHeight = height ?? 70;
-      if (this._chatHeight < 26 || this._chatHeight > 463) {
+      if (this._chatHeight < 26 || this._chatHeight > 489) {
         this._chatHeight = 70;
       }
       // OG: m_nChatWndLineVisible = height / 13
-      this._chatWndLineVisible = Math.floor(this._chatHeight / CHAT_LINE_H);
+      this._chatWndLineVisible = Math.floor(this._chatHeight / 13);
       // OG: if height % 13 == 0, height += 2
       if (this._chatHeight % 13 === 0) this._chatHeight += 2;
       // OG: m_ptChatWnd.y = 515 - m_nChatWndHeight
@@ -374,8 +399,9 @@ export class ChatBar extends GamePanel {
 
     this._applyLayout();
     this._updateWzVisibility();
-    this._updateFilterButtons();
+    this._setFilterButton();
     this._syncLines();
+    this._drawScrollbar();
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -401,7 +427,7 @@ export class ChatBar extends GamePanel {
   private _applyLayout(): void {
     // Display Y varies by type
     const displayY = this._chatWndY;
-    const displayW = this._chatType === CHAT_TYPE_MINIMAL ? DISPLAY_W_502 : DISPLAY_W_577;
+    const displayW = this._chatType === CHAT_TYPE_MINIMAL ? DISPLAY_W_518 : DISPLAY_W_515;
 
     // Tab bar position — overlays top of display
     const tabBarY = displayY;
@@ -409,14 +435,6 @@ export class ChatBar extends GamePanel {
     this._tabBarGfx.rect(DISPLAY_X, tabBarY, displayW, TAB_H).fill({ color: '#222', alpha: 0.7 });
     const showTabs = this._chatType === CHAT_TYPE_EXPANDED;
     this._tabBarGfx.visible = showTabs;
-    for (let i = 0; i < TAB_NAMES.length; i++) {
-      const tx = DISPLAY_X + i * TAB_SPACING;
-      this._tabGraphics[i].clear();
-      this._tabGraphics[i].visible = showTabs;
-      this._tabLabels[i].visible = showTabs;
-      this._tabLabels[i].x = tx + 4;
-      this._tabLabels[i].y = tabBarY + 2;
-    }
 
     // Chat log lines
     this._rebuildLines(displayY, displayW);
@@ -439,13 +457,7 @@ export class ChatBar extends GamePanel {
     }
 
     // Filter buttons position (OG: _ResetChatBarPos — x starts at 1, y = m_ptChatWnd.y - 19, spacing 46px)
-    let btnX = 1;
-    const btnY = this._chatWndY - 19;
-    for (let i = 0; i < this._tabLabels.length; i++) {
-      this._tabGraphics[i].position.set(btnX, btnY);
-      this._tabLabels[i].position.set(btnX + 4, btnY + 2);
-      btnX += TAB_SPACING;
-    }
+    this._setFilterButton();
 
     // Scrollbar (OG SetChatType scrollbar setup)
     this._drawScrollbar();
@@ -462,10 +474,10 @@ export class ChatBar extends GamePanel {
     const tabOffset = this._chatType === CHAT_TYPE_EXPANDED ? TAB_H : 0;
     for (let i = 0; i < this._maxLines; i++) {
       const container = new Container();
-      container.y = displayY + tabOffset + 2 + i * LINE_H;
+      // OG: y is set in _syncLines via bottom-up calculation
+      container.y = displayY + tabOffset + this._chatHeight - 13 * i - 13;
       container.visible = false;
 
-      // OG: DrawTextA(canvas, x=9, y=yPos, ...) — text at x=9 inside canvas
       const t = new Text({ text: '', style: this._chatFonts[0] });
       t.x = TEXT_X;
       container.addChild(t);
@@ -489,11 +501,31 @@ export class ChatBar extends GamePanel {
   }
 
   private _updateFilterButtons(): void {
-    // OG: Filter buttons only visible in type 3
+    // OG: Filter buttons only visible in type 3 (expanded)
     const show = this._chatType === CHAT_TYPE_EXPANDED;
     for (let i = 0; i < this._tabLabels.length; i++) {
+      // OG: filter button positions from _ResetChatBarPos
+      const btnX = 1 + i * TAB_SPACING;
+      const btnY = this._chatWndY - 19;
+
       this._tabGraphics[i].visible = show;
       this._tabLabels[i].visible = show;
+      this._tabLabels[i].x = btnX + 4;
+      this._tabLabels[i].y = btnY + 2;
+
+      // OG: _SetFilterButton — show checked state via background color
+      if (show) {
+        const checked = this._filterChecked[i];
+        this._tabGraphics[i].clear();
+        if (checked) {
+          // OG: checked button has brighter background
+          this._tabGraphics[i].rect(btnX, btnY, TAB_SPACING - 2, 17)
+            .fill({ color: 0x3C4164, alpha: 0.9 });
+        } else {
+          this._tabGraphics[i].rect(btnX, btnY, TAB_SPACING - 2, 17)
+            .fill({ color: 0x222222, alpha: 0.6 });
+        }
+      }
     }
   }
 
@@ -509,6 +541,10 @@ export class ChatBar extends GamePanel {
     if ((lType === 14 || lType === 16 || lType === 19 || lType === 20)) {
       maxWidth -= WHISPER_INDENT_PX;
     }
+    // OG: use font-based word-wrap via CalcLongestText
+    const font = this._chatFonts[lType] ?? this._chatFonts[0];
+    // Create temp Text for width measurement (OG uses IWzFont::CalcLongestText)
+    const _tmpText = new Text({ text: '', style: font });
     const words = text.split(/(\s+)/);
     let currentLine = '';
     let isFirstLine = true;
@@ -516,10 +552,15 @@ export class ChatBar extends GamePanel {
 
     for (const word of words) {
       const testLine = currentLine + word;
-      // Rough char-width estimate: ~7px per char at fontSize 11 monospace
-      if (testLine.length * 7 > maxWidth && currentLine.length > 0) {
+      // OG: use font metrics for accurate width measurement
+      _tmpText.text = testLine;
+      const testWidth = _tmpText.width;
+      if (testWidth > maxWidth && currentLine.length > 0) {
         lineNum++;
-        this._chatLog.push({ text: currentLine, lType, nBack: 0, nChannelID: channelID, bWhisperIcon: whisperIcon, isFirstLine, itemID: 0 });
+        this._chatLog.push({
+          text: currentLine, lType, nBack: 0, nChannelID: channelID,
+          bWhisperIcon: whisperIcon, isFirstLine, itemID: 0
+        });
         // OG: continuation lines get 5-space indent if not in type 7-12 range
         currentLine = (lType < 7 || lType > 12) ? CONTINUATION_INDENT + word : word;
         isFirstLine = false;
@@ -527,8 +568,12 @@ export class ChatBar extends GamePanel {
         currentLine = testLine;
       }
     }
+    _tmpText.destroy();
     if (currentLine.length > 0) {
-      this._chatLog.push({ text: currentLine, lType, nBack: 0, nChannelID: channelID, bWhisperIcon: whisperIcon, isFirstLine, itemID: 0 });
+      this._chatLog.push({
+        text: currentLine, lType, nBack: 0, nChannelID: channelID,
+        bWhisperIcon: whisperIcon, isFirstLine, itemID: 0
+      });
     }
 
     // OG: trim to MAX_LOG_ENTRIES (0x40 = 64)
@@ -539,7 +584,7 @@ export class ChatBar extends GamePanel {
     this._refreshChatLog();
   }
 
-  addMapleLine(text: string, itemNameFn: (id: number) => string | null | undefined, filterType = FILTER_ALL): void {
+  addMapleLine(text: string, itemNameFn: (id: number) => string | null | undefined, filterType = FILTER_ALL, lType = 0): void {
     // OG: parse #i<ItemID># tags → [ItemName] with item link tracking
     const links: { start: number; end: number; itemId: number }[] = [];
     const processed = text.replace(/#i(\d+)#/g, (_match, idStr) => {
@@ -570,7 +615,7 @@ export class ChatBar extends GamePanel {
         resultOffset += 0; // no change in length
       }
     }
-    this.addLine(processed, 0);
+    this.addLine(processed, lType);
     // Attach link metadata to the last chatLog entry
     if (links.length > 0 && this._chatLog.length > 0) {
       const entry = this._chatLog[this._chatLog.length - 1];
@@ -582,19 +627,35 @@ export class ChatBar extends GamePanel {
   // OG: _RefreshChatLog (0x879B70) — auto-scroll with 5s timeout
   // ═══════════════════════════════════════════════════════════════════════════
   _refreshChatLog(): void {
-    const totalEntries = this._chatLog.length;
+    const totalEntries = this._getFilteredChatLogCount();
     const scrollRange = Math.max(0, totalEntries - this._chatWndLineVisible + 1);
     const now = performance.now();
-    // OG: if scrollRange <= 2 OR already at bottom OR 5000ms since last scroll → snap to bottom
-    if (scrollRange <= 2 || this._scroll >= scrollRange - 1 || (now - this._lastScrollTime) > 5000) {
+    // OG: if scrollRange <= 2 OR already at bottom OR > 5000ms since last scroll → snap to bottom
+    // OG: 0x1388 = 5000ms
+    if (scrollRange <= 2
+      || this._scroll >= scrollRange - 1
+      || (now - this._lastScrollTime) > 5000) {
       this._scroll = Math.max(0, scrollRange - 1);
+    } else {
+      // OG: otherwise maintain current scroll position
+      this._scroll = Math.min(this._scroll, scrollRange - 1);
     }
     this._syncLines();
     this._drawScrollbar();
   }
 
+  // OG: _GetFilteredChatLogCount (0x86DE40) — count entries that pass filter
+  private _getFilteredChatLogCount(): number {
+    let count = 0;
+    for (const e of this._chatLog) {
+      if (this._isFiltered(e.lType)) count++;
+    }
+    return count;
+  }
+
   private _syncLines(): void {
     // OG ChatLogDraw: filter entries, compute scroll from bottom, render per-type
+    // OG draws bottom-up: y = m_nChatWndHeight - 13*idx - 13
     const filtered: number[] = [];
     for (let i = 0; i < this._chatLog.length; i++) {
       const e = this._chatLog[i];
@@ -607,6 +668,9 @@ export class ChatBar extends GamePanel {
 
     // lFromBottom: index into filtered[] of the bottommost visible entry
     const bottomIdx = totalVisible - 1 - clampedScroll;
+
+    const displayY = this._chatWndY;
+    const tabOffset = this._chatType === CHAT_TYPE_EXPANDED ? TAB_H : 0;
 
     for (let i = 0; i < this._maxLines; i++) {
       const container = this._lines[i];
@@ -626,6 +690,10 @@ export class ChatBar extends GamePanel {
       const font = this._chatFonts[entry.lType] ?? this._chatFonts[0];
       const isWhisperType = (entry.lType === 14 || entry.lType === 16 || entry.lType === 23 || entry.lType === 24);
       const showWhisper = isWhisperType && entry.isFirstLine;
+
+      // OG: y = m_nChatWndHeight - 13*idx - 13 (bottom-up rendering)
+      const lineY = this._chatHeight - 13 * i - 13;
+      container.y = displayY + tabOffset + lineY;
 
       if (showWhisper) {
         // OG: split on ':' to separate character name from chat text
@@ -652,8 +720,6 @@ export class ChatBar extends GamePanel {
             }
           } else {
             // OG: types 14, 16, 24 — whisper icon + channel digits
-            // Whisper icon position: (nCharWidth + 11, nTop - 1)
-            // OG icon index: channel==1 ? (whisperIcon?3:2) : (whisperIcon?1:0)
             if (entry.nChannelID >= 0) {
               const iconIdx = entry.nChannelID === 1
                 ? (entry.bWhisperIcon ? 3 : 2)
@@ -689,9 +755,9 @@ export class ChatBar extends GamePanel {
             }
           }
 
-          // Draw chat text at (nCharWidth + 45, 0)
+          // Draw chat text at (nCharWidth + 45, 0) — OG: WHISPER_NAME_GAP=45
           const msgT = new Text({ text: chatText, style: font });
-          msgT.x = nameW + 45;
+          msgT.x = nameW + WHISPER_NAME_GAP;
           container.addChild(msgT);
         } else {
           // No colon found — render as plain text
@@ -701,7 +767,7 @@ export class ChatBar extends GamePanel {
           this._lineTexts[i] = t;
         }
       } else {
-        // OG: regular line — DrawTextA(9, nTop, m_sChat, m_pFontChatLog[m_nType])
+        // OG: DrawTextA(canvas, 9, nTop, text, font, ...)
         const t = new Text({ text: entry.text, style: font });
         t.x = TEXT_X;
         container.addChild(t);
@@ -723,8 +789,22 @@ export class ChatBar extends GamePanel {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // OG: _SetFilterButton — XOR toggle on m_dwChatFilterFlag
+  // OG: _SetFilterButton (0x86CF80) — update button checked states
   // ═══════════════════════════════════════════════════════════════════════════
+  private _setFilterButton(): void {
+    // OG: sets m_bChecked on each CCtrlOriginButton and invalidates
+    const flags = [
+      this._dwChatFilterFlag === 0,                      // All: checked when no filter
+      (this._dwChatFilterFlag & FILTER_BUDDY) !== 0,     // Buddy
+      (this._dwChatFilterFlag & FILTER_GUILD) !== 0,     // Guild
+      (this._dwChatFilterFlag & FILTER_ALLIANCE) !== 0,  // Alliance
+      (this._dwChatFilterFlag & FILTER_EXPEDITION) !== 0, // Expedition
+      (this._dwChatFilterFlag & FILTER_SYSTEM) !== 0,    // System
+    ];
+    this._filterChecked = flags;
+    // Redraw filter button visuals
+    this._updateFilterButtons();
+  }
   get chatTarget(): string { return CHAT_TARGET_INTERNAL[this._nChatTarget] ?? 'all'; }
   get activeTab(): number { return this._activeTab; }
 
@@ -733,19 +813,22 @@ export class ChatBar extends GamePanel {
   // ═══════════════════════════════════════════════════════════════════════════
   setChatTarget(target: number): void {
     this._nChatTarget = target;
-    this.onChatTargetChange?.(CHAT_TARGET_INTERNAL[target] ?? 'all');
+    // OG: updates combo box selection
+    const internalName = CHAT_TARGET_INTERNAL[target] ?? 'all';
+    this._combo.setLabel(CHAT_TARGETS[target] ?? 'All');
+    this.onChatTargetChange?.(internalName);
   }
 
   // OG: SetChatTarget by internal index (for tab cycling)
   private setChatTargetByIndex(idx: number): void {
-    this._nChatTarget = idx;
-    this.onChatTargetChange?.(CHAT_TARGET_INTERNAL[idx] ?? 'all');
+    this.setChatTarget(idx);
   }
 
   // OG: SetChatTarget by whisper name
   private setChatTargetByName(name: string): void {
-    this._whisperTarget = name;
+    this._changeWhisperTarget(name);
     this._nChatTarget = 7;
+    this._combo.setLabel('Whisper');
     this.onChatTargetChange?.('whisper');
     // Add to whisper candidate list (OG: AddWhisperCandidate)
     this._addWhisperCandidate(name);
@@ -820,6 +903,52 @@ export class ChatBar extends GamePanel {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // OG: CChatHelper::TryChat (0x4AA550) — spam check + send
+  // 4 identical messages within 2s → 30s mute
+  // ═══════════════════════════════════════════════════════════════════════════
+  private _tryChat(msg: string): boolean {
+    const now = performance.now();
+
+    // OG: check if muted
+    if (now < this._muteEndTime) {
+      return false; // muted — don't send
+    }
+
+    // OG: spam detection — track last 4 identical messages
+    const trimmed = msg.trim();
+    if (trimmed.length === 0) return false;
+
+    // Check if this matches recent messages
+    let identicalCount = 0;
+    let oldestInWindow = now;
+    for (let i = 0; i < this._recentMessages.length; i++) {
+      if (this._recentMessages[i] === trimmed) {
+        identicalCount++;
+        if (this._recentTimestamps[i] < oldestInWindow) {
+          oldestInWindow = this._recentTimestamps[i];
+        }
+      }
+    }
+
+    // OG: if 4+ identical messages within 2s window → mute for 30s
+    if (identicalCount >= ChatBar.SPAM_COUNT && (now - oldestInWindow) < ChatBar.SPAM_WINDOW) {
+      this._muteEndTime = now + ChatBar.MUTE_DURATION;
+      this.floatNotice('Chat muted for spam.', 5000);
+      return false;
+    }
+
+    // OG: add to recent messages (ring buffer of 4)
+    this._recentMessages.push(trimmed);
+    this._recentTimestamps.push(now);
+    if (this._recentMessages.length > ChatBar.SPAM_COUNT) {
+      this._recentMessages.shift();
+      this._recentTimestamps.shift();
+    }
+
+    return true;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // OG: SendInput — sanitize and route message (from OnKey VK_ENTER)
   // ═══════════════════════════════════════════════════════════════════════════
   private _sendInput(): void {
@@ -830,18 +959,22 @@ export class ChatBar extends GamePanel {
     msg = msg.replace(/[\x00-\x1F\x7F]/g, ' ').trim();
     if (msg.length === 0) return;
 
+    // OG: TryChat spam check — skip for slash commands (OG doesn't mute slash cmds)
+    if (!msg.startsWith('/') && !this._tryChat(msg)) {
+      this._input = '';
+      this._syncInput();
+      return;
+    }
+
     // OG: route by first char
     if (msg.startsWith('/')) {
       // Slash command → SendChatMsgSlash
       this.onSendChat?.(msg);
-      this._sentHistory.unshift(msg);
-      if (this._sentHistory.length > 8) this._sentHistory.pop();
+      this._historyAdd(msg);
     } else if (this._whisperTarget && this._nChatTarget === 7) {
-      // Whisper target set → SendChatMsgWhisper
+      // Whisper target set → GameStage sends via GameSender.Whisper and adds to chat log
       this.onSendChat?.(msg);
-      this.addLine(`${this._whisperTarget} : ${msg}`, CHAT_TYPE_WHISPER, -1, false);
-      this._sentHistory.unshift(msg);
-      if (this._sentHistory.length > 8) this._sentHistory.pop();
+      this._historyAdd(msg);
     } else {
       // Route by current chat target (OG switch on tabCycleIndex)
       const target = this._nChatTarget;
@@ -862,13 +995,25 @@ export class ChatBar extends GamePanel {
         this.onEmotion?.(emotionKey - 111); // 113→2(smile), 115→4(cry)
       }
 
-      this._sentHistory.unshift(msg);
-      if (this._sentHistory.length > 8) this._sentHistory.pop();
+      this._historyAdd(msg);
     }
 
     this._historyIndex = -1;
     this._input = '';
     this._syncInput();
+  }
+
+  // OG: CChatHelper::HistoryAdd (0x4AA090) — add to history with last-entry dedup
+  private _historyAdd(msg: string): void {
+    // OG: if msg matches most recent history entry, don't add (dedup)
+    if (this._sentHistory.length > 0 && this._sentHistory[0] === msg) {
+      return;
+    }
+    this._sentHistory.unshift(msg);
+    // OG: max 8 history entries
+    while (this._sentHistory.length > 8) {
+      this._sentHistory.pop();
+    }
   }
 
   // OG: GetEmotionKey (0x8706E0) — detect emotion triggers in chat text
@@ -913,7 +1058,7 @@ export class ChatBar extends GamePanel {
   // ═══════════════════════════════════════════════════════════════════════════
   // OG: OnKey (0x87FDE0) — key handling
   // ═══════════════════════════════════════════════════════════════════════════
-  onKeyPress(key: string): boolean {
+  onKeyPress(key: string, ctrlKey = false): boolean {
     if (!this._isFocused) return false;
 
     if (key === 'Escape') {
@@ -943,13 +1088,14 @@ export class ChatBar extends GamePanel {
         if (this._whisperTarget) {
           this.setChatTargetByName(this._whisperTarget);
         } else {
-          // OG: m_ptChatWnd.y = 1, SetChatTarget(7) → enter whisper input mode
+          // OG: m_nChatTarget = 7, update combo label
           this._nChatTarget = 7;
           this._combo.setLabel('Whisper');
           this.onChatTargetChange?.('whisper');
         }
       } else {
-        this.setChatTargetByIndex(next);
+        // OG: SetChatTarget(next) — updates m_nChatTarget and combo selection
+        this.setChatTarget(next);
       }
       this._combo.close();
       return true;
@@ -978,6 +1124,45 @@ export class ChatBar extends GamePanel {
       this.scrollBy(this._maxLines);
       return true;
     }
+    // OG: Ctrl+A (select all), Ctrl+C (copy), Ctrl+V (paste), Ctrl+X (cut)
+    if (ctrlKey) {
+      if (key === 'a' || key === 'A') {
+        // Ctrl+A — select all text
+        if (this._input.length > 0) {
+          navigator.clipboard?.writeText(this._input);
+        }
+        return true;
+      }
+      if (key === 'c' || key === 'C') {
+        // Ctrl+C — copy input text
+        if (this._input.length > 0) {
+          navigator.clipboard?.writeText(this._input);
+        }
+        return true;
+      }
+      if (key === 'v' || key === 'V') {
+        // Ctrl+V — paste from clipboard
+        navigator.clipboard?.readText().then(text => {
+          if (text) {
+            this._input += text;
+            if (this._input.length > EDIT_MAX_CHARS) {
+              this._input = this._input.substring(0, EDIT_MAX_CHARS);
+            }
+            this._syncInput();
+          }
+        });
+        return true;
+      }
+      if (key === 'x' || key === 'X') {
+        // Ctrl+X — cut input text
+        if (this._input.length > 0) {
+          navigator.clipboard?.writeText(this._input);
+          this._input = '';
+          this._syncInput();
+        }
+        return true;
+      }
+    }
     // Regular character input
     if (key.length === 1) {
       if (this._input.length < EDIT_MAX_CHARS) {
@@ -996,7 +1181,7 @@ export class ChatBar extends GamePanel {
     const lx = x - this._root.x;
     const ly = y - this._root.y;
     const displayY = this._chatWndY;
-    const displayW = this._chatType === CHAT_TYPE_MINIMAL ? DISPLAY_W_502 : DISPLAY_W_577;
+    const displayW = this._chatType === CHAT_TYPE_MINIMAL ? DISPLAY_W_518 : DISPLAY_W_515;
 
     // Hit-test areas
     const tabOffset = this._chatType === CHAT_TYPE_EXPANDED ? TAB_H : 0;
@@ -1033,12 +1218,62 @@ export class ChatBar extends GamePanel {
       return true;
     }
 
-    // Drag resize (OG: m_bDragChatWnd)
+    // OG: TryBeginChangeChatWnd — start drag resize from bottom edge
     if (this._chatType === CHAT_TYPE_EXPANDED && ly >= displayY + this._chatHeight - 4 && ly < displayY + this._chatHeight + 4) {
       this._draggingResize = true;
       this._dragStartY = y;
       this._dragStartH = this._chatHeight;
+      this._dragStartWndY = displayY;
       return true;
+    }
+
+    // OG: TryBeginWhisper — click on whisper icon in chat log
+    if (inDisplay) {
+      const tabOff = this._chatType === CHAT_TYPE_EXPANDED ? TAB_H : 0;
+      const lineIdx = Math.floor((this._chatHeight - (ly - displayY - tabOff)) / LINE_H);
+      // Map display line index (bottom-up) to filtered chatLog index
+      const filtered: number[] = [];
+      for (let i = 0; i < this._chatLog.length; i++) {
+        if (this._isFiltered(this._chatLog[i].lType)) filtered.push(i);
+      }
+      const totalVisible = filtered.length;
+      const scrollRange = Math.max(0, totalVisible - this._chatWndLineVisible + 1);
+      const clampedScroll = Math.min(this._scroll, scrollRange);
+      const bottomIdx = totalVisible - 1 - clampedScroll;
+      const visIdx = bottomIdx - lineIdx;
+
+      if (visIdx >= 0 && visIdx < filtered.length) {
+        const entry = this._chatLog[filtered[visIdx]];
+
+        // OG: TryBeginWhisper — click on character name in whisper types
+        const isWhisperType = (entry.lType === 14 || entry.lType === 15 || entry.lType === 16
+          || entry.lType === 18 || entry.lType === 19 || entry.lType === 20
+          || entry.lType === 21 || entry.lType === 22);
+        if (isWhisperType && entry.bWhisperIcon && entry.isFirstLine) {
+          // Extract character name from whisper text
+          const colonIdx = entry.text.indexOf(':');
+          if (colonIdx > 0) {
+            const charName = entry.text.substring(0, colonIdx).trim();
+            if (charName) {
+              this._addWhisperCandidate(charName);
+              this.setChatTargetByName(charName);
+              this.focus();
+              return true;
+            }
+          }
+        }
+
+        // OG: TryBeginShowItemInfo — hover/click on item link in chat
+        if (entry.itemLinks && entry.itemLinks.length > 0 && this.onItemLink) {
+          const charIdx = Math.floor((lx - TEXT_X) / 7);
+          for (const link of entry.itemLinks) {
+            if (charIdx >= link.start && charIdx < link.end) {
+              this.onItemLink(link.itemId);
+              break;
+            }
+          }
+        }
+      }
     }
 
     // Tab click (OG: filter XOR toggle on m_dwChatFilterFlag)
@@ -1053,6 +1288,7 @@ export class ChatBar extends GamePanel {
           // OG: other tabs toggle via XOR on m_dwChatFilterFlag
           this._dwChatFilterFlag ^= FILTER_FLAGS[tab];
         }
+        this._setFilterButton();
         this._refreshChatLog();
         this.onTabChange?.(tab);
       }
@@ -1065,37 +1301,9 @@ export class ChatBar extends GamePanel {
       return true;
     }
 
-    // Display click → focus + item link detection
+    // Display click → focus
     if (inDisplay) {
       this.focus();
-      // OG: check if click lands on an item link in the display area
-      if (down && this.onItemLink) {
-        const tabOff = this._chatType === CHAT_TYPE_EXPANDED ? TAB_H : 0;
-        const lineIdx = Math.floor((ly - displayY - tabOff - 2) / LINE_H);
-        // Map display line index (bottom-up) to filtered chatLog index
-        const filtered: number[] = [];
-        for (let i = 0; i < this._chatLog.length; i++) {
-          if (this._isFiltered(this._chatLog[i].lType)) filtered.push(i);
-        }
-        const totalVisible = filtered.length;
-        const scrollRange = Math.max(0, totalVisible - this._chatWndLineVisible + 1);
-        const clampedScroll = Math.min(this._scroll, scrollRange);
-        const bottomIdx = totalVisible - 1 - clampedScroll;
-        const visIdx = bottomIdx - lineIdx;
-        if (visIdx >= 0 && visIdx < filtered.length) {
-          const entry = this._chatLog[filtered[visIdx]];
-          if (entry.itemLinks && entry.itemLinks.length > 0) {
-            // Compute char index from click x: text starts at TEXT_X, each char ≈7px
-            const charIdx = Math.floor((lx - TEXT_X) / 7);
-            for (const link of entry.itemLinks) {
-              if (charIdx >= link.start && charIdx < link.end) {
-                this.onItemLink(link.itemId);
-                break;
-              }
-            }
-          }
-        }
-      }
       return true;
     }
 
@@ -1103,39 +1311,23 @@ export class ChatBar extends GamePanel {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // OG: IsFiltered (0x86CD30) — filter visibility check
-  // ═══════════════════════════════════════════════════════════════════════════
-  private _isLineVisible(entry: ChatLogEntry): boolean {
-    // OG: return !dwFilterFlag || (nType >= 12 && nType <= 24) || ((1 << nType) & dwFilterFlag)
-    if (this._dwChatFilterFlag === 0) return true; // no filter — show everything
-    if (entry.lType >= 12 && entry.lType <= 24) return true; // system types always visible
-    return ((1 << entry.lType) & this._dwChatFilterFlag) !== 0;
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
   // Scrollbar (OG SetChatType scrollbar setup)
   // ═══════════════════════════════════════════════════════════════════════════
   private _drawScrollbar(): void {
-    const displayW = this._chatType === CHAT_TYPE_MINIMAL ? DISPLAY_W_502 : DISPLAY_W_577;
     // OG: scrollbar only visible in type 3 (expanded) and when content overflows
-    const showScrollbar = this._chatType === CHAT_TYPE_EXPANDED && this._chatLog.length > this._maxLines;
+    const showScrollbar = this._chatType === CHAT_TYPE_EXPANDED
+      && this._chatLog.length > this._maxLines;
     this._scrollGfx.visible = showScrollbar;
     if (!showScrollbar) return;
 
     this._scrollGfx.clear();
     // OG: x = 565 - m_nScrWidth (type 2/3) or 515 - m_nScrWidth (type 1)
-    const trackX = this._chatType === CHAT_TYPE_MINIMAL
-      ? DISPLAY_X + 515 - this._nScrWidth
-      : DISPLAY_X + 565 - this._nScrWidth;
-    // OG: scrollbar Y = 516 - m_nChatWndHeight (type 3), 517 (type 1), 515-h (type 2)
-    const trackTop = this._chatType === CHAT_TYPE_EXPANDED
-      ? 516 - this._chatHeight + TAB_H
-      : this._chatWndY;
-    // OG: scrollbar height = m_nChatWndHeight - 2 (type 3)
-    const trackH = this._chatType === CHAT_TYPE_EXPANDED
-      ? this._chatHeight - 2 - TAB_H
-      : this._chatHeight;
-    const totalLines = this._chatLog.length;
+    const trackX = DISPLAY_X + 565 - this._nScrWidth;
+    // OG: y = 516 - m_nChatWndHeight (type 3)
+    const trackTop = 516 - this._chatHeight;
+    // OG: height = m_nChatWndHeight - 2 (type 3)
+    const trackH = this._chatHeight - 2;
+    const totalLines = this._getFilteredChatLogCount();
 
     this._scrollGfx.rect(trackX, trackTop, SCROLLBAR_W, trackH).fill({ color: 0x333333, alpha: 0.6 });
 
@@ -1154,7 +1346,7 @@ export class ChatBar extends GamePanel {
   }
 
   scrollBy(delta: number): void {
-    const maxScroll = Math.max(0, this._chatLog.length - this._maxLines);
+    const maxScroll = Math.max(0, this._getFilteredChatLogCount() - this._maxLines);
     this._scroll = Math.max(0, Math.min(maxScroll, this._scroll + delta));
     this._lastScrollTime = performance.now(); // OG: m_dwLastScrolled
     this._syncLines();
@@ -1162,15 +1354,24 @@ export class ChatBar extends GamePanel {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // Update (cursor blink)
+  // Update (cursor blink + float notice)
   // ═══════════════════════════════════════════════════════════════════════════
   update(dt: number): void {
-    if (!this._isFocused) return;
-    this._blinkTimer += dt;
-    if (this._blinkTimer > 0.5) {
-      this._blinkTimer = 0;
-      this._cursorVisible = !this._cursorVisible;
-      this._cursor.visible = this._cursorVisible;
+    // Cursor blink
+    if (this._isFocused) {
+      this._blinkTimer += dt;
+      if (this._blinkTimer > 0.5) {
+        this._blinkTimer = 0;
+        this._cursorVisible = !this._cursorVisible;
+        this._cursor.visible = this._cursorVisible;
+      }
+    }
+    // Float notice timer
+    if (this._floatNoticeTimer > 0) {
+      const elapsed = performance.now() - this._floatNoticeTimer;
+      if (elapsed > this._floatNoticeDuration) {
+        this._hideFloatNotice();
+      }
     }
   }
 
@@ -1213,7 +1414,7 @@ export class ChatBar extends GamePanel {
     this._layerSpace = loadCanvas(bar, 'chatSpace', DISPLAY_X, this._chatWndY);
     this._layerSpace2 = loadCanvas(bar, 'chatSpace2', DISPLAY_X, this._chatWndY);
     this._layerEnter = loadCanvas(bar, 'chatEnter', EDIT_X, EDIT_Y, false);
-    this._layerCover = loadCanvas(bar, 'chatCover', DISPLAY_X + DISPLAY_W_577 - 82, EDIT_Y, false);
+    this._layerCover = loadCanvas(bar, 'chatCover', DISPLAY_X + DISPLAY_W_515 - 82, EDIT_Y, false);
 
     // Combo box WZ sprite (OG: StatusBar2.img/mainBar/chatTarget/base)
     const ctBase = bar.Get('chatTarget') as WzProperty | null;
@@ -1223,11 +1424,12 @@ export class ChatBar extends GamePanel {
 
     // Tab bar filter buttons (OG: StatusBar2.img/chat/Tap/*)
     const chatRoot = ui.GetItem('StatusBar2.img/chat') as WzProperty | null;
-    const filterNames = ['all', 'friend', 'party', 'guild', 'association', 'expedition'];
+    // OG: WZ node names for filter buttons
+    const filterWzNames = ['all', 'friend', 'party', 'guild', 'association', 'expedition'];
     if (chatRoot) {
       for (let i = 0; i < Math.min(TAB_NAMES.length, 6); i++) {
         const tapRoot = chatRoot.Get('Tap') as WzProperty | null;
-        const tapNode = tapRoot?.Get(filterNames[i]);
+        const tapNode = tapRoot?.Get(filterWzNames[i]);
         if (tapNode && typeof (tapNode as any).Get === 'function') {
           const normal = (tapNode as any).Get('normal/0') ?? (tapNode as any).Get('normal');
           if (normal instanceof WzCanvas) {
@@ -1297,6 +1499,7 @@ export class ChatBar extends GamePanel {
     }
 
     // OG: whisper icon sprites (StringPool 6581 → "UI/StatusBar.img/chat/whisper/%d")
+    // Note: OG uses StatusBar.img, not StatusBar2.img for whisper icons
     if (chatRoot) {
       for (let i = 0; i < 4; i++) {
         const node = chatRoot.Get(`whisper/${i}`);
@@ -1304,6 +1507,24 @@ export class ChatBar extends GamePanel {
           const wzSprite = loader.Load(node);
           if (wzSprite) {
             this._whisperIcons[i] = wzSprite;
+          }
+        }
+      }
+      // Also try StatusBar.img path if StatusBar2 didn't have them
+      if (!this._whisperIcons[0]) {
+        const statusBarRoot = ui.GetItem('StatusBar.img');
+        if (statusBarRoot instanceof WzProperty) {
+          const chatNode = statusBarRoot.Get('chat') as WzProperty | null;
+          if (chatNode) {
+            for (let i = 0; i < 4; i++) {
+              const node = chatNode.Get(`whisper/${i}`);
+              if (node instanceof WzCanvas) {
+                const wzSprite = loader.Load(node);
+                if (wzSprite) {
+                  this._whisperIcons[i] = wzSprite;
+                }
+              }
+            }
           }
         }
       }
@@ -1317,6 +1538,24 @@ export class ChatBar extends GamePanel {
           const wzSprite = loader.Load(node);
           if (wzSprite) {
             this._channelDigits[i] = wzSprite;
+          }
+        }
+      }
+      // Also try StatusBar.img path if StatusBar2 didn't have them
+      if (!this._channelDigits[0]) {
+        const statusBarRoot = ui.GetItem('StatusBar.img');
+        if (statusBarRoot instanceof WzProperty) {
+          const chatNode = statusBarRoot.Get('chat') as WzProperty | null;
+          if (chatNode) {
+            for (let i = 0; i <= 9; i++) {
+              const node = chatNode.Get(`digit/${i}`);
+              if (node instanceof WzCanvas) {
+                const wzSprite = loader.Load(node);
+                if (wzSprite) {
+                  this._channelDigits[i] = wzSprite;
+                }
+              }
+            }
           }
         }
       }
@@ -1334,10 +1573,40 @@ export class ChatBar extends GamePanel {
       this._isDraggingScroll = false;
     }
     if (!down && this._draggingResize) {
+      // OG: ChangeChatWndSize — snap to 13px increments, save to Config
+      // Must call BEFORE clearing flag since _changeChatWndSize checks it
+      this._changeChatWndSize(y);
       this._draggingResize = false;
-      this.setChatType(CHAT_TYPE_EXPANDED, this._chatHeight);
     }
   }
+
+  // OG: ChangeChatWndSize (0x87A540) — snap to 13px increments
+  private _changeChatWndSize(ry: number): void {
+    if (!this._draggingResize) return;
+    // OG: compute delta from start, snap to 13px
+    const delta = this._dragStartWndY - ry;
+    const snapDelta = Math.round(delta / 13) * 13;
+    let newH = this._dragStartH + snapDelta;
+    // OG: clamp to 26..489
+    newH = Math.max(26, Math.min(489, newH));
+    // OG: m_nChatWndLineVisible = height / 13
+    this._chatWndLineVisible = Math.floor(newH / 13);
+    // OG: if height % 13 == 0, height += 2
+    if (newH % 13 === 0) newH += 2;
+    this._chatHeight = newH;
+    // OG: m_ptChatWnd.y = 515 - m_nChatWndHeight
+    this._chatWndY = 515 - this._chatHeight;
+    this._maxLines = this._chatWndLineVisible;
+    this._applyLayout();
+    this._updateWzVisibility();
+    this._setFilterButton();
+    this._syncLines();
+    // OG: *((_DWORD *)TSingleton<CConfig>::ms_pInstance._m_pStr + 24) = m_nChatWndHeight
+    this._onResize?.(this._chatHeight);
+  }
+
+  // Callback for saving chat window height to config
+  _onResize: ((height: number) => void) | null = null;
 
   // OG: OnMouseMove (226 lines) — scrollbar drag, resize drag, tap bar hover
   onMouseMove(x: number, y: number): void {
@@ -1345,14 +1614,9 @@ export class ChatBar extends GamePanel {
     const ly = y - this._root.y;
 
     if (this._isDraggingScroll) {
-      const displayW = this._chatType === CHAT_TYPE_MINIMAL ? DISPLAY_W_502 : DISPLAY_W_577;
-      const trackTop = this._chatType === CHAT_TYPE_EXPANDED
-        ? 516 - this._chatHeight + TAB_H
-        : this._chatWndY;
-      const trackH = this._chatType === CHAT_TYPE_EXPANDED
-        ? this._chatHeight - 2 - TAB_H
-        : this._chatHeight;
-      const totalLines = this._chatLog.length;
+      const trackTop = 516 - this._chatHeight + TAB_H;
+      const trackH = this._chatHeight - 2 - TAB_H;
+      const totalLines = this._getFilteredChatLogCount();
       const thumbH = Math.max(12, Math.floor(trackH * this._maxLines / Math.max(1, totalLines)));
       const span = trackH - thumbH;
 
@@ -1369,17 +1633,299 @@ export class ChatBar extends GamePanel {
     }
 
     if (this._draggingResize) {
-      const delta = y - this._dragStartY;
-      const newH = Math.max(26, Math.min(463, this._dragStartH - delta));
-      this.setChatType(CHAT_TYPE_EXPANDED, newH);
+      // OG: ChangeChatWndSize — snap to 13px increments
+      const delta = this._dragStartWndY - y;
+      const snapDelta = Math.round(delta / 13) * 13;
+      let newH = this._dragStartH + snapDelta;
+      newH = Math.max(26, Math.min(489, newH));
+      this._chatWndLineVisible = Math.floor(newH / 13);
+      if (newH % 13 === 0) newH += 2;
+      this._chatHeight = newH;
+      this._chatWndY = 515 - this._chatHeight;
+      this._maxLines = this._chatWndLineVisible;
+      this._applyLayout();
+      this._updateWzVisibility();
+      this._setFilterButton();
+      this._syncLines();
       return;
     }
 
     // Tap bar hover highlight (OG: tapBarOver layer)
     if (this._chatType === CHAT_TYPE_EXPANDED && this._layerTapBarOver) {
-      const inTapBar = lx >= DISPLAY_X && lx < DISPLAY_X + DISPLAY_W_577
+      const inTapBar = lx >= DISPLAY_X && lx < DISPLAY_X + DISPLAY_W_515
         && ly >= this._chatWndY - 2 && ly < this._chatWndY - 2 + 4;
       this._layerTapBarOver.visible = inTapBar;
     }
+
+    // OG: TryBeginShowItemInfo — hover over item link in chat display
+    if (this._chatType !== CHAT_TYPE_NONE) {
+      const displayY = this._chatWndY;
+      const tabOffset = this._chatType === CHAT_TYPE_EXPANDED ? TAB_H : 0;
+      const inDisplay = lx >= DISPLAY_X && lx < DISPLAY_X + DISPLAY_W_515
+        && ly >= displayY + tabOffset && ly < displayY + this._chatHeight;
+      if (inDisplay) {
+        const lineIdx = Math.floor((this._chatHeight - (ly - displayY - tabOffset)) / LINE_H);
+        const filtered: number[] = [];
+        for (let i = 0; i < this._chatLog.length; i++) {
+          if (this._isFiltered(this._chatLog[i].lType)) filtered.push(i);
+        }
+        const totalVisible = filtered.length;
+        const scrollRange = Math.max(0, totalVisible - this._chatWndLineVisible + 1);
+        const clampedScroll = Math.min(this._scroll, scrollRange);
+        const bottomIdx = totalVisible - 1 - clampedScroll;
+        const visIdx = bottomIdx - lineIdx;
+        if (visIdx >= 0 && visIdx < filtered.length) {
+          const entry = this._chatLog[filtered[visIdx]];
+          if (entry.itemLinks && entry.itemLinks.length > 0 && this.onItemInfo) {
+            const charIdx = Math.floor((lx - TEXT_X) / 7);
+            for (const link of entry.itemLinks) {
+              if (charIdx >= link.start && charIdx < link.end) {
+                this.onItemInfo(link.itemId, x, y);
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OG: FloatNotice (0x86D430) — floating notice text
+  // ═══════════════════════════════════════════════════════════════════════════
+  private _floatNoticeText: Text | null = null;
+  private _floatNoticeTimer = 0;
+  private _floatNoticeDuration = 0;
+
+  floatNotice(text: string, duration = 5000): void {
+    // OG: CFloatNotice::CreateFloatNotice — show floating text above chat
+    if (!text) {
+      this._hideFloatNotice();
+      return;
+    }
+    this._floatNoticeDuration = duration;
+    this._floatNoticeTimer = performance.now();
+
+    if (!this._floatNoticeText) {
+      this._floatNoticeText = new Text({
+        text,
+        style: new TextStyle({ fill: '#FFD700', fontSize: 12, fontFamily: 'monospace', fontWeight: 'bold' })
+      });
+      this._floatNoticeText.anchor.set(0.5, 1);
+      this._root.addChild(this._floatNoticeText);
+    } else {
+      this._floatNoticeText.text = text;
+    }
+    // Position above chat bar
+    this._floatNoticeText.x = DISPLAY_X + DISPLAY_W_515 / 2;
+    this._floatNoticeText.y = this._chatWndY - 4;
+    this._floatNoticeText.visible = true;
+  }
+
+  private _hideFloatNotice(): void {
+    if (this._floatNoticeText) this._floatNoticeText.visible = false;
+    this._floatNoticeTimer = 0;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OG: ProcessToolTip (0x873140) — show tooltip on hover over EXP gauge
+  // ═══════════════════════════════════════════════════════════════════════════
+  onProcessToolTip: ((rx: number, ry: number) => void) | null = null;
+
+  processToolTip(rx: number, ry: number): void {
+    // OG: checks cursor color == -1 (transparent) and m_nToolTipType <= 1
+    // Then shows EXP tooltip with format from StringPool 0x1A37
+    this.onProcessToolTip?.(rx, ry);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OG: OnChildNotify (0x8804A0) — handle child control notifications
+  // ═══════════════════════════════════════════════════════════════════════════
+  onChildNotify(nId: number, param1: number, param2: number): void {
+    if (nId === SCROLLBAR_ID) {
+      // OG: nId=1010, param1>=0x12C && param1<=0x130 → ChatLogDraw + m_dwLastScrolled
+      if (param1 >= 0x12C && param1 <= 0x130) {
+        this._syncLines();
+        this._drawScrollbar();
+        this._lastScrollTime = performance.now();
+      }
+    } else if (nId === COMBO_ID) {
+      // OG: nId=1012, param1==600 → SetChatTarget(param2)
+      if (param1 === 600) {
+        this.setChatTarget(param2);
+      }
+    }
+    // OG: nId 2000-2003 with param1==100 → SetButtonBlink + OnButtonClicked
+    if (nId >= 2000 && nId <= 2003 && param1 === 100) {
+      this._setButtonBlink(nId - 2000, false);
+      this._onButtonClicked(nId);
+    }
+    // OG: param1==100 → OnButtonClicked
+    if (param1 === 100 && (nId < 2000 || nId > 2003)) {
+      this._onButtonClicked(nId);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OG: OnButtonClicked (0x880540) — button click dispatcher
+  // ═══════════════════════════════════════════════════════════════════════════
+  onButtonClicked: ((nId: number) => void) | null = null;
+
+  private _onButtonClicked(nId: number): void {
+    // OG: dispatches to CWvsContext::UI_Toggle, SendMigrateTo*, etc.
+    this.onButtonClicked?.(nId);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OG: SetButtonBlink (0x86CEC0) — button blink animation
+  // ═══════════════════════════════════════════════════════════════════════════
+  private _buttonBlinkStates = [false, false, false, false];
+
+  private _setButtonBlink(index: number, blink: boolean): void {
+    if (index >= 0 && index < 4) {
+      this._buttonBlinkStates[index] = blink;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OG: EnableButtons (0x86CF10) — enable/disable buttons based on game state
+  // ═══════════════════════════════════════════════════════════════════════════
+  onEnableButtons: ((enabled: boolean) => void) | null = null;
+
+  enableButtons(enabled: boolean): void {
+    // OG: enables/disables Cash Shop, ITC, etc. based on field state
+    // Delegated to GameStage via callback
+    this.onEnableButtons?.(enabled);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OG: ToggleMaxMinButton (0x86CEC0) — toggle min/max button visibility
+  // ═══════════════════════════════════════════════════════════════════════════
+  onToggleMaxMin: ((showMax: boolean) => void) | null = null;
+
+  private _toggleMaxMinButton(): void {
+    // OG: type 1 (minimal) → show minimize button, hide maximize
+    // OG: type 3 (expanded) → show both
+    const showMax = this._chatType === CHAT_TYPE_EXPANDED;
+    this.onToggleMaxMin?.(showMax);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OG: ToggleQuickSlot — toggle quick slot panel visibility
+  // ═══════════════════════════════════════════════════════════════════════════
+  onToggleQuickSlot: (() => void) | null = null;
+
+  private _toggleQuickSlot(): void {
+    this.onToggleQuickSlot?.();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OG: SendClaim (0x877970) — send claim to server
+  // ═══════════════════════════════════════════════════════════════════════════
+  onSendClaim: (() => void) | null = null;
+
+  private _sendClaim(): void {
+    this.onSendClaim?.();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OG: TryShowMemoListDlg (0x8779F0) — show memo list on right-click
+  // ═══════════════════════════════════════════════════════════════════════════
+  onShowMemoList: (() => void) | null = null;
+
+  private _tryShowMemoListDlg(): void {
+    this.onShowMemoList?.();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OG: TryUseTempExp (0x870AA0) — use temporary EXP on right-click
+  // ═══════════════════════════════════════════════════════════════════════════
+  onUseTempExp: (() => void) | null = null;
+
+  private _tryUseTempExp(): void {
+    this.onUseTempExp?.();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OG: SetWhisperTargetFromCandidate (0x532150) — navigate candidate list
+  // ═══════════════════════════════════════════════════════════════════════════
+  setWhisperTargetFromCandidate(index: number): void {
+    if (index >= 0 && index < this._whisperCandidate.length) {
+      const name = this._whisperCandidate[index];
+      this.setChatTargetByName(name);
+    }
+  }
+
+  // OG: getWhisperCandidateList — public accessor
+  getWhisperCandidateList(): readonly string[] {
+    return this._whisperCandidate;
+  }
+  onChangeWhisperTarget: ((name: string) => void) | null = null;
+
+  private _changeWhisperTarget(name: string): void {
+    this._whisperTarget = name;
+    this.onChangeWhisperTarget?.(name);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OG: ChangeGroupWhisperTarget (0x87F120) — group whisper dialog
+  // ═══════════════════════════════════════════════════════════════════════════
+  onChangeGroupWhisperTarget: (() => void) | null = null;
+
+  changeGroupWhisperTarget(): void {
+    this.onChangeGroupWhisperTarget?.();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OG: GetWhisperTarget (0x4D97C0) — get current whisper target
+  // ═══════════════════════════════════════════════════════════════════════════
+  getWhisperTarget(): string {
+    return this._whisperTarget;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OG: SetWhisperTarget (0x871830) — set whisper target from external
+  // ═══════════════════════════════════════════════════════════════════════════
+  setWhisperTarget(name: string): void {
+    this._changeWhisperTarget(name);
+    this._addWhisperCandidate(name);
+    this._nChatTarget = 7;
+    this.onChatTargetChange?.('whisper');
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OG: GetFilteredChatLogCount — public accessor
+  // ═══════════════════════════════════════════════════════════════════════════
+  getFilteredChatLogCount(): number {
+    return this._getFilteredChatLogCount();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OG: ConvertWhisperToNormal (0x8771C0) — convert whisper format
+  // ═══════════════════════════════════════════════════════════════════════════
+  convertWhisperToNormal(text: string): string {
+    // OG: strips whisper formatting — handles "Name : msg", "Name:msg", channel prefix
+    // OG: also handles "ChannelName> Name : msg" format
+    let s = text.trim();
+    // OG: strip channel prefix if present (e.g. "Scania> Name : msg")
+    const channelArrowIdx = s.indexOf('> ');
+    if (channelArrowIdx >= 0 && channelArrowIdx < 20) {
+      s = s.substring(channelArrowIdx + 2);
+    }
+    // OG: find first ':' and strip everything before it + the colon + leading spaces
+    const colonIdx = s.indexOf(':');
+    if (colonIdx > 0) {
+      s = s.substring(colonIdx + 1);
+      // OG: skip leading spaces after colon
+      while (s.length > 0 && s[0] === ' ') s = s.substring(1);
+    }
+    return s;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OG: GetChatLog — get chat log array
+  // ═══════════════════════════════════════════════════════════════════════════
+  getChatLog(): readonly ChatLogEntry[] {
+    return this._chatLog;
   }
 }

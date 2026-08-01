@@ -1,0 +1,39 @@
+﻿CUICharDetailVAC *__thiscall CUICharDetailVAC::CUICharDetailVAC(CUICharDetailVAC *this, CLogin *pLogin, int nIdx)
+{
+  CLogin::RANK *v4; // eax
+  BOOL v5; // eax
+
+  CFadeWnd::CFadeWnd(this); /*0x5e1469*/
+  if ( this == (CUICharDetailVAC *)-244 ) /*0x5e147e*/
+    TSingleton<CUICharDetailVAC>::ms_pInstance = nullptr; /*0x5e148d*/
+  else
+    TSingleton<CUICharDetailVAC>::ms_pInstance = this; /*0x5e1486*/
+  this->CFadeWnd::CDialog::CWnd::IGObj::__vftable = (CUICharDetailVAC_vtbl *)&CUICharDetailVAC::`vftable'{for `IGObj'}; /*0x5e1497*/
+  this->CFadeWnd::CDialog::CWnd::IUIMsgHandler::__vftable = (IUIMsgHandler_vtbl *)&CUICharDetailVAC::`vftable'{for `IUIMsgHandler'}; /*0x5e149d*/
+  this->CFadeWnd::CDialog::CWnd::ZRefCounted::__vftable = (ZRefCounted_vtbl *)&CUICharDetailVAC::`vftable'{for `ZRefCounted'}; /*0x5e14a4*/
+  this->m_pLayerAni.m_pInterface = nullptr; /*0x5e14ab*/
+  `eh vector constructor iterator'( /*0x5e14cf*/
+    this->m_pLayerIcon,
+    4u,
+    2,
+    (void (__thiscall *)(void *))_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>,
+    (void (__thiscall *)(void *))_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::~_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>);
+  this->m_nIdx = nIdx; /*0x5e14dc*/
+  this->m_pLogin = pLogin; /*0x5e14e5*/
+  v4 = &pLogin->m_aRankVAC.a[nIdx]; /*0x5e14e7*/
+  v5 = v4->nWorldRank && v4->nJobRank; /*0x5e14fd*/
+  this->m_bRankInfo = v5; /*0x5e1512*/
+  CFadeWnd::SetOption( /*0x5e152d*/
+    this,
+    0,
+    255,
+    0,
+    (tagPOINT)0xFFFFFD3A00000094uLL,
+    (tagPOINT)0xFFFFFD3A00000094uLL,
+    (tagPOINT)0xFFFFFD3A00000094uLL,
+    80,
+    0,
+    80);
+  CFadeWnd::CreateFadeWnd(this, 170, 210, nullptr, 11, 0, nullptr, 0, Origin_LT); /*0x5e154a*/
+  return this; /*0x5e1551*/
+}

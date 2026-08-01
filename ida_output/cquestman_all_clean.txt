@@ -1,0 +1,318 @@
+CQuestMan — Full IDA Audit (48 methods, 844-byte struct)
+═══════════════════════════════════════════════════════════
+
+STRUCT LAYOUT (v95_symbols.txt lines 16965-17024):
+  CQuestMan (844 bytes)
+  +0000  __vftable
+  +0004  TSingleton<CQuestMan>
+  +0004  ZMap<string, ushort[]> m_mSeriesQuest
+  +001C  ZMap<ushort, string> m_mSeriesQuestName
+  +0034  ZMap<ushort, string> m_mQuestName
+  +004C  ZMap<ushort, int> m_mBlockedQuest
+  +0064  int m_nWorldID
+  +0068  ZMap<ushort, ZRef<QuestDemand>> m_mStartDemand
+  +0080  ZMap<ushort, ZRef<QuestDemand>> m_mCompleteDemand
+  +0098  ushort[] m_aDisallowedDelivery
+  +009C  string[] m_asQuestCategoryName
+  +00A0  ushort[] m_aQuest
+  +00A4  ZMap<ulong, ushort[]> m_mNpcQuest
+  +00BC  ZMap<long, ushort[]> m_mItemQuest
+  +00D4  ZMap<long, ushort[]> m_mItemQuestDemand
+  +00EC  ushort[] m_aMesoQuest
+  +00F0  ushort[] m_aLevelQuest
+  +00F4  ZMap<ushort, string> m_mPartyQuestIconPath
+  +010C  ZMap<ushort, long> m_mQuestSortKey
+  +0124  ZMap<string, ushort> m_mShowLayerTag
+  +013C  ZMap<ushort, string> m_mShowEffect
+  +0154  MODQUESTTIME[] m_aModifiedQuestTime
+  +0158  ZMap<ushort, ushort[]> m_mExclusive
+  +0170  ZMap<ushort, int> m_mAutoStartQuest
+  +0188  ZMap<ushort, int> m_mAutoAcceptQuest
+  +01A0  ZMap<ushort, int> m_mAutoCompleteQuest
+  +01B8  ZMap<ushort, int> m_mAutoCancelQuest
+  +01D0  ZMap<ushort, int> m_mOneShotQuest
+  +01E8  ZMap<ushort, long> m_mQuestTimeLimit
+  +0200  ZMap<ushort, long> m_mQuestTimeLimit2
+  +0218  ZMap<ushort, long> m_mQuestDailyPlay
+  +0230  ZMap<long, ushort[]> m_mEquipOnAutoQuestStart
+  +0248  ZMap<ulong, ushort[]> m_mFieldOnAutoQuestStart
+  +0260  ZMap<long, int> m_mIsEquipAutoQuestStart
+  +0278  ZMap<ulong, int> m_mIsFieldAutoQuestStart
+  +0290  ushort[] m_aNormalAutoStartQuest
+  +0294  ZList<ushort> m_lAutoCompletionAlertQuest
+  +02A8  ZList<ushort> m_lTimeKeepQuest
+  +02BC  ZMap<ushort, long> m_mQuestCategory
+  +02D4  ZList<ushort> m_lRecentlyUpdatedQuest
+  +02E8  ushort m_usRecentlyViewdQuest
+  +02EC  ZMap<ushort, Rank[]> m_mRankInfo
+  +0304  ZMap<ushort, long> m_mQuestExpByLevel
+  +031C  ZMap<ushort, long> m_mQuestPerformByDay
+  +0334  ZMap<ushort, RankString> m_mRankStringInfo
+
+  Rank (12 bytes):
+    +0000 int nMinLevel
+    +0004 int nMaxLevel
+    +0008 ZArray<GradeEntity> aGradeEntity
+
+  RankString (24 bytes):
+    +0000 string sS
+    +0004 string sA
+    +0008 string sB
+    +000C string sC
+    +0010 string sD
+    +0014 string sF
+
+═══════════════════════════════════════════════════════════
+METHOD DECOMPILATIONS
+═══════════════════════════════════════════════════════════
+
+--- CONSTRUCTOR/DESTRUCTOR ---
+
+CQuestMan::CQuestMan(void) [0x6bac30]
+  Initializes TSingleton, sets vftable, initializes all ZMap members
+  with default table size 31 and auto-grow 0x64.
+  Sets m_nWorldID = 0.
+
+CQuestMan::~CQuestMan(void) [0x6bb040]
+  Cleanup — destroys all ZMap/ZArray members.
+
+--- LOADING ---
+
+CQuestMan::LoadQuestInfo(void) [0x6bec10]
+  Loads QuestInfo.img + Check.img from Quest.wz.
+  Parses series quests, quest names, auto-start/complete flags,
+  time limits, exclusive groups, party quest icons, show effects.
+  StringPool IDs: 0x1649=name, 0x1492=desc, 0xCC1=viewMedalItem.
+  Also reads: autoComplete, dailyPlayTime, timeLimit2 from Check.img.
+
+CQuestMan::LoadDemand(void) [0x6c3d60]
+  Loads Check.img demands into m_mStartDemand and m_mCompleteDemand.
+  Each demand includes: NPC, level range, items, mobs, skills,
+  quests, jobs, morph, buff, date ranges, day-of-week mask,
+  infoex, startScript, endScript, timeKeepInfo.
+
+CQuestMan::LoadExclusive(void) [0x6b9670]
+  Loads exclusive quest groups from Exclusive.img.
+  Populates m_mExclusive map.
+
+CQuestMan::LoadQuestExpByLevelInfo(void) [0x6b9d50]
+  Loads quest exp-by-level data into m_mQuestExpByLevel.
+
+CQuestMan::LoadQuestPerformByDayInfo(void) [0x6ba0f0]
+  Loads quest perform-by-day data into m_mQuestPerformByDay.
+
+CQuestMan::LoadPartyQuestInfo(void) [0x6c5540]
+  Loads party quest info including icon paths.
+
+CQuestMan::LoadPartyQuestRank(ushort, IWzProperty) [0x6c4720]
+  Loads party quest rank data for a specific quest.
+
+CQuestMan::LoadPartyQuestRankString(ushort, IWzProperty) [0x6bddc0]
+  Loads party quest rank strings (S/A/B/C/D/F grades).
+
+--- PACKET DECODE ---
+
+CQuestMan::DecodeDisallowedDeliveryList(CInPacket &) [0x6b86d0]
+  Decodes disallowed delivery quest list from server packet.
+  Format: count (4 bytes), then count × questId (4 bytes each).
+
+CQuestMan::RegisterDemand(ushort, IWzProperty) [0x6c0020]
+  Registers a single demand from WZ property into appropriate map.
+
+CQuestMan::RegisterDemandItem(ushort, long, long, long) [0x6b8b70]
+  Registers a demand item entry.
+
+--- QUERY METHODS ---
+
+CQuestMan::GetQuestCategory(ushort) [0x6b68c0]
+  Returns quest category from m_mQuestCategory map.
+  Falls back to 0 if not found.
+
+CQuestMan::GetQuestCategoryName(long) [0x6b9320]
+  Returns category name string by index from m_asQuestCategoryName.
+
+CQuestMan::GetQuestName(ushort) [0x523e80]
+  Returns quest name from m_mQuestName map.
+  Falls back to empty string.
+
+CQuestMan::GetQuestArray(void) [0x6417e0]
+  Returns copy of m_aQuest (all quest IDs).
+
+CQuestMan::GetQuestByNpc(ulong, ZArray<ushort> &) [0x6b7870]
+  Returns quests for given NPC from m_mNpcQuest.
+
+CQuestMan::GetQuestByItem(long, ZArray<ushort> &) [0x6b78a0]
+  Returns quests requiring item from m_mItemQuest.
+
+CQuestMan::GetQuestByItemDemand(long, ZArray<ushort> &) [0x6b78d0]
+  Returns quests with item demand from m_mItemQuestDemand.
+
+CQuestMan::GetQuestByMeso(ZArray<ushort> &) [0x6b7900]
+  Returns meso quests from m_aMesoQuest.
+
+CQuestMan::GetQuestByLevel(ZArray<ushort> &) [0x6b7940]
+  Returns level quests from m_aLevelQuest.
+
+CQuestMan::GetExpRateByLevel(ushort, long &) [0x6b5940]
+  Returns exp rate for quest from m_mQuestExpByLevel.
+
+CQuestMan::GetQuestTimeLimit(ushort) [0x6b5920]
+  Returns time limit from m_mQuestTimeLimit.
+
+CQuestMan::GetQuestTimeLimit2(ushort) [0x6b68e0]
+  Returns time limit 2 from m_mQuestTimeLimit2.
+
+CQuestMan::GetQuestDailyPlayMinTime(ushort) [0x6b6900]
+  Returns daily play min time from m_mQuestDailyPlay.
+
+CQuestMan::GetQuestDisplayMedal(ushort) [0x6bb400]
+  Complex WZ lookup: QuestInfo.img → quest node → viewMedalItem.
+  Returns item ID for quest display medal.
+
+CQuestMan::GetRecentlyUpdatedQuest(void) [0x6b4db0]
+  Returns head of m_lRecentlyUpdatedQuest list, or 0.
+
+CQuestMan::GetSeriesQuest(ZXString<char>) [0x7e2eb0]
+  Returns quest array for series from m_mSeriesQuest.
+
+CQuestMan::GetSeriesQuestName(ushort) [0x9f79e0]
+  Returns series name from m_mSeriesQuestName.
+
+CQuestMan::GetPartyQuestIconPath(ushort) [0x5297c0]
+  Returns party quest icon path from m_mPartyQuestIconPath.
+  Falls back to empty string.
+
+CQuestMan::GetPartyQuestRankCount(ZXString<char> &, CharacterData const &) [0x6b8d20]
+  Counts party quest rank occurrences for quests 1200-1499.
+
+CQuestMan::GetPartyQuestRankString(ushort, ZXString<char>) [0x6b93a0]
+  Returns rank string (S/A/B/C/D/F) from m_mRankStringInfo.
+
+--- DEMAND ACCESS ---
+
+CQuestMan::GetStartDemand(ushort) [0x670b50]
+  Returns QuestDemand* from m_mStartDemand, or nullptr.
+
+CQuestMan::GetCompleteDemand(ushort) [0x66da10]
+  Returns QuestDemand* from m_mCompleteDemand, or nullptr.
+
+CQuestMan::GetTimeKeepInfo(ushort) [0x6b8740]
+  Returns ZRef<TimeKeepInfo> from complete demand's pTimeKeepInfo.
+
+CQuestMan::GetKeepTime(ushort) [0x6b8c80]
+  Returns tKeepTime from TimeKeepInfo, or 0.
+
+CQuestMan::GetCompletedQuestCnt(CharacterData const &, int) [0x6b7c90]
+  Counts completed quests in CharacterData, excluding event
+  quests (ID 9000-9999) and medal quests (category 51) when
+  bExcludeEvent is set.
+
+CQuestMan::GetNormalAutoStartQuest(void) [0x9d83c0]
+  Returns copy of m_aNormalAutoStartQuest.
+
+--- VALIDATION ---
+
+CQuestMan::CheckStartDemand(ushort, ulong, CharacterData const &, SecondaryStat const &, long, long, int, long) [0x6bb6e0]
+  Complex validation of quest start requirements:
+  - Checks m_mBlockedQuest
+  - Validates NPC requirement
+  - Validates level range (LvMin/LvMax vs m_nWorldID)
+  - Validates job requirements
+  - Validates item requirements (checks inventory)
+  - Validates meso requirements
+  - Validates mob kill requirements
+  - Validates skill requirements
+  - Validates morph requirements
+  - Validates buff requirements
+  - Validates date ranges
+  - Validates day-of-week mask
+  - Validates quest prerequisites
+  - Validates taming mob level
+  - Validates field ID
+  - Validates premium user flag
+  - Validates level threshold
+  Returns 0 on success, error code on failure.
+
+CQuestMan::CheckCompleteDemand(ushort, ulong, CharacterData const &, SecondaryStat const &) [0x6bc3d0]
+  Complex validation of quest completion requirements:
+  - Validates NPC requirement
+  - Validates item return requirements
+  - Validates mob kill counts
+  - Validates skill level requirements
+  - Validates quest record state
+  - Validates infoex requirements
+  - Validates monster book card requirements
+  Returns 0 on success, error code on failure.
+
+CQuestMan::CheckExclusive(ushort, CharacterData const &) [0x6b9cc0]
+  Checks if quest conflicts with exclusive quest groups.
+  Returns 1 if exclusive (blocked), 0 if not.
+
+--- BOOLEAN CHECKS ---
+
+CQuestMan::IsAutoStartQuest(ushort) [0x6b5800]
+  Checks m_mAutoStartQuest map.
+
+CQuestMan::IsAutoAutoAcceptQuest(ushort) [0x6b5820]
+  Checks m_mAutoAcceptQuest map.
+
+CQuestMan::IsAutoCompleteQuest(ushort) [0x6b5840]
+  Checks m_mAutoCompleteQuest map.
+
+CQuestMan::IsAutoCompletionAlertQuest(ushort) [0x6b6870]
+  Checks m_lAutoCompletionAlertQuest list.
+
+CQuestMan::IsAutoAlertQuest(ushort) [0x6b6890]
+  Returns IsAutoStartQuest || IsAutoCompletionAlertQuest.
+
+CQuestMan::IsTimeLimitQuest(ushort) [0x6b5860]
+  Checks m_mQuestTimeLimit map.
+
+CQuestMan::IsTimeLimitQuest2(ushort) [0x6b5880]
+  Checks m_mQuestTimeLimit2 map.
+
+CQuestMan::IsDailyPlayQuest(ushort) [0x6b58a0]
+  Returns IsTimeLimitQuest2 && m_mQuestDailyPlay has entry.
+
+CQuestMan::IsDisallowedDeliveryQuest(ushort) [0x6b58e0]
+  Linear scan of m_aDisallowedDelivery array.
+
+CQuestMan::IsPartyQuest(ushort) [0x50abd0]
+  Returns (usQuestID - 1200) <= 0xC7 — range check only.
+
+CQuestMan::IsMedalQuest(ushort) [0x522c20]
+  Returns GetQuestCategory == 51.
+
+CQuestMan::IsStartScriptLinkedQuest(ushort) [0x6b79b0]
+  Checks if start demand has non-empty sStartScript.
+
+CQuestMan::IsCompleteScriptLinkedQuest(ushort) [0x6b7a70]
+  Checks if complete demand has non-empty sEndScript.
+
+CQuestMan::IsDeliveryAcceptQuest(ushort) [0x6b7b30]
+  Returns true if quest can be delivered for acceptance:
+  - Not script-linked
+  - Not party quest (1200-1500)
+  - Not auto-accept
+  - Not equip/field auto-start
+  - Not quest 10394
+  - Not auto-alert
+  - Not time-limited
+  - Not disallowed
+  - Has NPC != 0 && != 1013000
+
+CQuestMan::IsDeliveryCompleteQuest(ushort) [0x6b7be0]
+  Returns true if quest can be delivered for completion:
+  - Not script-linked
+  - Not party quest
+  - Not auto-alert
+  - Not time-limited
+  - Not disallowed
+  - Has complete NPC != 0 && != 1013000
+  - Has repeatInterval >= 0x5A0 OR has item/mob demands
+
+CQuestMan::IsEquipOnAutoStartQuest(long) [0x6b57b0]
+  Checks m_mIsEquipAutoQuestStart map.
+
+CQuestMan::IsFieldOnAutoStartQuest(long) [0x6b57d0]
+  Checks m_mIsFieldAutoQuestStart map.

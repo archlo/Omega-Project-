@@ -1,0 +1,12 @@
+[
+  {
+    "query": "0x59f140",
+    "matches": [
+      {
+        "address": "0x59f140",
+        "name": "CItemInfo::GetItemTypeName",
+        "pseudocode": "{\"addr\":\"0x59f140\",\"code\":\"ZXString<char> *__thiscall CItemInfo::GetItemTypeName(CItemInfo *this, ZXString<char> *result, int nItemID)\\n{\\n  StringPool *Instance; // eax\\n  ZXString<char> *v4; // eax\\n  unsigned int v5; // [esp-8h] [ebp-Ch]\\n\\n  switch ( nItemID / 1000000 ) /*0x59f166*/\\n  {\\n    case 1: /*0x59f166*/\\n      v5 = 10; /*0x59f16d*/\\n      goto LABEL_3; /*0x59f16d*/\\n    case 2: /*0x59f166*/\\n      v5 = 6791; /*0x59f187*/\\n      goto LABEL_3; /*0x59f18c*/\\n    case 3: /*0x59f166*/\\n      v5 = 11; /*0x59f18e*/\\n      goto LABEL_3; /*0x59f190*/\\n    case 4: /*0x59f166*/\\n      v5 = 6712; /*0x59f192*/\\n      goto LABEL_3; /*0x59f197*/\\n    case 5: /*0x59f166*/\\n      v5 = 6700; /*0x59f199*/\\nLABEL_3:\\n      Instance = StringPool::GetInstance(); /*0x59f16f*/\\n      StringPool::GetString(Instance, result, v5); /*0x59f17b*/\\n      v4 = result; /*0x59f180*/\\n      break; /*0x59f184*/\\n    default:\\n      result->_m_pStr = nullptr; /*0x59f1aa*/\\n      qmemcpy(ZXString<char>::GetBuffer(result, 10, 0), \\\"Erroe Type\\\", 10); /*0x59f1bb*/\\n      ZXString<char>::ReleaseBuffer(result, 10); /*0x59f1d5*/\\n      v4 = result; /*0x59f1da*/\\n      break; /*0x59f1da*/\\n  }\\n  return v4; /*0x59f184*/\\n}\",\"refs\":[{\"addr\":\"0x7466a0\",\"name\":\"?GetInstance@StringPool@@SAAAV1@XZ\"},{\"addr\":\"0x403b30\",\"name\":\"?GetString@StringPool@@QAE?AV?$ZXString@D@@I@Z\"},{\"addr\":\"0x42c880\",\"name\":\"?GetBuffer@?$ZXString@D@@QAEPADHH@Z\"},{\"addr\":\"0x42a080\",\"name\":\"?ReleaseBuffer@?$ZXString@D@@QAEXH@Z\"}]}"
+      }
+    ]
+  }
+]

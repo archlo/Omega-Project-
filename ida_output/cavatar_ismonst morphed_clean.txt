@@ -1,0 +1,3 @@
+﻿=== 0x45ef90 ===
+{"addr":"0x45ef90","code":"BOOL __thiscall CAvatar::IsMonsterMorphed(CAvatar *this)\n{\n  return this->m_dwMorphTemplateID /*0x45efd5*/\n      && !CMorphTemplate::IsSuperMan(this->m_dwMorphTemplateID)\n      && !CMorphTemplate::IsHideMorphed(this->m_dwMorphTemplateID)\n      && !CMorphTemplate::IsAttackableMorphed(this->m_dwMorphTemplateID);\n}","refs":[{"addr":"0x6650e0","name":"?IsSuperMan@CMorphTemplate@@SAHK@Z"},{"addr":"0x665180","name":"?IsHideMorphed@CMorphTemplate@@SAHK@Z"},{"addr":"0x665220","name":"?IsAttackableMorphed@CMorphTemplate@@SAHK@Z"}]}
+

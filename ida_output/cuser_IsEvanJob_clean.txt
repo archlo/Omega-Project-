@@ -1,0 +1,9 @@
+// cuser::IsEvanJob
+
+BOOL __thiscall CUser::IsEvanJob(CUser *this)
+{
+  int v1; // ecx
+
+  v1 = (*(int (__thiscall **)(char *))(*((_DWORD *)this - 34) + 64))((char *)this - 136); /*0x4bc011*/
+  return v1 / 100 == 22 || v1 == 2001; /*0x4bc033*/
+}

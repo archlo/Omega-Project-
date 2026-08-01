@@ -1,0 +1,348 @@
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "[{\"addr\":\"0x898f70\",\"callees\":[{\"addr\":\"0x5ab1e0\",\"name\":\"?IsOnlyItem@CItemInfo@@QAEHJ@Z\",\"type\":\"internal\"},{\"addr\":\"0x7466a0\",\"name\":\"?GetInstance@StringPool@@SAAAV1@XZ\",\"type\":\"internal\"},{\"addr\":\"0x403b30\",\"name\":\"?GetString@StringPool@@QAE?AV?$ZXString@D@@I@Z\",\"type\":\"internal\"},{\"addr\":\"0x42d1c0\",\"name\":\"??4?$ZXString@D@@QAEAAV0@ABV0@@Z\",\"type\":\"internal\"},{\"addr\":\"0x403460\",\"name\":\"?_Release@?$ZXString@D@@KAXPAU_ZXStringData@1@@Z\",\"type\":\"internal\"},{\"addr\":\"0x5abaa0\",\"name\":\"?IsQuestItem@CItemInfo@@QAEHJ@Z\",\"type\":\"internal\"},{\"addr\":\"0x42c880\",\"name\":\"?GetBuffer@?$ZXString@D@@QAEPADHH@Z\",\"type\":\"internal\"},{\"addr\":\"0x42a080\",\"name\":\"?ReleaseBuffer@?$ZXString@D@@QAEXH@Z\",\"type\":\"internal\"},{\"addr\":\"0x488700\",\"name\":\"??H?$ZXString@D@@QBE?AV0@ABV0@@Z\",\"type\":\"internal\"},{\"addr\":\"0x42d020\",\"name\":\"?_Cat@?$ZXString@D@@IAEAAV1@PBDH@Z\",\"type\":\"internal\"},{\"addr\":\"0x5abbe0\",\"name\":\"?IsPartyQuestItem@CItemInfo@@QAEHJ@Z\",\"type\":\"internal\"},{\"addr\":\"0x5ab5a0\",\"name\":\"?IsTradeBlockItem@CItemInfo@@QAEHJ@Z\",\"type\":\"internal\"},{\"addr\":\"0x42d470\",\"name\":\"??Y?$ZXString@D@@QAEAAV0@ABV0@@Z\",\"type\":\"internal\"},{\"addr\":\"0x5b2020\",\"name\":\"?IsAccountSharableItem@CItemInfo@@QAEHPAUGW_ItemSlotBase@@@Z\",\"type\":\"internal\"},{\"addr\":\"0x5b2050\",\"name\":\"?IsSharableOnceItem@CItemInfo@@QAEHPAUGW_ItemSlotBase@@@Z\",\"type\":\"internal\"},{\"addr\":\"0x4886c0\",\"name\":\"??H?$ZXString@D@@QBE?AV0@PBD@Z\",\"type\":\"internal\"},{\"addr\":\"0x5aaf60\",\"name\":\"?IsCashItem@CItemInfo@@QAEHJ@Z\",\"type\":\"internal\"},{\"addr\":\"0x889310\",\"name\":\"?GetItemExpireDate@CUIToolTip@@IAEXPAU_FILETIME@@JAAV?$ZXString@D@@HHHJ@Z\",\"type\":\"internal\"},{\"addr\":\"0x443c70\",\"name\":\"?Format@?$ZXString@D@@QAAAAV1@PBDZZ\",\"type\":\"internal\"},{\"addr\":\"0x5b1640\",\"name\":\"?GetItemName@CItemInfo@@QAE?AV?$ZXString@D@@J@Z\",\"type\":\"internal\"},{\"addr\":\"0x5b16e0\",\"name\":\"?GetItemDesc@CItemInfo@@QAE?AV?$ZXString@D@@J@Z\",\"type\":\"internal\"},{\"addr\":\"0x5aca50\",\"name\":\"?GetRequiredLEV@CItemInfo@@QAEJJ@Z\",\"type\":\"internal\"},{\"addr\":\"0x49ca80\",\"name\":\"??1?$ZRef@UITCITEM@@@@QAE@XZ\",\"type\":\"internal\"},{\"addr\":\"0xa30ec1\",\"name\":\"_atoi\",\"type\":\"internal\"},{\"addr\":\"0x42b960\",\"name\":\"?GetCharacterData@CWvsContext@@QAE?AV?$ZRef@VCharacterData@@@@XZ\",\"type\":\"internal\"},{\"addr\":\"0xb14078\",\"name\":\"__imp__InterlockedDecrement@4\",\"type\":\"external\"},{\"addr\":\"0xb14074\",\"name\":\"__imp__InterlockedIncrement@4\",\"type\":\"external\"},{\"addr\":\"0x4f2d70\",\"name\":\"?GetNext@?$ZList@UGW_NewYearCardRecord@@@@SAAAUGW_NewYearCardRecord@@AAPAU__POSITION@@@Z\",\"type\":\"internal\"},{\"addr\":\"0x482fd0\",\"name\":\"??Y?$ZXString@D@@QAEAAV0@PBD@Z\",\"type\":\"internal\"},{\"addr\":\"0x481720\",\"name\":\"?GetKarmaScissorsItem@CItemInfo@@QAEPBUKARMASCISSORSITEM@1@J@Z\",\"type\":\"internal\"},{\"addr\":\"0x47d760\",\"name\":\"?_CalcAutoGrow@?$ZMap@JHJ@@AAEXI@Z\",\"type\":\"internal\"},{\"addr\":\"0x42b750\",\"name\":\"?GetData@?$TSecType@J@@QBEJXZ\",\"type\":\"internal\"},{\"addr\":\"0x5c09f0\",\"name\":\"?GetAppliableKarmaType@CItemInfo@@QAEJJ@Z\",\"type\":\"internal\"},{\"addr\":\"0x47e0e0\",\"name\":\"?GetAt@?$ZMap@JHJ@@QAEPAHABJAAH@Z\",\"type\":\"internal\"},{\"addr\":\"0x4d99a0\",\"name\":\"??$?HDD@@YA?AV?$ZXString@D@@PBDABV0@@Z\",\"type\":\"internal\"},{\"addr\":\"0x4942f0\",\"name\":\"?Insert@?$ZMap@JHJ@@QAEPAU__POSITION@@ABJABH@Z\",\"type\":\"internal\"},{\"addr\":\"0x47f140\",\"name\":\"?RemoveAll@?$ZMap@JHJ@@QAEXXZ\",\"type\":\"internal\"},{\"addr\":\"0x5b4b20\",\"name\":\"?GetKarmaScissorsName@CItemInfo@@QAE?AV?$ZXString@D@@J@Z\",\"type\":\"internal\"},{\"addr\":\"0x881d40\",\"name\":\"?GetFontByType@CUIToolTip@@IAE?AV?$_com_ptr_t@V?$_com_IIID@UIWzFont@@$1?_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac@@3U__s_GUID@@B@@@@J@Z\",\"type\":\"internal\"},{\"addr\":\"0x894a40\",\"name\":\"?DrawTextSepartedLine@CUIToolTip@@IAEJJJJPBDV?$_com_ptr_t@V?$_com_IIID@UIWzFont@@$1?_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac@@3U__s_GUID@@B@@@@HPAJH@Z\",\"type\":\"internal\"},{\"addr\":\"0x42c990\",\"name\":\"??$?4D@?$ZXString@D@@QAEAAV0@PBD@Z\",\"type\":\"internal\"},{\"addr\":\"0x95f9d0\",\"name\":\"?get_basic_font@@YA?AV?$_com_ptr_t@V?$_com_IIID@UIWzFont@@$1?_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac@@3U__s_GUID@@B@@@@W4FONT_TYPE@@@Z\",\"type\":\"internal\"},{\"addr\":\"0x401730\",\"name\":\"?ZComVariantCopy@ZComAPI@@YAJPAUtagVARIANT@@0@Z\",\"type\":\"internal\"},{\"addr\":\"0xa2fd00\",\"name\":\"?_com_issue_error@@YGXJ@Z\",\"type\":\"internal\"},{\"addr\":\"0x403260\",\"name\":\"??0_bstr_t@@QAE@PBD@Z\",\"type\":\"internal\"},{\"addr\":\"0x42d990\",\"name\":\"?CalcTextWidth@IWzFont@@QAEKVZtl_bstr_t@@ABVZtl_variant_t@@@Z\",\"type\":\"internal\"},{\"addr\":\"0xc6da30\",\"name\":\"\",\"type\":\"external\"},{\"addr\":\"0xb1428c\",\"name\":\"__imp__VariantClear@4\",\"type\":\"external\"},{\"addr\":\"0x880f90\",\"name\":\"?SetBasicInfo@CUIToolTip@@QAEXJJJJ@Z\",\"type\":\"internal\"},{\"addr\":\"0x888370\",\"name\":\"?MakingLimitInfo@CUIToolTip@@QAEXAAV?$ZArray@V?$ZXString@D@@@@PAUCS_LIMITGOODS@@@Z\",\"type\":\"internal\"},{\"addr\":\"0x8814b0\",\"name\":\"?MakeLayer@CUIToolTip@@IAE?AV?$_com_ptr_t@V?$_com_IIID@UIWzCanvas@@$1?_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e@@3U__s_GUID@@B@@@@JJHHHKH@Z\",\"type\":\"internal\"},{\"addr\":\"0x42a350\",\"name\":\"?Getcanvas@IWzGr2DLayer@@QAE?AV?$_com_ptr_t@V?$_com_IIID@UIWzCanvas@@$1?_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e@@3U__s_GUID@@B@@@@ABVZtl_variant_t@@@Z\",\"type\":\"internal\"},{\"addr\":\"0x88ca40\",\"name\":\"?DrawTextItemName@CUIToolTip@@IAEXJPBDV?$_com_ptr_t@V?$_com_IIID@UIWzFont@@$1?_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac@@3U__s_GUID@@B@@@@@Z\",\"type\":\"internal\"},{\"addr\":\"0x88c360\",\"name\":\"?DrawTextCenter@CUIToolTip@@IAEXJPBDV?$_com_ptr_t@V?$_com_IIID@UIWzFont@@$1?_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac@@3U__s_GUID@@B@@@@@Z\",\"type\":\"internal\"},{\"addr\":\"0xa2fd20\",\"name\":\"?_com_issue_errorex@@YGXJPAUIUnknown@@ABU_GUID@@@Z\",\"type\":\"internal\"},{\"addr\":\"0x42d8b0\",\"name\":\"?DrawTextA@IWzCanvas@@QAEKJJVZtl_bstr_t@@PAUIWzFont@@ABVZtl_variant_t@@2@Z\",\"type\":\"internal\"},{\"addr\":\"0x88ccb0\",\"name\":\"?DrawItemTitle@CUIToolTip@@IAEXJPBDH@Z\",\"type\":\"internal\"},{\"addr\":\"0x882050\",\"name\":\"?DrawItemIcon@CUIToolTip@@IAEXJJJHH@Z\",\"type\":\"internal\"},{\"addr\":\"0x407520\",\"name\":\"??$_ZtlSecureFuse@J@@YAJQBJI@Z\",\"type\":\"internal\"},{\"addr\":\"0x88d710\",\"name\":\"?DrawTextEquip_Req@CUIToolTip@@IAEXJJJJHJ@Z\",\"type\":\"internal\"},{\"addr\":\"0x88dec0\",\"name\":\"?DrawDiscount_Info@CUIToolTip@@IAEXJJJ@Z\",\"type\":\"internal\"},{\"addr\":\"0x888be0\",\"name\":\"?DrawLimitInfo@CUIToolTip@@QAEXJAAV?$ZArray@V?$ZXString@D@@@@@Z\",\"type\":\"internal\"},{\"addr\":\"0x891530\",\"name\":\"?DrawNpcShopLimitedItemInfo@CUIToolTip@@AAEXJJ@Z\",\"type\":\"internal\"},{\"addr\":\"0x88e6a0\",\"name\":\"?DrawITCSaleInfo@CUIToolTip@@IAEXJJPAU_FILETIME@@PBDV?$ZRef@UITCITEM@@@@W4eITCToolTip@1@@Z\",\"type\":\"internal\"},{\"addr\":\"0x483cf0\",\"name\":\"?RemoveAll@?$ZArray@V?$ZXString@D@@@@QAEXXZ\",\"type\":\"internal\"}],\"more\":false}]"
+      }
+    ],
+    "structuredContent": {
+      "result": [
+        {
+          "addr": "0x898f70",
+          "callees": [
+            {
+              "addr": "0x5ab1e0",
+              "name": "?IsOnlyItem@CItemInfo@@QAEHJ@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x7466a0",
+              "name": "?GetInstance@StringPool@@SAAAV1@XZ",
+              "type": "internal"
+            },
+            {
+              "addr": "0x403b30",
+              "name": "?GetString@StringPool@@QAE?AV?$ZXString@D@@I@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x42d1c0",
+              "name": "??4?$ZXString@D@@QAEAAV0@ABV0@@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x403460",
+              "name": "?_Release@?$ZXString@D@@KAXPAU_ZXStringData@1@@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x5abaa0",
+              "name": "?IsQuestItem@CItemInfo@@QAEHJ@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x42c880",
+              "name": "?GetBuffer@?$ZXString@D@@QAEPADHH@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x42a080",
+              "name": "?ReleaseBuffer@?$ZXString@D@@QAEXH@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x488700",
+              "name": "??H?$ZXString@D@@QBE?AV0@ABV0@@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x42d020",
+              "name": "?_Cat@?$ZXString@D@@IAEAAV1@PBDH@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x5abbe0",
+              "name": "?IsPartyQuestItem@CItemInfo@@QAEHJ@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x5ab5a0",
+              "name": "?IsTradeBlockItem@CItemInfo@@QAEHJ@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x42d470",
+              "name": "??Y?$ZXString@D@@QAEAAV0@ABV0@@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x5b2020",
+              "name": "?IsAccountSharableItem@CItemInfo@@QAEHPAUGW_ItemSlotBase@@@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x5b2050",
+              "name": "?IsSharableOnceItem@CItemInfo@@QAEHPAUGW_ItemSlotBase@@@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x4886c0",
+              "name": "??H?$ZXString@D@@QBE?AV0@PBD@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x5aaf60",
+              "name": "?IsCashItem@CItemInfo@@QAEHJ@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x889310",
+              "name": "?GetItemExpireDate@CUIToolTip@@IAEXPAU_FILETIME@@JAAV?$ZXString@D@@HHHJ@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x443c70",
+              "name": "?Format@?$ZXString@D@@QAAAAV1@PBDZZ",
+              "type": "internal"
+            },
+            {
+              "addr": "0x5b1640",
+              "name": "?GetItemName@CItemInfo@@QAE?AV?$ZXString@D@@J@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x5b16e0",
+              "name": "?GetItemDesc@CItemInfo@@QAE?AV?$ZXString@D@@J@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x5aca50",
+              "name": "?GetRequiredLEV@CItemInfo@@QAEJJ@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x49ca80",
+              "name": "??1?$ZRef@UITCITEM@@@@QAE@XZ",
+              "type": "internal"
+            },
+            {
+              "addr": "0xa30ec1",
+              "name": "_atoi",
+              "type": "internal"
+            },
+            {
+              "addr": "0x42b960",
+              "name": "?GetCharacterData@CWvsContext@@QAE?AV?$ZRef@VCharacterData@@@@XZ",
+              "type": "internal"
+            },
+            {
+              "addr": "0xb14078",
+              "name": "__imp__InterlockedDecrement@4",
+              "type": "external"
+            },
+            {
+              "addr": "0xb14074",
+              "name": "__imp__InterlockedIncrement@4",
+              "type": "external"
+            },
+            {
+              "addr": "0x4f2d70",
+              "name": "?GetNext@?$ZList@UGW_NewYearCardRecord@@@@SAAAUGW_NewYearCardRecord@@AAPAU__POSITION@@@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x482fd0",
+              "name": "??Y?$ZXString@D@@QAEAAV0@PBD@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x481720",
+              "name": "?GetKarmaScissorsItem@CItemInfo@@QAEPBUKARMASCISSORSITEM@1@J@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x47d760",
+              "name": "?_CalcAutoGrow@?$ZMap@JHJ@@AAEXI@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x42b750",
+              "name": "?GetData@?$TSecType@J@@QBEJXZ",
+              "type": "internal"
+            },
+            {
+              "addr": "0x5c09f0",
+              "name": "?GetAppliableKarmaType@CItemInfo@@QAEJJ@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x47e0e0",
+              "name": "?GetAt@?$ZMap@JHJ@@QAEPAHABJAAH@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x4d99a0",
+              "name": "??$?HDD@@YA?AV?$ZXString@D@@PBDABV0@@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x4942f0",
+              "name": "?Insert@?$ZMap@JHJ@@QAEPAU__POSITION@@ABJABH@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x47f140",
+              "name": "?RemoveAll@?$ZMap@JHJ@@QAEXXZ",
+              "type": "internal"
+            },
+            {
+              "addr": "0x5b4b20",
+              "name": "?GetKarmaScissorsName@CItemInfo@@QAE?AV?$ZXString@D@@J@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x881d40",
+              "name": "?GetFontByType@CUIToolTip@@IAE?AV?$_com_ptr_t@V?$_com_IIID@UIWzFont@@$1?_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac@@3U__s_GUID@@B@@@@J@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x894a40",
+              "name": "?DrawTextSepartedLine@CUIToolTip@@IAEJJJJPBDV?$_com_ptr_t@V?$_com_IIID@UIWzFont@@$1?_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac@@3U__s_GUID@@B@@@@HPAJH@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x42c990",
+              "name": "??$?4D@?$ZXString@D@@QAEAAV0@PBD@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x95f9d0",
+              "name": "?get_basic_font@@YA?AV?$_com_ptr_t@V?$_com_IIID@UIWzFont@@$1?_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac@@3U__s_GUID@@B@@@@W4FONT_TYPE@@@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x401730",
+              "name": "?ZComVariantCopy@ZComAPI@@YAJPAUtagVARIANT@@0@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0xa2fd00",
+              "name": "?_com_issue_error@@YGXJ@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x403260",
+              "name": "??0_bstr_t@@QAE@PBD@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x42d990",
+              "name": "?CalcTextWidth@IWzFont@@QAEKVZtl_bstr_t@@ABVZtl_variant_t@@@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0xc6da30",
+              "name": "",
+              "type": "external"
+            },
+            {
+              "addr": "0xb1428c",
+              "name": "__imp__VariantClear@4",
+              "type": "external"
+            },
+            {
+              "addr": "0x880f90",
+              "name": "?SetBasicInfo@CUIToolTip@@QAEXJJJJ@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x888370",
+              "name": "?MakingLimitInfo@CUIToolTip@@QAEXAAV?$ZArray@V?$ZXString@D@@@@PAUCS_LIMITGOODS@@@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x8814b0",
+              "name": "?MakeLayer@CUIToolTip@@IAE?AV?$_com_ptr_t@V?$_com_IIID@UIWzCanvas@@$1?_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e@@3U__s_GUID@@B@@@@JJHHHKH@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x42a350",
+              "name": "?Getcanvas@IWzGr2DLayer@@QAE?AV?$_com_ptr_t@V?$_com_IIID@UIWzCanvas@@$1?_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e@@3U__s_GUID@@B@@@@ABVZtl_variant_t@@@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x88ca40",
+              "name": "?DrawTextItemName@CUIToolTip@@IAEXJPBDV?$_com_ptr_t@V?$_com_IIID@UIWzFont@@$1?_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac@@3U__s_GUID@@B@@@@@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x88c360",
+              "name": "?DrawTextCenter@CUIToolTip@@IAEXJPBDV?$_com_ptr_t@V?$_com_IIID@UIWzFont@@$1?_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac@@3U__s_GUID@@B@@@@@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0xa2fd20",
+              "name": "?_com_issue_errorex@@YGXJPAUIUnknown@@ABU_GUID@@@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x42d8b0",
+              "name": "?DrawTextA@IWzCanvas@@QAEKJJVZtl_bstr_t@@PAUIWzFont@@ABVZtl_variant_t@@2@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x88ccb0",
+              "name": "?DrawItemTitle@CUIToolTip@@IAEXJPBDH@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x882050",
+              "name": "?DrawItemIcon@CUIToolTip@@IAEXJJJHH@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x407520",
+              "name": "??$_ZtlSecureFuse@J@@YAJQBJI@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x88d710",
+              "name": "?DrawTextEquip_Req@CUIToolTip@@IAEXJJJJHJ@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x88dec0",
+              "name": "?DrawDiscount_Info@CUIToolTip@@IAEXJJJ@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x888be0",
+              "name": "?DrawLimitInfo@CUIToolTip@@QAEXJAAV?$ZArray@V?$ZXString@D@@@@@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x891530",
+              "name": "?DrawNpcShopLimitedItemInfo@CUIToolTip@@AAEXJJ@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x88e6a0",
+              "name": "?DrawITCSaleInfo@CUIToolTip@@IAEXJJPAU_FILETIME@@PBDV?$ZRef@UITCITEM@@@@W4eITCToolTip@1@@Z",
+              "type": "internal"
+            },
+            {
+              "addr": "0x483cf0",
+              "name": "?RemoveAll@?$ZArray@V?$ZXString@D@@@@QAEXXZ",
+              "type": "internal"
+            }
+          ],
+          "more": false
+        }
+      ]
+    },
+    "isError": false
+  },
+  "id": 1
+}

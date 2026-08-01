@@ -1,0 +1,92 @@
+// CUISkill::CanSkillUp
+// Decompiled from v95 IDB
+
+BOOL __thiscall CUISkill::CanSkillUp(CUISkill *this, const SKILLENTRY *pSkillEntry)
+{
+  int v3; // esi
+  char *p_m_uTableSize; // edi
+  volatile LONG *p_m_uCount; // ebp
+  int v7; // ebp
+  int job_level; // edi
+  int v9; // esi
+  int MySkillDegreeSP; // eax
+  int v11; // edi
+  int v12; // edi
+  CharacterData *cd; // [esp+8h] [ebp-Ch]
+  ZRef<CharacterData> result; // [esp+Ch] [ebp-8h] BYREF
+  int nSumMaxSP; // [esp+18h] [ebp+4h]
+
+  v3 = pSkillEntry->nSkillID / 10000; /*0x84a94c*/
+  if ( !(v3 % 1000) || v3 == 2001 ) /*0x84a971*/
+    return 0; /*0x84a97a*/
+  cd = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &result)->p; /*0x84a996*/
+  if ( result.p ) /*0x84a99c*/
+  {
+    p_m_uTableSize = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x84a99e*/
+    p_m_uCount = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount; /*0x84a9a1*/
+    if ( !InterlockedDecrement(p_m_uCount) ) /*0x84a9a5*/
+    {
+      InterlockedIncrement(p_m_uCount); /*0x84a9b0*/
+      if ( p_m_uTableSize ) /*0x84a9b8*/
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1); /*0x84a9c2*/
+    }
+    result.p = nullptr; /*0x84a9c4*/
+  }
+  v7 = 0; /*0x84a9d2*/
+  job_level = get_job_level(v3); /*0x84a9d4*/
+  v9 = 1; /*0x84a9d6*/
+  nSumMaxSP = 0; /*0x84a9de*/
+  if ( job_level > 1 ) /*0x84a9e2*/
+  {
+    do /*0x84a9fd*/
+    {
+      v7 += CUISkill::GetMySkillDegreeSP(this, v9); /*0x84a9ef*/
+      nSumMaxSP += CUISkill::GetMaxSkillDegreeSP(this, v9++); /*0x84a9f6*/
+    }
+    while ( v9 < job_level ); /*0x84a9fd*/
+    if ( v7 < nSumMaxSP ) /*0x84aa03*/
+      return 0; /*0x84aa03*/
+  }
+  MySkillDegreeSP = CUISkill::GetMySkillDegreeSP(this, job_level); /*0x84aa0c*/
+  v11 = job_level - 2; /*0x84aa11*/
+  if ( v11 ) /*0x84aa16*/
+  {
+    v12 = v11 - 1; /*0x84aa18*/
+    if ( v12 ) /*0x84aa1b*/
+    {
+      if ( v12 == 1 /*0x84aa45*/
+        && MySkillDegreeSP >= 3
+                            * (_ZtlSecureFuse<unsigned char>(
+                                 cd->characterStat._ZtlSecureTear_nLevel,
+                                 cd->characterStat._ZtlSecureTear_nLevel_CS)
+                             - 119) )
+      {
+        return 0; /*0x84aa50*/
+      }
+    }
+    else if ( MySkillDegreeSP >= 3 /*0x84aa73*/
+                               * _ZtlSecureFuse<unsigned char>(
+                                   cd->characterStat._ZtlSecureTear_nLevel,
+                                   cd->characterStat._ZtlSecureTear_nLevel_CS)
+                               - 209 )
+    {
+      return 0; /*0x84aa7e*/
+    }
+    return 1; /*0x84aa45*/
+  }
+  return MySkillDegreeSP < 3 /*0x84aa9e*/
+                         * _ZtlSecureFuse<unsigned char>(
+                             cd->characterStat._ZtlSecureTear_nLevel,
+                             cd->characterStat._ZtlSecureTear_nLevel_CS)
+                         - 89;
+}
+
+// References:
+//   ?GetCharacterData@CWvsContext@@QAE?AV?$ZRef@VCharacterData@@@@XZ @ 0x42b960
+//   ?ms_pInstance@?$TSingleton@VCWvsContext@@@@1PAVCWvsContext@@A @ 0xc64068
+//   __imp__InterlockedIncrement@4 @ 0xb14074
+//   __imp__InterlockedDecrement@4 @ 0xb14078
+//   ?get_job_level@@YAJJ@Z @ 0x47cb90
+//   ?GetMySkillDegreeSP@CUISkill@@IAEJJ@Z @ 0x84a790
+//   ?GetMaxSkillDegreeSP@CUISkill@@IAEJJ@Z @ 0x84a870
+//   ??$_ZtlSecureFuse@E@@YAEQBEI@Z @ 0x47d4d0

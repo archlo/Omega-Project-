@@ -40,6 +40,7 @@ function makeMobLook(position = { x: 0, y: 0 }): MobLook {
     container: {} as any,
     IsDead: false,
     OnHit: vi.fn(),
+    ShowHitEffect: vi.fn(),
     SetState: vi.fn(),
     SetFacing: vi.fn(),
     Update: vi.fn(),
@@ -52,7 +53,7 @@ function makeMobLook(position = { x: 0, y: 0 }): MobLook {
 describe('MobController', () => {
   describe('OnDamagedByPlayer', () => {
     it('sets aggro timer', () => {
-      const fh = new Foothold();
+      const fh = new Foothold(); fh.InitVectors();
       fh.Id = 1; fh.X1 = 0; fh.Y1 = 200; fh.X2 = 100; fh.Y2 = 200;
 
       const mob = makeMobLook({ x: 50, y: 200 });
@@ -67,7 +68,7 @@ describe('MobController', () => {
 
   describe('CanHitPlayer / NotePlayerHit', () => {
     it('cooldown resets after timer expires', () => {
-      const fh = new Foothold();
+      const fh = new Foothold(); fh.InitVectors();
       fh.Id = 1; fh.X1 = 0; fh.Y1 = 200; fh.X2 = 100; fh.Y2 = 200;
 
       const mob = makeMobLook({ x: 50, y: 200 });
@@ -85,7 +86,7 @@ describe('MobController', () => {
 
   describe('ApplyHitKnockback', () => {
     it('pushes mob horizontally', () => {
-      const fh = new Foothold();
+      const fh = new Foothold(); fh.InitVectors();
       fh.Id = 1; fh.X1 = 0; fh.Y1 = 200; fh.X2 = 100; fh.Y2 = 200;
 
       const mob = makeMobLook({ x: 50, y: 200 });
@@ -120,7 +121,7 @@ describe('MobController', () => {
 
   describe('IsAggressive', () => {
     it('aggressive mobs (FirstAttack) start with aggro', () => {
-      const fh = new Foothold();
+      const fh = new Foothold(); fh.InitVectors();
       fh.Id = 1; fh.X1 = 0; fh.Y1 = 200; fh.X2 = 100; fh.Y2 = 200;
 
       const mob = makeMobLook({ x: 50, y: 200 });
@@ -132,7 +133,7 @@ describe('MobController', () => {
     });
 
     it('aggro timer decays over time', () => {
-      const fh = new Foothold();
+      const fh = new Foothold(); fh.InitVectors();
       fh.Id = 1; fh.X1 = 0; fh.Y1 = 200; fh.X2 = 100; fh.Y2 = 200;
 
       const mob = makeMobLook({ x: 50, y: 200 });
@@ -141,14 +142,15 @@ describe('MobController', () => {
       ctl.OnDamagedByPlayer();
       expect(ctl.IsAggressive).toBe(true);
 
-      ctl.Update(8.1, { x: 50, y: 200 });
+      // Move player outside aggro range to prevent re-aggro
+      ctl.Update(8.1, { x: 500, y: 500 });
       expect(ctl.IsAggressive).toBe(false);
     });
   });
 
   describe('attack trigger', () => {
     it('fires onAttackPlayer when player in range', () => {
-      const fh = new Foothold();
+      const fh = new Foothold(); fh.InitVectors();
       fh.Id = 1; fh.X1 = 0; fh.Y1 = 200; fh.X2 = 100; fh.Y2 = 200;
 
       const mob = makeMobLook({ x: 50, y: 200 });
@@ -167,7 +169,7 @@ describe('MobController', () => {
     });
 
     it('does not fire onAttackPlayer when player out of range', () => {
-      const fh = new Foothold();
+      const fh = new Foothold(); fh.InitVectors();
       fh.Id = 1; fh.X1 = 0; fh.Y1 = 200; fh.X2 = 100; fh.Y2 = 200;
 
       const mob = makeMobLook({ x: 50, y: 200 });
@@ -188,7 +190,7 @@ describe('MobController', () => {
     // from each attack's own WZ frame-0 lt/rb hit rect, not a universal
     // box. Verified live against wz_client/Mob.nx (8800000.img/attack1/0).
     it('uses the real per-attack HitRect instead of the universal box when present', () => {
-      const fh = new Foothold();
+      const fh = new Foothold(); fh.InitVectors();
       fh.Id = 1; fh.X1 = 0; fh.Y1 = 200; fh.X2 = 1000; fh.Y2 = 200;
 
       const mob = makeMobLook({ x: 50, y: 200 });
@@ -209,7 +211,7 @@ describe('MobController', () => {
     });
 
     it('mirrors the real HitRect on X when the target is to the mob\'s left', () => {
-      const fh = new Foothold();
+      const fh = new Foothold(); fh.InitVectors();
       fh.Id = 1; fh.X1 = -1000; fh.Y1 = 200; fh.X2 = 1000; fh.Y2 = 200;
 
       const mob = makeMobLook({ x: 500, y: 200 });
@@ -230,7 +232,7 @@ describe('MobController', () => {
     });
 
     it('respects attack cooldown', () => {
-      const fh = new Foothold();
+      const fh = new Foothold(); fh.InitVectors();
       fh.Id = 1; fh.X1 = 0; fh.Y1 = 200; fh.X2 = 100; fh.Y2 = 200;
 
       const mob = makeMobLook({ x: 50, y: 200 });
@@ -250,6 +252,186 @@ describe('MobController', () => {
       // After cooldown (0.7s)
       ctl.Update(0.7, { x: 50, y: 200 });
       expect(hitCount).toBe(2);
+    });
+  });
+
+  describe('proximity aggro', () => {
+    it('detects player within aggro range', () => {
+      const fh = new Foothold(); fh.InitVectors();
+      fh.Id = 1; fh.X1 = 0; fh.Y1 = 200; fh.X2 = 100; fh.Y2 = 200;
+
+      const mob = makeMobLook({ x: 50, y: 200 });
+      const info = new MobInfo();
+      const ctl = new MobController(mob, makeField({ 1: fh }), info);
+
+      // Player very close (within 10px) — 100% aggro chance
+      ctl.Update(1.0, { x: 55, y: 200 });
+      expect(ctl.IsAggressive).toBe(true);
+    });
+
+    it('does not aggro when player is far away', () => {
+      const fh = new Foothold(); fh.InitVectors();
+      fh.Id = 1; fh.X1 = 0; fh.Y1 = 200; fh.X2 = 100; fh.Y2 = 200;
+
+      const mob = makeMobLook({ x: 50, y: 200 });
+      const info = new MobInfo();
+      const ctl = new MobController(mob, makeField({ 1: fh }), info);
+
+      // Player outside aggro range (>200px away)
+      ctl.Update(1.0, { x: 300, y: 200 });
+      expect(ctl.IsAggressive).toBe(false);
+    });
+  });
+
+  describe('body attack', () => {
+    it('fires onBodyAttack when mob touches player', () => {
+      const fh = new Foothold(); fh.InitVectors();
+      fh.Id = 1; fh.X1 = 0; fh.Y1 = 200; fh.X2 = 100; fh.Y2 = 200;
+
+      const mob = makeMobLook({ x: 50, y: 200 });
+      const info = new MobInfo();
+      info.Pad = 50;
+      info.BodyAttack = true;
+      info.FirstAttack = true;
+      const ctl = new MobController(mob, makeField({ 1: fh }), info);
+
+      let bodyDmg = 0;
+      ctl.onBodyAttack = (n: number) => { bodyDmg = n; };
+
+      // Player very close (within 40px)
+      ctl.Update(1.0, { x: 60, y: 200 });
+      expect(bodyDmg).toBeGreaterThan(0);
+    });
+
+    it('does not fire onBodyAttack when player is far', () => {
+      const fh = new Foothold(); fh.InitVectors();
+      fh.Id = 1; fh.X1 = 0; fh.Y1 = 200; fh.X2 = 100; fh.Y2 = 200;
+
+      const mob = makeMobLook({ x: 50, y: 200 });
+      const info = new MobInfo();
+      info.Pad = 50;
+      info.BodyAttack = true;
+      info.FirstAttack = true;
+      const ctl = new MobController(mob, makeField({ 1: fh }), info);
+
+      let bodyDmg = 0;
+      ctl.onBodyAttack = (n: number) => { bodyDmg = n; };
+
+      // Player far away (>40px)
+      ctl.Update(1.0, { x: 150, y: 200 });
+      expect(bodyDmg).toBe(0);
+    });
+  });
+
+  describe('foothold transitions', () => {
+    it('transitions to next foothold when walking right', () => {
+      const fh1 = new Foothold(); fh1.InitVectors();
+      fh1.Id = 1; fh1.X1 = 0; fh1.Y1 = 200; fh1.X2 = 100; fh1.Y2 = 200;
+      fh1.Next = 2;
+      fh1.InitVectors();
+
+      const fh2 = new Foothold(); fh2.InitVectors();
+      fh2.Id = 2; fh2.X1 = 100; fh2.Y1 = 200; fh2.X2 = 200; fh2.Y2 = 200;
+      fh2.Prev = 1;
+      fh2.InitVectors();
+
+      const mob = makeMobLook({ x: 90, y: 200 });
+      const info = new MobInfo();
+      info.FirstAttack = true; // Start aggressive to avoid idle delay
+      const ctl = new MobController(mob, makeField({ 1: fh1, 2: fh2 }), info);
+
+      // Chase player far right — should walk and transition
+      for (let i = 0; i < 20; i++) {
+        ctl.Update(0.1, { x: 500, y: 200 });
+      }
+
+      // Should have transitioned to fh2
+      expect(mob.Position.x).toBeGreaterThan(100);
+    });
+
+    it('does not transition when blocked by connected foothold', () => {
+      // Create a "wall" — vertical foothold blocking horizontal movement
+      const fh1 = new Foothold(); fh1.InitVectors();
+      fh1.Id = 1; fh1.X1 = 0; fh1.Y1 = 200; fh1.X2 = 100; fh1.Y2 = 200;
+      fh1.Next = 2;
+      fh1.InitVectors();
+
+      const fh2 = new Foothold(); fh2.InitVectors();
+      fh2.Id = 2; fh2.X1 = 100; fh2.Y1 = 200; fh2.X2 = 100; fh2.Y2 = 150; // Vertical wall
+      fh2.Prev = 1;
+      fh2.InitVectors();
+
+      const mob = makeMobLook({ x: 90, y: 200 });
+      const info = new MobInfo();
+      info.FirstAttack = true;
+      const ctl = new MobController(mob, makeField({ 1: fh1, 2: fh2 }), info);
+
+      // Try to walk into the wall
+      for (let i = 0; i < 20; i++) {
+        ctl.Update(0.1, { x: 500, y: 200 });
+      }
+
+      // Should not have passed the wall (x should be <= 100)
+      expect(mob.Position.x).toBeLessThanOrEqual(100);
+    });
+  });
+
+  describe('slope walking', () => {
+    it('walks faster downhill than uphill', () => {
+      // Downhill slope (Y increases as X increases)
+      const fhDown = new Foothold(); fhDown.InitVectors();
+      fhDown.Id = 1; fhDown.X1 = 0; fhDown.Y1 = 100; fhDown.X2 = 100; fhDown.Y2 = 200;
+      fhDown.InitVectors();
+
+      // Uphill slope (Y decreases as X increases)
+      const fhUp = new Foothold(); fhUp.InitVectors();
+      fhUp.Id = 2; fhUp.X1 = 0; fhUp.Y1 = 200; fhUp.X2 = 100; fhUp.Y2 = 100;
+      fhUp.InitVectors();
+
+      const mobDown = makeMobLook({ x: 50, y: 150 });
+      const mobUp = makeMobLook({ x: 50, y: 150 });
+      const info = new MobInfo();
+      info.FirstAttack = true;
+
+      const ctlDown = new MobController(mobDown, makeField({ 1: fhDown }), info);
+      const ctlUp = new MobController(mobUp, makeField({ 2: fhUp }), info);
+
+      // Walk both for same duration
+      for (let i = 0; i < 10; i++) {
+        ctlDown.Update(0.1, { x: 500, y: 150 });
+        ctlUp.Update(0.1, { x: 500, y: 150 });
+      }
+
+      // Downhill mob should have moved further
+      const distDown = Math.abs(mobDown.Position.x - 50);
+      const distUp = Math.abs(mobUp.Position.x - 50);
+      expect(distDown).toBeGreaterThan(distUp);
+    });
+  });
+
+  describe('OnServerMove', () => {
+    it('does not teleport mob to last path element (interpolation owned by MobLook)', () => {
+      const fh = new Foothold(); fh.InitVectors();
+      fh.Id = 1; fh.X1 = 0; fh.Y1 = 200; fh.X2 = 100; fh.Y2 = 200;
+
+      const mob = makeMobLook({ x: 50, y: 200 });
+      const ctl = new MobController(mob, makeField({ 1: fh }), new MobInfo());
+
+      const path = {
+        originX: 50, originY: 200,
+        elements: [
+          { attr: 0, x: 55, y: 200, vx: 0, vy: 0, fh: 1, moveAction: 1, elapse: 250 },
+          { attr: 0, x: 95, y: 200, vx: 0, vy: 0, fh: 1, moveAction: 1, elapse: 250 },
+        ],
+      };
+      ctl.OnServerMove(path, 1, false);
+
+      // The mob should stay near the interpolation start (first element),
+      // not snap to the final path position.
+      expect(mob.Position.x).toBeLessThan(95);
+      expect(mob.Position.y).toBe(200);
+      // Foothold from path is adopted for subsequent client-side stepping
+      expect(ctl.IsAggressive).toBe(false);
     });
   });
 });

@@ -1,0 +1,19 @@
+﻿void __thiscall CMob::TryPickUpDrop(CMob *this, int tCur)
+{
+  CDropPool *v3; // ebx
+  const tagPOINT *v4; // eax
+  _BYTE v5[8]; // [esp+4h] [ebp-8h] BYREF
+
+  if ( CMob::IsActive(this)
+    && _ZtlSecureFuse<int>(
+         this->m_pTemplate->_ZtlSecureTear_bPickUpDrop,
+         this->m_pTemplate->_ZtlSecureTear_bPickUpDrop_CS)
+    && tCur
+     - _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_tLastTryPickUpDrop, this->_ZtlSecureTear_m_tLastTryPickUpDrop_CS) >= 150 )
+  {
+    v3 = TSingleton<CDropPool>::ms_pInstance;
+    v4 = (const tagPOINT *)((int (__thiscall *)(IVecCtrlOwner *, _BYTE *))this->GetPos)(&this->IVecCtrlOwner, v5);
+    CDropPool::TryPickUpDropByMob(v3, this, v4);
+    this->_ZtlSecureTear_m_tLastTryPickUpDrop_CS = _ZtlSecureTear<long>(tCur, this->_ZtlSecureTear_m_tLastTryPickUpDrop);
+  }
+}

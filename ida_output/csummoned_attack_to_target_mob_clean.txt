@@ -1,0 +1,495 @@
+void __userpurge CSummoned::AttackToTargetMob(
+        CSummoned *this@<ecx>,
+        __int32 a2@<ebx>,
+        __int32 a3@<edi>,
+        __int32 a4@<esi>,
+        CMob *pMob,
+        int tCur)
+{
+  int v6; // eax
+  int v7; // eax
+  CMobPool *Instance; // eax
+  int v9; // eax
+  CMobPool *v10; // eax
+  int v11; // eax
+  int *HitPoint; // eax
+  int v13; // edx
+  int *v14; // eax
+  int *v15; // eax
+  POINT *v16; // eax
+  POINT *v17; // eax
+  int m_nMoveAction; // eax
+  int action_from_act_dir; // eax
+  int act_dir; // eax
+  CWvsContext *v21; // eax
+  CSkillInfo *v22; // eax
+  CSkillInfo *v23; // eax
+  CWvsContext *v24; // eax
+  CSkillInfo *v25; // eax
+  unsigned __int8 nLevel; // al
+  CSkill_HitAni *v27; // eax
+  __int32 v28; // edx
+  int CurrentAction; // eax
+  int CurrentFrameIndex; // eax
+  int v31; // edx
+  ATTACKINFO *v32; // eax
+  int RandomHitAction; // eax
+  CUserLocal *v34; // eax
+  CUserLocal *v35; // eax
+  CalcDamage *CalcDamage; // eax
+  CUserLocal *v37; // eax
+  CUserLocal *v38; // eax
+  CalcDamage *v39; // eax
+  CMobTemplate *Template; // eax
+  CMobTemplate *v41; // eax
+  _bstr_t::Data_t *v42; // ecx
+  CWvsContext *v43; // eax
+  unsigned int CharacterId; // eax
+  CBattleRecordMan *v45; // eax
+  char *v46; // [esp-40h] [ebp-CD0h]
+  int v47; // [esp-3Ch] [ebp-CCCh]
+  int nHitAction; // [esp-38h] [ebp-CC8h]
+  int v49; // [esp-34h] [ebp-CC4h]
+  unsigned int MobID; // [esp-30h] [ebp-CC0h]
+  unsigned int v51; // [esp-30h] [ebp-CC0h]
+  int v52; // [esp-30h] [ebp-CC0h]
+  MobStat *v53; // [esp-2Ch] [ebp-CBCh]
+  MobStat *v54; // [esp-2Ch] [ebp-CBCh]
+  const CharacterData *v55; // [esp-28h] [ebp-CB8h]
+  const CharacterData *v56; // [esp-28h] [ebp-CB8h]
+  int v57; // [esp-28h] [ebp-CB8h]
+  const BasicStat *v58; // [esp-24h] [ebp-CB4h]
+  const BasicStat *v59; // [esp-24h] [ebp-CB4h]
+  tagPOINT ptHit; // [esp-24h] [ebp-CB4h]
+  const SecondaryStat *v61; // [esp-20h] [ebp-CB0h]
+  const SecondaryStat *v62; // [esp-20h] [ebp-CB0h]
+  Ztl_bstr_t v63; // [esp-1Ch] [ebp-CACh] BYREF
+  int x; // [esp-18h] [ebp-CA8h]
+  tagRECT v65; // [esp-14h] [ebp-CA4h] BYREF
+  int m_nSkillID; // [esp-4h] [ebp-C94h]
+  Ztl_bstr_t *v67; // [esp+10h] [ebp-C80h]
+  int v68; // [esp+14h] [ebp-C7Ch]
+  const ZRef<PassiveSkillData> *v69; // [esp+18h] [ebp-C78h]
+  const ZRef<PassiveSkillData> *v70; // [esp+1Ch] [ebp-C74h]
+  int v71; // [esp+20h] [ebp-C70h]
+  const ZRef<PassiveSkillData> *v72; // [esp+24h] [ebp-C6Ch]
+  const ZRef<PassiveSkillData> *PassiveSkillData; // [esp+28h] [ebp-C68h]
+  tagPOINT *p_ptHitFirst; // [esp+2Ch] [ebp-C64h]
+  ZRef<CharacterData> *v75; // [esp+30h] [ebp-C60h]
+  ZRef<CharacterData> *v76; // [esp+34h] [ebp-C5Ch]
+  ZRef<CharacterData> *v77; // [esp+38h] [ebp-C58h]
+  ZRef<CharacterData> *v78; // [esp+3Ch] [ebp-C54h]
+  Ztl_bstr_t *v79; // [esp+40h] [ebp-C50h]
+  ZRef<SummonedAttackInfo> *v80; // [esp+44h] [ebp-C4Ch]
+  ZRef<CharacterData> *CharacterData; // [esp+48h] [ebp-C48h]
+  CSummoned *thisa; // [esp+4Ch] [ebp-C44h]
+  Ztl_bstr_t *v83; // [esp+17Ch] [ebp-B14h]
+  tagRECT *v84; // [esp+180h] [ebp-B10h]
+  tagRECT *v85; // [esp+184h] [ebp-B0Ch]
+  tagRECT v86; // [esp+188h] [ebp-B08h] BYREF
+  ZRef<CharacterData> v87; // [esp+19Ch] [ebp-AF4h] BYREF
+  tagRECT *v88; // [esp+1A4h] [ebp-AECh]
+  _BYTE v89[8]; // [esp+1A8h] [ebp-AE8h] BYREF
+  _BYTE v90[8]; // [esp+1B0h] [ebp-AE0h] BYREF
+  int v91[2]; // [esp+1B8h] [ebp-AD8h] BYREF
+  _BYTE v92[8]; // [esp+1C0h] [ebp-AD0h] BYREF
+  int y[2]; // [esp+1C8h] [ebp-AC8h] BYREF
+  _BYTE v94[8]; // [esp+1D0h] [ebp-AC0h] BYREF
+  tagRECT v95; // [esp+1D8h] [ebp-AB8h] BYREF
+  _BYTE v96[8]; // [esp+1E8h] [ebp-AA8h] BYREF
+  ZRef<SummonedAttackInfo> v97; // [esp+1F0h] [ebp-AA0h] BYREF
+  ZRef<CharacterData> result; // [esp+1F8h] [ebp-A98h] BYREF
+  int nFixedDamage; // [esp+204h] [ebp-A8Ch]
+  MobStat *ms; // [esp+208h] [ebp-A88h]
+  ATTACKINFO *a; // [esp+20Ch] [ebp-A84h]
+  int i; // [esp+210h] [ebp-A80h]
+  tagRECT rcAttack_Left; // [esp+214h] [ebp-A7Ch] BYREF
+  tagRECT rcAttack_Right; // [esp+224h] [ebp-A6Ch] BYREF
+  tagPOINT pt2L; // [esp+234h] [ebp-A5Ch]
+  tagPOINT pt1R; // [esp+23Ch] [ebp-A54h]
+  tagPOINT pt2R; // [esp+244h] [ebp-A4Ch]
+  tagPOINT pt1L; // [esp+24Ch] [ebp-A44h]
+  tagPOINT pt0; // [esp+254h] [ebp-A3Ch]
+  const BasicStat *bs; // [esp+25Ch] [ebp-A34h]
+  int bRangeAttack; // [esp+260h] [ebp-A30h]
+  ATTACKINFO aAttackInfo[15]; // [esp+264h] [ebp-A2Ch] BYREF
+  const SecondaryStat *SecondaryStat; // [esp+B60h] [ebp-130h]
+  int nActionSpeed; // [esp+B64h] [ebp-12Ch]
+  tagPOINT ptHitFirst; // [esp+B68h] [ebp-128h] BYREF
+  int nSLV; // [esp+B74h] [ebp-11Ch]
+  int nMaxMobCount; // [esp+B78h] [ebp-118h]
+  int nAttackCount; // [esp+B8Ch] [ebp-104h]
+  int tDelay2; // [esp+B90h] [ebp-100h]
+  int bMagicAttack; // [esp+B94h] [ebp-FCh]
+  int tDelay; // [esp+B98h] [ebp-F8h]
+  CSkill_HitAni skillHitAni; // [esp+B9Ch] [ebp-F4h] BYREF
+  const SKILLENTRY *pSkill; // [esp+C24h] [ebp-6Ch] BYREF
+  const GW_CharacterStat *p_characterStat; // [esp+C2Ch] [ebp-64h]
+  tagRECT rcAttack; // [esp+C30h] [ebp-60h]
+  const CharacterData *cd; // [esp+C40h] [ebp-50h]
+  tagRECT rcMobBodyOrigin; // [esp+C44h] [ebp-4Ch] BYREF
+  int nAttackIdx; // [esp+C54h] [ebp-3Ch]
+  int bLeft; // [esp+C58h] [ebp-38h]
+  CWvsContext *pCtx; // [esp+C5Ch] [ebp-34h]
+  int nAction; // [esp+C60h] [ebp-30h]
+  tagRECT rcAttack_First; // [esp+C64h] [ebp-2Ch] BYREF
+  const SummonedAttackInfo *p; // [esp+C74h] [ebp-1Ch]
+  int bAttackAtTheSameTime; // [esp+C78h] [ebp-18h]
+  int v135; // [esp+C8Ch] [ebp-4h]
+  int savedregs; // [esp+C90h] [ebp+0h] BYREF
+
+  thisa = this; /*0x7501f8*/
+  CMob::GetBodyRect(pMob, &rcMobBodyOrigin, 1); /*0x750207*/
+  if ( !ZAPI.IsRectEmpty(&rcMobBodyOrigin) )
+  {
+    pCtx = TSingleton<CWvsContext>::GetInstance(); /*0x750226*/
+    CharacterData = CWvsContext::GetCharacterData(pCtx, &result); /*0x750238*/
+    cd = ZRef<CharacterData>::operator*(CharacterData); /*0x750249*/
+    ZRef<CharacterData>::~ZRef<CharacterData>(&result); /*0x750252*/
+    p_characterStat = &cd->characterStat; /*0x75025a*/
+    bs = CWvsContext::GetBasicStat(pCtx); /*0x750265*/
+    SecondaryStat = CWvsContext::GetSecondaryStat(pCtx); /*0x750273*/
+    nAction = 4; /*0x750279*/
+    nAttackIdx = 0; /*0x750286*/
+    v6 = CSummonedBase::Action2AIType(&thisa->CSummonedBase, 4); /*0x750299*/
+    v80 = CSummonedBase::LoadAttackInfo(&thisa->CSummonedBase, &v97, thisa->m_nSkillID, nAttackIdx, thisa->m_nSLV, v6); /*0x7502d5*/
+    p = ZRef<SummonedAttackInfo>::operator SummonedAttackInfo *(v80); /*0x7502e6*/
+    ZRef<SummonedAttackInfo>::~ZRef<SummonedAttackInfo>(&v97); /*0x7502ef*/
+    if ( p )
+    {
+      nActionSpeed = 6; /*0x750301*/
+      nMaxMobCount = p->nMobCount; /*0x750311*/
+      nAttackCount = p->nAttackCount; /*0x75031d*/
+      tDelay2 = 0; /*0x750323*/
+      bMagicAttack = p->bMagicAttack; /*0x750333*/
+      bRangeAttack = p->bRangeAttack; /*0x75033f*/
+      bAttackAtTheSameTime = 0; /*0x750345*/
+      if ( bRangeAttack ) /*0x750353*/
+      {
+        operator<<(&rcAttack_Left, &p->rcRange); /*0x750587*/
+        m_nSkillID = *(_DWORD *)(((int (__thiscall *)(IVecCtrlOwner *, _BYTE *, _DWORD))thisa->GetPos)( /*0x7505b2*/
+                                   &thisa->IVecCtrlOwner,
+                                   v94,
+                                   0)
+                               + 4);
+        v65.bottom = (int)y; /*0x7505b9*/
+        v14 = (int *)((int (__thiscall *)(IVecCtrlOwner *))thisa->GetPos)(&thisa->IVecCtrlOwner); /*0x7505cf*/
+        adjust_rect(&rcAttack_Left, *v14, (int)y, m_nSkillID); /*0x7505db*/
+        rcAttack_Left.left -= 2; /*0x7505ec*/
+        rcAttack_Left.top -= 2; /*0x7505fb*/
+        rcAttack_Left.right += 2; /*0x75060a*/
+        rcAttack_Left.bottom += 2; /*0x750619*/
+        operator<<(&rcAttack_Right, &p->rcRange); /*0x75062d*/
+        m_nSkillID = *(_DWORD *)(((int (__thiscall *)(IVecCtrlOwner *, _BYTE *, int))thisa->GetPos)( /*0x750658*/
+                                   &thisa->IVecCtrlOwner,
+                                   v92,
+                                   1)
+                               + 4);
+        v65.bottom = (int)v91; /*0x75065f*/
+        v15 = (int *)((int (__thiscall *)(IVecCtrlOwner *))thisa->GetPos)(&thisa->IVecCtrlOwner); /*0x750675*/
+        adjust_rect(&rcAttack_Right, *v15, (int)v91, m_nSkillID); /*0x750681*/
+        rcAttack_Right.left -= 2; /*0x750692*/
+        rcAttack_Right.top -= 2; /*0x7506a1*/
+        rcAttack_Right.right += 2; /*0x7506b0*/
+        rcAttack_Right.bottom += 2; /*0x7506bf*/
+        v16 = (POINT *)((int (__thiscall *)(IVecCtrlOwner *, _BYTE *))pMob->GetPos)(&pMob->IVecCtrlOwner, v90); /*0x7506db*/
+        if ( PtInRect(&rcAttack_Left, *v16) ) /*0x7506eb*/
+        {
+          rcAttack = rcAttack_Left; /*0x7506fb*/
+          bLeft = 1; /*0x750719*/
+        }
+        else
+        {
+          v17 = (POINT *)((int (__thiscall *)(IVecCtrlOwner *, _BYTE *))pMob->GetPos)(&pMob->IVecCtrlOwner, v89); /*0x750738*/
+          if ( !PtInRect(&rcAttack_Right, *v17) ) /*0x750750*/
+            return; /*0x750750*/
+          rcAttack = rcAttack_Right; /*0x750758*/
+          bLeft = 0; /*0x750776*/
+        }
+      }
+      else
+      {
+        pt0.x = *(_DWORD *)((int (__thiscall *)(IVecCtrlOwner *, _BYTE *))thisa->GetPos)(&thisa->IVecCtrlOwner, v96); /*0x750379*/
+        v7 = ((int (__thiscall *)(IVecCtrlOwner *, int *))thisa->GetPos)(&thisa->IVecCtrlOwner, &v95.right); /*0x75039b*/
+        pt0.y = p->tzRange.y + *(_DWORD *)(v7 + 4); /*0x7503a6*/
+        pt1L.x = p->tzRange.y + pt0.x; /*0x7503b8*/
+        pt1L.y = pt0.y; /*0x7503c4*/
+        pt2L.x = pt0.x - p->tzRange.nRange; /*0x7503d8*/
+        pt2L.y = pt0.y; /*0x7503e4*/
+        pt1R.x = pt0.x - p->tzRange.y; /*0x7503f6*/
+        pt1R.y = pt0.y; /*0x750402*/
+        pt2R.x = p->tzRange.nRange + pt0.x; /*0x750414*/
+        pt2R.y = pt0.y; /*0x750420*/
+        v65.right = pt0.y; /*0x750432*/
+        v65.top = pt2L.x; /*0x750439*/
+        v65.left = pt1L.x; /*0x750440*/
+        x = pt0.x; /*0x750447*/
+        Instance = TSingleton<CMobPool>::GetInstance(); /*0x750448*/
+        if ( CMobPool::CheckMobInTrapezoid(Instance, x, v65.left, v65.top, v65.right, 4, pMob) ) /*0x75044f*/
+        {
+          m_nSkillID = pt0.y + 1; /*0x750461*/
+          v65.bottom = zmax<long>(pt1L.x, pt2L.x); /*0x750478*/
+          v65.right = pt0.y; /*0x75047f*/
+          v9 = zmin<long>(pt1L.x, pt2L.x); /*0x75048e*/
+          ZAPI.SetRect(&rcAttack_First, v9, v65.right, v65.bottom, m_nSkillID); /*0x75049b*/
+          bLeft = 1; /*0x7504a1*/
+        }
+        else
+        {
+          v65.right = pt0.y; /*0x7504b9*/
+          v65.top = pt2R.x; /*0x7504c0*/
+          v65.left = pt1R.x; /*0x7504c7*/
+          x = pt0.x; /*0x7504ce*/
+          v10 = TSingleton<CMobPool>::GetInstance(); /*0x7504cf*/
+          if ( !CMobPool::CheckMobInTrapezoid(v10, x, v65.left, v65.top, v65.right, 4, pMob) ) /*0x7504dd*/
+            return; /*0x7504dd*/
+          m_nSkillID = pt0.y + 1; /*0x7504e8*/
+          v65.bottom = zmax<long>(pt1R.x, pt2R.x); /*0x7504ff*/
+          v65.right = pt0.y; /*0x750506*/
+          v11 = zmin<long>(pt1R.x, pt2R.x); /*0x750515*/
+          ZAPI.SetRect(&rcAttack_First, v11, v65.right, v65.bottom, m_nSkillID); /*0x750522*/
+          bLeft = 0; /*0x750528*/
+        }
+        v65.top = rcAttack_First.left; /*0x750540*/
+        v65.right = rcAttack_First.top; /*0x750545*/
+        v65.bottom = rcAttack_First.right; /*0x75054b*/
+        v65.left = (int)&v95; /*0x75055a*/
+        HitPoint = (int *)CMob::GetHitPoint(pMob, v65, rcAttack_First.bottom); /*0x75055e*/
+        v13 = HitPoint[1]; /*0x750565*/
+        ptHitFirst.x = *HitPoint; /*0x750568*/
+        ptHitFirst.y = v13; /*0x75056e*/
+      }
+      m_nSkillID = bLeft; /*0x750789*/
+      m_nMoveAction = CSummoned::_ZtlSecureGet_m_nMoveAction(thisa); /*0x750790*/
+      action_from_act_dir = get_action_from_act_dir(m_nMoveAction); /*0x750796*/
+      act_dir = make_act_dir(action_from_act_dir, m_nSkillID); /*0x75079f*/
+      CSummoned::_ZtlSecurePut_m_nMoveAction(thisa, act_dir); /*0x7507af*/
+      m_nSkillID = 0; /*0x7507b4*/
+      v65.bottom = bLeft; /*0x7507b9*/
+      v65.right = p->tAttackAfter; /*0x7507c0*/
+      v65.top = tCur; /*0x7507c4*/
+      v65.left = (int)&p->sEffect; /*0x7507cb*/
+      v88 = &v65; /*0x7507ce*/
+      v79 = Ztl_bstr_t::Ztl_bstr_t((Ztl_bstr_t *)&v65, &p->sEffect); /*0x7507dc*/
+      CSummoned::ATTACKEFFECT::SetAttackEffect( /*0x7507ee*/
+        &thisa->m_effectAttack,
+        (Ztl_bstr_t)v65.left,
+        v65.top,
+        v65.right,
+        v65.bottom,
+        m_nSkillID);
+      pSkill = nullptr; /*0x7507f3*/
+      nSLV = 0; /*0x7507fa*/
+      if ( thisa->m_nSkillID == 35111009 || thisa->m_nSkillID == 35111010 ) /*0x750826*/
+      {
+        m_nSkillID = (int)&v87; /*0x750832*/
+        v21 = TSingleton<CWvsContext>::GetInstance(); /*0x750833*/
+        v78 = CWvsContext::GetCharacterData(v21, (ZRef<CharacterData> *)m_nSkillID); /*0x75083f*/
+        v77 = v78; /*0x75084b*/
+        v135 = 0; /*0x750851*/
+        m_nSkillID = 0; /*0x750858*/
+        v65.bottom = 35111001; /*0x75085a*/
+        v65.right = (int)ZRef<CharacterData>::operator*(v78); /*0x75086a*/
+        v22 = TSingleton<CSkillInfo>::GetInstance(); /*0x75086b*/
+        nSLV = CSkillInfo::GetSkillLevel(v22, (const CharacterData *)v65.right, v65.bottom, m_nSkillID); /*0x750877*/
+        v135 = -1; /*0x75087d*/
+        ZRef<CharacterData>::~ZRef<CharacterData>(&v87); /*0x75088a*/
+        m_nSkillID = thisa->m_nSkillID; /*0x75089b*/
+        v23 = TSingleton<CSkillInfo>::GetInstance(); /*0x75089c*/
+        pSkill = CSkillInfo::GetSkill(v23, m_nSkillID); /*0x7508a8*/
+      }
+      else
+      {
+        m_nSkillID = (int)&v86.bottom; /*0x7508b3*/
+        v24 = TSingleton<CWvsContext>::GetInstance(); /*0x7508b4*/
+        v76 = CWvsContext::GetCharacterData(v24, (ZRef<CharacterData> *)m_nSkillID); /*0x7508c0*/
+        v75 = v76; /*0x7508cc*/
+        v135 = 1; /*0x7508d2*/
+        m_nSkillID = (int)&pSkill; /*0x7508dc*/
+        v65.bottom = thisa->m_nSkillID; /*0x7508e9*/
+        v65.right = (int)ZRef<CharacterData>::operator*(v76); /*0x7508f5*/
+        v25 = TSingleton<CSkillInfo>::GetInstance(); /*0x7508f6*/
+        nSLV = CSkillInfo::GetSkillLevel(v25, (const CharacterData *)v65.right, v65.bottom, m_nSkillID); /*0x750902*/
+        v135 = -1; /*0x750908*/
+        ZRef<CharacterData>::~ZRef<CharacterData>((ZRef<CharacterData> *)&v86.bottom); /*0x750915*/
+      }
+      if ( pSkill && nSLV )
+      {
+        tDelay = p->tAttackAfter; /*0x750936*/
+        m_nSkillID = 0; /*0x75093c*/
+        v65.bottom = (int)aAttackInfo; /*0x750944*/
+        v65.right = 1; /*0x750945*/
+        v65.top = nAction; /*0x75094a*/
+        v65.left = 0; /*0x75094b*/
+        x = nSLV; /*0x750953*/
+        nLevel = GW_CharacterStat::_ZtlSecureGet_nLevel((GW_CharacterStat *)p_characterStat); /*0x750957*/
+        v27 = CSkill_HitAni::CSkill_HitAni( /*0x75096a*/
+                &skillHitAni,
+                pSkill,
+                nLevel,
+                x,
+                v65.left,
+                v65.top,
+                v65.right,
+                (const ATTACKINFO *)v65.bottom,
+                m_nSkillID);
+        v135 = 2; /*0x75096f*/
+        for ( i = 0; i < nAttackCount; ++i )
+        {
+          a = &aAttackInfo[i]; /*0x7509b6*/
+          memset((unsigned __int8 *)a, 0, sizeof(ATTACKINFO)); /*0x7509ca*/
+          a->dwMobID = (unsigned int)pMob; /*0x7509db*/
+          CurrentAction = CMob::GetCurrentAction(a->pMob, nullptr); /*0x7509e7*/
+          a->nForeAction = CurrentAction; /*0x7509f2*/
+          CurrentFrameIndex = CMob::GetCurrentFrameIndex(a->pMob); /*0x7509fd*/
+          a->nFrameIdx = CurrentFrameIndex; /*0x750a08*/
+          if ( bAttackAtTheSameTime ) /*0x750a0f*/
+          {
+            p_ptHitFirst = &ptHitFirst; /*0x750a17*/
+          }
+          else
+          {
+            v65.top = rcAttack.left; /*0x750a27*/
+            v65.right = rcAttack.top; /*0x750a2c*/
+            v65.bottom = rcAttack.right; /*0x750a32*/
+            v65.left = (int)&v86; /*0x750a41*/
+            p_ptHitFirst = (tagPOINT *)CMob::GetHitPoint(a->pMob, v65, rcAttack.bottom); /*0x750a4f*/
+          }
+          v86.right = (int)p_ptHitFirst; /*0x750a5b*/
+          v31 = p_ptHitFirst->y; /*0x750a69*/
+          v32 = a; /*0x750a6c*/
+          a->ptHit.x = p_ptHitFirst->x; /*0x750a72*/
+          v32->ptHit.y = v31; /*0x750a78*/
+          a->tDelay = tDelay + (bAttackAtTheSameTime != 0 ? tDelay2 : 0);
+          RandomHitAction = CMob::GetRandomHitAction(a->pMob); /*0x750aa2*/
+          a->nHitAction = RandomHitAction; /*0x750aad*/
+          ms = CMob::GetMobStat(a->pMob); /*0x750abd*/
+          if ( bMagicAttack ) /*0x750aca*/
+          {
+            m_nSkillID = CWvsContext::GetDragonFuryDamage(pCtx); /*0x750ad8*/
+            v34 = TSingleton<CUserLocal>::GetInstance(); /*0x750ad9*/
+            v65.bottom = CAvatar::GetWeaponItemID(&v34->CAvatar); /*0x750aea*/
+            v65.right = thisa->m_nDamage; /*0x750af7*/
+            v85 = &v65; /*0x750afd*/
+            x = (int)&v65; /*0x750b03*/
+            v35 = TSingleton<CUserLocal>::GetInstance(); /*0x750b04*/
+            PassiveSkillData = CUserLocal::GetPassiveSkillData(v35, (const ZRef<PassiveSkillData> *)x); /*0x750b10*/
+            v72 = PassiveSkillData; /*0x750b1c*/
+            LOBYTE(v135) = 3; /*0x750b22*/
+            x = thisa->m_nSLV; /*0x750b32*/
+            v63.m_Data = (_bstr_t::Data_t *)pSkill; /*0x750b36*/
+            v61 = SecondaryStat; /*0x750b3d*/
+            v58 = bs; /*0x750b44*/
+            v55 = cd; /*0x750b48*/
+            v53 = ms; /*0x750b4f*/
+            MobID = CMob::GetMobID(a->pMob); /*0x750b5d*/
+            CalcDamage = CWvsContext::GetCalcDamage(pCtx); /*0x750b61*/
+            LOBYTE(v135) = 2; /*0x750b66*/
+            v71 = CalcDamage::MDamage( /*0x750b71*/
+                    CalcDamage,
+                    MobID,
+                    v53,
+                    v55,
+                    v58,
+                    v61,
+                    (const SKILLENTRY *)v63.m_Data,
+                    x,
+                    *(const ZRef<PassiveSkillData> *)&v65.left,
+                    v65.right,
+                    v65.bottom,
+                    m_nSkillID);
+            a->aDamage[0] = v71; /*0x750b83*/
+          }
+          else
+          {
+            m_nSkillID = 0; /*0x750b8b*/
+            v37 = TSingleton<CUserLocal>::GetInstance(); /*0x750b8d*/
+            v65.bottom = CAvatar::GetWeaponItemID(&v37->CAvatar); /*0x750b9e*/
+            v65.right = thisa->m_nDamage; /*0x750bab*/
+            v84 = &v65; /*0x750bb1*/
+            x = (int)&v65; /*0x750bb7*/
+            v38 = TSingleton<CUserLocal>::GetInstance(); /*0x750bb8*/
+            v70 = CUserLocal::GetPassiveSkillData(v38, (const ZRef<PassiveSkillData> *)x); /*0x750bc4*/
+            v69 = v70; /*0x750bd0*/
+            LOBYTE(v135) = 4; /*0x750bd6*/
+            x = thisa->m_nSLV; /*0x750be6*/
+            v63.m_Data = (_bstr_t::Data_t *)pSkill; /*0x750bea*/
+            v62 = SecondaryStat; /*0x750bf1*/
+            v59 = bs; /*0x750bf8*/
+            v56 = cd; /*0x750bfc*/
+            v54 = ms; /*0x750c03*/
+            v51 = CMob::GetMobID(a->pMob); /*0x750c11*/
+            v39 = CWvsContext::GetCalcDamage(pCtx); /*0x750c15*/
+            LOBYTE(v135) = 2; /*0x750c1a*/
+            v68 = CalcDamage::PDamage( /*0x750c25*/
+                    v39,
+                    v51,
+                    v54,
+                    v56,
+                    v59,
+                    v62,
+                    (const SKILLENTRY *)v63.m_Data,
+                    x,
+                    *(const ZRef<PassiveSkillData> *)&v65.left,
+                    v65.right,
+                    v65.bottom,
+                    m_nSkillID);
+            a->aDamage[0] = v68; /*0x750c37*/
+          }
+          Template = CMob::GetTemplate(a->pMob); /*0x750c42*/
+          nFixedDamage = CMobTemplate::_ZtlSecureGet_nFixedDamage(Template); /*0x750c4e*/
+          if ( nFixedDamage > 0 && a->aDamage[0] > 0 ) /*0x750c67*/
+            a->aDamage[0] = nFixedDamage; /*0x750c75*/
+          m_nSkillID = thisa->m_nSkillID; /*0x750c84*/
+          v41 = CMob::GetTemplate(a->pMob); /*0x750c8d*/
+          if ( !CMobTemplate::IsVulnerableTo(v41, m_nSkillID) ) /*0x750c94*/
+            a->aDamage[0] = 0; /*0x750ca3*/
+          m_nSkillID = 0; /*0x750caa*/
+          memset(&v65.top, 0, 12); /*0x750cb0*/
+          v65.left = 1; /*0x750cb2*/
+          x = 1; /*0x750cb4*/
+          v63.m_Data = v42; /*0x750cb6*/
+          v83 = &v63; /*0x750cb9*/
+          v67 = CSkill_HitAni::operator()(&skillHitAni, &v63, i); /*0x750cd2*/
+          ptHit = a->ptHit; /*0x750ceb*/
+          v57 = i; /*0x750cf2*/
+          v52 = a->aDamage[0]; /*0x750cfe*/
+          v49 = bLeft; /*0x750d02*/
+          nHitAction = a->nHitAction; /*0x750d0c*/
+          v47 = a->tDelay + tCur; /*0x750d19*/
+          v46 = (char *)thisa->m_nSkillID; /*0x750d26*/
+          v43 = TSingleton<CWvsContext>::GetInstance(); /*0x750d27*/
+          CharacterId = CWvsContext::GetCharacterId(v43); /*0x750d2e*/
+          CMob::AddDamageInfo( /*0x750d3c*/
+            a->pMob,
+            CharacterId,
+            v46,
+            v47,
+            nHitAction,
+            v49,
+            v52,
+            0,
+            v57,
+            ptHit,
+            v63,
+            x,
+            v65.left,
+            v65.top,
+            v65.right,
+            v65.bottom,
+            m_nSkillID);
+          if ( TSingleton<CBattleRecordMan>::IsInstantiated() ) /*0x750d41*/
+          {
+            m_nSkillID = 1; /*0x750d4a*/
+            v65.bottom = 0; /*0x750d4c*/
+            v65.right = a->aDamage[0]; /*0x750d57*/
+            v45 = TSingleton<CBattleRecordMan>::GetInstance(); /*0x750d58*/
+            CBattleRecordMan::SetBattleDamageInfo(v45, v65.right, v65.bottom, m_nSkillID); /*0x750d5f*/
+          }
+          v27 = (CSkill_HitAni *)(i + 1); /*0x750988*/
+        }
+        sub_C9E6D4((__int32)v27, v28, i, a2, (__int32)&savedregs, a3, a4); /*0xde8e1a*/
+      }
+    }
+  }
+}

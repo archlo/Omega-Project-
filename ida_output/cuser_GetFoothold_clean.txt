@@ -1,0 +1,20 @@
+// cuser::GetFoothold
+
+IWzVector2D_vtbl *__thiscall CUser::GetFoothold(CUser *this)
+{
+  IWzVector2D *m_pInterface; // eax
+  IWzVector2D *v2; // eax
+  IWzVector2D_vtbl *v3; // esi
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > result; // [esp+0h] [ebp-4h] BYREF
+
+  result.m_pInterface = (IWzVector2D *)this; /*0x93a280*/
+  m_pInterface = CUser::GetVecCtrl(this, &result)->m_pInterface; /*0x93a28a*/
+  if ( m_pInterface ) /*0x93a28e*/
+    v2 = m_pInterface - 3; /*0x93a290*/
+  else
+    v2 = nullptr; /*0x93a295*/
+  v3 = v2[104].__vftable; /*0x93a298*/
+  if ( result.m_pInterface ) /*0x93a2a4*/
+    result.m_pInterface->Release(result.m_pInterface); /*0x93a2ac*/
+  return v3; /*0x93a2b2*/
+}

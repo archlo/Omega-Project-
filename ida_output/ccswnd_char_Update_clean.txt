@@ -1,0 +1,42 @@
+// ccswnd::char::Update
+
+void __thiscall CCSWnd_Char::Update(CCSWnd_Char *this)
+{
+  int (*v2)(void); // edi
+  __POSITION *m_pHead; // eax
+  __POSITION *v4; // edi
+  __POSITION *pos; // [esp+4h] [ebp-4h] BYREF
+
+  this->m_pUserPreview.p->Update(this->m_pUserPreview.p); /*0x4bd80e*/
+  CAnimationDisplayer::UpdateBeforeUserUpdate(TSingleton<CAnimationDisplayer>::ms_pInstance); /*0x4bd816*/
+  TSingleton<CAnimationDisplayer>::ms_pInstance->Update(TSingleton<CAnimationDisplayer>::ms_pInstance); /*0x4bd825*/
+  CWnd::Update(this); /*0x4bd829*/
+  if ( this->m_bBlowWeather ) /*0x4bd82e*/
+  {
+    v2 = (int (*)(void))timeGetTime; /*0x4bd83c*/
+    if ( timeGetTime() - this->m_tBlowWeather > 0xFA0 ) /*0x4bd84f*/
+      CCSWnd_Char::DeleteFloatNotice(this); /*0x4bd853*/
+    if ( !this->m_bLayerWeather ) /*0x4bd858*/
+      goto LABEL_8; /*0x4bd858*/
+    if ( (unsigned int)(v2() - this->m_tBlowWeather) > 0x1388 ) /*0x4bd86e*/
+      CCSWnd_Char::TransientLayer_Clear(this); /*0x4bd872*/
+    if ( !this->m_bLayerWeather ) /*0x4bd877*/
+    {
+LABEL_8:
+      if ( (unsigned int)(v2() - this->m_tBlowWeather) > 0x1B58 ) /*0x4bd88d*/
+      {
+        m_pHead = (__POSITION *)this->m_lpLayerTransient._m_pHead; /*0x4bd88f*/
+        this->m_bBlowWeather = 0; /*0x4bd895*/
+        for ( pos = m_pHead; pos; m_pHead = pos ) /*0x4bd8a5*/
+        {
+          v4 = m_pHead; /*0x4bd8b0*/
+          ZList<_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>>::GetNext(&pos); /*0x4bd8b7*/
+          ZList<_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>>::RemoveAt( /*0x4bd8c2*/
+            &this->m_lpLayerTransient,
+            v4);
+        }
+        CUserPreview::DeleteFireCrack(this->m_pUserPreview.p); /*0x4bd8db*/
+      }
+    }
+  }
+}

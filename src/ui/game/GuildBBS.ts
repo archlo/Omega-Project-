@@ -49,6 +49,8 @@ export class GuildBBS extends GamePanel {
     this._root.addChild(this._titleText);
 
     this._redrawBg();
+    // OG: CUIWnd close button
+    this.createCloseButton(null, null, 1, 300);
   }
 
   Open(): void {

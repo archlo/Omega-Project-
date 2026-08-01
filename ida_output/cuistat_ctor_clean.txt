@@ -1,0 +1,90 @@
+// cuistat::ctor
+
+CUIStat *__thiscall CUIStat::CUIStat(CUIStat *this, int bTip)
+{
+  IWzFont *m_pInterface; // eax
+  IWzFont *v4; // ebx
+  IWzFont *v5; // eax
+  IWzFont *v6; // ebx
+
+  CUIWnd::CUIWnd(this, 2, 5, 150, 6, 1, 0, 0); /*0x86778b*/
+  if ( this == (CUIStat *)-2824 ) /*0x86779c*/
+    TSingleton<CUIStat>::ms_pInstance = nullptr; /*0x8677ac*/
+  else
+    TSingleton<CUIStat>::ms_pInstance = this; /*0x8677a4*/
+  this->CUIWnd::CWnd::IGObj::__vftable = (CUIStat_vtbl *)&CUIStat::`vftable'{for `IGObj'}; /*0x8677c6*/
+  this->CUIWnd::CWnd::IUIMsgHandler::__vftable = (IUIMsgHandler_vtbl *)&CUIStat::`vftable'{for `IUIMsgHandler'}; /*0x8677cc*/
+  this->CUIWnd::CWnd::ZRefCounted::__vftable = (ZRefCounted_vtbl *)&CUIStat::`vftable'{for `ZRefCounted'}; /*0x8677d3*/
+  `eh vector constructor iterator'( /*0x8677da*/
+    this->m_pBtApUp,
+    8u,
+    6,
+    (void (__thiscall *)(void *))ZRef<CCtrlOriginButton>::ZRef<CCtrlOriginButton>,
+    (void (__thiscall *)(void *))ZRef<CCtrlOriginButton>::~ZRef<CCtrlOriginButton>);
+  `eh vector constructor iterator'( /*0x8677f9*/
+    this->m_pBtAutoApUp,
+    8u,
+    3,
+    (void (__thiscall *)(void *))ZRef<CCtrlOriginButton>::ZRef<CCtrlOriginButton>,
+    (void (__thiscall *)(void *))ZRef<CCtrlOriginButton>::~ZRef<CCtrlOriginButton>);
+  this->m_pUIStatDetail.p = nullptr; /*0x8677fe*/
+  this->m_pFont.m_pInterface = nullptr; /*0x867804*/
+  this->m_pFontNo.m_pInterface = nullptr; /*0x86780a*/
+  this->m_ttHelper.__vftable = (CToolTipHelper_vtbl *)&CToolTipHelper::`vftable'; /*0x867810*/
+  this->m_ttHelper.m_aTTH.a = nullptr; /*0x867820*/
+  this->m_ttHelper.m_mTTHChar.__vftable = (ZMap<long,CToolTipHelper::TTH_INFO,long>_vtbl *)&ZMap<long,CToolTipHelper::TTH_INFO,long>::`vftable'; /*0x867828*/
+  this->m_ttHelper.m_mTTHChar._m_apTable = nullptr; /*0x86782e*/
+  this->m_ttHelper.m_mTTHChar._m_uTableSize = 31; /*0x867831*/
+  this->m_ttHelper.m_mTTHChar._m_uCount = 0; /*0x867838*/
+  ZMap<long,CToolTipHelper::TTH_INFO,long>::_CalcAutoGrow(&this->m_ttHelper.m_mTTHChar, 0x64u); /*0x86783b*/
+  this->m_pFontCategory.m_pInterface = nullptr; /*0x867840*/
+  this->m_pStatJob.m_pInterface = nullptr; /*0x867846*/
+  this->m_bTip = bTip; /*0x86786a*/
+  `eh vector constructor iterator'( /*0x867870*/
+    this->m_pLayerTip,
+    4u,
+    4,
+    (void (__thiscall *)(void *))_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>,
+    (void (__thiscall *)(void *))_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::~_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>);
+  `eh vector constructor iterator'( /*0x86788f*/
+    this->m_apCanvasDisabled,
+    4u,
+    4,
+    (void (__thiscall *)(void *))_com_ptr_t<_com_IIID<IWzCanvas,&__s_GUID const _GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e>>::_com_ptr_t<_com_IIID<IWzCanvas,&__s_GUID const _GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e>>,
+    (void (__thiscall *)(void *))_com_ptr_t<_com_IIID<IWzCanvas,&__s_GUID const _GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e>>::~_com_ptr_t<_com_IIID<IWzCanvas,&__s_GUID const _GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e>>);
+  this->m_lm.m_pWnd = nullptr; /*0x867894*/
+  this->m_lm.m_nOffsetX = 0; /*0x86789a*/
+  this->m_lm.m_nOffsetY = 0; /*0x8678a0*/
+  this->m_lm.m_aLayer.a = nullptr; /*0x8678a6*/
+  this->m_lm.m_aButton.a = nullptr; /*0x8678ac*/
+  m_pInterface = get_basic_font( /*0x8678c3*/
+                   (_com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> > *)&bTip,
+                   FONT_SMALL_GRAY)->m_pInterface;
+  v4 = this->m_pFont.m_pInterface; /*0x8678c5*/
+  if ( v4 != m_pInterface ) /*0x8678d0*/
+  {
+    this->m_pFont.m_pInterface = m_pInterface; /*0x8678d2*/
+    if ( m_pInterface ) /*0x8678da*/
+      m_pInterface->AddRef(m_pInterface); /*0x8678e2*/
+    if ( v4 ) /*0x8678e6*/
+      v4->Release(v4); /*0x8678ee*/
+  }
+  if ( bTip ) /*0x8678f6*/
+    (*(void (__stdcall **)(int))(*(_DWORD *)bTip + 8))(bTip); /*0x8678fe*/
+  v5 = get_basic_font( /*0x86790c*/
+         (_com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> > *)&bTip,
+         FONT_SMALL_GRAY)->m_pInterface;
+  v6 = this->m_pFontNo.m_pInterface; /*0x86790e*/
+  if ( v6 != v5 ) /*0x867919*/
+  {
+    this->m_pFontNo.m_pInterface = v5; /*0x86791b*/
+    if ( v5 ) /*0x867923*/
+      v5->AddRef(v5); /*0x86792b*/
+    if ( v6 ) /*0x86792f*/
+      v6->Release(v6); /*0x867937*/
+  }
+  if ( bTip ) /*0x86793f*/
+    (*(void (__stdcall **)(int))(*(_DWORD *)bTip + 8))(bTip); /*0x867947*/
+  CUIWnd::CreateUIWndPosSaved(this, 172, 337, 10); /*0x867957*/
+  return this; /*0x86795e*/
+}

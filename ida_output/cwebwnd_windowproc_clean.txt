@@ -1,0 +1,1 @@
+{"addr":"0x9a3dc0","code":"// attributes: thunk\nint __thiscall CWebWnd::WindowProc(\n        CWebWnd *this,\n        HWND__ *hWindow,\n        unsigned int iMessage,\n        unsigned int wParam,\n        int lParam)\n{\n  return ZAPI.DefWindowProcA(hWindow, iMessage, wParam, lParam);\n}","refs":[{"addr":"0xc6d758","name":"?ZAPI@@3U_ZAPIProcAddress@@A"}]}

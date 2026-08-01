@@ -1,0 +1,6 @@
+// cuserlocal::IsSit
+
+int __thiscall CUserLocal::IsSit(CUserLocal *this)
+{
+  return _ZtlSecureFuse<int>(this->_ZtlSecureTear_m_bSit, this->_ZtlSecureTear_m_bSit_CS); /*0x8df506*/
+}

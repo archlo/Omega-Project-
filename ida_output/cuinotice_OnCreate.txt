@@ -1,0 +1,51 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"addr\":\"0x792a60\",\"code\":\"void __thiscall CUINoticePremium::OnCreate(CUINoticePremium *this, void *pData)\\n{\\n  StringPool *Instance; // eax\\n  const ZXString<unsigned short> *StringW; // eax\\n  CCtrlButton *v5; // eax\\n  CCtrlButton *v6; // eax\\n  ZRefCounted *v7; // eax\\n  CCtrlButton *v8; // edi\\n  CCtrlButton *p; // eax\\n  ZRef<CCtrlButton> result; // [esp+10h] [ebp-24h] BYREF\\n  CCtrlButton::CREATEPARAM paramButton; // [esp+18h] [ebp-1Ch] BYREF\\n  int v12; // [esp+30h] [ebp-4h]\\n\\n  v12 = 0; /*0x792aa0*/\\n  memset(&paramButton, 0, sizeof(paramButton)); /*0x792aa4*/\\n  Instance = StringPool::GetInstance(); /*0x792aa8*/\\n  StringW = StringPool::GetStringW(Instance, (ZXString<unsigned short> *)&result, 0x1962u); /*0x792aaf*/\\n  LOBYTE(v12) = 1; /*0x792ab9*/\\n  ZXString<unsigned short>::operator=(&paramButton.sUOL, StringW); /*0x792abe*/\\n  LOBYTE(v12) = 0; /*0x792ac7*/\\n  if ( *(_DWORD *)&result.gap0 ) /*0x792acd*/\\n    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(*(_DWORD *)&result.gap0 - 12)); /*0x792ad3*/\\n  v5 = (CCtrlButton *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0xADCu); /*0x792ae5*/\\n  *(_DWORD *)&result.gap0 = v5; /*0x792aea*/\\n  LOBYTE(v12) = 2; /*0x792aee*/\\n  if ( v5 ) /*0x792af5*/\\n    v6 = CCtrlButton::CCtrlButton(v5); /*0x792af9*/\\n  else\\n    v6 = nullptr; /*0x792b00*/\\n  LOBYTE(v12) = 0; /*0x792b02*/\\n  if ( v6 && (v7 = &v6->ZRefCounted) != nullptr ) /*0x792b13*/\\n  {\\n    v8 = (CCtrlButton *)&v7[-1].___u1; /*0x792b15*/\\n    if ( v7 != (ZRefCounted *)8 ) /*0x792b1a*/\\n      InterlockedIncrement(&v8->_m_nRef); /*0x792b20*/\\n  }\\n  else\\n  {\\n    v8 = nullptr; /*0x792b92*/\\n  }\\n  p = this->m_pBtClose.p; /*0x792b26*/\\n  this->m_pBtClose.p = v8; /*0x792b2c*/\\n  result.p = p; /*0x792b32*/\\n  if ( p ) /*0x792b38*/\\n    ZRef<CCtrlButton>::_ReleaseRaw(&result, nullptr); /*0x792b3f*/\\n  this->m_pBtClose.p->CreateCtrl_2(this->m_pBtClose.p, this, 2u, 283, 14, 0, &paramButton); /*0x792b5f*/\\n  v12 = -1; /*0x792b65*/\\n  if ( paramButton.sUOL._m_pStr ) /*0x792b6f*/\\n    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)paramButton.sUOL._m_pStr - 1); /*0x792b75*/\\n}\",\"refs\":[{\"addr\":\"0x7466a0\",\"name\":\"?GetInstance@StringPool@@SAAAV1@XZ\"},{\"addr\":\"0x403b60\",\"name\":\"?GetStringW@StringPool@@QAE?AV?$ZXString@G@@I@Z\"},{\"addr\":\"0x416d20\",\"name\":\"??4?$ZXString@G@@QAEAAV0@ABV0@@Z\"},{\"addr\":\"0x4034b0\",\"name\":\"?_Release@?$ZXString@G@@KAXPAU_ZXStringData@1@@Z\"},{\"addr\":\"0x402040\",\"name\":\"?Alloc@?$ZAllocEx@VZAllocAnonSelector@@@@QAEPAXI@Z\"},{\"addr\":\"0xc6e67c\",\"name\":\"?_s_alloc@?$ZAllocEx@VZAllocAnonSelector@@@@0V1@A\"},{\"addr\":\"0x471740\",\"name\":\"??0CCtrlButton@@QAE@XZ\"},{\"addr\":\"0xb14074\",\"name\":\"__imp__InterlockedIncrement@4\"},{\"addr\":\"0x429d70\",\"name\":\"?_ReleaseRaw@?$ZRef@VCCtrlButton@@@@AAEXPAVZRefCounted@@@Z\"}]}"
+    }
+  ],
+  "structuredContent": {
+    "addr": "0x792a60",
+    "code": "void __thiscall CUINoticePremium::OnCreate(CUINoticePremium *this, void *pData)\n{\n  StringPool *Instance; // eax\n  const ZXString<unsigned short> *StringW; // eax\n  CCtrlButton *v5; // eax\n  CCtrlButton *v6; // eax\n  ZRefCounted *v7; // eax\n  CCtrlButton *v8; // edi\n  CCtrlButton *p; // eax\n  ZRef<CCtrlButton> result; // [esp+10h] [ebp-24h] BYREF\n  CCtrlButton::CREATEPARAM paramButton; // [esp+18h] [ebp-1Ch] BYREF\n  int v12; // [esp+30h] [ebp-4h]\n\n  v12 = 0; /*0x792aa0*/\n  memset(&paramButton, 0, sizeof(paramButton)); /*0x792aa4*/\n  Instance = StringPool::GetInstance(); /*0x792aa8*/\n  StringW = StringPool::GetStringW(Instance, (ZXString<unsigned short> *)&result, 0x1962u); /*0x792aaf*/\n  LOBYTE(v12) = 1; /*0x792ab9*/\n  ZXString<unsigned short>::operator=(&paramButton.sUOL, StringW); /*0x792abe*/\n  LOBYTE(v12) = 0; /*0x792ac7*/\n  if ( *(_DWORD *)&result.gap0 ) /*0x792acd*/\n    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(*(_DWORD *)&result.gap0 - 12)); /*0x792ad3*/\n  v5 = (CCtrlButton *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0xADCu); /*0x792ae5*/\n  *(_DWORD *)&result.gap0 = v5; /*0x792aea*/\n  LOBYTE(v12) = 2; /*0x792aee*/\n  if ( v5 ) /*0x792af5*/\n    v6 = CCtrlButton::CCtrlButton(v5); /*0x792af9*/\n  else\n    v6 = nullptr; /*0x792b00*/\n  LOBYTE(v12) = 0; /*0x792b02*/\n  if ( v6 && (v7 = &v6->ZRefCounted) != nullptr ) /*0x792b13*/\n  {\n    v8 = (CCtrlButton *)&v7[-1].___u1; /*0x792b15*/\n    if ( v7 != (ZRefCounted *)8 ) /*0x792b1a*/\n      InterlockedIncrement(&v8->_m_nRef); /*0x792b20*/\n  }\n  else\n  {\n    v8 = nullptr; /*0x792b92*/\n  }\n  p = this->m_pBtClose.p; /*0x792b26*/\n  this->m_pBtClose.p = v8; /*0x792b2c*/\n  result.p = p; /*0x792b32*/\n  if ( p ) /*0x792b38*/\n    ZRef<CCtrlButton>::_ReleaseRaw(&result, nullptr); /*0x792b3f*/\n  this->m_pBtClose.p->CreateCtrl_2(this->m_pBtClose.p, this, 2u, 283, 14, 0, &paramButton); /*0x792b5f*/\n  v12 = -1; /*0x792b65*/\n  if ( paramButton.sUOL._m_pStr ) /*0x792b6f*/\n    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)paramButton.sUOL._m_pStr - 1); /*0x792b75*/\n}",
+    "refs": [
+      {
+        "addr": "0x7466a0",
+        "name": "?GetInstance@StringPool@@SAAAV1@XZ"
+      },
+      {
+        "addr": "0x403b60",
+        "name": "?GetStringW@StringPool@@QAE?AV?$ZXString@G@@I@Z"
+      },
+      {
+        "addr": "0x416d20",
+        "name": "??4?$ZXString@G@@QAEAAV0@ABV0@@Z"
+      },
+      {
+        "addr": "0x4034b0",
+        "name": "?_Release@?$ZXString@G@@KAXPAU_ZXStringData@1@@Z"
+      },
+      {
+        "addr": "0x402040",
+        "name": "?Alloc@?$ZAllocEx@VZAllocAnonSelector@@@@QAEPAXI@Z"
+      },
+      {
+        "addr": "0xc6e67c",
+        "name": "?_s_alloc@?$ZAllocEx@VZAllocAnonSelector@@@@0V1@A"
+      },
+      {
+        "addr": "0x471740",
+        "name": "??0CCtrlButton@@QAE@XZ"
+      },
+      {
+        "addr": "0xb14074",
+        "name": "__imp__InterlockedIncrement@4"
+      },
+      {
+        "addr": "0x429d70",
+        "name": "?_ReleaseRaw@?$ZRef@VCCtrlButton@@@@AAEXPAVZRefCounted@@@Z"
+      }
+    ]
+  },
+  "isError": false
+}

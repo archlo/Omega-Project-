@@ -1,0 +1,322 @@
+void __thiscall CMob::AddDamageInfo(
+        CMob *this,
+        unsigned int dwCharacterId,
+        char *nSkillID,
+        int tDelayedProcess,
+        int nHitAction,
+        int bLeft,
+        int nDamage,
+        int bCriticalAttack,
+        int nAttackIdx,
+        tagPOINT pt,
+        Ztl_bstr_t sHitAni,
+        int bChase,
+        int nMoveType,
+        int nBulletCashItemID,
+        int nMoveEndingPosX,
+        int nMoveEndingPosY,
+        int bMoveLeft)
+{
+  _bstr_t::Data_t *m_Data; // eax
+  CMobTemplate *m_pTemplate; // eax
+  char **v20; // eax
+  int IsGL5thEventCakeTeam; // eax
+  CMob::DAMAGEINFO *v22; // eax
+  CMob::DAMAGEINFO *v23; // esi
+  int v24; // edx
+  int v25; // ecx
+  IVecCtrlOwner *v26; // edi
+  unsigned int v27; // eax
+  int v28; // ecx
+  unsigned int v29; // eax
+  int v30; // edi
+  int v31; // ecx
+  unsigned int v32; // eax
+  int v33; // ecx
+  unsigned int v34; // eax
+  int v35; // ecx
+  unsigned int v36; // eax
+  int v37; // ecx
+  _bstr_t::Data_t *v38; // ecx
+  StringPool *Instance; // eax
+  const Ztl_bstr_t *BSTR; // eax
+  const _bstr_t *v41; // eax
+  _bstr_t::Data_t *v42; // ecx
+  Ztl_variant_t *ObjectA; // eax
+  BOOL v44; // edi
+  CMob::HITEFFECT *v45; // edi
+  StringPool *v46; // eax
+  const Ztl_bstr_t *v47; // eax
+  const _bstr_t *v48; // eax
+  _bstr_t::Data_t *v49; // ecx
+  int int32; // eax
+  CUser *User; // eax
+  SecondaryStat *v52; // eax
+  int rWeaponCharge; // eax
+  void *v54; // esp
+  const wchar_t *v55; // eax
+  _bstr_t *v56; // eax
+  BOOL v57; // eax
+  int v58; // eax
+  Ztl_bstr_t v59; // [esp-10h] [ebp-7Ch] BYREF
+  const Ztl_variant_t *p_vParam; // [esp-Ch] [ebp-78h]
+  const Ztl_variant_t *p_vAux; // [esp-8h] [ebp-74h]
+  const _bstr_t *p_s; // [esp-4h] [ebp-70h]
+  _DWORD v63[4]; // [esp+0h] [ebp-6Ch] BYREF
+  Ztl_variant_t v64; // [esp+10h] [ebp-5Ch] BYREF
+  Ztl_variant_t vParam; // [esp+20h] [ebp-4Ch] BYREF
+  Ztl_variant_t vAux; // [esp+30h] [ebp-3Ch] BYREF
+  int nElement[2]; // [esp+40h] [ebp-2Ch]
+  int v68; // [esp+48h] [ebp-24h] BYREF
+  Ztl_bstr_t v69; // [esp+4Ch] [ebp-20h] BYREF
+  _bstr_t v70; // [esp+50h] [ebp-1Ch] BYREF
+  Ztl_bstr_t result; // [esp+54h] [ebp-18h] BYREF
+  _bstr_t s; // [esp+58h] [ebp-14h] BYREF
+  int v73; // [esp+68h] [ebp-4h]
+
+  s.m_Data = (_bstr_t::Data_t *)this; /*0x653a3d*/
+  m_Data = TSingleton<CUserLocal>::ms_pInstance.m_Data; /*0x653a40*/
+  v73 = 0; /*0x653a45*/
+  if ( TSingleton<CUserLocal>::ms_pInstance.m_Data ) /*0x653a4e*/
+  {
+    if ( TSingleton<CUserLocal>::ms_pInstance.m_Data[552].m_RefCount == dwCharacterId ) /*0x653a59*/
+    {
+      this->m_tLastHitted = ZAPI.timeGetTime(); /*0x653a61*/
+      m_Data = TSingleton<CUserLocal>::ms_pInstance.m_Data; /*0x653a67*/
+    }
+    if ( m_Data ) /*0x653a6e*/
+    {
+      if ( m_Data[552].m_RefCount == dwCharacterId ) /*0x653a76*/
+      {
+        m_pTemplate = this->m_pTemplate; /*0x653a78*/
+        if ( m_pTemplate ) /*0x653a80*/
+        {
+          v20 = (char **)_ZtlSecureFuse<unsigned long>( /*0x653a8a*/
+                           m_pTemplate->_ZtlSecureTear_dwTemplateID,
+                           m_pTemplate->_ZtlSecureTear_dwTemplateID_CS);
+          if ( v20 == &off_8F71AF ) /*0x653a97*/
+          {
+            IsGL5thEventCakeTeam = CUserLocal::IsGL5thEventCakeTeam((CUserLocal *)TSingleton<CUserLocal>::ms_pInstance.m_Data); /*0x653a9f*/
+          }
+          else
+          {
+            if ( v20 != (char **)((char *)&off_8F71AF + 1) ) /*0x653aab*/
+              goto LABEL_12; /*0x653aab*/
+            IsGL5thEventCakeTeam = CUserLocal::IsGL5thEventPieTeam((CUserLocal *)TSingleton<CUserLocal>::ms_pInstance.m_Data); /*0x653ab3*/
+          }
+          if ( IsGL5thEventCakeTeam ) /*0x653aba*/
+          {
+LABEL_78:
+            v38 = sHitAni.m_Data; /*0x654076*/
+            goto LABEL_79; /*0x654076*/
+          }
+        }
+      }
+    }
+  }
+LABEL_12:
+  v22 = ZList<CMob::DAMAGEINFO>::AddTail(&this->m_lDamageInfo); /*0x653ac0*/
+  v23 = v22; /*0x653ace*/
+  if ( nSkillID == (char *)&loc_4DD5C8 + 4 || nSkillID == &byte_E66C4B || nSkillID == (char *)&off_423D0A ) /*0x653aee*/
+  {
+    v25 = 0; /*0x653c19*/
+  }
+  else
+  {
+    if ( nSkillID != (char *)&loc_4E23EC + 3 /*0x653b66*/
+      && nSkillID != &byte_E6935C
+      && nSkillID != (char *)&loc_406849
+      && nSkillID != (_BYTE *)&loc_40684E + 1
+      && nSkillID != (char *)33121001
+      && nSkillID != (char *)32001000
+      && nSkillID != (char *)32101000
+      && nSkillID != (char *)32111002
+      && nSkillID != (char *)32121002
+      && nSkillID != (char *)35001003 )
+    {
+      if ( nSkillID == (char *)22171002 ) /*0x653b72*/
+      {
+        nElement[0] = 0; /*0x653b7a*/
+        nElement[1] = 60; /*0x653b81*/
+        v68 = 180; /*0x653b88*/
+        v69.m_Data = (_bstr_t::Data_t *)420; /*0x653b8f*/
+        if ( nAttackIdx < 4 ) /*0x653b96*/
+          CMob::DAMAGEINFO::_ZtlSecurePut_tDelayedProcess(v22, nElement[nAttackIdx] + tDelayedProcess); /*0x653bb3*/
+        else
+          CMob::DAMAGEINFO::_ZtlSecurePut_tDelayedProcess(v22, tDelayedProcess); /*0x653ba1*/
+      }
+      else
+      {
+        if ( nSkillID == (char *)3111006 /*0x653bfd*/
+          || nSkillID == (char *)3211006
+          || nSkillID == (char *)13111001
+          || nSkillID == (char *)33001000
+          || nSkillID == (char *)33111001
+          || nSkillID == (char *)35111004
+          || nSkillID == (char *)35121005
+          || (v24 = 120, nSkillID == (char *)35121013) )
+        {
+          v24 = 60; /*0x653bff*/
+        }
+        CMob::DAMAGEINFO::_ZtlSecurePut_tDelayedProcess(v22, tDelayedProcess + nAttackIdx * v24); /*0x653c0d*/
+      }
+      goto LABEL_42; /*0x653ba6*/
+    }
+    v25 = tDelayedProcess; /*0x653c14*/
+  }
+  v22->_ZtlSecureTear_tDelayedProcess_CS = _ZtlSecureTear<long>(v25, v22->_ZtlSecureTear_tDelayedProcess); /*0x653c22*/
+LABEL_42:
+  v23->_ZtlSecureTear_dwCharacterId_CS = _ZtlSecureTear<unsigned long>(dwCharacterId, v23->_ZtlSecureTear_dwCharacterId); /*0x653c25*/
+  v23->_ZtlSecureTear_nSkillID_CS = _ZtlSecureTear<long>((int)nSkillID, v23->_ZtlSecureTear_nSkillID); /*0x653c43*/
+  v23->_ZtlSecureTear_nHitAction_CS = _ZtlSecureTear<long>(nHitAction, v23->_ZtlSecureTear_nHitAction); /*0x653c51*/
+  v23->_ZtlSecureTear_bLeft_CS = _ZtlSecureTear<int>(bLeft, v23->_ZtlSecureTear_bLeft); /*0x653c5f*/
+  v23->_ZtlSecureTear_nDamage_CS = _ZtlSecureTear<long>(nDamage, v23->_ZtlSecureTear_nDamage); /*0x653c6d*/
+  v23->_ZtlSecureTear_bCriticalAttack_CS = _ZtlSecureTear<int>(bCriticalAttack, v23->_ZtlSecureTear_bCriticalAttack); /*0x653c7b*/
+  v26 = &this->IVecCtrlOwner; /*0x653c83*/
+  v23->_ZtlSecureTear_nAttackIdx_CS = _ZtlSecureTear<long>(nAttackIdx, v23->_ZtlSecureTear_nAttackIdx); /*0x653c86*/
+  pt.x -= *(_DWORD *)((int (__thiscall *)(IVecCtrlOwner *, int *))v26->GetPos)(v26, &v68); /*0x653c98*/
+  pt.y -= *(_DWORD *)(((int (__thiscall *)(IVecCtrlOwner *, int *))v26->GetPos)(v26, &v68) + 4); /*0x653cae*/
+  v27 = _ZtlSecureTear<int>(bChase, v23->_ZtlSecureTear_bChase); /*0x653cb4*/
+  v28 = nBulletCashItemID; /*0x653cb9*/
+  v23->_ZtlSecureTear_bChase_CS = v27; /*0x653cbf*/
+  v29 = _ZtlSecureTear<long>(v28, v23->_ZtlSecureTear_nBulletCashItemID); /*0x653cc2*/
+  v30 = nMoveType; /*0x653cc7*/
+  v23->_ZtlSecureTear_nBulletCashItemID_CS = v29; /*0x653cca*/
+  if ( v30 == 1 && nDamage < CMob::GetPushedDamage((CMob *)s.m_Data) ) /*0x653ce0*/
+    v31 = 0; /*0x653ce2*/
+  else
+    v31 = v30; /*0x653ce6*/
+  v32 = _ZtlSecureTear<long>(v31, v23->_ZtlSecureTear_nMoveType); /*0x653ceb*/
+  v33 = nMoveEndingPosX; /*0x653cf0*/
+  v23->_ZtlSecureTear_nMoveType_CS = v32; /*0x653cf9*/
+  v34 = _ZtlSecureTear<long>(v33, v23->_ZtlSecureTear_nMoveEndingPosX); /*0x653cfc*/
+  v35 = nMoveEndingPosY; /*0x653d01*/
+  v23->_ZtlSecureTear_nMoveEndingPosX_CS = v34; /*0x653d0a*/
+  v36 = _ZtlSecureTear<long>(v35, v23->_ZtlSecureTear_nMoveEndingPosY); /*0x653d10*/
+  v37 = bMoveLeft; /*0x653d15*/
+  v23->_ZtlSecureTear_nMoveEndingPosY_CS = v36; /*0x653d1e*/
+  v23->_ZtlSecureTear_bMoveLeft_CS = _ZtlSecureTear<int>(v37, v23->_ZtlSecureTear_bMoveLeft); /*0x653d2d*/
+  v38 = sHitAni.m_Data; /*0x653d33*/
+  if ( nDamage <= 0 ) /*0x653d36*/
+    goto LABEL_79; /*0x653d36*/
+  if ( !sHitAni.m_Data ) /*0x653d3e*/
+    return; /*0x653d3e*/
+  if ( !sHitAni.m_Data->m_wstr || !(*((_DWORD *)sHitAni.m_Data->m_wstr - 1) >> 1) ) /*0x653d5a*/
+    goto LABEL_79; /*0x653d5c*/
+  if ( pt.x != 0x7FFFFFFF && pt.y != 0x7FFFFFFF ) /*0x653d73*/
+  {
+    if ( nSkillID != (char *)&loc_4E23EC /*0x653dad*/
+      && nSkillID != (char *)&loc_4E23EC + 3
+      && nSkillID != &byte_E6935C
+      && nSkillID != (char *)&word_D72A0E
+      && nSkillID != (char *)&_unwindfunclet__Load_CPetTemplate__SAXXZ_12 + 3
+      && nSkillID != (char *)22171002
+      || !nAttackIdx )
+    {
+      Ztl_variant_t::Ztl_variant_t(&vAux, &vtMissing); /*0x653dbb*/
+      LOBYTE(v73) = 1; /*0x653dc8*/
+      Ztl_variant_t::Ztl_variant_t(&vParam, &vtMissing); /*0x653dcc*/
+      p_s = nullptr; /*0x653dd1*/
+      p_vAux = &vAux; /*0x653dd6*/
+      p_vParam = &vParam; /*0x653dda*/
+      LOBYTE(v73) = 2; /*0x653de4*/
+      Instance = StringPool::GetInstance(); /*0x653de8*/
+      BSTR = StringPool::GetBSTR(Instance, &result, 0x1673u); /*0x653def*/
+      LOBYTE(v73) = 3; /*0x653dfc*/
+      v41 = Ztl_bstr_t::operator+(&sHitAni, &v70, BSTR); /*0x653e00*/
+      v59.m_Data = v42; /*0x653e05*/
+      v69.m_Data = (_bstr_t::Data_t *)&v59; /*0x653e08*/
+      Ztl_bstr_t::Ztl_bstr_t(&v59, v41); /*0x653e0c*/
+      LOBYTE(v73) = 5; /*0x653e18*/
+      if ( !g_rm.m_pInterface ) /*0x653e1c*/
+        _com_issue_error(-2147467261); /*0x653e23*/
+      LOBYTE(v73) = 4; /*0x653e2b*/
+      ObjectA = IWzResMan::GetObjectA(g_rm.m_pInterface, &v64, v59, p_vParam, p_vAux); /*0x653e36*/
+      LOBYTE(v73) = 6; /*0x653e3c*/
+      v44 = get_int32(ObjectA, (int)p_s) != 0; /*0x653e51*/
+      Ztl_variant_t::~Ztl_variant_t(&v64); /*0x653e53*/
+      _bstr_t::~_bstr_t(&v70); /*0x653e5b*/
+      Ztl_bstr_t::~Ztl_bstr_t(&result); /*0x653e63*/
+      Ztl_variant_t::~Ztl_variant_t(&vParam); /*0x653e6b*/
+      LOBYTE(v73) = 0; /*0x653e73*/
+      Ztl_variant_t::~Ztl_variant_t(&vAux); /*0x653e77*/
+      if ( !v44 || !nAttackIdx ) /*0x653e84*/
+      {
+        v45 = ZList<CMob::HITEFFECT>::AddTail((ZList<CMob::HITEFFECT> *)&s.m_Data[101].m_str); /*0x653ea0*/
+        Ztl_variant_t::Ztl_variant_t(&vParam, &vtMissing); /*0x653ea2*/
+        LOBYTE(v73) = 7; /*0x653eaf*/
+        Ztl_variant_t::Ztl_variant_t(&vAux, &vtMissing); /*0x653eb3*/
+        p_s = nullptr; /*0x653eb8*/
+        p_vAux = &vParam; /*0x653ebd*/
+        p_vParam = &vAux; /*0x653ec1*/
+        v59.m_Data = (_bstr_t::Data_t *)1637; /*0x653ec5*/
+        LOBYTE(v73) = 8; /*0x653ecb*/
+        v46 = StringPool::GetInstance(); /*0x653ecf*/
+        v47 = StringPool::GetBSTR(v46, &v69, (unsigned int)v59.m_Data); /*0x653ed6*/
+        LOBYTE(v73) = 9; /*0x653ee3*/
+        v48 = Ztl_bstr_t::operator+(&sHitAni, &s, v47); /*0x653ee7*/
+        v59.m_Data = v49; /*0x653eec*/
+        result.m_Data = (_bstr_t::Data_t *)&v59; /*0x653eef*/
+        Ztl_bstr_t::Ztl_bstr_t(&v59, v48); /*0x653ef3*/
+        LOBYTE(v73) = 11; /*0x653eff*/
+        if ( !g_rm.m_pInterface ) /*0x653f03*/
+          _com_issue_error(-2147467261); /*0x653f0a*/
+        LOBYTE(v73) = 10; /*0x653f13*/
+        result.m_Data = (_bstr_t::Data_t *)IWzResMan::GetObjectA(g_rm.m_pInterface, &v64, v59, p_vParam, p_vAux); /*0x653f22*/
+        p_vAux = (const Ztl_variant_t *)v23->_ZtlSecureTear_tDelayedProcess_CS; /*0x653f28*/
+        LOBYTE(v73) = 12; /*0x653f2a*/
+        v70.m_Data = (_bstr_t::Data_t *)_ZtlSecureFuse<long>(v23->_ZtlSecureTear_tDelayedProcess, (unsigned int)p_vAux); /*0x653f33*/
+        int32 = get_int32((Ztl_variant_t *)result.m_Data, (int)p_s); /*0x653f3d*/
+        v45->tHit = (int)v70.m_Data - int32; /*0x653f47*/
+        Ztl_variant_t::~Ztl_variant_t(&v64); /*0x653f4f*/
+        _bstr_t::~_bstr_t(&s); /*0x653f57*/
+        Ztl_bstr_t::~Ztl_bstr_t(&v69); /*0x653f5f*/
+        Ztl_variant_t::~Ztl_variant_t(&vAux); /*0x653f67*/
+        LOBYTE(v73) = 0; /*0x653f6f*/
+        Ztl_variant_t::~Ztl_variant_t(&vParam); /*0x653f73*/
+        v45->nSkillID = (int)nSkillID; /*0x653f7b*/
+        v45->bLeft = bLeft; /*0x653f7e*/
+        if ( nSkillID == (char *)1211002 || nSkillID == (char *)1221009 ) /*0x653f8f*/
+        {
+          User = CUserPool::GetUser((CUserPool *)TSingleton<CUserPool>::ms_pInstance.m_pInterface, dwCharacterId); /*0x653f9b*/
+          v52 = (SecondaryStat *)((int (__thiscall *)(CUser *, _DWORD, _DWORD, _DWORD, _DWORD, _DWORD, unsigned int, unsigned int, unsigned int))User->GetSecondaryStat)( /*0x653fa7*/
+                                   User,
+                                   v63[0],
+                                   v63[1],
+                                   v63[2],
+                                   v63[3],
+                                   *(_DWORD *)&v64.vt,
+                                   v64.decVal.Hi32,
+                                   v64.decVal.Lo32,
+                                   v64.decVal.Mid32);
+          rWeaponCharge = SecondaryStat::_ZtlSecureGet_rWeaponCharge_(v52); /*0x653fab*/
+          v69.m_Data = (_bstr_t::Data_t *)get_element_by_charged_skillid(rWeaponCharge); /*0x653fb6*/
+          v54 = alloca(32); /*0x653fc1*/
+          v55 = _Int2StrW((int)v69.m_Data, (wchar_t *)v63); /*0x653fcd*/
+          _bstr_t::_bstr_t(&s, v55); /*0x653fd9*/
+          p_s = &s; /*0x653fe1*/
+          LOBYTE(v73) = 13; /*0x653fea*/
+          v56 = Ztl_bstr_t::operator+=(&sHitAni, L"/"); /*0x653fee*/
+          _bstr_t::operator+=(v56, p_s); /*0x653ff5*/
+          LOBYTE(v73) = 0; /*0x653ffd*/
+          _bstr_t::~_bstr_t(&s); /*0x654001*/
+        }
+        v57 = is_delayed_hit_sfx_needed_skill((int)nSkillID) && !nAttackIdx; /*0x654020*/
+        v45->bSfx = v57; /*0x654022*/
+        Ztl_bstr_t::operator=(&v45->sHitUOL, &sHitAni); /*0x65402c*/
+        v45->ptRel = pt; /*0x654034*/
+      }
+      v38 = sHitAni.m_Data; /*0x65403d*/
+    }
+    if ( nSkillID == (char *)2121007 || nSkillID == (char *)2221007 || nSkillID == &byte_B8CC9B ) /*0x654056*/
+    {
+      v58 = _ZtlSecureFuse<long>(v23->_ZtlSecureTear_tDelayedProcess, v23->_ZtlSecureTear_tDelayedProcess_CS); /*0x65405d*/
+      v23->_ZtlSecureTear_tDelayedProcess_CS = _ZtlSecureTear<long>(v58 + 360, v23->_ZtlSecureTear_tDelayedProcess); /*0x654073*/
+      goto LABEL_78; /*0x654073*/
+    }
+LABEL_79:
+    if ( !v38 ) /*0x65407b*/
+      return; /*0x65407b*/
+  }
+  _bstr_t::Data_t::Release(v38); /*0x65407d*/
+}

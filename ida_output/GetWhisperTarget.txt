@@ -1,0 +1,6 @@
+﻿ZXString<char> *__thiscall CUIStatusBar::GetWhisperTarget(CUIStatusBar *this, ZXString<char> *result)
+{
+  result->_m_pStr = nullptr; /*0x4d97d7*/
+  ZXString<char>::operator=(result, &this->m_sWhisperTarget); /*0x4d97dd*/
+  return result; /*0x4d97e4*/
+}

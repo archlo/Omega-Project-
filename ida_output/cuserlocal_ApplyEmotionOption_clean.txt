@@ -1,0 +1,61 @@
+// cuserlocal::ApplyEmotionOption
+
+void __thiscall CUserLocal::ApplyEmotionOption(CUserLocal *this, int nItemOptionID, int nLevel)
+{
+  ItemOptionInfo *p; // eax
+  ItemOptionLevelData *v4; // esi
+  int v5; // eax
+  ItemOptionInfo *v6; // esi
+  volatile LONG *p_nReqLevel; // edi
+  ZRef<ItemOptionInfo> pOption; // [esp+Ch] [ebp-14h] BYREF
+  int v9; // [esp+1Ch] [ebp-4h]
+
+  CItemOptionInfo::GetItemOption(TSingleton<CItemOptionInfo>::ms_pInstance, &pOption, nItemOptionID); /*0x9091d5*/
+  p = pOption.p; /*0x9091da*/
+  v9 = 0; /*0x9091de*/
+  if ( !pOption.p ) /*0x9091e8*/
+    return; /*0x9091e8*/
+  v4 = &pOption.p->aLevelData.a[nLevel]; /*0x9091f8*/
+  if ( v4->bEmotion ) /*0x9091fb*/
+  {
+    if ( CRand32::Random(&g_rand) % 0x65 <= v4->nProb ) /*0x909219*/
+    {
+      v5 = 0; /*0x90921b*/
+      if ( v4->bEmotion_angry > 0 ) /*0x909223*/
+        v5 = 5; /*0x909225*/
+      if ( v4->bEmotion_cheer > 0 ) /*0x90922f*/
+        v5 = 10; /*0x909231*/
+      if ( v4->bEmotion_love > 0 ) /*0x90923d*/
+        v5 = 17; /*0x90923f*/
+      if ( v4->bEmotion_blaze > 0 ) /*0x90924b*/
+        v5 = 15; /*0x90924d*/
+      if ( v4->bEmotion_glitter > 0 ) /*0x909259*/
+      {
+        v5 = 14; /*0x90925b*/
+LABEL_15:
+        CWvsContext::SendEmotionChange( /*0x909266*/
+          (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+          v5,
+          1,
+          1000 * v4->nTime);
+        goto LABEL_16; /*0x909279*/
+      }
+      if ( v5 > 0 ) /*0x909264*/
+        goto LABEL_15; /*0x909264*/
+    }
+LABEL_16:
+    p = pOption.p; /*0x90927e*/
+  }
+  v9 = -1; /*0x909282*/
+  if ( p ) /*0x90928c*/
+  {
+    v6 = p - 1; /*0x90928e*/
+    p_nReqLevel = &p[-1].nReqLevel; /*0x909291*/
+    if ( !InterlockedDecrement(p_nReqLevel) ) /*0x909295*/
+    {
+      InterlockedIncrement(p_nReqLevel); /*0x9092a0*/
+      if ( v6 ) /*0x9092a8*/
+        (*(void (__thiscall **)(ItemOptionInfo *, int))v6->nItemOptionID)(v6, 1); /*0x9092b2*/
+    }
+  }
+}

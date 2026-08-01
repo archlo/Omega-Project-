@@ -1,0 +1,10 @@
+const ZRef<CAttrShoe> *__thiscall CMob::GetShoeAttr(CMob *this, const ZRef<CAttrShoe> *result)
+{
+  CAttrShoe *v2; // eax
+
+  v2 = *(CAttrShoe **)&this->m_pAttrShoe.gap0; /*0x640c21*/
+  result->p = v2; /*0x640c34*/
+  if ( v2 ) /*0x640c39*/
+    InterlockedIncrement(&v2->_m_nRef); /*0x640c3f*/
+  return result; /*0x640c47*/
+}

@@ -1,0 +1,410 @@
+int __thiscall CSkillInfo::LoadSkillRoot(
+        CSkillInfo *this,
+        IWzProperty *nSkillRootID,
+        _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pSkillRoot,
+        _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pStrSR)
+{
+  _bstr_t::Data_t *v4; // ecx
+  StringPool *Instance; // eax
+  Ztl_variant_t *v6; // eax
+  IUnknown *Unknown; // eax
+  int v8; // eax
+  StringPool *v9; // eax
+  IWzProperty_vtbl *v10; // edx
+  const ZXString<char> *labeled_string; // eax
+  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > *v12; // esi
+  _bstr_t::Data_t *v13; // ecx
+  StringPool *v14; // eax
+  Ztl_variant_t *v15; // eax
+  IUnknown *v16; // eax
+  HRESULT v17; // eax
+  _bstr_t::Data_t *v18; // ecx
+  StringPool *v19; // eax
+  Ztl_variant_t *v20; // eax
+  IUnknown *v21; // eax
+  HRESULT v22; // eax
+  IWzProperty *m_pInterface; // edi
+  char *v24; // eax
+  void (*v25)(void); // edx
+  HRESULT v26; // eax
+  IWzProperty *v27; // esi
+  HRESULT (__stdcall *get_persistentUOL)(IWzSerialize *, wchar_t **); // ecx
+  _bstr_t::Data_t *m_Data; // ebx
+  wchar_t *m_wstr; // eax
+  int v31; // esi
+  Ztl_variant_t *v32; // eax
+  IUnknown *v33; // eax
+  _bstr_t::Data_t *v34; // ebp
+  CSkillInfo *v35; // esi
+  ZRef<SKILLENTRY> *v36; // eax
+  char *p_sFinishUOL; // esi
+  volatile LONG *apCanvas; // edi
+  unsigned int (__stdcall *Release)(IUnknown *); // eax
+  unsigned int (__stdcall *v40)(IUnknown *); // edx
+  void (__thiscall *dtr_CSkillInfo)(CSkillInfo *); // edx
+  char *v42; // esi
+  volatile LONG *v43; // edi
+  int v45; // [esp-20h] [ebp-E4h]
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > v46; // [esp-1Ch] [ebp-E0h]
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > v47; // [esp-18h] [ebp-DCh] BYREF
+  IWzProperty *v48; // [esp-10h] [ebp-D4h] BYREF
+  Ztl_bstr_t v49; // [esp-Ch] [ebp-D0h] BYREF
+  BOOL v50; // [esp-8h] [ebp-CCh]
+  BOOL v51; // [esp-4h] [ebp-C8h]
+  int key; // [esp+0h] [ebp-C4h] BYREF
+  Ztl_bstr_t *v53; // [esp+4h] [ebp-C0h]
+  unsigned int v54; // [esp+8h] [ebp-BCh]
+  Ztl_bstr_t v55; // [esp+Ch] [ebp-B8h] BYREF
+  Ztl_bstr_t v56; // [esp+10h] [ebp-B4h] BYREF
+  ZXString<char> pExceptionObject; // [esp+14h] [ebp-B0h] BYREF
+  CSkillInfo *v58; // [esp+18h] [ebp-ACh] BYREF
+  Ztl_bstr_t v59; // [esp+1Ch] [ebp-A8h] BYREF
+  int v60; // [esp+20h] [ebp-A4h]
+  ZArray<ZRef<SKILLENTRY> > *v61; // [esp+24h] [ebp-A0h]
+  ZRef<SKILLENTRY> result; // [esp+28h] [ebp-9Ch] BYREF
+  int nSkillID; // [esp+30h] [ebp-94h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pSkill; // [esp+34h] [ebp-90h] BYREF
+  Ztl_bstr_t sName; // [esp+38h] [ebp-8Ch]
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pInfo; // [esp+3Ch] [ebp-88h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pSkillList; // [esp+40h] [ebp-84h]
+  ZXString<char> sID; // [esp+44h] [ebp-80h] BYREF
+  CSkillInfo *v69; // [esp+48h] [ebp-7Ch]
+  _com_ptr_t<_com_IIID<IEnumVARIANT,&_GUID_00020404_0000_0000_c000_000000000046> > pEnum; // [esp+4Ch] [ebp-78h] BYREF
+  ZRef<SKILLROOT> pSR; // [esp+50h] [ebp-74h] BYREF
+  ZRef<SKILLENTRY> p; // [esp+58h] [ebp-6Ch] BYREF
+  int v73; // [esp+78h] [ebp-4Ch] BYREF
+  _com_ptr_t<_com_IIID<IUnknown,&_GUID_00000000_0000_0000_c000_000000000046> > v74; // [esp+7Ch] [ebp-48h] BYREF
+  VARIANTARG pvarg; // [esp+80h] [ebp-44h] BYREF
+  int v76; // [esp+90h] [ebp-34h]
+  Ztl_variant_t v77; // [esp+94h] [ebp-30h] BYREF
+  char v78; // [esp+A4h] [ebp-20h]
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > v79; // [esp+A8h] [ebp-1Ch]
+  int v80; // [esp+ACh] [ebp-18h] BYREF
+  char v81; // [esp+B4h] [ebp-10h]
+  char v82; // [esp+B8h] [ebp-Ch]
+  char v83; // [esp+BCh] [ebp-8h]
+  int v84; // [esp+C0h] [ebp-4h]
+
+  v69 = this; /*0x70fc2d*/
+  v84 = 1; /*0x70fc37*/
+  pSR.p = nullptr; /*0x70fc42*/
+  ZRef<SKILLROOT>::_Alloc(&pSR); /*0x70fc46*/
+  v58 = nullptr; /*0x70fc4b*/
+  pExceptionObject._m_pStr = nullptr; /*0x70fc4c*/
+  v56.m_Data = v4; /*0x70fc4d*/
+  nSkillID = (int)&v56; /*0x70fc50*/
+  LOBYTE(v84) = 2; /*0x70fc5a*/
+  Instance = StringPool::GetInstance(); /*0x70fc62*/
+  StringPool::GetBSTR(Instance, &v56, 0x3D5u); /*0x70fc69*/
+  LOBYTE(v84) = 3; /*0x70fc75*/
+  if ( !pSkillRoot.m_pInterface ) /*0x70fc7f*/
+LABEL_2:
+    _com_issue_error(-2147467261); /*0x70fc81*/
+  LOBYTE(v84) = 2; /*0x70fc90*/
+  v6 = IWzProperty::Getitem(pSkillRoot.m_pInterface, (Ztl_variant_t *)&pvarg.boolVal, v56); /*0x70fc98*/
+  LOBYTE(v84) = 4; /*0x70fc9f*/
+  Unknown = Ztl_variant_t::GetUnknown(v6, (bool)pExceptionObject._m_pStr, (bool)v58); /*0x70fca7*/
+  pInfo.m_pInterface = nullptr; /*0x70fcb1*/
+  v8 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>( /*0x70fcb5*/
+         &pInfo,
+         Unknown);
+  if ( v8 < 0 && v8 != -2147467262 ) /*0x70fcc3*/
+LABEL_5:
+    _com_issue_error(v8); /*0x70fcc5*/
+  LOBYTE(v84) = 6; /*0x70fcd0*/
+  if ( pvarg.iVal == 8 ) /*0x70fcdd*/
+  {
+    pvarg.iVal = 0; /*0x70fce1*/
+    if ( v76 ) /*0x70fcec*/
+      ZAPI.CoTaskMemFree((void *)(v76 - 4)); /*0x70fcf2*/
+  }
+  else
+  {
+    VariantClear((VARIANTARG *)&pvarg.boolVal); /*0x70fcff*/
+  }
+  sID._m_pStr = nullptr; /*0x70fd05*/
+  LOBYTE(v84) = 7; /*0x70fd1b*/
+  ZXString<char>::Format(&sID, "%03d", nSkillRootID); /*0x70fd23*/
+  nSkillID = (int)&v58; /*0x70fd2d*/
+  pExceptionObject._m_pStr = (char *)2215; /*0x70fd31*/
+  v56.m_Data = (_bstr_t::Data_t *)&v58; /*0x70fd36*/
+  v9 = StringPool::GetInstance(); /*0x70fd37*/
+  StringPool::GetBSTR(v9, (Ztl_bstr_t *)v56.m_Data, (unsigned int)pExceptionObject._m_pStr); /*0x70fd3e*/
+  pSkill.m_pInterface = (IWzProperty *)&pExceptionObject; /*0x70fd4a*/
+  LOBYTE(v84) = 8; /*0x70fd4f*/
+  pExceptionObject._m_pStr = nullptr; /*0x70fd57*/
+  ZXString<char>::operator=(&pExceptionObject, &sID); /*0x70fd59*/
+  v56.m_Data = (_bstr_t::Data_t *)pStrSR.m_pInterface; /*0x70fd68*/
+  pSkill.m_pInterface = (IWzProperty *)&v56; /*0x70fd71*/
+  if ( pStrSR.m_pInterface ) /*0x70fd77*/
+  {
+    v10 = pStrSR.m_pInterface->__vftable; /*0x70fd79*/
+    v55.m_Data = (_bstr_t::Data_t *)pStrSR.m_pInterface; /*0x70fd7b*/
+    ((void (*)(void))v10->AddRef)(); /*0x70fd7f*/
+  }
+  v83 = 7; /*0x70fd86*/
+  labeled_string = get_labeled_string( /*0x70fd8e*/
+                     (ZXString<char> *)&pSkill,
+                     (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> >)v55.m_Data,
+                     (ZXString<char>)v56.m_Data,
+                     (Ztl_bstr_t)pExceptionObject._m_pStr);
+  v12 = *(_com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > **)&pSR.gap0; /*0x70fd96*/
+  v83 = 9; /*0x70fd9e*/
+  ZXString<char>::operator=((ZXString<char> *)(*(_DWORD *)&pSR.gap0 + 4), labeled_string); /*0x70fda6*/
+  v83 = 7; /*0x70fdaf*/
+  if ( pSkill.m_pInterface ) /*0x70fdb9*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&pSkill.m_pInterface[-3]); /*0x70fdbf*/
+  pExceptionObject._m_pStr = nullptr; /*0x70fdc7*/
+  v56.m_Data = nullptr; /*0x70fdc8*/
+  v55.m_Data = v13; /*0x70fdc9*/
+  result.p = (SKILLENTRY *)&v55; /*0x70fdcc*/
+  v54 = 6872; /*0x70fdd0*/
+  v53 = &v55; /*0x70fdd5*/
+  v12->m_pInterface = (IWzCanvas *)nSkillRootID; /*0x70fdd6*/
+  v14 = StringPool::GetInstance(); /*0x70fdd8*/
+  StringPool::GetBSTR(v14, v53, v54); /*0x70fddf*/
+  v83 = 10; /*0x70fdeb*/
+  if ( !nSkillRootID ) /*0x70fdf5*/
+    _com_issue_error(-2147467261); /*0x70fdfc*/
+  v83 = 7; /*0x70fe09*/
+  v15 = IWzProperty::Getitem(nSkillRootID, &v77, v55); /*0x70fe11*/
+  v83 = 11; /*0x70fe18*/
+  v16 = Ztl_variant_t::GetUnknown(v15, (bool)v56.m_Data, (bool)pExceptionObject._m_pStr); /*0x70fe20*/
+  pInfo.m_pInterface = nullptr; /*0x70fe2a*/
+  v17 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>( /*0x70fe2e*/
+          &pInfo,
+          v16);
+  if ( v17 < 0 && v17 != -2147467262 ) /*0x70fe3c*/
+    _com_issue_error(v17); /*0x70fe3f*/
+  v83 = 13; /*0x70fe44*/
+  if ( v77.vt == 8 ) /*0x70fe51*/
+  {
+    v18 = nullptr; /*0x70fe5a*/
+    v77.vt = 0; /*0x70fe5c*/
+    if ( v77.decVal.Lo32 ) /*0x70fe63*/
+      ZAPI.CoTaskMemFree((void *)(v77.decVal.Lo32 - 4)); /*0x70fe69*/
+  }
+  else
+  {
+    VariantClear(&v77); /*0x70fe76*/
+  }
+  pExceptionObject._m_pStr = nullptr; /*0x70fe7c*/
+  v56.m_Data = nullptr; /*0x70fe7d*/
+  v55.m_Data = v18; /*0x70fe7e*/
+  result.p = (SKILLENTRY *)&v55; /*0x70fe81*/
+  v54 = 2395; /*0x70fe85*/
+  v53 = &v55; /*0x70fe8a*/
+  v19 = StringPool::GetInstance(); /*0x70fe8b*/
+  StringPool::GetBSTR(v19, v53, v54); /*0x70fe92*/
+  v83 = 14; /*0x70fe9b*/
+  if ( !sName.m_Data ) /*0x70fea5*/
+    _com_issue_error(-2147467261); /*0x70feac*/
+  v83 = 13; /*0x70feb6*/
+  v20 = IWzProperty::Getitem((IWzProperty *)sName.m_Data, (Ztl_variant_t *)&pSR.p, v55); /*0x70febe*/
+  v83 = 15; /*0x70fec5*/
+  v21 = Ztl_variant_t::GetUnknown(v20, (bool)v56.m_Data, (bool)pExceptionObject._m_pStr); /*0x70fecd*/
+  v22 = _com_ptr_t<_com_IIID<IWzCanvas,&__s_GUID const _GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e>>::_QueryInterface<IUnknown *>( /*0x70fed6*/
+          v12 + 3,
+          v21);
+  if ( v22 < 0 && v22 != -2147467262 ) /*0x70fee4*/
+    _com_issue_error(v22); /*0x70fee7*/
+  v83 = 13; /*0x70feec*/
+  if ( LOWORD(pSR.p) == 8 ) /*0x70fef9*/
+  {
+    LOWORD(pSR.p) = 0; /*0x70fefd*/
+    if ( p.p ) /*0x70ff08*/
+      ZAPI.CoTaskMemFree(&p.p[-1].apCanvas[2]); /*0x70ff0e*/
+  }
+  else
+  {
+    VariantClear((VARIANTARG *)&pSR.p); /*0x70ff1b*/
+  }
+  m_pInterface = pInfo.m_pInterface; /*0x70ff21*/
+  if ( !pInfo.m_pInterface ) /*0x70ff27*/
+    _com_issue_error(-2147467261); /*0x70ff2e*/
+  v24 = (char *)IWzProperty::Get_NewEnum(pInfo.m_pInterface, &v74)->m_pInterface; /*0x70ff3f*/
+  v83 = 16; /*0x70ff44*/
+  v69 = nullptr; /*0x70ff4c*/
+  result.p = (SKILLENTRY *)&pExceptionObject; /*0x70ff50*/
+  pExceptionObject._m_pStr = v24; /*0x70ff54*/
+  if ( v24 ) /*0x70ff58*/
+  {
+    v25 = *(void (**)(void))(*(_DWORD *)v24 + 4); /*0x70ff5c*/
+    v56.m_Data = (_bstr_t::Data_t *)v24; /*0x70ff5f*/
+    v25(); /*0x70ff60*/
+  }
+  v26 = _com_ptr_t<_com_IIID<IEnumVARIANT,&__s_GUID const _GUID_00020404_0000_0000_c000_000000000046>>::_QueryInterface<_com_ptr_t<_com_IIID<IUnknown,&__s_GUID const _GUID_00000000_0000_0000_c000_000000000046>>>( /*0x70ff66*/
+          (_com_ptr_t<_com_IIID<IEnumVARIANT,&_GUID_00020404_0000_0000_c000_000000000046> > *)&sID,
+          (_com_ptr_t<_com_IIID<IUnknown,&_GUID_00000000_0000_0000_c000_000000000046> >)v56.m_Data);
+  if ( v26 < 0 && v26 != -2147467262 ) /*0x70ff74*/
+    _com_issue_error(v26); /*0x70ff77*/
+  v82 = 18; /*0x70ff80*/
+  if ( v73 ) /*0x70ff8a*/
+    (*(void (__cdecl **)(int, char *))(*(_DWORD *)v73 + 8))(v73, pExceptionObject._m_pStr); /*0x70ff92*/
+  VariantInit((VARIANTARG *)&p.p); /*0x70ff99*/
+  v81 = 19; /*0x70ff9f*/
+  v73 = 0; /*0x70ffa7*/
+  while ( 1 )
+  {
+    v27 = pSkillList.m_pInterface; /*0x70ffab*/
+    if ( !pSkillList.m_pInterface ) /*0x70ffb1*/
+      goto LABEL_2; /*0x70ffb1*/
+    get_persistentUOL = pSkillList.m_pInterface->get_persistentUOL; /*0x70ffb9*/
+    v55.m_Data = (_bstr_t::Data_t *)&v73; /*0x70ffc0*/
+    if ( ((int (__cdecl *)(IWzProperty *, int, SKILLENTRY **))get_persistentUOL)(pSkillList.m_pInterface, 1, &p.p) ) /*0x70ffc9*/
+      break; /*0x70ffc9*/
+    DetachBSTR(&v59, (tagVARIANT *)&pEnum); /*0x70ffdd*/
+    m_Data = v59.m_Data; /*0x70ffe5*/
+    v78 = 20; /*0x70ffe9*/
+    if ( v59.m_Data ) /*0x70fff3*/
+      m_wstr = v59.m_Data->m_wstr; /*0x70fff5*/
+    else
+      m_wstr = nullptr; /*0x70fff9*/
+    v31 = _wtoi(m_wstr); /*0x710001*/
+    pExceptionObject._m_pStr = (char *)v31; /*0x710017*/
+    if ( v31 / 10000 != v80 ) /*0x710022*/
+    {
+      pExceptionObject._m_pStr = (char *)-2147467259; /*0x710236*/
+      _CxxThrowException(&pExceptionObject, &_TI1_AVZException__); /*0x71023e*/
+    }
+    v51 = 0; /*0x710028*/
+    v50 = 0; /*0x71002a*/
+    v58 = (CSkillInfo *)&v49; /*0x71002f*/
+    v49.m_Data = m_Data; /*0x710033*/
+    if ( m_Data ) /*0x710037*/
+      InterlockedIncrement((volatile LONG *)&m_Data->m_RefCount); /*0x71003d*/
+    v78 = 20; /*0x710055*/
+    v32 = IWzProperty::Getitem(m_pInterface, (Ztl_variant_t *)(&pvarg.__s11 + 1), v49); /*0x71005d*/
+    v78 = 22; /*0x710064*/
+    v33 = Ztl_variant_t::GetUnknown(v32, v50, v51); /*0x71006c*/
+    v34 = nullptr; /*0x710071*/
+    v58 = nullptr; /*0x710073*/
+    if ( v33 )
+    {
+      v8 = ((int (__cdecl *)(IUnknown *, GUID *, SKILLENTRY **))v33->QueryInterface)( /*0x71008a*/
+             v33,
+             &_GUID_986515d9_0a0b_4929_8b4f_718682177b92,
+             &p.p);
+      v34 = v8 < 0 ? nullptr : *(_bstr_t::Data_t **)&pSR.gap0;
+      v55.m_Data = v34; /*0x71009a*/
+      if ( v8 < 0 && v8 != -2147467262 ) /*0x7100a7*/
+        goto LABEL_5; /*0x7100a7*/
+    }
+    v77.gap0[4] = 24; /*0x7100b6*/
+    if ( pvarg.vt == 8 ) /*0x7100be*/
+    {
+      pvarg.vt = 0; /*0x7100c9*/
+      if ( pvarg.decVal.Lo32 ) /*0x7100d3*/
+        ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x7100d9*/
+    }
+    else
+    {
+      VariantClear(&pvarg); /*0x7100e9*/
+    }
+    v48 = v79.m_pInterface; /*0x7100f9*/
+    pSR.p = (SKILLROOT *)&v48; /*0x710102*/
+    if ( v79.m_pInterface ) /*0x710108*/
+      ((void (__thiscall *)(IWzProperty *, IWzProperty *, IWzProperty *))v79.m_pInterface->AddRef)( /*0x710110*/
+        v79.m_pInterface,
+        v79.m_pInterface,
+        v48);
+    *(_DWORD *)&pSR.gap0 = &v47; /*0x710115*/
+    v47.m_pInterface = (IWzProperty *)v34; /*0x710119*/
+    if ( v34 ) /*0x71011d*/
+    {
+      v46.m_pInterface = (IWzProperty *)v34; /*0x710125*/
+      (*((void (**)(void))v34->m_wstr + 1))(); /*0x710126*/
+    }
+    v45 = v31; /*0x710128*/
+    v35 = v58; /*0x710129*/
+    CSkillInfo::LoadSkill(v58, &result, v45, v46, v47); /*0x710134*/
+    LOBYTE(v76) = 25; /*0x71013e*/
+    if ( !result.p ) /*0x710146*/
+    {
+      key = -2147467259; /*0x71024d*/
+      _CxxThrowException(&key, &_TI1_AVZException__); /*0x710255*/
+    }
+    v47.m_pInterface = (IWzProperty *)&result; /*0x710150*/
+    v36 = ZArray<ZRef<SKILLENTRY>>::InsertBefore(v61 + 2, -1); /*0x71015a*/
+    ZRef<SKILLENTRY>::operator=(v36, (const ZRef<SKILLENTRY> *)v47.m_pInterface); /*0x710161*/
+    ZMap<long,ZRef<SKILLENTRY>,long>::Insert(&v35->m_mSkill, &key, &result); /*0x710173*/
+    LOBYTE(v76) = 24; /*0x71017c*/
+    if ( result.p ) /*0x710186*/
+    {
+      p_sFinishUOL = (char *)&result.p[-1].sFinishUOL; /*0x710188*/
+      apCanvas = (volatile LONG *)result.p[-1].apCanvas; /*0x71018b*/
+      if ( !InterlockedDecrement(apCanvas) ) /*0x71018f*/
+      {
+        InterlockedIncrement(apCanvas); /*0x71019a*/
+        if ( p_sFinishUOL ) /*0x7101a2*/
+          (**(void (__thiscall ***)(char *, int))p_sFinishUOL)(p_sFinishUOL, 1); /*0x7101ac*/
+      }
+      m_pInterface = (IWzProperty *)v55.m_Data; /*0x7101ae*/
+      *(_DWORD *)&result.gap0 = 0; /*0x7101b2*/
+    }
+    *((_BYTE *)&pvarg.__s11 + 12) = 20; /*0x7101ba*/
+    if ( v34 ) /*0x7101c4*/
+      (*((void (__cdecl **)(_bstr_t::Data_t *))v34->m_wstr + 2))(v34); /*0x7101cd*/
+    pvarg.bVal = 19; /*0x7101cf*/
+    if ( m_Data ) /*0x7101d9*/
+    {
+      _bstr_t::Data_t::Release(m_Data); /*0x7101dd*/
+      key = 0; /*0x7101e2*/
+    }
+    if ( (_WORD)nSkillID == 8 ) /*0x7101f0*/
+    {
+      LOWORD(nSkillID) = 0; /*0x7101f4*/
+      if ( sName.m_Data ) /*0x7101ff*/
+        ZAPI.CoTaskMemFree(&sName.m_Data[-1].m_RefCount); /*0x710209*/
+    }
+    else
+    {
+      v8 = VariantClear((VARIANTARG *)&nSkillID); /*0x710219*/
+      if ( v8 < 0 ) /*0x710221*/
+        goto LABEL_5; /*0x710221*/
+    }
+  }
+  ZMap<long,ZRef<SKILLROOT>,long>::Insert( /*0x71026e*/
+    (ZMap<long,ZRef<SKILLROOT>,long> *)&result.p->nSubWeapon,
+    &v80,
+    (const ZRef<SKILLROOT> *)&pSkill);
+  v78 = 18; /*0x710279*/
+  if ( LOWORD(pEnum.m_pInterface) == 8 ) /*0x710281*/
+  {
+    LOWORD(pEnum.m_pInterface) = 0; /*0x710285*/
+    if ( pSR.p ) /*0x710290*/
+      ZAPI.CoTaskMemFree(&pSR.p[-1].pBookIcon); /*0x710296*/
+  }
+  else
+  {
+    VariantClear((VARIANTARG *)&pEnum); /*0x7102a3*/
+  }
+  Release = v27->Release; /*0x7102ab*/
+  v78 = 13; /*0x7102af*/
+  ((void (__cdecl *)(IWzProperty *))Release)(v27); /*0x7102b7*/
+  v40 = m_pInterface->Release; /*0x7102bb*/
+  *((_BYTE *)&v77.__s11 + 12) = 7; /*0x7102bf*/
+  ((void (__cdecl *)(IWzProperty *))v40)(m_pInterface); /*0x7102c7*/
+  v77.bVal = 6; /*0x7102cd*/
+  if ( v60 ) /*0x7102d7*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(v60 - 12)); /*0x7102dd*/
+  dtr_CSkillInfo = v58->__vftable[2].dtr_CSkillInfo; /*0x7102eb*/
+  v77.bVal = 2; /*0x7102ef*/
+  ((void (__cdecl *)(CSkillInfo *))dtr_CSkillInfo)(v58); /*0x7102f7*/
+  v42 = (char *)&result.p[-1].sFinishUOL; /*0x7102fd*/
+  v43 = (volatile LONG *)result.p[-1].apCanvas; /*0x710300*/
+  v77.gap0[4] = 1; /*0x710304*/
+  if ( !InterlockedDecrement(v43) ) /*0x71030c*/
+  {
+    InterlockedIncrement(v43); /*0x710317*/
+    if ( v42 ) /*0x71031f*/
+      (**(void (__thiscall ***)(char *, int))v42)(v42, 1); /*0x710329*/
+  }
+  v77.gap0[0] = 0; /*0x710332*/
+  if ( v77.decVal.Mid32 ) /*0x71033c*/
+    (*(void (__cdecl **)(unsigned int))(*(_DWORD *)v77.decVal.Mid32 + 8))(v77.decVal.Mid32); /*0x710344*/
+  v76 = -1; /*0x71034d*/
+  if ( v77.decVal.Mid32 ) /*0x71035a*/
+    (*(void (__cdecl **)(unsigned int))(*(_DWORD *)v77.decVal.Mid32 + 8))(v77.decVal.Mid32); /*0x710362*/
+  return 1; /*0x710369*/
+}

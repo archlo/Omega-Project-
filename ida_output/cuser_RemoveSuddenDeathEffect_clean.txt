@@ -1,0 +1,13 @@
+// cuser::RemoveSuddenDeathEffect
+
+void __thiscall CUser::RemoveSuddenDeathEffect(CUser *this)
+{
+  IWzGr2DLayer *m_pInterface; // eax
+
+  m_pInterface = this->m_pLayerSuddenDeathEffect.m_pInterface; /*0x8e12c0*/
+  if ( m_pInterface ) /*0x8e12c8*/
+  {
+    this->m_pLayerSuddenDeathEffect.m_pInterface = nullptr; /*0x8e12ca*/
+    m_pInterface->Release(m_pInterface); /*0x8e12da*/
+  }
+}

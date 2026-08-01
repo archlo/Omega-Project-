@@ -1,0 +1,129 @@
+// 0x69e870
+void __thiscall CPersonalShopDlg::~CPersonalShopDlg(CPersonalShopDlg *this)
+{
+  CPersonalShopDlg::CSoldItemDlg *p; // ecx
+  IWzProperty *m_pInterface; // eax
+  IWzFont *v4; // eax
+  IWzFont *v5; // eax
+  IWzCanvas *v6; // eax
+  IWzCanvas *v7; // eax
+  char *m_pStr; // eax
+  char *v9; // eax
+
+  this->CMiniRoomBaseDlg::CUniqueModeless::CDialog::CWnd::IGObj::__vftable = (CPersonalShopDlg_vtbl *)&CPersonalShopDlg::`vftable'{for `IGObj'}; /*0x69e89a*/
+  this->CMiniRoomBaseDlg::CUniqueModeless::CDialog::CWnd::IUIMsgHandler::__vftable = (IUIMsgHandler_vtbl *)&CPersonalShopDlg::`vftable'{for `IUIMsgHandler'}; /*0x69e8a0*/
+  this->CMiniRoomBaseDlg::CUniqueModeless::CDialog::CWnd::ZRefCounted::__vftable = (ZRefCounted_vtbl *)&CPersonalShopDlg::`vftable'{for `ZRefCounted'}; /*0x69e8a7*/
+  p = this->m_pSoldItem.p; /*0x69e8ae*/
+  if ( p ) /*0x69e8c0*/
+  {
+    CWnd::Destroy(p); /*0x69e8c2*/
+    if ( this->m_pSoldItem.p ) /*0x69e8c7*/
+    {
+      ZRef<CPersonalShopDlg::CSoldItemDlg>::_ReleaseRaw(&this->m_pSoldItem, nullptr); /*0x69e8d8*/
+      this->m_pSoldItem.p = nullptr; /*0x69e8dd*/
+    }
+  }
+  if ( !this->m_nMyPosition ) /*0x69e8e0*/
+    *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 3609) = 0; /*0x69e8ed*/
+  CLayoutMan::~CLayoutMan(&this->m_lm); /*0x69e8fe*/
+  m_pInterface = this->m_pImgFontNumber.m_pInterface; /*0x69e903*/
+  if ( m_pInterface ) /*0x69e910*/
+    m_pInterface->Release(m_pInterface); /*0x69e918*/
+  v4 = this->m_pFontName.m_pInterface; /*0x69e91a*/
+  if ( v4 ) /*0x69e927*/
+    v4->Release(v4); /*0x69e92f*/
+  v5 = this->m_pFont.m_pInterface; /*0x69e931*/
+  if ( v5 ) /*0x69e93e*/
+    v5->Release(v5); /*0x69e946*/
+  v6 = this->m_pSoldOut.m_pInterface; /*0x69e948*/
+  if ( v6 ) /*0x69e955*/
+    v6->Release(v6); /*0x69e95d*/
+  v7 = this->m_pSelect.m_pInterface; /*0x69e95f*/
+  if ( v7 ) /*0x69e96c*/
+    v7->Release(v7); /*0x69e974*/
+  CUIToolTip::~CUIToolTip(&this->m_uiToolTip); /*0x69e981*/
+  if ( this->m_pSBBuy.p ) /*0x69e991*/
+  {
+    ZRef<CCtrlScrollBar>::_ReleaseRaw(&this->m_pSBBuy, nullptr); /*0x69e999*/
+    this->m_pSBBuy.p = nullptr; /*0x69e99e*/
+  }
+  if ( this->m_pEditChat.p ) /*0x69e9ac*/
+  {
+    ZRef<CCtrlEdit>::_ReleaseRaw(&this->m_pEditChat, nullptr); /*0x69e9b4*/
+    this->m_pEditChat.p = nullptr; /*0x69e9b9*/
+  }
+  if ( this->m_pBtVisitList.p ) /*0x69e9c7*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&this->m_pBtVisitList, nullptr); /*0x69e9cf*/
+    this->m_pBtVisitList.p = nullptr; /*0x69e9d4*/
+  }
+  if ( this->m_pBtBlackList.p ) /*0x69e9e2*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&this->m_pBtBlackList, nullptr); /*0x69e9ea*/
+    this->m_pBtBlackList.p = nullptr; /*0x69e9ef*/
+  }
+  if ( this->m_pBtExit2.p ) /*0x69e9fd*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&this->m_pBtExit2, nullptr); /*0x69ea05*/
+    this->m_pBtExit2.p = nullptr; /*0x69ea0a*/
+  }
+  if ( this->m_pBtCoin.p ) /*0x69ea18*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&this->m_pBtCoin, nullptr); /*0x69ea20*/
+    this->m_pBtCoin.p = nullptr; /*0x69ea25*/
+  }
+  if ( this->m_pBtArrange.p ) /*0x69ea33*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&this->m_pBtArrange, nullptr); /*0x69ea3b*/
+    this->m_pBtArrange.p = nullptr; /*0x69ea40*/
+  }
+  `eh vector destructor iterator'( /*0x69ea58*/
+    this->m_pBtBan,
+    8u,
+    3,
+    (void (__thiscall *)(void *))ZRef<CCtrlOriginButton>::~ZRef<CCtrlOriginButton>);
+  if ( this->m_pBtBuy.p ) /*0x69ea68*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&this->m_pBtBuy, nullptr); /*0x69ea70*/
+    this->m_pBtBuy.p = nullptr; /*0x69ea75*/
+  }
+  if ( this->m_pBtStart.p ) /*0x69ea83*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&this->m_pBtStart, nullptr); /*0x69ea8b*/
+    this->m_pBtStart.p = nullptr; /*0x69ea90*/
+  }
+  if ( this->m_pBtItem.p ) /*0x69ea9e*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&this->m_pBtItem, nullptr); /*0x69eaa6*/
+    this->m_pBtItem.p = nullptr; /*0x69eaab*/
+  }
+  if ( this->m_pBtInfo.p ) /*0x69eab9*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&this->m_pBtInfo, nullptr); /*0x69eac1*/
+    this->m_pBtInfo.p = nullptr; /*0x69eac6*/
+  }
+  if ( this->m_pBtExit.p ) /*0x69ead4*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&this->m_pBtExit, nullptr); /*0x69eadc*/
+    this->m_pBtExit.p = nullptr; /*0x69eae1*/
+  }
+  if ( this->m_pBtClose.p ) /*0x69eaef*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&this->m_pBtClose, nullptr); /*0x69eaf7*/
+    this->m_pBtClose.p = nullptr; /*0x69eafc*/
+  }
+  m_pStr = this->m_sTitleExt._m_pStr; /*0x69eaff*/
+  if ( m_pStr ) /*0x69eb0c*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)m_pStr - 1); /*0x69eb12*/
+  v9 = this->m_sTitle._m_pStr; /*0x69eb1a*/
+  if ( v9 ) /*0x69eb27*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v9 - 1); /*0x69eb2d*/
+  if ( this->m_pSoldItem.p ) /*0x69eb40*/
+  {
+    ZRef<CPersonalShopDlg::CSoldItemDlg>::_ReleaseRaw(&this->m_pSoldItem, nullptr); /*0x69eb48*/
+    this->m_pSoldItem.p = nullptr; /*0x69eb4d*/
+  }
+  ZArray<CPersonalShopDlg::SOLD_ITEM>::RemoveAll(&this->m_aSoldItem); /*0x69eb5b*/
+  ZArray<CPersonalShopDlg::ITEM>::RemoveAll(&this->m_aItem); /*0x69eb6a*/
+  CMiniRoomBaseDlg::~CMiniRoomBaseDlg(this); /*0x69eb79*/
+}

@@ -1,0 +1,27 @@
+﻿ZXString<char> *__thiscall CChatHelper::HistoryUp(CChatHelper *this, ZXString<char> *result)
+{
+  int m_nHistoryIndex; // eax
+  ZXString<char> *a; // edx
+  char *m_pStr; // edx
+
+  if ( this->m_bUseHistory ) /*0x4aa25c*/
+  {
+    ++this->m_nHistoryIndex; /*0x4aa261*/
+    this->m_bUseHistory = 0; /*0x4aa264*/
+  }
+  if ( --this->m_nHistoryIndex < 0 ) /*0x4aa267*/
+    this->m_nHistoryIndex = 0; /*0x4aa26d*/
+  result->_m_pStr = nullptr; /*0x4aa274*/
+  m_nHistoryIndex = this->m_nHistoryIndex; /*0x4aa27a*/
+  if ( m_nHistoryIndex >= 0 ) /*0x4aa283*/
+  {
+    a = this->m_asHistory.a; /*0x4aa285*/
+    if ( a ) /*0x4aa28a*/
+      m_pStr = a[-1]._m_pStr; /*0x4aa290*/
+    else
+      m_pStr = nullptr; /*0x4aa28c*/
+    if ( m_nHistoryIndex < (unsigned int)m_pStr ) /*0x4aa295*/
+      ZXString<char>::operator=(result, &this->m_asHistory.a[m_nHistoryIndex]); /*0x4aa2a0*/
+  }
+  return result; /*0x4aa2a7*/
+}

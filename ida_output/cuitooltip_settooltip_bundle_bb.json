@@ -1,0 +1,13 @@
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Invalid params: missing required parameters: ['addrs']"
+      }
+    ],
+    "isError": true
+  },
+  "id": 2
+}

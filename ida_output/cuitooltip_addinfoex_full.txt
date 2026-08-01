@@ -1,0 +1,58 @@
+{
+  "addr": "0x88bac0",
+  "code": "void __thiscall CUIToolTip::AddInfoEx(\n        CUIToolTip *this,\n        _bstr_t *nType,\n        _bstr_t *nSubType,\n        ZXString<char> sContext,\n        ZXString<char> sSubContext,\n        int bUseDot,\n        int nAlign)\n{\n  int v8; // ebp\n  int v9; // ebx\n  CUIToolTip::CLineInfo *v10; // edi\n  void (__stdcall *v11)(VARIANTARG *); // ebx\n  HRESULT v12; // eax\n  HRESULT v13; // eax\n  _bstr_t::Data_t *v14; // ecx\n  IWzFont *m_pInterface; // ebp\n  _bstr_t::Data_t *v16; // ecx\n  IWzFont *v17; // ebx\n  unsigned int v18; // eax\n  bool v19; // zf\n  int v20; // ecx\n  HRESULT (__stdcall *get_height)(IWzFont *, int *); // ecx\n  HRESULT v22; // eax\n  HRESULT (__stdcall *v23)(IWzFont *, int *); // ecx\n  int v24; // edi\n  HRESULT v25; // eax\n  int v26; // ecx\n  int v27; // eax\n  HRESULT (__stdcall *v28)(IWzFont *, int *); // eax\n  HRESULT v29; // eax\n  int v30; // ecx\n  unsigned int (__stdcall *Release)(IUnknown *); // eax\n  unsigned int (__stdcall *v32)(IUnknown *); // edx\n  _bstr_t v33; // [esp-8h] [ebp-50h] BYREF\n  const ZXString<char> *p_sContext; // [esp-4h] [ebp-4Ch]\n  _com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> > pFont; // [esp+14h] [ebp-34h] BYREF\n  _com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> > pSubFont; // [esp+18h] [ebp-30h] BYREF\n  VARIANTARG pvargDest; // [esp+1Ch] [ebp-2Ch] BYREF\n  VARIANTARG pvarg; // [esp+2Ch] [ebp-1Ch] BYREF\n  int v39; // [esp+44h] [ebp-4h]\n\n  v8 = (int)nType; /*0x88bae9*/\n  v39 = 1; /*0x88baf3*/\n  CUIToolTip::GetFontByType(this, &pFont, (int)nType); /*0x88bafb*/\n  v9 = (int)nSubType; /*0x88bb00*/\n  LOBYTE(v39) = 2; /*0x88bb0c*/\n  CUIToolTip::GetFontByType(this, &pSubFont, (int)nSubType); /*0x88bb11*/\n  v10 = &this->m_aLineInfo[this->m_nLineNo]; /*0x88bb1d*/\n  p_sContext = &sContext; /*0x88bb24*/\n  LOBYTE(v39) = 3; /*0x88bb28*/\n  v10->m_nType = v8; /*0x88bb2d*/\n  v10->m_nSubType = v9; /*0x88bb30*/\n  ZXString<char>::operator=(&v10->m_sContext, p_sContext); /*0x88bb33*/\n  ZXString<char>::operator=(&v10->m_sSubContext, &sSubContext); /*0x88bb40*/\n  v11 = VariantInit; /*0x88bb45*/\n  VariantInit(&pvarg); /*0x88bb50*/\n  v12 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing); /*0x88bb5c*/\n  if ( v12 < 0 ) /*0x88bb66*/\n    _com_issue_error(v12); /*0x88bb69*/\n  LOBYTE(v39) = 4; /*0x88bb73*/\n  v11(&pvargDest); /*0x88bb78*/\n  v13 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing); /*0x88bb84*/\n  if ( v13 < 0 ) /*0x88bb8e*/\n    _com_issue_error(v13); /*0x88bb91*/\n  p_sContext = (const ZXString<char> *)&pvarg; /*0x88bb9e*/\n  v33.m_Data = v14; /*0x88bb9f*/\n  nType = &v33; /*0x88bba0*/\n  LOBYTE(v39) = 5; /*0x88bba7*/\n  _bstr_t::_bstr_t(&v33, sContext._m_pStr); /*0x88bbac*/\n  m_pInterface = pFont.m_pInterface; /*0x88bbb1*/\n  LOBYTE(v39) = 6; /*0x88bbb5*/\n  if ( !pFont.m_pInterface ) /*0x88bbbc*/\n    _com_issue_error(-2147467261); /*0x88bbc3*/\n  LOBYTE(v39) = 5; /*0x88bbca*/\n  nType = (_bstr_t *)IWzFont::CalcTextWidth( /*0x88bbd8*/\n                       pFont.m_pInterface,\n                       (Ztl_bstr_t)v33.m_Data,\n                       (const Ztl_variant_t *)p_sContext);\n  p_sContext = (const ZXString<char> *)&pvargDest; /*0x88bbe0*/\n  v33.m_Data = v16; /*0x88bbe1*/\n  nSubType = &v33; /*0x88bbe2*/\n  _bstr_t::_bstr_t(&v33, sSubContext._m_pStr); /*0x88bbe9*/\n  v17 = pSubFont.m_pInterface; /*0x88bbee*/\n  LOBYTE(v39) = 7; /*0x88bbf2*/\n  if ( !pSubFont.m_pInterface ) /*0x88bbf9*/\n    _com_issue_error(-2147467261); /*0x88bc00*/\n  LOBYTE(v39) = 5; /*0x88bc07*/\n  v18 = IWzFont::CalcTextWidth(pSubFont.m_pInterface, (Ztl_bstr_t)v33.m_Data, (const Ztl_variant_t *)p_sContext); /*0x88bc0c*/\n  v19 = pvargDest.vt == 8; /*0x88bc17*/\n  v10->m_nWidth = (int)nType + v18; /*0x88bc1d*/\n  LOBYTE(v39) = 4; /*0x88bc1f*/\n  if ( v19 ) /*0x88bc24*/\n  {\n    pvargDest.vt = 0; /*0x88bc2c*/\n    if ( pvargDest.decVal.Lo32 ) /*0x88bc33*/\n      ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4)); /*0x88bc39*/\n  }\n  else\n  {\n    VariantClear(&pvargDest); /*0x88bc46*/\n  }\n  LOBYTE(v39) = 3; /*0x88bc52*/\n  if ( pvarg.vt == 8 ) /*0x88bc57*/\n  {\n    pvarg.vt = 0; /*0x88bc5f*/\n    if ( pvarg.decVal.Lo32 ) /*0x88bc66*/\n      ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x88bc6c*/\n  }\n  else\n  {\n    VariantClear(&pvarg); /*0x88bc79*/\n  }\n  v20 = nAlign; /*0x88bc83*/\n  v10->m_bUseDotImage = bUseDot; /*0x88bc87*/\n  v10->m_nAlign = v20; /*0x88bc8a*/\n  get_height = v17->get_height; /*0x88bc8f*/\n  nType = nullptr; /*0x88bc98*/\n  v22 = get_height(v17, (int *)&nType); /*0x88bca0*/\n  if ( v22 < 0 ) /*0x88bca4*/\n    _com_issue_errorex(v22, v17, &_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac); /*0x88bcad*/\n  v23 = m_pInterface->get_height; /*0x88bcb5*/\n  v24 = (int)nType; /*0x88bcb8*/\n  nSubType = nullptr; /*0x88bcc2*/\n  v25 = v23(m_pInterface, (int *)&nSubType); /*0x88bcca*/\n  if ( v25 < 0 ) /*0x88bcce*/\n    _com_issue_errorex(v25, m_pInterface, &_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac); /*0x88bcd7*/\n  v26 = (int)nSubType; /*0x88bcdc*/\n  if ( v24 >= (int)nSubType ) /*0x88bce2*/\n    v26 = v24; /*0x88bce4*/\n  this->m_aLineInfo[this->m_nLineNo].m_nHeight = v26; /*0x88bcec*/\n  v27 = this->m_aLineInfo[this->m_nLineNo].m_nWidth + 20; /*0x88bcfa*/\n  if ( this->m_nWidth < v27 ) /*0x88bd00*/\n    this->m_nWidth = v27; /*0x88bd02*/\n  v28 = m_pInterface->get_height; /*0x88bd08*/\n  nType = nullptr; /*0x88bd11*/\n  v29 = v28(m_pInterface, (int *)&nType); /*0x88bd19*/\n  if ( v29 < 0 ) /*0x88bd1d*/\n    _com_issue_errorex(v29, m_pInterface, &_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac); /*0x88bd26*/\n  v30 = (int)nType; /*0x88bd2b*/\n  ++this->m_nLineNo; /*0x88bd2f*/\n  this->m_nHeight += v30 + 4; /*0x88bd35*/\n  Release = v17->Release; /*0x88bd3a*/\n  LOBYTE(v39) = 2; /*0x88bd3e*/\n  Release(v17); /*0x88bd43*/\n  v32 = m_pInterface->Release; /*0x88bd48*/\n  LOBYTE(v39) = 1; /*0x88bd4c*/\n  v32(m_pInterface); /*0x88bd51*/\n  LOBYTE(v39) = 0; /*0x88bd57*/\n  if ( sContext._m_pStr ) /*0x88bd5e*/\n    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sContext._m_pStr - 1); /*0x88bd64*/\n  v39 = -1; /*0x88bd70*/\n  if ( sSubContext._m_pStr ) /*0x88bd7a*/\n    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sSubContext._m_pStr - 1); /*0x88bd80*/\n}",
+  "refs": [
+    {
+      "addr": "0x881d40",
+      "name": "?GetFontByType@CUIToolTip@@IAE?AV?$_com_ptr_t@V?$_com_IIID@UIWzFont@@$1?_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac@@3U__s_GUID@@B@@@@J@Z"
+    },
+    {
+      "addr": "0x42d1c0",
+      "name": "??4?$ZXString@D@@QAEAAV0@ABV0@@Z"
+    },
+    {
+      "addr": "0xb14290",
+      "name": "__imp__VariantInit@4"
+    },
+    {
+      "addr": "0x401730",
+      "name": "?ZComVariantCopy@ZComAPI@@YAJPAUtagVARIANT@@0@Z"
+    },
+    {
+      "addr": "0xc626e8",
+      "name": "?vtMissing@@3V_variant_t@@A"
+    },
+    {
+      "addr": "0xa2fd00",
+      "name": "?_com_issue_error@@YGXJ@Z"
+    },
+    {
+      "addr": "0x403260",
+      "name": "??0_bstr_t@@QAE@PBD@Z"
+    },
+    {
+      "addr": "0x42d990",
+      "name": "?CalcTextWidth@IWzFont@@QAEKVZtl_bstr_t@@ABVZtl_variant_t@@@Z"
+    },
+    {
+      "addr": "0xc6d758",
+      "name": "?ZAPI@@3U_ZAPIProcAddress@@A"
+    },
+    {
+      "addr": "0xb1428c",
+      "name": "__imp__VariantClear@4"
+    },
+    {
+      "addr": "0xa2fd20",
+      "name": "?_com_issue_errorex@@YGXJPAUIUnknown@@ABU_GUID@@@Z"
+    },
+    {
+      "addr": "0xb47160",
+      "name": "__GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac"
+    },
+    {
+      "addr": "0x403460",
+      "name": "?_Release@?$ZXString@D@@KAXPAU_ZXStringData@1@@Z"
+    }
+  ]
+}

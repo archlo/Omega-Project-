@@ -1,0 +1,73 @@
+﻿void __thiscall CUILoginStart::OnButtonClicked(CUILoginStart *this, unsigned int nId)
+{
+  CLogin *m_pLogin; // ecx
+  CLogin *v4; // ecx
+  int m_nLoginStep; // eax
+  CLogin *v6; // eax
+
+  if ( !this->m_bRequestSent ) /*0x5ee803*/
+  {
+    m_pLogin = this->m_pLogin; /*0x5ee810*/
+    if ( !m_pLogin->m_tStepChanging ) /*0x5ee816*/
+    {
+      switch ( nId ) /*0x5ee835*/
+      {
+        case 0x3E8u: /*0x5ee835*/
+          CLogin::ViewRecommendWorld(m_pLogin, 0); /*0x5ee83e*/
+          v4 = this->m_pLogin; /*0x5ee843*/
+          m_nLoginStep = v4->m_nLoginStep; /*0x5ee849*/
+          if ( m_nLoginStep == 2 ) /*0x5ee852*/
+          {
+            CLogin::GotoWorldSelect(v4, 0); /*0x5ee856*/
+          }
+          else if ( m_nLoginStep == 5 ) /*0x5ee863*/
+          {
+            if ( TSingleton<CUICharDetailVAC>::ms_pInstance ) /*0x5ee86d*/
+            {
+              CWnd::Destroy(TSingleton<CUICharDetailVAC>::ms_pInstance); /*0x5ee86f*/
+              if ( TSingleton<CUICharDetailVAC>::ms_pInstance ) /*0x5ee87b*/
+                ((void (__thiscall *)(ZRefCounted *, int))TSingleton<CUICharDetailVAC>::ms_pInstance->dtr_ZRefCounted)( /*0x5ee886*/
+                  &TSingleton<CUICharDetailVAC>::ms_pInstance->ZRefCounted,
+                  1);
+            }
+            if ( TSingleton<CUIAvatarVAC>::ms_pInstance ) /*0x5ee890*/
+            {
+              CWnd::Destroy(TSingleton<CUIAvatarVAC>::ms_pInstance); /*0x5ee892*/
+              if ( TSingleton<CUIAvatarVAC>::ms_pInstance ) /*0x5ee89e*/
+                ((void (__thiscall *)(ZRefCounted *, int))TSingleton<CUIAvatarVAC>::ms_pInstance->dtr_ZRefCounted)( /*0x5ee8a9*/
+                  &TSingleton<CUIAvatarVAC>::ms_pInstance->ZRefCounted,
+                  1);
+            }
+            CLogin::GotoWorldSelect(this->m_pLogin, 1); /*0x5ee8b3*/
+          }
+          else
+          {
+            CLogin::GotoTitle(v4, 1, nullptr); /*0x5ee8be*/
+          }
+          break; /*0x5ee85b*/
+        case 0x3E9u: /*0x5ee835*/
+          CLogin::ViewRecommendWorld(m_pLogin, 0); /*0x5ee8c7*/
+          ZAPI.PostQuitMessage(0); /*0x5ee8ce*/
+          break; /*0x5ee8d4*/
+        case 0x3EAu: /*0x5ee835*/
+          CLogin::ViewRecommendWorld(m_pLogin, 0); /*0x5ee8ee*/
+          break; /*0x5ee8ee*/
+        case 0x3EBu: /*0x5ee835*/
+          CLogin::ViewRecommendWorld(m_pLogin, 1); /*0x5ee8f2*/
+          break; /*0x5ee8f2*/
+        case 0x3ECu: /*0x5ee835*/
+          if ( CUILoginStart::SendViewAllCharacterPacket(this) ) /*0x5ee8d8*/
+            CUILoginStart::EnableLoginStartCtrl(this, 1); /*0x5ee8e5*/
+          break; /*0x5ee8ea*/
+        default:
+          break;
+      }
+      if ( TSingleton<CWndMan>::ms_pInstance ) /*0x5ee8ff*/
+      {
+        v6 = this->m_pLogin; /*0x5ee901*/
+        if ( (unsigned int)(v6->m_nLoginStep - 1) <= 1 ) /*0x5ee911*/
+          CWndMan::SetFocus(TSingleton<CWndMan>::ms_pInstance, v6->m_pFocusedUI); /*0x5ee91e*/
+      }
+    }
+  }
+}

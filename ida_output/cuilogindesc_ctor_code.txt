@@ -1,0 +1,72 @@
+﻿CUILoginDesc *__thiscall CUILoginDesc::CUILoginDesc(CUILoginDesc *this, CLogin *pLogin, int nStep)
+{
+  CLogin *v4; // ecx
+  int v5; // edi
+  int v6; // edx
+  int v7; // ecx
+  int v8; // ebx
+  int v9; // ebp
+  int v10; // eax
+  StringPool *Instance; // eax
+  int v12; // ecx
+  CLogin *v13; // edi
+  wchar_t *m_pStr; // [esp-8h] [ebp-30h]
+  ZXString<unsigned short> result; // [esp+14h] [ebp-14h] BYREF
+  CUILoginDesc *v17; // [esp+18h] [ebp-10h]
+  int v18; // [esp+24h] [ebp-4h]
+
+  v17 = this; /*0x5f0069*/
+  CFadeWnd::CFadeWnd(this); /*0x5f006d*/
+  v4 = pLogin; /*0x5f0072*/
+  v5 = nStep; /*0x5f0076*/
+  this->CFadeWnd::CDialog::CWnd::IGObj::__vftable = (CUILoginDesc_vtbl *)&CUILoginDesc::`vftable'{for `IGObj'}; /*0x5f007c*/
+  this->CFadeWnd::CDialog::CWnd::IUIMsgHandler::__vftable = (IUIMsgHandler_vtbl *)&CUILoginDesc::`vftable'{for `IUIMsgHandler'}; /*0x5f0082*/
+  this->CFadeWnd::CDialog::CWnd::ZRefCounted::__vftable = (ZRefCounted_vtbl *)&CUILoginDesc::`vftable'{for `ZRefCounted'}; /*0x5f0089*/
+  this->m_pLogin = v4; /*0x5f0090*/
+  this->m_nStep = v5; /*0x5f0096*/
+  v18 = 0; /*0x5f009c*/
+  this->m_pChFont.m_pInterface = nullptr; /*0x5f00a0*/
+  v6 = 40; /*0x5f00a6*/
+  v7 = 0; /*0x5f00ab*/
+  v8 = 127; /*0x5f00ad*/
+  v9 = -42; /*0x5f00b0*/
+  LOBYTE(v18) = 1; /*0x5f00b3*/
+  nStep = 42; /*0x5f00b8*/
+  v10 = 40; /*0x5f00c0*/
+  if ( v5 == 5 ) /*0x5f00c5*/
+  {
+    v8 = 150; /*0x5f00c7*/
+    v7 = 33; /*0x5f00ca*/
+    v6 = -149; /*0x5f00cf*/
+    nStep = 57; /*0x5f00d2*/
+    v10 = 0; /*0x5f00da*/
+    v9 = 33; /*0x5f00dc*/
+  }
+  CFadeWnd::SetOption( /*0x5f00fb*/
+    this,
+    255,
+    255,
+    0,
+    (tagPOINT)__PAIR64__(v9, v6),
+    (tagPOINT)__PAIR64__(v7, v10),
+    (tagPOINT)__PAIR64__(v7, v10),
+    100,
+    0,
+    300);
+  pLogin = nullptr; /*0x5f0100*/
+  LOBYTE(v18) = 2; /*0x5f0112*/
+  Instance = StringPool::GetInstance(); /*0x5f0117*/
+  m_pStr = StringPool::GetStringW(Instance, &result, 0x548u)->_m_pStr; /*0x5f0126*/
+  LOBYTE(v18) = 3; /*0x5f012c*/
+  ZXString<unsigned short>::Format((ZXString<unsigned short> *)&pLogin, m_pStr, v5); /*0x5f0131*/
+  LOBYTE(v18) = 2; /*0x5f013d*/
+  if ( result._m_pStr ) /*0x5f0144*/
+    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)result._m_pStr - 1); /*0x5f014a*/
+  v12 = 210 - v5; /*0x5f0163*/
+  v13 = pLogin; /*0x5f0165*/
+  CFadeWnd::CreateFadeWnd(this, v8, nStep, (const wchar_t *)pLogin, v12, 1, nullptr, 0, Origin_LT); /*0x5f016f*/
+  LOBYTE(v18) = 1; /*0x5f0174*/
+  if ( v13 ) /*0x5f017b*/
+    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&v13[-1].m_bCharSale); /*0x5f0181*/
+  return this; /*0x5f018b*/
+}

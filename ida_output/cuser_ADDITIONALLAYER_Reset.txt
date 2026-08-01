@@ -1,0 +1,3 @@
+// CUser::ADDITIONALLAYER_Reset @ 0x8df3c0
+
+{"addr":"0x8df3c0","code":"void __thiscall CUser::ADDITIONALLAYER::Reset(CUser::ADDITIONALLAYER *this)\n{\n  IWzGr2DLayer *m_pInterface; // eax\n  IWzGr2DLayer *v3; // eax\n\n  this->nData = -1; /*0x8df3c3*/\n  this->l.bFixed = 1; /*0x8df3ca*/\n  m_pInterface = this->l.pLayer.m_pInterface; /*0x8df3d1*/\n  if ( m_pInterface ) /*0x8df3d6*/\n  {\n    this->l.pLayer.m_pInterface = nullptr; /*0x8df3d8*/\n    m_pInterface->Release(m_pInterface); /*0x8df3e5*/\n  }\n  this->nDataForRepeat = -1; /*0x8df3e7*/\n  this->l2.bFixed = 1; /*0x8df3ed*/\n  v3 = this->l2.pLayer.m_pInterface; /*0x8df3f4*/\n  if ( v3 ) /*0x8df3f9*/\n  {\n    this->l2.pLayer.m_pInterface = nullptr; /*0x8df3fb*/\n    v3->Release(v3); /*0x8df408*/\n  }\n}"}

@@ -1,0 +1,26 @@
+// CMobTemplate::IsVulnerableTo
+// Address: 0x659260
+
+int __thiscall CMobTemplate::IsVulnerableTo(CMobTemplate *this, int nSkillID)
+{
+  int *a; // eax
+  unsigned int i; // ecx
+  int *v6; // eax
+
+  if ( !_ZtlSecureFuse<int>(this->_ZtlSecureTear_bOnlyNormalAttack, this->_ZtlSecureTear_bOnlyNormalAttack_CS) /*0x659283*/
+    || nSkillID <= 0 )
+  {
+    a = this->m_aDamagedBySelectedSkill.a; /*0x659285*/
+    if ( !a || !*(a - 1) ) /*0x65928f*/
+      return 1; /*0x65929b*/
+    for ( i = 0; ; ++i ) /*0x65929e*/
+    {
+      v6 = this->m_aDamagedBySelectedSkill.a; /*0x6592a0*/
+      if ( !v6 || i >= *(v6 - 1) ) /*0x6592ad*/
+        break; /*0x6592ad*/
+      if ( nSkillID == v6[i] ) /*0x6592b2*/
+        return 1; /*0x6592b2*/
+    }
+  }
+  return 0; /*0x65929a*/
+}

@@ -1,0 +1,243 @@
+void __thiscall CMob::SetLayerZ(CMob *this)
+{
+  IWzVector2D *m_pInterface; // eax
+  _DWORD *v3; // esi
+  int v4; // eax
+  IWzGr2DLayer *v5; // ebx
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *p_m_pLayerAction; // edi
+  HRESULT v7; // eax
+  void *v8; // eax
+  IWzGr2DLayer *v9; // ecx
+  IWzGr2DLayer *v10; // ecx
+  IWzGr2DLayer *v11; // ecx
+  IWzGr2DLayer *v12; // ecx
+  IWzGr2DLayer *v13; // ecx
+  IWzGr2DLayer *v14; // ecx
+  int v15; // eax
+  IWzGr2DLayer *v16; // ebx
+  HRESULT v17; // eax
+  IWzGr2DLayer *v18; // ebx
+  HRESULT v19; // eax
+  IWzGr2DLayer *v20; // ebx
+  int v21; // esi
+  HRESULT v22; // eax
+  IWzGr2DLayer *v23; // esi
+  HRESULT v24; // eax
+  IWzGr2DLayer *v25; // edi
+  HRESULT v26; // eax
+  int v27; // [esp-4h] [ebp-14h]
+  int v28; // [esp-4h] [ebp-14h]
+  int v29; // [esp-4h] [ebp-14h]
+  int v30; // [esp-4h] [ebp-14h]
+  int v31; // [esp-4h] [ebp-14h]
+
+  m_pInterface = this->m_pvc.m_pInterface; /*0x63ab54*/
+  if ( m_pInterface ) /*0x63ab5e*/
+    v3 = &m_pInterface[-3].__vftable; /*0x63ab60*/
+  else
+    v3 = nullptr; /*0x63ab65*/
+  if ( v3[190] == 4 ) /*0x63ab6e*/
+    v4 = -1073471724; /*0x63ab70*/
+  else
+    v4 = 10 * (3000 * v3[112] - v3[113]) - 1073711833; /*0x63ab8c*/
+  v5 = this->m_pLayerAction.m_pInterface; /*0x63ab93*/
+  p_m_pLayerAction = &this->m_pLayerAction; /*0x63ab99*/
+  if ( !v5 ) /*0x63aba1*/
+    _com_issue_error(-2147467261); /*0x63aba8*/
+  v7 = v5->put_z(v5, v4); /*0x63abb7*/
+  if ( v7 < 0 ) /*0x63abbb*/
+    _com_issue_errorex(v7, v5, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x63abc4*/
+  v8 = (void *)_ZtlSecureFuse<unsigned long>( /*0x63abd7*/
+                 this->m_pTemplate->_ZtlSecureTear_dwTemplateID,
+                 this->m_pTemplate->_ZtlSecureTear_dwTemplateID_CS);
+  if ( v8 > &loc_866E12 ) /*0x63abe4*/
+  {
+    switch ( (unsigned int)v8 ) /*0x63ad02*/
+    {
+      case 0x866E13u: /*0x63ad02*/
+      case 0x866E1Bu: /*0x63ad02*/
+      case 0x866E77u: /*0x63ad02*/
+        v14 = p_m_pLayerAction->m_pInterface; /*0x63ad36*/
+        if ( !p_m_pLayerAction->m_pInterface ) /*0x63ad36*/
+          _com_issue_error(-2147467261); /*0x63ad4d*/
+        v15 = 10 * (3000 * v3[112] - v3[113]) - 1073711836; /*0x63ad5d*/
+        goto LABEL_39; /*0x63ad64*/
+      case 0x866E14u: /*0x63ad02*/
+      case 0x866E1Au: /*0x63ad02*/
+      case 0x866E1Cu: /*0x63ad02*/
+      case 0x866E76u: /*0x63ad02*/
+      case 0x866E78u: /*0x63ad02*/
+        goto $LN11_59;
+      case 0x866E15u: /*0x63ad02*/
+      case 0x866E16u: /*0x63ad02*/
+      case 0x866E1Du: /*0x63ad02*/
+      case 0x866E1Eu: /*0x63ad02*/
+      case 0x866E79u: /*0x63ad02*/
+      case 0x866E7Au: /*0x63ad02*/
+        if ( !p_m_pLayerAction->m_pInterface ) /*0x63adbc*/
+          _com_issue_error(-2147467261); /*0x63add3*/
+        IWzGr2DLayer::Putz(p_m_pLayerAction->m_pInterface, 10 * (3000 * v3[112] - v3[113]) - 1073711838); /*0x63adeb*/
+        break; /*0x63adeb*/
+      case 0x866E17u: /*0x63ad02*/
+      case 0x866E1Fu: /*0x63ad02*/
+      case 0x866E7Bu: /*0x63ad02*/
+        v14 = p_m_pLayerAction->m_pInterface; /*0x63ae21*/
+        if ( !p_m_pLayerAction->m_pInterface ) /*0x63ae21*/
+          _com_issue_error(-2147467261); /*0x63ae38*/
+        v15 = 10 * (3000 * v3[112] - v3[113] - 107371184); /*0x63ae4d*/
+        goto LABEL_39; /*0x63ae4f*/
+      case 0x866E18u: /*0x63ad02*/
+      case 0x866E20u: /*0x63ad02*/
+      case 0x866E7Cu: /*0x63ad02*/
+        if ( !p_m_pLayerAction->m_pInterface ) /*0x63adf0*/
+          _com_issue_error(-2147467261); /*0x63ae07*/
+        IWzGr2DLayer::Putz(p_m_pLayerAction->m_pInterface, 10 * (3000 * v3[112] - v3[113]) - 1073711839); /*0x63ae1f*/
+        break; /*0x63ae1f*/
+      case 0x866E19u: /*0x63ad02*/
+      case 0x866E21u: /*0x63ad02*/
+      case 0x866E7Du: /*0x63ad02*/
+        v14 = p_m_pLayerAction->m_pInterface; /*0x63ae51*/
+        if ( !p_m_pLayerAction->m_pInterface ) /*0x63ae51*/
+          _com_issue_error(-2147467261); /*0x63ae68*/
+        v15 = 10 * (3000 * v3[112] - v3[113]) - 1073711841; /*0x63ae78*/
+LABEL_39:
+        IWzGr2DLayer::Putz(v14, v15); /*0x63ae80*/
+        break; /*0x63ae80*/
+      case 0x866E22u: /*0x63ad02*/
+      case 0x866E8Au: /*0x63ad02*/
+$LN18_38: /*0x63ac0c*/
+        v27 = 10 * (3000 * v3[112] - v3[113]) - 1073711835; /*0x63ac0c*/
+        v9 = _com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::operator->(&this->m_pLayerAction); /*0x63ac32*/
+        IWzGr2DLayer::Putz(v9, v27); /*0x63ac34*/
+        break; /*0x63ac34*/
+      default:
+        break;
+    }
+  }
+  else if ( v8 == &loc_866E12 ) /*0x63abea*/
+  {
+$LN11_59: /*0x63ad69*/
+    v16 = p_m_pLayerAction->m_pInterface; /*0x63ad69*/
+    if ( !p_m_pLayerAction->m_pInterface ) /*0x63ad69*/
+      _com_issue_error(-2147467261); /*0x63ad80*/
+    v17 = v16->put_z(v16, 10 * (3000 * v3[112] - v3[113]) - 1073711837); /*0x63ada1*/
+    if ( v17 < 0 ) /*0x63ada5*/
+      _com_issue_errorex(v17, v16, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x63adb2*/
+  }
+  else
+  {
+    switch ( (unsigned int)v8 ) /*0x63ac05*/
+    {
+      case 0x864700u: /*0x63ac05*/
+      case 0x864701u: /*0x63ac05*/
+      case 0x864702u: /*0x63ac05*/
+      case 0x864764u: /*0x63ac05*/
+      case 0x864765u: /*0x63ac05*/
+      case 0x864766u: /*0x63ac05*/
+        goto $LN18_38;
+      case 0x864703u: /*0x63ac05*/
+      case 0x864704u: /*0x63ac05*/
+      case 0x864767u: /*0x63ac05*/
+      case 0x864768u: /*0x63ac05*/
+        v28 = 10 * (3000 * v3[112] - v3[113]) - 1073711839; /*0x63ac57*/
+        v10 = _com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::operator->(&this->m_pLayerAction); /*0x63ac5f*/
+        IWzGr2DLayer::Putz(v10, v28); /*0x63ac61*/
+        break; /*0x63ac61*/
+      case 0x864705u: /*0x63ac05*/
+      case 0x864706u: /*0x63ac05*/
+      case 0x864769u: /*0x63ac05*/
+      case 0x86476Au: /*0x63ac05*/
+        v29 = 10 * (3000 * v3[112] - v3[113]) - 1073711838; /*0x63ac84*/
+        v11 = _com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::operator->(&this->m_pLayerAction); /*0x63ac8c*/
+        IWzGr2DLayer::Putz(v11, v29); /*0x63ac8e*/
+        break; /*0x63ac8e*/
+      case 0x864707u: /*0x63ac05*/
+      case 0x864708u: /*0x63ac05*/
+      case 0x86476Bu: /*0x63ac05*/
+      case 0x86476Cu: /*0x63ac05*/
+        v30 = 10 * (3000 * v3[112] - v3[113]) - 1073711837; /*0x63acb1*/
+        v12 = _com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::operator->(&this->m_pLayerAction); /*0x63acb9*/
+        IWzGr2DLayer::Putz(v12, v30); /*0x63acbb*/
+        break; /*0x63acbb*/
+      case 0x864709u: /*0x63ac05*/
+      case 0x86470Au: /*0x63ac05*/
+      case 0x86476Du: /*0x63ac05*/
+      case 0x86476Eu: /*0x63ac05*/
+        v31 = 10 * (3000 * v3[112] - v3[113]) - 1073711836; /*0x63acde*/
+        v13 = _com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::operator->(&this->m_pLayerAction); /*0x63ace6*/
+        IWzGr2DLayer::Putz(v13, v31); /*0x63ace8*/
+        break; /*0x63ace8*/
+      default:
+        break;
+    }
+  }
+  if ( _ZtlSecureFuse<unsigned long>( /*0x63af7a*/
+         this->m_pTemplate->_ZtlSecureTear_dwTemplateID,
+         this->m_pTemplate->_ZtlSecureTear_dwTemplateID_CS) == 8830001
+    || (_UNKNOWN *)_ZtlSecureFuse<unsigned long>(
+                     this->m_pTemplate->_ZtlSecureTear_dwTemplateID,
+                     this->m_pTemplate->_ZtlSecureTear_dwTemplateID_CS) == &loc_86BC32
+    || _ZtlSecureFuse<unsigned long>(
+         this->m_pTemplate->_ZtlSecureTear_dwTemplateID,
+         this->m_pTemplate->_ZtlSecureTear_dwTemplateID_CS) == 8830004
+    || _ZtlSecureFuse<unsigned long>(
+         this->m_pTemplate->_ZtlSecureTear_dwTemplateID,
+         this->m_pTemplate->_ZtlSecureTear_dwTemplateID_CS) == 8830005
+    || _ZtlSecureFuse<unsigned long>(
+         this->m_pTemplate->_ZtlSecureTear_dwTemplateID,
+         this->m_pTemplate->_ZtlSecureTear_dwTemplateID_CS) == 8830006
+    || CMobTemplate::_ZtlSecureGet_dwTemplateID(this->m_pTemplate) == 8830008
+    || CMobTemplate::_ZtlSecureGet_dwTemplateID(this->m_pTemplate) == 8830009
+    || CMobTemplate::_ZtlSecureGet_dwTemplateID(this->m_pTemplate) == 8830011
+    || (_UNKNOWN *)CMobTemplate::_ZtlSecureGet_dwTemplateID(this->m_pTemplate) == &loc_86BC3C
+    || CMobTemplate::_ZtlSecureGet_dwTemplateID(this->m_pTemplate) == 8830013 )
+  {
+    v18 = p_m_pLayerAction->m_pInterface; /*0x63af7c*/
+    if ( !p_m_pLayerAction->m_pInterface ) /*0x63af7c*/
+      _com_issue_error(-2147467261); /*0x63af8d*/
+    v19 = v18->put_z(v18, 30000 * v3[112] - 1073739824); /*0x63afa7*/
+    if ( v19 < 0 ) /*0x63afab*/
+      _com_issue_errorex(v19, v18, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x63afb4*/
+  }
+  if ( _ZtlSecureFuse<unsigned long>( /*0x63b02b*/
+         this->m_pTemplate->_ZtlSecureTear_dwTemplateID,
+         this->m_pTemplate->_ZtlSecureTear_dwTemplateID_CS) == 8830000
+    || _ZtlSecureFuse<unsigned long>(
+         this->m_pTemplate->_ZtlSecureTear_dwTemplateID,
+         this->m_pTemplate->_ZtlSecureTear_dwTemplateID_CS) == 8830003
+    || (_UNKNOWN *)_ZtlSecureFuse<unsigned long>(
+                     this->m_pTemplate->_ZtlSecureTear_dwTemplateID,
+                     this->m_pTemplate->_ZtlSecureTear_dwTemplateID_CS) == &loc_86BC37
+    || (_UNKNOWN *)_ZtlSecureFuse<unsigned long>(
+                     this->m_pTemplate->_ZtlSecureTear_dwTemplateID,
+                     this->m_pTemplate->_ZtlSecureTear_dwTemplateID_CS) == &loc_86BC3A )
+  {
+    v20 = p_m_pLayerAction->m_pInterface; /*0x63b02d*/
+    v21 = v3[112]; /*0x63b02f*/
+    if ( !p_m_pLayerAction->m_pInterface ) /*0x63b02d*/
+      _com_issue_error(-2147467261); /*0x63b03e*/
+    v22 = v20->put_z(v20, 30000 * v21 - 1073739825); /*0x63b059*/
+    if ( v22 < 0 ) /*0x63b05d*/
+      _com_issue_errorex(v22, v20, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x63b066*/
+  }
+  if ( this->m_pTemplate->nEscortType == 1 ) /*0x63b078*/
+  {
+    v23 = p_m_pLayerAction->m_pInterface; /*0x63b07a*/
+    if ( !p_m_pLayerAction->m_pInterface ) /*0x63b07a*/
+      _com_issue_error(-2147467261); /*0x63b085*/
+    v24 = v23->put_z(v23, -1073471724); /*0x63b098*/
+    if ( v24 < 0 ) /*0x63b09c*/
+      _com_issue_errorex(v24, v23, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x63b0a5*/
+  }
+  if ( _ZtlSecureFuse<int>( /*0x63b0bd*/
+         this->m_pTemplate->_ZtlSecureTear_bUpperMostLayer,
+         this->m_pTemplate->_ZtlSecureTear_bUpperMostLayer_CS) )
+  {
+    v25 = p_m_pLayerAction->m_pInterface; /*0x63b0c9*/
+    if ( !v25 ) /*0x63b0cd*/
+      _com_issue_error(-2147467261); /*0x63b0d4*/
+    v26 = v25->put_z(v25, -1073471724); /*0x63b0e7*/
+    if ( v26 < 0 ) /*0x63b0eb*/
+      _com_issue_errorex(v26, v25, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x63b0f4*/
+  }
+}

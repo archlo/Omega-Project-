@@ -1,5 +1,7 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import { GamePanel } from './GamePanel.js';
+import { ScriptText, ScriptSubst } from './ScriptText.js';
+import { BuiltInFont } from '../BuiltInFont.js';
 
 export enum DialogType { Ok, Next, PrevNext, YesNo, Menu, AskText, AskNumber, Quiz, AskAccept }
 

@@ -1,0 +1,3 @@
+// CUser::IsOnFoothold @ 0x4600f0
+
+{"addr":"0x4600f0","code":"BOOL __thiscall CUser::IsOnFoothold(CUser *this)\n{\n  IWzVector2D *m_pInterface; // eax\n\n  m_pInterface = this->m_pvc.m_pInterface; /*0x4600f0*/\n  if ( m_pInterface ) /*0x4600f8*/\n    return m_pInterface[101].__vftable != nullptr; /*0x460108*/\n  else\n    return MEMORY[0x1A0] != 0; /*0x460118*/\n}"}

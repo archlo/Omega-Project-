@@ -1,0 +1,16 @@
+﻿CUIAdminShopWishList *__cdecl TSingleton<CUIAdminShopWishList>::CreateInstance()
+{
+  CUIAdminShopWishList *result; // eax
+  CUIAdminShopWishList *v1; // eax
+
+  result = TSingleton<CUIAdminShopWishList>::ms_pInstance; /*0x42a851*/
+  if ( !TSingleton<CUIAdminShopWishList>::ms_pInstance ) /*0x42a858*/
+  {
+    v1 = (CUIAdminShopWishList *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0xECu); /*0x42a864*/
+    if ( v1 ) /*0x42a877*/
+      return CUIAdminShopWishList::CUIAdminShopWishList(v1); /*0x42a87b*/
+    else
+      return nullptr; /*0x42a890*/
+  }
+  return result; /*0x42a880*/
+}

@@ -1,0 +1,52 @@
+void __thiscall CMob::ProcessAction(CMob *this, int tCur)
+{
+  int CurrentAction; // edi
+  int v4; // ebp
+  int v5; // ecx
+  __POSITION **p_m_posFrame; // edi
+  ZList<ZRef<CActionMan::MOBACTIONFRAMEENTRY> > *v7; // ebp
+  IWzGr2DLayer *m_pInterface; // ecx
+  Ztl_variant_t vValue; // [esp+14h] [ebp-1Ch] BYREF
+  int v10; // [esp+2Ch] [ebp-4h]
+
+  CurrentAction = CMob::GetCurrentAction(this, nullptr); /*0x64ab90*/
+  v4 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_tCurFrameRemain, this->_ZtlSecureTear_m_tCurFrameRemain_CS) - 30; /*0x64aba5*/
+  this->_ZtlSecureTear_m_tCurFrameRemain_CS = _ZtlSecureTear<long>(v4, this->_ZtlSecureTear_m_tCurFrameRemain); /*0x64abb4*/
+  if ( v4 <= 0 ) /*0x64abbc*/
+  {
+    v5 = CurrentAction; /*0x64abc8*/
+    p_m_posFrame = &this->m_posFrame; /*0x64abcb*/
+    v7 = &this->m_aAction.a[v5]; /*0x64abd2*/
+    ZList<ZRef<CActionMan::MOBACTIONFRAMEENTRY>>::GetNext(&this->m_posFrame); /*0x64abd5*/
+    if ( _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nOneTimeAction, this->_ZtlSecureTear_m_nOneTimeAction_CS) <= -1 ) /*0x64abf3*/
+    {
+      if ( !*p_m_posFrame ) /*0x64ac16*/
+        *p_m_posFrame = (__POSITION *)v7->_m_pHead; /*0x64ac1e*/
+    }
+    else if ( !*p_m_posFrame ) /*0x64abf5*/
+    {
+      this->_ZtlSecureTear_m_nOneTimeAction_CS = _ZtlSecureTear<long>(-1, this->_ZtlSecureTear_m_nOneTimeAction); /*0x64ac06*/
+      CMob::PrepareActionLayer(this); /*0x64ac0c*/
+      return; /*0x64ac11*/
+    }
+    vValue.vt = 3; /*0x64ac25*/
+    vValue.decVal.Lo32 = 1; /*0x64ac2a*/
+    m_pInterface = this->m_pLayerAction.m_pInterface; /*0x64ac32*/
+    v10 = 0; /*0x64ac38*/
+    if ( !m_pInterface ) /*0x64ac42*/
+      _com_issue_error(-2147467261); /*0x64ac49*/
+    IWzGr2DLayer::ShiftCanvas(m_pInterface, &vValue); /*0x64ac53*/
+    v10 = -1; /*0x64ac5e*/
+    if ( vValue.vt == 8 ) /*0x64ac66*/
+    {
+      vValue.vt = 0; /*0x64ac6e*/
+      if ( vValue.decVal.Lo32 ) /*0x64ac75*/
+        ZAPI.CoTaskMemFree((void *)(vValue.decVal.Lo32 - 4)); /*0x64ac7b*/
+    }
+    else
+    {
+      VariantClear(&vValue); /*0x64ac88*/
+    }
+    CMob::SetFrameInfo(this, v7, *p_m_posFrame); /*0x64ac94*/
+  }
+}

@@ -1,0 +1,18 @@
+// CUISkill::ResetInfo
+// Decompiled from v95 IDB
+
+void __thiscall CUISkill::ResetInfo(CUISkill *this)
+{
+  CUISkill::GetSkillRootVisible(this, (const CharacterData *)1); /*0x8514f5*/
+  CUISkill::SetTabItems(this); /*0x8514fc*/
+  CUISkill::SetScrollBar(this); /*0x851503*/
+  CUISkill::SetButtons(this); /*0x85150a*/
+  CWnd::InvalidateRect(this, nullptr); /*0x851513*/
+}
+
+// References:
+//   ?GetSkillRootVisible@CUISkill@@IAEPBUSKILLROOT@@H@Z @ 0x84a6f0
+//   ?SetTabItems@CUISkill@@IAEXXZ @ 0x850990
+//   ?SetScrollBar@CUISkill@@IAEXXZ @ 0x84b1c0
+//   ?SetButtons@CUISkill@@IAEXXZ @ 0x84b220
+//   ?InvalidateRect@CWnd@@QAEXPBUtagRECT@@@Z @ 0x9ad3f0

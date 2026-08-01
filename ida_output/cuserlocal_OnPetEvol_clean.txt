@@ -1,0 +1,29 @@
+// cuserlocal::OnPetEvol
+
+void __thiscall CUserLocal::OnPetEvol(CUserLocal *this, CInPacket *iPacket)
+{
+  ZRef<CPet> *a; // eax
+  CPet *p; // eax
+
+  CUser::OnPetEvol(this, iPacket); /*0x903f38*/
+  a = this->m_apPet.a; /*0x903f3d*/
+  if ( a[2].p ) /*0x903f43*/
+  {
+    CPet::SetPositionContext(a->p, 5); /*0x903f4e*/
+    CPet::SetPositionContext(this->m_apPet.a[1].p, 3); /*0x903f5e*/
+    CPet::SetPositionContext(this->m_apPet.a[2].p, 4); /*0x903f6e*/
+  }
+  else if ( a[1].p ) /*0x903f70*/
+  {
+    CPet::SetPositionContext(a->p, 1); /*0x903f7b*/
+    CPet::SetPositionContext(this->m_apPet.a[1].p, 2); /*0x903f8b*/
+  }
+  else
+  {
+    p = a->p; /*0x903f8d*/
+    if ( p ) /*0x903f92*/
+      CPet::SetPositionContext(p, 0); /*0x903f98*/
+  }
+  if ( TSingleton<CUIItem>::ms_pInstance ) /*0x903fa6*/
+    CWnd::InvalidateRect(TSingleton<CUIItem>::ms_pInstance, nullptr); /*0x903fb0*/
+}

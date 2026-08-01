@@ -1,0 +1,42 @@
+void __thiscall CVecCtrl::FallDown(CVecCtrl *this)
+{
+  CStaticFoothold *pfhFallStart; // eax
+  StringPool *Instance; // eax
+  CONSTANTS *p; // edi
+  long double Data; // st7
+  wchar_t *t; // [esp+0h] [ebp-24h]
+  unsigned int t_4; // [esp+4h] [ebp-20h]
+  ZXString<unsigned short> result; // [esp+14h] [ebp-10h] BYREF
+  int v9; // [esp+20h] [ebp-4h]
+
+  pfhFallStart = this->m_falldownNext.pfhFallStart; /*0x993dab*/
+  t_4 = this->_ZtlSecureTear_m_pLadderOrRope_CS; /*0x993db1*/
+  this->m_falldownNext.bValid = 0; /*0x993dbb*/
+  this->m_pfhFallStart = pfhFallStart; /*0x993dc1*/
+  if ( _ZtlSecureFuse<CLadderOrRope *>(this->_ZtlSecureTear_m_pLadderOrRope, t_4) ) /*0x993dc7*/
+  {
+    this->OnAttachedObjectChanged(this, nullptr, nullptr, 0); /*0x993ddd*/
+  }
+  else
+  {
+    if ( !this->m_pfh ) /*0x993de7*/
+      return; /*0x993de7*/
+    CVecCtrl::DetachFromFoothold(this); /*0x993def*/
+    if ( !this->m_pOwner->GetType(this->m_pOwner) ) /*0x993dfb*/
+    {
+      Instance = StringPool::GetInstance(); /*0x993e0b*/
+      t = StringPool::GetStringW(Instance, &result, 0x907u)->_m_pStr; /*0x993e1b*/
+      v9 = 0; /*0x993e1c*/
+      play_game_sound(t, 0x64u); /*0x993e20*/
+      v9 = -1; /*0x993e2c*/
+      if ( result._m_pStr ) /*0x993e36*/
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)result._m_pStr - 1); /*0x993e3c*/
+    }
+  }
+  p = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p; /*0x993e4a*/
+  Data = TSecType<double>::GetData(&this->m_pAttrField->g); /*0x993e56*/
+  this->m_ap._ZtlSecureTear_vy_CS = _ZtlSecureTear<double>( /*0x993e7f*/
+                                      p->dJumpSpeed * DOUBLE_N0_35355339 / Data,
+                                      this->m_ap._ZtlSecureTear_vy);
+  this->m_ap._ZtlSecureTear_vx_CS = _ZtlSecureTear<double>(0.0, this->m_ap._ZtlSecureTear_vx); /*0x993e87*/
+}

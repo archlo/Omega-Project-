@@ -1,0 +1,61 @@
+// 0x69a670
+void __thiscall CPersonalShopDlg::OnSoldItemResult(CPersonalShopDlg *this, CInPacket *iPacket)
+{
+  CInPacket *v3; // ebx
+  unsigned __int8 v4; // al
+  CPersonalShopDlg::ITEM *a; // ecx
+  int v6; // eax
+  GW_ItemSlotBase *p; // ebp
+  CPersonalShopDlg::ITEM *v8; // eax
+  CPersonalShopDlg::SOLD_ITEM *v9; // edi
+  const ZXString<char> *v10; // eax
+  int Data; // eax
+  int v12; // eax
+  int v13; // edi
+  bool v14; // cf
+  int PersonalShopTax; // eax
+  CPersonalShopDlg::CSoldItemDlg *v16; // ecx
+  int i_4; // [esp+18h] [ebp-1Ch]
+  int i_8; // [esp+1Ch] [ebp-18h]
+
+  v3 = iPacket; /*0x69a699*/
+  v4 = CInPacket::Decode1(iPacket); /*0x69a69f*/
+  a = this->m_aItem.a; /*0x69a6a4*/
+  v6 = v4; /*0x69a6ad*/
+  p = a[v6].pItem.p; /*0x69a6b3*/
+  v8 = &a[v6]; /*0x69a6b7*/
+  i_4 = v8->nSet; /*0x69a6c4*/
+  i_8 = v8->nPrice; /*0x69a6c8*/
+  if ( p ) /*0x69a6d2*/
+    InterlockedIncrement(&p->_m_nRef); /*0x69a6d8*/
+  v9 = ZArray<CPersonalShopDlg::SOLD_ITEM>::InsertBefore(&this->m_aSoldItem, -1); /*0x69a6f5*/
+  v9->nNumber = i_4 * CInPacket::Decode2(v3); /*0x69a708*/
+  v10 = CInPacket::DecodeStr(v3, (ZXString<char> *)&iPacket); /*0x69a70e*/
+  ZXString<char>::operator=(&v9->sBuyerName, v10); /*0x69a71c*/
+  if ( iPacket ) /*0x69a72c*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&iPacket[-1].m_uLength); /*0x69a732*/
+  Data = TSecType<long>::GetData(&p->nItemID); /*0x69a73d*/
+  TSecType<long>::SetData(&v9->nItemID, Data); /*0x69a745*/
+  v12 = i_8 * v9->nNumber / i_4; /*0x69a755*/
+  v9->nPrice = i_8; /*0x69a759*/
+  v13 = v12; /*0x69a75c*/
+  v14 = __CFADD__(v12, this->m_nTotSold); /*0x69a75f*/
+  LODWORD(this->m_nTotSold) += v12; /*0x69a75f*/
+  HIDWORD(this->m_nTotSold) += (v12 >> 31) + v14; /*0x69a766*/
+  PersonalShopTax = GetPersonalShopTax(v12); /*0x69a76c*/
+  v16 = this->m_pSoldItem.p; /*0x69a771*/
+  this->m_nTotReceived += v13 - PersonalShopTax; /*0x69a77f*/
+  if ( v16 ) /*0x69a78d*/
+  {
+    CPersonalShopDlg::CSoldItemDlg::SetScrollBar(v16); /*0x69a78f*/
+    CWnd::InvalidateRect(this->m_pSoldItem.p, nullptr); /*0x69a79e*/
+  }
+  if ( p ) /*0x69a7ad*/
+  {
+    if ( !InterlockedDecrement(&p->_m_nRef) ) /*0x69a7b3*/
+    {
+      InterlockedIncrement(&p->_m_nRef); /*0x69a7be*/
+      ((void (__thiscall *)(GW_ItemSlotBase *, int))p->dtr_ZRefCounted)(p, 1); /*0x69a7cd*/
+    }
+  }
+}

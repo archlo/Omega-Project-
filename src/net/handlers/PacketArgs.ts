@@ -79,10 +79,17 @@ export interface MobEnterArgs {
   team?: number;
   isBoss?: boolean;
 }
-export interface MobMoveArgs { mobId: number; x: number; y: number; }
+export interface MobMoveArgs {
+  mobId: number;
+  bNotForceLandingWhenDiscard: number;
+  bNotChangeAction: boolean;
+  bNextAttackPossible: boolean;
+  bLeft: number; // bit 0 = direction, bits 1-7 = move action
+  movePath: { originX: number; originY: number; originVx: number; originVy: number; elements: { attr: number; x: number; y: number; vx: number; vy: number; fh: number; moveAction: number; elapse: number }[] };
+}
 export interface MobDamagedArgs { mobId: number; damage: number; hp: number; maxHp: number; }
 
-export interface NpcEnterArgs { objId: number; templateId: number; x: number; y: number; facingLeft: boolean; nCy?: number; rx0?: number; rx1?: number; fhId?: number; }
+export interface NpcEnterArgs { objId: number; templateId: number; x: number; y: number; moveAction: number; footholdId: number; rgHorzLow: number; rgHorzHigh: number; bEnabled: boolean; }
 export interface OtherCharEnterArgs {
   charId: number; level: number; name: string; look?: AvatarLook; x: number; y: number;
   guildName?: string;
@@ -123,7 +130,7 @@ export interface DropEnterArgs { dropId: number; isMoney: boolean; itemIdOrAmoun
 export interface DropLeaveArgs { dropId: number; leaveType: number; pickUpId?: number; }
 
 export interface InventoryOpArg { opType: number; invType: number; pos: number; itemId?: number; quantity?: number; newPos?: number; equipExp?: number; petLevel?: number; petTameness?: number; petRepleteness?: number; petRemainLife?: number; equipStats?: EquipStats; }
-export interface UserChatArgs { charId: number; text: string; }
+export interface UserChatArgs { charId: number; chatType: number; text: string; }
 export interface ScriptMessageArgs { speakerId: number; msgType: number; text: string; hasPrev: boolean; hasNext: boolean; quizHint?: string; quizMinLength?: number; quizMaxLength?: number; quizRemainTime?: number; defaultText?: string; minLength?: number; maxLength?: number; defaultNum?: number; minNum?: number; maxNum?: number; avatars?: number[]; pets?: number[]; slideMenuType?: number; menu?: string[]; questId?: number; boxWidth?: number; boxHeight?: number; }
 export interface FuncKeyEntry { keyIndex: number; type: number; actionId: number; }
 // OG: CField::OnFootHoldInfo (decompile/53a810.c), OutHeader.FootHoldInfo
@@ -168,7 +175,19 @@ export interface GuildMember { characterId: number; name: string; job: number; l
 export interface GuildLoadArgs { guildId: number; name: string; members: GuildMember[]; }
 export interface AllianceMember { characterId: number; name: string; job: number; level: number; grade: number; guildId: number; }
 export interface AllianceLoadArgs { allianceName: string; members: AllianceMember[]; }
-export interface ShopItemEntry { itemId: number; price: number; quantity: number; }
+/** OG: CShopDlg::ITEM struct — all fields from SetShopDlg (0x6EAB00). */
+export interface ShopItemEntry {
+  itemId: number;
+  price: number;
+  discountRate: number;
+  tokenId: number;
+  tokenPrice: number;
+  itemPeriod: number;
+  levelLimited: number;
+  quantity: number;
+  maxPerSlot: number;
+  unitPrice: number;  // for throw arrows/bullets (prefix 207/233)
+}
 export interface ShopOpenArgs { npcId: number; items: ShopItemEntry[]; }
 export interface ShopResultArgs { resultType: number; shortfall?: number; message?: string; }
 // OG: CAdminShopDlg::OnPacket (decompile/4310f0.c) — opcode 366 body is a

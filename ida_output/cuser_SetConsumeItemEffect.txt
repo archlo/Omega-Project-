@@ -1,0 +1,3 @@
+// CUser::SetConsumeItemEffect @ 0x8f54d0
+
+{"addr":"0x8f54d0","code":"void __thiscall CUser::SetConsumeItemEffect(CUser *this, CInPacket *iPacket)\n{\n  int v3; // edi\n\n  v3 = CInPacket::Decode4(iPacket); /*0x8f54dd*/\n  CUser::SetConsumeItemEffect(this, v3); /*0x8f54e2*/\n  this->m_nConsumeItemID = v3; /*0x8f54e7*/\n}","refs":[{"addr":"0x409870","name":"?Decode4@CInPacket@@QAEKXZ"},{"addr":"0x8eeb60","name":"?SetConsumeItemEffect@CUser@@QAEXJ@Z"}]}

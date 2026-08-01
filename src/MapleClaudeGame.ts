@@ -180,6 +180,12 @@ export class MapleClaudeGame {
 
     // Keyboard
     document.addEventListener('keydown', (e) => {
+      // OG: prevent browser defaults for game keys (Alt→menu, Tab→focus, F1-F12→help, Space→scroll)
+      if (e.altKey || e.key === 'Tab' || e.key.startsWith('F') && /^F\d{1,2}$/.test(e.key)
+        || e.key === ' ' || e.key === 'ArrowUp' || e.key === 'ArrowDown'
+        || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault();
+      }
       if (!this._prevKeys.has(e.key)) {
         this.stageDirector.onKeyPress(e.key);
       }

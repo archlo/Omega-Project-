@@ -1,0 +1,359 @@
+﻿// bad sp value at call has been detected, the output may be wrong!
+void __thiscall CMob::ProcessAttack(CMob *this, BulletContainer<CMob::MobBullet>::CallUpdateFunc tCur)
+{
+  int tStart; // eax
+  int v4; // esi
+  void *v5; // esp
+  wchar_t *v6; // ebx
+  StringPool *Instance; // eax
+  ZXString<unsigned short> *StringW; // eax
+  _bstr_t::Data_t *m_Data; // ecx
+  wchar_t *m_wstr; // ecx
+  const wchar_t *v11; // esi
+  Ztl_variant_t *ObjectA; // eax
+  IUnknown *Unknown; // eax
+  int v14; // ebx
+  int IsNoFlip; // eax
+  int v16; // ecx
+  void (__cdecl *v17)(int); // edx
+  CUserLocal *v18; // ebx
+  __POSITION *m_pHead; // eax
+  CMob::ATTACKENTRY *Next; // esi
+  MobAttackInfo *AttackInfo; // eax
+  int nType; // eax
+  int OneTimeAction; // eax
+  int OneTimeActionRemain; // eax
+  int nAttackIdx; // ecx
+  IWzVector2D *m_pInterface; // eax
+  int v27; // eax
+  int v28; // ebx
+  IWzVector2D *v29; // eax
+  int v30; // ebx
+  unsigned int v31; // ecx
+  int v32; // eax
+  int v33; // edx
+  CharacterData *p; // eax
+  int summon_skill_id_from_idx; // eax
+  CSummoned *v36; // ebx
+  CMob *Mob; // eax
+  int HitSummonedInRect; // eax
+  int v39; // ebx
+  int v40; // ebx
+  _BYTE dTrembleForce[20]; // [esp+0h] [ebp-A8h] BYREF
+  const Ztl_variant_t *p_vAux; // [esp+14h] [ebp-94h]
+  __POSITION **p_pos; // [esp+18h] [ebp-90h]
+  int v44; // [esp+1Ch] [ebp-8Ch]
+  wchar_t v45[24]; // [esp+20h] [ebp-88h] BYREF
+  CMob *apMob[15]; // [esp+50h] [ebp-58h] BYREF
+  tagRECT rcIntersect; // [esp+8Ch] [ebp-1Ch] BYREF
+  int v48; // [esp+A4h] [ebp-4h]
+  Ztl_variant_t result; // [esp+A8h] [ebp+0h] BYREF
+  Ztl_variant_t vParam; // [esp+B8h] [ebp+10h] BYREF
+  Ztl_variant_t vAux; // [esp+C8h] [ebp+20h] BYREF
+  CSummoned *apSummoned[2]; // [esp+D8h] [ebp+30h] BYREF
+  tagRECT rcLocalUser; // [esp+E0h] [ebp+38h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v54; // [esp+F0h] [ebp+48h] BYREF
+  __POSITION *posSave; // [esp+F4h] [ebp+4Ch]
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v56; // [esp+F8h] [ebp+50h] BYREF
+  CUserLocal *pUserLocal; // [esp+FCh] [ebp+54h]
+  __POSITION *pos; // [esp+100h] [ebp+58h] BYREF
+  int nIdx; // [esp+104h] [ebp+5Ch] BYREF
+  MobAttackInfo *pInfo; // [esp+108h] [ebp+60h]
+  int nCount; // [esp+10Ch] [ebp+64h] BYREF
+
+  if ( !_ZtlSecureFuse<int>(
+          this->m_pTemplate->_ZtlSecureTear_bNotAttack,
+          this->m_pTemplate->_ZtlSecureTear_bNotAttack_CS)
+    && (!_ZtlSecureFuse<int>(this->_ZtlSecureTear_m_nSuspended, this->_ZtlSecureTear_m_nSuspended_CS)
+     || _ZtlSecureFuse<int>(this->_ZtlSecureTear_m_nSuspended, this->_ZtlSecureTear_m_nSuspended_CS) == 3)
+    && !CMob::IsMobOurTeam(this)
+    && CMob::IsSamePhaseWithMe(this)
+    && (!this->m_stat.nDazzle_ || CMob::IsDazzledMobByMe(this))
+    && !this->m_stat.bDisable )
+  {
+    tStart = this->m_effectAttack.tStart;
+    if ( tStart && tCur.m_tCur - tStart >= 0 )
+    {
+      nCount = 0;
+      v48 = 0;
+      v4 = -1;
+      for ( pInfo = (MobAttackInfo *)-1; ; v4 = (int)pInfo )
+      {
+        if ( v4 < 0 )
+        {
+          v6 = &sDefault;
+        }
+        else
+        {
+          v5 = alloca(32);
+          v6 = (wchar_t *)_Int2StrW(v4, v45);
+        }
+        v44 = 986;
+        p_pos = &pos;
+        Instance = StringPool::GetInstance();
+        StringW = StringPool::GetStringW(Instance, (ZXString<unsigned short> *)p_pos, v44);
+        m_Data = this->m_effectAttack.sEffect.m_Data;
+        LOBYTE(v48) = 1;
+        if ( m_Data )
+          m_wstr = m_Data->m_wstr;
+        else
+          m_wstr = nullptr;
+        ZXString<unsigned short>::Format((ZXString<unsigned short> *)&nCount, StringW->_m_pStr, m_wstr, v6);
+        LOBYTE(v48) = 0;
+        if ( pos )
+          ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&pos[-12]);
+        Ztl_variant_t::Ztl_variant_t(&vAux, &vtMissing);
+        LOBYTE(v48) = 2;
+        Ztl_variant_t::Ztl_variant_t(&vParam, &vtMissing);
+        v11 = (const wchar_t *)nCount;
+        v44 = 0;
+        p_pos = nullptr;
+        p_vAux = &vAux;
+        *(_DWORD *)&dTrembleForce[16] = &vParam;
+        *(_DWORD *)&dTrembleForce[12] = &vAux;
+        pUserLocal = (CUserLocal *)&dTrembleForce[12];
+        LOBYTE(v48) = 3;
+        _bstr_t::_bstr_t((_bstr_t *)&dTrembleForce[12], (const wchar_t *)nCount);
+        LOBYTE(v48) = 4;
+        if ( !g_rm.m_pInterface )
+          _com_issue_error(-2147467261);
+        LOBYTE(v48) = 3;
+        ObjectA = IWzResMan::GetObjectA(
+                    g_rm.m_pInterface,
+                    &result,
+                    *(Ztl_bstr_t *)&dTrembleForce[12],
+                    *(const Ztl_variant_t **)&dTrembleForce[16],
+                    p_vAux);
+        LOBYTE(v48) = 5;
+        Unknown = Ztl_variant_t::GetUnknown(ObjectA, (bool)p_pos, v44);
+        _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>(
+          (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *)&nIdx,
+          Unknown);
+        Ztl_variant_t::~Ztl_variant_t(&result);
+        Ztl_variant_t::~Ztl_variant_t(&vParam);
+        LOBYTE(v48) = 9;
+        Ztl_variant_t::~Ztl_variant_t(&vAux);
+        v14 = nIdx;
+        if ( !nIdx || !IWzProperty::Getcount((IWzProperty *)nIdx) )
+          break;
+        IsNoFlip = CMob::IsNoFlip(this);
+        if ( IsNoFlip || this->m_effectAttack.bLeft )
+          IsNoFlip = 1;
+        v44 = -1;
+        p_pos = nullptr;
+        p_vAux = nullptr;
+        *(_DWORD *)&dTrembleForce[16] = 0;
+        *(_DWORD *)&dTrembleForce[12] = IsNoFlip;
+        *(_DWORD *)&dTrembleForce[8] = v16;
+        pUserLocal = (CUserLocal *)&dTrembleForce[8];
+        Ztl_bstr_t::Ztl_bstr_t((Ztl_bstr_t *)&dTrembleForce[8], v11);
+        CMob::LoadLayer(
+          this,
+          &v56,
+          *(Ztl_bstr_t *)&dTrembleForce[8],
+          *(int *)&dTrembleForce[12],
+          *(int *)&dTrembleForce[16],
+          (int)p_vAux,
+          (int)p_pos,
+          v44);
+        if ( v56.m_pInterface )
+          ((void (__cdecl *)(IWzGr2DLayer *))v56.m_pInterface->Release)(v56.m_pInterface);
+        v17 = *(void (__cdecl **)(int))(*(_DWORD *)v14 + 8);
+        LOBYTE(v48) = 0;
+        v17(v14);
+        pInfo = (MobAttackInfo *)((char *)pInfo + 1);
+      }
+      LOBYTE(v48) = 0;
+      if ( v14 )
+        (*(void (__cdecl **)(int))(*(_DWORD *)v14 + 8))(v14);
+      this->m_effectAttack.tStart = 0;
+      v48 = -1;
+      if ( v11 )
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)v11 - 1);
+    }
+    BulletContainer<CMob::MobBullet>::CallUpdate<BulletContainer<CMob::MobBullet>::CallUpdateFunc>(
+      &this->m_Bullets,
+      tCur);
+    v18 = (CUserLocal *)TSingleton<CUserLocal>::ms_pInstance.m_Data;
+    pUserLocal = (CUserLocal *)TSingleton<CUserLocal>::ms_pInstance.m_Data;
+    CAvatar::GetBodyRect((CAvatar *)&TSingleton<CUserLocal>::ms_pInstance.m_Data[11].m_str, &rcLocalUser, 1);
+    CMob::MobBullet::Container::ProcessAttack(&this->m_Bullets, this, v18, rcLocalUser, tCur.m_tCur);
+    m_pHead = (__POSITION *)this->m_lAttackEntry._m_pHead;
+    for ( pos = m_pHead; pos; m_pHead = pos )
+    {
+      posSave = m_pHead;
+      Next = ZList<CMob::ATTACKENTRY>::GetNext(&pos);
+      if ( tCur.m_tCur - Next->tTime >= 0 )
+      {
+        AttackInfo = CMobTemplate::GetAttackInfo(this->m_pTemplate, Next->nAttackIdx);
+        pInfo = AttackInfo;
+        if ( AttackInfo && AttackInfo->bTremble )
+          CAnimationDisplayer::Effect_Tremble(TSingleton<CAnimationDisplayer>::ms_pInstance, DOUBLE_30_0, 1, 0, 0, 0);
+        nType = Next->nType;
+        if ( nType )
+        {
+          if ( nType == 3 || nType == 4 )
+          {
+            if ( ZAPI.IntersectRect(&rcIntersect, &rcLocalUser, &Next->rcRange) && !CMob::IsNotEnemyMob(this) )
+              v18->SetDamaged(v18, 0, 0, 0, 0, this, Next->nAttackIdx, 2 * (Next->bLeft == 0) - 1, 0, 1, 1);
+            HitSummonedInRect = CUserLocal::FindHitSummonedInRect(
+                                  v18,
+                                  &Next->rcRange,
+                                  (CSummoned **)&vParam.decVal._variant_t::tagVARIANT::$E4136441F1BE6AA32618DB9A0F6DCF75::$E2F13C0D8C7A5E44CBEA2DDC2BADB614::__s0,
+                                  2);
+            v39 = 0;
+            for ( nCount = HitSummonedInRect; v39 < nCount; ++v39 )
+              CSummoned::SetDamaged(
+                *((CSummoned **)&vParam.decVal.Lo32 + v39),
+                0,
+                0,
+                0,
+                this,
+                Next->nAttackIdx,
+                2 * (Next->bLeft == 0) - 1);
+            v40 = 0;
+            nCount = CMobPool::FindHitMobInRect(
+                       TSingleton<CMobPool>::ms_pInstance,
+                       &Next->rcRange,
+                       apMob,
+                       15,
+                       nullptr,
+                       0,
+                       0,
+                       0,
+                       1,
+                       1);
+            if ( nCount > 0 )
+            {
+              do
+                CMob::SetDamagedByMob(apMob[v40++], 0, 0, 0, this, Next->nAttackIdx, 2 * (Next->bLeft == 0) - 1);
+              while ( v40 < nCount );
+            }
+          }
+          else
+          {
+            v31 = (unsigned int)Next->rcRange.left >> 2;
+            v32 = Next->rcRange.left & 3;
+            v33 = v18->m_dwCharacterId & 0x3FFFFFFF;
+            nIdx = v32;
+            if ( v31 == v33 )
+            {
+              if ( v32 || CMob::IsNotEnemyMob(this) )
+              {
+                p = CWvsContext::GetCharacterData(
+                      (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+                      (ZRef<CharacterData> *)&vAux.boolVal)->p;
+                v48 = 10;
+                summon_skill_id_from_idx = get_summon_skill_id_from_idx(p, nIdx);
+                v36 = CUser::GetSummoned(v18, (ZRef<CSummoned> *)&result.boolVal, summon_skill_id_from_idx)->p;
+                ZRef<CSummoned>::~ZRef<CSummoned>((ZRef<CSummoned> *)&result.boolVal);
+                v48 = -1;
+                ZRef<CharacterData>::~ZRef<CharacterData>((ZRef<CharacterData> *)&vAux.boolVal);
+                if ( v36 )
+                  CSummoned::SetDamaged(v36, 0, 0, 0, this, Next->nAttackIdx, 2 * (Next->bLeft == 0) - 1);
+              }
+              else
+              {
+                v18->SetDamaged(v18, 0, 0, 0, 0, this, Next->nAttackIdx, 2 * (Next->bLeft == 0) - 1, 0, 1, 1);
+              }
+            }
+            else if ( v32 == 3 )
+            {
+              Mob = CMobPool::GetMob(TSingleton<CMobPool>::ms_pInstance, v31);
+              if ( Mob )
+                CMob::SetDamagedByMob(Mob, 0, 0, 0, this, Next->nAttackIdx, 2 * (Next->bLeft == 0) - 1);
+            }
+          }
+        }
+        else
+        {
+          nCount = Next->nAttackIdx + 13;
+          if ( pInfo
+            && pInfo->bRush
+            && (OneTimeAction = CMob::GetOneTimeAction(this), OneTimeAction == nCount)
+            && (CMob::_ZtlSecureGet_m_nMobCtrlState(this) == 4 || CMob::_ZtlSecureGet_m_nMobCtrlState(this) == 3) )
+          {
+            OneTimeActionRemain = CMob::GetOneTimeActionRemain(this);
+            nAttackIdx = Next->nAttackIdx;
+            this->m_tRushAttackEnd = tCur.m_tCur + OneTimeActionRemain;
+            p_vAux = nullptr;
+            memset(&dTrembleForce[8], 0, 12);
+            *(_QWORD *)dTrembleForce = 0xE00000001LL;
+            this->m_nRushAttackIdx = nAttackIdx;
+            CMob::GenerateMovePath(
+              this,
+              nCount,
+              Next->bLeft,
+              0,
+              *(int *)dTrembleForce,
+              *(int *)&dTrembleForce[4],
+              *(int *)&dTrembleForce[8],
+              *(int *)&dTrembleForce[12],
+              *(int *)&dTrembleForce[16],
+              (int)p_vAux);
+          }
+          else if ( ZAPI.IntersectRect(&rcIntersect, &rcLocalUser, &Next->rcRange) && !CMob::IsNotEnemyMob(this) )
+          {
+            m_pInterface = CUser::GetVecCtrl(
+                             v18,
+                             (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&v56)->m_pInterface;
+            if ( m_pInterface )
+              nCount = (int)&m_pInterface[-3];
+            else
+              nCount = 0;
+            if ( v56.m_pInterface )
+              ((void (__cdecl *)(IWzGr2DLayer *))v56.m_pInterface->Release)(v56.m_pInterface);
+            if ( !pInfo->bJumpAttack || *(_DWORD *)(nCount + 416) )
+              ((void (__thiscall *)(CUserLocal *, _DWORD, _DWORD, _DWORD, _DWORD, CMob *, int, int, _DWORD, int, int, const Ztl_variant_t *))v18->SetDamaged)(
+                v18,
+                0,
+                0,
+                0,
+                0,
+                this,
+                Next->nAttackIdx,
+                2 * (Next->bLeft == 0) - 1,
+                0,
+                1,
+                1,
+                p_vAux);
+          }
+          v27 = CUserLocal::FindHitSummonedInRect(v18, &Next->rcRange, apSummoned, 2);
+          v28 = 0;
+          for ( nCount = v27; v28 < nCount; ++v28 )
+          {
+            v29 = CSummoned::GetVecCtrl(apSummoned[v28], &v54)->m_pInterface;
+            if ( v29 )
+              nIdx = (int)&v29[-3];
+            else
+              nIdx = 0;
+            if ( v54.m_pInterface )
+              ((void (__cdecl *)(IWzVector2D *))v54.m_pInterface->Release)(v54.m_pInterface);
+            if ( !pInfo->bJumpAttack || *(_DWORD *)(nIdx + 416) )
+              CSummoned::SetDamaged(apSummoned[v28], 0, 0, 0, this, Next->nAttackIdx, 2 * (Next->bLeft == 0) - 1);
+          }
+          v30 = 0;
+          nCount = CMobPool::FindHitMobInRect(
+                     TSingleton<CMobPool>::ms_pInstance,
+                     &Next->rcRange,
+                     apMob,
+                     15,
+                     nullptr,
+                     0,
+                     0,
+                     0,
+                     1,
+                     1);
+          if ( nCount > 0 )
+          {
+            do
+              CMob::SetDamagedByMob(apMob[v30++], 0, 0, 0, this, Next->nAttackIdx, 2 * (Next->bLeft == 0) - 1);
+            while ( v30 < nCount );
+          }
+        }
+        ZList<CMob::ATTACKENTRY>::RemoveAt(&this->m_lAttackEntry, posSave);
+        v18 = pUserLocal;
+      }
+    }
+  }
+}

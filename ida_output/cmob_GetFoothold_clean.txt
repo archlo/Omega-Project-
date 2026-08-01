@@ -1,0 +1,10 @@
+IWzVector2D_vtbl *__thiscall CMob::GetFoothold(CMob *this)
+{
+  IWzVector2D *m_pInterface; // eax
+
+  m_pInterface = this->m_pvc.m_pInterface; /*0x93a1a0*/
+  if ( m_pInterface ) /*0x93a1a8*/
+    return m_pInterface[101].__vftable; /*0x93a1aa*/
+  else
+    return (IWzVector2D_vtbl *)MEMORY[0x1A0]; /*0x93a1b3*/
+}

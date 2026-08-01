@@ -1,0 +1,215 @@
+// Address: 0x8767c0
+// Function: ??0CUIStatusBar@@QAE@XZ
+
+CUIStatusBar *__thiscall CUIStatusBar::CUIStatusBar(CUIStatusBar *this)
+{
+  void (__stdcall *v2)(VARIANTARG *); // ebp
+  HRESULT v3; // eax
+  HRESULT v4; // eax
+  Ztl_variant_t *ObjectA; // eax
+  IUnknown *Unknown; // eax
+  HRESULT v7; // eax
+  HRESULT (__stdcall *v8)(VARIANTARG *); // ebx
+  _bstr_t v10; // [esp-1Ch] [ebp-74h] BYREF
+  int p_pvargDest; // [esp-18h] [ebp-70h]
+  int p_pvarg; // [esp-14h] [ebp-6Ch]
+  int v13; // [esp-10h] [ebp-68h]
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > v14; // [esp-Ch] [ebp-64h] BYREF
+  int v15; // [esp-8h] [ebp-60h]
+  CWnd::UIOrigin v16; // [esp-4h] [ebp-5Ch]
+  CUIStatusBar *v17; // [esp+14h] [ebp-44h]
+  _bstr_t *v18; // [esp+18h] [ebp-40h]
+  VARIANTARG pvargDest; // [esp+1Ch] [ebp-3Ch] BYREF
+  VARIANTARG pvarg; // [esp+2Ch] [ebp-2Ch] BYREF
+  Ztl_variant_t result; // [esp+3Ch] [ebp-1Ch] BYREF
+  int v22; // [esp+54h] [ebp-4h]
+
+  v17 = this;
+  CWnd::CWnd(this);
+  v22 = 0;
+  if ( this == (CUIStatusBar *)-128 )
+    TSingleton<CUIStatusBar>::ms_pInstance._m_pStr = nullptr;
+  else
+    TSingleton<CUIStatusBar>::ms_pInstance._m_pStr = (wchar_t *)this;
+  this->CWnd::IGObj::__vftable = (CUIStatusBar_vtbl *)&CUIStatusBar::`vftable'{for `IGObj'};
+  this->CWnd::IUIMsgHandler::__vftable = (IUIMsgHandler_vtbl *)&CUIStatusBar::`vftable'{for `IUIMsgHandler'};
+  this->CWnd::ZRefCounted::__vftable = (ZRefCounted_vtbl *)&CUIStatusBar::`vftable'{for `ZRefCounted'};
+  CUIToolTip::CUIToolTip(&this->m_uiToolTip);
+  CUIToolTip::CUIToolTip(&this->m_uiItemToolTip);
+  this->m_pBtITC.p = nullptr;
+  this->m_pBtMenu.p = nullptr;
+  this->m_pBtSystem.p = nullptr;
+  this->m_pBtMin.p = nullptr;
+  this->m_pBtMax.p = nullptr;
+  this->m_pBtEquipKey.p = nullptr;
+  this->m_pBtInvenKey.p = nullptr;
+  this->m_pBtStatKey.p = nullptr;
+  this->m_pBtSkillKey.p = nullptr;
+  this->m_pBtWhisper.p = nullptr;
+  this->m_pScrChatLog.p = nullptr;
+  this->m_pEditChatInput.p = nullptr;
+  this->m_pCBChatTarget.p = nullptr;
+  CCtrlComboBox::CREATEPARAM::CREATEPARAM(&this->m_paramComboBox);
+  CCtrlEdit::CREATEPARAM::CREATEPARAM(&this->m_paramEdit);
+  this->m_nChatTarget = 8;
+  this->m_nCurPtY = -1;
+  this->m_bDragChatWnd = 0;
+  this->m_pLayerTempEXP.m_pInterface = nullptr;
+  this->m_pFont.m_pInterface = nullptr;
+  this->m_pFontJobTitle.m_pInterface = nullptr;
+  this->m_pFontDimGreen.m_pInterface = nullptr;
+  this->m_pFontWhite.m_pInterface = nullptr;
+  `eh vector constructor iterator'(
+    this->m_pFontChatLog,
+    4u,
+    27,
+    (void (__thiscall *)(void *))_com_ptr_t<_com_IIID<IWzFont,&__s_GUID const _GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac>>::_com_ptr_t<_com_IIID<IWzFont,&__s_GUID const _GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac>>,
+    (void (__thiscall *)(void *))_com_ptr_t<_com_IIID<IWzFont,&__s_GUID const _GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac>>::~_com_ptr_t<_com_IIID<IWzFont,&__s_GUID const _GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac>>);
+  this->m_pFontJobCategory.m_pInterface = nullptr;
+  this->m_pImgFontLevelNo.m_pInterface = nullptr;
+  this->m_pImgFontMemo.m_pInterface = nullptr;
+  this->m_sWhisperTarget._m_pStr = nullptr;
+  this->m_lsWhisperCandidate.__vftable = (ZList<ZXString<char> >_vtbl *)&ZList<ZXString<char>>::`vftable';
+  this->m_lsWhisperCandidate._m_uCount = 0;
+  this->m_lsWhisperCandidate._m_pHead = nullptr;
+  this->m_lsWhisperCandidate._m_pTail = nullptr;
+  this->m_GaugeHP.m_pLayerL.m_pInterface = nullptr;
+  this->m_GaugeHP.m_pLayerC.m_pInterface = nullptr;
+  this->m_GaugeHP.m_pLayerR.m_pInterface = nullptr;
+  this->m_GaugeMP.m_pLayerL.m_pInterface = nullptr;
+  this->m_GaugeMP.m_pLayerC.m_pInterface = nullptr;
+  this->m_GaugeMP.m_pLayerR.m_pInterface = nullptr;
+  this->m_GaugeEXP.m_pLayerL.m_pInterface = nullptr;
+  this->m_GaugeEXP.m_pLayerC.m_pInterface = nullptr;
+  this->m_GaugeEXP.m_pLayerR.m_pInterface = nullptr;
+  v2 = VariantInit;
+  LOBYTE(v22) = 32;
+  VariantInit(&pvarg);
+  v3 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing);
+  if ( v3 < 0 )
+    _com_issue_error(v3);
+  LOBYTE(v22) = 33;
+  v2(&pvargDest);
+  v4 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing);
+  if ( v4 < 0 )
+    _com_issue_error(v4);
+  v16 = (CWnd::UIOrigin)sEtcChars;
+  v15 = 0;
+  v14.m_pInterface = nullptr;
+  v13 = 0;
+  p_pvarg = (int)&pvarg;
+  p_pvargDest = (int)&pvargDest;
+  v10.m_Data = (_bstr_t::Data_t *)&pvargDest;
+  v18 = &v10;
+  LOBYTE(v22) = 34;
+  _bstr_t::_bstr_t(&v10, L"UI/StatusBar2.img/mainBar/gauge/number");
+  LOBYTE(v22) = 35;
+  if ( !g_rm.m_pInterface )
+    _com_issue_error(-2147467261);
+  LOBYTE(v22) = 34;
+  ObjectA = IWzResMan::GetObjectA(
+              g_rm.m_pInterface,
+              &result,
+              (Ztl_bstr_t)v10.m_Data,
+              (const Ztl_variant_t *)p_pvargDest,
+              (const Ztl_variant_t *)p_pvarg);
+  LOBYTE(v22) = 36;
+  Unknown = Ztl_variant_t::GetUnknown(ObjectA, v13, (bool)v14.m_pInterface);
+  v18 = (_bstr_t *)&v14;
+  v14.m_pInterface = nullptr;
+  v7 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+         &v14,
+         Unknown);
+  if ( v7 < 0 && v7 != -2147467262 )
+    _com_issue_error(v7);
+  CBitmapStrNumber::CBitmapStrNumber(&this->m_GougeNo, v14, v15, (const char *)v16);
+  v8 = VariantClear;
+  LOBYTE(v22) = 38;
+  if ( result.vt == 8 )
+  {
+    result.vt = 0;
+    if ( result.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(result.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&result);
+  }
+  LOBYTE(v22) = 39;
+  if ( pvargDest.vt == 8 )
+  {
+    pvargDest.vt = 0;
+    if ( pvargDest.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4));
+  }
+  else
+  {
+    v8(&pvargDest);
+  }
+  LOBYTE(v22) = 40;
+  if ( pvarg.vt == 8 )
+  {
+    pvarg.vt = 0;
+    if ( pvarg.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4));
+  }
+  else
+  {
+    v8(&pvarg);
+  }
+  this->m_sFriendGroupTarget._m_pStr = nullptr;
+  LOBYTE(v22) = 41;
+  CChatHelper::CChatHelper(&this->m_chatHelper);
+  LOBYTE(v22) = 42;
+  CFloatNotice::CFloatNotice(&this->m_floatNotice);
+  LOBYTE(v22) = 43;
+  CFloatNotice::CFloatNotice(&this->m_quizPanel);
+  LOBYTE(v22) = 44;
+  CFloatNotice::CFloatNotice(&this->m_itemMsg);
+  this->m_pLayerNoticeMsg.m_pInterface = nullptr;
+  this->m_pLayerChatLog.m_pInterface = nullptr;
+  this->m_pLayerChatBar.m_pInterface = nullptr;
+  this->m_pLayerSkin.m_pInterface = nullptr;
+  this->m_pLayerGaugeText.m_pInterface = nullptr;
+  this->m_pLayerChatSpace.m_pInterface = nullptr;
+  this->m_pLayerChatSpace2.m_pInterface = nullptr;
+  this->m_pLayerChatEnter.m_pInterface = nullptr;
+  this->m_pLayerChatCover.m_pInterface = nullptr;
+  LOBYTE(v22) = 54;
+  `eh vector constructor iterator'(
+    this->m_pLayerButtonAni,
+    4u,
+    4,
+    (void (__thiscall *)(void *))_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>,
+    (void (__thiscall *)(void *))_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::~_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>);
+  LOBYTE(v22) = 55;
+  this->m_nChatWndType = 0;
+  this->m_nPastHP = -1;
+  this->m_nPastMP = -1;
+  this->m_tLastUpdateSkillCooltime = timeGetTime();
+  CUIStatusBar::CQuickSlot::CQuickSlot(&this->m_QuickSlot);
+  this->m_lm.m_pWnd = nullptr;
+  this->m_lm.m_nOffsetX = 0;
+  this->m_lm.m_nOffsetY = 0;
+  this->m_lm.m_aLayer.a = nullptr;
+  this->m_lm.m_aButton.a = nullptr;
+  LOBYTE(v22) = 57;
+  `eh vector constructor iterator'(
+    this->m_apBtChatFilter,
+    8u,
+    6,
+    (void (__thiscall *)(void *))ZRef<CCtrlOriginButton>::ZRef<CCtrlOriginButton>,
+    (void (__thiscall *)(void *))ZRef<CCtrlOriginButton>::~ZRef<CCtrlOriginButton>);
+  v16 = Origin_LB;
+  v15 = 1;
+  v14.m_pInterface = nullptr;
+  v13 = 1;
+  p_pvarg = -1073343024;
+  p_pvargDest = 578;
+  v10.m_Data = (_bstr_t::Data_t *)1024;
+  LOBYTE(v22) = 58;
+  this->m_dwChatFilterFlag = 0;
+  this->m_uiItemToolTip.m_bIngoreWeddingInfo = 1;
+  CWnd::CreateWnd(this, 0, -578, (int)v10.m_Data, p_pvargDest, p_pvarg, v13, v14.m_pInterface, v15, v16);
+  return this;
+}

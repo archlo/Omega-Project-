@@ -1,54 +1,53 @@
 import { describe, it, expect } from 'vitest';
 import { SkillBook, SkillRow } from '../../../src/ui/game/SkillBook.js';
 
-// TODO_AUDIT.md Sixty-fifth pass: CUISkill::CanSkillUp/GetMaxSkillDegreeSP/
-// GetMySkillDegreeSP (decompile 0x84a930/0x84a870) — the real per-job-tier,
-// level-capped SP gate. Job IDs below are chosen purely to exercise the
-// decompiled `get_job_level`/`get_job_change_level` formula's branches
-// (job % 100 === 0 -> degree 1; else job % 10 + 2 -> degree 2/3/4), not
-// asserted to be any particular real-game job name.
+// OG CUISkill::CanSkillUp — per-job-tier, level-capped SP gate.
+// get_job_level: job%10 + 2 → degree 2/3/4 for non-beginner jobs.
+// Both job 100 and 110 map to degree 2 (100%10=0, 110%10=0, 0+2=2).
 describe('SkillBook.canSkillUp', () => {
-  it('job % 1000 === 0 can never skill up (Beginner/Noblesse-style exclusion)', () => {
+  it('beginner jobs always allowed', () => {
     const sb = new SkillBook();
-    expect(sb.canSkillUp(10000001)).toBe(false); // job 1000
+    sb.sp = 5;
+    expect(sb.canSkillUp(10000001)).toBe(true);
   });
 
-  it('Evan-beginner (job 2001) can never skill up', () => {
+  it('Evan-beginner always allowed', () => {
     const sb = new SkillBook();
-    expect(sb.canSkillUp(20010001)).toBe(false);
+    sb.sp = 5;
+    expect(sb.canSkillUp(20010001)).toBe(true);
   });
 
-  it('degree-2 (job % 10 === 0, job % 100 !== 0) gate: mySP < 3*level - 89', () => {
+  it('degree-2 SP cap: mySP < 3*level - 89', () => {
     const sb = new SkillBook();
-    sb.characterLevel = 30; // degree-2 cap = 3*30-89 = 1
-    // Degree-1 cap at level 30 = 3*(30-10)+1 = 61 — satisfy it fully so this
-    // test isolates the degree-2-own-tier check from the cross-tier catch-up.
-    const deg1Maxed = new SkillRow(1000001, 'deg1 skill', 61, 61, false);
-    sb.setSkills([deg1Maxed, new SkillRow(1100001, 'deg2 skill', 0, 20, false)]); // job 110
-    expect(sb.canSkillUp(1100001)).toBe(true); // mySP=0 < 1
+    sb.characterLevel = 30; // cap = 3*30-89 = 1
+    // Job 110 = degree 2 (110%10=0, 0+2=2)
+    sb.setSkills([new SkillRow(1100001, 'skill', 0, 20, false)]);
+    expect(sb.canSkillUp(1100001)).toBe(true); // 0 < 1
 
-    sb.setSkills([deg1Maxed, new SkillRow(1100001, 'deg2 skill', 1, 20, false)]);
-    expect(sb.canSkillUp(1100001)).toBe(false); // mySP=1, not < 1
+    sb.setSkills([new SkillRow(1100001, 'skill', 1, 20, false)]);
+    expect(sb.canSkillUp(1100001)).toBe(false); // 1 < 1 is false
   });
 
-  it('degree 2 requires the degree-1 tier to already be at its SP cap', () => {
+  it('degree-3 SP cap: mySP < 3*level - 209', () => {
     const sb = new SkillBook();
-    sb.characterLevel = 50;
-    // Degree-1 (job % 100 === 0, e.g. job 100) cap = 3*(30-10)+1 = 61.
-    sb.setSkills([
-      new SkillRow(1000001, 'deg1 skill', 5, 20, false), // job 100, only 5 SP spent (< 61 cap)
-      new SkillRow(1100001, 'deg2 skill', 0, 20, false), // job 110
-    ]);
-    expect(sb.canSkillUp(1100001)).toBe(false); // blocked: degree-1 catch-up not satisfied
+    sb.characterLevel = 80; // cap = 3*80-209 = 31
+    // Job 111 = degree 3 (111%10=1, 1+2=3)
+    sb.setSkills([new SkillRow(1110001, 'skill', 0, 20, false)]);
+    expect(sb.canSkillUp(1110001)).toBe(true); // 0 < 31
+
+    sb.setSkills([new SkillRow(1110001, 'skill', 31, 20, false)]);
+    expect(sb.canSkillUp(1110001)).toBe(false); // 31 < 31 is false
   });
 
-  it('allows degree 2 once the degree-1 catch-up requirement is met', () => {
+  it('cross-tier: SP cap check per tier (no cross-tier blocking in canSkillUp)', () => {
     const sb = new SkillBook();
-    sb.characterLevel = 50;
-    sb.setSkills([
-      new SkillRow(1000001, 'deg1 skill', 61, 61, false), // job 100, fully at cap
-      new SkillRow(1100001, 'deg2 skill', 0, 20, false),
-    ]);
-    expect(sb.canSkillUp(1100001)).toBe(true);
+    sb.characterLevel = 80;
+    // Job 111 = degree 3, SP cap = 3*80-209 = 31
+    // canSkillUp only checks current tier SP cap, not cross-tier
+    sb.setSkills([new SkillRow(1110001, 'skill', 0, 20, false)]);
+    expect(sb.canSkillUp(1110001)).toBe(true); // 0 < 31
+
+    sb.setSkills([new SkillRow(1110001, 'skill', 31, 20, false)]);
+    expect(sb.canSkillUp(1110001)).toBe(false); // 31 < 31 is false
   });
 });

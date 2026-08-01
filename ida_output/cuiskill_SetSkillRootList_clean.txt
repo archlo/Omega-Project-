@@ -1,0 +1,44 @@
+// CUISkill::SetSkillRootList
+// Decompiled from v95 IDB
+
+void __thiscall CUISkill::SetSkillRootList(CUISkill *this)
+{
+  CharacterData *p; // esi
+  char *p_m_uTableSize; // edi
+  volatile LONG *p_m_uCount; // ebx
+  __int16 v5; // ax
+  int v6; // ecx
+  ZRef<CharacterData> result; // [esp+10h] [ebp-8h] BYREF
+
+  p = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &result)->p; /*0x84bff9*/
+  if ( result.p ) /*0x84c002*/
+  {
+    p_m_uTableSize = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x84c004*/
+    p_m_uCount = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount; /*0x84c007*/
+    if ( !InterlockedDecrement(p_m_uCount) ) /*0x84c00b*/
+    {
+      InterlockedIncrement(p_m_uCount); /*0x84c016*/
+      if ( p_m_uTableSize ) /*0x84c01e*/
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1); /*0x84c028*/
+    }
+    result.p = nullptr; /*0x84c02a*/
+  }
+  ZArray<long>::RemoveAll(&this->m_aSkillRoot); /*0x84c03a*/
+  v5 = _ZtlSecureFuse<short>(p->characterStat._ZtlSecureTear_nJob, p->characterStat._ZtlSecureTear_nJob_CS); /*0x84c048*/
+  get_skill_root_from_job(v5, &this->m_aSkillRoot); /*0x84c054*/
+  v6 = _ZtlSecureFuse<short>(p->characterStat._ZtlSecureTear_nJob, p->characterStat._ZtlSecureTear_nJob_CS); /*0x84c063*/
+  if ( v6 / 100 == 22 || v6 == 2001 ) /*0x84c085*/
+    *ZArray<long>::InsertBefore(&this->m_aSkillRoot, 0) = 2001; /*0x84c096*/
+  else
+    *ZArray<long>::InsertBefore(&this->m_aSkillRoot, 0) = 1000 * (v6 / 1000); /*0x84c0c2*/
+}
+
+// References:
+//   ?GetCharacterData@CWvsContext@@QAE?AV?$ZRef@VCharacterData@@@@XZ @ 0x42b960
+//   ?ms_pInstance@?$TSingleton@VCWvsContext@@@@1PAVCWvsContext@@A @ 0xc64068
+//   __imp__InterlockedIncrement@4 @ 0xb14074
+//   __imp__InterlockedDecrement@4 @ 0xb14078
+//   ?RemoveAll@?$ZArray@J@@QAEXXZ @ 0x4609e0
+//   ??$_ZtlSecureFuse@F@@YAFQBFI@Z @ 0x47d510
+//   ?get_skill_root_from_job@@YAXJAAV?$ZArray@J@@@Z @ 0x4ba830
+//   ?InsertBefore@?$ZArray@J@@QAEAAJH@Z @ 0x4802f0

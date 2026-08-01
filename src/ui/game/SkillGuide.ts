@@ -1,45 +1,86 @@
-import { Graphics, Text, TextStyle } from 'pixi.js';
+import { Sprite, Texture } from 'pixi.js';
 import { GamePanel } from './GamePanel.js';
+import type { WzTextureLoader } from '../../render/WzTextureLoader.js';
+import { WzPackage } from '../../wz/WzPackage.js';
+import { WzProperty } from '../../wz/WzProperty.js';
+import { WzCanvas } from '../../wz/WzCanvas.js';
 
-const W = 260;
-const H = 118;
+// OG: CWndSkillGuide — static image popup (inherits CWnd)
+// WZ path: UI/UIWindow.img/AranSkillGuide/{nGrade} (grades 1-4)
+// Window size: 800×600 (from CWnd::CreateWnd in constructor)
+// Closes on double-click or Escape key
+// No buttons, no scrollbar, no interactive elements
 
 export class SkillGuide extends GamePanel {
-  private readonly _bg = new Graphics();
-  private readonly _title = new Text({ text: 'Skill Guide', style: new TextStyle({ fill: '#ffe6a3', fontSize: 13, fontFamily: 'monospace' }) });
-  private readonly _body = new Text({
-    text: 'A skill guide was opened by the server.\n\nUse the Skill Book to view and level\navailable skills. Detailed guide payload\nis not decoded yet.',
-    style: new TextStyle({ fill: '#ffffff', fontSize: 11, fontFamily: 'monospace' }),
-  });
+  private _image: Sprite | null = null;
+  private _grade = 0;
+  private _loader: WzTextureLoader | null = null;
+  private _ui: WzPackage | null = null;
 
-  constructor() {
+  constructor(loader?: WzTextureLoader, ui?: WzPackage | null) {
     super();
-    this._root.position.set(280, 160);
-    this._bg.roundRect(0, 0, W, H, 5).fill({ color: 0x121827, alpha: 0.92 });
-    this._bg.roundRect(0, 0, W, H, 5).stroke({ color: 0x7cc8ff, width: 1 });
-    this._title.position.set(10, 8);
-    this._body.position.set(10, 30);
-    this._root.addChild(this._bg, this._title, this._body);
+    this._loader = loader ?? null;
+    this._ui = ui ?? null;
+
+    // OG: CWndSkillGuide::CWndSkillGuide — loads UI/UIWindow.img/AranSkillGuide/{nGrade}
+    if (loader && ui) {
+      const guideProp = ui.GetItem('UI/UIWindow.img/AranSkillGuide');
+      const prop = guideProp instanceof WzProperty ? guideProp : null;
+      // Load grade 1 by default (will be replaced in open())
+      const gradeNode = prop?.Get('1');
+      if (gradeNode instanceof WzCanvas) {
+        const ws = loader.Load(gradeNode);
+        if (ws) {
+          this._image = new Sprite(ws.Texture);
+          this._root.addChild(this._image);
+        }
+      }
+    }
   }
 
-  Open(): void {
+  // OG: OpenSkillGuide — grade 1-4 from button IDs 3001-3004
+  // Also called by CUserLocal::OnOpenSkillGuide (opcode 262)
+  open(grade: number, _loader?: WzTextureLoader, _ui?: WzPackage | null): void {
+    this._grade = grade;
     this.isVisible = true;
+    const loader = _loader ?? this._loader;
+    const ui = _ui ?? this._ui;
+
+    // Load the grade-specific WZ image
+    if (loader && ui) {
+      const guideProp = ui.GetItem('UI/UIWindow.img/AranSkillGuide');
+      const prop = guideProp instanceof WzProperty ? guideProp : null;
+      const gradeNode = prop?.Get(String(grade));
+      if (gradeNode instanceof WzCanvas) {
+        const ws = loader.Load(gradeNode);
+        if (ws) {
+          if (this._image) {
+            this._image.texture = ws.Texture;
+          } else {
+            this._image = new Sprite(ws.Texture);
+            this._root.addChild(this._image);
+          }
+        }
+      }
+    }
   }
 
+  // OG: CWndSkillGuide::OnMouseButton — close on double-click
   handleMouseButton(x: number, y: number, down: boolean): boolean {
-    if (!this.isVisible || !down) return this.isVisible;
-    const lx = x - this._root.x;
-    const ly = y - this._root.y;
-    if (lx >= W - 20 && lx < W && ly >= 0 && ly < 22) {
+    if (!this.isVisible) return false;
+    if (!down) return true;
+    // OG: Close on any click (double-click in OG, but single-click is fine for now)
+    this.isVisible = false;
+    return true;
+  }
+
+  // OG: CWndSkillGuide::OnKey — close on Escape
+  onKeyPress(key: string): boolean {
+    if (!this.isVisible) return false;
+    if (key === 'Escape') {
       this.isVisible = false;
       return true;
     }
-    return lx >= 0 && lx < W && ly >= 0 && ly < H;
-  }
-
-  onKeyPress(key: string): boolean {
-    if (!this.isVisible) return false;
-    if (key === 'Escape') this.isVisible = false;
     return true;
   }
 }

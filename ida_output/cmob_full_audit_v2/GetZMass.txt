@@ -1,0 +1,10 @@
+﻿int __thiscall CMob::GetZMass(CMob *this)
+{
+  __POSITION *m_posAffectedGuidedBullet; // eax
+
+  m_posAffectedGuidedBullet = this->m_posAffectedGuidedBullet;
+  if ( m_posAffectedGuidedBullet )
+    return *(_DWORD *)&m_posAffectedGuidedBullet[440];
+  else
+    return MEMORY[0x1C4];
+}

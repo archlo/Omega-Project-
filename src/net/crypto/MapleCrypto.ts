@@ -5,27 +5,7 @@ const BlockSize = 16;
 const FirstChunkSize = 0x5B0;
 const SubsequentChunkSize = 0x5B4;
 
-let aesKey: Uint8Array | null = null;
-let ecb: aesjs.ModeOfOperation.ecb | null = null;
-
-function getAesKey(): Uint8Array {
-  if (!aesKey) {
-    aesKey = new Uint8Array(AesUserKey.ToArray());
-  }
-  return aesKey;
-}
-
-function getEcb(): aesjs.ModeOfOperation.ecb {
-  if (!ecb) {
-    ecb = new aesjs.ModeOfOperation.ecb(getAesKey());
-  }
-  return ecb;
-}
-
-function EncryptBlockInPlace(block: Uint8Array): void {
-  const encrypted = getEcb().encrypt(block);
-  block.set(encrypted);
-}
+const AES_KEY = new Uint8Array(AesUserKey.ToArray());
 
 function FillBlock(block: Uint8Array, iv: Uint8Array): void {
   for (let i = 0; i < block.length; i += iv.length) {
@@ -34,6 +14,10 @@ function FillBlock(block: Uint8Array, iv: Uint8Array): void {
 }
 
 export class MapleCrypto {
+  /**
+   * OG: AES::transform — XOR-encrypt data with AES-expanded IV.
+   * Creates a FRESH AES-ECB instance per block to avoid any state leak.
+   */
   static Crypt(data: Uint8Array, iv: Uint8Array): void {
     if (iv.length !== 4) throw new Error('iv must be exactly 4 bytes');
     if (data.length === 0) return;
@@ -47,7 +31,9 @@ export class MapleCrypto {
       for (let i = offset; i < offset + chunkLen; i++) {
         const blockIndex = (i - offset) % BlockSize;
         if (blockIndex === 0) {
-          EncryptBlockInPlace(block);
+          const ecb = new aesjs.ModeOfOperation.ecb(AES_KEY);
+          const encrypted = ecb.encrypt(block);
+          block.set(encrypted);
         }
         data[i] ^= block[blockIndex];
       }

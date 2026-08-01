@@ -1,0 +1,26 @@
+// CSkillInfo::GetItemSkill(long)
+
+const ITEMSKILLENTRY *__thiscall CSkillInfo::GetItemSkill(CSkillInfo *this, int nSkillID)
+{
+  ITEMSKILLENTRY *v2; // edi
+  ITEMSKILLENTRY *v3; // esi
+  ZRef<ITEMSKILLENTRY> p; // [esp+10h] [ebp-14h] BYREF
+  int v6; // [esp+20h] [ebp-4h]
+
+  p.p = nullptr;
+  v6 = 0;
+  ZMap<long,ZRef<ITEMSKILLENTRY>,long>::GetAt(&this->m_mItemSkill, &nSkillID, &p);
+  v2 = p.p;
+  v6 = -1;
+  if ( p.p )
+  {
+    v3 = p.p - 2;
+    if ( !InterlockedDecrement((volatile LONG *)&p.p[-2].apLevelData) )
+    {
+      InterlockedIncrement((volatile LONG *)&v2[-2].apLevelData);
+      if ( v2 != (ITEMSKILLENTRY *)16 )
+        (*(void (__thiscall **)(ITEMSKILLENTRY *, int))v3->nSkillID)(v2 - 2, 1);
+    }
+  }
+  return v2;
+}

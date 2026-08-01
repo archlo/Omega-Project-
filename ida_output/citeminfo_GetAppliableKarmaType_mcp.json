@@ -1,0 +1,12 @@
+[
+  {
+    "query": "0x5c09f0",
+    "matches": [
+      {
+        "address": "0x5c09f0",
+        "name": "CItemInfo::GetAppliableKarmaType",
+        "pseudocode": "{\"addr\":\"0x5c09f0\",\"code\":\"int __thiscall CItemInfo::GetAppliableKarmaType(CItemInfo *this, int nItemID)\\n{\\n  const CItemInfo::EQUIPITEM *EquipItem; // eax\\n  const CItemInfo::BUNDLEITEM *BundleItem; // eax\\n\\n  if ( nItemID / 1000000 == 1 ) /*0x5c0a0a*/\\n  {\\n    EquipItem = CItemInfo::GetEquipItem(this, nItemID); /*0x5c0a0c*/\\n    if ( EquipItem ) /*0x5c0a13*/\\n      return EquipItem->nAppliableKarmaType; /*0x5c0a1c*/\\n  }\\n  else\\n  {\\n    BundleItem = CItemInfo::GetBundleItem(this, nItemID); /*0x5c0a1f*/\\n    if ( BundleItem ) /*0x5c0a26*/\\n      return BundleItem->nAppliableKarmaType; /*0x5c0a2c*/\\n  }\\n  return 0; /*0x5c0a1b*/\\n}\",\"refs\":[{\"addr\":\"0x5c0820\",\"name\":\"?GetEquipItem@CItemInfo@@QAEPBUEQUIPITEM@1@J@Z\"},{\"addr\":\"0x5b5200\",\"name\":\"?GetBundleItem@CItemInfo@@QAEPBUBUNDLEITEM@1@J@Z\"}]}"
+      }
+    ]
+  }
+]

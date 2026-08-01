@@ -1,0 +1,13 @@
+[
+  {
+    "query": "0x5c39d0",
+    "matches": [
+      {
+        "address": "0x5c39d0",
+        "name": "CItemInfo::GetLevelInfo(long,long)",
+        "disasm": "push    this\npush    ebp\npush    esi\npush    edi\nmov     edi, [esp+10h+nItemID]\nxor     ebp, ebp\npush    edi; nItemID\nmov     esi, this\nmov     [esp+14h+var_4], ebp\ncall    ?IsGrowthItem@CItemInfo@@QAEHJ@Z; CItemInfo::IsGrowthItem(long)\ntest    eax, eax\njz      short loc_5C3A4F\npush    ebx\npush    edi; nItemId\nmov     this, esi; this\ncall    ?GetEquipItem@CItemInfo@@QAEPBUEQUIPITEM@1@J@Z; CItemInfo::GetEquipItem(long)\nmov     ebx, eax\ncmp     ebx, ebp\njnz     short loc_5C3A08\nmov     eax, [esp+14h+result]\npop     ebx\npop     edi\npop     esi\nmov     [eax+4], ebp\npop     ebp\npop     this\nretn    0Ch\nmov     ebp, [esp+14h+nLevel]\ntest    ebp, ebp\njle     short loc_5C3A3C\npush    edi; nItemID\nmov     this, esi; this\ncall    ?GetMaxLevel@CItemInfo@@QAEJJ@Z; CItemInfo::GetMaxLevel(long)\ncmp     ebp, eax\njg      short loc_5C3A3C\nmov     eax, [ebx+210h]\nmov     esi, [esp+14h+result]\nlea     this, [eax+ebp*8-8]\npush    this; r\nmov     this, esi; this\ncall    ??0?$ZRef@ULevelInfo@CItemInfo@@@@QAE@ABV0@@Z; ZRef<CItemInfo::LevelInfo>::ZRef<CItemInfo::LevelInfo>(ZRef<CItemInfo::LevelInfo> const &)\npop     ebx\npop     edi\nmov     eax, esi\npop     esi\npop     ebp\npop     this\nretn    0Ch\nmov     eax, [esp+14h+result]\npop     ebx\npop     edi\npop     esi\nmov     dword ptr [eax+4], 0\npop     ebp\npop     this\nretn    0Ch\nmov     eax, [esp+10h+result]\npop     edi\npop     esi\nmov     [eax+4], ebp\npop     ebp\npop     this\nretn    0Ch",
+        "pseudocode": "ZRef<CItemInfo::LevelInfo> *__thiscall CItemInfo::GetLevelInfo(\n        CItemInfo *this,\n        ZRef<CItemInfo::LevelInfo> *result,\n        int nItemID,\n        int nLevel)\n{\n  const CItemInfo::EQUIPITEM *EquipItem; // ebx\n\n  if ( CItemInfo::IsGrowthItem(this, nItemID) )\n  {\n    EquipItem = CItemInfo::GetEquipItem(this, nItemID);\n    if ( EquipItem )\n    {\n      if ( nLevel <= 0 || nLevel > (int)CItemInfo::GetMaxLevel(this, nItemID) )\n      {\n        result->p = nullptr;\n        return result;\n      }\n      else\n      {\n        ZRef<CItemInfo::LevelInfo>::ZRef<CItemInfo::LevelInfo>(result, &EquipItem->apLevelInfo.a[nLevel - 1]);\n        return result;\n      }\n    }\n    else\n    {\n      result->p = nullptr;\n      return result;\n    }\n  }\n  else\n  {\n    result->p = nullptr;\n    return result;\n  }\n}\n"
+      }
+    ]
+  }
+]

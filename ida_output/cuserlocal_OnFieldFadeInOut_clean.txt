@@ -1,0 +1,21 @@
+// cuserlocal::OnFieldFadeInOut
+
+void __thiscall CUserLocal::OnFieldFadeInOut(CUserLocal *this, CInPacket *iPacket)
+{
+  int v4; // ebx
+  int v5; // ebp
+  unsigned int v6; // eax
+  CAnimationDisplayer *v7; // esi
+  int LayerZ; // eax
+  int v9; // [esp-4h] [ebp-14h]
+  unsigned int tFadeOut; // [esp+14h] [ebp+4h]
+
+  v4 = CInPacket::Decode4(iPacket); /*0x9057a3*/
+  v5 = CInPacket::Decode4(iPacket); /*0x9057ac*/
+  tFadeOut = CInPacket::Decode4(iPacket); /*0x9057b5*/
+  v6 = CInPacket::Decode4(iPacket); /*0x9057b9*/
+  v7 = TSingleton<CAnimationDisplayer>::ms_pInstance; /*0x9057be*/
+  v9 = v6; /*0x9057c4*/
+  LayerZ = CAvatar::GetLayerZ(&this->CAvatar); /*0x9057cb*/
+  CAnimationDisplayer::RegisterFadeInOutAnimation(v7, v4, v5, tFadeOut, LayerZ - 2, v9); /*0x9057dd*/
+}

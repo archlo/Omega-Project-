@@ -1,0 +1,3 @@
+// CUserLocal::OnGoToCommoditySN @ 0x905760
+
+{"addr":"0x905760","code":"void __thiscall CUserLocal::OnGoToCommoditySN(CUserLocal *this, CInPacket *iPacket)\n{\n  *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 4147) = CInPacket::Decode4(iPacket); /*0x90576f*/\n  CWvsContext::SendMigrateToShopRequest((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, 0); /*0x905783*/\n}","refs":[{"addr":"0xc64068","name":"?ms_pInstance@?$TSingleton@VCWvsContext@@@@1PAVCWvsContext@@A"},{"addr":"0x409870","name":"?Decode4@CInPacket@@QAEKXZ"},{"addr":"0x9dc280","name":"?SendMigrateToShopRequest@CWvsContext@@QAEXH@Z"}]}

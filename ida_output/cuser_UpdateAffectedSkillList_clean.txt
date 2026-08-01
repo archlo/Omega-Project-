@@ -1,0 +1,377 @@
+// CUser::UpdateAffectedSkillList(long,int) @ 0x8ffaf0
+// Decompiled via IDA headless
+
+void __thiscall CUser::UpdateAffectedSkillList(CUser *this, int tDelay, int bEnterField)
+{
+  const SecondaryStat *v4; // esi
+  ZFatalSection *p; // ebx
+  bool v6; // zf
+  TemporaryStatBase<long> *v7; // ebx
+  int v8; // eax
+  CAvatar *v9; // ecx
+  int v10; // eax
+  int v11; // eax
+  CAvatar *v12; // ecx
+  void (__thiscall *PrepareActionLayer)(CAvatar *, int, int, int); // eax
+  int v14; // eax
+  __POSITION *m_pHead; // eax
+  __POSITION *v16; // edi
+  CUser::AFFECTEDSKILLENTRY *Next; // esi
+  ZList<_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > > *a; // ecx
+  IWzGr2DLayer *m_pInterface; // eax
+  int update_time; // edi
+  int v21; // edi
+  CUser::AFFECTEDSKILLENTRY *v22; // esi
+  const int *v23; // eax
+  int v24; // edx
+  unsigned int ZtlSecureTear_nSeal__CS; // [esp-4h] [ebp-44h]
+  unsigned int ZtlSecureTear_rSeal__CS; // [esp-4h] [ebp-44h]
+  unsigned int ZtlSecureTear_rStun__CS; // [esp-4h] [ebp-44h]
+  unsigned int ZtlSecureTear_rWeakness__CS; // [esp-4h] [ebp-44h]
+  unsigned int ZtlSecureTear_rCurse__CS; // [esp-4h] [ebp-44h]
+  unsigned int ZtlSecureTear_rDarkness__CS; // [esp-4h] [ebp-44h]
+  unsigned int ZtlSecureTear_rPoison__CS; // [esp-4h] [ebp-44h]
+  unsigned int ZtlSecureTear_rSlow__CS; // [esp-4h] [ebp-44h]
+  unsigned int ZtlSecureTear_rAttract__CS; // [esp-4h] [ebp-44h]
+  unsigned int ZtlSecureTear_rStopPortion__CS; // [esp-4h] [ebp-44h]
+  unsigned int ZtlSecureTear_rStopMotion__CS; // [esp-4h] [ebp-44h]
+  unsigned int ZtlSecureTear_rFear__CS; // [esp-4h] [ebp-44h]
+  unsigned int ZtlSecureTear_rBanMap__CS; // [esp-4h] [ebp-44h]
+  unsigned int ZtlSecureTear_rReverseInput__CS; // [esp-4h] [ebp-44h]
+  unsigned int ZtlSecureTear_rFrozen__CS; // [esp-4h] [ebp-44h]
+  unsigned int ZtlSecureTear_rDarkAura__CS; // [esp-4h] [ebp-44h]
+  unsigned int ZtlSecureTear_rBlueAura__CS; // [esp-4h] [ebp-44h]
+  unsigned int ZtlSecureTear_rYellowAura__CS; // [esp-4h] [ebp-44h]
+  __POSITION *pos; // [esp+14h] [ebp-2Ch] BYREF
+  int key; // [esp+18h] [ebp-28h] BYREF
+  ZMap<long,int,long> mSkillID; // [esp+1Ch] [ebp-24h] BYREF
+  int v46; // [esp+3Ch] [ebp-4h]
+
+  v4 = this->GetSecondaryStat(this);
+  mSkillID.__vftable = (ZMap<long,int,long>_vtbl *)&ZMap<long,int,long>::`vftable';
+  mSkillID._m_apTable = nullptr;
+  mSkillID._m_uTableSize = 31;
+  mSkillID._m_uCount = 0;
+  ZMap<long,int,long>::_CalcAutoGrow(&mSkillID, 0x64u);
+  ZtlSecureTear_nSeal__CS = v4->_ZtlSecureTear_nSeal__CS;
+  v46 = 0;
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nSeal_, ZtlSecureTear_nSeal__CS) )
+  {
+    ZtlSecureTear_rSeal__CS = v4->_ZtlSecureTear_rSeal__CS;
+    pos = nullptr;
+    key = _ZtlSecureFuse<long>(v4->_ZtlSecureTear_rSeal_, ZtlSecureTear_rSeal__CS);
+    ZMap<long,int,long>::Insert(&mSkillID, &key, (const int *)&pos);
+  }
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nStun_, v4->_ZtlSecureTear_nStun__CS) )
+  {
+    ZtlSecureTear_rStun__CS = v4->_ZtlSecureTear_rStun__CS;
+    key = 0;
+    pos = (__POSITION *)_ZtlSecureFuse<long>(v4->_ZtlSecureTear_rStun_, ZtlSecureTear_rStun__CS);
+    ZMap<long,int,long>::Insert(&mSkillID, (const int *)&pos, &key);
+  }
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nWeakness_, v4->_ZtlSecureTear_nWeakness__CS) )
+  {
+    ZtlSecureTear_rWeakness__CS = v4->_ZtlSecureTear_rWeakness__CS;
+    key = 0;
+    pos = (__POSITION *)_ZtlSecureFuse<long>(v4->_ZtlSecureTear_rWeakness_, ZtlSecureTear_rWeakness__CS);
+    ZMap<long,int,long>::Insert(&mSkillID, (const int *)&pos, &key);
+  }
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nCurse_, v4->_ZtlSecureTear_nCurse__CS) )
+  {
+    ZtlSecureTear_rCurse__CS = v4->_ZtlSecureTear_rCurse__CS;
+    key = 0;
+    pos = (__POSITION *)_ZtlSecureFuse<long>(v4->_ZtlSecureTear_rCurse_, ZtlSecureTear_rCurse__CS);
+    ZMap<long,int,long>::Insert(&mSkillID, (const int *)&pos, &key);
+  }
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nDarkness_, v4->_ZtlSecureTear_nDarkness__CS) )
+  {
+    ZtlSecureTear_rDarkness__CS = v4->_ZtlSecureTear_rDarkness__CS;
+    key = 0;
+    pos = (__POSITION *)_ZtlSecureFuse<long>(v4->_ZtlSecureTear_rDarkness_, ZtlSecureTear_rDarkness__CS);
+    ZMap<long,int,long>::Insert(&mSkillID, (const int *)&pos, &key);
+  }
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nPoison_, v4->_ZtlSecureTear_nPoison__CS) )
+  {
+    ZtlSecureTear_rPoison__CS = v4->_ZtlSecureTear_rPoison__CS;
+    key = 0;
+    pos = (__POSITION *)_ZtlSecureFuse<long>(v4->_ZtlSecureTear_rPoison_, ZtlSecureTear_rPoison__CS);
+    ZMap<long,int,long>::Insert(&mSkillID, (const int *)&pos, &key);
+  }
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nSlow_, v4->_ZtlSecureTear_nSlow__CS) )
+  {
+    ZtlSecureTear_rSlow__CS = v4->_ZtlSecureTear_rSlow__CS;
+    key = 0;
+    pos = (__POSITION *)_ZtlSecureFuse<long>(v4->_ZtlSecureTear_rSlow_, ZtlSecureTear_rSlow__CS);
+    ZMap<long,int,long>::Insert(&mSkillID, (const int *)&pos, &key);
+  }
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nAttract_, v4->_ZtlSecureTear_nAttract__CS) )
+  {
+    ZtlSecureTear_rAttract__CS = v4->_ZtlSecureTear_rAttract__CS;
+    key = 0;
+    pos = (__POSITION *)_ZtlSecureFuse<long>(v4->_ZtlSecureTear_rAttract_, ZtlSecureTear_rAttract__CS);
+    ZMap<long,int,long>::Insert(&mSkillID, (const int *)&pos, &key);
+  }
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nStopPortion_, v4->_ZtlSecureTear_nStopPortion__CS) )
+  {
+    ZtlSecureTear_rStopPortion__CS = v4->_ZtlSecureTear_rStopPortion__CS;
+    key = 0;
+    pos = (__POSITION *)_ZtlSecureFuse<long>(v4->_ZtlSecureTear_rStopPortion_, ZtlSecureTear_rStopPortion__CS);
+    ZMap<long,int,long>::Insert(&mSkillID, (const int *)&pos, &key);
+  }
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nStopMotion_, v4->_ZtlSecureTear_nStopMotion__CS) )
+  {
+    ZtlSecureTear_rStopMotion__CS = v4->_ZtlSecureTear_rStopMotion__CS;
+    key = 0;
+    pos = (__POSITION *)_ZtlSecureFuse<long>(v4->_ZtlSecureTear_rStopMotion_, ZtlSecureTear_rStopMotion__CS);
+    ZMap<long,int,long>::Insert(&mSkillID, (const int *)&pos, &key);
+  }
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nFear_, v4->_ZtlSecureTear_nFear__CS) )
+  {
+    ZtlSecureTear_rFear__CS = v4->_ZtlSecureTear_rFear__CS;
+    key = 0;
+    pos = (__POSITION *)_ZtlSecureFuse<long>(v4->_ZtlSecureTear_rFear_, ZtlSecureTear_rFear__CS);
+    ZMap<long,int,long>::Insert(&mSkillID, (const int *)&pos, &key);
+  }
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nBanMap_, v4->_ZtlSecureTear_nBanMap__CS) )
+  {
+    ZtlSecureTear_rBanMap__CS = v4->_ZtlSecureTear_rBanMap__CS;
+    key = 0;
+    pos = (__POSITION *)_ZtlSecureFuse<long>(v4->_ZtlSecureTear_rBanMap_, ZtlSecureTear_rBanMap__CS);
+    ZMap<long,int,long>::Insert(&mSkillID, (const int *)&pos, &key);
+  }
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nReverseInput_, v4->_ZtlSecureTear_nReverseInput__CS) )
+  {
+    ZtlSecureTear_rReverseInput__CS = v4->_ZtlSecureTear_rReverseInput__CS;
+    key = 0;
+    pos = (__POSITION *)_ZtlSecureFuse<long>(v4->_ZtlSecureTear_rReverseInput_, ZtlSecureTear_rReverseInput__CS);
+    ZMap<long,int,long>::Insert(&mSkillID, (const int *)&pos, &key);
+  }
+  p = (ZFatalSection *)v4->aTemporaryStat[6].p;
+  ZFatalSection::Lock(p + 3);
+  if ( p != (ZFatalSection *)-24 )
+  {
+    v6 = p[3]._m_nRef-- == 1;
+    if ( v6 )
+      p[3]._m_pTIB = nullptr;
+  }
+  if ( p[1]._m_nRef )
+  {
+    v7 = v4->aTemporaryStat[6].p;
+    key = 0;
+    ZFatalSection::Lock(&v7->m_lock);
+    if ( v7 != (TemporaryStatBase<long> *)-24 )
+    {
+      v6 = v7->m_lock._m_nRef-- == 1;
+      if ( v6 )
+        v7->m_lock._m_pTIB = nullptr;
+    }
+    ZMap<long,int,long>::Insert(&mSkillID, &v7->m_reason, &key);
+  }
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nFrozen_, v4->_ZtlSecureTear_nFrozen__CS) )
+  {
+    ZtlSecureTear_rFrozen__CS = v4->_ZtlSecureTear_rFrozen__CS;
+    key = 0;
+    pos = (__POSITION *)_ZtlSecureFuse<long>(v4->_ZtlSecureTear_rFrozen_, ZtlSecureTear_rFrozen__CS);
+    ZMap<long,int,long>::Insert(&mSkillID, (const int *)&pos, &key);
+  }
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nDarkAura_, v4->_ZtlSecureTear_nDarkAura__CS)
+    && _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nBlueAura_, v4->_ZtlSecureTear_nBlueAura__CS)
+    && _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nYellowAura_, v4->_ZtlSecureTear_nYellowAura__CS) )
+  {
+    key = 0;
+    pos = nullptr;
+    ZMap<long,int,long>::Insert(&mSkillID, (const int *)&pos, &key);
+    goto LABEL_57;
+  }
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nDarkAura_, v4->_ZtlSecureTear_nDarkAura__CS)
+    && _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nBlueAura_, v4->_ZtlSecureTear_nBlueAura__CS) )
+  {
+    key = 0;
+    pos = (__POSITION *)1;
+    ZMap<long,int,long>::Insert(&mSkillID, (const int *)&pos, &key);
+    goto LABEL_57;
+  }
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nDarkAura_, v4->_ZtlSecureTear_nDarkAura__CS)
+    && _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nYellowAura_, v4->_ZtlSecureTear_nYellowAura__CS) )
+  {
+    key = 0;
+    pos = (__POSITION *)2;
+LABEL_56:
+    ZMap<long,int,long>::Insert(&mSkillID, (const int *)&pos, &key);
+    goto LABEL_57;
+  }
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nBlueAura_, v4->_ZtlSecureTear_nBlueAura__CS)
+    && _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nYellowAura_, v4->_ZtlSecureTear_nYellowAura__CS) )
+  {
+    key = 0;
+    pos = (__POSITION *)3;
+    ZMap<long,int,long>::Insert(&mSkillID, (const int *)&pos, &key);
+    goto LABEL_57;
+  }
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nDarkAura_, v4->_ZtlSecureTear_nDarkAura__CS) )
+  {
+    ZtlSecureTear_rDarkAura__CS = v4->_ZtlSecureTear_rDarkAura__CS;
+    key = 0;
+    pos = (__POSITION *)_ZtlSecureFuse<long>(v4->_ZtlSecureTear_rDarkAura_, ZtlSecureTear_rDarkAura__CS);
+    ZMap<long,int,long>::Insert(&mSkillID, (const int *)&pos, &key);
+  }
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nBlueAura_, v4->_ZtlSecureTear_nBlueAura__CS) )
+  {
+    ZtlSecureTear_rBlueAura__CS = v4->_ZtlSecureTear_rBlueAura__CS;
+    key = 0;
+    pos = (__POSITION *)_ZtlSecureFuse<long>(v4->_ZtlSecureTear_rBlueAura_, ZtlSecureTear_rBlueAura__CS);
+    ZMap<long,int,long>::Insert(&mSkillID, (const int *)&pos, &key);
+  }
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nYellowAura_, v4->_ZtlSecureTear_nYellowAura__CS) )
+  {
+    ZtlSecureTear_rYellowAura__CS = v4->_ZtlSecureTear_rYellowAura__CS;
+    key = 0;
+    pos = (__POSITION *)_ZtlSecureFuse<long>(v4->_ZtlSecureTear_rYellowAura_, ZtlSecureTear_rYellowAura__CS);
+    goto LABEL_56;
+  }
+LABEL_57:
+  if ( !_ZtlSecureFuse<long>(v4->_ZtlSecureTear_nDojangBerserk_, v4->_ZtlSecureTear_nDojangBerserk__CS)
+    || _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nRepeatEffect_, v4->_ZtlSecureTear_nRepeatEffect__CS) )
+  {
+    CUser::RemoveDojangBerserkEffect(this);
+  }
+  else
+  {
+    CUser::LoadDojangBerserkEffect(this);
+  }
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nDojangInvincible_, v4->_ZtlSecureTear_nDojangInvincible__CS) )
+    CUser::LoadDojangInvincibleEffect(this);
+  else
+    CUser::RemoveDojangInvincibleEffect(this);
+  v8 = _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nDojangShield_, v4->_ZtlSecureTear_nDojangShield__CS);
+  v9 = &this->CAvatar;
+  if ( v8 )
+    CAvatar::LoadBarrier(v9);
+  else
+    CAvatar::RemoveBarrier(v9);
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nRepeatEffect_, v4->_ZtlSecureTear_nRepeatEffect__CS) )
+  {
+    v10 = _ZtlSecureFuse<long>(v4->_ZtlSecureTear_rRepeatEffect_, v4->_ZtlSecureTear_rRepeatEffect__CS);
+    CUser::_LoadItemRepeatEffect(this, -v10);
+  }
+  else
+  {
+    CUser::_RemoveItemRepeatEffect(this);
+  }
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nMagicShield_, v4->_ZtlSecureTear_nMagicShield__CS) )
+    CUser::LoadMagicShield(this);
+  else
+    CUser::RemoveMagicShield(this);
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nSuddenDeath_, v4->_ZtlSecureTear_nSuddenDeath__CS) )
+    CUser::LoadSuddenDeathEffect(this);
+  else
+    CUser::RemoveSuddenDeathEffect(this);
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nFinalCut_, v4->_ZtlSecureTear_nFinalCut__CS) )
+    CUser::LoadFinalCutEffect(this);
+  else
+    CUser::RemoveFinalCutEffect(this);
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nBlessingArmor_, v4->_ZtlSecureTear_nBlessingArmor__CS) <= 0 )
+    CUser::RemoveBlessingArmor(this);
+  else
+    CUser::LoadBlessingArmor(this);
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nCyclone_, v4->_ZtlSecureTear_nCyclone__CS) )
+  {
+    v11 = this->IsRemoteUser(this);
+    v12 = &this->CAvatar;
+    if ( v11 )
+    {
+LABEL_87:
+      this->m_nTamingMobOneTimeAction = -1;
+      this->m_nOneTimeAction = -1;
+      CAvatar::ClearActionLayer(v12, 1);
+      PrepareActionLayer = this->PrepareActionLayer;
+      this->m_nOneTimeAction = 205;
+      PrepareActionLayer(&this->CAvatar, 6, 100, 0);
+      goto LABEL_91;
+    }
+    if ( CAvatar::GetOneTimeAction(v12) != 205 && CAvatar::GetOneTimeAction(&this->CAvatar) != 204 )
+    {
+      v12 = &this->CAvatar;
+      goto LABEL_87;
+    }
+  }
+  else if ( CAvatar::GetOneTimeAction(&this->CAvatar) == 205 || CAvatar::GetOneTimeAction(&this->CAvatar) == 204 )
+  {
+    CUser::TryDoingCycloneAfter(this);
+  }
+LABEL_91:
+  if ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nMorewildDamageUp_, v4->_ZtlSecureTear_nMorewildDamageUp__CS) )
+  {
+    if ( !this->m_tDelayMoreWildEffect )
+    {
+      v14 = get_update_time() + 1440;
+      if ( !v14 )
+        v14 = 1;
+      CUser::LoadMoreWildEffect(this, v14, 0);
+    }
+  }
+  else
+  {
+    CUser::RemoveMoreWildEffect(this);
+  }
+  m_pHead = (__POSITION *)this->m_lAffectedSkillEntry._m_pHead;
+  for ( pos = m_pHead; pos; m_pHead = pos )
+  {
+    v16 = m_pHead;
+    Next = ZList<CUser::AFFECTEDSKILLENTRY>::GetNext(&pos);
+    if ( ZMap<long,int,long>::GetAt(&mSkillID, &Next->nSkillID, nullptr) )
+    {
+      ZMap<long,int,long>::RemoveKey(&mSkillID, &Next->nSkillID);
+    }
+    else
+    {
+      if ( Next->posList )
+      {
+        a = this->m_lpLayerAffected.a;
+        if ( Next->l.nPos != POS_FACE_ORIGIN )
+          ++a;
+        ZList<_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>>::RemoveAt(
+          a,
+          Next->posList);
+      }
+      if ( Next->nSkillID < 4u )
+      {
+        m_pInterface = this->m_pLayerEffect.m_pInterface;
+        if ( m_pInterface )
+        {
+          this->m_pLayerEffect.m_pInterface = nullptr;
+          m_pInterface->Release(m_pInterface);
+        }
+      }
+      ZList<CUser::AFFECTEDSKILLENTRY>::RemoveAt(&this->m_lAffectedSkillEntry, v16);
+    }
+  }
+  update_time = get_update_time();
+  pos = ZMap<long,int,long>::GetHeadPosition(&mSkillID);
+  if ( pos )
+  {
+    v21 = tDelay + update_time;
+    do
+    {
+      v22 = ZList<CUser::AFFECTEDSKILLENTRY>::AddTail(&this->m_lAffectedSkillEntry);
+      v23 = ZMap<long,int,long>::GetNext(&mSkillID, &pos, nullptr);
+      v24 = *v23;
+      v22->nSkillID = *v23;
+      v22->tStart = v21;
+      if ( !v21 )
+        v22->tStart = 1;
+      v22->posList = nullptr;
+      v22->bEnterField = bEnterField;
+      if ( v24 % 0x10000 == 162 )
+      {
+        this->m_bIsAbleToHitByUser = 1;
+        this->m_nIsAbleToHitByUserReason = 162;
+      }
+    }
+    while ( pos );
+  }
+  CUser::ShiftAffectedSkillAnimation(this, 1);
+  v46 = -1;
+  mSkillID.__vftable = (ZMap<long,int,long>_vtbl *)&ZMap<long,int,long>::`vftable';
+  ZMap<long,int,long>::RemoveAll(&mSkillID);
+}

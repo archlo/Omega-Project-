@@ -1,0 +1,3 @@
+// CUser::IsFanShapeShoot @ 0x8de410
+
+{"addr":"0x8de410","code":"BOOL __thiscall CUser::IsFanShapeShoot(CUser *this, int nSkillID)\n{\n  bool v2; // zf\n\n  if ( nSkillID > 35111004 ) /*0x8de419*/\n  {\n    if ( nSkillID == 35121005 ) /*0x8de437*/\n      return 0; /*0x8de437*/\n    v2 = nSkillID == 35121013; /*0x8de439*/\n  }\n  else\n  {\n    if ( nSkillID == 35111004 || nSkillID == 3001004 || nSkillID == 35001004 ) /*0x8de429*/\n      return 0; /*0x8de429*/\n    v2 = nSkillID == 35101010; /*0x8de42b*/\n  }\n  return !v2; /*0x8de443*/\n}"}

@@ -1,0 +1,138 @@
+// 0x69c080
+void __thiscall CPersonalShopDlg::OnButtonClicked(CPersonalShopDlg *this, ZXString<char> nId)
+{
+  char v3; // bl
+  CPersonalShopDlg_vtbl *v4; // edi
+  int v5; // eax
+  CUserRemote *RemoteUserByName; // esi
+  CPersonalShopDlg::CSoldItemDlg *v7; // eax
+  CPersonalShopDlg::CSoldItemDlg *v8; // eax
+  CCtrlEdit *p; // ecx
+  ZXString<char> *Text; // eax
+  int IsEmpty; // eax
+  CCtrlEdit *v12; // ecx
+  char *v13; // ecx
+  CCtrlEdit *v14; // esi
+  IUIMsgHandler *v15; // eax
+  ZXString<char> v16[5]; // [esp-4h] [ebp-34h] BYREF
+  ZXString<char> result; // [esp+10h] [ebp-20h] BYREF
+  ZXString<char> v18; // [esp+14h] [ebp-1Ch] BYREF
+  ZXString<char> *v19; // [esp+18h] [ebp-18h]
+  ZRef<CPersonalShopDlg::CSoldItemDlg> pDlg; // [esp+1Ch] [ebp-14h] BYREF
+  int v21; // [esp+2Ch] [ebp-4h]
+
+  v3 = 0; /*0x69c0a8*/
+  v18._m_pStr = nullptr; /*0x69c0ac*/
+  pDlg.p = nullptr; /*0x69c0b0*/
+  v21 = 0; /*0x69c0be*/
+  switch ( (unsigned int)nId._m_pStr )
+  {
+    case 0x3E9u:
+      CPersonalShopDlg::DeliverBlackList(this); /*0x69c0d4*/
+      this->OnStart(this); /*0x69c0e0*/
+      goto LABEL_3; /*0x69c0e0*/
+    case 0x3EAu:
+      v4 = this->CMiniRoomBaseDlg::CUniqueModeless::CDialog::CWnd::IGObj::__vftable; /*0x69c108*/
+      v5 = this->IsEntrusted(this); /*0x69c10f*/
+      v4->SetRet(this, v5 != 0 ? 8 : 2);
+      goto LABEL_3; /*0x69c123*/
+    case 0x3EBu:
+      CPersonalShopDlg::BuyItem(this, this->m_nBuySelected); /*0x69c13b*/
+      goto LABEL_3; /*0x69c140*/
+    case 0x3ECu:
+      v16[0] = (ZXString<char>)CMiniRoomBaseDlg::GetUserID(this, &result, 0)->_m_pStr; /*0x69c157*/
+      LOBYTE(v21) = 1; /*0x69c158*/
+      RemoteUserByName = CUserPool::FindRemoteUserByName( /*0x69c162*/
+                           (CUserPool *)TSingleton<CUserPool>::ms_pInstance.m_pInterface,
+                           v16[0]._m_pStr);
+      LOBYTE(v21) = 0; /*0x69c168*/
+      if ( result._m_pStr ) /*0x69c16f*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x69c175*/
+      if ( RemoteUserByName ) /*0x69c17f*/
+        CWvsContext::SendCharacterInfoRequest( /*0x69c194*/
+          (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+          RemoteUserByName->m_dwCharacterId,
+          0,
+          0);
+      goto LABEL_3; /*0x69c199*/
+    case 0x3EDu:
+      if ( !this->m_pSoldItem.p ) /*0x69c19e*/
+      {
+        v7 = (CPersonalShopDlg::CSoldItemDlg *)ZAllocEx<ZAllocAnonSelector>::Alloc( /*0x69c1b4*/
+                                                 &ZAllocEx<ZAllocAnonSelector>::_s_alloc,
+                                                 0xBCu);
+        nId._m_pStr = (char *)v7; /*0x69c1b9*/
+        LOBYTE(v21) = 2; /*0x69c1bd*/
+        if ( v7 ) /*0x69c1c4*/
+          v8 = CPersonalShopDlg::CSoldItemDlg::CSoldItemDlg(v7, this); /*0x69c1c9*/
+        else
+          v8 = nullptr; /*0x69c1d0*/
+        LOBYTE(v21) = 0; /*0x69c1d9*/
+        ZRef<CPersonalShopDlg::CSoldItemDlg>::operator=(&this->m_pSoldItem, v8); /*0x69c1de*/
+      }
+      goto LABEL_3; /*0x69c1e3*/
+    case 0x3EEu:
+      p = this->m_pEditChat.p; /*0x69c1e8*/
+      if ( !p /*0x69c20f*/
+        || (Text = CCtrlEdit::GetText(p, &v18),
+            v3 = 1,
+            IsEmpty = ZXString<char>::IsEmpty(Text),
+            LOBYTE(nId._m_pStr) = 0,
+            IsEmpty) )
+      {
+        LOBYTE(nId._m_pStr) = 1; /*0x69c211*/
+      }
+      if ( (v3 & 1) != 0 && v18._m_pStr ) /*0x69c221*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v18._m_pStr - 1); /*0x69c227*/
+      if ( !LOBYTE(nId._m_pStr) )
+      {
+        CCtrlEdit::GetText(this->m_pEditChat.p, &nId); /*0x69c245*/
+        v12 = this->m_pEditChat.p; /*0x69c24a*/
+        LOBYTE(v21) = 3; /*0x69c251*/
+        CCtrlEdit::SetText(v12, nullptr); /*0x69c256*/
+        v16[0]._m_pStr = v13; /*0x69c25b*/
+        v19 = v16; /*0x69c262*/
+        ZXString<char>::ZXString<char>(v16, &nId); /*0x69c267*/
+        CMiniRoomBaseDlg::CheckAndSendChat(this, v16[0]); /*0x69c26e*/
+        v14 = this->m_pEditChat.p; /*0x69c273*/
+        v15 = v14 ? &v14->IUIMsgHandler : nullptr;
+        CWndMan::SetFocus(TSingleton<CWndMan>::ms_pInstance, v15); /*0x69c28b*/
+        LOBYTE(v21) = 0; /*0x69c294*/
+        if ( nId._m_pStr ) /*0x69c29b*/
+          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)nId._m_pStr - 1); /*0x69c2a5*/
+      }
+      goto LABEL_3; /*0x69c2ad*/
+    case 0x3EFu:
+      CPersonalShopDlg::OnClickBanButton(this, 1); /*0x69c2b6*/
+      goto LABEL_3; /*0x69c2bb*/
+    case 0x3F0u:
+      CPersonalShopDlg::OnClickBanButton(this, 2); /*0x69c2c4*/
+      goto LABEL_3; /*0x69c2c9*/
+    case 0x3F1u:
+      CPersonalShopDlg::OnClickBanButton(this, 3); /*0x69c2d2*/
+      goto LABEL_3; /*0x69c2d7*/
+    case 0x3F2u:
+      this->SetRet(this, 2); /*0x69c12e*/
+LABEL_3:
+      v21 = -1; /*0x69c0e2*/
+      ZRef<CPersonalShopDlg::CSoldItemDlg>::~ZRef<CPersonalShopDlg::CSoldItemDlg>(&pDlg); /*0x69c0ee*/
+      return; /*0x69c105*/
+    default:
+      switch ( (unsigned int)nId._m_pStr ) /*0x69c2df*/
+      {
+        case 1u: /*0x69c2df*/
+          v16[0]._m_pStr = (char *)1; /*0x69c2e1*/
+          break;
+        case 2u: /*0x69c2df*/
+          v16[0]._m_pStr = (char *)2; /*0x69c2e9*/
+          break;
+        case 8u: /*0x69c2df*/
+          v16[0]._m_pStr = (char *)8; /*0x69c2f1*/
+          break;
+        default:
+          return; /*0x69c2ef*/
+      }
+      this->SetRet(this, (int)v16[0]._m_pStr); /*0x69c2f9*/
+      return;
+  }
+}

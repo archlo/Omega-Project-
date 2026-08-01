@@ -285,15 +285,21 @@ describe('FieldHandlers', () => {
     const args: Args[] = [];
     handlers.onMobMove = (a) => args.push(a as any);
     const p = OutPacket.Raw();
+    // OG format: mobId(4) flags(4) skillEffectId(4) multiCount(4) randCount(4) MovePath(variable)
     p.writeInt(777);
-    p.writeByte(0); p.writeByte(0); p.writeByte(0); p.writeByte(0); p.writeInt(0);
-    p.writeInt(0); p.writeInt(0);
-    p.writeShort(50); p.writeShort(60);
+    p.writeByte(0); p.writeByte(0); p.writeByte(0); p.writeByte(0); // flags
+    p.writeInt(0); // skillEffectId
+    p.writeInt(0); // multiCount = 0
+    p.writeInt(0); // randCount = 0
+    // MovePath: originX(2) originY(2) originVx(2) originVy(2) count(1)
+    p.writeShort(50); p.writeShort(60); // originX, originY
+    p.writeShort(0); p.writeShort(0); // originVx, originVy
+    p.writeByte(0); // element count = 0
     dispatchPayload(router, OutHeader.MobMove, p.toArray());
     expect(args).toHaveLength(1);
     expect(args[0].mobId).toBe(777);
-    expect(args[0].x).toBe(50);
-    expect(args[0].y).toBe(60);
+    expect(args[0].movePath.originX).toBe(50);
+    expect(args[0].movePath.originY).toBe(60);
   });
 
   it('MobDamaged fires callback', () => {
@@ -313,15 +319,17 @@ describe('FieldHandlers', () => {
     const args: Args[] = [];
     handlers.onNpcEnter = (a) => args.push(a as any);
     const p = OutPacket.Raw();
+    // OG format: objId(4) templateId(4) x(2) y(2) moveAction(1) footholdId(2) rgHorzLow(2) rgHorzHigh(2) bEnabled(1)
     p.writeInt(10); p.writeInt(1012100);
-    p.writeShort(300); p.writeShort(400); p.writeByte(1); p.writeShort(0); p.writeShort(0); p.writeShort(0);
+    p.writeShort(300); p.writeShort(400); p.writeByte(1); p.writeShort(0); p.writeShort(0); p.writeShort(0); p.writeByte(1);
     dispatchPayload(router, OutHeader.NpcEnterField, p.toArray());
     expect(args).toHaveLength(1);
     expect(args[0].objId).toBe(10);
     expect(args[0].templateId).toBe(1012100);
     expect(args[0].x).toBe(300);
     expect(args[0].y).toBe(400);
-    expect(args[0].facingLeft).toBe(true);
+    expect(args[0].moveAction).toBe(1);
+    expect(args[0].bEnabled).toBe(true);
   });
 
   it('NpcLeaveField fires callback', () => {

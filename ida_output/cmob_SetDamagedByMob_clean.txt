@@ -1,0 +1,209 @@
+void __thiscall CMob::SetDamagedByMob(
+        CMob *this,
+        CMob *nDamage,
+        unsigned __int8 vx,
+        int vy,
+        CMob *pAttackMob,
+        int nAttackIdx,
+        int nDir)
+{
+  IWzVector2D *m_pInterface; // edx
+  int v9; // eax
+  int v10; // edx
+  IWzVector2D *v11; // eax
+  IWzVector2D *v12; // eax
+  int v13; // eax
+  CVecCtrl *v14; // ecx
+  IWzVector2D *v15; // eax
+  IWzVector2D *v16; // ecx
+  CVecCtrl *v17; // eax
+  int update_time; // eax
+  char *m_pStr; // ebp
+  MobAttackInfo *AttackInfo; // eax
+  MobAttackInfo *v21; // edi
+  int v22; // eax
+  unsigned int v23; // ebx
+  unsigned int rand; // ebp
+  IWzVector2D *v25; // eax
+  bool v26; // zf
+  const wchar_t **v27; // edi
+  const wchar_t *v28; // ebp
+  CAnimationDisplayer *v29; // edi
+  int IsLeft; // eax
+  const wchar_t **p_m_wstr; // edi
+  const wchar_t *v32; // edi
+  int nHitCount; // edi
+  IWzVector2D *v34; // eax
+  IWzVector2D *v35; // eax
+  int v36; // eax
+  unsigned int dwTemplateID; // eax
+  int v38; // edi
+  int v39; // ebp
+  unsigned int MobID; // eax
+  unsigned int v41; // eax
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v42; // [esp-14h] [ebp-78h] BYREF
+  unsigned int v43; // [esp-10h] [ebp-74h]
+  IWzVector2D *v44; // [esp-Ch] [ebp-70h]
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v45; // [esp-8h] [ebp-6Ch] BYREF
+  unsigned int sound_volume_by_pos; // [esp-4h] [ebp-68h]
+  int x; // [esp+14h] [ebp-50h]
+  int y; // [esp+18h] [ebp-4Ch]
+  CMobTemplate *pTemplate; // [esp+1Ch] [ebp-48h] BYREF
+  ZArray<unsigned char> v50; // [esp+20h] [ebp-44h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v51; // [esp+24h] [ebp-40h]
+  tagRECT rc; // [esp+38h] [ebp-2Ch] BYREF
+  tagRECT rcBody; // [esp+48h] [ebp-1Ch] BYREF
+  int v54; // [esp+60h] [ebp-4h]
+
+  if ( pAttackMob
+    && (pAttackMob->m_stat.nDazzle_ != this->m_stat.nDazzle_
+     || (this->m_pTemplate->nEscortType == 1) != (pAttackMob->m_pTemplate->nEscortType == 1))
+    && pAttackMob != this )
+  {
+    m_pInterface = this->m_pvc.m_pInterface; /*0x64b2dc*/
+    v9 = m_pInterface ? (int)&m_pInterface[-3] : 0;
+    if ( *(_DWORD *)(v9 + 416) )
+    {
+      if ( !CMob::IsActive(this)
+        || ((v11 = this->m_pvcActive.m_pInterface) == nullptr ? (v12 = nullptr) : (v12 = v11 - 3), v12[104].__vftable) )
+      {
+        v13 = v10 ? v10 - 12 : 0;
+        if ( !*(_DWORD *)(v13 + 1868) )
+        {
+          v14 = v10 ? (CVecCtrl *)(v10 - 12) : nullptr;
+          if ( !CVecCtrl::GetLadderOrRope(v14) )
+          {
+            if ( !CMob::IsActive(this)
+              || ((v15 = this->m_pvcActive.m_pInterface) == nullptr ? (v16 = nullptr) : (v16 = v15 - 3),
+                  !v16[467].__vftable
+               && (!v15 ? (v17 = nullptr) : (v17 = (CVecCtrl *)&v15[-3]), !CVecCtrl::GetLadderOrRope(v17))) )
+            {
+              update_time = get_update_time(); /*0x64b396*/
+              if ( update_time - this->m_tLastHitByMob >= (this->m_pTemplate->nEscortType != 1 ? 2000 : 1500) )
+              {
+                this->m_tLastHitByMob = update_time; /*0x64b3c8*/
+                m_pStr = TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x64b3d8*/
+                pTemplate = pAttackMob->m_pTemplate; /*0x64b3df*/
+                AttackInfo = CMobTemplate::GetAttackInfo(pTemplate, nAttackIdx); /*0x64b3e3*/
+                v21 = AttackInfo; /*0x64b3e8*/
+                if ( AttackInfo && AttackInfo->bMagicAttack ) /*0x64b3ee*/
+                  v22 = CalcDamage::MDamage((CalcDamage *)(m_pStr + 15480), &pAttackMob->m_stat, &this->m_stat); /*0x64b408*/
+                else
+                  v22 = CalcDamage::PDamage((CalcDamage *)(m_pStr + 15480), &pAttackMob->m_stat, &this->m_stat); /*0x64b423*/
+                v23 = v22; /*0x64b428*/
+                if ( v21 ) /*0x64b42c*/
+                {
+                  CMob::GetBodyRect(this, &rc, 1); /*0x64b43b*/
+                  rand = get_rand(rc.right - rc.left, rc.left); /*0x64b455*/
+                  x = rand; /*0x64b45f*/
+                  v25 = (IWzVector2D *)get_rand(rc.bottom - rc.top, rc.top); /*0x64b463*/
+                  v26 = v21->bHitAttach == 0; /*0x64b46b*/
+                  sound_volume_by_pos = -1073343324; /*0x64b474*/
+                  y = (int)v25; /*0x64b47c*/
+                  v45.m_pInterface = nullptr; /*0x64b480*/
+                  if ( v26 ) /*0x64b486*/
+                  {
+                    v51 = &v45; /*0x64b4e2*/
+                    v44 = v25; /*0x64b4e6*/
+                    v43 = rand; /*0x64b4e7*/
+                    v42.m_pInterface = nullptr; /*0x64b4eb*/
+                    p_m_wstr = (const wchar_t **)&v21->sHit.m_Data->m_wstr; /*0x64b4f1*/
+                    v54 = 2; /*0x64b4f4*/
+                    v51 = (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v42; /*0x64b4fc*/
+                    if ( p_m_wstr ) /*0x64b502*/
+                      v32 = *p_m_wstr; /*0x64b504*/
+                    else
+                      v32 = nullptr; /*0x64b508*/
+                    v54 = -1; /*0x64b513*/
+                    CAnimationDisplayer::Effect_General( /*0x64b526*/
+                      TSingleton<CAnimationDisplayer>::ms_pInstance,
+                      v32,
+                      nDir > 0,
+                      v42,
+                      v43,
+                      (int)v44,
+                      v45,
+                      sound_volume_by_pos);
+                  }
+                  else
+                  {
+                    v50.a = (unsigned __int8 *)&v45; /*0x64b488*/
+                    v44 = nullptr; /*0x64b48c*/
+                    v43 = 0; /*0x64b48e*/
+                    v42.m_pInterface = v25; /*0x64b490*/
+                    v51 = (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v42; /*0x64b493*/
+                    v54 = 0; /*0x64b49a*/
+                    CMob::GetVecCtrl(this, &v42); /*0x64b4a2*/
+                    v27 = (const wchar_t **)&v21->sHit.m_Data->m_wstr; /*0x64b4a7*/
+                    LOBYTE(v54) = 1; /*0x64b4aa*/
+                    if ( v27 ) /*0x64b4b1*/
+                      v28 = *v27; /*0x64b4b3*/
+                    else
+                      v28 = nullptr; /*0x64b4b7*/
+                    v29 = TSingleton<CAnimationDisplayer>::ms_pInstance; /*0x64b4b9*/
+                    IsLeft = CMob::IsLeft(this); /*0x64b4c1*/
+                    v54 = -1; /*0x64b4cf*/
+                    CAnimationDisplayer::Effect_General( /*0x64b4d7*/
+                      v29,
+                      v28,
+                      IsLeft == 0,
+                      v42,
+                      v43,
+                      (int)v44,
+                      v45,
+                      sound_volume_by_pos);
+                    rand = x; /*0x64b4dc*/
+                  }
+                  if ( this->m_pTemplate->nEscortType == 1 ) /*0x64b538*/
+                  {
+                    nHitCount = CMob::GetCurTemplate(this)->nHitCount; /*0x64b541*/
+                    if ( nHitCount > 0 ) /*0x64b549*/
+                    {
+                      v34 = this->m_pvcActive.m_pInterface; /*0x64b54b*/
+                      if ( v34 ) /*0x64b553*/
+                        v35 = v34 - 3; /*0x64b555*/
+                      else
+                        v35 = nullptr; /*0x64b55a*/
+                      if ( !v35[472].__vftable ) /*0x64b55c*/
+                      {
+                        v36 = ::rand(); /*0x64b565*/
+                        CMob::_ZtlSecurePut_m_nOneTimeAction(this, v36 % nHitCount + 7); /*0x64b572*/
+                        CMob::PrepareActionLayer(this); /*0x64b579*/
+                      }
+                    }
+                  }
+                  sound_volume_by_pos = get_sound_volume_by_pos(rand, y); /*0x64b596*/
+                  v45.m_pInterface = (IWzGr2DLayer *)(nAttackIdx + 11); /*0x64b597*/
+                  dwTemplateID = CMobTemplate::_ZtlSecureGet_dwTemplateID(pTemplate); /*0x64b59c*/
+                  play_mob_sound(dwTemplateID, (SE_TYPE)v45.m_pInterface, sound_volume_by_pos); /*0x64b5a2*/
+                }
+                CMob::ShowDamage(this, (int)this, v23, 0, 0, 0, 0, 0); /*0x64b5b7*/
+                CMob::GetBodyRect(this, &rcBody, 0); /*0x64b5c5*/
+                v38 = (rcBody.right + rcBody.left) / 2; /*0x64b5f6*/
+                v39 = (rcBody.top + rcBody.bottom) / 2; /*0x64b5f8*/
+                CMob::ChaseTarget(this, 1, &pAttackMob->IVecCtrlOwner, 0); /*0x64b5fa*/
+                COutPacket::COutPacket((COutPacket *)&pTemplate, 233); /*0x64b608*/
+                rcBody.bottom = 3; /*0x64b611*/
+                MobID = CMob::GetMobID(nDamage); /*0x64b619*/
+                COutPacket::Encode4((COutPacket *)&pTemplate, MobID); /*0x64b623*/
+                COutPacket::Encode4( /*0x64b639*/
+                  (COutPacket *)&pTemplate,
+                  *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 2093));
+                v41 = CMob::GetMobID(this); /*0x64b640*/
+                COutPacket::Encode4((COutPacket *)&pTemplate, v41); /*0x64b64a*/
+                COutPacket::Encode1((COutPacket *)&pTemplate, vx); /*0x64b658*/
+                COutPacket::Encode4((COutPacket *)&pTemplate, v23); /*0x64b662*/
+                COutPacket::Encode1((COutPacket *)&pTemplate, vy < 0); /*0x64b677*/
+                COutPacket::Encode2((COutPacket *)&pTemplate, v38); /*0x64b681*/
+                COutPacket::Encode2((COutPacket *)&pTemplate, v39); /*0x64b68b*/
+                CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, (const COutPacket *)&pTemplate); /*0x64b69b*/
+                rcBody.bottom = -1; /*0x64b6a4*/
+                ZArray<unsigned char>::RemoveAll(&v50); /*0x64b6ac*/
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

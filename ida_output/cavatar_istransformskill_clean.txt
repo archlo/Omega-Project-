@@ -1,0 +1,10 @@
+BOOL __thiscall CAvatar::IsTransFormSkill(CAvatar *this)
+{
+  unsigned int m_dwMorphTemplateID; // eax
+
+  m_dwMorphTemplateID = this->m_dwMorphTemplateID;
+  return m_dwMorphTemplateID == 1000
+      || m_dwMorphTemplateID == 1001
+      || m_dwMorphTemplateID == 1100
+      || m_dwMorphTemplateID == 1101;
+}

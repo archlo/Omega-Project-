@@ -1,0 +1,13 @@
+// cuistat::ResetInfo
+
+void __thiscall CUIStat::ResetInfo(CUIStat *this)
+{
+  CUIStatDetail *p; // ecx
+
+  CUIStat::RestoreButtons(this); /*0x862383*/
+  CUIStat::EnableApUpButton(this); /*0x86238a*/
+  CWnd::InvalidateRect(this, nullptr); /*0x862393*/
+  p = this->m_pUIStatDetail.p; /*0x862398*/
+  if ( p ) /*0x8623a1*/
+    CWnd::InvalidateRect(p, nullptr); /*0x8623a5*/
+}

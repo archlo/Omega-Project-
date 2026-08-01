@@ -1,0 +1,524 @@
+int __thiscall CMob::IsTargetInAttackRange(
+        CMob *this,
+        int nTargetType,
+        int *pnAction,
+        int *pbLeft,
+        CMob::TARGETINFO *pti,
+        int nForceAttackIdx)
+{
+  CMob *v6; // esi
+  CMobTemplate *m_pTemplate; // eax
+  int IsLeft; // eax
+  _bstr_t::Data_t *m_Data; // edi
+  IWzVector2D *m_pInterface; // eax
+  IWzVector2D *v11; // eax
+  IVecCtrlOwner *v12; // ebx
+  CMob *v13; // ecx
+  char **p_m_str; // eax
+  IVecCtrlOwner *v15; // eax
+  IVecCtrlOwner *v16; // eax
+  CMobPool *v17; // edi
+  tagPOINT *v18; // eax
+  CMob *NearestMob; // eax
+  CMobPool *v20; // edi
+  tagPOINT *v21; // eax
+  tagPOINT (__thiscall *GetPos)(IVecCtrlOwner *); // edx
+  int *v23; // ebx
+  int v24; // eax
+  int v25; // ebx
+  CMobTemplate *CurTemplate; // eax
+  MobAttackInfo *AttackInfo; // eax
+  MobAttackInfo *v28; // edi
+  CMobTemplate *v29; // eax
+  int nType; // eax
+  tagPOINT (__thiscall *v31)(IVecCtrlOwner *); // edx
+  IVecCtrlOwner *v32; // esi
+  tagRECT *v33; // eax
+  tagRECT *v34; // eax
+  int v35; // ecx
+  int v36; // eax
+  int IsRectIntersectWithTrapezoid; // eax
+  bool v38; // zf
+  BOOL v39; // ecx
+  int v40; // ebx
+  IVecCtrlOwner *v41; // ebx
+  int v42; // eax
+  int v43; // eax
+  int v44; // eax
+  tagPOINT (__thiscall *v45)(IVecCtrlOwner *); // edx
+  int v46; // eax
+  int v47; // esi
+  int v48; // eax
+  tagPOINT (__thiscall *v49)(IVecCtrlOwner *); // edx
+  int v50; // eax
+  int v51; // eax
+  int v52; // esi
+  int v53; // ecx
+  int summon_idx_from_skill_id; // eax
+  int v55; // ebx
+  int v56; // eax
+  int v57; // esi
+  int v58; // eax
+  __int16 v59; // cx
+  bool v60; // cc
+  int v61; // eax
+  unsigned int rand; // eax
+  int v63; // ecx
+  int v64; // edx
+  unsigned int dwTargetInfo; // eax
+  int v67; // [esp+4h] [ebp-208h]
+  unsigned int v68; // [esp+8h] [ebp-204h]
+  unsigned int ZtlSecureTear_left_CS; // [esp+Ch] [ebp-200h]
+  unsigned int dwFlagb; // [esp+20h] [ebp-1ECh]
+  unsigned int dwFlagc; // [esp+20h] [ebp-1ECh]
+  _DWORD *dwFlagd; // [esp+20h] [ebp-1ECh]
+  _DWORD *dwFlage; // [esp+20h] [ebp-1ECh]
+  unsigned int dwFlag; // [esp+20h] [ebp-1ECh]
+  unsigned int dwFlaga; // [esp+20h] [ebp-1ECh]
+  unsigned int nCount; // [esp+24h] [ebp-1E8h]
+  CMob::IsTargetInAttackRange::__l6::<unnamed_type_eTargetInfo> eTargetInfo; // [esp+2Ch] [ebp-1E0h]
+  int ja; // [esp+30h] [ebp-1DCh]
+  int jb; // [esp+30h] [ebp-1DCh]
+  unsigned int j; // [esp+30h] [ebp-1DCh]
+  ZArray<long> anIdx; // [esp+34h] [ebp-1D8h] BYREF
+  tagRECT rcTarget; // [esp+38h] [ebp-1D4h] BYREF
+  CMob *pCandidateMob; // [esp+48h] [ebp-1C4h]
+  CSummoned *pSummoned; // [esp+4Ch] [ebp-1C0h]
+  int i; // [esp+50h] [ebp-1BCh]
+  CUserLocal *pUserLocal; // [esp+54h] [ebp-1B8h]
+  int bLeft; // [esp+58h] [ebp-1B4h]
+  int bNoFlip; // [esp+5Ch] [ebp-1B0h]
+  tagPOINT ptR; // [esp+60h] [ebp-1ACh]
+  tagPOINT ptHit; // [esp+68h] [ebp-1A4h]
+  tagRECT rcTotal; // [esp+70h] [ebp-19Ch] BYREF
+  int v93; // [esp+80h] [ebp-18Ch]
+  ZList<long> lY; // [esp+84h] [ebp-188h] BYREF
+  tagPOINT ptL; // [esp+98h] [ebp-174h]
+  tagRECT rcIntersect; // [esp+A0h] [ebp-16Ch] BYREF
+  CMob::TARGETINFO ati[9]; // [esp+B0h] [ebp-15Ch] BYREF
+  tagRECT rcRangeL; // [esp+D4h] [ebp-138h] BYREF
+  tagRECT rcRangeR; // [esp+E4h] [ebp-128h] BYREF
+  char v100[8]; // [esp+F4h] [ebp-118h] BYREF
+  char v101[8]; // [esp+FCh] [ebp-110h] BYREF
+  char v102[8]; // [esp+104h] [ebp-108h] BYREF
+  char v103[8]; // [esp+10Ch] [ebp-100h] BYREF
+  char v104[8]; // [esp+114h] [ebp-F8h] BYREF
+  char v105[8]; // [esp+11Ch] [ebp-F0h] BYREF
+  char v106[8]; // [esp+124h] [ebp-E8h] BYREF
+  char v107[8]; // [esp+12Ch] [ebp-E0h] BYREF
+  char v108[8]; // [esp+134h] [ebp-D8h] BYREF
+  char v109[8]; // [esp+13Ch] [ebp-D0h] BYREF
+  char v110[8]; // [esp+144h] [ebp-C8h] BYREF
+  int y2; // [esp+14Ch] [ebp-C0h] BYREF
+  char v112[8]; // [esp+154h] [ebp-B8h] BYREF
+  char v113[8]; // [esp+15Ch] [ebp-B0h] BYREF
+  char v114[8]; // [esp+164h] [ebp-A8h] BYREF
+  char v115[8]; // [esp+16Ch] [ebp-A0h] BYREF
+  char v116[8]; // [esp+174h] [ebp-98h] BYREF
+  char v117[4]; // [esp+17Ch] [ebp-90h] BYREF
+  char v118[12]; // [esp+180h] [ebp-8Ch] BYREF
+  int v119; // [esp+18Ch] [ebp-80h] BYREF
+  char v120[8]; // [esp+194h] [ebp-78h] BYREF
+  char v121[8]; // [esp+19Ch] [ebp-70h] BYREF
+  int abAttackLeft[9]; // [esp+1A4h] [ebp-68h]
+  int anAttackAction[9]; // [esp+1C8h] [ebp-44h]
+  tagRECT v124; // [esp+1ECh] [ebp-20h] BYREF
+  int v125; // [esp+208h] [ebp-4h]
+
+  v6 = this; /*0x645f82*/
+  if ( !this->m_stat.nDoom_ || (m_pTemplate = this->m_pTemplateByDoom) == nullptr ) /*0x645f99*/
+    m_pTemplate = this->m_pTemplate; /*0x645f9b*/
+  if ( m_pTemplate->nAttackCount <= 0 /*0x64600a*/
+    || _ZtlSecureFuse<int>(
+         this->m_pTemplate->_ZtlSecureTear_bNotAttack,
+         this->m_pTemplate->_ZtlSecureTear_bNotAttack_CS)
+    || _ZtlSecureFuse<int>(v6->_ZtlSecureTear_m_nSuspended, v6->_ZtlSecureTear_m_nSuspended_CS)
+    || CMob::IsImmovable(v6)
+    || v6->m_stat.nSeal_
+    || v6->m_stat.bDisable )
+  {
+    return 0; /*0x646aa8*/
+  }
+  `vector constructor iterator'(ati, 4u, 9, (void *(__thiscall *)(void *))CMob::TARGETINFO::TARGETINFO); /*0x646027*/
+  nCount = 0; /*0x646030*/
+  IsLeft = CMob::IsLeft(v6); /*0x646034*/
+  m_Data = TSingleton<CUserLocal>::ms_pInstance.m_Data; /*0x646039*/
+  bLeft = IsLeft; /*0x64603f*/
+  pCandidateMob = nullptr; /*0x646046*/
+  pSummoned = nullptr; /*0x64604a*/
+  pUserLocal = (CUserLocal *)TSingleton<CUserLocal>::ms_pInstance.m_Data; /*0x646051*/
+  switch ( nTargetType ) /*0x64605e*/
+  {
+    case 0: /*0x64605e*/
+      goto $LN76_10;
+    case 1: /*0x64605e*/
+      v17 = TSingleton<CMobPool>::ms_pInstance; /*0x646160*/
+      v18 = (tagPOINT *)((int (__thiscall *)(IVecCtrlOwner *, char *))v6->GetPos)(&v6->IVecCtrlOwner, v120); /*0x646171*/
+      NearestMob = CMobPool::FindNearestMob(v17, *v18, 0); /*0x64617e*/
+      goto LABEL_37; /*0x64617e*/
+    case 2: /*0x64605e*/
+      v20 = TSingleton<CMobPool>::ms_pInstance; /*0x6461b0*/
+      v21 = (tagPOINT *)((int (__thiscall *)(IVecCtrlOwner *, char *))v6->GetPos)(&v6->IVecCtrlOwner, v106); /*0x6461c1*/
+      NearestMob = CMobPool::FindNearestMob(v20, *v21, 1); /*0x6461c5*/
+LABEL_37:
+      pCandidateMob = NearestMob; /*0x646183*/
+      if ( !NearestMob ) /*0x646189*/
+        return 0; /*0x646189*/
+      CMob::GetBodyRect(NearestMob, &rcTarget, 0); /*0x646198*/
+      eTargetInfo = TI_MOB; /*0x64619d*/
+      goto LABEL_43; /*0x6461a5*/
+    case 3: /*0x64605e*/
+      m_pInterface = v6->m_pvcActive.m_pInterface; /*0x646084*/
+      if ( m_pInterface ) /*0x64608c*/
+        v11 = m_pInterface - 3; /*0x64608e*/
+      else
+        v11 = nullptr; /*0x646093*/
+      v12 = (IVecCtrlOwner *)v11[192].__vftable; /*0x646095*/
+      if ( !v12 ) /*0x64609d*/
+        return 0; /*0x64609d*/
+      if ( v12->IsKindOf(v12, &CSummoned::ms_RTTI_CSummoned) ) /*0x6460af*/
+        pSummoned = (CSummoned *)&v12[-1]; /*0x6460b8*/
+      else
+        pSummoned = nullptr; /*0x6460be*/
+      if ( v12->IsKindOf(v12, &CMob::ms_RTTI_CMob) ) /*0x6460d2*/
+        v13 = (CMob *)&v12[-1]; /*0x6460d8*/
+      else
+        v13 = nullptr; /*0x6460dd*/
+      pCandidateMob = v13; /*0x6460df*/
+      if ( m_Data ) /*0x6460e5*/
+        p_m_str = &m_Data->m_str; /*0x6460e7*/
+      else
+        p_m_str = nullptr; /*0x6460ec*/
+      if ( p_m_str == (char **)v12 ) /*0x6460f0*/
+      {
+$LN76_10: /*0x646065*/
+        CAvatar::GetBodyRect((CAvatar *)&m_Data[11].m_str, &rcTarget, 0); /*0x646065*/
+        eTargetInfo = TI_USERLOCAL; /*0x646077*/
+      }
+      else
+      {
+        if ( pSummoned ) /*0x646104*/
+          v15 = &pSummoned->IVecCtrlOwner; /*0x646106*/
+        else
+          v15 = nullptr; /*0x64610b*/
+        if ( v12 == v15 ) /*0x64610f*/
+        {
+          CSummoned::GetBodyRect(pSummoned, &rcTarget, 0); /*0x64611c*/
+          eTargetInfo = TI_SUMMONED; /*0x646121*/
+        }
+        else
+        {
+          if ( v13 ) /*0x646130*/
+            v16 = &v13->IVecCtrlOwner; /*0x646132*/
+          else
+            v16 = nullptr; /*0x646137*/
+          if ( v12 != v16 ) /*0x64613b*/
+            return 0; /*0x64613b*/
+          CMob::GetBodyRect(v13, &rcTarget, 0); /*0x646148*/
+          eTargetInfo = TI_MOB; /*0x64614d*/
+        }
+      }
+LABEL_43:
+      bNoFlip = CMob::IsNoFlip(v6); /*0x64623b*/
+      i = 0; /*0x646248*/
+      if ( CMob::GetCurTemplate(v6)->nAttackCount <= 0 ) /*0x64625c*/
+        return 0; /*0x64625c*/
+      v25 = i; /*0x646262*/
+      break; /*0x646262*/
+    case 4: /*0x64605e*/
+      CMob::GetBodyRect(v6, &rcTarget, 0); /*0x6461d0*/
+      if ( ZAPI.IsRectEmpty(&rcTarget) ) /*0x6461da*/
+      {
+        GetPos = v6->GetPos; /*0x6461e7*/
+        rcTarget.bottom = 1; /*0x6461f2*/
+        rcTarget.right = 1; /*0x6461f6*/
+        rcTarget.top = -1; /*0x646204*/
+        rcTarget.left = -1; /*0x646208*/
+        v23 = (int *)((int (__thiscall *)(IVecCtrlOwner *, char *))GetPos)(&v6->IVecCtrlOwner, v108); /*0x64620e*/
+        v24 = ((int (__thiscall *)(IVecCtrlOwner *, char *))v6->GetPos)(&v6->IVecCtrlOwner, v110); /*0x64621f*/
+        ZAPI.OffsetRect(&rcTarget, *v23, *(_DWORD *)(v24 + 4)); /*0x64622d*/
+      }
+      eTargetInfo = TI_SELF; /*0x646233*/
+      goto LABEL_43; /*0x646233*/
+    default:
+      goto LABEL_43;
+  }
+  do
+  {
+    CurTemplate = CMob::GetCurTemplate(v6); /*0x646269*/
+    AttackInfo = CMobTemplate::GetAttackInfo(CurTemplate, v25); /*0x646270*/
+    v28 = AttackInfo; /*0x646275*/
+    if ( !AttackInfo /*0x646324*/
+      || !AttackInfo->bDoFirst && v6->m_bDoFirstAttack
+      || AttackInfo->bInactive
+      || AttackInfo->nConMP > CMob::_ZtlSecureGet_m_nMP(v6)
+      || eTargetInfo == TI_USERLOCAL && CAvatar::IsHideMorphed(&pUserLocal->CAvatar)
+      || v28->bSpeicalAttack && !v6->m_bAttackReady
+      || eTargetInfo == TI_USERLOCAL
+      && !v28->bMagicAttack
+      && (_UNKNOWN *)CMob::GetMobID(v6) != (_UNKNOWN *)((char *)&loc_8F710F + 3)
+      && (CUser::IsDarkSight(pUserLocal) || CUser::IsWindWalk(pUserLocal) || CUser::IsSneak(pUserLocal)) )
+    {
+      goto LABEL_126; /*0x64632b*/
+    }
+    v29 = CMob::GetCurTemplate(v6); /*0x646333*/
+    if ( CMobTemplate::_ZtlSecureGet_bSelfDestruction(v29) && v25 == CMob::GetCurTemplate(v6)->nAttackCount - 1 ) /*0x646353*/
+      break; /*0x646353*/
+    nType = v28->nType; /*0x646359*/
+    if ( !nType ) /*0x64635e*/
+    {
+      v31 = v6->GetPos; /*0x646367*/
+      v32 = &v6->IVecCtrlOwner; /*0x64636a*/
+      dwFlagb = *(_DWORD *)(((int (__thiscall *)(IVecCtrlOwner *, char *))v31)(v32, v112) + 4); /*0x646381*/
+      ja = *(_DWORD *)((int (__thiscall *)(IVecCtrlOwner *, char *))v32->GetPos)(v32, v114); /*0x64639f*/
+      v33 = operator<<(&rcRangeL, &v28->rcRange); /*0x6463a3*/
+      ZAPI.OffsetRect(v33, ja, dwFlagb); /*0x6463b6*/
+      dwFlagc = *(_DWORD *)(((int (__thiscall *)(IVecCtrlOwner *, int *))v32->GetPos)(v32, &v119) + 4); /*0x6463d5*/
+      jb = *(_DWORD *)((int (__thiscall *)(IVecCtrlOwner *, char *))v32->GetPos)(v32, v100); /*0x6463f0*/
+      v34 = operator<<(&rcRangeR, &v28->rcRange); /*0x6463f4*/
+      v35 = -v34->left; /*0x646400*/
+      v34->left = -v34->right; /*0x646402*/
+      v34->right = v35; /*0x64640b*/
+      ZAPI.OffsetRect(v34, jb, dwFlagc); /*0x646415*/
+      if ( bLeft ) /*0x64642c*/
+      {
+        if ( !ZAPI.IntersectRect(&rcIntersect, &rcRangeL, &rcTarget) ) /*0x646437*/
+        {
+          if ( bNoFlip || !ZAPI.IntersectRect(&rcIntersect, &rcRangeR, &rcTarget) ) /*0x646460*/
+            goto LABEL_126; /*0x646468*/
+          v36 = 0; /*0x64646e*/
+          goto LABEL_73; /*0x646470*/
+        }
+        goto LABEL_72; /*0x64643f*/
+      }
+      if ( ZAPI.IntersectRect(&rcIntersect, &rcRangeR, &rcTarget) ) /*0x64647b*/
+      {
+        v36 = 0; /*0x646485*/
+        goto LABEL_73; /*0x646487*/
+      }
+      IsRectIntersectWithTrapezoid = ZAPI.IntersectRect(&rcIntersect, &rcRangeL, &rcTarget); /*0x64649e*/
+      goto LABEL_71; /*0x64649e*/
+    }
+    if ( nType != 3 && nType != 4 ) /*0x6464e6*/
+    {
+      v32 = &this->IVecCtrlOwner; /*0x6464f6*/
+      v40 = v28->rcRange._ZtlSecureTear_left[0] /*0x64650c*/
+          + *(_DWORD *)((int (__thiscall *)(IVecCtrlOwner *, char *))this->GetPos)(&this->IVecCtrlOwner, v113);
+      ptL.y = v28->rcRange._ZtlSecureTear_left[1] /*0x646528*/
+            + *(_DWORD *)(((int (__thiscall *)(IVecCtrlOwner *, char *))v32->GetPos)(v32, v103) + 4);
+      ptR.x = *(_DWORD *)((int (__thiscall *)(IVecCtrlOwner *, char *))v32->GetPos)(v32, v121) /*0x646545*/
+            - v28->rcRange._ZtlSecureTear_left[0];
+      ptR.y = v28->rcRange._ZtlSecureTear_left[1] /*0x64655e*/
+            + *(_DWORD *)(((int (__thiscall *)(IVecCtrlOwner *, char *))v32->GetPos)(v32, v105) + 4);
+      if ( bLeft ) /*0x646569*/
+      {
+        if ( !CMob::IsRectIntersectWithTrapezoid( /*0x64657f*/
+                this,
+                v40,
+                v40,
+                v40 - v28->rcRange._ZtlSecureTear_left_CS,
+                ptL.y,
+                4,
+                &rcTarget) )
+        {
+          if ( bNoFlip /*0x6465b2*/
+            || !CMob::IsRectIntersectWithTrapezoid(
+                  this,
+                  ptR.x,
+                  ptR.x,
+                  ptR.x + v28->rcRange._ZtlSecureTear_left_CS,
+                  ptR.y,
+                  4,
+                  &rcTarget) )
+          {
+            goto LABEL_126; /*0x6465b9*/
+          }
+          v36 = 0; /*0x6465bf*/
+          goto LABEL_73; /*0x6465c1*/
+        }
+        goto LABEL_72; /*0x646586*/
+      }
+      if ( CMob::IsRectIntersectWithTrapezoid( /*0x6465db*/
+             this,
+             ptR.x,
+             ptR.x,
+             ptR.x + v28->rcRange._ZtlSecureTear_left_CS,
+             ptR.y,
+             4,
+             &rcTarget) )
+      {
+        v36 = 0; /*0x6465e4*/
+LABEL_73:
+        v38 = bNoFlip == 0; /*0x6464b1*/
+        anAttackAction[nCount] = i; /*0x6464be*/
+        v39 = !v38 || v36; /*0x6468c4*/
+        abAttackLeft[nCount] = v39; /*0x6468c9*/
+        v53 = v28->nType; /*0x6468d0*/
+        if ( v53 == 1 ) /*0x6468d6*/
+        {
+          if ( eTargetInfo >= TI_USERLOCAL ) /*0x6468de*/
+          {
+            if ( eTargetInfo <= TI_SUMMONED ) /*0x6468e6*/
+            {
+              if ( pSummoned ) /*0x646917*/
+                summon_idx_from_skill_id = get_summon_idx_from_skill_id(pSummoned->m_nSkillID); /*0x646920*/
+              else
+                summon_idx_from_skill_id = 0; /*0x64692a*/
+              ati[nCount].dwTargetInfo = summon_idx_from_skill_id | (4 * pUserLocal->m_dwCharacterId); /*0x646940*/
+            }
+            else if ( eTargetInfo == TI_MOB ) /*0x6468eb*/
+            {
+              ati[nCount].dwTargetInfo = (4 * CMob::GetMobID(pCandidateMob)) | 3; /*0x646905*/
+            }
+          }
+        }
+        else if ( v53 == 2 ) /*0x64694f*/
+        {
+          if ( v36 ) /*0x646957*/
+            dwFlaga = v28->rcRange._ZtlSecureTear_left[0]; /*0x64695c*/
+          else
+            dwFlaga = -v28->rcRange._ZtlSecureTear_left[0]; /*0x646967*/
+          v55 = dwFlaga + *(_DWORD *)((int (__thiscall *)(IVecCtrlOwner *, char *))v32->GetPos)(v32, v102); /*0x646983*/
+          v56 = v28->rcRange._ZtlSecureTear_left[1] /*0x646996*/
+              + *(_DWORD *)(((int (__thiscall *)(IVecCtrlOwner *, char *))v32->GetPos)(v32, v104) + 4);
+          ptHit.x = v55; /*0x64699e*/
+          v57 = v56; /*0x6469a2*/
+          v58 = (rcTarget.right + rcTarget.left) / 2; /*0x6469b3*/
+          if ( bLeft ) /*0x6469a4*/
+          {
+            v59 = LOWORD(rcTarget.right) - 10; /*0x6469b5*/
+            v60 = v58 < rcTarget.right - 10; /*0x6469b8*/
+          }
+          else
+          {
+            v59 = LOWORD(rcTarget.left) + 10; /*0x6469cc*/
+            v60 = rcTarget.left + 10 < v58; /*0x6469cf*/
+          }
+          if ( !v60 ) /*0x6469d1*/
+            v59 = (rcTarget.right + rcTarget.left) / 2; /*0x6469d3*/
+          LOWORD(v61) = LOWORD(rcTarget.top) + 10; /*0x6469d9*/
+          if ( v57 >= rcTarget.top + 10 ) /*0x6469de*/
+          {
+            LOWORD(v61) = LOWORD(rcTarget.bottom) - 10; /*0x6469e4*/
+            if ( v57 <= rcTarget.bottom - 10 ) /*0x6469e9*/
+              v61 = (rcTarget.bottom + rcTarget.top) / 2; /*0x6469f1*/
+          }
+          ati[nCount].ptTarget.x = v59; /*0x6469f7*/
+          ati[nCount].ptTarget.y = v61; /*0x6469ff*/
+        }
+        else
+        {
+          ati[nCount].dwTargetInfo = 0; /*0x646a09*/
+        }
+        ++nCount; /*0x646a14*/
+        goto LABEL_126; /*0x646a14*/
+      }
+      IsRectIntersectWithTrapezoid = CMob::IsRectIntersectWithTrapezoid( /*0x646606*/
+                                       this,
+                                       v40,
+                                       v40,
+                                       v40 - v28->rcRange._ZtlSecureTear_left_CS,
+                                       ptL.y,
+                                       4,
+                                       &rcTarget);
+LABEL_71:
+      if ( !IsRectIntersectWithTrapezoid ) /*0x6464a6*/
+        goto LABEL_126; /*0x6464a6*/
+LABEL_72:
+      v36 = 1; /*0x6464ac*/
+      goto LABEL_73; /*0x6464ac*/
+    }
+    if ( get_update_time() - v6->m_tLastAreaAttack < 2500 ) /*0x646620*/
+      goto LABEL_126; /*0x646620*/
+    operator<<(&rcTotal, &v28->tzArea.rcAttack); /*0x64662f*/
+    v41 = &this->IVecCtrlOwner; /*0x64663e*/
+    v42 = ((int (__thiscall *)(IVecCtrlOwner *, char *))this->GetPos)(&this->IVecCtrlOwner, v115); /*0x64664e*/
+    rcTotal.top += *(_DWORD *)(v42 + 4); /*0x646653*/
+    v43 = ((int (__thiscall *)(IVecCtrlOwner *, char *))v41->GetPos)(v41, v107); /*0x646666*/
+    rcTotal.bottom += *(_DWORD *)(v43 + 4); /*0x64666b*/
+    dwFlagd = (_DWORD *)((int (__thiscall *)(IVecCtrlOwner *, char *))v41->GetPos)(v41, v116); /*0x646682*/
+    v44 = CMob::IsLeft(this); /*0x646686*/
+    v45 = this->GetPos; /*0x6466a3*/
+    rcTotal.left = *dwFlagd
+                 + v28->rcRange._ZtlSecureTear_left[0] * v28->rcRange._ZtlSecureTear_top[0] * (v44 != 0 ? 1 : -1);
+    dwFlage = (_DWORD *)((int (__thiscall *)(IVecCtrlOwner *, char *))v45)(&this->IVecCtrlOwner, v109); /*0x6466b8*/
+    rcTotal.right = *dwFlage
+                  + v28->rcRange._ZtlSecureTear_top[0]
+                  * (v28->rcRange._ZtlSecureTear_left[0] + v28->rcRange._ZtlSecureTear_left[1])
+                  * (CMob::IsLeft(this) != 0 ? 1 : -1);
+    if ( !ZAPI.IntersectRect(&v124, &rcTotal, &rcTarget) ) /*0x6466f2*/
+      goto LABEL_126; /*0x6466fa*/
+    anIdx.a = nullptr; /*0x646702*/
+    ZtlSecureTear_left_CS = v28->rcRange._ZtlSecureTear_left_CS; /*0x64670f*/
+    v68 = v28->rcRange._ZtlSecureTear_left[1]; /*0x646710*/
+    v67 = v28->rcRange._ZtlSecureTear_left[0]; /*0x646711*/
+    v125 = 0; /*0x646717*/
+    get_random_unique_array(&anIdx, v67, v68, ZtlSecureTear_left_CS); /*0x64671e*/
+    dwFlag = 0; /*0x646726*/
+    for ( j = 0; anIdx.a && j < *(anIdx.a - 1); ++j )
+    {
+      ptHit.x = ((int (__thiscall *)(IVecCtrlOwner *, char *))v41->GetPos)(v41, v117); /*0x64675c*/
+      v93 = v28->rcRange._ZtlSecureTear_top[0]; /*0x646763*/
+      v46 = CMob::IsLeft(this); /*0x646767*/
+      v47 = *(_DWORD *)ptHit.x + (v93 / 2 + v93 * anIdx.a[j]) * (v46 != 0 ? 1 : -1);
+      lY.__vftable = (ZList<long>_vtbl *)&ZList<long>::`vftable'; /*0x64679a*/
+      memset(&lY._m_uCount, 0, 12); /*0x6467a2*/
+      v48 = v28->nType; /*0x6467b4*/
+      LOBYTE(v125) = 1; /*0x6467b7*/
+      if ( v48 == 3 ) /*0x6467c2*/
+      {
+        v49 = v41->GetPos; /*0x6467cb*/
+        ptHit.x = (int)TSingleton<CWvsPhysicalSpace2D>::ms_pInstance; /*0x6467d2*/
+        v50 = ((int (__thiscall *)(IVecCtrlOwner *))v49)(v41); /*0x6467e1*/
+        v51 = ((int (__thiscall *)(IVecCtrlOwner *, char *, int))v41->GetPos)(v41, v118, *(_DWORD *)(v50 + 4) + 100); /*0x6467f9*/
+        CWvsPhysicalSpace2D::GetFootholdRange( /*0x646807*/
+          (CWvsPhysicalSpace2D *)ptHit.x,
+          v47,
+          *(_DWORD *)(v51 + 4) - 100,
+          (int)&y2,
+          &lY);
+      }
+      else
+      {
+        if ( v48 != 4 ) /*0x646811*/
+          goto LABEL_97; /*0x646811*/
+        v52 = *(_DWORD *)(((int (__thiscall *)(IVecCtrlOwner *, char *))v41->GetPos)(v41, v101) + 4); /*0x646824*/
+        *ZList<long>::AddTail(&lY) = v52; /*0x646830*/
+      }
+      if ( lY._m_uCount ) /*0x646837*/
+        dwFlag |= 1 << (LOBYTE(anIdx.a[j]) - LOBYTE(v28->rcRange._ZtlSecureTear_left[0])); /*0x64684e*/
+LABEL_97:
+      LOBYTE(v125) = 0; /*0x646852*/
+      lY.__vftable = (ZList<long>_vtbl *)&ZList<long>::`vftable'; /*0x64685e*/
+      ZList<long>::RemoveAll(&lY); /*0x646866*/
+    }
+    if ( dwFlag ) /*0x64687a*/
+    {
+      anAttackAction[nCount] = i; /*0x646888*/
+      abAttackLeft[nCount] = CMob::IsLeft(this); /*0x646898*/
+      ati[nCount++].dwTargetInfo = dwFlag; /*0x64689f*/
+    }
+    v125 = -1; /*0x6468af*/
+    ZArray<long>::RemoveAll(&anIdx); /*0x6468ba*/
+LABEL_126:
+    v6 = this; /*0x646a18*/
+    v25 = ++i; /*0x646a20*/
+  }
+  while ( v25 < CMob::GetCurTemplate(this)->nAttackCount );
+  if ( !nCount ) /*0x646a3d*/
+    return 0; /*0x646a3d*/
+  if ( pnAction && pbLeft && pti ) /*0x646a52*/
+  {
+    if ( nForceAttackIdx ) /*0x646a59*/
+      rand = nForceAttackIdx - 1; /*0x646a5b*/
+    else
+      rand = get_rand(nCount, 0); /*0x646a65*/
+    v63 = anAttackAction[rand]; /*0x646a6d*/
+    v64 = abAttackLeft[rand]; /*0x646a74*/
+    dwTargetInfo = ati[rand].dwTargetInfo; /*0x646a7b*/
+    *pnAction = v63 + 13; /*0x646a85*/
+    *pbLeft = v64; /*0x646a87*/
+    pti->dwTargetInfo = dwTargetInfo; /*0x646a89*/
+  }
+  return 1; /*0x646a90*/
+}

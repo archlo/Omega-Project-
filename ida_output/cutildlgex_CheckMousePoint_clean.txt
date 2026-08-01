@@ -1,0 +1,125 @@
+// CUtilDlgEx::CheckMousePoint
+// Address: 0x97e5d0
+
+void __thiscall CUtilDlgEx::CheckMousePoint(CUtilDlgEx *this, int rx, int ry)
+{
+  CT_INFO *a; // eax
+  int m_nScrollPos; // ebx
+  const ZXString<char> *v6; // esi
+  int nTop; // ecx
+  int m_ctLeft; // eax
+  char *m_pStr; // edx
+  int v10; // eax
+  char *v11; // eax
+  int v12; // esi
+  char *v13; // ebx
+  int (__thiscall *GetAbsTop)(IUIMsgHandler *); // eax
+  int v15; // eax
+  int v16; // eax
+  int v17; // [esp-1Ch] [ebp-54h]
+  GW_ItemSlotBase *p; // [esp-18h] [ebp-50h]
+  int v19; // [esp-8h] [ebp-40h]
+  char *v20; // [esp-4h] [ebp-3Ch]
+  int idx; // [esp+14h] [ebp-24h]
+  int i; // [esp+18h] [ebp-20h]
+  ZXString<char> sResult; // [esp+1Ch] [ebp-1Ch] BYREF
+  ZRef<GW_ItemSlotBase> pItem; // [esp+20h] [ebp-18h] BYREF
+  int nResult; // [esp+28h] [ebp-10h]
+  int v26; // [esp+34h] [ebp-4h]
+
+  nResult = -1; /*0x97e5fb*/
+  sResult._m_pStr = nullptr; /*0x97e603*/
+  v26 = 0; /*0x97e607*/
+  *(_DWORD *)&pItem.gap0 = 0; /*0x97e60b*/
+  idx = 0; /*0x97e60f*/
+  for ( i = 0; ; ++i ) /*0x97e613*/
+  {
+    a = this->m_aCT.a; /*0x97e620*/
+    if ( !a || (unsigned int)idx >= a[-1].nMapNo ) /*0x97e635*/
+      break; /*0x97e635*/
+    m_nScrollPos = this->m_nScrollPos; /*0x97e63b*/
+    v6 = (const ZXString<char> *)&a[i]; /*0x97e643*/
+    nTop = a[i].nTop; /*0x97e647*/
+    if ( nTop - m_nScrollPos >= -48 && nTop - m_nScrollPos < this->m_scrHeight + 24 ) /*0x97e662*/
+    {
+      m_ctLeft = this->m_ctLeft; /*0x97e668*/
+      m_pStr = v6[6]._m_pStr; /*0x97e66e*/
+      if ( (int)&m_pStr[m_ctLeft] < rx && rx < (int)&m_pStr[(unsigned int)v6[8]._m_pStr + 8 + m_ctLeft] ) /*0x97e687*/
+      {
+        v10 = this->m_ctTop - m_nScrollPos; /*0x97e693*/
+        if ( v10 + nTop < ry && ry < (int)&v6[9]._m_pStr[v10 + nTop] ) /*0x97e6a5*/
+        {
+          v11 = v6[1]._m_pStr; /*0x97e6a7*/
+          if ( (v11 || v6->_m_pStr == (char *)1) /*0x97e6c3*/
+            && (idx <= this->m_nCurDisplayItemIndex || v6[10]._m_pStr != (char *)-1) )
+          {
+            if ( v11 ) /*0x97e6c7*/
+              *(ZXString<char> *)&pItem.gap0 = v6[1]; /*0x97e6c9*/
+            else
+              ZXString<char>::operator=(&sResult, v6 + 4); /*0x97e6d7*/
+          }
+          v12 = (int)v6[10]._m_pStr; /*0x97e6dc*/
+          if ( v12 != -1 ) /*0x97e6e2*/
+            nResult = v12; /*0x97e6e4*/
+        }
+      }
+    }
+    ++idx; /*0x97e6e8*/
+  }
+  v13 = sResult._m_pStr; /*0x97e6f8*/
+  if ( sResult._m_pStr && *sResult._m_pStr ) /*0x97e700*/
+  {
+    v20 = sResult._m_pStr; /*0x97e7bd*/
+    v19 = this->GetAbsTop(&this->IUIMsgHandler) + ry + 20; /*0x97e7cc*/
+    v16 = this->GetAbsLeft(&this->IUIMsgHandler); /*0x97e7d2*/
+    CUIToolTip::SetToolTip_String(&this->m_uiToolTip, v16 + rx + 20, v19, v20); /*0x97e7e3*/
+  }
+  else if ( *(_DWORD *)&pItem.gap0 ) /*0x97e70f*/
+  {
+    CItemInfo::GetItemSlot( /*0x97e721*/
+      (CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr,
+      &pItem,
+      *(_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *)&pItem.gap0);
+    GetAbsTop = this->GetAbsTop; /*0x97e72d*/
+    p = pItem.p; /*0x97e738*/
+    LOBYTE(v26) = 1; /*0x97e73b*/
+    v17 = GetAbsTop(&this->IUIMsgHandler) + ry + 20; /*0x97e74c*/
+    v15 = this->GetAbsLeft(&this->IUIMsgHandler); /*0x97e752*/
+    CUIToolTip::ShowItemToolTip(&this->m_uiToolTip, v15 + rx + 20, v17, p, nullptr, nullptr, 0, 0, ITCToolTip_None); /*0x97e763*/
+    LOBYTE(v26) = 0; /*0x97e76c*/
+    if ( pItem.p ) /*0x97e773*/
+    {
+      if ( !InterlockedDecrement(&pItem.p->_m_nRef) ) /*0x97e779*/
+      {
+        InterlockedIncrement(&pItem.p->_m_nRef); /*0x97e78b*/
+        if ( pItem.p ) /*0x97e797*/
+          ((void (__thiscall *)(GW_ItemSlotBase *, int))pItem.p->dtr_ZRefCounted)(pItem.p, 1); /*0x97e79f*/
+      }
+      pItem.p = nullptr; /*0x97e7a1*/
+    }
+  }
+  else
+  {
+    CUIToolTip::ClearToolTip(&this->m_uiToolTip); /*0x97e7ad*/
+  }
+  if ( this->m_nSelect != nResult ) /*0x97e7f2*/
+  {
+    this->m_nSelect = nResult; /*0x97e7f7*/
+    CWnd::InvalidateRect(this, nullptr); /*0x97e7fd*/
+  }
+  v26 = -1; /*0x97e802*/
+  if ( v13 ) /*0x97e80c*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v13 - 1); /*0x97e812*/
+}
+
+// References:
+//   ??4?$ZXString@D@@QAEAAV0@ABV0@@Z @ 0x42d1c0
+//   ?SetToolTip_String@CUIToolTip@@QAEXJJPBD@Z @ 0x887140
+//   ?GetItemSlot@CItemInfo@@QAE?AV?$ZRef@UGW_ItemSlotBase@@@@J@Z @ 0x5c3b20
+//   ?ms_pInstance@?$TSingleton@VCItemInfo@@@@1PAVCItemInfo@@A @ 0xc63ea4
+//   ?ShowItemToolTip@CUIToolTip@@QAEXJJPAUGW_ItemSlotBase@@PAUItemToolTipParam@1@PAUCS_LIMITGOODS@@HJW4eITCToolTip@1@@Z @ 0x8a9300
+//   __imp__InterlockedIncrement@4 @ 0xb14074
+//   __imp__InterlockedDecrement@4 @ 0xb14078
+//   ?ClearToolTip@CUIToolTip@@QAEXXZ @ 0x880f20
+//   ?InvalidateRect@CWnd@@QAEXPBUtagRECT@@@Z @ 0x9ad3f0
+//   ?_Release@?$ZXString@D@@KAXPAU_ZXStringData@1@@Z @ 0x403460

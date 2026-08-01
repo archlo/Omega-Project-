@@ -1,0 +1,64 @@
+﻿void __thiscall CPet::OnValidateStat(CPet *this)
+{
+  GW_ItemSlotPet *ItemSlot; // eax
+  int m_nTameness; // ebp
+  GW_ItemSlotPet *v4; // edi
+  char *m_pStr; // edi
+  int v6; // eax
+  StringPool *v7; // eax
+  ZXString<char> *String; // eax
+  StringPool *Instance; // eax
+  ZXString<char> sLog; // [esp+10h] [ebp-14h] BYREF
+  ZXString<char> result; // [esp+14h] [ebp-10h] BYREF
+  int v12; // [esp+20h] [ebp-4h]
+
+  if ( this->m_pOwner->IsLocalUser(this->m_pOwner) )
+  {
+    ItemSlot = CPet::GetItemSlot(this);
+    m_nTameness = this->m_nTameness;
+    v4 = ItemSlot;
+    this->m_nTameness = _ZtlSecureFuse<short>(ItemSlot->_ZtlSecureTear_nTameness, ItemSlot->_ZtlSecureTear_nTameness_CS);
+    this->m_nRepleteness = _ZtlSecureFuse<unsigned char>(
+                             v4->_ZtlSecureTear_nRepleteness,
+                             v4->_ZtlSecureTear_nRepleteness_CS);
+    this->m_nPetAttribute = _ZtlSecureFuse<short>(v4->_ZtlSecureTear_nPetAttribute, v4->_ZtlSecureTear_nPetAttribute_CS);
+    CPet::SetShoeAttr(this);
+    CPet::UpdatePetAbility(this);
+    m_pStr = nullptr;
+    sLog._m_pStr = nullptr;
+    v6 = this->m_nTameness;
+    v12 = 0;
+    if ( m_nTameness >= v6 )
+    {
+      if ( m_nTameness <= v6 )
+      {
+LABEL_11:
+        v12 = -1;
+        if ( m_pStr )
+          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)m_pStr - 1);
+        return;
+      }
+      Instance = StringPool::GetInstance();
+      String = StringPool::GetString(Instance, &result, 0x18Bu);
+      LOBYTE(v12) = 2;
+    }
+    else
+    {
+      v7 = StringPool::GetInstance();
+      String = StringPool::GetString(v7, &result, 0x18Au);
+      LOBYTE(v12) = 1;
+    }
+    ZXString<char>::Format(&sLog, String->_m_pStr, this->m_nTameness - m_nTameness);
+    LOBYTE(v12) = 0;
+    if ( result._m_pStr )
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1);
+    m_pStr = sLog._m_pStr;
+    if ( sLog._m_pStr && *sLog._m_pStr )
+      CUIScreenMsg::ScrMsg_Add(
+        TSingleton<CUIScreenMsg>::ms_pInstance,
+        sLog._m_pStr,
+        FONT_BASIC_YELLOW,
+        FONT_BASIC_BLACK);
+    goto LABEL_11;
+  }
+}

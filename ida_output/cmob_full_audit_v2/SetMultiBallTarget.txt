@@ -1,0 +1,136 @@
+﻿void __thiscall CMob::SetMultiBallTarget(CMob *this, int nBulletNumber, int nRange)
+{
+  int *ZtlSecureTear_m_nMobCtrlState; // esi
+  tagPOINT *a; // edi
+  IWzGr2DLayer *v6; // ebp
+  int Data; // eax
+  __POSITION *v8; // ebp
+  USERREMOTE_ENTRY *p; // edi
+  LONG (__stdcall *v10)(volatile LONG *); // ebp
+  CUserRemote *v11; // esi
+  int x; // ebp
+  int v13; // ecx
+  int v14; // esi
+  tagPOINT *v15; // eax
+  int y; // eax
+  int v17; // ebp
+  ZArray<tagPOINT> *p_m_aMultiTargetForBall; // ebx
+  unsigned int v19; // esi
+  unsigned int v20; // eax
+  __POSITION *v21; // esi
+  ZArray<tagPOINT> aTargetList; // [esp+14h] [ebp-38h] BYREF
+  __POSITION *position; // [esp+18h] [ebp-34h] BYREF
+  int v24; // [esp+1Ch] [ebp-30h]
+  tagPOINT pCurUserPt; // [esp+20h] [ebp-2Ch] BYREF
+  tagPOINT pMobPt; // [esp+28h] [ebp-24h]
+  ZRef<CUserRemote> pRemoteUser; // [esp+30h] [ebp-1Ch] BYREF
+  ZRef<USERREMOTE_ENTRY> pUserEntry; // [esp+38h] [ebp-14h]
+  int v29; // [esp+48h] [ebp-4h]
+
+  ZtlSecureTear_m_nMobCtrlState = this->_ZtlSecureTear_m_nMobCtrlState;
+  if ( _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nMobCtrlState, this->_ZtlSecureTear_m_nMobCtrlState_CS) == 3
+    || _ZtlSecureFuse<long>(ZtlSecureTear_m_nMobCtrlState, this->_ZtlSecureTear_m_nMobCtrlState_CS) == 4 )
+  {
+    a = nullptr;
+    v6 = TSingleton<CUserPool>::ms_pInstance.m_pInterface + 9;
+    aTargetList.a = nullptr;
+    v29 = 0;
+    pMobPt.x = TSecType<long>::GetData(&this->m_ptPos.x);
+    Data = TSecType<long>::GetData(&this->m_ptPos.y);
+    v8 = (__POSITION *)v6[3].__vftable;
+    pMobPt.y = Data;
+    position = v8;
+    if ( !v8 )
+      goto LABEL_27;
+    do
+    {
+      p = ZList<ZRef<USERREMOTE_ENTRY>>::GetNext(&position)->p;
+      v10 = InterlockedIncrement;
+      pUserEntry.p = p;
+      if ( p )
+      {
+        InterlockedIncrement(&p->_m_nRef);
+        v11 = p->pUserRemote.p;
+        pRemoteUser.p = v11;
+        if ( v11 )
+          v10(&v11->_m_nRef);
+        LOBYTE(v29) = 2;
+        if ( v11 )
+        {
+          ((void (__thiscall *)(IVecCtrlOwner *, tagPOINT *))v11->GetPos)(&v11->IVecCtrlOwner, &pCurUserPt);
+          x = pMobPt.x;
+          v13 = pMobPt.y - (pCurUserPt.y - 25);
+          pCurUserPt.y -= 25;
+          v24 = (pMobPt.x - pCurUserPt.x) * (pMobPt.x - pCurUserPt.x) + v13 * v13;
+          v14 = (int)sqrt((double)v24);
+          if ( (this->m_pTemplate->bNoFlip
+             || (_ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nMoveAction, this->_ZtlSecureTear_m_nMoveAction_CS) & 1) != 0)
+            && x > pCurUserPt.x
+            && v14 <= nRange
+            || !this->m_pTemplate->bNoFlip
+            && (_ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nMoveAction, this->_ZtlSecureTear_m_nMoveAction_CS) & 1) == 0
+            && x < pCurUserPt.x
+            && v14 <= nRange )
+          {
+            v15 = ZArray<tagPOINT>::InsertBefore(&aTargetList, -1);
+            *v15 = pCurUserPt;
+          }
+          LOBYTE(v29) = 1;
+          ZRef<CUserRemote>::_ReleaseRaw(&pRemoteUser, nullptr);
+          pRemoteUser.p = nullptr;
+          LOBYTE(v29) = 0;
+          if ( !InterlockedDecrement(&p->_m_nRef) )
+          {
+            InterlockedIncrement(&p->_m_nRef);
+            ((void (__thiscall *)(USERREMOTE_ENTRY *, int))p->dtr_ZRefCounted)(p, 1);
+          }
+          pUserEntry.p = nullptr;
+        }
+        else
+        {
+          LOBYTE(v29) = 0;
+          if ( !InterlockedDecrement(&p->_m_nRef) )
+          {
+            v10(&p->_m_nRef);
+            ((void (__thiscall *)(USERREMOTE_ENTRY *, int))p->dtr_ZRefCounted)(p, 1);
+          }
+          pUserEntry.p = nullptr;
+        }
+      }
+      else
+      {
+        LOBYTE(v29) = 0;
+      }
+    }
+    while ( position );
+    a = aTargetList.a;
+    if ( aTargetList.a )
+      y = aTargetList.a[-1].y;
+    else
+LABEL_27:
+      y = 0;
+    v17 = nBulletNumber;
+    if ( y <= nBulletNumber )
+    {
+      ZArray<tagPOINT>::operator=(&this->m_aMultiTargetForBall, &aTargetList);
+    }
+    else if ( nBulletNumber > 0 )
+    {
+      p_m_aMultiTargetForBall = &this->m_aMultiTargetForBall;
+      do
+      {
+        if ( a && (v19 = a[-1].y) != 0 )
+          v20 = CRand32::Random(&g_rand) % v19;
+        else
+          v20 = CRand32::Random(&g_rand);
+        v21 = (__POSITION *)&a[v20];
+        *ZArray<tagPOINT>::InsertBefore(p_m_aMultiTargetForBall, -1) = *(tagPOINT *)v21;
+        ZArray<tagPOINT>::RemoveAt(&aTargetList, v21);
+        --v17;
+      }
+      while ( v17 );
+    }
+    v29 = -1;
+    ZArray<tagPOINT>::RemoveAll(&aTargetList);
+  }
+}

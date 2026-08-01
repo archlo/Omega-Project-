@@ -1,0 +1,466 @@
+// cuserlocal::TryDoingFlyingRush
+
+void __thiscall CUserLocal::TryDoingFlyingRush(CUserLocal *this)
+{
+  int OneTimeAction; // eax
+  CAvatar::ACTIONINFO *v3; // ebp
+  IWzVector2D *m_pInterface; // eax
+  CVecCtrl *v5; // ecx
+  IWzVector2D *v6; // eax
+  IWzVector2D *v7; // ecx
+  IWzVector2D *v8; // eax
+  CVecCtrl *v9; // ecx
+  const SKILLENTRY *Skill; // eax
+  int nDelayFrame; // edi
+  tagPOINT (__thiscall *GetPos)(IVecCtrlOwner *); // edx
+  CUserLocal::RUSH::RUSHELEM *m_pHead; // esi
+  IWzVector2D *v14; // eax
+  IWzVector2D *v15; // eax
+  IUnknown *v16; // esi
+  HRESULT v17; // eax
+  int nVx; // eax
+  int *p_nVx; // ebp
+  CUserLocal::RUSH::RUSHELEM::RUSHSTYLE nState; // edi
+  long double v21; // st7
+  int v22; // ecx
+  int v23; // eax
+  CUserLocal::RUSH::RUSHELEM::RUSHSTYLE v24; // esi
+  CWvsPhysicalSpace2D *v25; // ebp
+  signed int v26; // edi
+  CStaticFoothold *FootholdUnderneath; // esi
+  CStaticFoothold *FootholdAbove; // ebp
+  int y; // eax
+  CStaticFoothold *v30; // eax
+  tagPOINT *a; // ecx
+  int v32; // ecx
+  unsigned int i; // esi
+  tagPOINT *v34; // eax
+  int v35; // eax
+  int v36; // eax
+  CharacterData *p; // esi
+  int SkillLevel; // eax
+  int v39; // esi
+  SKILLENTRY *v40; // ebp
+  const SKILLLEVELDATA *LevelData; // eax
+  SKILLLEVELDATA *v42; // eax
+  int nX; // eax
+  int v44; // eax
+  CWvsPhysicalSpace2D *v45; // esi
+  int v46; // eax
+  CStaticFoothold *v47; // eax
+  tagPOINT *v48; // ecx
+  unsigned int j; // esi
+  tagPOINT *v50; // eax
+  int v51; // eax
+  int v52; // eax
+  CAvatar::ACTIONINFO *v53; // eax
+  int v54; // eax
+  CWvsPhysicalSpace2D *v55; // esi
+  CAvatar::ACTIONINFO *v56; // eax
+  int v57; // eax
+  IWzVector2D *v58; // eax
+  CVecCtrl *v59; // ecx
+  IWzVector2D *v60; // eax
+  CVecCtrl *v61; // ecx
+  IWzVector2D *v62; // eax
+  IWzShape2D *v63; // eax
+  CAvatar::ACTIONINFO *v64; // eax
+  int nSkillID; // [esp-4h] [ebp-64h]
+  CStaticFoothold *pfhUnder; // [esp+Ch] [ebp-54h]
+  CStaticFoothold *pfhAbove; // [esp+10h] [ebp-50h]
+  CStaticFoothold *pfhAbovea; // [esp+10h] [ebp-50h]
+  int cyUnder; // [esp+14h] [ebp-4Ch] BYREF
+  int cyAbove; // [esp+18h] [ebp-48h] BYREF
+  int bFhIgnore; // [esp+1Ch] [ebp-44h]
+  int nBoundary; // [esp+20h] [ebp-40h]
+  CWvsPhysicalSpace2D *pSpace; // [esp+24h] [ebp-3Ch]
+  int v74; // [esp+28h] [ebp-38h]
+  CAvatar::ACTIONINFO *ai; // [esp+2Ch] [ebp-34h]
+  tagRECT rect; // [esp+30h] [ebp-30h] BYREF
+  const SKILLENTRY *pSkill; // [esp+40h] [ebp-20h]
+  int *v78; // [esp+44h] [ebp-1Ch]
+  tagPOINT pt; // [esp+48h] [ebp-18h] BYREF
+  tagPOINT judgeP2; // [esp+50h] [ebp-10h] BYREF
+  tagPOINT oldPt; // [esp+58h] [ebp-8h]
+
+  get_update_time(); /*0x90bc18*/
+  OneTimeAction = CAvatar::GetOneTimeAction(&this->CAvatar); /*0x90bc25*/
+  nSkillID = this->m_rush.nSkillID; /*0x90bc38*/
+  v3 = &this->m_aiAction[OneTimeAction > -1]; /*0x90bc3f*/
+  ai = v3; /*0x90bc46*/
+  if ( is_jump_rush_skill(nSkillID)
+    && ((m_pInterface = this->m_pvc.m_pInterface) == nullptr ? (v5 = nullptr) : (v5 = (CVecCtrl *)&m_pInterface[-3]),
+        CVecCtrl::IsFreeFalling(v5))
+    || ((v6 = this->m_pvc.m_pInterface) == nullptr ? (v7 = nullptr) : (v7 = v6 - 3),
+        ((int (__thiscall *)(IWzVector2D *))v7->Release)(v7)
+     || ((v8 = this->m_pvc.m_pInterface) == nullptr ? (v9 = nullptr) : (v9 = (CVecCtrl *)&v8[-3]),
+         rect.left = 0,
+         CVecCtrl::IsSwimming(v9))) )
+  {
+    rect.left = 1; /*0x90bcac*/
+  }
+  if ( this->m_rush.bValid ) /*0x90bcb4*/
+  {
+    if ( !this->m_rush.lElem._m_uCount ) /*0x90bcc6*/
+    {
+LABEL_19:
+      if ( v3->bCurFrameStop ) /*0x90bcf5*/
+      {
+        v3->bCurFrameStop = 0; /*0x90bcfa*/
+        v3->tCurFrameRemain = 0; /*0x90bcfd*/
+        v3->tCurTMFrameRemain = 0; /*0x90bd00*/
+      }
+      this->m_rush.bValid = 0; /*0x90bd03*/
+      return; /*0x90bd0f*/
+    }
+    while ( this->m_rush.lElem._m_pHead->tDuring <= 0 ) /*0x90bcd9*/
+    {
+      ZList<CUserLocal::RUSH::RUSHELEM>::RemoveAt(&this->m_rush.lElem, (__POSITION *)this->m_rush.lElem._m_pHead); /*0x90bce8*/
+      if ( !this->m_rush.lElem._m_uCount ) /*0x90bced*/
+        goto LABEL_19; /*0x90bcf3*/
+    }
+    Skill = CSkillInfo::GetSkill(TSingleton<CSkillInfo>::ms_pInstance, this->m_rush.nSkillID); /*0x90bd1e*/
+    nDelayFrame = Skill->nDelayFrame; /*0x90bd23*/
+    GetPos = this->GetPos; /*0x90bd29*/
+    m_pHead = this->m_rush.lElem._m_pHead; /*0x90bd2c*/
+    pSkill = Skill; /*0x90bd35*/
+    ((void (__thiscall *)(IVecCtrlOwner *, tagPOINT *))GetPos)(&this->IVecCtrlOwner, &pt); /*0x90bd3e*/
+    if ( v3->nCurFrameIndex <= nDelayFrame ) /*0x90bd43*/
+    {
+      v14 = this->m_pvc.m_pInterface; /*0x90bd45*/
+      if ( v14 ) /*0x90bd4d*/
+        v15 = v14 - 3; /*0x90bd4f*/
+      else
+        v15 = nullptr; /*0x90bd54*/
+      v16 = v15 + 3; /*0x90bd5e*/
+      v17 = v15[3].raw_Move(v15 + 3, pt.x, pt.y); /*0x90bd69*/
+      if ( v17 < 0 ) /*0x90bd6d*/
+        _com_issue_errorex(v17, v16, &_GUID_4cfb57c7_eae3_40b3_ac98_4b2750e3642a); /*0x90bd76*/
+      TSecType<long>::SetData(&this->m_ptPos.x, pt.x); /*0x90bd89*/
+      TSecType<long>::SetData(&this->m_ptPos.y, pt.y); /*0x90bd95*/
+      return; /*0x90bda1*/
+    }
+    nVx = m_pHead->nVx; /*0x90bda2*/
+    m_pHead->tDuring -= 30; /*0x90bda5*/
+    p_nVx = &m_pHead->nVx; /*0x90bda9*/
+    v78 = &m_pHead->nVx; /*0x90bdac*/
+    v74 = nVx; /*0x90bdb0*/
+    if ( !nVx ) /*0x90bdb6*/
+      return; /*0x90bdb6*/
+    nState = m_pHead->nState; /*0x90bdbc*/
+    oldPt = pt; /*0x90bdcc*/
+    pSpace = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance; /*0x90bdd4*/
+    if ( nState == RS_SLOWDOWN ) /*0x90bddb*/
+      *p_nVx = (int)((double)v74 * DOUBLE_0_8); /*0x90bdec*/
+    if ( nState == RS_SLOWDOWN2 ) /*0x90bdf2*/
+    {
+      v21 = m_pHead->dAx + m_pHead->dVx; /*0x90bdf7*/
+      m_pHead->dVx = v21; /*0x90bdfa*/
+      *p_nVx = (int)v21; /*0x90be02*/
+    }
+    v22 = *p_nVx + pt.x; /*0x90be09*/
+    pt.x = v22; /*0x90be0c*/
+    v23 = *p_nVx; /*0x90be10*/
+    if ( *p_nVx >= 30 || (v24 = m_pHead->nState, v24 == RS_SLOWDOWN) || (nBoundary = 30, v24 == RS_SLOWDOWN2) ) /*0x90be2a*/
+      nBoundary = v23; /*0x90be2c*/
+    v25 = pSpace; /*0x90be34*/
+    v26 = abs32(nBoundary); /*0x90be41*/
+    v74 = v26; /*0x90be52*/
+    FootholdUnderneath = CWvsPhysicalSpace2D::GetFootholdUnderneath(pSpace, v22, pt.y, &cyUnder, v26 + pt.y, 1); /*0x90be5b*/
+    pfhUnder = FootholdUnderneath; /*0x90be73*/
+    FootholdAbove = CWvsPhysicalSpace2D::GetFootholdAbove(v25, pt.x, pt.y, &cyAbove, pt.y - v26); /*0x90be7c*/
+    y = cyUnder; /*0x90be7e*/
+    pfhAbove = FootholdAbove; /*0x90be82*/
+    bFhIgnore = 0; /*0x90be86*/
+    if ( !FootholdUnderneath ) /*0x90be90*/
+      y = pt.y; /*0x90be92*/
+    v30 = CWvsPhysicalSpace2D::GetFootholdUnderneath(pSpace, pt.x, y + 2, nullptr, 0x7FFFFFFF, 1); /*0x90beac*/
+    if ( FootholdAbove || FootholdUnderneath ) /*0x90beb7*/
+    {
+      a = this->m_rush.aMobCurPos.a; /*0x90bebd*/
+      if ( a && a[-1].y && v30 ) /*0x90bed7*/
+      {
+        v32 = cyUnder; /*0x90bedd*/
+        for ( i = 0; ; ++i ) /*0x90bee1*/
+        {
+          v34 = this->m_rush.aMobCurPos.a; /*0x90bef0*/
+          if ( !v34 || i >= v34[-1].y ) /*0x90bf01*/
+            break; /*0x90bf01*/
+          if ( FootholdAbove ) /*0x90bf09*/
+          {
+            if ( TSecType<int>::GetData(&FootholdAbove->m_pAttrFoothold.p->forbidfalldown) ) /*0x90bf11*/
+              goto LABEL_104; /*0x90bf18*/
+            v32 = cyUnder; /*0x90bf1e*/
+          }
+          if ( pfhUnder ) /*0x90bf27*/
+          {
+            if ( TSecType<int>::GetData(&pfhUnder->m_pAttrFoothold.p->forbidfalldown) ) /*0x90bf33*/
+              goto LABEL_104; /*0x90bf3a*/
+            v32 = cyUnder; /*0x90bf40*/
+          }
+          if ( (this->m_nMoveAction & 1) != 0 ) /*0x90bf4d*/
+          {
+            FootholdAbove = pfhAbove; /*0x90bf62*/
+            v26 = v74; /*0x90bf66*/
+            if ( pt.x + nBoundary <= this->m_rush.aMobCurPos.a[i].x ) /*0x90bf6a*/
+              continue; /*0x90bf6a*/
+          }
+          if ( (this->m_nMoveAction & 1) == 0 ) /*0x90bf6e*/
+          {
+            FootholdAbove = pfhAbove; /*0x90bf81*/
+            if ( pt.x - nBoundary >= this->m_rush.aMobCurPos.a[i].x ) /*0x90bf85*/
+              continue; /*0x90bf85*/
+          }
+          if ( FootholdAbove ) /*0x90bf89*/
+          {
+            v35 = this->m_rush.aMobCurPos.a[i].y; /*0x90bf91*/
+            if ( v35 > cyAbove && (int)abs32(v35 - cyAbove) > v26 ) /*0x90bfa6*/
+            {
+              FootholdAbove = nullptr; /*0x90bfa8*/
+              pfhAbove = nullptr; /*0x90bfaa*/
+              bFhIgnore = 1; /*0x90bfae*/
+            }
+          }
+          if ( pfhUnder ) /*0x90bfbb*/
+          {
+            v36 = this->m_rush.aMobCurPos.a[i].y; /*0x90bfc3*/
+            if ( v36 > v32 && (int)abs32(v36 - v32) > v26 ) /*0x90bfd4*/
+            {
+              pfhUnder = nullptr; /*0x90bfe7*/
+              bFhIgnore = 1; /*0x90bfef*/
+              goto LABEL_68; /*0x90bfef*/
+            }
+          }
+          if ( bFhIgnore ) /*0x90bfdb*/
+            break; /*0x90bfdb*/
+        }
+      }
+      else
+      {
+LABEL_104:
+        v32 = cyUnder; /*0x90c287*/
+      }
+      if ( pfhUnder ) /*0x90c290*/
+        goto LABEL_106; /*0x90c290*/
+LABEL_68:
+      if ( FootholdAbove ) /*0x90bff9*/
+        goto LABEL_114; /*0x90bff9*/
+    }
+    if ( rect.left ) /*0x90c00e*/
+    {
+      if ( !is_jump_rush_skill(this->m_rush.nSkillID) ) /*0x90c025*/
+        goto LABEL_75; /*0x90c025*/
+      p = CWvsContext::GetCharacterData( /*0x90c03b*/
+            (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+            (ZRef<CharacterData> *)&rect)->p;
+      ZRef<CharacterData>::~ZRef<CharacterData>((ZRef<CharacterData> *)&rect); /*0x90c042*/
+      SkillLevel = CSkillInfo::GetSkillLevel(TSingleton<CSkillInfo>::ms_pInstance, p, this->m_rush.nSkillID, nullptr); /*0x90c058*/
+      v39 = SkillLevel; /*0x90c05d*/
+      if ( SkillLevel > 0 ) /*0x90c061*/
+      {
+        memset(&rect, 0, sizeof(rect)); /*0x90c067*/
+        v40 = (SKILLENTRY *)pSkill; /*0x90c077*/
+        LevelData = SKILLENTRY::GetLevelData((SKILLENTRY *)pSkill, SkillLevel); /*0x90c07e*/
+        operator<<(&rect, &LevelData->rcAffectedArea); /*0x90c08e*/
+        v42 = (SKILLLEVELDATA *)SKILLENTRY::GetLevelData(v40, v39); /*0x90c099*/
+        nX = SKILLLEVELDATA::_ZtlSecureGet_nX(v42); /*0x90c0a0*/
+        pSkill = (const SKILLENTRY *)(rect.right - nX - rect.left); /*0x90c0c3*/
+        v44 = abs32((int)((double)(rect.bottom - rect.top) / (double)(int)pSkill * (double)*v78)); /*0x90c0d7*/
+        if ( v44 >= 2 * v26 - 2 ) /*0x90c0df*/
+          v44 = 2 * v26 - 2; /*0x90c0e1*/
+        pt.y += v44; /*0x90c0e3*/
+LABEL_75:
+        v45 = pSpace; /*0x90c0e7*/
+        pfhUnder = CWvsPhysicalSpace2D::GetFootholdUnderneath(pSpace, pt.x, pt.y, &cyUnder, v26 + pt.y, 1); /*0x90c107*/
+        FootholdAbove = CWvsPhysicalSpace2D::GetFootholdAbove(v45, pt.x, pt.y, &cyAbove, pt.y - v26); /*0x90c12b*/
+        v46 = cyUnder; /*0x90c12d*/
+        pfhAbovea = FootholdAbove; /*0x90c131*/
+        if ( !pfhUnder ) /*0x90c135*/
+          v46 = pt.y; /*0x90c137*/
+        v47 = CWvsPhysicalSpace2D::GetFootholdUnderneath(v45, pt.x, v46 + 2, nullptr, 0x7FFFFFFF, 1); /*0x90c14f*/
+        if ( FootholdAbove || pfhUnder ) /*0x90c15c*/
+        {
+          v48 = this->m_rush.aMobCurPos.a; /*0x90c162*/
+          if ( v48 && v48[-1].y && v47 ) /*0x90c17c*/
+          {
+            v32 = cyUnder; /*0x90c182*/
+            for ( j = 0; ; ++j ) /*0x90c186*/
+            {
+              v50 = this->m_rush.aMobCurPos.a; /*0x90c190*/
+              if ( !v50 || j >= v50[-1].y ) /*0x90c1a1*/
+                break; /*0x90c1a1*/
+              if ( FootholdAbove ) /*0x90c1a9*/
+              {
+                if ( TSecType<int>::GetData(&FootholdAbove->m_pAttrFoothold.p->forbidfalldown) ) /*0x90c1b1*/
+                  goto LABEL_122; /*0x90c1b8*/
+                v32 = cyUnder; /*0x90c1be*/
+              }
+              if ( pfhUnder ) /*0x90c1c7*/
+              {
+                if ( TSecType<int>::GetData(&pfhUnder->m_pAttrFoothold.p->forbidfalldown) ) /*0x90c1d3*/
+                  goto LABEL_122; /*0x90c1da*/
+                v32 = cyUnder; /*0x90c1e0*/
+              }
+              if ( (this->m_nMoveAction & 1) != 0 ) /*0x90c1ed*/
+              {
+                FootholdAbove = pfhAbovea; /*0x90c202*/
+                v26 = v74; /*0x90c206*/
+                if ( pt.x + nBoundary <= this->m_rush.aMobCurPos.a[j].x ) /*0x90c20a*/
+                  continue; /*0x90c20a*/
+              }
+              if ( (this->m_nMoveAction & 1) == 0 ) /*0x90c20e*/
+              {
+                FootholdAbove = pfhAbovea; /*0x90c221*/
+                if ( pt.x - nBoundary >= this->m_rush.aMobCurPos.a[j].x ) /*0x90c225*/
+                  continue; /*0x90c225*/
+              }
+              if ( FootholdAbove ) /*0x90c229*/
+              {
+                v51 = this->m_rush.aMobCurPos.a[j].y; /*0x90c231*/
+                if ( v51 > cyAbove && (int)abs32(v51 - cyAbove) > v26 ) /*0x90c246*/
+                {
+                  FootholdAbove = nullptr; /*0x90c248*/
+                  pfhAbovea = nullptr; /*0x90c24a*/
+                  bFhIgnore = 1; /*0x90c24e*/
+                }
+              }
+              if ( pfhUnder ) /*0x90c25b*/
+              {
+                v52 = this->m_rush.aMobCurPos.a[j].y; /*0x90c263*/
+                if ( v52 > v32 && (int)abs32(v52 - v32) > v26 ) /*0x90c274*/
+                {
+                  pfhUnder = nullptr; /*0x90c2dd*/
+                  bFhIgnore = 1; /*0x90c2e5*/
+                  goto LABEL_113; /*0x90c2e5*/
+                }
+              }
+              if ( bFhIgnore ) /*0x90c27b*/
+                break; /*0x90c27b*/
+            }
+          }
+          else
+          {
+LABEL_122:
+            v32 = cyUnder; /*0x90c36b*/
+          }
+          if ( pfhUnder ) /*0x90c374*/
+          {
+LABEL_106:
+            if ( FootholdAbove && v32 - pt.y > pt.y - cyAbove ) /*0x90c2b0*/
+              pt.y = cyAbove - 1; /*0x90c2b7*/
+            else
+              pt.y = v32 - 1; /*0x90c380*/
+LABEL_115:
+            judgeP2 = pt; /*0x90c2fa*/
+            if ( bFhIgnore ) /*0x90c310*/
+            {
+              v55 = pSpace; /*0x90c389*/
+            }
+            else
+            {
+              v54 = this->GetZMass(&this->IVecCtrlOwner); /*0x90c31b*/
+              v55 = pSpace; /*0x90c321*/
+              if ( !CWvsPhysicalSpace2D::CanGoThrough(pSpace, oldPt.x, oldPt.y, &judgeP2.x, &judgeP2.y, v54) /*0x90c349*/
+                && !pfhUnder
+                && !FootholdAbove )
+              {
+LABEL_119:
+                v56 = ai; /*0x90c34b*/
+                if ( ai->bCurFrameStop ) /*0x90c34f*/
+                {
+                  ai->bCurFrameStop = 0; /*0x90c354*/
+                  v56->tCurFrameRemain = 0; /*0x90c357*/
+                  v56->tCurTMFrameRemain = 0; /*0x90c35a*/
+                }
+                this->m_rush.bValid = 0; /*0x90c35d*/
+                return; /*0x90c36a*/
+              }
+            }
+            if ( (pt.x < v55->m_rcMBR.left /*0x90c3b7*/
+               || pt.x > v55->m_rcMBR.right - 1
+               || pt.y < v55->m_rcMBR.top
+               || pt.y > v55->m_rcMBR.bottom - 1)
+              && !pfhUnder
+              && !FootholdAbove )
+            {
+              goto LABEL_119; /*0x90c3b7*/
+            }
+            v57 = this->m_rush.nSkillID; /*0x90c3b9*/
+            if ( v57 > 32001000 ) /*0x90c3c4*/
+            {
+              if ( v57 > 32111002 ) /*0x90c421*/
+              {
+                if ( v57 != 32121002 ) /*0x90c441*/
+                  goto LABEL_159; /*0x90c441*/
+              }
+              else if ( v57 != 32111002 && (v57 < 32001007 || v57 > 32001011 && v57 != 32101000) ) /*0x90c438*/
+              {
+                goto LABEL_159; /*0x90c438*/
+              }
+            }
+            else if ( v57 != 32001000 ) /*0x90c3c6*/
+            {
+              if ( v57 <= 21100002 ) /*0x90c3cd*/
+              {
+                if ( v57 < 21100001 && (v57 < 20000014 || v57 > 20000015 && v57 != 21000002) ) /*0x90c3e9*/
+                  goto LABEL_159; /*0x90c3e9*/
+LABEL_144:
+                v58 = this->m_pvc.m_pInterface; /*0x90c405*/
+                if ( v58 ) /*0x90c40d*/
+                  v59 = (CVecCtrl *)&v58[-3]; /*0x90c40f*/
+                else
+                  v59 = nullptr; /*0x90c416*/
+                CVecCtrl::SetMovePathAttribute(v59, 15); /*0x90c414*/
+                goto LABEL_159; /*0x90c414*/
+              }
+              if ( v57 <= 21120010 && (v57 >= 21120009 || (unsigned int)(v57 - 21110007) <= 1) ) /*0x90c403*/
+                goto LABEL_144; /*0x90c403*/
+LABEL_159:
+              v62 = this->m_pvc.m_pInterface; /*0x90c45b*/
+              if ( v62 ) /*0x90c463*/
+                v63 = v62 - 3; /*0x90c465*/
+              else
+                v63 = nullptr; /*0x90c46a*/
+              IWzShape2D::Move(v63 + 3, pt.x, pt.y); /*0x90c479*/
+              TSecType<long>::SetData(&this->m_ptPos.x, pt.x); /*0x90c48c*/
+              TSecType<long>::SetData(&this->m_ptPos.y, pt.y); /*0x90c498*/
+              return; /*0x90c4a4*/
+            }
+            v60 = this->m_pvc.m_pInterface; /*0x90c443*/
+            if ( v60 ) /*0x90c44b*/
+              v61 = (CVecCtrl *)&v60[-3]; /*0x90c44d*/
+            else
+              v61 = nullptr; /*0x90c452*/
+            CVecCtrl::SetMovePathAttribute(v61, 19); /*0x90c456*/
+            goto LABEL_159; /*0x90c456*/
+          }
+        }
+LABEL_113:
+        if ( !FootholdAbove ) /*0x90c2ef*/
+          goto LABEL_115; /*0x90c2ef*/
+LABEL_114:
+        pt.y = cyAbove - 1; /*0x90c2f1*/
+        goto LABEL_115; /*0x90c2f6*/
+      }
+      v53 = ai; /*0x90c2bd*/
+      if ( ai->bCurFrameStop ) /*0x90c2c1*/
+      {
+        ai->bCurFrameStop = 0; /*0x90c2c6*/
+        v53->tCurFrameRemain = 0; /*0x90c2c9*/
+        v53->tCurTMFrameRemain = 0; /*0x90c2cc*/
+      }
+      this->m_rush.bValid = 0; /*0x90c2d1*/
+    }
+    else
+    {
+      v64 = ai; /*0x90c4a5*/
+      if ( ai->bCurFrameStop ) /*0x90c4ab*/
+      {
+        ai->bCurFrameStop = 0; /*0x90c4b0*/
+        v64->tCurFrameRemain = 0; /*0x90c4b3*/
+        v64->tCurTMFrameRemain = 0; /*0x90c4b6*/
+      }
+      this->m_rush.bValid = 0; /*0x90c4b9*/
+    }
+  }
+}

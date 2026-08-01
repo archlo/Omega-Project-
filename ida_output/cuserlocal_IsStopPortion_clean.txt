@@ -1,0 +1,9 @@
+// cuserlocal::IsStopPortion
+
+BOOL __thiscall CUserLocal::IsStopPortion(CUserLocal *this)
+{
+  const SecondaryStat *v1; // eax
+
+  v1 = this->GetSecondaryStat(this); /*0x903c35*/
+  return _ZtlSecureFuse<long>(v1->_ZtlSecureTear_nStopPortion_, v1->_ZtlSecureTear_nStopPortion__CS) != 0; /*0x903c52*/
+}

@@ -1,0 +1,3 @@
+// CCtrlTab::RemoveAllItems @ 0x4ee090
+
+{"addr":"0x4ee090","code":"void __thiscall CCtrlTab::RemoveAllItems(CCtrlTab *this)\n{\n  this->m_nCurTab = 0; /*0x4ee092*/\n  this->m_nInsertPos = 0; /*0x4ee095*/\n  ZList<CCtrlTab::TABINFO>::RemoveAll(&this->m_lTabInfo); /*0x4ee09b*/\n}","refs":[{"addr":"0x4ee030","name":"?RemoveAll@?$ZList@UTABINFO@CCtrlTab@@@@QAEXXZ"}]}

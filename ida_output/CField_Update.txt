@@ -1,0 +1,146 @@
+﻿void __thiscall CField::Update(CField *this)
+{
+  int update_time; // eax
+  __POSITION *m_pHead; // edi
+  int v4; // ecx
+  int v5; // edx
+  int v6; // ebp
+  CField::WEATHERMSGINFO *Next; // eax
+  int nItemID; // edx
+  int m_tStartBlowingTime; // eax
+  IUIMsgHandler *v10; // edi
+  CInputSystem *v11; // ebx
+  CNpc *Npc; // edi
+  CUserRemote *Balloon; // eax
+  int m_nCursorState; // ecx
+  int v15; // edi
+  ZXString<char> v16; // [esp-8h] [ebp-50h] BYREF
+  int v17; // [esp-4h] [ebp-4Ch]
+  __POSITION *pos; // [esp+14h] [ebp-34h] BYREF
+  int tCur; // [esp+18h] [ebp-30h]
+  int bKillMob; // [esp+1Ch] [ebp-2Ch]
+  ZXString<char> *v21; // [esp+20h] [ebp-28h]
+  tagPOINT pt; // [esp+24h] [ebp-24h] BYREF
+  CField::WEATHERMSGINFO weatherMsgInfo; // [esp+2Ch] [ebp-1Ch] BYREF
+  int v24; // [esp+44h] [ebp-4h]
+
+  CMapLoadable::Update(this); /*0x5465a9*/
+  CField::UpdateDynamicObject(this); /*0x5465b0*/
+  CWvsContext::Update((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr); /*0x5465bb*/
+  CCakePieEvent::Update(TSingleton<CCakePieEvent>::ms_pInstance); /*0x5465c6*/
+  if ( this->m_bWhisperSent && ZAPI.timeGetTime() - this->m_tWhisperSent > 0xBB8 ) /*0x5465e6*/
+  {
+    this->m_bWhisperSent = 0; /*0x5465e8*/
+    this->m_tWhisperSent = ZAPI.timeGetTime(); /*0x5465f8*/
+  }
+  update_time = get_update_time(); /*0x5465fe*/
+  m_pHead = (__POSITION *)this->m_lWeatherMsgInfo._m_pHead; /*0x546603*/
+  v4 = update_time; /*0x546609*/
+  v5 = *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 4143); /*0x546610*/
+  v6 = update_time - this->m_tInitTimeForWeatherMsg; /*0x546618*/
+  tCur = update_time; /*0x54661e*/
+  bKillMob = v5; /*0x546622*/
+  pos = m_pHead; /*0x546626*/
+  if ( m_pHead ) /*0x54662c*/
+  {
+    while ( 1 ) /*0x54663a*/
+    {
+      Next = ZList<CField::WEATHERMSGINFO>::GetNext(&pos); /*0x54663a*/
+      nItemID = Next->nItemID; /*0x546641*/
+      weatherMsgInfo.tTime = Next->tTime; /*0x546644*/
+      weatherMsgInfo.nOption = Next->nOption; /*0x546651*/
+      weatherMsgInfo.nItemID = nItemID; /*0x54665a*/
+      weatherMsgInfo.sMsg._m_pStr = nullptr; /*0x54665e*/
+      ZXString<char>::operator=(&weatherMsgInfo.sMsg, &Next->sMsg); /*0x546666*/
+      v24 = 0; /*0x546670*/
+      if ( weatherMsgInfo.nOption == 1 && bKillMob ) /*0x54667f*/
+        goto LABEL_9; /*0x54667f*/
+      if ( v6 >= weatherMsgInfo.tTime ) /*0x546685*/
+        break; /*0x546685*/
+LABEL_10:
+      v24 = -1; /*0x5466b8*/
+      if ( weatherMsgInfo.sMsg._m_pStr ) /*0x5466c2*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)weatherMsgInfo.sMsg._m_pStr - 1); /*0x5466c8*/
+      m_pHead = pos; /*0x5466d0*/
+      if ( !pos ) /*0x5466d6*/
+      {
+        v4 = tCur; /*0x5466dc*/
+        goto LABEL_14; /*0x5466dc*/
+      }
+    }
+    v17 = 1; /*0x546687*/
+    v21 = &v16; /*0x546690*/
+    v16._m_pStr = nullptr; /*0x546695*/
+    ZXString<char>::operator=(&v16, &weatherMsgInfo.sMsg); /*0x54669b*/
+    CField::BlowWeather(this, weatherMsgInfo.nItemID, v16, v17); /*0x5466a7*/
+LABEL_9:
+    ZList<CField::WEATHERMSGINFO>::RemoveAt(&this->m_lWeatherMsgInfo, m_pHead); /*0x5466ac*/
+    goto LABEL_10; /*0x5466b3*/
+  }
+LABEL_14:
+  if ( this->m_bBlowWeatherByClient ) /*0x5466e0*/
+  {
+    m_tStartBlowingTime = this->m_tStartBlowingTime; /*0x5466e9*/
+    if ( m_tStartBlowingTime ) /*0x5466f1*/
+    {
+      if ( v4 - m_tStartBlowingTime > 22000 ) /*0x5466fb*/
+      {
+        v17 = 1; /*0x5466fd*/
+        v21 = &v16; /*0x546702*/
+        v16._m_pStr = nullptr; /*0x546713*/
+        ZXString<char>::GetBuffer(&v16, 0, 0); /*0x546719*/
+        ZXString<char>::ReleaseBuffer(&v16, 0); /*0x54672b*/
+        CField::BlowWeather(this, 0, v16, v17); /*0x546734*/
+      }
+    }
+  }
+  CWndMan::GetCursorPos(TSingleton<CWndMan>::ms_pInstance, &pt, 0); /*0x546746*/
+  if ( TSingleton<CWndMan>::ms_pInstance ) /*0x546753*/
+    v10 = &TSingleton<CWndMan>::ms_pInstance->IUIMsgHandler; /*0x546755*/
+  else
+    v10 = nullptr; /*0x54675a*/
+  if ( CWndMan::GetHandlerFromPoint(TSingleton<CWndMan>::ms_pInstance, pt.x, pt.y) == v10 ) /*0x54676d*/
+  {
+    CWndMan::GetCursorPos(TSingleton<CWndMan>::ms_pInstance, &pt, 1); /*0x546780*/
+    v11 = TSingleton<CInputSystem>::ms_pInstance; /*0x54678b*/
+    Npc = CNpcPool::FindNpc(TSingleton<CNpcPool>::ms_pInstance, &pt); /*0x5467a1*/
+    Balloon = CUserPool::FindBalloon((CUserPool *)TSingleton<CUserPool>::ms_pInstance.m_pInterface, &pt); /*0x5467a8*/
+    m_nCursorState = v11->m_nCursorState; /*0x5467b3*/
+    switch ( m_nCursorState ) /*0x5467ba*/
+    {
+      case 0: /*0x5467ba*/
+        if ( Npc ) /*0x5467d3*/
+          m_nCursorState = 1; /*0x5467d5*/
+        if ( Balloon ) /*0x5467dc*/
+        {
+          m_nCursorState = 2; /*0x5467e7*/
+          if ( Balloon->m_nMiniRoomType > 2 ) /*0x5467ec*/
+            m_nCursorState = 3; /*0x5467ee*/
+        }
+        break; /*0x5467ee*/
+      case 1: /*0x5467ba*/
+        if ( !Npc ) /*0x5467c3*/
+          m_nCursorState = 0; /*0x5467c5*/
+        break; /*0x5467c7*/
+      case 2: /*0x5467ba*/
+      case 3: /*0x5467ba*/
+        if ( !Balloon ) /*0x5467cb*/
+          m_nCursorState = 0; /*0x5467cd*/
+        break; /*0x5467cf*/
+      default:
+        break;
+    }
+    if ( m_nCursorState != v11->m_nCursorState ) /*0x5467f5*/
+      CInputSystem::SetCursorState(v11, m_nCursorState); /*0x5467fa*/
+  }
+  CMapLoadable::ProcessReflection(this); /*0x546801*/
+  if ( TSingleton<CPortalList>::ms_pInstance ) /*0x54680e*/
+    CPortalList::UpdateHiddenPortal(TSingleton<CPortalList>::ms_pInstance); /*0x546810*/
+  v15 = tCur; /*0x546815*/
+  if ( tCur - this->m_tLastUpdateQuestLayer > 5000 ) /*0x546827*/
+  {
+    CField::UpdateQuestLayer(this); /*0x54682b*/
+    this->m_tLastUpdateQuestLayer = v15; /*0x546830*/
+  }
+  CField::DrawFearEffect(this); /*0x546838*/
+}

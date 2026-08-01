@@ -1,0 +1,189 @@
+[
+  {
+    "query": "0x6b6890",
+    "matches": [
+      {
+        "address": "0x6b6890",
+        "name": "CQuestMan::IsAutoAlertQuest(ushort)",
+        "disasm": "push    esi\npush    edi\nmov     edi, dword ptr [esp+8+usQuestID]\npush    edi; usQuestID\nmov     esi, this\ncall    ?IsAutoStartQuest@CQuestMan@@QAEHG@Z; CQuestMan::IsAutoStartQuest(ushort)\ntest    eax, eax\njnz     short loc_6B68B3\npush    edi; usQuestID\nmov     this, esi; this\ncall    ?IsAutoCompletionAlertQuest@CQuestMan@@QAEHG@Z; CQuestMan::IsAutoCompletionAlertQuest(ushort)\ntest    eax, eax\njnz     short loc_6B68B3\npop     edi\npop     esi\nretn    4\npop     edi\nmov     eax, 1\npop     esi\nretn    4",
+        "pseudocode": "int __thiscall CQuestMan::IsAutoAlertQuest(CQuestMan *this, unsigned __int16 usQuestID)\n{\n  int result; // eax\n\n  if ( CQuestMan::IsAutoStartQuest(this, usQuestID) )\n    return 1;\n  result = CQuestMan::IsAutoCompletionAlertQuest(this, usQuestID);\n  if ( result )\n    return 1;\n  return result;\n}\n"
+      }
+    ]
+  },
+  {
+    "query": "0x6b5820",
+    "matches": [
+      {
+        "address": "0x6b5820",
+        "name": "CQuestMan::IsAutoAutoAcceptQuest(ushort)",
+        "disasm": "push    this\nlea     eax, [esp+4+bAutoAccept]\npush    eax; value\nlea     edx, [esp+8+usQuestID]\npush    edx; key\nadd     this, 188h; this\ncall    ?GetAt@?$ZMap@GHG@@QAEPAHABGAAH@Z; ZMap<ushort,int,ushort>::GetAt(ushort const &,int &)\nneg     eax\nsbb     eax, eax\nneg     eax\npop     this\nretn    4",
+        "pseudocode": "BOOL __thiscall CQuestMan::IsAutoAutoAcceptQuest(CQuestMan *this, unsigned __int16 usQuestID)\n{\n  int bAutoAccept; // [esp+0h] [ebp-4h] BYREF\n\n  bAutoAccept = (int)this;\n  return ZMap<unsigned short,int,unsigned short>::GetAt(&this->m_mAutoAcceptQuest, &usQuestID, &bAutoAccept) != nullptr;\n}\n"
+      }
+    ]
+  },
+  {
+    "query": "0x6b5840",
+    "matches": [
+      {
+        "address": "0x6b5840",
+        "name": "CQuestMan::IsAutoCompleteQuest(ushort)",
+        "disasm": "push    this\nlea     eax, [esp+4+bAutoComplete]\npush    eax; value\nlea     edx, [esp+8+usQuestID]\npush    edx; key\nadd     this, 1A0h; this\ncall    ?GetAt@?$ZMap@GHG@@QAEPAHABGAAH@Z; ZMap<ushort,int,ushort>::GetAt(ushort const &,int &)\nneg     eax\nsbb     eax, eax\nneg     eax\npop     this\nretn    4",
+        "pseudocode": "BOOL __thiscall CQuestMan::IsAutoCompleteQuest(CQuestMan *this, unsigned __int16 usQuestID)\n{\n  int bAutoComplete; // [esp+0h] [ebp-4h] BYREF\n\n  bAutoComplete = (int)this;\n  return ZMap<unsigned short,int,unsigned short>::GetAt(&this->m_mAutoCompleteQuest, &usQuestID, &bAutoComplete) != nullptr;\n}\n"
+      }
+    ]
+  },
+  {
+    "query": "0x6b6870",
+    "matches": [
+      {
+        "address": "0x6b6870",
+        "name": "CQuestMan::IsAutoCompletionAlertQuest(ushort)",
+        "disasm": "push    0; posAfter\nlea     eax, [esp+4+usQuestID]\npush    eax; d\nadd     this, 294h; this\ncall    ?Find@?$ZList@G@@QBEPAU__POSITION@@ABGPAU2@@Z; ZList<ushort>::Find(ushort const &,__POSITION *)\nneg     eax\nsbb     eax, eax\nneg     eax\nretn    4",
+        "pseudocode": "BOOL __thiscall CQuestMan::IsAutoCompletionAlertQuest(CQuestMan *this, unsigned __int16 usQuestID)\n{\n  return ZList<unsigned short>::Find(&this->m_lAutoCompletionAlertQuest, &usQuestID, nullptr) != nullptr;\n}\n"
+      }
+    ]
+  },
+  {
+    "query": "0x6b5800",
+    "matches": [
+      {
+        "address": "0x6b5800",
+        "name": "CQuestMan::IsAutoStartQuest(ushort)",
+        "disasm": "push    this\nlea     eax, [esp+4+bAutoStart]\npush    eax; value\nlea     edx, [esp+8+usQuestID]\npush    edx; key\nadd     this, 170h; this\ncall    ?GetAt@?$ZMap@GHG@@QAEPAHABGAAH@Z; ZMap<ushort,int,ushort>::GetAt(ushort const &,int &)\nneg     eax\nsbb     eax, eax\nneg     eax\npop     this\nretn    4",
+        "pseudocode": "BOOL __thiscall CQuestMan::IsAutoStartQuest(CQuestMan *this, unsigned __int16 usQuestID)\n{\n  int bAutoStart; // [esp+0h] [ebp-4h] BYREF\n\n  bAutoStart = (int)this;\n  return ZMap<unsigned short,int,unsigned short>::GetAt(&this->m_mAutoStartQuest, &usQuestID, &bAutoStart) != nullptr;\n}\n"
+      }
+    ]
+  },
+  {
+    "query": "0x6b7a70",
+    "matches": [
+      {
+        "address": "0x6b7a70",
+        "name": "CQuestMan::IsCompleteScriptLinkedQuest(ushort)",
+        "disasm": "push    0FFFFFFFFh\npush    offset __ehhandler$?IsCompleteScriptLinkedQuest@CQuestMan@@QAEHG@Z\nmov     eax, large fs:0\npush    eax\nsub     esp, 8\nmov     eax, ___security_cookie\nxor     eax, esp\npush    eax\nlea     eax, [esp+18h+var_C]\nmov     large fs:0, eax\ncmp     [esp+18h+usQuestID], 0\njz      short loc_6B7AD2\nmov     [esp+18h+var_10], 0\nlea     eax, [esp+18h+pComplete]\npush    eax; value\nlea     edx, [esp+1Ch+usQuestID]\npush    edx; key\nsub     this, 0FFFFFF80h; this\nmov     [esp+20h+var_4], 0\ncall    ?GetAt@?$ZMap@GV?$ZRef@UQuestDemand@@@@G@@QAEPAV?$ZRef@UQuestDemand@@@@ABGAAV2@@Z; ZMap<ushort,ZRef<QuestDemand>,ushort>::GetAt(ushort const &,ZRef<QuestDemand> &)\ntest    eax, eax\njnz     short loc_6B7AE6\nlea     this, [esp+18h+pComplete]; this\nmov     [esp+18h+var_4], 0FFFFFFFFh\ncall    ??1?$ZRef@UQuestDemand@@@@QAE@XZ; ZRef<QuestDemand>::~ZRef<QuestDemand>(void)\nxor     eax, eax\nmov     this, [esp+18h+var_C]\nmov     large fs:0, this\npop     this\nadd     esp, 14h\nretn    4\nmov     eax, [esp+18h+var_10]\nmov     eax, [eax+9Ch]\ntest    eax, eax\njz      short loc_6B7AC1\ncmp     byte ptr [eax], 0\njz      short loc_6B7AC1\nlea     this, [esp+18h+pComplete]; this\nmov     [esp+18h+var_4], 0FFFFFFFFh\ncall    ??1?$ZRef@UQuestDemand@@@@QAE@XZ; ZRef<QuestDemand>::~ZRef<QuestDemand>(void)\nmov     eax, 1\nmov     this, [esp+18h+var_C]\nmov     large fs:0, this\npop     this\nadd     esp, 14h\nretn    4",
+        "pseudocode": "int __thiscall CQuestMan::IsCompleteScriptLinkedQuest(CQuestMan *this, unsigned __int16 usQuestID)\n{\n  char *m_pStr; // eax\n  ZRef<QuestDemand> pComplete; // [esp+4h] [ebp-14h] BYREF\n  int v5; // [esp+14h] [ebp-4h]\n\n  if ( !usQuestID )\n    return 0;\n  pComplete.p = nullptr;\n  v5 = 0;\n  if ( !ZMap<unsigned short,ZRef<QuestDemand>,unsigned short>::GetAt(&this->m_mCompleteDemand, &usQuestID, &pComplete)\n    || (m_pStr = pComplete.p->sEndScript._m_pStr) == nullptr\n    || !*m_pStr )\n  {\n    v5 = -1;\n    ZRef<QuestDemand>::~ZRef<QuestDemand>(&pComplete);\n    return 0;\n  }\n  v5 = -1;\n  ZRef<QuestDemand>::~ZRef<QuestDemand>(&pComplete);\n  return 1;\n}\n"
+      }
+    ]
+  },
+  {
+    "query": "0x6b58a0",
+    "matches": [
+      {
+        "address": "0x6b58a0",
+        "name": "CQuestMan::IsDailyPlayQuest(ushort)",
+        "disasm": "push    this\nmov     eax, dword ptr [esp+4+usQuestID]\npush    esi\npush    eax; usQuestID\nmov     esi, this\ncall    ?IsTimeLimitQuest2@CQuestMan@@QAEHG@Z; CQuestMan::IsTimeLimitQuest2(ushort)\ntest    eax, eax\njnz     short loc_6B58B7\npop     esi\npop     this\nretn    4\nlea     this, [esp+8+tTimeLimit]\npush    this; value\nlea     edx, [esp+0Ch+usQuestID]\npush    edx; key\nlea     this, [esi+218h]; this\ncall    ?GetAt@?$ZMap@GJG@@QAEPAJABGAAJ@Z; ZMap<ushort,long,ushort>::GetAt(ushort const &,long &)\nneg     eax\nsbb     eax, eax\nneg     eax\npop     esi\npop     this\nretn    4",
+        "pseudocode": "int __thiscall CQuestMan::IsDailyPlayQuest(CQuestMan *this, unsigned __int16 usQuestID)\n{\n  int result; // eax\n  int tTimeLimit; // [esp+4h] [ebp-4h] BYREF\n\n  result = CQuestMan::IsTimeLimitQuest2(this, usQuestID);\n  if ( result )\n    return ZMap<unsigned short,long,unsigned short>::GetAt(&this->m_mQuestDailyPlay, &usQuestID, &tTimeLimit) != nullptr;\n  return result;\n}\n"
+      }
+    ]
+  },
+  {
+    "query": "0x6b7b30",
+    "matches": [
+      {
+        "address": "0x6b7b30",
+        "name": "CQuestMan::IsDeliveryAcceptQuest(ushort)",
+        "disasm": "push    esi\npush    edi\nmov     edi, dword ptr [esp+8+usQuestID]\npush    edi; usQuestID\nmov     esi, this\ncall    ?IsStartScriptLinkedQuest@CQuestMan@@QAEHG@Z; CQuestMan::IsStartScriptLinkedQuest(ushort)\ntest    eax, eax\njz      short loc_6B7B49\npop     edi\nxor     eax, eax\npop     esi\nretn    4\nlea     eax, [edi-4B0h]\nmov     this, 0C7h\ncmp     ax, cx\njbe     short loc_6B7B42\npush    edi; usQuestID\nmov     this, esi; this\ncall    ?IsAutoAutoAcceptQuest@CQuestMan@@QAEHG@Z; CQuestMan::IsAutoAutoAcceptQuest(ushort)\ntest    eax, eax\njnz     short loc_6B7B42\npush    ebx\nmovzx   ebx, di\npush    ebx; nItemID\nmov     this, esi; this\ncall    ?IsEquipOnAutoStartQuest@CQuestMan@@QAEHJ@Z; CQuestMan::IsEquipOnAutoStartQuest(long)\ntest    eax, eax\njnz     short loc_6B7BD4\npush    ebx; nItemID\nmov     this, esi; this\ncall    ?IsFieldOnAutoStartQuest@CQuestMan@@QAEHJ@Z; CQuestMan::IsFieldOnAutoStartQuest(long)\ntest    eax, eax\njnz     short loc_6B7BD4\nmov     edx, 289Ah\ncmp     di, dx\njz      short loc_6B7BD4\npush    edi; usQuestID\nmov     this, esi; this\ncall    ?IsAutoAlertQuest@CQuestMan@@QAEHG@Z; CQuestMan::IsAutoAlertQuest(ushort)\ntest    eax, eax\njnz     short loc_6B7BD4\npush    edi; usQuestID\nmov     this, esi; this\ncall    ?IsTimeLimitQuest@CQuestMan@@QAEHG@Z; CQuestMan::IsTimeLimitQuest(ushort)\ntest    eax, eax\njnz     short loc_6B7BD4\npush    edi; usQuestID\nmov     this, esi; this\ncall    ?IsDisallowedDeliveryQuest@CQuestMan@@QAEHG@Z; CQuestMan::IsDisallowedDeliveryQuest(ushort)\ntest    eax, eax\njnz     short loc_6B7BD4\npush    edi; usQuestID\nmov     this, esi; this\ncall    ?GetStartDemand@CQuestMan@@QAEPAUQuestDemand@@G@Z; CQuestMan::GetStartDemand(ushort)\ntest    eax, eax\njz      short loc_6B7BD4\nmov     eax, [eax+18h]\ntest    eax, eax\njz      short loc_6B7BD4\ncmp     eax, 0F7508h\njz      short loc_6B7BD4\npop     ebx\npop     edi\nmov     eax, 1\npop     esi\nretn    4\npop     ebx\npop     edi\nxor     eax, eax\npop     esi\nretn    4",
+        "pseudocode": "BOOL __thiscall CQuestMan::IsDeliveryAcceptQuest(CQuestMan *this, unsigned __int16 usQuestID)\n{\n  QuestDemand *StartDemand; // eax\n  unsigned int dwNpcTemplateID; // eax\n\n  if ( CQuestMan::IsStartScriptLinkedQuest(this, usQuestID)\n    || (unsigned __int16)(usQuestID - 1200) <= 0xC7u\n    || CQuestMan::IsAutoAutoAcceptQuest(this, usQuestID) )\n  {\n    return 0;\n  }\n  if ( CQuestMan::IsEquipOnAutoStartQuest(this, usQuestID) )\n    return 0;\n  if ( CQuestMan::IsFieldOnAutoStartQuest(this, usQuestID) )\n    return 0;\n  if ( usQuestID == 10394 )\n    return 0;\n  if ( CQuestMan::IsAutoAlertQuest(this, usQuestID) )\n    return 0;\n  if ( CQuestMan::IsTimeLimitQuest(this, usQuestID) )\n    return 0;\n  if ( CQuestMan::IsDisallowedDeliveryQuest(this, usQuestID) )\n    return 0;\n  StartDemand = CQuestMan::GetStartDemand(this, usQuestID);\n  if ( !StartDemand )\n    return 0;\n  dwNpcTemplateID = StartDemand->dwNpcTemplateID;\n  return dwNpcTemplateID && dwNpcTemplateID != 1013000;\n}\n"
+      }
+    ]
+  },
+  {
+    "query": "0x6b7be0",
+    "matches": [
+      {
+        "address": "0x6b7be0",
+        "name": "CQuestMan::IsDeliveryCompleteQuest(ushort)",
+        "disasm": "push    esi\npush    edi\nmov     edi, dword ptr [esp+8+usQuestID]\npush    edi; usQuestID\nmov     esi, this\ncall    ?IsCompleteScriptLinkedQuest@CQuestMan@@QAEHG@Z; CQuestMan::IsCompleteScriptLinkedQuest(ushort)\ntest    eax, eax\njz      short loc_6B7BF9\npop     edi\nxor     eax, eax\npop     esi\nretn    4\nlea     eax, [edi-4B0h]\nmov     this, 0C7h\ncmp     ax, cx\njbe     short loc_6B7BF2\npush    edi; usQuestID\nmov     this, esi; this\ncall    ?IsAutoAlertQuest@CQuestMan@@QAEHG@Z; CQuestMan::IsAutoAlertQuest(ushort)\ntest    eax, eax\njnz     short loc_6B7BF2\npush    edi; usQuestID\nmov     this, esi; this\ncall    ?IsTimeLimitQuest@CQuestMan@@QAEHG@Z; CQuestMan::IsTimeLimitQuest(ushort)\ntest    eax, eax\njnz     short loc_6B7BF2\npush    edi; usQuestID\nmov     this, esi; this\ncall    ?IsDisallowedDeliveryQuest@CQuestMan@@QAEHG@Z; CQuestMan::IsDisallowedDeliveryQuest(ushort)\ntest    eax, eax\njnz     short loc_6B7BF2\npush    ebx\npush    edi; usQuestID\nmov     this, esi; this\ncall    ?GetCompleteDemand@CQuestMan@@QAEPAUQuestDemand@@G@Z; CQuestMan::GetCompleteDemand(ushort)\nmov     ebx, eax\ntest    ebx, ebx\njz      short loc_6B7C88\npush    edi; usQuestID\nmov     this, esi; this\ncall    ?GetStartDemand@CQuestMan@@QAEPAUQuestDemand@@G@Z; CQuestMan::GetStartDemand(ushort)\ntest    eax, eax\njz      short loc_6B7C88\nmov     this, [ebx+18h]\ntest    this, this\njz      short loc_6B7C88\ncmp     this, 0F7508h\njz      short loc_6B7C88\nmov     eax, [eax+30h]\ntest    eax, eax\njl      short loc_6B7C7D\ncmp     eax, 5A0h\njge     short loc_6B7C7D\nlea     this, [ebx+74h]; this\ncall    ?IsEmpty@?$ZArray@UItemInfo@@@@QBEHXZ; ZArray<ItemInfo>::IsEmpty(void)\ntest    eax, eax\njz      short loc_6B7C7D\nlea     this, [ebx+78h]; this\ncall    ?IsEmpty@?$ZArray@UMobInfo@@@@QBEHXZ; ZArray<MobInfo>::IsEmpty(void)\ntest    eax, eax\njnz     short loc_6B7C88\npop     ebx\npop     edi\nmov     eax, 1\npop     esi\nretn    4\npop     ebx\npop     edi\nxor     eax, eax\npop     esi\nretn    4",
+        "pseudocode": "BOOL __thiscall CQuestMan::IsDeliveryCompleteQuest(CQuestMan *this, unsigned __int16 usQuestID)\n{\n  BOOL result; // eax\n  QuestDemand *CompleteDemand; // ebx\n  QuestDemand *StartDemand; // eax\n  unsigned int dwNpcTemplateID; // ecx\n\n  if ( CQuestMan::IsCompleteScriptLinkedQuest(this, usQuestID)\n    || (unsigned __int16)(usQuestID - 1200) <= 0xC7u\n    || CQuestMan::IsAutoAlertQuest(this, usQuestID)\n    || CQuestMan::IsTimeLimitQuest(this, usQuestID)\n    || CQuestMan::IsDisallowedDeliveryQuest(this, usQuestID) )\n  {\n    return 0;\n  }\n  CompleteDemand = CQuestMan::GetCompleteDemand(this, usQuestID);\n  result = false;\n  if ( CompleteDemand )\n  {\n    StartDemand = CQuestMan::GetStartDemand(this, usQuestID);\n    if ( StartDemand )\n    {\n      dwNpcTemplateID = CompleteDemand->dwNpcTemplateID;\n      if ( dwNpcTemplateID )\n      {\n        if ( dwNpcTemplateID != 1013000\n          && (StartDemand->nRepeatInterval >= 0x5A0u\n           || !ZArray<ItemInfo>::IsEmpty(&CompleteDemand->aDemandItem)\n           || !ZArray<MobInfo>::IsEmpty(&CompleteDemand->aDemandMob)) )\n        {\n          return true;\n        }\n      }\n    }\n  }\n  return result;\n}\n"
+      }
+    ]
+  },
+  {
+    "query": "0x6b58e0",
+    "matches": [
+      {
+        "address": "0x6b58e0",
+        "name": "CQuestMan::IsDisallowedDeliveryQuest(ushort)",
+        "disasm": "mov     eax, [this+98h]\ntest    eax, eax\njnz     short loc_6B58EE\nxor     edx, edx\njmp     short loc_6B58F1\nmov     edx, [eax-4]\nxor     eax, eax\npush    esi\ntest    edx, edx\njle     short loc_6B5910\nmov     this, [this+98h]\nmov     si, [esp+4+usQuestID]\ncmp     [this], si\njz      short loc_6B5916\ninc     eax\nadd     this, 2\ncmp     eax, edx\njl      short loc_6B5903\nxor     eax, eax\npop     esi\nretn    4\nmov     eax, 1\npop     esi\nretn    4",
+        "pseudocode": "int __thiscall CQuestMan::IsDisallowedDeliveryQuest(CQuestMan *this, unsigned __int16 usQuestID)\n{\n  wchar_t *a; // eax\n  int v3; // edx\n  int v4; // eax\n  wchar_t *i; // ecx\n\n  a = this->m_aDisallowedDelivery.a;\n  if ( a )\n    v3 = *((_DWORD *)a - 1);\n  else\n    v3 = 0;\n  v4 = 0;\n  if ( v3 <= 0 )\n    return 0;\n  for ( i = this->m_aDisallowedDelivery.a; *i != usQuestID; ++i )\n  {\n    if ( ++v4 >= v3 )\n      return 0;\n  }\n  return 1;\n}\n"
+      }
+    ]
+  },
+  {
+    "query": "0x6b57b0",
+    "matches": [
+      {
+        "address": "0x6b57b0",
+        "name": "CQuestMan::IsEquipOnAutoStartQuest(long)",
+        "disasm": "push    this\nlea     eax, [esp+4+bAutoStart]\npush    eax; value\nlea     edx, [esp+8+nItemID]\npush    edx; key\nadd     this, 260h; this\ncall    ?GetAt@?$ZMap@JHJ@@QAEPAHABJAAH@Z; ZMap<long,int,long>::GetAt(long const &,int &)\nneg     eax\nsbb     eax, eax\nneg     eax\npop     this\nretn    4",
+        "pseudocode": "BOOL __thiscall CQuestMan::IsEquipOnAutoStartQuest(CQuestMan *this, int nItemID)\n{\n  int bAutoStart; // [esp+0h] [ebp-4h] BYREF\n\n  bAutoStart = (int)this;\n  return ZMap<long,int,long>::GetAt(&this->m_mIsEquipAutoQuestStart, &nItemID, &bAutoStart) != nullptr;\n}\n"
+      }
+    ]
+  },
+  {
+    "query": "0x6b57d0",
+    "matches": [
+      {
+        "address": "0x6b57d0",
+        "name": "CQuestMan::IsFieldOnAutoStartQuest(long)",
+        "disasm": "push    this\nmov     eax, [esp+4+nItemID]\nlea     edx, [esp+4+bAutoStart]\nmov     [esp+4+nItemID], eax\npush    edx; value\nlea     eax, [esp+8+nItemID]\npush    eax; key\nadd     this, 278h; this\ncall    ?GetAt@?$ZMap@KHK@@QAEPAHABKAAH@Z; ZMap<ulong,int,ulong>::GetAt(ulong const &,int &)\nneg     eax\nsbb     eax, eax\nneg     eax\npop     this\nretn    4",
+        "pseudocode": "BOOL __thiscall CQuestMan::IsFieldOnAutoStartQuest(CQuestMan *this, int nItemID)\n{\n  int bAutoStart; // [esp+0h] [ebp-4h] BYREF\n\n  bAutoStart = (int)this;\n  return ZMap<unsigned long,int,unsigned long>::GetAt(\n           &this->m_mIsFieldAutoQuestStart,\n           (const unsigned int *)&nItemID,\n           &bAutoStart) != nullptr;\n}\n"
+      }
+    ]
+  },
+  {
+    "query": "0x522c20",
+    "matches": [
+      {
+        "address": "0x522c20",
+        "name": "CQuestMan::IsMedalQuest(ushort)",
+        "disasm": "mov     eax, dword ptr [esp+usQuestID]\npush    eax; usQuestID\ncall    ?GetQuestCategory@CQuestMan@@QBEJG@Z; CQuestMan::GetQuestCategory(ushort)\nxor     this, this\ncmp     eax, 33h ; '3'\nsetz    cl\nmov     eax, this\nretn    4",
+        "pseudocode": "BOOL __thiscall CQuestMan::IsMedalQuest(CQuestMan *this, unsigned __int16 usQuestID)\n{\n  return CQuestMan::GetQuestCategory(this, usQuestID) == 51;\n}\n"
+      }
+    ]
+  },
+  {
+    "query": "0x50abd0",
+    "matches": [
+      {
+        "address": "0x50abd0",
+        "name": "CQuestMan::IsPartyQuest(ushort)",
+        "disasm": "mov     eax, dword ptr [esp+usQuestID]\nadd     eax, 0FFFFFB50h\nmov     this, 0C7h\ncmp     cx, ax\nsbb     eax, eax\ninc     eax\nretn    4",
+        "pseudocode": "BOOL __thiscall CQuestMan::IsPartyQuest(CQuestMan *this, unsigned __int16 usQuestID)\n{\n  return (unsigned __int16)(usQuestID - 1200) <= 0xC7u;\n}\n"
+      }
+    ]
+  },
+  {
+    "query": "0x6b79b0",
+    "matches": [
+      {
+        "address": "0x6b79b0",
+        "name": "CQuestMan::IsStartScriptLinkedQuest(ushort)",
+        "disasm": "push    0FFFFFFFFh\npush    offset __ehhandler$?IsStartScriptLinkedQuest@CQuestMan@@QAEHG@Z\nmov     eax, large fs:0\npush    eax\nsub     esp, 8\nmov     eax, ___security_cookie\nxor     eax, esp\npush    eax\nlea     eax, [esp+18h+var_C]\nmov     large fs:0, eax\ncmp     [esp+18h+usQuestID], 0\njz      short loc_6B7A12\nmov     [esp+18h+var_10], 0\nlea     eax, [esp+18h+pStart]\npush    eax; value\nlea     edx, [esp+1Ch+usQuestID]\npush    edx; key\nadd     this, 68h ; 'h'; this\nmov     [esp+20h+var_4], 0\ncall    ?GetAt@?$ZMap@GV?$ZRef@UQuestDemand@@@@G@@QAEPAV?$ZRef@UQuestDemand@@@@ABGAAV2@@Z; ZMap<ushort,ZRef<QuestDemand>,ushort>::GetAt(ushort const &,ZRef<QuestDemand> &)\ntest    eax, eax\njnz     short loc_6B7A26\nlea     this, [esp+18h+pStart]; this\nmov     [esp+18h+var_4], 0FFFFFFFFh\ncall    ??1?$ZRef@UQuestDemand@@@@QAE@XZ; ZRef<QuestDemand>::~ZRef<QuestDemand>(void)\nxor     eax, eax\nmov     this, [esp+18h+var_C]\nmov     large fs:0, this\npop     this\nadd     esp, 14h\nretn    4\nmov     eax, [esp+18h+var_10]\nmov     eax, [eax+98h]\ntest    eax, eax\njz      short loc_6B7A01\ncmp     byte ptr [eax], 0\njz      short loc_6B7A01\nlea     this, [esp+18h+pStart]; this\nmov     [esp+18h+var_4], 0FFFFFFFFh\ncall    ??1?$ZRef@UQuestDemand@@@@QAE@XZ; ZRef<QuestDemand>::~ZRef<QuestDemand>(void)\nmov     eax, 1\nmov     this, [esp+18h+var_C]\nmov     large fs:0, this\npop     this\nadd     esp, 14h\nretn    4",
+        "pseudocode": "int __thiscall CQuestMan::IsStartScriptLinkedQuest(CQuestMan *this, unsigned __int16 usQuestID)\n{\n  char *m_pStr; // eax\n  ZRef<QuestDemand> pStart; // [esp+4h] [ebp-14h] BYREF\n  int v5; // [esp+14h] [ebp-4h]\n\n  if ( !usQuestID )\n    return 0;\n  pStart.p = nullptr;\n  v5 = 0;\n  if ( !ZMap<unsigned short,ZRef<QuestDemand>,unsigned short>::GetAt(&this->m_mStartDemand, &usQuestID, &pStart)\n    || (m_pStr = pStart.p->sStartScript._m_pStr) == nullptr\n    || !*m_pStr )\n  {\n    v5 = -1;\n    ZRef<QuestDemand>::~ZRef<QuestDemand>(&pStart);\n    return 0;\n  }\n  v5 = -1;\n  ZRef<QuestDemand>::~ZRef<QuestDemand>(&pStart);\n  return 1;\n}\n"
+      }
+    ]
+  },
+  {
+    "query": "0x6b5860",
+    "matches": [
+      {
+        "address": "0x6b5860",
+        "name": "CQuestMan::IsTimeLimitQuest(ushort)",
+        "disasm": "push    this\nlea     eax, [esp+4+tTimeLimit]\npush    eax; value\nlea     edx, [esp+8+usQuestID]\npush    edx; key\nadd     this, 1E8h; this\ncall    ?GetAt@?$ZMap@GJG@@QAEPAJABGAAJ@Z; ZMap<ushort,long,ushort>::GetAt(ushort const &,long &)\nneg     eax\nsbb     eax, eax\nneg     eax\npop     this\nretn    4",
+        "pseudocode": "BOOL __thiscall CQuestMan::IsTimeLimitQuest(CQuestMan *this, unsigned __int16 usQuestID)\n{\n  int tTimeLimit; // [esp+0h] [ebp-4h] BYREF\n\n  tTimeLimit = (int)this;\n  return ZMap<unsigned short,long,unsigned short>::GetAt(&this->m_mQuestTimeLimit, &usQuestID, &tTimeLimit) != nullptr;\n}\n"
+      }
+    ]
+  },
+  {
+    "query": "0x6b5880",
+    "matches": [
+      {
+        "address": "0x6b5880",
+        "name": "CQuestMan::IsTimeLimitQuest2(ushort)",
+        "disasm": "push    this\nlea     eax, [esp+4+tTimeLimit]\npush    eax; value\nlea     edx, [esp+8+usQuestID]\npush    edx; key\nadd     this, 200h; this\ncall    ?GetAt@?$ZMap@GJG@@QAEPAJABGAAJ@Z; ZMap<ushort,long,ushort>::GetAt(ushort const &,long &)\nneg     eax\nsbb     eax, eax\nneg     eax\npop     this\nretn    4",
+        "pseudocode": "BOOL __thiscall CQuestMan::IsTimeLimitQuest2(CQuestMan *this, unsigned __int16 usQuestID)\n{\n  int tTimeLimit; // [esp+0h] [ebp-4h] BYREF\n\n  tTimeLimit = (int)this;\n  return ZMap<unsigned short,long,unsigned short>::GetAt(&this->m_mQuestTimeLimit2, &usQuestID, &tTimeLimit) != nullptr;\n}\n"
+      }
+    ]
+  }
+]

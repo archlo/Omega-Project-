@@ -1,0 +1,24 @@
+﻿BOOL __thiscall CMob::IsAbleTargetEscortMob(CMob *this, CMob *pEscortMob)
+{
+  int v3; // ebp
+  tagPOINT ptAttacker; // [esp+8h] [ebp-10h] BYREF
+  tagPOINT ptEscort; // [esp+10h] [ebp-8h] BYREF
+
+  if ( !pEscortMob || pEscortMob->m_pTemplate->nEscortType != 1 )
+    return 0;
+  if ( !_ZtlSecureFuse<long>(
+          this->m_pTemplate->_ZtlSecureTear_nMoveAbility,
+          this->m_pTemplate->_ZtlSecureTear_nMoveAbility_CS)
+    || _ZtlSecureFuse<long>(
+         this->m_pTemplate->_ZtlSecureTear_nMoveAbility,
+         this->m_pTemplate->_ZtlSecureTear_nMoveAbility_CS) == 1 )
+  {
+    v3 = pEscortMob->GetZMass(&pEscortMob->IVecCtrlOwner);
+    if ( this->GetZMass(&this->IVecCtrlOwner) != v3 )
+      return 0;
+  }
+  ((void (__thiscall *)(IVecCtrlOwner *, tagPOINT *))this->GetPos)(&this->IVecCtrlOwner, &ptAttacker);
+  ((void (__thiscall *)(IVecCtrlOwner *, tagPOINT *))pEscortMob->GetPos)(&pEscortMob->IVecCtrlOwner, &ptEscort);
+  return (ptAttacker.y - ptEscort.y) * (ptAttacker.y - ptEscort.y)
+       + (ptAttacker.x - ptEscort.x) * (ptAttacker.x - ptEscort.x) <= 40000;
+}

@@ -1,0 +1,195 @@
+// cuserlocal::TryDoingItemSkill
+
+void __thiscall CUserLocal::TryDoingItemSkill(
+        CUserLocal *this,
+        CMob *pMob,
+        unsigned int tAttackTime,
+        int nMobCount,
+        int nDamagePerMob,
+        _DWORD *nSkillID,
+        int nAction)
+{
+  ZRef<CharacterData> *CharacterData; // eax
+  CharacterData *p; // esi
+  int v9; // ebx
+  CharacterData *v10; // eax
+  LONG (__stdcall *v11)(volatile LONG *); // ebp
+  volatile LONG *p_m_uTableSize; // esi
+  volatile LONG *v13; // esi
+  int v14; // esi
+  unsigned int v15; // ebp
+  unsigned int v16; // ebx
+  int v17; // esi
+  CItemInfo::ItemSkill *v18; // edi
+  unsigned int v19; // esi
+  _DWORD *v20; // eax
+  const ITEMSKILLENTRY *ItemSkill; // eax
+  ZRef<ITEMSKILLLEVELDATA> *a; // ecx
+  int v24; // edx
+  int nSkillLevel; // ecx
+  ITEMSKILLLEVELDATA *v26; // esi
+  bool v27; // cc
+  CItemInfo::ItemSkill *v28; // esi
+  volatile LONG *p_nSkillLevel; // edi
+  char *v30; // esi
+  volatile LONG *p_m_uCount; // edi
+  __POSITION *pos; // [esp+18h] [ebp-54h] BYREF
+  int nProb; // [esp+1Ch] [ebp-50h]
+  ZRef<ITEMSKILLLEVELDATA> pData; // [esp+20h] [ebp-4Ch] BYREF
+  ZRef<CItemInfo::ItemSkill> pSkill; // [esp+28h] [ebp-44h] BYREF
+  ZRef<CharacterData> pCD; // [esp+30h] [ebp-3Ch] BYREF
+  ZRef<CharacterData> result; // [esp+38h] [ebp-34h] BYREF
+  CRand32 rnd; // [esp+40h] [ebp-2Ch] BYREF
+  int v39; // [esp+68h] [ebp-4h]
+  int i; // [esp+78h] [ebp+Ch]
+
+  nProb = (int)this; /*0x907a97*/
+  pos = nullptr; /*0x907a9b*/
+  if ( TSingleton<CWvsContext>::ms_pInstance._m_pStr ) /*0x907aab*/
+  {
+    CharacterData = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &result); /*0x907ab2*/
+    p = pCD.p; /*0x907ab7*/
+    v9 = 1; /*0x907abb*/
+  }
+  else
+  {
+    p = nullptr; /*0x907ac2*/
+    pCD.p = nullptr; /*0x907ac4*/
+    CharacterData = &pCD; /*0x907ac8*/
+    v9 = 2; /*0x907acc*/
+  }
+  v10 = CharacterData->p; /*0x907acf*/
+  v11 = InterlockedIncrement; /*0x907ad2*/
+  pCD.p = v10; /*0x907ad8*/
+  if ( v10 ) /*0x907ade*/
+    InterlockedIncrement((volatile LONG *)&v10[-1].m_mVisitorQuestLog._m_uCount); /*0x907ae4*/
+  v39 = 1; /*0x907ae6*/
+  if ( (v9 & 2) != 0 ) /*0x907af1*/
+  {
+    v9 &= ~2u; /*0x907af3*/
+    pos = (__POSITION *)v9; /*0x907af6*/
+    if ( p ) /*0x907afc*/
+    {
+      p_m_uTableSize = (volatile LONG *)&p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x907afe*/
+      if ( !InterlockedDecrement(p_m_uTableSize + 1) ) /*0x907b05*/
+      {
+        v11(p_m_uTableSize + 1); /*0x907b10*/
+        if ( p_m_uTableSize ) /*0x907b14*/
+          (**(void (__thiscall ***)(char *, int))p_m_uTableSize)((char *)p_m_uTableSize, 1); /*0x907b1e*/
+      }
+    }
+  }
+  LOBYTE(v39) = 2; /*0x907b20*/
+  if ( (v9 & 1) != 0 && result.p ) /*0x907b30*/
+  {
+    v13 = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x907b32*/
+    if ( !InterlockedDecrement((volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount) ) /*0x907b39*/
+    {
+      v11(v13 + 1); /*0x907b44*/
+      if ( v13 ) /*0x907b48*/
+        (**(void (__thiscall ***)(char *, int))v13)((char *)v13, 1); /*0x907b52*/
+    }
+    result.p = nullptr; /*0x907b54*/
+  }
+  if ( pCD.p )
+  {
+    v14 = 0; /*0x907b71*/
+    pos = *(__POSITION **)(nProb + 18276); /*0x907b73*/
+    if ( pos )
+    {
+      v15 = tAttackTime; /*0x907b87*/
+      v16 = (unsigned int)nSkillID + nMobCount + tAttackTime; /*0x907b8b*/
+      while ( 1 )
+      {
+        v17 = v14 + 1; /*0x907b99*/
+        i = v17; /*0x907b9b*/
+        v16 += 4; /*0x907b9f*/
+        v15 += 16; /*0x907ba2*/
+        v18 = ZList<ZRef<CItemInfo::ItemSkill>>::GetNext(&pos)->p; /*0x907baa*/
+        pSkill.p = v18; /*0x907bb0*/
+        if ( v18 ) /*0x907bb6*/
+          InterlockedIncrement(&v18[-2].nSkillLevel); /*0x907bbc*/
+        LOBYTE(v39) = 3; /*0x907bc2*/
+        if ( v18 )
+        {
+          CRand32::CRand32(&rnd); /*0x907bd3*/
+          v19 = nDamagePerMob + tAttackTime + v17 + nAction + 10; /*0x907bf5*/
+          ZSynchronizedHelper<ZFatalSection>::ZSynchronizedHelper<ZFatalSection>( /*0x907bf9*/
+            (ZSynchronizedHelper<ZFatalSection> *)&nSkillID,
+            &rnd.m_lock);
+          v20 = nSkillID; /*0x907bfe*/
+          rnd.m_s1 = v15; /*0x907c02*/
+          rnd.m_past_s1 = v15; /*0x907c06*/
+          rnd.m_s2 = v16; /*0x907c0a*/
+          rnd.m_past_s2 = v16; /*0x907c0e*/
+          rnd.m_s3 = v19; /*0x907c12*/
+          rnd.m_past_s3 = v19; /*0x907c16*/
+          if ( nSkillID[1]-- == 1 ) /*0x907c1a*/
+            *v20 = 0; /*0x907c20*/
+          nProb = CRand32::Random(&rnd) % 0x64; /*0x907c3e*/
+          if ( TSingleton<CSkillInfo>::ms_pInstance )
+          {
+            ItemSkill = CSkillInfo::GetItemSkill(TSingleton<CSkillInfo>::ms_pInstance, v18->nSkillID); /*0x907c4d*/
+            if ( ItemSkill )
+            {
+              a = ItemSkill->apLevelData.a; /*0x907c5a*/
+              v24 = a ? (int)a[-1].p : 0;
+              nSkillLevel = v18->nSkillLevel; /*0x907c68*/
+              if ( nSkillLevel <= v24 && nSkillLevel > 0 ) /*0x907c71*/
+              {
+                v26 = ItemSkill->apLevelData.a[nSkillLevel - 1].p; /*0x907c76*/
+                pData.p = v26; /*0x907c7e*/
+                if ( v26 ) /*0x907c84*/
+                  InterlockedIncrement(&v26[-1].nX); /*0x907c8a*/
+                v27 = v26->nProp <= nProb; /*0x907c94*/
+                LOBYTE(v39) = 4; /*0x907c97*/
+                if ( v27 ) /*0x907c9c*/
+                {
+                  LOBYTE(v39) = 3; /*0x907c9e*/
+LABEL_38:
+                  ZRef<ITEMSKILLLEVELDATA>::~ZRef<ITEMSKILLLEVELDATA>(&pData); /*0x907ccd*/
+                  LOBYTE(v39) = 2; /*0x907cd6*/
+                  ZRef<CItemInfo::ItemSkill>::~ZRef<CItemInfo::ItemSkill>(&pSkill); /*0x907cdb*/
+                  goto LABEL_44; /*0x907ce0*/
+                }
+                v27 = v26->nConMP <= _ZtlSecureFuse<long>( /*0x907cc0*/
+                                       pCD.p->characterStat._ZtlSecureTear_nMP,
+                                       pCD.p->characterStat._ZtlSecureTear_nMP_CS);
+                LOBYTE(v39) = 3; /*0x907cc2*/
+                if ( !v27 ) /*0x907ccb*/
+                  goto LABEL_38; /*0x907ccb*/
+                ZRef<ITEMSKILLLEVELDATA>::~ZRef<ITEMSKILLLEVELDATA>(&pData); /*0x907ce2*/
+              }
+            }
+          }
+          v28 = v18 - 2; /*0x907ce7*/
+          p_nSkillLevel = &v18[-2].nSkillLevel; /*0x907cea*/
+          LOBYTE(v39) = 2; /*0x907cee*/
+          if ( !InterlockedDecrement(p_nSkillLevel) ) /*0x907cf3*/
+          {
+            InterlockedIncrement(p_nSkillLevel); /*0x907cfe*/
+            if ( v28 ) /*0x907d06*/
+              (*(void (__thiscall **)(CItemInfo::ItemSkill *, int))v28->nSkillID)(v28, 1); /*0x907d10*/
+          }
+          pSkill.p = nullptr; /*0x907d12*/
+        }
+LABEL_44:
+        if ( !pos ) /*0x907d1f*/
+        {
+          v11 = InterlockedIncrement; /*0x907d25*/
+          break; /*0x907d25*/
+        }
+        v14 = i; /*0x907b91*/
+      }
+    }
+    v30 = (char *)&pCD.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x907d2b*/
+    p_m_uCount = (volatile LONG *)&pCD.p[-1].m_mVisitorQuestLog._m_uCount; /*0x907d32*/
+    v39 = -1; /*0x907d36*/
+    if ( !InterlockedDecrement(p_m_uCount) ) /*0x907d3e*/
+    {
+      v11(p_m_uCount); /*0x907d49*/
+      if ( v30 ) /*0x907d4d*/
+        (**(void (__thiscall ***)(char *, int))v30)(v30, 1); /*0x907d57*/
+    }
+  }
+}

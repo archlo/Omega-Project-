@@ -1,33 +1,29 @@
-import { Container } from 'pixi.js';
+import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import { Button } from '../Button.js';
+import type { WzTextureLoader } from '../../render/WzTextureLoader.js';
+import type { WzPackage } from '../../wz/WzPackage.js';
+import { WzProperty } from '../../wz/WzProperty.js';
+import { WzCanvas } from '../../wz/WzCanvas.js';
 
 export class GamePanel {
-  // Pixi's Container defaults to visible:true; field initializers don't go
-  // through the isVisible setter below, so this has to be set explicitly or
-  // every panel would render from the moment it's constructed, regardless
-  // of whether its own constructor happens to call `this.isVisible = false`.
   protected _root = new Container({ visible: false });
 
-  // Pixi's actual render visibility lives on `_root.visible`, not on this
-  // flag — several panels only ever set `isVisible` and relied on that
-  // alone to make themselves appear, which silently did nothing since
-  // nothing else touched `_root.visible` for them. Keeping them in lockstep
-  // here fixes every such panel at once instead of patching each site.
   private _isVisible = false;
   get isVisible(): boolean { return this._isVisible; }
   set isVisible(v: boolean) { this._isVisible = v; this._root.visible = v; }
 
   get container(): Container { return this._root; }
 
-  // --- Generic window drag support (OG: CWndMan::m_pDragWnd) ---
-  /** Override to false for fixed-position panels (StatusBar, ChatBar, HUDs). */
+  // --- Window drag (OG: CWndMan::m_pDragWnd) ---
   draggable = true;
   private _wndDragging = false;
   private _wndDragOff = { x: 0, y: 0 };
 
-  /** Check if local coords (lx, ly) hit the panel's title bar.
-   *  Uses getLocalBounds() so it works regardless of how the panel
-   *  positions its children. Returns true if drag started or click consumed. */
+  // --- Close button (OG: CUIWnd::m_pBtClose, id=1000) ---
+  private _wndCloseBtn: Button | null = null;
+  private _wndCloseX = 0;
+  private _wndCloseY = 0;
+
   beginDrag(lx: number, ly: number, down: boolean): boolean {
     if (!this.draggable) return false;
     if (!down && this._wndDragging) {
@@ -43,7 +39,6 @@ export class GamePanel {
     return true;
   }
 
-  /** Move the panel during drag. */
   updateDrag(): void {
     if (!this._wndDragging) return;
     const mx = (window as any).__mouseX as number | undefined;
@@ -54,17 +49,76 @@ export class GamePanel {
     }
   }
 
+  /**
+   * OG: CUIWnd::OnCreate — creates close button based on m_nBtCloseType.
+   * Call this from subclass constructors after setting up the panel.
+   *
+   * @param loader - WZ texture loader for loading button assets
+   * @param uiWz - UI WZ package for loading button backgrounds
+   * @param btCloseType - Close button type (0=none, 1-5=WZ styles, default=1)
+   * @param panelW - Panel width (for positioning close button at top-right)
+   */
+  createCloseButton(loader?: WzTextureLoader | null, uiWz?: WzPackage | null, btCloseType = 1, panelW?: number): void {
+    if (btCloseType === 0) return; // No close button
+
+    const pw = panelW ?? 184;
+
+    // OG: close button position — top-right corner
+    this._wndCloseX = pw - 18;
+    this._wndCloseY = 6;
+
+    // Try loading WZ close button
+    let loaded = false;
+    if (loader && uiWz) {
+      // OG: BtCloseType 5 → "UI/Basic.img/BtClose3"
+      // BtCloseType 4 → panel-specific close from Skill/main/BtClose etc.
+      // BtCloseType 1-3 → StringPool-based close buttons
+      const closePath = btCloseType === 5
+        ? 'UI/Basic.img/BtClose3'
+        : 'UI/Basic.img/BtClose';
+      const node = uiWz.GetItem(closePath);
+      if (node instanceof WzProperty) {
+        const btn = Button.fromWz(loader, node);
+        btn.onClick = () => { this.isVisible = false; };
+        btn.container.position.set(this._wndCloseX, this._wndCloseY);
+        this._root.addChild(btn.container);
+        this._wndCloseBtn = btn;
+        loaded = true;
+      }
+    }
+
+    // Fallback: simple "X" graphics button
+    if (!loaded) {
+      const btn = new Button();
+      const g = new Graphics();
+      g.rect(0, 0, 14, 14).fill({ color: 0x1a1a2e, alpha: 0.9 });
+      g.rect(0, 0, 14, 14).stroke({ color: 0x505570, width: 1 });
+      const t = new Text({ text: 'X', style: new TextStyle({ fill: 0xCCCCEE, fontSize: 10, fontFamily: 'monospace' }) });
+      t.x = 4; t.y = 1;
+      btn.container.addChild(g, t);
+      btn.onClick = () => { this.isVisible = false; };
+      btn.container.position.set(this._wndCloseX, this._wndCloseY);
+      this._root.addChild(btn.container);
+      this._wndCloseBtn = btn;
+    }
+  }
+
+  /** OG: CUIWnd::OnButtonClicked(1000) — close button handler */
+  onWndButtonClicked(nId: number): void {
+    if (nId === 1000) {
+      this.isVisible = false;
+    }
+  }
+
   update(_dt: number): void {}
   handleMouseButton(_x: number, _y: number, _down: boolean): boolean { return false; }
   onKeyPress(_key: string): boolean { return false; }
 
-  /** Reset pressed/hover state on all buttons in this panel's container tree. */
   resetButtonStates(): void {
     this._resetButtonsRecursive(this._root);
   }
 
   private _resetButtonsRecursive(c: Container): void {
-    // Check if this container is a Button's container
     if ((c as any).__buttonInstance) {
       ((c as any).__buttonInstance as Button).resetState();
     }

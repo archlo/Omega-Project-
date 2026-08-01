@@ -1,0 +1,1 @@
+{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"decompile","arguments":{"addr":"0x8a0bd0"}}}

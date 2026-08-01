@@ -1,0 +1,13 @@
+// cuser::OnPassiveMove
+
+void __thiscall CUser::OnPassiveMove(CUser *this, CInPacket *iPacket)
+{
+  IWzVector2D *m_pInterface; // eax
+
+  if ( this->m_dwDriverID ) /*0x8dea10*/
+  {
+    m_pInterface = this->m_pvc.m_pInterface; /*0x8dea19*/
+    if ( m_pInterface ) /*0x8dea21*/
+      CMovePath::OnMovePacket((CMovePath *)&m_pInterface[142], iPacket, 1); /*0x8dea30*/
+  }
+}

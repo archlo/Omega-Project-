@@ -1,0 +1,24 @@
+﻿void __thiscall CUIStatusBar::ResetButtonToolTip(CUIStatusBar *this)
+{
+  CharacterData *p; // ebx
+  char *p_m_uTableSize; // esi
+  volatile LONG *p_m_uCount; // edi
+  ZRef<CharacterData> result; // [esp+8h] [ebp-8h] BYREF
+
+  p = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &result)->p;
+  if ( result.p )
+  {
+    p_m_uTableSize = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize;
+    p_m_uCount = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount;
+    if ( !InterlockedDecrement(p_m_uCount) )
+    {
+      InterlockedIncrement(p_m_uCount);
+      if ( p_m_uTableSize )
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1);
+    }
+    result.p = nullptr;
+  }
+  this->m_pBtSystem.p->m_bToolTip = _ZtlSecureFuse<unsigned char>(
+                                      p->characterStat._ZtlSecureTear_nLevel,
+                                      p->characterStat._ZtlSecureTear_nLevel_CS) <= 0xCu;
+}

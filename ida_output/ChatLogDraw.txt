@@ -1,0 +1,37 @@
+﻿void __thiscall CUIStatusBar::ChatLogDraw(CUIStatusBar *this)
+{
+  CUIStatusBar *v1; // ebx
+  ZRef<CUIStatusBar::CChatLog> *a; // edx
+  CUIStatusBar::CChatLog *p; // eax
+  CUIStatusBar::CChatLog *v4; // esi
+  IWzGr2DLayer *m_pInterface; // eax
+  void (__stdcall *v6)(VARIANTARG *); // edi
+  HRESULT v7; // eax
+  HRESULT v8; // eax
+  IWzGr2DLayer *v9; // eax
+  IWzGr2DLayer *v10; // esi
+  IUnknown *v11; // esi
+  HRESULT v12; // eax
+  IWzGr2DLayer *v13; // eax
+  IUnknown *v14; // esi
+  HRESULT v15; // eax
+  IWzGr2DLayer *v16; // eax
+  IUnknown *v17; // esi
+  HRESULT v18; // eax
+  IUnknown *v19; // esi
+  HRESULT v20; // eax
+  HRESULT v21; // eax
+  HRESULT v22; // eax
+  IWzVector2D *v23; // ecx
+  IWzGr2DLayer *v24; // ecx
+  IWzCanvas *v25; // esi
+  HRESULT v26; // eax
+  HRESULT v27; // eax
+  bool v28; // cc
+  CUIStatusBar::CChatLog *v29; // esi
+  char v30; // al
+  int v31; // edi
+  CUIStatusBar::CChatLog *v32; // esi
+  bool v33; // zf
+  unsigned int ZtlSecureTear_m_nType_CS; // edx
+  const wch... [65946 chars total]

@@ -1,0 +1,7 @@
+// cuser::GetShoeAttr
+
+const ZRef<CAttrShoe> *__thiscall CUser::GetShoeAttr(CUser *this, const ZRef<CAttrShoe> *result)
+{
+  result->p = nullptr; /*0x8eb5ca*/
+  return result; /*0x8eb5ce*/
+}

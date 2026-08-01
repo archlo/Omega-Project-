@@ -1,0 +1,479 @@
+// cashshop::IsUsableItem
+
+int __thiscall CCashShop::IsUsableItem(CCashShop *this, int nItemID, ZXString<char> *sReq)
+{
+  CharacterData *p; // ebx
+  char *p_m_uTableSize; // esi
+  volatile LONG *p_m_uCount; // edi
+  _LARGE_INTEGER *aliPetLockerSN; // esi
+  int CashItemSlotPosition; // eax
+  StringPool *Instance; // eax
+  const ZXString<char> *String; // eax
+  int v11; // ebx
+  _LARGE_INTEGER *v12; // ebp
+  int v13; // eax
+  GW_ItemSlotBase *v14; // esi
+  const CItemInfo::PETFOODITEM *PetFoodItem; // edi
+  const char *v16; // edx
+  int v17; // eax
+  ZXString<char> *v18; // esi
+  ZXString<char> *v19; // esi
+  StringPool *v20; // eax
+  char *m_pStr; // eax
+  int v22; // ecx
+  StringPool *v23; // eax
+  const ZXString<char> *v24; // eax
+  const CItemInfo::KARMASCISSORSITEM *KarmaScissorsItem; // eax
+  _DWORD *v26; // ebx
+  int v27; // eax
+  int v28; // ebp
+  int v29; // edi
+  TSecType<long> *v30; // esi
+  int v31; // eax
+  int v32; // eax
+  int v33; // edi
+  TSecType<long> **p_p; // ebp
+  TSecType<long> *v35; // esi
+  int Data; // eax
+  int AppliableKarmaType; // eax
+  int v38; // edi
+  TSecType<long> **v39; // ebp
+  TSecType<long> *v40; // esi
+  int v41; // eax
+  int v42; // eax
+  int v43; // edi
+  TSecType<long> **v44; // ebp
+  TSecType<long> *v45; // esi
+  int v46; // eax
+  int v47; // eax
+  StringPool *v48; // eax
+  ZXString<char> *v49; // eax
+  const ZXString<char> *v50; // eax
+  CItemInfo::EQUIPITEM *EquipItem; // edi
+  StringPool *v52; // eax
+  const BasicStat *v53; // eax
+  const BasicStat *v54; // ebx
+  int v55; // eax
+  int v56; // esi
+  StringPool *v57; // eax
+  int v58; // esi
+  StringPool *v59; // eax
+  int v60; // esi
+  StringPool *v61; // eax
+  TSecType<long> *v62; // eax
+  int v63; // eax
+  StringPool *v64; // eax
+  int v65; // ebx
+  _LARGE_INTEGER *v66; // ebp
+  int v67; // eax
+  GW_ItemSlotBase *v68; // esi
+  int v69; // eax
+  StringPool *v70; // eax
+  const ZXString<char> *v71; // eax
+  StringPool *v72; // eax
+  const ZXString<char> *v73; // eax
+  __int16 v74; // ax
+  int novice_skill_as_race; // eax
+  StringPool *v76; // eax
+  const ZXString<char> *v77; // eax
+  const char *v78; // [esp-8h] [ebp-50h]
+  char *v79; // [esp-4h] [ebp-4Ch]
+  char *v80; // [esp-4h] [ebp-4Ch]
+  char *v81; // [esp-4h] [ebp-4Ch]
+  char *v82; // [esp-4h] [ebp-4Ch]
+  char *v83; // [esp-4h] [ebp-4Ch]
+  CharacterData *cd; // [esp+14h] [ebp-34h]
+  int bFound; // [esp+18h] [ebp-30h] BYREF
+  ZRef<GW_ItemSlotBase> nKarma; // [esp+1Ch] [ebp-2Ch] BYREF
+  int nPetCount; // [esp+24h] [ebp-24h]
+  ZXString<char> v88; // [esp+28h] [ebp-20h] BYREF
+  int nPetIndex; // [esp+2Ch] [ebp-1Ch] BYREF
+  const BasicStat *bs; // [esp+30h] [ebp-18h] BYREF
+  ZRef<CharacterData> result; // [esp+34h] [ebp-14h] BYREF
+  int v92; // [esp+44h] [ebp-4h]
+
+  p = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &result)->p; /*0x485eb7*/
+  cd = p; /*0x485ebe*/
+  if ( result.p ) /*0x485ec4*/
+  {
+    p_m_uTableSize = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x485ec6*/
+    p_m_uCount = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount; /*0x485ec9*/
+    if ( !InterlockedDecrement(p_m_uCount) ) /*0x485ecd*/
+    {
+      InterlockedIncrement(p_m_uCount); /*0x485ed8*/
+      if ( p_m_uTableSize ) /*0x485ee0*/
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1); /*0x485eea*/
+    }
+    result.p = nullptr; /*0x485eec*/
+  }
+  bs = (const BasicStat *)(TSingleton<CWvsContext>::ms_pInstance._m_pStr + 8400); /*0x485f13*/
+  v88._m_pStr = (char *)(nItemID / 10000); /*0x485f17*/
+  if ( nItemID / 10000 == 519 || nItemID / 10000 == 524 ) /*0x485f27*/
+  {
+    CItemInfo::GetItemInfo( /*0x485f3d*/
+      (CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr,
+      (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *)&bFound,
+      (IWzProperty *)nItemID);
+    v92 = 0; /*0x485f47*/
+    if ( !bFound ) /*0x485f54*/
+    {
+      CMSException::CMSException((CMSException *)&sReq, 570425350); /*0x485f5f*/
+      nItemID = (int)sReq; /*0x485f72*/
+      _CxxThrowException(&nItemID, &_TI3_AVCTerminateException__); /*0x485f76*/
+    }
+    aliPetLockerSN = p->characterStat.aliPetLockerSN; /*0x485f81*/
+    CashItemSlotPosition = CharacterData::FindCashItemSlotPosition(p, 5, p->characterStat.aliPetLockerSN[0]); /*0x485f8a*/
+    if ( CashItemSlotPosition <= 0 || !p->aaItemSlot[5].a[CashItemSlotPosition].p ) /*0x485f99*/
+    {
+      Instance = StringPool::GetInstance(); /*0x485faa*/
+      String = StringPool::GetString(Instance, (ZXString<char> *)&nItemID, 0x208u); /*0x485fb1*/
+      LOBYTE(v92) = 1; /*0x485fbb*/
+      ZXString<char>::operator=(sReq, String); /*0x485fc0*/
+      LOBYTE(v92) = 0; /*0x485fc9*/
+      if ( nItemID ) /*0x485fd0*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(nItemID - 12)); /*0x485fd6*/
+      v92 = -1; /*0x485fe2*/
+      if ( bFound ) /*0x485fec*/
+        (*(void (__stdcall **)(int))(*(_DWORD *)bFound + 8))(bFound); /*0x485ff4*/
+      return 0; /*0x485ff8*/
+    }
+    nPetCount = 1; /*0x485ffd*/
+    v11 = 0; /*0x486005*/
+    v12 = aliPetLockerSN; /*0x486007*/
+    while ( 1 ) /*0x486020*/
+    {
+      v13 = CharacterData::FindCashItemSlotPosition(cd, 5, *v12); /*0x486020*/
+      if ( v13 <= 0 ) /*0x486027*/
+        break; /*0x486027*/
+      v14 = cd->aaItemSlot[5].a[v13].p; /*0x486033*/
+      if ( !v14 ) /*0x486039*/
+        break; /*0x486039*/
+      nPetCount = 0; /*0x48604a*/
+      PetFoodItem = CItemInfo::GetPetFoodItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, nItemID); /*0x486057*/
+      if ( !PetFoodItem /*0x486073*/
+        || (nPetIndex = TSecType<long>::GetData(&v14->nItemID),
+            !ZList<unsigned long>::Find(&PetFoodItem->ldwPet, (const unsigned int *)&nPetIndex, nullptr)) )
+      {
+        v16 = (const char *)&v14[1]; /*0x48607c*/
+        v17 = strlen((const char *)&v14[1]); /*0x48608b*/
+        v18 = sReq; /*0x48608d*/
+        ZXString<char>::_Cat(sReq, v16, v17); /*0x486095*/
+        ZXString<char>::_Cat(v18, s0, 1); /*0x4860a3*/
+      }
+      ++v11; /*0x4860a8*/
+      ++v12; /*0x4860a9*/
+      if ( v11 >= 3 ) /*0x4860af*/
+        goto LABEL_24; /*0x4860af*/
+    }
+    if ( nPetCount ) /*0x4860f7*/
+    {
+      v23 = StringPool::GetInstance(); /*0x486103*/
+      v24 = StringPool::GetString(v23, (ZXString<char> *)&nItemID, 0x208u); /*0x48610a*/
+      LOBYTE(v92) = 2; /*0x486114*/
+      ZXString<char>::operator=(sReq, v24); /*0x486119*/
+      LOBYTE(v92) = 0; /*0x486122*/
+      if ( nItemID ) /*0x486129*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(nItemID - 12)); /*0x48612f*/
+      v92 = -1; /*0x48613b*/
+      if ( !bFound ) /*0x486145*/
+        return 0; /*0x486145*/
+      goto LABEL_32; /*0x486145*/
+    }
+LABEL_24:
+    v19 = sReq; /*0x4860b5*/
+    if ( sReq->_m_pStr && *sReq->_m_pStr ) /*0x4860c3*/
+    {
+      v20 = StringPool::GetInstance(); /*0x4860d6*/
+      m_pStr = StringPool::GetString(v20, (ZXString<char> *)&sReq, 0x209u)->_m_pStr; /*0x4860e2*/
+      LOBYTE(v92) = 3; /*0x4860e4*/
+      if ( m_pStr ) /*0x4860eb*/
+        v22 = *((_DWORD *)m_pStr - 1); /*0x4860ed*/
+      else
+        v22 = 0; /*0x48615a*/
+      ZXString<char>::_Cat(v19, m_pStr, v22); /*0x486160*/
+      LOBYTE(v92) = 0; /*0x486169*/
+      if ( sReq ) /*0x486170*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&sReq[-3]); /*0x486176*/
+      v92 = -1; /*0x486182*/
+      if ( !bFound ) /*0x48618c*/
+        return 0; /*0x48618c*/
+LABEL_32:
+      (*(void (__stdcall **)(int))(*(_DWORD *)bFound + 8))(bFound); /*0x48614b*/
+      return 0; /*0x486155*/
+    }
+    v92 = -1; /*0x4861a5*/
+    if ( bFound ) /*0x4861af*/
+      (*(void (__stdcall **)(int))(*(_DWORD *)bFound + 8))(bFound); /*0x4861b7*/
+  }
+  if ( v88._m_pStr != (char *)552 ) /*0x4861c1*/
+    goto LABEL_78; /*0x4861c1*/
+  *(_DWORD *)&nKarma.gap0 = 0; /*0x4861d4*/
+  KarmaScissorsItem = CItemInfo::GetKarmaScissorsItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, nItemID); /*0x4861d8*/
+  if ( KarmaScissorsItem ) /*0x4861df*/
+    *(_DWORD *)&nKarma.gap0 = KarmaScissorsItem->nKarmaKey; /*0x4861e4*/
+  bFound = 0; /*0x4861f2*/
+  nPetCount = (int)&cd->aaItemSlot[1]; /*0x4861f6*/
+  nPetIndex = 5; /*0x4861fa*/
+  do /*0x48633e*/
+  {
+    v26 = (_DWORD *)nPetCount; /*0x486202*/
+    v27 = *(_DWORD *)nPetCount; /*0x486206*/
+    if ( *(_DWORD *)nPetCount ) /*0x486206*/
+      v27 = *(_DWORD *)(v27 - 4); /*0x48620c*/
+    v28 = v27 - 1; /*0x48620f*/
+    v29 = 1; /*0x486212*/
+    if ( v27 - 1 < 1 ) /*0x486219*/
+    {
+LABEL_51:
+      if ( bFound ) /*0x48625f*/
+        goto LABEL_69; /*0x48625f*/
+      v33 = 0; /*0x486269*/
+      p_p = (TSecType<long> **)&cd->aEquipped[0].p; /*0x48626b*/
+      while ( 1 ) /*0x486271*/
+      {
+        v35 = *p_p; /*0x486271*/
+        if ( *p_p ) /*0x486271*/
+        {
+          Data = TSecType<long>::GetData(v35 + 1); /*0x48627b*/
+          AppliableKarmaType = CItemInfo::GetAppliableKarmaType( /*0x486287*/
+                                 (CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr,
+                                 Data);
+          if ( AppliableKarmaType == *(_DWORD *)&nKarma.gap0 /*0x486299*/
+            && !(*(int (__thiscall **)(TSecType<long> *))(v35->FakePtr1 + 20))(v35) )
+          {
+            break; /*0x486299*/
+          }
+        }
+        ++v33; /*0x4862a3*/
+        p_p += 2; /*0x4862a4*/
+        if ( v33 >= 60 ) /*0x4862aa*/
+        {
+          v38 = 0; /*0x4862ac*/
+          v39 = (TSecType<long> **)&cd->aDragonEquipped[0].p; /*0x4862ae*/
+          while ( 1 ) /*0x4862b4*/
+          {
+            v40 = *v39; /*0x4862b4*/
+            if ( *v39 ) /*0x4862b4*/
+            {
+              v41 = TSecType<long>::GetData(v40 + 1); /*0x4862be*/
+              v42 = CItemInfo::GetAppliableKarmaType((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, v41); /*0x4862ca*/
+              if ( v42 == *(_DWORD *)&nKarma.gap0 /*0x4862dc*/
+                && !(*(int (__thiscall **)(TSecType<long> *))(v40->FakePtr1 + 20))(v40) )
+              {
+                goto LABEL_68; /*0x4862e0*/
+              }
+            }
+            ++v38; /*0x4862e2*/
+            v39 += 2; /*0x4862e3*/
+            if ( v38 >= 4 ) /*0x4862e9*/
+            {
+              v43 = 0; /*0x4862eb*/
+              v44 = (TSecType<long> **)&cd->aMechanicEquipped[0].p; /*0x4862ed*/
+              while ( 1 ) /*0x4862f3*/
+              {
+                v45 = *v44; /*0x4862f3*/
+                if ( *v44 ) /*0x4862f3*/
+                {
+                  v46 = TSecType<long>::GetData(v45 + 1); /*0x4862fd*/
+                  v47 = CItemInfo::GetAppliableKarmaType((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, v46); /*0x486309*/
+                  if ( v47 == *(_DWORD *)&nKarma.gap0 /*0x48631b*/
+                    && !(*(int (__thiscall **)(TSecType<long> *))(v45->FakePtr1 + 20))(v45) )
+                  {
+                    goto LABEL_68; /*0x48631f*/
+                  }
+                }
+                ++v43; /*0x486321*/
+                v44 += 2; /*0x486322*/
+                if ( v43 >= 5 ) /*0x486328*/
+                  goto LABEL_69; /*0x486328*/
+              }
+            }
+          }
+        }
+      }
+    }
+    else
+    {
+      while ( 1 ) /*0x486222*/
+      {
+        v30 = *(TSecType<long> **)(*v26 + 8 * v29 + 4); /*0x486222*/
+        if ( v30 ) /*0x486228*/
+        {
+          v31 = TSecType<long>::GetData(v30 + 1); /*0x48622d*/
+          v32 = CItemInfo::GetAppliableKarmaType((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, v31); /*0x486239*/
+          if ( v32 == *(_DWORD *)&nKarma.gap0 && !(*(int (__thiscall **)(TSecType<long> *))(v30->FakePtr1 + 20))(v30) ) /*0x48624b*/
+            break; /*0x48624b*/
+        }
+        if ( ++v29 > v28 ) /*0x486258*/
+          goto LABEL_51; /*0x486258*/
+      }
+    }
+LABEL_68:
+    bFound = 1; /*0x48632c*/
+LABEL_69:
+    nPetCount += 4; /*0x486334*/
+    --nPetIndex; /*0x486339*/
+  }
+  while ( nPetIndex ); /*0x48633e*/
+  if ( !bFound ) /*0x486349*/
+  {
+    CItemInfo::GetItemName( /*0x48635f*/
+      (CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr,
+      (ZXString<char> *)&nPetIndex,
+      nItemID);
+    v92 = 4; /*0x48636e*/
+    v48 = StringPool::GetInstance(); /*0x486376*/
+    v49 = StringPool::GetString(v48, &v88, 0x124Bu); /*0x48637d*/
+    nItemID = 0; /*0x486382*/
+    v78 = v49->_m_pStr; /*0x486391*/
+    LOBYTE(v92) = 6; /*0x486397*/
+    v50 = ZXString<char>::Format((ZXString<char> *)&nItemID, v78, nPetIndex); /*0x48639c*/
+    ZXString<char>::operator=(sReq, v50); /*0x4863a9*/
+    LOBYTE(v92) = 5; /*0x4863b2*/
+    if ( nItemID ) /*0x4863b9*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(nItemID - 12)); /*0x4863bf*/
+    LOBYTE(v92) = 4; /*0x4863cb*/
+    if ( v88._m_pStr ) /*0x4863d2*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v88._m_pStr - 1); /*0x4863d8*/
+    v92 = -1; /*0x4863e4*/
+    if ( nPetIndex ) /*0x4863ee*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(nPetIndex - 12)); /*0x4863f4*/
+    return 0; /*0x4863fe*/
+  }
+LABEL_78:
+  if ( nItemID / 1000000 != 1 ) /*0x48641b*/
+    return 1; /*0x48641b*/
+  EquipItem = (CItemInfo::EQUIPITEM *)CItemInfo::GetEquipItem( /*0x48642d*/
+                                        (CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr,
+                                        nItemID);
+  if ( !EquipItem ) /*0x486431*/
+  {
+    v52 = StringPool::GetInstance(); /*0x48643d*/
+    v79 = StringPool::GetString(v52, (ZXString<char> *)&nItemID, 0x23Fu)->_m_pStr; /*0x48644f*/
+    v92 = 7; /*0x486450*/
+    ZXString<char>::Format(sReq, v79); /*0x486459*/
+    goto LABEL_81; /*0x486459*/
+  }
+  v54 = bs; /*0x486484*/
+  v55 = _ZtlSecureFuse<long>(bs->_ZtlSecureTear_nJob, bs->_ZtlSecureTear_nJob_CS) % 1000 / 100; /*0x4864c2*/
+  if ( v55 ) /*0x4864c4*/
+    v56 = 1 << (v55 - 1); /*0x4864ce*/
+  else
+    v56 = 0; /*0x4864d2*/
+  if ( _ZtlSecureFuse<long>(EquipItem->_ZtlSecureTear_nrJob, EquipItem->_ZtlSecureTear_nrJob_CS) /*0x4864f7*/
+    && (_ZtlSecureFuse<long>(EquipItem->_ZtlSecureTear_nrJob, EquipItem->_ZtlSecureTear_nrJob_CS) & v56) == 0 )
+  {
+    v57 = StringPool::GetInstance(); /*0x486503*/
+    v80 = StringPool::GetString(v57, (ZXString<char> *)&nItemID, 0x1FFu)->_m_pStr; /*0x486515*/
+    v92 = 8; /*0x486516*/
+    ZXString<char>::Format(sReq, v80); /*0x48651f*/
+    goto LABEL_81; /*0x48651f*/
+  }
+  v58 = _ZtlSecureFuse<long>(EquipItem->_ZtlSecureTear_nrLevel, EquipItem->_ZtlSecureTear_nrLevel_CS); /*0x486539*/
+  if ( v58 > _ZtlSecureFuse<long>(v54->_ZtlSecureTear_nLevel, v54->_ZtlSecureTear_nLevel_CS) ) /*0x486545*/
+  {
+    v59 = StringPool::GetInstance(); /*0x486551*/
+    v81 = StringPool::GetString(v59, (ZXString<char> *)&nItemID, 0x200u)->_m_pStr; /*0x486563*/
+    v92 = 9; /*0x486564*/
+    ZXString<char>::Format(sReq, v81); /*0x48656d*/
+    goto LABEL_81; /*0x48656d*/
+  }
+  if ( _ZtlSecureFuse<long>(EquipItem->_ZtlSecureTear_nrPOP, EquipItem->_ZtlSecureTear_nrPOP_CS) ) /*0x48657a*/
+  {
+    v60 = _ZtlSecureFuse<long>(EquipItem->_ZtlSecureTear_nrPOP, EquipItem->_ZtlSecureTear_nrPOP_CS); /*0x486598*/
+    if ( v60 > _ZtlSecureFuse<long>(v54->_ZtlSecureTear_nPOP, v54->_ZtlSecureTear_nPOP_CS) ) /*0x4865a4*/
+    {
+      v61 = StringPool::GetInstance(); /*0x4865b0*/
+      v82 = StringPool::GetString(v61, (ZXString<char> *)&nItemID, 0x201u)->_m_pStr; /*0x4865be*/
+      v92 = 10; /*0x4865c3*/
+      ZXString<char>::Format(sReq, v82); /*0x4865cc*/
+      goto LABEL_81; /*0x4865cc*/
+    }
+  }
+  if ( nItemID / 100000 == 17 ) /*0x4865e7*/
+  {
+    v62 = (TSecType<long> *)cd->aEquipped[11].p; /*0x4865ed*/
+    if ( v62 ) /*0x4865f5*/
+    {
+      v63 = TSecType<long>::GetData(v62 + 1); /*0x4865fa*/
+      if ( !CItemInfo::EQUIPITEM::IsAbleToStickWithWeapon(EquipItem, v63) ) /*0x486602*/
+      {
+        v64 = StringPool::GetInstance(); /*0x486615*/
+        v83 = StringPool::GetString(v64, (ZXString<char> *)&nItemID, 0x204u)->_m_pStr; /*0x486627*/
+        v92 = 11; /*0x486628*/
+        ZXString<char>::Format(sReq, v83); /*0x486631*/
+        goto LABEL_81; /*0x486631*/
+      }
+    }
+  }
+  if ( v88._m_pStr != (char *)180 ) /*0x48663e*/
+    goto LABEL_119; /*0x48663e*/
+  v65 = 1; /*0x48664a*/
+  nPetCount = 0; /*0x48664f*/
+  nPetIndex = 0; /*0x486653*/
+  v66 = cd->characterStat.aliPetLockerSN; /*0x486657*/
+  while ( 1 ) /*0x486668*/
+  {
+    v67 = CharacterData::FindCashItemSlotPosition(cd, 5, *v66); /*0x486668*/
+    if ( !v67 ) /*0x48666f*/
+      break; /*0x48666f*/
+    ++nPetCount; /*0x486675*/
+    v65 = 0; /*0x486685*/
+    v68 = CharacterData::GetItem(cd, &nKarma, 5, v67)->p; /*0x48668c*/
+    ZRef<GW_ItemSlotBase>::~ZRef<GW_ItemSlotBase>(&nKarma); /*0x486693*/
+    v69 = TSecType<long>::GetData(&v68->nItemID); /*0x48669b*/
+    if ( !CItemInfo::EQUIPITEM::IsItemSuitedForPet(EquipItem, v69) ) /*0x4866a3*/
+    {
+      ZXString<char>::operator+=(sReq, (const char *)&v68[1]); /*0x4866b4*/
+      ZXString<char>::operator+=(sReq, s0); /*0x4866c2*/
+    }
+    ++v66; /*0x4866cc*/
+    if ( ++nPetIndex >= 3 ) /*0x4866d6*/
+      goto LABEL_105; /*0x4866d6*/
+  }
+  if ( v65 ) /*0x48670d*/
+  {
+    v70 = StringPool::GetInstance(); /*0x486719*/
+    v71 = StringPool::GetString(v70, (ZXString<char> *)&nItemID, 0x207u); /*0x486720*/
+    v92 = 12; /*0x48672a*/
+    ZXString<char>::operator=(sReq, v71); /*0x486732*/
+    goto LABEL_81; /*0x486737*/
+  }
+LABEL_105:
+  if ( !sReq->_m_pStr || !*sReq->_m_pStr ) /*0x4866e6*/
+  {
+LABEL_119:
+    if ( v88._m_pStr == (char *)190 || is_saddle(nItemID) ) /*0x486778*/
+    {
+      v74 = _ZtlSecureFuse<short>(cd->characterStat._ZtlSecureTear_nJob, cd->characterStat._ZtlSecureTear_nJob_CS); /*0x486790*/
+      novice_skill_as_race = get_novice_skill_as_race(1004, v74); /*0x4867a4*/
+      if ( CSkillInfo::GetSkillLevel(TSingleton<CSkillInfo>::ms_pInstance, cd, novice_skill_as_race, nullptr) <= 0 ) /*0x4867c4*/
+      {
+        v76 = StringPool::GetInstance(); /*0x4867d0*/
+        v77 = StringPool::GetString(v76, (ZXString<char> *)&bs, 0x20Au); /*0x4867d7*/
+        v92 = 14; /*0x4867e1*/
+        ZXString<char>::operator=(sReq, v77); /*0x4867e9*/
+        v53 = bs; /*0x4867ee*/
+        goto LABEL_82; /*0x4867f2*/
+      }
+    }
+    return 1; /*0x4867f7*/
+  }
+  if ( nPetCount > 1 ) /*0x4866f0*/
+  {
+    ZXString<char>::Format(sReq, aOneOrMoreOfYou); /*0x4866fc*/
+    return 0; /*0x486706*/
+  }
+  v72 = StringPool::GetInstance(); /*0x486746*/
+  v73 = StringPool::GetString(v72, (ZXString<char> *)&nItemID, 0x206u); /*0x48674d*/
+  v92 = 13; /*0x486757*/
+  ZXString<char>::operator+=(sReq, v73); /*0x48675f*/
+LABEL_81:
+  v53 = (const BasicStat *)nItemID; /*0x486461*/
+LABEL_82:
+  v92 = -1; /*0x486465*/
+  if ( !v53 ) /*0x48646f*/
+    return 0; /*0x48646f*/
+  ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v53[-1]._ZtlSecureTear_nMMP); /*0x486475*/
+  return 0; /*0x4867fc*/
+}

@@ -1,0 +1,3214 @@
+// CSkillInfo::LoadSkill(long,_com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>,_com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>)
+
+ZRef<SKILLENTRY> *__thiscall CSkillInfo::LoadSkill(
+        CSkillInfo *this,
+        ZRef<SKILLENTRY> *result,
+        int nSkillID,
+        _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pSkill,
+        _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pStrSR)
+{
+  SKILLENTRY *p; // eax
+  StringPool *Instance; // eax
+  IWzProperty_vtbl *v7; // edx
+  const ZXString<char> *labeled_string; // eax
+  SKILLENTRY *v9; // ecx
+  char *v10; // ecx
+  StringPool *v11; // eax
+  IWzProperty_vtbl *v12; // edx
+  const ZXString<char> *v13; // eax
+  SKILLENTRY *v14; // ecx
+  _bstr_t::Data_t *v15; // ecx
+  StringPool *v16; // eax
+  Ztl_variant_t *v17; // eax
+  SKILLENTRY *v18; // esi
+  _bstr_t::Data_t *v19; // ecx
+  StringPool *v20; // eax
+  Ztl_variant_t *v21; // eax
+  SKILLENTRY *v22; // esi
+  _bstr_t::Data_t *v23; // ecx
+  StringPool *v24; // eax
+  Ztl_variant_t *v25; // eax
+  SKILLENTRY *v26; // esi
+  _bstr_t::Data_t *v27; // ecx
+  StringPool *v28; // eax
+  Ztl_variant_t *v29; // eax
+  SKILLENTRY *v30; // esi
+  _bstr_t::Data_t *v31; // ecx
+  StringPool *v32; // eax
+  Ztl_variant_t *v33; // eax
+  SKILLENTRY *v34; // esi
+  _bstr_t::Data_t *v35; // ecx
+  StringPool *v36; // eax
+  Ztl_variant_t *v37; // eax
+  SKILLENTRY *v38; // esi
+  _bstr_t::Data_t *v39; // ecx
+  StringPool *v40; // eax
+  Ztl_variant_t *v41; // eax
+  SKILLENTRY *v42; // esi
+  _bstr_t::Data_t *v43; // ecx
+  StringPool *v44; // eax
+  Ztl_variant_t *v45; // eax
+  SKILLENTRY *v46; // esi
+  _bstr_t::Data_t *v47; // ecx
+  StringPool *v48; // eax
+  Ztl_variant_t *v49; // eax
+  SKILLENTRY *v50; // esi
+  _bstr_t::Data_t *v51; // ecx
+  StringPool *v52; // eax
+  Ztl_variant_t *v53; // eax
+  SKILLENTRY *v54; // esi
+  _bstr_t::Data_t *v55; // ecx
+  Ztl_variant_t *v56; // eax
+  IUnknown *Unknown; // eax
+  int v58; // eax
+  IWzProperty *m_pInterface; // edi
+  const _com_ptr_t<_com_IIID<IUnknown,&_GUID_00000000_0000_0000_c000_000000000046> > *NewEnum; // eax
+  IEnumVARIANT *v61; // ebx
+  Ztl_variant_t *v62; // eax
+  IUnknown *v63; // eax
+  IWzProperty *v64; // esi
+  _bstr_t::Data_t *v65; // ecx
+  StringPool *v66; // eax
+  Ztl_variant_t *v67; // eax
+  IWzVector2D_vtbl *int32; // eax
+  _bstr_t::Data_t *v69; // ecx
+  IWzVector2D *v70; // edi
+  StringPool *v71; // eax
+  Ztl_variant_t *v72; // eax
+  _bstr_t::Data_t *v73; // ecx
+  StringPool *v74; // eax
+  Ztl_variant_t *v75; // eax
+  _bstr_t::Data_t *v76; // ecx
+  StringPool *v77; // eax
+  Ztl_variant_t *v78; // eax
+  _bstr_t::Data_t *v79; // ecx
+  StringPool *v80; // eax
+  Ztl_variant_t *v81; // eax
+  _bstr_t::Data_t *v82; // ecx
+  StringPool *v83; // eax
+  Ztl_variant_t *v84; // eax
+  _bstr_t::Data_t *v85; // ecx
+  StringPool *v86; // eax
+  Ztl_variant_t *v87; // eax
+  IWzProperty_vtbl *v88; // eax
+  IWzVector2D *v89; // edi
+  unsigned int (__stdcall *Release)(IUnknown *); // ecx
+  unsigned int (__stdcall *v91)(IUnknown *); // eax
+  StringPool *v92; // eax
+  Ztl_variant_t *v93; // eax
+  IUnknown *v94; // eax
+  IWzProperty *v95; // ebx
+  HRESULT v96; // eax
+  _bstr_t::Data_t *v97; // ecx
+  unsigned int i; // edi
+  HRESULT (__stdcall *get_count)(IWzProperty *, unsigned int *); // edx
+  HRESULT v100; // eax
+  void *v101; // esp
+  wchar_t *v102; // eax
+  Ztl_variant_t *v103; // eax
+  _bstr_t::Data_t *v104; // ecx
+  int action_code_from_name; // esi
+  StringPool *v106; // eax
+  Ztl_variant_t *v107; // eax
+  IUnknown *v108; // eax
+  IEnumVARIANT *v109; // esi
+  HRESULT v110; // eax
+  void *v111; // esp
+  wchar_t *v112; // eax
+  Ztl_variant_t *v113; // eax
+  _bstr_t::Data_t *v114; // ecx
+  int v115; // eax
+  bool v116; // zf
+  SKILLENTRY *v117; // eax
+  SKILLENTRY *v118; // eax
+  StringPool *v119; // eax
+  Ztl_variant_t *v120; // eax
+  IUnknown *v121; // eax
+  _bstr_t::Data_t *v122; // ecx
+  IWzProperty *v123; // edi
+  HRESULT v124; // eax
+  Ztl_variant_t *v125; // eax
+  SKILLENTRY *v126; // esi
+  _bstr_t::Data_t *v127; // ecx
+  Ztl_variant_t *v128; // eax
+  SKILLENTRY *v129; // esi
+  StringPool *v130; // eax
+  Ztl_variant_t *v131; // eax
+  HRESULT v132; // eax
+  const wchar_t *bstrVal; // ecx
+  _bstr_t::Data_t *v134; // ecx
+  StringPool *v135; // eax
+  Ztl_variant_t *v136; // eax
+  SKILLENTRY *v137; // esi
+  _bstr_t::Data_t *v138; // ecx
+  StringPool *v139; // eax
+  unsigned __int16 vt; // si
+  _bstr_t::Data_t *v141; // ecx
+  StringPool *v142; // eax
+  wchar_t *m_pStr; // ecx
+  int v144; // ebx
+  ZXString<unsigned short> *v145; // eax
+  volatile LONG *v146; // edi
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *p_sEffectUOL; // esi
+  StringPool *v148; // eax
+  _bstr_t::Data_t *v149; // ecx
+  unsigned __int16 v150; // si
+  StringPool *v151; // eax
+  wchar_t *v152; // ecx
+  ZXString<unsigned short> *v153; // eax
+  volatile LONG *v154; // edi
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *p_sScreenEffectUOL; // esi
+  StringPool *v156; // eax
+  _bstr_t::Data_t *v157; // ecx
+  unsigned __int16 v158; // si
+  StringPool *v159; // eax
+  wchar_t *v160; // ecx
+  ZXString<unsigned short> *v161; // eax
+  volatile LONG *v162; // edi
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *p_sAffectedUOL; // esi
+  StringPool *v164; // eax
+  _bstr_t::Data_t *v165; // ecx
+  unsigned __int16 v166; // si
+  StringPool *v167; // eax
+  wchar_t *v168; // ecx
+  ZXString<unsigned short> *v169; // eax
+  volatile LONG *v170; // edi
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *p_sSpecialAffectedUOL; // esi
+  StringPool *v172; // eax
+  Ztl_variant_t *v173; // eax
+  IUnknown *v174; // eax
+  HRESULT v175; // eax
+  _bstr_t::Data_t *v176; // ecx
+  StringPool *v177; // eax
+  wchar_t *v178; // ecx
+  ZXString<unsigned short> *v179; // eax
+  _bstr_t::Data_t *v180; // ecx
+  _bstr_t::Data_t *v181; // edi
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *p_sPrepareUOL; // esi
+  StringPool *v183; // eax
+  Ztl_variant_t *v184; // eax
+  _bstr_t::Data_t *v185; // ecx
+  int v186; // eax
+  _bstr_t::Data_t *v187; // ecx
+  StringPool *v188; // eax
+  Ztl_variant_t *v189; // eax
+  SKILLENTRY *v190; // esi
+  StringPool *v191; // eax
+  Ztl_variant_t *v192; // eax
+  IUnknown *v193; // eax
+  HRESULT v194; // eax
+  _bstr_t::Data_t *v195; // ecx
+  StringPool *v196; // eax
+  wchar_t *v197; // ecx
+  ZXString<unsigned short> *v198; // eax
+  _bstr_t::Data_t *v199; // edi
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *p_sKeyDownUOL; // esi
+  StringPool *v201; // eax
+  Ztl_variant_t *v202; // eax
+  IUnknown *v203; // eax
+  HRESULT v204; // eax
+  _bstr_t::Data_t *v205; // ecx
+  StringPool *v206; // eax
+  wchar_t *v207; // ecx
+  ZXString<unsigned short> *v208; // eax
+  _bstr_t::Data_t *v209; // edi
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *p_sKeyDownEndUOL; // esi
+  StringPool *v211; // eax
+  Ztl_variant_t *v212; // eax
+  IUnknown *v213; // eax
+  HRESULT v214; // eax
+  _bstr_t::Data_t *v215; // ecx
+  IWzProperty *v216; // esi
+  HRESULT (__stdcall *v217)(IWzProperty *, unsigned int *); // edx
+  HRESULT v218; // eax
+  StringPool *v219; // eax
+  wchar_t *v220; // ecx
+  int v221; // edi
+  ZXString<unsigned short> *v222; // eax
+  HRESULT (__stdcall *v223)(IWzProperty *, unsigned int *); // ecx
+  HRESULT v224; // eax
+  StringPool *v225; // eax
+  wchar_t *v226; // eax
+  ZXString<unsigned short> *v227; // eax
+  SKILLENTRY *v228; // eax
+  Ztl_bstr_t *v229; // eax
+  _bstr_t::Data_t *m_Data; // ebx
+  Ztl_bstr_t *v231; // esi
+  StringPool *v232; // eax
+  Ztl_variant_t *v233; // eax
+  IUnknown *v234; // eax
+  HRESULT v235; // eax
+  _bstr_t::Data_t *v236; // ecx
+  StringPool *v237; // eax
+  wchar_t *v238; // ecx
+  ZXString<unsigned short> *v239; // eax
+  _bstr_t::Data_t *v240; // ecx
+  _bstr_t::Data_t *v241; // edi
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *p_sBallUOL; // esi
+  StringPool *v243; // eax
+  Ztl_variant_t *v244; // eax
+  SKILLENTRY *v245; // esi
+  StringPool *v246; // eax
+  Ztl_variant_t *v247; // eax
+  IUnknown *v248; // eax
+  HRESULT v249; // eax
+  IWzProperty *v250; // ecx
+  StringPool *v251; // eax
+  wchar_t *v252; // ecx
+  ZXString<unsigned short> *v253; // eax
+  _bstr_t::Data_t *v254; // ecx
+  _bstr_t::Data_t *v255; // edi
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *p_sFlipBallUOL; // esi
+  StringPool *v257; // eax
+  Ztl_variant_t *v258; // eax
+  SKILLENTRY *v259; // esi
+  StringPool *v260; // eax
+  _bstr_t::Data_t *v261; // ecx
+  unsigned __int16 v262; // si
+  StringPool *v263; // eax
+  wchar_t *v264; // ecx
+  ZXString<unsigned short> *v265; // eax
+  _bstr_t::Data_t *v266; // edi
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *p_sMobUOL; // esi
+  StringPool *v268; // eax
+  unsigned __int16 v269; // si
+  _bstr_t::Data_t *v270; // ecx
+  StringPool *v271; // eax
+  wchar_t *v272; // ecx
+  ZXString<unsigned short> *v273; // eax
+  _bstr_t::Data_t *v274; // edi
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *p_sTileUOL; // esi
+  StringPool *v276; // eax
+  unsigned __int16 v277; // si
+  _bstr_t::Data_t *v278; // ecx
+  StringPool *v279; // eax
+  wchar_t *v280; // ecx
+  ZXString<unsigned short> *v281; // eax
+  _bstr_t::Data_t *v282; // edi
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *p_sAfterimageUOL; // esi
+  StringPool *v284; // eax
+  unsigned __int16 v285; // si
+  _bstr_t::Data_t *v286; // ecx
+  StringPool *v287; // eax
+  wchar_t *v288; // ecx
+  ZXString<unsigned short> *v289; // eax
+  _bstr_t::Data_t *v290; // edi
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *p_sSpecialUOL; // esi
+  StringPool *v292; // eax
+  unsigned __int16 v293; // si
+  _bstr_t::Data_t *v294; // ecx
+  StringPool *v295; // eax
+  wchar_t *v296; // ecx
+  ZXString<unsigned short> *v297; // eax
+  _bstr_t::Data_t *v298; // edi
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *p_sSummonedUOL; // esi
+  StringPool *v300; // eax
+  unsigned __int16 v301; // si
+  _bstr_t::Data_t *v302; // ecx
+  StringPool *v303; // eax
+  wchar_t *v304; // ecx
+  ZXString<unsigned short> *v305; // eax
+  _bstr_t::Data_t *v306; // edi
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *p_sFinishUOL; // esi
+  StringPool *v308; // eax
+  Ztl_variant_t *v309; // eax
+  SKILLENTRY *v310; // esi
+  IUnknown *v311; // eax
+  HRESULT v312; // eax
+  _bstr_t::Data_t *v313; // ecx
+  StringPool *v314; // eax
+  Ztl_variant_t *v315; // eax
+  SKILLENTRY *v316; // esi
+  IUnknown *v317; // eax
+  HRESULT v318; // eax
+  _bstr_t::Data_t *v319; // ecx
+  StringPool *v320; // eax
+  Ztl_variant_t *v321; // eax
+  SKILLENTRY *v322; // esi
+  IUnknown *v323; // eax
+  HRESULT v324; // eax
+  _bstr_t::Data_t *v325; // ecx
+  StringPool *v326; // eax
+  Ztl_variant_t *v327; // eax
+  IUnknown *v328; // eax
+  HRESULT v329; // eax
+  _bstr_t::Data_t *v330; // ecx
+  bool v331; // bl
+  StringPool *v332; // eax
+  Ztl_variant_t *v333; // eax
+  IUnknown *v334; // eax
+  HRESULT v335; // eax
+  IWzProperty *v336; // edi
+  bool v337; // bl
+  SKILLENTRY *v338; // eax
+  _bstr_t::Data_t *p_nMaxLevel; // ecx
+  void (*AddRef)(void); // edx
+  StringPool *v341; // eax
+  Ztl_variant_t *v342; // eax
+  IUnknown *v343; // eax
+  HRESULT v344; // eax
+  _bstr_t::Data_t *v345; // ecx
+  StringPool *v346; // eax
+  char *v347; // eax
+  const ZXString<char> *v348; // eax
+  SKILLENTRY *v349; // ecx
+  StringPool *v350; // eax
+  Ztl_variant_t *v351; // eax
+  SKILLENTRY *v352; // esi
+  IUnknown *v353; // eax
+  HRESULT v354; // eax
+  _bstr_t::Data_t *v355; // ecx
+  StringPool *v356; // eax
+  Ztl_variant_t *v357; // eax
+  SKILLENTRY *v358; // esi
+  IUnknown *v359; // eax
+  HRESULT v360; // eax
+  _bstr_t::Data_t *v361; // ecx
+  StringPool *v362; // eax
+  IWzProperty *v363; // ecx
+  Ztl_variant_t *v364; // eax
+  SKILLENTRY *v365; // esi
+  StringPool *v366; // eax
+  Ztl_variant_t *v367; // eax
+  IUnknown *v368; // eax
+  HRESULT v369; // eax
+  _bstr_t::Data_t *v370; // eax
+  wchar_t *m_wstr; // eax
+  void (__stdcall *v372)(VARIANTARG *); // esi
+  HRESULT v373; // eax
+  HRESULT v374; // eax
+  _bstr_t::Data_t *v375; // eax
+  Ztl_variant_t *ObjectA; // eax
+  IUnknown *v377; // eax
+  HRESULT v378; // eax
+  IWzProperty *v379; // esi
+  const _com_ptr_t<_com_IIID<IUnknown,&_GUID_00000000_0000_0000_c000_000000000046> > *v380; // eax
+  IEnumVARIANT *v381; // esi
+  StringPool *v382; // eax
+  ZXString<unsigned short> *StringW; // eax
+  _bstr_t::Data_t *v384; // edi
+  const wchar_t *v385; // eax
+  wchar_t *v386; // ecx
+  bool v387; // bl
+  Ztl_variant_t *v388; // eax
+  IUnknown *v389; // eax
+  _bstr_t::Data_t *v390; // ecx
+  StringPool *v391; // eax
+  Ztl_variant_t *v392; // eax
+  IUnknown *v393; // eax
+  _bstr_t::Data_t *v394; // ecx
+  StringPool *v395; // eax
+  IWzProperty *v396; // ebx
+  Ztl_variant_t *v397; // eax
+  IUnknown *v398; // eax
+  _bstr_t::Data_t *v399; // ecx
+  StringPool *v400; // eax
+  IWzProperty *v401; // esi
+  Ztl_variant_t *v402; // eax
+  IUnknown *v403; // eax
+  _bstr_t::Data_t *v404; // ecx
+  IWzVector2D *v405; // edi
+  _bstr_t::Data_t *v406; // ecx
+  StringPool *v407; // eax
+  Ztl_variant_t *v408; // eax
+  SKILLENTRY *v409; // edi
+  unsigned int v410; // eax
+  SKILLENTRY *v411; // edi
+  unsigned int v412; // eax
+  SKILLENTRY *v413; // edi
+  unsigned int v414; // eax
+  StringPool *v415; // eax
+  Ztl_variant_t *v416; // eax
+  int v417; // edi
+  unsigned int Crc32; // eax
+  _bstr_t::Data_t *v419; // ecx
+  StringPool *v420; // eax
+  Ztl_variant_t *v421; // eax
+  IUnknown *v422; // eax
+  _bstr_t::Data_t *v423; // ecx
+  StringPool *v424; // eax
+  Ztl_variant_t *v425; // eax
+  IUnknown *v426; // eax
+  IWzVector2D *v427; // edi
+  int v428; // eax
+  int v429; // eax
+  int v430; // eax
+  int v431; // eax
+  unsigned int (__stdcall *v432)(IUnknown *); // edx
+  unsigned int (__stdcall *v433)(IUnknown *); // ecx
+  unsigned int (__stdcall *v434)(IUnknown *); // eax
+  unsigned int (__stdcall *v435)(IUnknown *); // ecx
+  Ztl_bstr_t v437; // [esp-A8h] [ebp-258h] BYREF
+  Ztl_bstr_t v438; // [esp-A4h] [ebp-254h] BYREF
+  Ztl_bstr_t v439; // [esp-A0h] [ebp-250h] BYREF
+  Ztl_bstr_t v440; // [esp-9Ch] [ebp-24Ch] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > v441; // [esp-98h] [ebp-248h] BYREF
+  Ztl_bstr_t v442; // [esp-94h] [ebp-244h] BYREF
+  Ztl_bstr_t v443; // [esp-90h] [ebp-240h] BYREF
+  Ztl_bstr_t v444; // [esp-8Ch] [ebp-23Ch] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > v445[2]; // [esp-88h] [ebp-238h] BYREF
+  Ztl_bstr_t v446; // [esp-80h] [ebp-230h] BYREF
+  _bstr_t v447; // [esp-7Ch] [ebp-22Ch] BYREF
+  _bstr_t v448; // [esp-78h] [ebp-228h] BYREF
+  Ztl_bstr_t v449; // [esp-74h] [ebp-224h] BYREF
+  BOOL v450; // [esp-70h] [ebp-220h]
+  _bstr_t v451; // [esp-6Ch] [ebp-21Ch] BYREF
+  wchar_t v452; // [esp-68h] [ebp-218h] BYREF
+  _bstr_t v453; // [esp-60h] [ebp-210h] BYREF
+  wchar_t v454; // [esp-5Ch] [ebp-20Ch] BYREF
+  Ztl_bstr_t *v455; // [esp-50h] [ebp-200h]
+  unsigned int v456; // [esp-4Ch] [ebp-1FCh]
+  Ztl_bstr_t v457; // [esp-48h] [ebp-1F8h] BYREF
+  BOOL v458; // [esp-44h] [ebp-1F4h]
+  BOOL v459; // [esp-40h] [ebp-1F0h]
+  Ztl_bstr_t v460; // [esp-34h] [ebp-1E4h] BYREF
+  BOOL v461; // [esp-30h] [ebp-1E0h]
+  BOOL v462; // [esp-2Ch] [ebp-1DCh]
+  Ztl_bstr_t v463; // [esp-28h] [ebp-1D8h] BYREF
+  Ztl_bstr_t v464; // [esp-24h] [ebp-1D4h] BYREF
+  int v465; // [esp-20h] [ebp-1D0h]
+  _bstr_t v466; // [esp-14h] [ebp-1C4h] BYREF
+  Ztl_bstr_t v467; // [esp-10h] [ebp-1C0h] BYREF
+  ZXString<char> v468; // [esp-Ch] [ebp-1BCh] BYREF
+  ZXString<char> v469; // [esp-8h] [ebp-1B8h] BYREF
+  _BYTE v470[20]; // [esp-4h] [ebp-1B4h] BYREF
+  Ztl_variant_t v471; // [esp+10h] [ebp-1A0h] BYREF
+  Ztl_variant_t v472; // [esp+20h] [ebp-190h] BYREF
+  Ztl_variant_t v473; // [esp+30h] [ebp-180h] BYREF
+  Ztl_variant_t v474; // [esp+40h] [ebp-170h] BYREF
+  Ztl_variant_t v475; // [esp+50h] [ebp-160h] BYREF
+  Ztl_variant_t v476; // [esp+60h] [ebp-150h] BYREF
+  Ztl_variant_t v477; // [esp+70h] [ebp-140h] BYREF
+  Ztl_variant_t vTime; // [esp+80h] [ebp-130h] BYREF
+  Ztl_variant_t v479; // [esp+90h] [ebp-120h] BYREF
+  tagRECT rcRange; // [esp+A0h] [ebp-110h] BYREF
+  Ztl_variant_t v481; // [esp+B0h] [ebp-100h] BYREF
+  Ztl_variant_t v482; // [esp+C0h] [ebp-F0h] BYREF
+  Ztl_variant_t v483; // [esp+D0h] [ebp-E0h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pInfo; // [esp+E0h] [ebp-D0h] BYREF
+  _com_ptr_t<_com_IIID<IUnknown,&_GUID_00000000_0000_0000_c000_000000000046> > v485; // [esp+E4h] [ebp-CCh] BYREF
+  tagVARIANT v; // [esp+E8h] [ebp-C8h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pRange; // [esp+F8h] [ebp-B8h] BYREF
+  ZXString<unsigned short> v488; // [esp+FCh] [ebp-B4h] BYREF
+  int nX; // [esp+100h] [ebp-B0h] BYREF
+  unsigned int f; // [esp+104h] [ebp-ACh] BYREF
+  _com_ptr_t<_com_IIID<IEnumVARIANT,&_GUID_00020404_0000_0000_c000_000000000046> > pEnum; // [esp+108h] [ebp-A8h] BYREF
+  int nY; // [esp+10Ch] [ebp-A4h] BYREF
+  Ztl_variant_t v493; // [esp+110h] [ebp-A0h] BYREF
+  Ztl_variant_t v494; // [esp+120h] [ebp-90h] BYREF
+  Ztl_variant_t v495; // [esp+130h] [ebp-80h] BYREF
+  Ztl_variant_t vParam; // [esp+140h] [ebp-70h] BYREF
+  Ztl_variant_t v497; // [esp+150h] [ebp-60h] BYREF
+  Ztl_variant_t v498; // [esp+160h] [ebp-50h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pHit; // [esp+170h] [ebp-40h] BYREF
+  Ztl_variant_t v500; // [esp+174h] [ebp-3Ch] BYREF
+  ZXString<char> sID; // [esp+184h] [ebp-2Ch] BYREF
+  tagVARIANT vName; // [esp+188h] [ebp-28h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pFlipBall; // [esp+198h] [ebp-18h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > pRB; // [esp+19Ch] [ebp-14h] BYREF
+  int v505; // [esp+1A0h] [ebp-10h]
+  int v506; // [esp+1ACh] [ebp-4h]
+  int pAPsd; // [esp+1B0h] [ebp+0h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > pLT; // [esp+1B4h] [ebp+4h] BYREF
+  unsigned int f1; // [esp+1B8h] [ebp+8h] BYREF
+  _com_ptr_t<_com_IIID<IEnumVARIANT,&_GUID_00020404_0000_0000_c000_000000000046> > pEnum1; // [esp+1BCh] [ebp+Ch] BYREF
+  bool v511; // [esp+1C3h] [ebp+13h]
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pAction; // [esp+1C4h] [ebp+14h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pAttack; // [esp+1C8h] [ebp+18h] BYREF
+  int nIdx; // [esp+1CCh] [ebp+1Ch] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pPsdSkill; // [esp+1D0h] [ebp+20h] BYREF
+  Ztl_variant_t v516; // [esp+1D4h] [ebp+24h] BYREF
+  Ztl_bstr_t sName; // [esp+1E4h] [ebp+34h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pProp; // [esp+1E8h] [ebp+38h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pKeyDownEnd; // [esp+1ECh] [ebp+3Ch] BYREF
+  ZXString<unsigned short> sUOL; // [esp+1F0h] [ebp+40h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pSkillID; // [esp+1F4h] [ebp+44h] BYREF
+  int nRange; // [esp+1F8h] [ebp+48h] BYREF
+  tagVARIANT Destination; // [esp+1FCh] [ebp+4Ch] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > pSP; // [esp+20Ch] [ebp+5Ch] BYREF
+  SKILLENTRY *v525; // [esp+210h] [ebp+60h]
+
+  pAttack.m_pInterface = (IWzProperty *)this;
+  v505 = 0;
+  v506 = 1;
+  VariantInit(&v);
+  sUOL._m_pStr = nullptr;
+  LOBYTE(v506) = 4;
+  result->p = nullptr;
+  ZRef<SKILLENTRY>::_Alloc(result);
+  v505 = 1;
+  sID._m_pStr = nullptr;
+  LOBYTE(v506) = 5;
+  ZXString<char>::Format(&sID, "%07d", nSkillID);
+  p = result->p;
+  v525 = (SKILLENTRY *)v470;
+  v469._m_pStr = (char *)1649;
+  v468._m_pStr = v470;
+  p->nSkillID = nSkillID;
+  Instance = StringPool::GetInstance();
+  StringPool::GetBSTR(Instance, (Ztl_bstr_t *)v468._m_pStr, (unsigned int)v469._m_pStr);
+  pLT.m_pInterface = (IWzVector2D *)&v469;
+  LOBYTE(v506) = 6;
+  v469._m_pStr = nullptr;
+  ZXString<char>::operator=(&v469, &sID);
+  v468._m_pStr = (char *)pStrSR.m_pInterface;
+  pLT.m_pInterface = (IWzVector2D *)&v468;
+  if ( pStrSR.m_pInterface )
+  {
+    v7 = pStrSR.m_pInterface->__vftable;
+    v467.m_Data = (_bstr_t::Data_t *)pStrSR.m_pInterface;
+    ((void (*)(void))v7->AddRef)();
+  }
+  LOBYTE(v506) = 5;
+  labeled_string = get_labeled_string(
+                     (ZXString<char> *)&pAction,
+                     (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> >)v467.m_Data,
+                     v468,
+                     (Ztl_bstr_t)v469._m_pStr);
+  v9 = result->p;
+  LOBYTE(v506) = 7;
+  ZXString<char>::operator=(&v9->sName, labeled_string);
+  LOBYTE(v506) = 5;
+  if ( pAction.m_pInterface )
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&pAction.m_pInterface[-3]);
+  v469._m_pStr = v10;
+  v525 = (SKILLENTRY *)&v469;
+  v468._m_pStr = (char *)1492;
+  v11 = StringPool::GetInstance();
+  StringPool::GetBSTR(v11, (Ztl_bstr_t *)&v469, (unsigned int)v468._m_pStr);
+  pLT.m_pInterface = (IWzVector2D *)&v468;
+  LOBYTE(v506) = 8;
+  v468._m_pStr = nullptr;
+  ZXString<char>::operator=(&v468, &sID);
+  v467.m_Data = (_bstr_t::Data_t *)pStrSR.m_pInterface;
+  pLT.m_pInterface = (IWzVector2D *)&v467;
+  if ( pStrSR.m_pInterface )
+  {
+    v12 = pStrSR.m_pInterface->__vftable;
+    v466.m_Data = (_bstr_t::Data_t *)pStrSR.m_pInterface;
+    ((void (*)(void))v12->AddRef)();
+  }
+  LOBYTE(v506) = 5;
+  v13 = get_labeled_string(
+          (ZXString<char> *)&pAction,
+          (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> >)v466.m_Data,
+          (ZXString<char>)v467.m_Data,
+          (Ztl_bstr_t)v468._m_pStr);
+  v14 = result->p;
+  LOBYTE(v506) = 9;
+  ZXString<char>::operator=(&v14->sDescription, v13);
+  LOBYTE(v506) = 5;
+  if ( pAction.m_pInterface )
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&pAction.m_pInterface[-3]);
+  v468._m_pStr = nullptr;
+  v467.m_Data = v15;
+  v525 = (SKILLENTRY *)&v467;
+  v16 = StringPool::GetInstance();
+  StringPool::GetBSTR(v16, &v467, 0x96Bu);
+  LOBYTE(v506) = 10;
+  if ( !pSkill.m_pInterface )
+LABEL_10:
+    _com_issue_error(-2147467261);
+  LOBYTE(v506) = 5;
+  v17 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, v467);
+  v18 = result->p;
+  LOBYTE(v506) = 11;
+  v18->nSkillType = get_int32(v17, (int)v468._m_pStr);
+  LOBYTE(v506) = 5;
+  if ( Destination.vt == 8 )
+  {
+    v19 = nullptr;
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  v468._m_pStr = nullptr;
+  v467.m_Data = v19;
+  v525 = (SKILLENTRY *)&v467;
+  v20 = StringPool::GetInstance();
+  StringPool::GetBSTR(v20, &v467, 0x1939u);
+  LOBYTE(v506) = 5;
+  v21 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, v467);
+  v22 = result->p;
+  LOBYTE(v506) = 13;
+  v22->nPsdSkill = get_int32(v21, (int)v468._m_pStr);
+  LOBYTE(v506) = 5;
+  if ( Destination.vt == 8 )
+  {
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  v468._m_pStr = nullptr;
+  v467.m_Data = v23;
+  v525 = (SKILLENTRY *)&v467;
+  v24 = StringPool::GetInstance();
+  StringPool::GetBSTR(v24, &v467, 0x96Cu);
+  LOBYTE(v506) = 5;
+  v25 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, v467);
+  v26 = result->p;
+  LOBYTE(v506) = 15;
+  v26->nWeapon = get_int32(v25, (int)v468._m_pStr);
+  LOBYTE(v506) = 5;
+  if ( Destination.vt == 8 )
+  {
+    v27 = nullptr;
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  v468._m_pStr = nullptr;
+  v467.m_Data = v27;
+  v525 = (SKILLENTRY *)&v467;
+  v28 = StringPool::GetInstance();
+  StringPool::GetBSTR(v28, &v467, 0x1683u);
+  LOBYTE(v506) = 5;
+  v29 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, v467);
+  v30 = result->p;
+  LOBYTE(v506) = 17;
+  v30->nSubWeapon = get_int32(v29, (int)v468._m_pStr);
+  LOBYTE(v506) = 5;
+  if ( Destination.vt == 8 )
+  {
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  v468._m_pStr = nullptr;
+  v467.m_Data = v31;
+  v525 = (SKILLENTRY *)&v467;
+  v32 = StringPool::GetInstance();
+  StringPool::GetBSTR(v32, &v467, 0xEA9u);
+  LOBYTE(v506) = 5;
+  v33 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, v467);
+  v34 = result->p;
+  LOBYTE(v506) = 19;
+  v34->bInvisible = get_int32(v33, (int)v468._m_pStr) != 0;
+  LOBYTE(v506) = 5;
+  if ( Destination.vt == 8 )
+  {
+    v35 = nullptr;
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  v468._m_pStr = nullptr;
+  v467.m_Data = v35;
+  v525 = (SKILLENTRY *)&v467;
+  v36 = StringPool::GetInstance();
+  StringPool::GetBSTR(v36, &v467, 0x1AABu);
+  LOBYTE(v506) = 5;
+  v37 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, v467);
+  v38 = result->p;
+  LOBYTE(v506) = 21;
+  v38->bUpButtonDisabled = get_int32(v37, (int)v468._m_pStr) != 0;
+  LOBYTE(v506) = 5;
+  if ( Destination.vt == 8 )
+  {
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  v468._m_pStr = nullptr;
+  v467.m_Data = v39;
+  v525 = (SKILLENTRY *)&v467;
+  v40 = StringPool::GetInstance();
+  StringPool::GetBSTR(v40, &v467, 0x1AC0u);
+  LOBYTE(v506) = 5;
+  v41 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, v467);
+  v42 = result->p;
+  LOBYTE(v506) = 23;
+  v42->nDefaultMasterLev = get_int32(v41, (int)v468._m_pStr);
+  LOBYTE(v506) = 5;
+  if ( Destination.vt == 8 )
+  {
+    v43 = nullptr;
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  v468._m_pStr = nullptr;
+  v467.m_Data = v43;
+  v525 = (SKILLENTRY *)&v467;
+  v44 = StringPool::GetInstance();
+  StringPool::GetBSTR(v44, &v467, 0x1901u);
+  LOBYTE(v506) = 5;
+  v45 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, v467);
+  v46 = result->p;
+  LOBYTE(v506) = 25;
+  v46->bCombatOrders = get_int32(v45, (int)v468._m_pStr) != 0;
+  LOBYTE(v506) = 5;
+  if ( Destination.vt == 8 )
+  {
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  v468._m_pStr = nullptr;
+  v467.m_Data = v47;
+  v525 = (SKILLENTRY *)&v467;
+  v48 = StringPool::GetInstance();
+  StringPool::GetBSTR(v48, &v467, 0xB7Du);
+  LOBYTE(v506) = 5;
+  v49 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, v467);
+  v50 = result->p;
+  LOBYTE(v506) = 27;
+  v50->bTimeLimited = get_int32(v49, (int)v468._m_pStr);
+  LOBYTE(v506) = 5;
+  if ( Destination.vt == 8 )
+  {
+    v51 = nullptr;
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  v468._m_pStr = nullptr;
+  v467.m_Data = v51;
+  v525 = (SKILLENTRY *)&v467;
+  v52 = StringPool::GetInstance();
+  StringPool::GetBSTR(v52, &v467, 0x14F9u);
+  LOBYTE(v506) = 5;
+  v53 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, v467);
+  v54 = result->p;
+  LOBYTE(v506) = 29;
+  v54->dwMobCode = get_int32(v53, (int)v468._m_pStr);
+  LOBYTE(v506) = 5;
+  if ( Destination.vt == 8 )
+  {
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  result->p->nMaxLevel = 0;
+  if ( result->p->nPsdSkill )
+  {
+    v468._m_pStr = nullptr;
+    v467.m_Data = nullptr;
+    v466.m_Data = v55;
+    v525 = (SKILLENTRY *)&v466;
+    _bstr_t::_bstr_t(&v466, L"psdSkill");
+    LOBYTE(v506) = 5;
+    v56 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, (Ztl_bstr_t)v466.m_Data);
+    LOBYTE(v506) = 31;
+    Unknown = Ztl_variant_t::GetUnknown(v56, (bool)v467.m_Data, (bool)v468._m_pStr);
+    pPsdSkill.m_pInterface = nullptr;
+    v58 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+            &pPsdSkill,
+            Unknown);
+    if ( v58 < 0 && v58 != -2147467262 )
+LABEL_54:
+      _com_issue_error(v58);
+    LOBYTE(v506) = 33;
+    if ( Destination.vt == 8 )
+    {
+      Destination.vt = 0;
+      if ( Destination.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&Destination);
+    }
+    m_pInterface = pPsdSkill.m_pInterface;
+    if ( pPsdSkill.m_pInterface )
+    {
+      NewEnum = IWzProperty::Get_NewEnum(
+                  pPsdSkill.m_pInterface,
+                  (_com_ptr_t<_com_IIID<IUnknown,&_GUID_00000000_0000_0000_c000_000000000046> > *)&pAction);
+      LOBYTE(v506) = 34;
+      _com_ptr_t<_com_IIID<IEnumVARIANT,&__s_GUID const _GUID_00020404_0000_0000_c000_000000000046>>::_com_ptr_t<_com_IIID<IEnumVARIANT,&__s_GUID const _GUID_00020404_0000_0000_c000_000000000046>>(
+        &pEnum1,
+        NewEnum);
+      LOBYTE(v506) = 36;
+      if ( pAction.m_pInterface )
+        ((void (__cdecl *)(IWzProperty *))pAction.m_pInterface->Release)(pAction.m_pInterface);
+      VariantInit(&vName);
+      LOBYTE(v506) = 37;
+      f1 = 0;
+      while ( 1 )
+      {
+        v61 = pEnum1.m_pInterface;
+        if ( !pEnum1.m_pInterface )
+          goto LABEL_10;
+        if ( ((int (__cdecl *)(IEnumVARIANT *, int, tagVARIANT *, unsigned int *))pEnum1.m_pInterface->Next)(
+               pEnum1.m_pInterface,
+               1,
+               &vName,
+               &f1) )
+        {
+          m_pInterface = pPsdSkill.m_pInterface;
+          goto LABEL_118;
+        }
+        DetachBSTR((Ztl_bstr_t *)&pProp, &vName);
+        v465 = 0;
+        v464.m_Data = nullptr;
+        v525 = (SKILLENTRY *)&v463;
+        v463.m_Data = (_bstr_t::Data_t *)pProp.m_pInterface;
+        if ( pProp.m_pInterface )
+          InterlockedIncrement((volatile LONG *)&pProp.m_pInterface[2]);
+        m_pInterface = pPsdSkill.m_pInterface;
+        LOBYTE(v506) = 38;
+        v62 = IWzProperty::Getitem(pPsdSkill.m_pInterface, &vParam, v463);
+        LOBYTE(v506) = 40;
+        v63 = Ztl_variant_t::GetUnknown(v62, (bool)v464.m_Data, v465);
+        pSkillID.m_pInterface = nullptr;
+        v58 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+                &pSkillID,
+                v63);
+        if ( v58 < 0 && v58 != -2147467262 )
+          goto LABEL_54;
+        LOBYTE(v506) = 42;
+        if ( vParam.vt == 8 )
+        {
+          vParam.vt = 0;
+          if ( vParam.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(vParam.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&vParam);
+        }
+        v64 = pSkillID.m_pInterface;
+        if ( !pSkillID.m_pInterface )
+          break;
+        pLT.m_pInterface = nullptr;
+        ZRef<AdditionPsd>::_Alloc((ZRef<AdditionPsd> *)&pAPsd);
+        v465 = 0;
+        v464.m_Data = v65;
+        v525 = (SKILLENTRY *)&v464;
+        v463.m_Data = (_bstr_t::Data_t *)6376;
+        LOBYTE(v506) = 43;
+        v66 = StringPool::GetInstance();
+        StringPool::GetBSTR(v66, &v464, (unsigned int)v463.m_Data);
+        LOBYTE(v506) = 43;
+        v67 = IWzProperty::Getitem(v64, &v493, v464);
+        LOBYTE(v506) = 45;
+        int32 = (IWzVector2D_vtbl *)get_int32(v67, v465);
+        v70 = pLT.m_pInterface;
+        pLT.m_pInterface[2].__vftable = int32;
+        LOBYTE(v506) = 43;
+        if ( v493.vt == 8 )
+        {
+          v493.vt = 0;
+          if ( v493.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(v493.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&v493);
+        }
+        v465 = 0;
+        v464.m_Data = v69;
+        v525 = (SKILLENTRY *)&v464;
+        v463.m_Data = (_bstr_t::Data_t *)6403;
+        v71 = StringPool::GetInstance();
+        StringPool::GetBSTR(v71, &v464, (unsigned int)v463.m_Data);
+        LOBYTE(v506) = 43;
+        v72 = IWzProperty::Getitem(v64, &v495, v464);
+        LOBYTE(v506) = 47;
+        v70->__vftable = (IWzVector2D_vtbl *)get_int32(v72, v465);
+        LOBYTE(v506) = 43;
+        if ( v495.vt == 8 )
+        {
+          v73 = nullptr;
+          v495.vt = 0;
+          if ( v495.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(v495.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&v495);
+        }
+        v465 = 0;
+        v464.m_Data = v73;
+        v525 = (SKILLENTRY *)&v464;
+        v463.m_Data = (_bstr_t::Data_t *)6405;
+        v74 = StringPool::GetInstance();
+        StringPool::GetBSTR(v74, &v464, (unsigned int)v463.m_Data);
+        LOBYTE(v506) = 43;
+        v75 = IWzProperty::Getitem(v64, &v500, v464);
+        LOBYTE(v506) = 49;
+        v70[1].__vftable = (IWzVector2D_vtbl *)get_int32(v75, v465);
+        LOBYTE(v506) = 43;
+        if ( v500.vt == 8 )
+        {
+          v500.vt = 0;
+          if ( v500.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(v500.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&v500);
+        }
+        v465 = 0;
+        v464.m_Data = v76;
+        v525 = (SKILLENTRY *)&v464;
+        v463.m_Data = (_bstr_t::Data_t *)6406;
+        v77 = StringPool::GetInstance();
+        StringPool::GetBSTR(v77, &v464, (unsigned int)v463.m_Data);
+        LOBYTE(v506) = 43;
+        v78 = IWzProperty::Getitem(v64, &v516, v464);
+        LOBYTE(v506) = 51;
+        v70[3].__vftable = (IWzVector2D_vtbl *)get_int32(v78, v465);
+        LOBYTE(v506) = 43;
+        if ( v516.vt == 8 )
+        {
+          v516.vt = 0;
+          if ( v516.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(v516.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&v516);
+        }
+        v465 = 0;
+        v464.m_Data = v79;
+        v525 = (SKILLENTRY *)&v464;
+        v463.m_Data = (_bstr_t::Data_t *)6454;
+        v80 = StringPool::GetInstance();
+        StringPool::GetBSTR(v80, &v464, (unsigned int)v463.m_Data);
+        LOBYTE(v506) = 43;
+        v81 = IWzProperty::Getitem(v64, &v497, v464);
+        LOBYTE(v506) = 53;
+        v70[4].__vftable = (IWzVector2D_vtbl *)get_int32(v81, v465);
+        LOBYTE(v506) = 43;
+        if ( v497.vt == 8 )
+        {
+          v82 = nullptr;
+          v497.vt = 0;
+          if ( v497.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(v497.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&v497);
+        }
+        v465 = 0;
+        v464.m_Data = v82;
+        v525 = (SKILLENTRY *)&v464;
+        v463.m_Data = (_bstr_t::Data_t *)6436;
+        v83 = StringPool::GetInstance();
+        StringPool::GetBSTR(v83, &v464, (unsigned int)v463.m_Data);
+        LOBYTE(v506) = 43;
+        v84 = IWzProperty::Getitem(v64, &v498, v464);
+        LOBYTE(v506) = 55;
+        v70[5].__vftable = (IWzVector2D_vtbl *)get_int32(v84, v465);
+        LOBYTE(v506) = 43;
+        if ( v498.vt == 8 )
+        {
+          v498.vt = 0;
+          if ( v498.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(v498.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&v498);
+        }
+        v465 = 0;
+        v464.m_Data = v85;
+        v525 = (SKILLENTRY *)&v464;
+        v463.m_Data = (_bstr_t::Data_t *)6427;
+        v86 = StringPool::GetInstance();
+        StringPool::GetBSTR(v86, &v464, (unsigned int)v463.m_Data);
+        LOBYTE(v506) = 43;
+        v87 = IWzProperty::Getitem(v64, &v494, v464);
+        LOBYTE(v506) = 57;
+        v70[6].__vftable = (IWzVector2D_vtbl *)get_int32(v87, v465);
+        LOBYTE(v506) = 43;
+        if ( v494.vt == 8 )
+        {
+          v494.vt = 0;
+          if ( v494.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(v494.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&v494);
+        }
+        if ( pProp.m_pInterface )
+          v88 = pProp.m_pInterface->__vftable;
+        else
+          v88 = nullptr;
+        pKeyDownEnd.m_pInterface = (IWzProperty *)_wtoi((const wchar_t *)v88);
+        ZMap<long,ZRef<AdditionPsd>,long>::Insert(
+          &result->p->mAdditionPsdOffset,
+          (const int *)&pKeyDownEnd,
+          (const ZRef<AdditionPsd> *)&pAPsd);
+        v89 = v70 - 4;
+        LOBYTE(v506) = 42;
+        if ( !InterlockedDecrement((volatile LONG *)&v89[1]) )
+        {
+          InterlockedIncrement((volatile LONG *)&v89[1]);
+          if ( v89 )
+            ((void (__thiscall *)(IWzVector2D *, int))v89->QueryInterface)(v89, 1);
+        }
+        Release = v64->Release;
+        pLT.m_pInterface = nullptr;
+        LOBYTE(v506) = 38;
+        ((void (__cdecl *)(IWzProperty *))Release)(v64);
+        LOBYTE(v506) = 37;
+        if ( pProp.m_pInterface )
+        {
+          _bstr_t::Data_t::Release((_bstr_t::Data_t *)pProp.m_pInterface);
+          pProp.m_pInterface = nullptr;
+        }
+        if ( vName.vt == 8 )
+        {
+          vName.vt = 0;
+          if ( vName.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(vName.decVal.Lo32 - 4));
+        }
+        else
+        {
+          v58 = VariantClear(&vName);
+          if ( v58 < 0 )
+            goto LABEL_54;
+        }
+      }
+      LOBYTE(v506) = 38;
+      if ( pProp.m_pInterface )
+        _bstr_t::Data_t::Release((_bstr_t::Data_t *)pProp.m_pInterface);
+LABEL_118:
+      LOBYTE(v506) = 36;
+      if ( vName.vt == 8 )
+      {
+        vName.vt = 0;
+        if ( vName.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(vName.decVal.Lo32 - 4));
+      }
+      else
+      {
+        VariantClear(&vName);
+      }
+      v91 = v61->Release;
+      LOBYTE(v506) = 33;
+      ((void (__cdecl *)(IEnumVARIANT *))v91)(v61);
+    }
+    LOBYTE(v506) = 5;
+    if ( m_pInterface )
+      ((void (__cdecl *)(IWzProperty *))m_pInterface->Release)(m_pInterface);
+  }
+  v462 = 0;
+  v461 = 0;
+  v460.m_Data = v55;
+  v525 = (SKILLENTRY *)&v460;
+  v92 = StringPool::GetInstance();
+  StringPool::GetBSTR(v92, &v460, 0x1A9Au);
+  LOBYTE(v506) = 5;
+  v93 = IWzProperty::Getitem(pSkill.m_pInterface, &v494, v460);
+  LOBYTE(v506) = 59;
+  v94 = Ztl_variant_t::GetUnknown(v93, v461, v462);
+  v95 = nullptr;
+  pAction.m_pInterface = nullptr;
+  if ( v94 )
+  {
+    v96 = ((int (__cdecl *)(IUnknown *, GUID *, _com_ptr_t<_com_IIID<IEnumVARIANT,&_GUID_00020404_0000_0000_c000_000000000046> > *))v94->QueryInterface)(
+            v94,
+            &_GUID_986515d9_0a0b_4929_8b4f_718682177b92,
+            &pEnum1);
+    LOBYTE(v95) = v96 < 0;
+    v95 = (IWzProperty *)((unsigned int)pEnum1.m_pInterface & ((unsigned int)&v95[-1].__vftable + 3));
+    pAction.m_pInterface = v95;
+    if ( v96 < 0 && v96 != -2147467262 )
+      _com_issue_error(v96);
+  }
+  LOBYTE(v506) = 61;
+  if ( v494.vt == 8 )
+  {
+    v97 = nullptr;
+    v494.vt = 0;
+    if ( v494.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v494.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v494);
+  }
+  if ( v95 )
+  {
+    for ( i = 0; ; ++i )
+    {
+      get_count = v95->get_count;
+      pSkillID.m_pInterface = nullptr;
+      v100 = ((int (__cdecl *)(IWzProperty *, _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *))get_count)(
+               v95,
+               &pSkillID);
+      if ( v100 < 0 )
+        _com_issue_errorex(v100, v95, &_GUID_986515d9_0a0b_4929_8b4f_718682177b92);
+      if ( i >= (unsigned int)pSkillID.m_pInterface )
+        break;
+      v101 = alloca(32);
+      v102 = _itow(i, &v454, 10);
+      v525 = (SKILLENTRY *)&v453;
+      _bstr_t::_bstr_t(&v453, v102);
+      LOBYTE(v506) = 61;
+      v103 = IWzProperty::Getitem(v95, &v498, (Ztl_bstr_t)v453.m_Data);
+      v453.m_Data = v104;
+      v525 = (SKILLENTRY *)&v453;
+      LOBYTE(v506) = 63;
+      _bstr_t::_bstr_t(&v453, v103);
+      action_code_from_name = get_action_code_from_name((Ztl_bstr_t)v453.m_Data);
+      LOBYTE(v506) = 61;
+      if ( v498.vt == 8 )
+      {
+        v498.vt = 0;
+        if ( v498.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(v498.decVal.Lo32 - 4));
+      }
+      else
+      {
+        VariantClear(&v498);
+      }
+      if ( action_code_from_name >= 0 )
+        *ZArray<long>::InsertBefore(&result->p->aAction, -1) = action_code_from_name;
+    }
+  }
+  v459 = 0;
+  v458 = 0;
+  v457.m_Data = v97;
+  v525 = (SKILLENTRY *)&v457;
+  v456 = 6039;
+  v455 = &v457;
+  v106 = StringPool::GetInstance();
+  StringPool::GetBSTR(v106, v455, v456);
+  LOBYTE(v506) = 61;
+  v107 = IWzProperty::Getitem(pSkill.m_pInterface, &v498, v457);
+  LOBYTE(v506) = 65;
+  v108 = Ztl_variant_t::GetUnknown(v107, v458, v459);
+  v109 = nullptr;
+  pEnum1.m_pInterface = nullptr;
+  if ( v108 )
+  {
+    v110 = ((int (__cdecl *)(IUnknown *, GUID *, unsigned int *))v108->QueryInterface)(
+             v108,
+             &_GUID_986515d9_0a0b_4929_8b4f_718682177b92,
+             &f1);
+    v109 = v110 < 0 ? nullptr : (IEnumVARIANT *)f1;
+    pEnum1.m_pInterface = v109;
+    if ( v110 < 0 && v110 != -2147467262 )
+      _com_issue_error(v110);
+  }
+  LOBYTE(v506) = 67;
+  if ( v498.vt == 8 )
+  {
+    v498.vt = 0;
+    if ( v498.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v498.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v498);
+  }
+  if ( v109 )
+  {
+    v111 = alloca(32);
+    v112 = _itow(0, &v452, 10);
+    v525 = (SKILLENTRY *)&v451;
+    _bstr_t::_bstr_t(&v451, v112);
+    LOBYTE(v506) = 67;
+    v113 = IWzProperty::Getitem((IWzProperty *)v109, &v497, (Ztl_bstr_t)v451.m_Data);
+    v451.m_Data = v114;
+    v525 = (SKILLENTRY *)&v451;
+    LOBYTE(v506) = 69;
+    v505 = 3;
+    _bstr_t::_bstr_t(&v451, v113);
+    v115 = get_action_code_from_name((Ztl_bstr_t)v451.m_Data);
+  }
+  else
+  {
+    v115 = 0;
+  }
+  v116 = (v505 & 2) == 0;
+  result->p->nSpecialAction = v115;
+  v506 = 67;
+  if ( !v116 )
+  {
+    v505 &= ~2u;
+    if ( v497.vt == 8 )
+    {
+      v497.vt = 0;
+      if ( v497.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(v497.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&v497);
+    }
+  }
+  v117 = result->p;
+  v451.m_Data = nullptr;
+  v117->nDelayFrame = -1;
+  v118 = result->p;
+  v450 = 0;
+  v449.m_Data = (_bstr_t::Data_t *)-1;
+  v118->nHoldFrame = -1;
+  v525 = (SKILLENTRY *)&v449;
+  v119 = StringPool::GetInstance();
+  StringPool::GetBSTR(v119, &v449, 0x1675u);
+  LOBYTE(v506) = 67;
+  v120 = IWzProperty::Getitem(pSkill.m_pInterface, &v497, v449);
+  LOBYTE(v506) = 71;
+  v121 = Ztl_variant_t::GetUnknown(v120, v450, (bool)v451.m_Data);
+  v123 = nullptr;
+  f1 = 0;
+  if ( v121 )
+  {
+    v124 = ((int (__cdecl *)(IUnknown *, GUID *, _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *))v121->QueryInterface)(
+             v121,
+             &_GUID_986515d9_0a0b_4929_8b4f_718682177b92,
+             &pSkillID);
+    v122 = v124 < 0 ? nullptr : (_bstr_t::Data_t *)pSkillID.m_pInterface;
+    v123 = (IWzProperty *)v122;
+    f1 = (unsigned int)v122;
+    if ( v124 < 0 && v124 != -2147467262 )
+      _com_issue_error(v124);
+  }
+  LOBYTE(v506) = 73;
+  if ( v497.vt == 8 )
+  {
+    v497.vt = 0;
+    if ( v497.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v497.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v497);
+  }
+  if ( v123 )
+  {
+    v448.m_Data = (_bstr_t::Data_t *)-1;
+    v447.m_Data = v122;
+    v525 = (SKILLENTRY *)&v447;
+    _bstr_t::_bstr_t(&v447, L"delay");
+    LOBYTE(v506) = 73;
+    v125 = IWzProperty::Getitem(v123, &v516, (Ztl_bstr_t)v447.m_Data);
+    v126 = result->p;
+    LOBYTE(v506) = 75;
+    v126->nDelayFrame = get_int32(v125, (int)v448.m_Data);
+    LOBYTE(v506) = 73;
+    if ( v516.vt == 8 )
+    {
+      v516.vt = 0;
+      if ( v516.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(v516.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&v516);
+    }
+    v448.m_Data = (_bstr_t::Data_t *)-1;
+    v447.m_Data = v127;
+    v525 = (SKILLENTRY *)&v447;
+    _bstr_t::_bstr_t(&v447, aHo);
+    LOBYTE(v506) = 73;
+    v128 = IWzProperty::Getitem(v123, &v516, (Ztl_bstr_t)v447.m_Data);
+    v129 = result->p;
+    LOBYTE(v506) = 77;
+    v129->nHoldFrame = get_int32(v128, (int)v448.m_Data);
+    LOBYTE(v506) = 73;
+    if ( v516.vt == 8 )
+    {
+      v516.vt = 0;
+      if ( v516.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(v516.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&v516);
+    }
+  }
+  v448.m_Data = v122;
+  v525 = (SKILLENTRY *)&v448;
+  v447.m_Data = (_bstr_t::Data_t *)1669;
+  v130 = StringPool::GetInstance();
+  StringPool::GetBSTR(v130, (Ztl_bstr_t *)&v448, (unsigned int)v447.m_Data);
+  LOBYTE(v506) = 73;
+  v131 = IWzProperty::Getitem(pSkill.m_pInterface, &v516, (Ztl_bstr_t)v448.m_Data);
+  LOBYTE(v506) = 79;
+  v132 = ZComAPI::ZComVariantCopy(&v, v131);
+  if ( v132 < 0 )
+    _com_issue_error(v132);
+  LOBYTE(v506) = 73;
+  if ( v516.vt == 8 )
+  {
+    v516.vt = 0;
+    if ( v516.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v516.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v516);
+  }
+  bstrVal = v.bstrVal;
+  if ( v.vt != 8 )
+    bstrVal = &sDefault;
+  if ( !get_element_attribute_0(bstrVal, &result->p->nAttackElemAttr) )
+  {
+    pSkillID.m_pInterface = (IWzProperty *)-2147467259;
+    _CxxThrowException(&pSkillID, &_TI1_AVZException__);
+  }
+  v448.m_Data = nullptr;
+  v447.m_Data = v134;
+  v525 = (SKILLENTRY *)&v447;
+  v135 = StringPool::GetInstance();
+  StringPool::GetBSTR(v135, (Ztl_bstr_t *)&v447, 0x96Eu);
+  LOBYTE(v506) = 73;
+  v136 = IWzProperty::Getitem(pSkill.m_pInterface, &v516, (Ztl_bstr_t)v447.m_Data);
+  v137 = result->p;
+  LOBYTE(v506) = 81;
+  v137->bContinuousEffect = get_int32(v136, (int)v448.m_Data) != 0;
+  LOBYTE(v506) = 73;
+  if ( v516.vt == 8 )
+  {
+    v516.vt = 0;
+    if ( v516.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v516.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v516);
+  }
+  v448.m_Data = v138;
+  v525 = (SKILLENTRY *)&v448;
+  v447.m_Data = (_bstr_t::Data_t *)6829;
+  v139 = StringPool::GetInstance();
+  StringPool::GetBSTR(v139, (Ztl_bstr_t *)&v448, (unsigned int)v447.m_Data);
+  LOBYTE(v506) = 73;
+  vt = IWzProperty::Getitem(pSkill.m_pInterface, &v516, (Ztl_bstr_t)v448.m_Data)->vt;
+  if ( v516.vt == 8 )
+  {
+    v141 = nullptr;
+    v516.vt = 0;
+    if ( v516.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v516.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v516);
+  }
+  if ( !vt )
+  {
+    v144 = nSkillID;
+    goto LABEL_211;
+  }
+  v448.m_Data = (_bstr_t::Data_t *)2415;
+  v447.m_Data = (_bstr_t::Data_t *)&pKeyDownEnd;
+  v142 = StringPool::GetInstance();
+  m_pStr = StringPool::GetStringW(v142, (ZXString<unsigned short> *)v447.m_Data, (unsigned int)v448.m_Data)->_m_pStr;
+  v144 = nSkillID;
+  LOBYTE(v506) = 83;
+  v145 = ZXString<unsigned short>::Format(&sUOL, m_pStr, nSkillID / 10000, nSkillID);
+  _bstr_t::_bstr_t((_bstr_t *)&pSkillID, v145->_m_pStr);
+  v146 = (volatile LONG *)pSkillID.m_pInterface;
+  p_sEffectUOL = (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *)&result->p->sEffectUOL;
+  if ( p_sEffectUOL != &pSkillID )
+  {
+    v141 = (_bstr_t::Data_t *)p_sEffectUOL->m_pInterface;
+    if ( p_sEffectUOL->m_pInterface )
+    {
+      _bstr_t::Data_t::Release(v141);
+      p_sEffectUOL->m_pInterface = nullptr;
+    }
+    p_sEffectUOL->m_pInterface = (IWzProperty *)v146;
+    if ( !v146 )
+      goto LABEL_209;
+    InterlockedIncrement(v146 + 2);
+  }
+  if ( v146 && !InterlockedDecrement(v146 + 2) )
+  {
+    if ( *v146 )
+      ZAPI.CoTaskMemFree((void *)(*v146 - 4));
+    if ( *((_DWORD *)v146 + 1) )
+      ZAllocEx<ZAllocAnonSelector>::Free(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, *((void **)v146 + 1));
+    ZAllocEx<ZAllocAnonSelector>::Free(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, (void *)v146);
+  }
+LABEL_209:
+  LOBYTE(v506) = 73;
+  if ( pKeyDownEnd.m_pInterface )
+    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&pKeyDownEnd.m_pInterface[-3]);
+LABEL_211:
+  v448.m_Data = v141;
+  v525 = (SKILLENTRY *)&v448;
+  v447.m_Data = (_bstr_t::Data_t *)1687;
+  v148 = StringPool::GetInstance();
+  StringPool::GetBSTR(v148, (Ztl_bstr_t *)&v448, (unsigned int)v447.m_Data);
+  LOBYTE(v506) = 84;
+  LOBYTE(v506) = 73;
+  v150 = IWzProperty::Getitem(pSkill.m_pInterface, &v516, (Ztl_bstr_t)v448.m_Data)->vt;
+  if ( v516.vt == 8 )
+  {
+    v516.vt = 0;
+    if ( v516.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v516.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v516);
+  }
+  if ( v150 )
+  {
+    v448.m_Data = (_bstr_t::Data_t *)2416;
+    v447.m_Data = (_bstr_t::Data_t *)&pKeyDownEnd;
+    v151 = StringPool::GetInstance();
+    v152 = StringPool::GetStringW(v151, (ZXString<unsigned short> *)v447.m_Data, (unsigned int)v448.m_Data)->_m_pStr;
+    LOBYTE(v506) = 85;
+    v153 = ZXString<unsigned short>::Format(&sUOL, v152, v144 / 10000, v144);
+    _bstr_t::_bstr_t((_bstr_t *)&pSkillID, v153->_m_pStr);
+    v154 = (volatile LONG *)pSkillID.m_pInterface;
+    p_sScreenEffectUOL = (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *)&result->p->sScreenEffectUOL;
+    if ( p_sScreenEffectUOL != &pSkillID )
+    {
+      v149 = (_bstr_t::Data_t *)p_sScreenEffectUOL->m_pInterface;
+      if ( p_sScreenEffectUOL->m_pInterface )
+      {
+        _bstr_t::Data_t::Release(v149);
+        p_sScreenEffectUOL->m_pInterface = nullptr;
+      }
+      p_sScreenEffectUOL->m_pInterface = (IWzProperty *)v154;
+      if ( !v154 )
+        goto LABEL_230;
+      InterlockedIncrement(v154 + 2);
+    }
+    if ( v154 && !InterlockedDecrement(v154 + 2) )
+    {
+      if ( *v154 )
+        ZAPI.CoTaskMemFree((void *)(*v154 - 4));
+      if ( *((_DWORD *)v154 + 1) )
+        ZAllocEx<ZAllocAnonSelector>::Free(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, *((void **)v154 + 1));
+      ZAllocEx<ZAllocAnonSelector>::Free(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, (void *)v154);
+    }
+LABEL_230:
+    LOBYTE(v506) = 73;
+    if ( pKeyDownEnd.m_pInterface )
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&pKeyDownEnd.m_pInterface[-3]);
+  }
+  v448.m_Data = v149;
+  v525 = (SKILLENTRY *)&v448;
+  v447.m_Data = (_bstr_t::Data_t *)2413;
+  v156 = StringPool::GetInstance();
+  StringPool::GetBSTR(v156, (Ztl_bstr_t *)&v448, (unsigned int)v447.m_Data);
+  LOBYTE(v506) = 73;
+  v158 = IWzProperty::Getitem(pSkill.m_pInterface, &v516, (Ztl_bstr_t)v448.m_Data)->vt;
+  if ( v516.vt == 8 )
+  {
+    v516.vt = 0;
+    if ( v516.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v516.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v516);
+  }
+  if ( v158 )
+  {
+    v448.m_Data = (_bstr_t::Data_t *)2419;
+    v447.m_Data = (_bstr_t::Data_t *)&pKeyDownEnd;
+    v159 = StringPool::GetInstance();
+    v160 = StringPool::GetStringW(v159, (ZXString<unsigned short> *)v447.m_Data, (unsigned int)v448.m_Data)->_m_pStr;
+    LOBYTE(v506) = 87;
+    v161 = ZXString<unsigned short>::Format(&sUOL, v160, v144 / 10000, v144);
+    _bstr_t::_bstr_t((_bstr_t *)&pSkillID, v161->_m_pStr);
+    v162 = (volatile LONG *)pSkillID.m_pInterface;
+    p_sAffectedUOL = (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *)&result->p->sAffectedUOL;
+    if ( p_sAffectedUOL != &pSkillID )
+    {
+      v157 = (_bstr_t::Data_t *)p_sAffectedUOL->m_pInterface;
+      if ( p_sAffectedUOL->m_pInterface )
+      {
+        _bstr_t::Data_t::Release(v157);
+        p_sAffectedUOL->m_pInterface = nullptr;
+      }
+      p_sAffectedUOL->m_pInterface = (IWzProperty *)v162;
+      if ( !v162 )
+        goto LABEL_249;
+      InterlockedIncrement(v162 + 2);
+    }
+    if ( v162 && !InterlockedDecrement(v162 + 2) )
+    {
+      if ( *v162 )
+        ZAPI.CoTaskMemFree((void *)(*v162 - 4));
+      if ( *((_DWORD *)v162 + 1) )
+        ZAllocEx<ZAllocAnonSelector>::Free(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, *((void **)v162 + 1));
+      ZAllocEx<ZAllocAnonSelector>::Free(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, (void *)v162);
+    }
+LABEL_249:
+    LOBYTE(v506) = 73;
+    if ( pKeyDownEnd.m_pInterface )
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&pKeyDownEnd.m_pInterface[-3]);
+  }
+  v448.m_Data = v157;
+  v525 = (SKILLENTRY *)&v448;
+  v447.m_Data = (_bstr_t::Data_t *)6474;
+  v164 = StringPool::GetInstance();
+  StringPool::GetBSTR(v164, (Ztl_bstr_t *)&v448, (unsigned int)v447.m_Data);
+  LOBYTE(v506) = 73;
+  v166 = IWzProperty::Getitem(pSkill.m_pInterface, &v516, (Ztl_bstr_t)v448.m_Data)->vt;
+  if ( v516.vt == 8 )
+  {
+    v516.vt = 0;
+    if ( v516.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v516.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v516);
+  }
+  if ( v166 )
+  {
+    v448.m_Data = (_bstr_t::Data_t *)6467;
+    v447.m_Data = (_bstr_t::Data_t *)&pKeyDownEnd;
+    v167 = StringPool::GetInstance();
+    v168 = StringPool::GetStringW(v167, (ZXString<unsigned short> *)v447.m_Data, (unsigned int)v448.m_Data)->_m_pStr;
+    LOBYTE(v506) = 89;
+    v169 = ZXString<unsigned short>::Format(&sUOL, v168, v144 / 10000, v144);
+    _bstr_t::_bstr_t((_bstr_t *)&pSkillID, v169->_m_pStr);
+    v170 = (volatile LONG *)pSkillID.m_pInterface;
+    p_sSpecialAffectedUOL = (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *)&result->p->sSpecialAffectedUOL;
+    if ( p_sSpecialAffectedUOL != &pSkillID )
+    {
+      v165 = (_bstr_t::Data_t *)p_sSpecialAffectedUOL->m_pInterface;
+      if ( p_sSpecialAffectedUOL->m_pInterface )
+      {
+        _bstr_t::Data_t::Release(v165);
+        p_sSpecialAffectedUOL->m_pInterface = nullptr;
+      }
+      p_sSpecialAffectedUOL->m_pInterface = (IWzProperty *)v170;
+      if ( !v170 )
+        goto LABEL_268;
+      InterlockedIncrement(v170 + 2);
+    }
+    if ( v170 && !InterlockedDecrement(v170 + 2) )
+    {
+      if ( *v170 )
+        ZAPI.CoTaskMemFree((void *)(*v170 - 4));
+      if ( *((_DWORD *)v170 + 1) )
+        ZAllocEx<ZAllocAnonSelector>::Free(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, *((void **)v170 + 1));
+      ZAllocEx<ZAllocAnonSelector>::Free(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, (void *)v170);
+    }
+LABEL_268:
+    LOBYTE(v506) = 73;
+    if ( pKeyDownEnd.m_pInterface )
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&pKeyDownEnd.m_pInterface[-3]);
+  }
+  v448.m_Data = nullptr;
+  v447.m_Data = nullptr;
+  v446.m_Data = v165;
+  v525 = (SKILLENTRY *)&v446;
+  v172 = StringPool::GetInstance();
+  StringPool::GetBSTR(v172, &v446, 0x1AC8u);
+  LOBYTE(v506) = 73;
+  v173 = IWzProperty::Getitem(pSkill.m_pInterface, &v516, v446);
+  LOBYTE(v506) = 91;
+  v174 = Ztl_variant_t::GetUnknown(v173, (bool)v447.m_Data, (bool)v448.m_Data);
+  pPsdSkill.m_pInterface = nullptr;
+  v175 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+           &pPsdSkill,
+           v174);
+  if ( v175 < 0 && v175 != -2147467262 )
+    _com_issue_error(v175);
+  LOBYTE(v506) = 93;
+  if ( v516.vt == 8 )
+  {
+    v516.vt = 0;
+    if ( v516.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v516.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v516);
+  }
+  if ( pPsdSkill.m_pInterface )
+  {
+    v448.m_Data = (_bstr_t::Data_t *)2533;
+    v447.m_Data = (_bstr_t::Data_t *)&pKeyDownEnd;
+    v177 = StringPool::GetInstance();
+    v178 = StringPool::GetStringW(v177, (ZXString<unsigned short> *)v447.m_Data, (unsigned int)v448.m_Data)->_m_pStr;
+    LOBYTE(v506) = 94;
+    v179 = ZXString<unsigned short>::Format(&sUOL, v178, v144 / 10000, v144);
+    _bstr_t::_bstr_t((_bstr_t *)&pSkillID, v179->_m_pStr);
+    v181 = (_bstr_t::Data_t *)pSkillID.m_pInterface;
+    p_sPrepareUOL = (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *)&result->p->sPrepareUOL;
+    if ( p_sPrepareUOL != &pSkillID )
+    {
+      v180 = (_bstr_t::Data_t *)p_sPrepareUOL->m_pInterface;
+      if ( p_sPrepareUOL->m_pInterface )
+      {
+        _bstr_t::Data_t::Release(v180);
+        p_sPrepareUOL->m_pInterface = nullptr;
+      }
+      p_sPrepareUOL->m_pInterface = (IWzProperty *)v181;
+      if ( !v181 )
+        goto LABEL_285;
+      InterlockedIncrement((volatile LONG *)&v181->m_RefCount);
+    }
+    if ( v181 )
+      _bstr_t::Data_t::Release(v181);
+LABEL_285:
+    LOBYTE(v506) = 93;
+    if ( pKeyDownEnd.m_pInterface )
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&pKeyDownEnd.m_pInterface[-3]);
+    v448.m_Data = v180;
+    v525 = (SKILLENTRY *)&v448;
+    v447.m_Data = (_bstr_t::Data_t *)6810;
+    v446.m_Data = (_bstr_t::Data_t *)&v448;
+    v183 = StringPool::GetInstance();
+    StringPool::GetBSTR(v183, (Ztl_bstr_t *)v446.m_Data, (unsigned int)v447.m_Data);
+    LOBYTE(v506) = 95;
+    if ( !pPsdSkill.m_pInterface )
+      _com_issue_error(-2147467261);
+    LOBYTE(v506) = 93;
+    v184 = IWzProperty::Getitem(pPsdSkill.m_pInterface, &v500, (Ztl_bstr_t)v448.m_Data);
+    v448.m_Data = v185;
+    v525 = (SKILLENTRY *)&v448;
+    LOBYTE(v506) = 96;
+    _bstr_t::_bstr_t(&v448, v184);
+    v186 = get_action_code_from_name((Ztl_bstr_t)v448.m_Data);
+    v187 = (_bstr_t::Data_t *)result->p;
+    v187[3].m_str = (char *)v186;
+    LOBYTE(v506) = 93;
+    if ( v500.vt == 8 )
+    {
+      v500.vt = 0;
+      if ( v500.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(v500.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&v500);
+    }
+    v448.m_Data = nullptr;
+    v447.m_Data = v187;
+    v525 = (SKILLENTRY *)&v447;
+    v446.m_Data = (_bstr_t::Data_t *)2403;
+    v188 = StringPool::GetInstance();
+    StringPool::GetBSTR(v188, (Ztl_bstr_t *)&v447, (unsigned int)v446.m_Data);
+    LOBYTE(v506) = 93;
+    v189 = IWzProperty::Getitem(pPsdSkill.m_pInterface, &v500, (Ztl_bstr_t)v447.m_Data);
+    v190 = result->p;
+    LOBYTE(v506) = 98;
+    v190->tPrepare = get_int32(v189, (int)v448.m_Data);
+    LOBYTE(v506) = 93;
+    if ( v500.vt == 8 )
+    {
+      v500.vt = 0;
+      if ( v500.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(v500.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&v500);
+    }
+  }
+  v448.m_Data = nullptr;
+  v447.m_Data = nullptr;
+  v446.m_Data = v176;
+  v525 = (SKILLENTRY *)&v446;
+  v191 = StringPool::GetInstance();
+  StringPool::GetBSTR(v191, &v446, 0xE94u);
+  LOBYTE(v506) = 93;
+  v192 = IWzProperty::Getitem(pSkill.m_pInterface, &v500, v446);
+  LOBYTE(v506) = 100;
+  v193 = Ztl_variant_t::GetUnknown(v192, (bool)v447.m_Data, (bool)v448.m_Data);
+  pSkillID.m_pInterface = nullptr;
+  v194 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+           &pSkillID,
+           v193);
+  if ( v194 < 0 && v194 != -2147467262 )
+    _com_issue_error(v194);
+  LOBYTE(v506) = 102;
+  if ( v500.vt == 8 )
+  {
+    v500.vt = 0;
+    if ( v500.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v500.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v500);
+  }
+  if ( pSkillID.m_pInterface )
+  {
+    v448.m_Data = (_bstr_t::Data_t *)3731;
+    v447.m_Data = (_bstr_t::Data_t *)&pSP;
+    v196 = StringPool::GetInstance();
+    v197 = StringPool::GetStringW(v196, (ZXString<unsigned short> *)v447.m_Data, (unsigned int)v448.m_Data)->_m_pStr;
+    LOBYTE(v506) = 103;
+    v198 = ZXString<unsigned short>::Format(&sUOL, v197, v144 / 10000, v144);
+    _bstr_t::_bstr_t((_bstr_t *)&pKeyDownEnd, v198->_m_pStr);
+    v199 = (_bstr_t::Data_t *)pKeyDownEnd.m_pInterface;
+    p_sKeyDownUOL = (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *)&result->p->sKeyDownUOL;
+    if ( p_sKeyDownUOL != &pKeyDownEnd )
+    {
+      v195 = (_bstr_t::Data_t *)p_sKeyDownUOL->m_pInterface;
+      if ( p_sKeyDownUOL->m_pInterface )
+      {
+        _bstr_t::Data_t::Release(v195);
+        p_sKeyDownUOL->m_pInterface = nullptr;
+      }
+      p_sKeyDownUOL->m_pInterface = (IWzProperty *)v199;
+      if ( !v199 )
+        goto LABEL_312;
+      InterlockedIncrement((volatile LONG *)&v199->m_RefCount);
+    }
+    if ( v199 )
+      _bstr_t::Data_t::Release(v199);
+LABEL_312:
+    LOBYTE(v506) = 102;
+    if ( pSP.m_pInterface )
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&pSP.m_pInterface[-3]);
+  }
+  v448.m_Data = nullptr;
+  v447.m_Data = nullptr;
+  v446.m_Data = v195;
+  v525 = (SKILLENTRY *)&v446;
+  v201 = StringPool::GetInstance();
+  StringPool::GetBSTR(v201, &v446, 0xEFBu);
+  LOBYTE(v506) = 102;
+  v202 = IWzProperty::Getitem(pSkill.m_pInterface, &v495, v446);
+  LOBYTE(v506) = 105;
+  v203 = Ztl_variant_t::GetUnknown(v202, (bool)v447.m_Data, (bool)v448.m_Data);
+  pKeyDownEnd.m_pInterface = nullptr;
+  v204 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+           &pKeyDownEnd,
+           v203);
+  if ( v204 < 0 && v204 != -2147467262 )
+    _com_issue_error(v204);
+  LOBYTE(v506) = 107;
+  if ( v495.vt == 8 )
+  {
+    v205 = nullptr;
+    v495.vt = 0;
+    if ( v495.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v495.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v495);
+  }
+  if ( pKeyDownEnd.m_pInterface )
+  {
+    v448.m_Data = (_bstr_t::Data_t *)3836;
+    v447.m_Data = (_bstr_t::Data_t *)&nRange;
+    v206 = StringPool::GetInstance();
+    v207 = StringPool::GetStringW(v206, (ZXString<unsigned short> *)v447.m_Data, (unsigned int)v448.m_Data)->_m_pStr;
+    LOBYTE(v506) = 108;
+    v208 = ZXString<unsigned short>::Format(&sUOL, v207, v144 / 10000, v144);
+    _bstr_t::_bstr_t((_bstr_t *)&pSP, v208->_m_pStr);
+    v209 = (_bstr_t::Data_t *)pSP.m_pInterface;
+    p_sKeyDownEndUOL = (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&result->p->sKeyDownEndUOL;
+    if ( p_sKeyDownEndUOL != &pSP )
+    {
+      v205 = (_bstr_t::Data_t *)p_sKeyDownEndUOL->m_pInterface;
+      if ( p_sKeyDownEndUOL->m_pInterface )
+      {
+        _bstr_t::Data_t::Release(v205);
+        p_sKeyDownEndUOL->m_pInterface = nullptr;
+      }
+      p_sKeyDownEndUOL->m_pInterface = (IWzVector2D *)v209;
+      if ( !v209 )
+        goto LABEL_329;
+      InterlockedIncrement((volatile LONG *)&v209->m_RefCount);
+    }
+    if ( v209 )
+      _bstr_t::Data_t::Release(v209);
+LABEL_329:
+    LOBYTE(v506) = 107;
+    if ( nRange )
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(nRange - 12));
+  }
+  v448.m_Data = nullptr;
+  v447.m_Data = nullptr;
+  v446.m_Data = v205;
+  v525 = (SKILLENTRY *)&v446;
+  v211 = StringPool::GetInstance();
+  StringPool::GetBSTR(v211, &v446, 0x1AB7u);
+  LOBYTE(v506) = 107;
+  v212 = IWzProperty::Getitem(pSkill.m_pInterface, &v493, v446);
+  LOBYTE(v506) = 110;
+  v213 = Ztl_variant_t::GetUnknown(v212, (bool)v447.m_Data, (bool)v448.m_Data);
+  pHit.m_pInterface = nullptr;
+  v214 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+           &pHit,
+           v213);
+  if ( v214 < 0 && v214 != -2147467262 )
+    _com_issue_error(v214);
+  LOBYTE(v506) = 112;
+  if ( v493.vt == 8 )
+  {
+    v215 = nullptr;
+    v493.vt = 0;
+    if ( v493.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v493.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v493);
+  }
+  v216 = pHit.m_pInterface;
+  if ( pHit.m_pInterface )
+  {
+    v217 = pHit.m_pInterface->get_count;
+    pSP.m_pInterface = nullptr;
+    v218 = ((int (__cdecl *)(IWzProperty *, _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *))v217)(
+             pHit.m_pInterface,
+             &pSP);
+    if ( v218 < 0 )
+      _com_issue_errorex(v218, v216, &_GUID_986515d9_0a0b_4929_8b4f_718682177b92);
+    if ( pSP.m_pInterface )
+    {
+      v446.m_Data = (_bstr_t::Data_t *)2421;
+      v219 = StringPool::GetInstance();
+      v220 = StringPool::GetStringW(v219, (ZXString<unsigned short> *)&nRange, (unsigned int)v446.m_Data)->_m_pStr;
+      v221 = v144 / 10000;
+      LOBYTE(v506) = 113;
+      v222 = ZXString<unsigned short>::Format(&sUOL, v220, v144 / 10000, v144);
+      _bstr_t::_bstr_t((_bstr_t *)&pSP, v222->_m_pStr);
+      Ztl_bstr_t::operator=(&result->p->sHitRootUOL, (const Ztl_bstr_t *)&pSP);
+      if ( pSP.m_pInterface )
+        _bstr_t::Data_t::Release((_bstr_t::Data_t *)pSP.m_pInterface);
+      LOBYTE(v506) = 112;
+      if ( nRange )
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(nRange - 12));
+      nIdx = 0;
+      while ( 1 )
+      {
+        v223 = v216->get_count;
+        pSP.m_pInterface = nullptr;
+        v224 = ((int (__cdecl *)(IWzProperty *, _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *))v223)(
+                 v216,
+                 &pSP);
+        if ( v224 < 0 )
+          _com_issue_errorex(v224, v216, &_GUID_986515d9_0a0b_4929_8b4f_718682177b92);
+        if ( nIdx >= (unsigned int)pSP.m_pInterface )
+          goto LABEL_360;
+        v225 = StringPool::GetInstance();
+        v226 = StringPool::GetStringW(v225, (ZXString<unsigned short> *)&nRange, 0x976u)->_m_pStr;
+        LOBYTE(v506) = 114;
+        v227 = ZXString<unsigned short>::Format(&sUOL, v226, v221, nSkillID, nIdx);
+        _bstr_t::_bstr_t(&sName, v227->_m_pStr);
+        v228 = result->p;
+        LOBYTE(v506) = 115;
+        v229 = ZArray<Ztl_bstr_t>::InsertBefore(&v228->asHitUOL, -1);
+        m_Data = sName.m_Data;
+        v231 = v229;
+        if ( v229 == &sName )
+          goto LABEL_355;
+        if ( v229->m_Data )
+        {
+          _bstr_t::Data_t::Release(v229->m_Data);
+          v231->m_Data = nullptr;
+        }
+        v231->m_Data = m_Data;
+        if ( m_Data )
+          break;
+LABEL_357:
+        LOBYTE(v506) = 112;
+        if ( nRange )
+          ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(nRange - 12));
+        ++nIdx;
+        v216 = pHit.m_pInterface;
+        v144 = nSkillID;
+      }
+      InterlockedIncrement((volatile LONG *)&m_Data->m_RefCount);
+LABEL_355:
+      if ( m_Data )
+      {
+        _bstr_t::Data_t::Release(m_Data);
+        sName.m_Data = nullptr;
+      }
+      goto LABEL_357;
+    }
+  }
+LABEL_360:
+  v445[0].m_pInterface = nullptr;
+  v444.m_Data = nullptr;
+  v443.m_Data = v215;
+  v525 = (SKILLENTRY *)&v443;
+  v232 = StringPool::GetInstance();
+  StringPool::GetBSTR(v232, &v443, 0x43Fu);
+  LOBYTE(v506) = 112;
+  v233 = IWzProperty::Getitem(pSkill.m_pInterface, &v479, v443);
+  LOBYTE(v506) = 117;
+  v234 = Ztl_variant_t::GetUnknown(v233, (bool)v444.m_Data, (bool)v445[0].m_pInterface);
+  nIdx = 0;
+  v235 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+           (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *)&nIdx,
+           v234);
+  if ( v235 < 0 && v235 != -2147467262 )
+    _com_issue_error(v235);
+  LOBYTE(v506) = 119;
+  if ( v479.vt == 8 )
+  {
+    v479.vt = 0;
+    if ( v479.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v479.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v479);
+  }
+  if ( nIdx )
+  {
+    v445[0].m_pInterface = (IWzProperty *)2424;
+    v444.m_Data = (_bstr_t::Data_t *)&nRange;
+    v237 = StringPool::GetInstance();
+    v238 = StringPool::GetStringW(v237, (ZXString<unsigned short> *)v444.m_Data, (unsigned int)v445[0].m_pInterface)->_m_pStr;
+    LOBYTE(v506) = 120;
+    v239 = ZXString<unsigned short>::Format(&sUOL, v238, v144 / 10000, v144);
+    _bstr_t::_bstr_t((_bstr_t *)&pSP, v239->_m_pStr);
+    v241 = (_bstr_t::Data_t *)pSP.m_pInterface;
+    p_sBallUOL = (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&result->p->sBallUOL;
+    if ( p_sBallUOL != &pSP )
+    {
+      v240 = (_bstr_t::Data_t *)p_sBallUOL->m_pInterface;
+      if ( p_sBallUOL->m_pInterface )
+      {
+        _bstr_t::Data_t::Release(v240);
+        p_sBallUOL->m_pInterface = nullptr;
+      }
+      p_sBallUOL->m_pInterface = (IWzVector2D *)v241;
+      if ( !v241 )
+        goto LABEL_375;
+      InterlockedIncrement((volatile LONG *)&v241->m_RefCount);
+    }
+    if ( v241 )
+      _bstr_t::Data_t::Release(v241);
+LABEL_375:
+    LOBYTE(v506) = 119;
+    if ( nRange )
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(nRange - 12));
+    v445[0].m_pInterface = nullptr;
+    v444.m_Data = v240;
+    v525 = (SKILLENTRY *)&v444;
+    v443.m_Data = (_bstr_t::Data_t *)6825;
+    v243 = StringPool::GetInstance();
+    StringPool::GetBSTR(v243, &v444, (unsigned int)v443.m_Data);
+    LOBYTE(v506) = 121;
+    if ( !nIdx )
+      _com_issue_error(-2147467261);
+    LOBYTE(v506) = 119;
+    v244 = IWzProperty::Getitem((IWzProperty *)nIdx, (Ztl_variant_t *)&Destination, v444);
+    v245 = result->p;
+    LOBYTE(v506) = 122;
+    v245->tBallDelay = get_int32(v244, (int)v445[0].m_pInterface);
+    LOBYTE(v506) = 119;
+    if ( Destination.vt == 8 )
+    {
+      Destination.vt = 0;
+      if ( Destination.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&Destination);
+    }
+  }
+  v445[0].m_pInterface = nullptr;
+  v444.m_Data = nullptr;
+  v443.m_Data = v236;
+  v525 = (SKILLENTRY *)&v443;
+  v246 = StringPool::GetInstance();
+  StringPool::GetBSTR(v246, &v443, 0x1793u);
+  LOBYTE(v506) = 119;
+  v247 = IWzProperty::Getitem(pSkill.m_pInterface, &v481, v443);
+  LOBYTE(v506) = 124;
+  v248 = Ztl_variant_t::GetUnknown(v247, (bool)v444.m_Data, (bool)v445[0].m_pInterface);
+  pFlipBall.m_pInterface = nullptr;
+  v249 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+           &pFlipBall,
+           v248);
+  if ( v249 < 0 && v249 != -2147467262 )
+    _com_issue_error(v249);
+  LOBYTE(v506) = 126;
+  if ( v481.vt == 8 )
+  {
+    v481.vt = 0;
+    if ( v481.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v481.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v481);
+  }
+  if ( pFlipBall.m_pInterface )
+  {
+    v445[0].m_pInterface = (IWzProperty *)6046;
+    v444.m_Data = (_bstr_t::Data_t *)&nRange;
+    v251 = StringPool::GetInstance();
+    v252 = StringPool::GetStringW(v251, (ZXString<unsigned short> *)v444.m_Data, (unsigned int)v445[0].m_pInterface)->_m_pStr;
+    LOBYTE(v506) = 127;
+    v253 = ZXString<unsigned short>::Format(&sUOL, v252, v144 / 10000, v144);
+    _bstr_t::_bstr_t((_bstr_t *)&pSP, v253->_m_pStr);
+    v255 = (_bstr_t::Data_t *)pSP.m_pInterface;
+    p_sFlipBallUOL = (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&result->p->sFlipBallUOL;
+    if ( p_sFlipBallUOL != &pSP )
+    {
+      v254 = (_bstr_t::Data_t *)p_sFlipBallUOL->m_pInterface;
+      if ( p_sFlipBallUOL->m_pInterface )
+      {
+        _bstr_t::Data_t::Release(v254);
+        p_sFlipBallUOL->m_pInterface = nullptr;
+      }
+      p_sFlipBallUOL->m_pInterface = (IWzVector2D *)v255;
+      if ( !v255 )
+        goto LABEL_398;
+      InterlockedIncrement((volatile LONG *)&v255->m_RefCount);
+    }
+    if ( v255 )
+      _bstr_t::Data_t::Release(v255);
+LABEL_398:
+    LOBYTE(v506) = 126;
+    if ( nRange )
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(nRange - 12));
+    v445[0].m_pInterface = nullptr;
+    v444.m_Data = v254;
+    v525 = (SKILLENTRY *)&v444;
+    v443.m_Data = (_bstr_t::Data_t *)6825;
+    v257 = StringPool::GetInstance();
+    StringPool::GetBSTR(v257, &v444, (unsigned int)v443.m_Data);
+    LOBYTE(v506) = 0x80;
+    if ( !pFlipBall.m_pInterface )
+      _com_issue_error(-2147467261);
+    LOBYTE(v506) = 126;
+    v258 = IWzProperty::Getitem(pFlipBall.m_pInterface, (Ztl_variant_t *)&Destination, v444);
+    v259 = result->p;
+    LOBYTE(v506) = -127;
+    v259->tBallDelay = get_int32(v258, (int)v445[0].m_pInterface);
+    LOBYTE(v506) = 126;
+    if ( Destination.vt == 8 )
+    {
+      Destination.vt = 0;
+      if ( Destination.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&Destination);
+    }
+  }
+  v445[0].m_pInterface = v250;
+  v525 = (SKILLENTRY *)v445;
+  v444.m_Data = (_bstr_t::Data_t *)1638;
+  v443.m_Data = (_bstr_t::Data_t *)v445;
+  v260 = StringPool::GetInstance();
+  StringPool::GetBSTR(v260, (Ztl_bstr_t *)v443.m_Data, (unsigned int)v444.m_Data);
+  LOBYTE(v506) = 126;
+  v262 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, (Ztl_bstr_t)v445[0].m_pInterface)->vt;
+  if ( Destination.vt == 8 )
+  {
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  if ( v262 )
+  {
+    v445[0].m_pInterface = (IWzProperty *)2426;
+    v444.m_Data = (_bstr_t::Data_t *)&nRange;
+    v263 = StringPool::GetInstance();
+    v264 = StringPool::GetStringW(v263, (ZXString<unsigned short> *)v444.m_Data, (unsigned int)v445[0].m_pInterface)->_m_pStr;
+    LOBYTE(v506) = -125;
+    v265 = ZXString<unsigned short>::Format(&sUOL, v264, v144 / 10000, v144);
+    _bstr_t::_bstr_t((_bstr_t *)&pSP, v265->_m_pStr);
+    v266 = (_bstr_t::Data_t *)pSP.m_pInterface;
+    p_sMobUOL = (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&result->p->sMobUOL;
+    if ( p_sMobUOL != &pSP )
+    {
+      v261 = (_bstr_t::Data_t *)p_sMobUOL->m_pInterface;
+      if ( p_sMobUOL->m_pInterface )
+      {
+        _bstr_t::Data_t::Release(v261);
+        p_sMobUOL->m_pInterface = nullptr;
+      }
+      p_sMobUOL->m_pInterface = (IWzVector2D *)v266;
+      if ( !v266 )
+        goto LABEL_418;
+      InterlockedIncrement((volatile LONG *)&v266->m_RefCount);
+    }
+    if ( v266 )
+      _bstr_t::Data_t::Release(v266);
+LABEL_418:
+    LOBYTE(v506) = 126;
+    if ( nRange )
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(nRange - 12));
+  }
+  v445[0].m_pInterface = (IWzProperty *)v261;
+  v525 = (SKILLENTRY *)v445;
+  v444.m_Data = (_bstr_t::Data_t *)1533;
+  v443.m_Data = (_bstr_t::Data_t *)v445;
+  v268 = StringPool::GetInstance();
+  StringPool::GetBSTR(v268, (Ztl_bstr_t *)v443.m_Data, (unsigned int)v444.m_Data);
+  LOBYTE(v506) = 126;
+  v269 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, (Ztl_bstr_t)v445[0].m_pInterface)->vt;
+  if ( Destination.vt == 8 )
+  {
+    v270 = nullptr;
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  if ( v269 )
+  {
+    v445[0].m_pInterface = (IWzProperty *)2428;
+    v444.m_Data = (_bstr_t::Data_t *)&nRange;
+    v271 = StringPool::GetInstance();
+    v272 = StringPool::GetStringW(v271, (ZXString<unsigned short> *)v444.m_Data, (unsigned int)v445[0].m_pInterface)->_m_pStr;
+    LOBYTE(v506) = -123;
+    v273 = ZXString<unsigned short>::Format(&sUOL, v272, v144 / 10000, v144);
+    _bstr_t::_bstr_t((_bstr_t *)&pSP, v273->_m_pStr);
+    v274 = (_bstr_t::Data_t *)pSP.m_pInterface;
+    p_sTileUOL = (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&result->p->sTileUOL;
+    if ( p_sTileUOL != &pSP )
+    {
+      v270 = (_bstr_t::Data_t *)p_sTileUOL->m_pInterface;
+      if ( p_sTileUOL->m_pInterface )
+      {
+        _bstr_t::Data_t::Release(v270);
+        p_sTileUOL->m_pInterface = nullptr;
+      }
+      p_sTileUOL->m_pInterface = (IWzVector2D *)v274;
+      if ( !v274 )
+        goto LABEL_432;
+      InterlockedIncrement((volatile LONG *)&v274->m_RefCount);
+    }
+    if ( v274 )
+      _bstr_t::Data_t::Release(v274);
+LABEL_432:
+    LOBYTE(v506) = 126;
+    if ( nRange )
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(nRange - 12));
+  }
+  v445[0].m_pInterface = (IWzProperty *)v270;
+  v525 = (SKILLENTRY *)v445;
+  v444.m_Data = (_bstr_t::Data_t *)2434;
+  v443.m_Data = (_bstr_t::Data_t *)v445;
+  v276 = StringPool::GetInstance();
+  StringPool::GetBSTR(v276, (Ztl_bstr_t *)v443.m_Data, (unsigned int)v444.m_Data);
+  LOBYTE(v506) = 126;
+  v277 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, (Ztl_bstr_t)v445[0].m_pInterface)->vt;
+  if ( Destination.vt == 8 )
+  {
+    v278 = nullptr;
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  if ( v277 )
+  {
+    v445[0].m_pInterface = (IWzProperty *)2430;
+    v444.m_Data = (_bstr_t::Data_t *)&nRange;
+    v279 = StringPool::GetInstance();
+    v280 = StringPool::GetStringW(v279, (ZXString<unsigned short> *)v444.m_Data, (unsigned int)v445[0].m_pInterface)->_m_pStr;
+    LOBYTE(v506) = -121;
+    v281 = ZXString<unsigned short>::Format(&sUOL, v280, v144 / 10000, v144);
+    _bstr_t::_bstr_t((_bstr_t *)&pSP, v281->_m_pStr);
+    v282 = (_bstr_t::Data_t *)pSP.m_pInterface;
+    p_sAfterimageUOL = (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&result->p->sAfterimageUOL;
+    if ( p_sAfterimageUOL != &pSP )
+    {
+      v278 = (_bstr_t::Data_t *)p_sAfterimageUOL->m_pInterface;
+      if ( p_sAfterimageUOL->m_pInterface )
+      {
+        _bstr_t::Data_t::Release(v278);
+        p_sAfterimageUOL->m_pInterface = nullptr;
+      }
+      p_sAfterimageUOL->m_pInterface = (IWzVector2D *)v282;
+      if ( !v282 )
+        goto LABEL_446;
+      InterlockedIncrement((volatile LONG *)&v282->m_RefCount);
+    }
+    if ( v282 )
+      _bstr_t::Data_t::Release(v282);
+LABEL_446:
+    LOBYTE(v506) = 126;
+    if ( nRange )
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(nRange - 12));
+  }
+  v445[0].m_pInterface = (IWzProperty *)v278;
+  v525 = (SKILLENTRY *)v445;
+  v444.m_Data = (_bstr_t::Data_t *)2534;
+  v443.m_Data = (_bstr_t::Data_t *)v445;
+  v284 = StringPool::GetInstance();
+  StringPool::GetBSTR(v284, (Ztl_bstr_t *)v443.m_Data, (unsigned int)v444.m_Data);
+  LOBYTE(v506) = 126;
+  v285 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, (Ztl_bstr_t)v445[0].m_pInterface)->vt;
+  if ( Destination.vt == 8 )
+  {
+    v286 = nullptr;
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  if ( v285 )
+  {
+    v445[0].m_pInterface = (IWzProperty *)2535;
+    v444.m_Data = (_bstr_t::Data_t *)&nRange;
+    v287 = StringPool::GetInstance();
+    v288 = StringPool::GetStringW(v287, (ZXString<unsigned short> *)v444.m_Data, (unsigned int)v445[0].m_pInterface)->_m_pStr;
+    LOBYTE(v506) = -119;
+    v289 = ZXString<unsigned short>::Format(&sUOL, v288, v144 / 10000, v144);
+    _bstr_t::_bstr_t((_bstr_t *)&pSP, v289->_m_pStr);
+    v290 = (_bstr_t::Data_t *)pSP.m_pInterface;
+    p_sSpecialUOL = (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&result->p->sSpecialUOL;
+    if ( p_sSpecialUOL != &pSP )
+    {
+      v286 = (_bstr_t::Data_t *)p_sSpecialUOL->m_pInterface;
+      if ( p_sSpecialUOL->m_pInterface )
+      {
+        _bstr_t::Data_t::Release(v286);
+        p_sSpecialUOL->m_pInterface = nullptr;
+      }
+      p_sSpecialUOL->m_pInterface = (IWzVector2D *)v290;
+      if ( !v290 )
+        goto LABEL_460;
+      InterlockedIncrement((volatile LONG *)&v290->m_RefCount);
+    }
+    if ( v290 )
+      _bstr_t::Data_t::Release(v290);
+LABEL_460:
+    LOBYTE(v506) = 126;
+    if ( nRange )
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(nRange - 12));
+  }
+  v445[0].m_pInterface = (IWzProperty *)v286;
+  v525 = (SKILLENTRY *)v445;
+  v444.m_Data = (_bstr_t::Data_t *)6878;
+  v443.m_Data = (_bstr_t::Data_t *)v445;
+  v292 = StringPool::GetInstance();
+  StringPool::GetBSTR(v292, (Ztl_bstr_t *)v443.m_Data, (unsigned int)v444.m_Data);
+  LOBYTE(v506) = 126;
+  v293 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, (Ztl_bstr_t)v445[0].m_pInterface)->vt;
+  if ( Destination.vt == 8 )
+  {
+    v294 = nullptr;
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  if ( v293 )
+  {
+    v445[0].m_pInterface = (IWzProperty *)2432;
+    v444.m_Data = (_bstr_t::Data_t *)&nRange;
+    v295 = StringPool::GetInstance();
+    v296 = StringPool::GetStringW(v295, (ZXString<unsigned short> *)v444.m_Data, (unsigned int)v445[0].m_pInterface)->_m_pStr;
+    LOBYTE(v506) = -117;
+    v297 = ZXString<unsigned short>::Format(&sUOL, v296, v144 / 10000, v144);
+    _bstr_t::_bstr_t((_bstr_t *)&pSP, v297->_m_pStr);
+    v298 = (_bstr_t::Data_t *)pSP.m_pInterface;
+    p_sSummonedUOL = (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&result->p->sSummonedUOL;
+    if ( p_sSummonedUOL != &pSP )
+    {
+      v294 = (_bstr_t::Data_t *)p_sSummonedUOL->m_pInterface;
+      if ( p_sSummonedUOL->m_pInterface )
+      {
+        _bstr_t::Data_t::Release(v294);
+        p_sSummonedUOL->m_pInterface = nullptr;
+      }
+      p_sSummonedUOL->m_pInterface = (IWzVector2D *)v298;
+      if ( !v298 )
+        goto LABEL_474;
+      InterlockedIncrement((volatile LONG *)&v298->m_RefCount);
+    }
+    if ( v298 )
+      _bstr_t::Data_t::Release(v298);
+LABEL_474:
+    LOBYTE(v506) = 126;
+    if ( nRange )
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(nRange - 12));
+  }
+  v445[0].m_pInterface = (IWzProperty *)v294;
+  v525 = (SKILLENTRY *)v445;
+  v444.m_Data = (_bstr_t::Data_t *)4193;
+  v443.m_Data = (_bstr_t::Data_t *)v445;
+  v300 = StringPool::GetInstance();
+  StringPool::GetBSTR(v300, (Ztl_bstr_t *)v443.m_Data, (unsigned int)v444.m_Data);
+  LOBYTE(v506) = 126;
+  v301 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, (Ztl_bstr_t)v445[0].m_pInterface)->vt;
+  if ( Destination.vt == 8 )
+  {
+    v302 = nullptr;
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  if ( v301 )
+  {
+    v445[0].m_pInterface = (IWzProperty *)2468;
+    v444.m_Data = (_bstr_t::Data_t *)&nRange;
+    v303 = StringPool::GetInstance();
+    v304 = StringPool::GetStringW(v303, (ZXString<unsigned short> *)v444.m_Data, (unsigned int)v445[0].m_pInterface)->_m_pStr;
+    LOBYTE(v506) = -115;
+    v305 = ZXString<unsigned short>::Format(&sUOL, v304, v144 / 10000, v144);
+    _bstr_t::_bstr_t((_bstr_t *)&pSP, v305->_m_pStr);
+    v306 = (_bstr_t::Data_t *)pSP.m_pInterface;
+    p_sFinishUOL = (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&result->p->sFinishUOL;
+    if ( p_sFinishUOL != &pSP )
+    {
+      v302 = (_bstr_t::Data_t *)p_sFinishUOL->m_pInterface;
+      if ( p_sFinishUOL->m_pInterface )
+      {
+        _bstr_t::Data_t::Release(v302);
+        p_sFinishUOL->m_pInterface = nullptr;
+      }
+      p_sFinishUOL->m_pInterface = (IWzVector2D *)v306;
+      if ( !v306 )
+        goto LABEL_488;
+      InterlockedIncrement((volatile LONG *)&v306->m_RefCount);
+    }
+    if ( v306 )
+      _bstr_t::Data_t::Release(v306);
+LABEL_488:
+    LOBYTE(v506) = 126;
+    if ( nRange )
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(nRange - 12));
+  }
+  v445[0].m_pInterface = nullptr;
+  v444.m_Data = nullptr;
+  v443.m_Data = v302;
+  v525 = (SKILLENTRY *)&v443;
+  v308 = StringPool::GetInstance();
+  StringPool::GetBSTR(v308, &v443, 0x983u);
+  LOBYTE(v506) = 126;
+  v309 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, v443);
+  v310 = result->p;
+  LOBYTE(v506) = -113;
+  v311 = Ztl_variant_t::GetUnknown(v309, (bool)v444.m_Data, (bool)v445[0].m_pInterface);
+  v312 = _com_ptr_t<_com_IIID<IWzCanvas,&__s_GUID const _GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e>>::_QueryInterface<IUnknown *>(
+           v310->apCanvas,
+           v311);
+  if ( v312 < 0 && v312 != -2147467262 )
+    _com_issue_error(v312);
+  LOBYTE(v506) = 126;
+  if ( Destination.vt == 8 )
+  {
+    v313 = nullptr;
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  v445[0].m_pInterface = nullptr;
+  v444.m_Data = nullptr;
+  v443.m_Data = v313;
+  v525 = (SKILLENTRY *)&v443;
+  v314 = StringPool::GetInstance();
+  StringPool::GetBSTR(v314, &v443, 0x95Bu);
+  LOBYTE(v506) = 126;
+  v315 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, v443);
+  v316 = result->p;
+  LOBYTE(v506) = -111;
+  v317 = Ztl_variant_t::GetUnknown(v315, (bool)v444.m_Data, (bool)v445[0].m_pInterface);
+  v318 = _com_ptr_t<_com_IIID<IWzCanvas,&__s_GUID const _GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e>>::_QueryInterface<IUnknown *>(
+           &v316->apCanvas[1],
+           v317);
+  if ( v318 < 0 && v318 != -2147467262 )
+    _com_issue_error(v318);
+  LOBYTE(v506) = 126;
+  if ( Destination.vt == 8 )
+  {
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  v445[0].m_pInterface = nullptr;
+  v444.m_Data = nullptr;
+  v443.m_Data = v319;
+  v525 = (SKILLENTRY *)&v443;
+  v320 = StringPool::GetInstance();
+  StringPool::GetBSTR(v320, &v443, 0x984u);
+  LOBYTE(v506) = 126;
+  v321 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, v443);
+  v322 = result->p;
+  LOBYTE(v506) = -109;
+  v323 = Ztl_variant_t::GetUnknown(v321, (bool)v444.m_Data, (bool)v445[0].m_pInterface);
+  v324 = _com_ptr_t<_com_IIID<IWzCanvas,&__s_GUID const _GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e>>::_QueryInterface<IUnknown *>(
+           &v322->apCanvas[2],
+           v323);
+  if ( v324 < 0 && v324 != -2147467262 )
+    _com_issue_error(v324);
+  LOBYTE(v506) = 126;
+  if ( Destination.vt == 8 )
+  {
+    v325 = nullptr;
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  v445[0].m_pInterface = nullptr;
+  v444.m_Data = nullptr;
+  v443.m_Data = v325;
+  v525 = (SKILLENTRY *)&v443;
+  v326 = StringPool::GetInstance();
+  StringPool::GetBSTR(v326, &v443, 0x985u);
+  LOBYTE(v506) = 126;
+  v327 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, v443);
+  LOBYTE(v506) = -107;
+  v328 = Ztl_variant_t::GetUnknown(v327, (bool)v444.m_Data, (bool)v445[0].m_pInterface);
+  v525 = (SKILLENTRY *)v445;
+  v445[0].m_pInterface = nullptr;
+  v329 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+           v445,
+           v328);
+  if ( v329 < 0 && v329 != -2147467262 )
+    _com_issue_error(v329);
+  v331 = CSkillInfo::LoadFinalAttack((CSkillInfo *)pAttack.m_pInterface, &result->p->aFinalAttack, v445[0]) == 0;
+  LOBYTE(v506) = 126;
+  if ( Destination.vt == 8 )
+  {
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  if ( v331 )
+    goto LABEL_519;
+  v445[0].m_pInterface = nullptr;
+  v444.m_Data = nullptr;
+  v443.m_Data = v330;
+  v525 = (SKILLENTRY *)&v443;
+  v332 = StringPool::GetInstance();
+  StringPool::GetBSTR(v332, &v443, 0x79Eu);
+  LOBYTE(v506) = 126;
+  v333 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, v443);
+  LOBYTE(v506) = -105;
+  v334 = Ztl_variant_t::GetUnknown(v333, (bool)v444.m_Data, (bool)v445[0].m_pInterface);
+  v525 = (SKILLENTRY *)v445;
+  v445[0].m_pInterface = nullptr;
+  v335 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+           v445,
+           v334);
+  if ( v335 < 0 && v335 != -2147467262 )
+    _com_issue_error(v335);
+  v336 = pAttack.m_pInterface;
+  v337 = CSkillInfo::LoadReqSkill((CSkillInfo *)pAttack.m_pInterface, &result->p->lReqSkill, v445[0]) == 0;
+  LOBYTE(v506) = 126;
+  if ( Destination.vt == 8 )
+  {
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  if ( v337 )
+  {
+LABEL_519:
+    v445[0].m_pInterface = (IWzProperty *)&_TI1_AVZException__;
+    pSP.m_pInterface = (IWzVector2D *)-2147467259;
+    v444.m_Data = (_bstr_t::Data_t *)&pSP;
+    goto LABEL_520;
+  }
+  v338 = result->p;
+  p_nMaxLevel = (_bstr_t::Data_t *)&v338->nMaxLevel;
+  v445[0].m_pInterface = (IWzProperty *)&v338->nMaxLevel;
+  v444.m_Data = (_bstr_t::Data_t *)&v338->common;
+  v443.m_Data = (_bstr_t::Data_t *)pStrSR.m_pInterface;
+  v525 = (SKILLENTRY *)&v443;
+  if ( pStrSR.m_pInterface )
+  {
+    AddRef = (void (*)(void))pStrSR.m_pInterface->AddRef;
+    v442.m_Data = (_bstr_t::Data_t *)pStrSR.m_pInterface;
+    AddRef();
+  }
+  v441.m_pInterface = nullptr;
+  v440.m_Data = nullptr;
+  v439.m_Data = p_nMaxLevel;
+  pLT.m_pInterface = (IWzVector2D *)&v439;
+  LOBYTE(v506) = -104;
+  v341 = StringPool::GetInstance();
+  StringPool::GetBSTR(v341, &v439, 0x1902u);
+  LOBYTE(v506) = -104;
+  v342 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, v439);
+  LOBYTE(v506) = -102;
+  v343 = Ztl_variant_t::GetUnknown(v342, (bool)v440.m_Data, (bool)v441.m_pInterface);
+  pLT.m_pInterface = (IWzVector2D *)&v441;
+  v441.m_pInterface = nullptr;
+  v344 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+           &v441,
+           v343);
+  if ( v344 < 0 && v344 != -2147467262 )
+    _com_issue_error(v344);
+  LOBYTE(v506) = -101;
+  CSkillInfo::LoadLevelDataCommon(
+    (CSkillInfo *)v336,
+    nSkillID,
+    v441,
+    (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> >)v442.m_Data,
+    (IWzShape2D *)v443.m_Data,
+    (Ztl_bstr_t *)v444.m_Data);
+  LOBYTE(v506) = 126;
+  if ( Destination.vt == 8 )
+  {
+    v345 = nullptr;
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  if ( result->p->nMaxLevel > 0
+    && (is_ignore_master_level_for_skillinfo(nSkillID) || !is_skill_need_master_level(nSkillID)) )
+  {
+    sName.m_Data = nullptr;
+    v444.m_Data = (_bstr_t::Data_t *)6275;
+    v443.m_Data = (_bstr_t::Data_t *)&pSP;
+    LOBYTE(v506) = -100;
+    v346 = StringPool::GetInstance();
+    v347 = StringPool::GetString(v346, (ZXString<char> *)v443.m_Data, (unsigned int)v444.m_Data)->_m_pStr;
+    v444.m_Data = (_bstr_t::Data_t *)result->p->nMaxLevel;
+    LOBYTE(v506) = -99;
+    ZXString<char>::Format((ZXString<char> *)&sName, v347, v444.m_Data);
+    LOBYTE(v506) = -100;
+    if ( pSP.m_pInterface )
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&pSP.m_pInterface[-3]);
+    v348 = ZXString<char>::operator+((ZXString<char> *)&sName, (ZXString<char> *)&pSP, &result->p->sDescription);
+    v349 = result->p;
+    LOBYTE(v506) = -98;
+    ZXString<char>::operator=(&v349->sDescription, v348);
+    LOBYTE(v506) = -100;
+    if ( pSP.m_pInterface )
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&pSP.m_pInterface[-3]);
+    LOBYTE(v506) = 126;
+    if ( sName.m_Data )
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&sName.m_Data[-1]);
+  }
+  v444.m_Data = nullptr;
+  v443.m_Data = nullptr;
+  v442.m_Data = v345;
+  v525 = (SKILLENTRY *)&v442;
+  v441.m_pInterface = (IWzProperty *)1655;
+  v440.m_Data = (_bstr_t::Data_t *)&v442;
+  v350 = StringPool::GetInstance();
+  StringPool::GetBSTR(v350, (Ztl_bstr_t *)v440.m_Data, (unsigned int)v441.m_pInterface);
+  LOBYTE(v506) = 126;
+  v351 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, v442);
+  v352 = result->p;
+  LOBYTE(v506) = -96;
+  v353 = Ztl_variant_t::GetUnknown(v351, (bool)v443.m_Data, (bool)v444.m_Data);
+  v354 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+           &v352->pLevelData,
+           v353);
+  if ( v354 < 0 && v354 != -2147467262 )
+    _com_issue_error(v354);
+  LOBYTE(v506) = 126;
+  if ( Destination.vt == 8 )
+  {
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  v444.m_Data = nullptr;
+  v443.m_Data = nullptr;
+  v442.m_Data = v355;
+  v525 = (SKILLENTRY *)&v442;
+  v441.m_pInterface = (IWzProperty *)5342;
+  v440.m_Data = (_bstr_t::Data_t *)&v442;
+  v356 = StringPool::GetInstance();
+  StringPool::GetBSTR(v356, (Ztl_bstr_t *)v440.m_Data, (unsigned int)v441.m_pInterface);
+  LOBYTE(v506) = 126;
+  v357 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, v442);
+  v358 = result->p;
+  LOBYTE(v506) = -94;
+  v359 = Ztl_variant_t::GetUnknown(v357, (bool)v443.m_Data, (bool)v444.m_Data);
+  v360 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+           &v358->pCharLevelData,
+           v359);
+  if ( v360 < 0 && v360 != -2147467262 )
+    _com_issue_error(v360);
+  LOBYTE(v506) = 126;
+  if ( Destination.vt == 8 )
+  {
+    v361 = nullptr;
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  if ( result->p->pCharLevelData.m_pInterface )
+  {
+    v444.m_Data = nullptr;
+    v443.m_Data = v361;
+    v525 = (SKILLENTRY *)&v443;
+    v442.m_Data = (_bstr_t::Data_t *)5748;
+    v441.m_pInterface = (IWzProperty *)&v443;
+    v362 = StringPool::GetInstance();
+    StringPool::GetBSTR(v362, (Ztl_bstr_t *)v441.m_pInterface, (unsigned int)v442.m_Data);
+    v363 = result->p->pCharLevelData.m_pInterface;
+    LOBYTE(v506) = -93;
+    if ( !v363 )
+      _com_issue_error(-2147467261);
+    LOBYTE(v506) = 126;
+    v364 = IWzProperty::Getitem(v363, (Ztl_variant_t *)&Destination, v443);
+    v365 = result->p;
+    LOBYTE(v506) = -92;
+    v365->bSkillLVData = get_int32(v364, (int)v444.m_Data) != 0;
+    LOBYTE(v506) = 126;
+    if ( Destination.vt == 8 )
+    {
+      Destination.vt = 0;
+      if ( Destination.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&Destination);
+    }
+  }
+  v444.m_Data = nullptr;
+  v443.m_Data = nullptr;
+  v442.m_Data = v361;
+  v525 = (SKILLENTRY *)&v442;
+  v441.m_pInterface = (IWzProperty *)5342;
+  v440.m_Data = (_bstr_t::Data_t *)&v442;
+  v366 = StringPool::GetInstance();
+  StringPool::GetBSTR(v366, (Ztl_bstr_t *)v440.m_Data, (unsigned int)v441.m_pInterface);
+  LOBYTE(v506) = 126;
+  v367 = IWzProperty::Getitem(pSkill.m_pInterface, (Ztl_variant_t *)&Destination, v442);
+  LOBYTE(v506) = -90;
+  v368 = Ztl_variant_t::GetUnknown(v367, (bool)v443.m_Data, (bool)v444.m_Data);
+  v525 = (SKILLENTRY *)&v444;
+  v444.m_Data = nullptr;
+  v369 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+           (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *)&v444,
+           v368);
+  if ( v369 < 0 && v369 != -2147467262 )
+    _com_issue_error(v369);
+  v511 = CSkillInfo::LoadCharLevelData(
+           (CSkillInfo *)pAttack.m_pInterface,
+           nSkillID,
+           &result->p->aCharLevelData,
+           (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> >)v444.m_Data) == 0;
+  LOBYTE(v506) = 126;
+  if ( Destination.vt == 8 )
+  {
+    Destination.vt = 0;
+    if ( Destination.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&Destination);
+  }
+  if ( v511 )
+  {
+    v444.m_Data = (_bstr_t::Data_t *)&_TI1_AVZException__;
+    pSP.m_pInterface = (IWzVector2D *)-2147467259;
+    v443.m_Data = (_bstr_t::Data_t *)&pSP;
+LABEL_520:
+    _CxxThrowException(v444.m_Data, (_ThrowInfo *)v445[0].m_pInterface);
+  }
+  SKILLENTRY::InitCrc(result->p);
+  v370 = result->p->sSummonedUOL.m_Data;
+  if ( v370 )
+  {
+    m_wstr = v370->m_wstr;
+    if ( m_wstr )
+    {
+      if ( *((_DWORD *)m_wstr - 1) >> 1 )
+      {
+        v372 = VariantInit;
+        VariantInit(&Destination);
+        v373 = ZComAPI::ZComVariantCopy(&Destination, &vtMissing);
+        if ( v373 < 0 )
+          _com_issue_error(v373);
+        LOBYTE(v506) = -89;
+        v372(&vParam);
+        v374 = ZComAPI::ZComVariantCopy(&vParam, &vtMissing);
+        if ( v374 < 0 )
+          _com_issue_error(v374);
+        v444.m_Data = nullptr;
+        v443.m_Data = nullptr;
+        v442.m_Data = (_bstr_t::Data_t *)&Destination;
+        v375 = result->p->sSummonedUOL.m_Data;
+        v441.m_pInterface = (IWzProperty *)&vParam;
+        v525 = (SKILLENTRY *)&v440;
+        v440.m_Data = v375;
+        if ( v375 )
+          InterlockedIncrement((volatile LONG *)&v375->m_RefCount);
+        LOBYTE(v506) = -87;
+        if ( !g_rm.m_pInterface )
+          _com_issue_error(-2147467261);
+        LOBYTE(v506) = -88;
+        ObjectA = IWzResMan::GetObjectA(
+                    g_rm.m_pInterface,
+                    &v483,
+                    v440,
+                    (const Ztl_variant_t *)v441.m_pInterface,
+                    (const Ztl_variant_t *)v442.m_Data);
+        LOBYTE(v506) = -86;
+        v377 = Ztl_variant_t::GetUnknown(ObjectA, (bool)v443.m_Data, (bool)v444.m_Data);
+        pProp.m_pInterface = nullptr;
+        v378 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+                 &pProp,
+                 v377);
+        if ( v378 < 0 && v378 != -2147467262 )
+          _com_issue_error(v378);
+        LOBYTE(v506) = -84;
+        if ( v483.vt == 8 )
+        {
+          v483.vt = 0;
+          if ( v483.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(v483.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&v483);
+        }
+        LOBYTE(v506) = -83;
+        if ( vParam.vt == 8 )
+        {
+          vParam.vt = 0;
+          if ( vParam.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(vParam.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&vParam);
+        }
+        LOBYTE(v506) = -82;
+        if ( Destination.vt == 8 )
+        {
+          Destination.vt = 0;
+          if ( Destination.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&Destination);
+        }
+        v379 = pProp.m_pInterface;
+        if ( pProp.m_pInterface )
+        {
+          VariantInit(&vName);
+          LOBYTE(v506) = -81;
+          v380 = IWzProperty::Get_NewEnum(v379, &v485);
+          LOBYTE(v506) = -80;
+          _com_ptr_t<_com_IIID<IEnumVARIANT,&__s_GUID const _GUID_00020404_0000_0000_c000_000000000046>>::_com_ptr_t<_com_IIID<IEnumVARIANT,&__s_GUID const _GUID_00020404_0000_0000_c000_000000000046>>(
+            &pEnum,
+            v380);
+          LOBYTE(v506) = -78;
+          if ( v485.m_pInterface )
+            ((void (__cdecl *)(IUnknown *, IWzProperty *))v485.m_pInterface->Release)(
+              v485.m_pInterface,
+              v445[0].m_pInterface);
+          f = 0;
+          while ( 1 )
+          {
+            v381 = pEnum.m_pInterface;
+            if ( !pEnum.m_pInterface )
+              goto LABEL_10;
+            if ( ((int (__cdecl *)(IEnumVARIANT *, int, tagVARIANT *, unsigned int *))pEnum.m_pInterface->Next)(
+                   pEnum.m_pInterface,
+                   1,
+                   &vName,
+                   &f) )
+            {
+              break;
+            }
+            DetachBSTR(&sName, &vName);
+            v439.m_Data = (_bstr_t::Data_t *)6814;
+            v438.m_Data = (_bstr_t::Data_t *)&v488;
+            LOBYTE(v506) = -77;
+            v382 = StringPool::GetInstance();
+            StringW = StringPool::GetStringW(v382, (ZXString<unsigned short> *)v438.m_Data, (unsigned int)v439.m_Data);
+            v384 = sName.m_Data;
+            v385 = StringW->_m_pStr;
+            if ( sName.m_Data )
+              v386 = sName.m_Data->m_wstr;
+            else
+              v386 = nullptr;
+            v387 = _wcsnicmp(v386, v385, 6u) == 0;
+            if ( v488._m_pStr )
+              ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)v488._m_pStr - 1);
+            if ( v387 )
+            {
+              v439.m_Data = nullptr;
+              v438.m_Data = nullptr;
+              v525 = (SKILLENTRY *)&v437;
+              v437.m_Data = v384;
+              if ( v384 )
+                InterlockedIncrement((volatile LONG *)&v384->m_RefCount);
+              LOBYTE(v506) = -77;
+              v388 = IWzProperty::Getitem(pProp.m_pInterface, &v482, v437);
+              LOBYTE(v506) = -75;
+              v389 = Ztl_variant_t::GetUnknown(v388, (bool)v438.m_Data, (bool)v439.m_Data);
+              pAttack.m_pInterface = nullptr;
+              v58 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+                      &pAttack,
+                      v389);
+              if ( v58 < 0 && v58 != -2147467262 )
+                goto LABEL_54;
+              LOBYTE(v506) = -73;
+              if ( v482.vt == 8 )
+              {
+                v482.vt = 0;
+                if ( v482.decVal.Lo32 )
+                  ZAPI.CoTaskMemFree((void *)(v482.decVal.Lo32 - 4));
+              }
+              else
+              {
+                VariantClear(&v482);
+              }
+              if ( pAttack.m_pInterface )
+              {
+                v439.m_Data = nullptr;
+                v438.m_Data = nullptr;
+                v437.m_Data = v390;
+                v525 = (SKILLENTRY *)&v437;
+                v391 = StringPool::GetInstance();
+                StringPool::GetBSTR(v391, &v437, 0x3D5u);
+                LOBYTE(v506) = -73;
+                v392 = IWzProperty::Getitem(pAttack.m_pInterface, &v477, v437);
+                LOBYTE(v506) = -71;
+                v393 = Ztl_variant_t::GetUnknown(v392, (bool)v438.m_Data, (bool)v439.m_Data);
+                _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>(
+                  &pInfo,
+                  v393);
+                LOBYTE(v506) = -69;
+                Ztl_variant_t::~Ztl_variant_t(&v477);
+                v439.m_Data = nullptr;
+                v438.m_Data = nullptr;
+                v437.m_Data = v394;
+                v525 = (SKILLENTRY *)&v437;
+                v395 = StringPool::GetInstance();
+                StringPool::GetBSTR(v395, &v437, 0x690u);
+                v396 = pInfo.m_pInterface;
+                LOBYTE(v506) = -68;
+                if ( !pInfo.m_pInterface )
+                  goto LABEL_10;
+                LOBYTE(v506) = -69;
+                v397 = IWzProperty::Getitem(pInfo.m_pInterface, &v472, v437);
+                LOBYTE(v506) = -67;
+                v398 = Ztl_variant_t::GetUnknown(v397, (bool)v438.m_Data, (bool)v439.m_Data);
+                _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>(
+                  &pRange,
+                  v398);
+                LOBYTE(v506) = -65;
+                Ztl_variant_t::~Ztl_variant_t(&v472);
+                v439.m_Data = nullptr;
+                v438.m_Data = nullptr;
+                v437.m_Data = v399;
+                v525 = (SKILLENTRY *)&v437;
+                v400 = StringPool::GetInstance();
+                StringPool::GetBSTR(v400, &v437, 0x1AD9u);
+                v401 = pRange.m_pInterface;
+                LOBYTE(v506) = -64;
+                if ( !pRange.m_pInterface )
+                  goto LABEL_10;
+                LOBYTE(v506) = -65;
+                v402 = IWzProperty::Getitem(pRange.m_pInterface, &v474, v437);
+                LOBYTE(v506) = -63;
+                v403 = Ztl_variant_t::GetUnknown(v402, (bool)v438.m_Data, (bool)v439.m_Data);
+                _com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>::_com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>(
+                  &pSP,
+                  v403);
+                LOBYTE(v506) = -61;
+                Ztl_variant_t::~Ztl_variant_t(&v474);
+                v405 = pSP.m_pInterface;
+                if ( pSP.m_pInterface )
+                {
+                  Ztl_variant_t::Ztl_variant_t(&vTime, &vtMissing);
+                  LOBYTE(v506) = -60;
+                  IWzVector2D::_GetSnapshot(
+                    v405,
+                    &nX,
+                    &nY,
+                    nullptr,
+                    nullptr,
+                    nullptr,
+                    nullptr,
+                    nullptr,
+                    nullptr,
+                    &vTime);
+                  LOBYTE(v506) = -61;
+                  Ztl_variant_t::~Ztl_variant_t(&vTime);
+                  v439.m_Data = nullptr;
+                  v438.m_Data = v406;
+                  v525 = (SKILLENTRY *)&v438;
+                  v437.m_Data = (_bstr_t::Data_t *)1686;
+                  v407 = StringPool::GetInstance();
+                  StringPool::GetBSTR(v407, &v438, (unsigned int)v437.m_Data);
+                  LOBYTE(v506) = -61;
+                  v408 = IWzProperty::Getitem(v401, &v476, v438);
+                  LOBYTE(v506) = -58;
+                  nRange = get_int32(v408, (int)v439.m_Data);
+                  LOBYTE(v506) = -61;
+                  Ztl_variant_t::~Ztl_variant_t(&v476);
+                  v409 = result->p;
+                  v410 = GETCRC32<long,long>(&nX);
+                  SKILLENTRY::AddCrc(v409, v410);
+                  v411 = result->p;
+                  v412 = GETCRC32<long,long>(&nY);
+                  SKILLENTRY::AddCrc(v411, v412);
+                  v413 = result->p;
+                  v414 = GETCRC32<long,long>(&nRange);
+                  SKILLENTRY::AddCrc(v413, v414);
+                }
+                v439.m_Data = (_bstr_t::Data_t *)1;
+                v438.m_Data = v404;
+                v525 = (SKILLENTRY *)&v438;
+                v437.m_Data = (_bstr_t::Data_t *)1681;
+                v415 = StringPool::GetInstance();
+                StringPool::GetBSTR(v415, &v438, (unsigned int)v437.m_Data);
+                LOBYTE(v506) = -61;
+                v416 = IWzProperty::Getitem(v396, &v475, v438);
+                LOBYTE(v506) = -56;
+                v417 = get_int32(v416, (int)v439.m_Data);
+                LOBYTE(v506) = -61;
+                Ztl_variant_t::~Ztl_variant_t(&v475);
+                v439.m_Data = nullptr;
+                nRange = v417;
+                Crc32 = CCrc32::GetCrc32((const unsigned __int8 *)&nRange, 4u, 0, 0, nullptr);
+                SKILLENTRY::AddCrc(result->p, Crc32);
+                v439.m_Data = nullptr;
+                v438.m_Data = nullptr;
+                v437.m_Data = v419;
+                v525 = (SKILLENTRY *)&v437;
+                v420 = StringPool::GetInstance();
+                StringPool::GetBSTR(v420, &v437, 0x1ABEu);
+                LOBYTE(v506) = -61;
+                v421 = IWzProperty::Getitem(v401, &v473, v437);
+                LOBYTE(v506) = -54;
+                v422 = Ztl_variant_t::GetUnknown(v421, (bool)v438.m_Data, (bool)v439.m_Data);
+                _com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>::_com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>(
+                  &pLT,
+                  v422);
+                LOBYTE(v506) = -52;
+                Ztl_variant_t::~Ztl_variant_t(&v473);
+                v439.m_Data = nullptr;
+                v438.m_Data = nullptr;
+                v437.m_Data = v423;
+                v525 = (SKILLENTRY *)&v437;
+                v424 = StringPool::GetInstance();
+                StringPool::GetBSTR(v424, &v437, 0x1ACBu);
+                LOBYTE(v506) = -52;
+                v425 = IWzProperty::Getitem(v401, &v471, v437);
+                LOBYTE(v506) = -50;
+                v426 = Ztl_variant_t::GetUnknown(v425, (bool)v438.m_Data, (bool)v439.m_Data);
+                _com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>::_com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>(
+                  &pRB,
+                  v426);
+                LOBYTE(v506) = -48;
+                Ztl_variant_t::~Ztl_variant_t(&v471);
+                v427 = pLT.m_pInterface;
+                if ( pLT.m_pInterface && pRB.m_pInterface )
+                {
+                  v439.m_Data = (_bstr_t::Data_t *)IWzShape2D::Gety(pRB.m_pInterface);
+                  v438.m_Data = (_bstr_t::Data_t *)IWzShape2D::Getx(pRB.m_pInterface);
+                  v437.m_Data = (_bstr_t::Data_t *)IWzShape2D::Gety(v427);
+                  v428 = IWzShape2D::Getx(v427);
+                  SetRect(&rcRange, v428, (int)v437.m_Data, (int)v438.m_Data, (int)v439.m_Data);
+                  v525 = result->p;
+                  nRange = GETCRC32<long,long>(&rcRange.bottom);
+                  v429 = GETCRC32<long,long>(&rcRange.right);
+                  nRange |= v429;
+                  v430 = GETCRC32<long,long>(&rcRange.top);
+                  nRange |= v430;
+                  v431 = GETCRC32<long,long>(&rcRange.left);
+                  SKILLENTRY::AddCrc(v525, nRange | v431);
+                }
+                LOBYTE(v506) = -52;
+                if ( pRB.m_pInterface )
+                  ((void (__cdecl *)(IWzVector2D *))pRB.m_pInterface->Release)(pRB.m_pInterface);
+                LOBYTE(v506) = -61;
+                if ( v427 )
+                  ((void (__cdecl *)(IWzVector2D *))v427->Release)(v427);
+                LOBYTE(v506) = -65;
+                if ( pSP.m_pInterface )
+                  ((void (__cdecl *)(IWzVector2D *))pSP.m_pInterface->Release)(pSP.m_pInterface);
+                v432 = v401->Release;
+                LOBYTE(v506) = -69;
+                ((void (__cdecl *)(IWzProperty *))v432)(v401);
+                v433 = v396->Release;
+                LOBYTE(v506) = -73;
+                ((void (__cdecl *)(IWzProperty *))v433)(v396);
+                v434 = pAttack.m_pInterface->Release;
+                LOBYTE(v506) = -77;
+                ((void (__cdecl *)(IWzProperty *))v434)(pAttack.m_pInterface);
+                v384 = sName.m_Data;
+              }
+              else
+              {
+                LOBYTE(v506) = -77;
+              }
+            }
+            LOBYTE(v506) = -78;
+            if ( v384 )
+            {
+              _bstr_t::Data_t::Release(v384);
+              sName.m_Data = nullptr;
+            }
+            if ( vName.vt == 8 )
+            {
+              vName.vt = 0;
+              if ( vName.decVal.Lo32 )
+                ZAPI.CoTaskMemFree((void *)(vName.decVal.Lo32 - 4));
+            }
+            else
+            {
+              v58 = VariantClear(&vName);
+              if ( v58 < 0 )
+                goto LABEL_54;
+            }
+          }
+          v435 = v381->Release;
+          LOBYTE(v506) = -81;
+          ((void (__cdecl *)(IEnumVARIANT *))v435)(v381);
+          LOBYTE(v506) = -82;
+          if ( vName.vt == 8 )
+          {
+            vName.vt = 0;
+            if ( vName.decVal.Lo32 )
+              ZAPI.CoTaskMemFree((void *)(vName.decVal.Lo32 - 4));
+          }
+          else
+          {
+            VariantClear(&vName);
+          }
+          v379 = pProp.m_pInterface;
+        }
+        LOBYTE(v506) = 126;
+        if ( v379 )
+          ((void (__cdecl *)(IWzProperty *))v379->Release)(v379);
+      }
+    }
+  }
+  LOBYTE(v506) = 119;
+  if ( pFlipBall.m_pInterface )
+    ((void (__cdecl *)(IWzProperty *))pFlipBall.m_pInterface->Release)(pFlipBall.m_pInterface);
+  LOBYTE(v506) = 112;
+  if ( nIdx )
+    (*(void (__cdecl **)(int))(*(_DWORD *)nIdx + 8))(nIdx);
+  LOBYTE(v506) = 107;
+  if ( pHit.m_pInterface )
+    ((void (__cdecl *)(IWzProperty *))pHit.m_pInterface->Release)(pHit.m_pInterface);
+  LOBYTE(v506) = 102;
+  if ( pKeyDownEnd.m_pInterface )
+    ((void (__cdecl *)(IWzProperty *))pKeyDownEnd.m_pInterface->Release)(pKeyDownEnd.m_pInterface);
+  LOBYTE(v506) = 93;
+  if ( pSkillID.m_pInterface )
+    ((void (__cdecl *)(IWzProperty *))pSkillID.m_pInterface->Release)(pSkillID.m_pInterface);
+  LOBYTE(v506) = 73;
+  if ( pPsdSkill.m_pInterface )
+    ((void (__cdecl *)(IWzProperty *))pPsdSkill.m_pInterface->Release)(pPsdSkill.m_pInterface);
+  LOBYTE(v506) = 67;
+  if ( f1 )
+    (*(void (__cdecl **)(unsigned int))(*(_DWORD *)f1 + 8))(f1);
+  LOBYTE(v506) = 61;
+  if ( pEnum1.m_pInterface )
+    ((void (__cdecl *)(IEnumVARIANT *))pEnum1.m_pInterface->Release)(pEnum1.m_pInterface);
+  LOBYTE(v506) = 5;
+  if ( pAction.m_pInterface )
+    ((void (__cdecl *)(IWzProperty *))pAction.m_pInterface->Release)(pAction.m_pInterface);
+  LOBYTE(v506) = 4;
+  if ( sID._m_pStr )
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sID._m_pStr - 1);
+  LOBYTE(v506) = 3;
+  if ( sUOL._m_pStr )
+    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)sUOL._m_pStr - 1);
+  LOBYTE(v506) = 2;
+  if ( v.vt == 8 )
+  {
+    v.vt = 0;
+    if ( v.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v);
+  }
+  LOBYTE(v506) = 1;
+  ((void (__cdecl *)(IWzProperty *))pSkill.m_pInterface->Release)(pSkill.m_pInterface);
+  LOBYTE(v506) = 0;
+  if ( pStrSR.m_pInterface )
+    ((void (__cdecl *)(IWzProperty *))pStrSR.m_pInterface->Release)(pStrSR.m_pInterface);
+  return result;
+}

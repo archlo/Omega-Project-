@@ -1,0 +1,11 @@
+[
+  {
+    "query": "ShowAffectedSkillAni",
+    "matches": [
+      {
+        "address": "0x8eb860",
+        "name": "CUser::ShowAffectedSkillAni(long)"
+      }
+    ]
+  }
+]

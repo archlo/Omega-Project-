@@ -1,0 +1,36 @@
+// cuser::GetAuraBooster
+
+int __thiscall CUser::GetAuraBooster(CUser *this)
+{
+  const SecondaryStat *v1; // esi
+  int v2; // eax
+  SKILLENTRY *Skill; // edi
+  const SKILLLEVELDATA *LevelData; // eax
+  int v5; // edi
+  SKILLENTRY *v6; // ebp
+  int v7; // eax
+  const SKILLLEVELDATA *v8; // eax
+  int v10; // [esp-8h] [ebp-14h]
+
+  v1 = this->GetSecondaryStat(this); /*0x8de90c*/
+  if ( _ZtlSecureFuse<long>(v1->_ZtlSecureTear_nYellowAura_, v1->_ZtlSecureTear_nYellowAura__CS) <= 0 ) /*0x8de926*/
+    return 0; /*0x8dea09*/
+  v2 = _ZtlSecureFuse<long>(v1->_ZtlSecureTear_rYellowAura_, v1->_ZtlSecureTear_rYellowAura__CS); /*0x8de93b*/
+  Skill = (SKILLENTRY *)CSkillInfo::GetSkill(TSingleton<CSkillInfo>::ms_pInstance, v2); /*0x8de94f*/
+  if ( !Skill ) /*0x8de953*/
+    return 0; /*0x8dea03*/
+  v10 = _ZtlSecureFuse<long>(v1->_ZtlSecureTear_nYellowAura_, v1->_ZtlSecureTear_nYellowAura__CS); /*0x8de969*/
+  LevelData = SKILLENTRY::GetLevelData(Skill, v10); /*0x8de96c*/
+  v5 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nY, LevelData->_ZtlSecureTear_nY_CS); /*0x8de991*/
+  if ( _ZtlSecureFuse<long>(v1->_ZtlSecureTear_nSuperBody_, v1->_ZtlSecureTear_nSuperBody__CS) > 0 ) /*0x8de99d*/
+  {
+    v6 = (SKILLENTRY *)CSkillInfo::GetSkill(TSingleton<CSkillInfo>::ms_pInstance, 32110008); /*0x8de9af*/
+    if ( v6 ) /*0x8de9b3*/
+    {
+      v7 = _ZtlSecureFuse<long>(v1->_ZtlSecureTear_nSuperBody_, v1->_ZtlSecureTear_nSuperBody__CS); /*0x8de9bd*/
+      v8 = SKILLENTRY::GetLevelData(v6, v7); /*0x8de9c8*/
+      v5 += v5 * _ZtlSecureFuse<long>(v8->_ZtlSecureTear_nY, v8->_ZtlSecureTear_nY_CS) / 100; /*0x8de9f8*/
+    }
+  }
+  return v5; /*0x8de9fd*/
+}

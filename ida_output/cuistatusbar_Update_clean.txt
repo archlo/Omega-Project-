@@ -1,0 +1,58 @@
+// Address: 0x874290
+// Function: ?Update@CUIStatusBar@@UAEXXZ
+
+void __thiscall CUIStatusBar::Update(CUIStatusBar *this)
+{
+  int v2; // edi
+  int v3; // eax
+  int v4; // eax
+  int *m_bButtonAniPlayTime; // ebp
+  int v6; // ebx
+  char *m_str; // edi
+  int v8; // [esp-4h] [ebp-1Ch]
+  tagPOINT pt; // [esp+10h] [ebp-8h] BYREF
+
+  v2 = 0;
+  if ( !this->m_uiToolTip.m_nWidth || (++nCounter_1, !(nCounter_1 % 32)) )
+  {
+    CWndMan::GetCursorPos(TSingleton<CWndMan>::ms_pInstance, &pt, this->m_origin);
+    v3 = this->GetAbsTop(&this->IUIMsgHandler);
+    v8 = pt.y - v3;
+    v4 = this->GetAbsLeft(&this->IUIMsgHandler);
+    CUIStatusBar::ProcessToolTip(this, pt.x - v4, v8);
+  }
+  if ( this->m_dwFloatNotice && ZAPI.timeGetTime() > this->m_dwFloatNotice )
+  {
+    CFloatNotice::DeleteFloatNotice(&this->m_floatNotice);
+    this->m_dwFloatNotice = 0;
+  }
+  if ( this->m_dwItemMsg && ZAPI.timeGetTime() > this->m_dwItemMsg )
+  {
+    CFloatNotice::DeleteFloatNotice(&this->m_itemMsg);
+    this->m_dwItemMsg = 0;
+  }
+  if ( TSingleton<CInputSystem>::ms_pInstance->m_nCursorState != 9 && this->m_bDragChatWnd )
+  {
+    CWndMan::ReleaseCaptureWnd(TSingleton<CWndMan>::ms_pInstance, &this->IUIMsgHandler);
+    this->m_bDragChatWnd = 0;
+  }
+  m_bButtonAniPlayTime = this->m_bButtonAniPlayTime;
+  do
+  {
+    v6 = *m_bButtonAniPlayTime;
+    if ( v6 + 90000 < timeGetTime() && v6 != -1 )
+      CUIStatusBar::SetButtonBlink(this, v2, 0);
+    ++v2;
+    ++m_bButtonAniPlayTime;
+  }
+  while ( v2 < 4 );
+  if ( timeGetTime() - this->m_tLastUpdateSkillCooltime > 0x3E8 )
+    CUIStatusBar::CQuickSlot::DrawSkillCooltime(&this->m_QuickSlot);
+  if ( TSingleton<CUserLocal>::ms_pInstance.m_Data )
+  {
+    m_str = TSingleton<CUserLocal>::ms_pInstance.m_Data[1531].m_str;
+    if ( get_update_time() - (int)m_str > 1000 )
+      CUIStatusBar::CQuickSlot::DrawConsumeItemCooltime(&this->m_QuickSlot);
+  }
+  CWnd::Update(this);
+}

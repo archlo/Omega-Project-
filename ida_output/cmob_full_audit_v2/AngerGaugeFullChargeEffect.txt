@@ -1,0 +1,79 @@
+﻿void __thiscall CMob::AngerGaugeFullChargeEffect(CMob *this)
+{
+  int update_time; // eax
+  StringPool *Instance; // eax
+  Ztl_bstr_t *BSTR; // esi
+  CMobTemplate *m_pTemplate; // eax
+  unsigned int v6; // eax
+  StringPool *v7; // eax
+  _bstr_t::Data_t *m_Data; // eax
+  const wchar_t *m_wstr; // edx
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzVector2D *v11; // eax
+  ZXString<unsigned short> v12; // [esp-Ch] [ebp-3Ch] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v13; // [esp-8h] [ebp-38h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v14; // [esp-4h] [ebp-34h] BYREF
+  ZXString<unsigned short> sUOL; // [esp+10h] [ebp-20h] BYREF
+  Ztl_bstr_t result; // [esp+14h] [ebp-1Ch] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v17; // [esp+18h] [ebp-18h]
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *v18; // [esp+1Ch] [ebp-14h]
+  ZXString<unsigned short> *v19; // [esp+20h] [ebp-10h]
+  int v20; // [esp+2Ch] [ebp-4h]
+
+  update_time = get_update_time();
+  if ( update_time >= this->m_bFullChargeEffectStartTime + this->m_bFullChargeEffectTime )
+  {
+    this->m_bFullChargeEffectStartTime = update_time;
+    sUOL._m_pStr = nullptr;
+    v20 = 0;
+    Instance = StringPool::GetInstance();
+    BSTR = StringPool::GetBSTR(Instance, &result, 0x3CEu);
+    m_pTemplate = this->m_pTemplate;
+    v14.m_pInterface = (IWzGr2DLayer *)m_pTemplate->_ZtlSecureTear_dwTemplateID_CS;
+    LOBYTE(v20) = 1;
+    v6 = _ZtlSecureFuse<unsigned long>(m_pTemplate->_ZtlSecureTear_dwTemplateID, (unsigned int)v14.m_pInterface);
+    if ( BSTR->m_Data )
+      ZXString<unsigned short>::Format(&sUOL, BSTR->m_Data->m_wstr, v6);
+    else
+      ZXString<unsigned short>::Format(&sUOL, nullptr, v6);
+    LOBYTE(v20) = 0;
+    if ( result.m_Data )
+      _bstr_t::Data_t::Release(result.m_Data);
+    result.m_Data = (_bstr_t::Data_t *)47;
+    ZXString<unsigned short>::_Cat(&sUOL, (const wchar_t *)&result, 1);
+    v7 = StringPool::GetInstance();
+    m_Data = StringPool::GetBSTR(v7, &result, 0xC2Fu)->m_Data;
+    LOBYTE(v20) = 2;
+    if ( m_Data )
+      m_wstr = m_Data->m_wstr;
+    else
+      m_wstr = nullptr;
+    ZXString<unsigned short>::_Cat(&sUOL, m_wstr, wcslen(m_wstr));
+    LOBYTE(v20) = 0;
+    if ( result.m_Data )
+    {
+      _bstr_t::Data_t::Release(result.m_Data);
+      result.m_Data = nullptr;
+    }
+    m_pInterface = this->m_pLayerAction.m_pInterface;
+    v17 = &v14;
+    v14.m_pInterface = m_pInterface;
+    if ( m_pInterface )
+      m_pInterface->AddRef(m_pInterface);
+    v11 = this->m_pvcHead.m_pInterface;
+    LOBYTE(v20) = 3;
+    v18 = &v13;
+    v13.m_pInterface = v11;
+    if ( v11 )
+      v11->AddRef(v11);
+    v19 = &v12;
+    LOBYTE(v20) = 4;
+    v12._m_pStr = nullptr;
+    ZXString<unsigned short>::operator=(&v12, &sUOL);
+    LOBYTE(v20) = 0;
+    CAnimationDisplayer::Effect_FullChargedAngerGauge(TSingleton<CAnimationDisplayer>::ms_pInstance, v12, v13, v14);
+    v20 = -1;
+    if ( sUOL._m_pStr )
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)sUOL._m_pStr - 1);
+  }
+}

@@ -1,0 +1,154 @@
+﻿void __thiscall CPet::CursedChatCommand(CPet *this)
+{
+  int Level; // eax
+  StringPool *Instance; // eax
+  ZXString<char> *String; // eax
+  CPetTemplate *m_pTemplate; // esi
+  CPetTemplate::SLANGREACTION *v6; // ebp
+  int i; // edx
+  CPetTemplate::SLANGREACTION *a; // ecx
+  CPetTemplate::SLANGREACTION *v9; // ecx
+  const ZArray<CPetTemplate::ACTION> *p_act; // edi
+  CPetTemplate::SLANGREACTION *v11; // eax
+  Ztl_bstr_t *v12; // esi
+  unsigned int v13; // edx
+  CPetTemplate::ACTION *v14; // eax
+  _bstr_t::Data_t *v15; // ecx
+  CPetTemplate::ACTION *v16; // esi
+  _bstr_t::Data_t *v17; // edi
+  int ActionNo; // ebp
+  Ztl_bstr_t *v19; // eax
+  _bstr_t::Data_t *m_Data; // edi
+  unsigned int v21; // eax
+  IWzVector2D *m_pInterface; // eax
+  CVecCtrl *v23; // ecx
+  IWzVector2D *v24; // eax
+  CVecCtrl *v25; // ecx
+  const char *m_str; // ecx
+  char *m_pStr; // esi
+  _bstr_t::Data_t *v28; // esi
+  unsigned __int8 *Buffer; // eax
+  unsigned __int8 *v30; // [esp-8h] [ebp-30h]
+  Ztl_bstr_t v31; // [esp-4h] [ebp-2Ch] BYREF
+  ZXString<char> sContent; // [esp+14h] [ebp-14h] BYREF
+  const ZArray<CPetTemplate::ACTION> *act; // [esp+18h] [ebp-10h] BYREF
+  int v34; // [esp+24h] [ebp-4h]
+
+  Level = CPet::GetLevel(this);
+  if ( this->m_nOneTimeAction <= -1 && Level >= 15 )
+  {
+    if ( TSingleton<CWvsContext>::ms_pInstance._m_pStr[8300] )
+    {
+      Instance = StringPool::GetInstance();
+      String = StringPool::GetString(Instance, (ZXString<char> *)&act, 0x392u);
+      v34 = 0;
+      CHATLOG_ADD(String, 8u);
+      v34 = -1;
+      if ( act )
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&act[-3]);
+    }
+    else
+    {
+      m_pTemplate = this->m_pTemplate;
+      v6 = nullptr;
+      for ( i = 0; ; ++i )
+      {
+        a = m_pTemplate->m_aSlangReaction.a;
+        if ( a )
+          a = (CPetTemplate::SLANGREACTION *)a[-1].act.a;
+        if ( (int)v6 >= (int)a )
+          break;
+        v9 = &m_pTemplate->m_aSlangReaction.a[i];
+        if ( Level >= v9->rgLevel.low && v9->rgLevel.high >= Level )
+        {
+          p_act = &v9->act;
+          goto LABEL_15;
+        }
+        v6 = (CPetTemplate::SLANGREACTION *)((char *)v6 + 1);
+      }
+      p_act = act;
+LABEL_15:
+      v11 = m_pTemplate->m_aSlangReaction.a;
+      if ( v11 )
+        v11 = (CPetTemplate::SLANGREACTION *)v11[-1].act.a;
+      if ( v6 != v11 )
+      {
+        if ( p_act->a )
+        {
+          v12 = p_act->a[-1].absSpeak.a;
+          if ( v12 )
+          {
+            v13 = CRand32::Random(&g_rand) % (unsigned int)v12;
+            v14 = p_act->a;
+            v31.m_Data = v15;
+            act = (const ZArray<CPetTemplate::ACTION> *)&v31;
+            v16 = &v14[v13];
+            v31.m_Data = v16->bsAction.m_Data;
+            if ( v31.m_Data )
+              InterlockedIncrement((volatile LONG *)&v31.m_Data->m_RefCount);
+            v17 = nullptr;
+            ActionNo = CPetTemplate::GetActionNo(this->m_pTemplate, v31);
+            act = nullptr;
+            v19 = v16->absSpeak.a;
+            v34 = 1;
+            if ( v19 && v19[-1].m_Data )
+            {
+              m_Data = v19[-1].m_Data;
+              if ( m_Data )
+                v21 = CRand32::Random(&g_rand) % (unsigned int)m_Data;
+              else
+                v21 = CRand32::Random(&g_rand);
+              Ztl_bstr_t::operator=((Ztl_bstr_t *)&act, &v16->absSpeak.a[v21]);
+              v17 = (_bstr_t::Data_t *)act;
+            }
+            if ( ActionNo >= 0 )
+            {
+              m_pInterface = this->m_pvc.m_pInterface;
+              if ( m_pInterface )
+                v23 = (CVecCtrl *)&m_pInterface[-3];
+              else
+                v23 = nullptr;
+              if ( CVecCtrl::IsOnLadder(v23)
+                || ((v24 = this->m_pvc.m_pInterface) == nullptr ? (v25 = nullptr) : (v25 = (CVecCtrl *)&v24[-3]),
+                    CVecCtrl::IsOnRope(v25)) )
+              {
+                ActionNo = 8;
+              }
+              this->m_nOneTimeAction = ActionNo;
+              CPet::PrepareActionLayer(this);
+              if ( v17 )
+              {
+                if ( !v17->m_str )
+                  v17->m_str = _com_util::ZtlConvertBSTRToString(v17->m_wstr);
+                m_str = v17->m_str;
+              }
+              else
+              {
+                m_str = nullptr;
+              }
+              m_pStr = nullptr;
+              sContent._m_pStr = nullptr;
+              if ( m_str )
+              {
+                v28 = (_bstr_t::Data_t *)strlen(m_str);
+                v31.m_Data = v28;
+                v30 = (unsigned __int8 *)m_str;
+                Buffer = (unsigned __int8 *)ZXString<char>::GetBuffer(&sContent, (int)v28, 0);
+                memcpy(Buffer, v30, (unsigned int)v31.m_Data);
+                ZXString<char>::ReleaseBuffer(&sContent, (int)v28);
+                m_pStr = sContent._m_pStr;
+              }
+              LOBYTE(v34) = 2;
+              CPet::ChatCommand(this, &sContent);
+              LOBYTE(v34) = 1;
+              if ( m_pStr )
+                ZXString<char>::_Release((ZXString<char>::_ZXStringData *)m_pStr - 1);
+            }
+            if ( v17 )
+              _bstr_t::Data_t::Release(v17);
+          }
+        }
+      }
+    }
+  }
+}

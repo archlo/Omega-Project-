@@ -1,0 +1,46 @@
+// cuiuserlist::DestroyAllianceButton
+
+void __thiscall CUIUserList::DestroyAllianceButton(CUIUserList *this, int nIdx)
+{
+  CCtrlButton **p_p; // esi
+  int v4; // edi
+  CCtrlButton *p; // ecx
+  bool v6; // zf
+  ZRef<CCtrlButton> *v7; // esi
+
+  if ( nIdx >= 0 ) /*0x8bac0a*/
+  {
+    p = this->m_pBtAlliance_Dynamic[nIdx].p; /*0x8bac46*/
+    if ( p ) /*0x8bac4f*/
+    {
+      p->Destroy(p); /*0x8bac56*/
+      v6 = this->m_pBtAlliance_Dynamic[nIdx].p == nullptr; /*0x8bac58*/
+      v7 = &this->m_pBtAlliance_Dynamic[nIdx]; /*0x8bac60*/
+      if ( !v6 ) /*0x8bac67*/
+      {
+        ZRef<CCtrlButton>::_ReleaseRaw(v7, nullptr); /*0x8bac6d*/
+        v7->p = nullptr; /*0x8bac72*/
+      }
+    }
+  }
+  else
+  {
+    p_p = &this->m_pBtAlliance_Dynamic[0].p; /*0x8bac0c*/
+    v4 = 15; /*0x8bac12*/
+    do /*0x8bac3f*/
+    {
+      if ( *p_p ) /*0x8bac17*/
+      {
+        (*p_p)->Destroy(*p_p); /*0x8bac22*/
+        if ( *p_p ) /*0x8bac24*/
+        {
+          ZRef<CCtrlButton>::_ReleaseRaw((ZRef<CCtrlButton> *)(p_p - 1), nullptr); /*0x8bac2e*/
+          *p_p = nullptr; /*0x8bac33*/
+        }
+      }
+      p_p += 2; /*0x8bac39*/
+      --v4; /*0x8bac3c*/
+    }
+    while ( v4 ); /*0x8bac3f*/
+  }
+}

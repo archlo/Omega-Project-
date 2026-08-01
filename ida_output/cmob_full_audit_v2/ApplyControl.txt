@@ -1,0 +1,50 @@
+﻿void __thiscall CMob::ApplyControl(CMob *this, int tCur)
+{
+  CMobTemplate *m_pTemplate; // esi
+  _bstr_t::Data_t *m_Data; // ebp
+  char **p_m_str; // esi
+  IVecCtrlOwner *v6; // edi
+  _DWORD *v7; // ebx
+  int v8; // ebx
+  _DWORD *v9; // esi
+  __int64 v10; // rax
+  unsigned int v11; // esi
+  unsigned int v12; // eax
+  unsigned int ZtlSecureTear_m_dwMobID_CS; // [esp-4h] [ebp-58h]
+  _BYTE v15[8]; // [esp+18h] [ebp-3Ch] BYREF
+  _BYTE v16[8]; // [esp+20h] [ebp-34h] BYREF
+  _BYTE v17[8]; // [esp+28h] [ebp-2Ch] BYREF
+  _BYTE v18[8]; // [esp+30h] [ebp-24h] BYREF
+  COutPacket oPacket; // [esp+38h] [ebp-1Ch] BYREF
+  int v20; // [esp+50h] [ebp-4h]
+
+  m_pTemplate = this->m_pTemplate;
+  if ( (_ZtlSecureFuse<int>(m_pTemplate->_ZtlSecureTear_bPickUpDrop, m_pTemplate->_ZtlSecureTear_bPickUpDrop_CS)
+     || _ZtlSecureFuse<int>(m_pTemplate->_ZtlSecureTear_bFirstAttack, m_pTemplate->_ZtlSecureTear_bFirstAttack_CS))
+    && tCur - _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_tLastApplyCtrl, this->_ZtlSecureTear_m_tLastApplyCtrl_CS) >= 1000 )
+  {
+    this->_ZtlSecureTear_m_tLastApplyCtrl_CS = _ZtlSecureTear<long>(tCur, this->_ZtlSecureTear_m_tLastApplyCtrl);
+    m_Data = TSingleton<CUserLocal>::ms_pInstance.m_Data;
+    p_m_str = &TSingleton<CUserLocal>::ms_pInstance.m_Data->m_str;
+    v6 = &this->IVecCtrlOwner;
+    v7 = (_DWORD *)(*((int (__thiscall **)(char **, _BYTE *))TSingleton<CUserLocal>::ms_pInstance.m_Data->m_str + 4))(
+                     &TSingleton<CUserLocal>::ms_pInstance.m_Data->m_str,
+                     v15);
+    v8 = *v7 - *(_DWORD *)((int (__thiscall *)(IVecCtrlOwner *, _BYTE *))v6->GetPos)(v6, v16);
+    v9 = (_DWORD *)((*((int (__thiscall **)(char **, _BYTE *))*p_m_str + 4))(p_m_str, v17) + 4);
+    v10 = *v9 - *(_DWORD *)(((int (__thiscall *)(IVecCtrlOwner *, _BYTE *))v6->GetPos)(v6, v18) + 4);
+    HIDWORD(v10) = (unsigned __int64)(1431655766LL * (int)((HIDWORD(v10) ^ v10) - HIDWORD(v10))) >> 32;
+    v11 = HIDWORD(v10) + (int)abs32(v8) / 10 + (HIDWORD(v10) >> 31);
+    if ( ((int)m_Data[133].m_str & 0xFFFFFFFE) == 0x12 )
+      v11 += 100;
+    COutPacket::COutPacket(&oPacket, 228);
+    ZtlSecureTear_m_dwMobID_CS = this->_ZtlSecureTear_m_dwMobID_CS;
+    v20 = 0;
+    v12 = _ZtlSecureFuse<unsigned long>(this->_ZtlSecureTear_m_dwMobID, ZtlSecureTear_m_dwMobID_CS);
+    COutPacket::Encode4(&oPacket, v12);
+    COutPacket::Encode4(&oPacket, v11);
+    CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket);
+    v20 = -1;
+    ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff);
+  }
+}

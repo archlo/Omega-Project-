@@ -15,13 +15,27 @@ export class TextField {
   isPassword = false;
   drawBackground = true;
 
+  // OG: CCtrlEdit::SetEnable (0x4DE970) — enable/disable state
+  private _enabled = true;
+  get enabled(): boolean { return this._enabled; }
+  set enabled(v: boolean) {
+    this._enabled = v;
+    if (!v) this.isFocused = false;
+    this.drawBg();
+  }
+
   private _isFocused = false;
   get isFocused(): boolean { return this._isFocused; }
   set isFocused(v: boolean) {
+    if (!this._enabled && v) return;
     this._isFocused = v;
     this._cursor.visible = v;
     this.drawBg();
   }
+
+  // OG: CCtrlEdit::OnMouseEnter — hover state
+  private _hovered = false;
+  get hovered(): boolean { return this._hovered; }
   /** Optional WZ background sprite, rendered when the field is empty. */
   background: WzSprite | null = null;
   container: Container;
@@ -92,10 +106,17 @@ export class TextField {
   }
 
   handleMouseButton(x: number, y: number, down: boolean): boolean {
+    if (!this._enabled) return false;
     if (!down) return false;
     const b = this.bounds;
     this.isFocused = x >= b.x && x < b.x + b.width && y >= b.y && y < b.y + b.height;
     return this._isFocused;
+  }
+
+  /** OG: CCtrlEdit::OnMouseEnter — hover tracking. */
+  onMouseMove(x: number, y: number): void {
+    const b = this.bounds;
+    this._hovered = x >= b.x && x < b.x + b.width && y >= b.y && y < b.y + b.height;
   }
 
   private _updateDisplay(): void {
@@ -117,13 +138,20 @@ export class TextField {
     const cursorH = this.height - 8;
     this._updateCursorPos();
     this._cursor.clear();
-    this._cursor.rect(0, 0, 1, cursorH).fill({ color: this._caretColor });
+    if (this._enabled) {
+      this._cursor.rect(0, 0, 1, cursorH).fill({ color: this._caretColor });
+    }
 
     if (this.background || !this.drawBackground) {
       // WZ art or transparent mode — no fill box
       return;
     }
-    g.rect(0, 0, this.width, this.height).fill({ color: this.isFocused ? 0x1a3a5a : 0x0a1a2a });
-    g.rect(0, 0, this.width, this.height).stroke({ width: 1, color: this.isFocused ? 0x88CCFF : 0x446688 });
+    if (!this._enabled) {
+      g.rect(0, 0, this.width, this.height).fill({ color: 0x0a0a0a });
+      g.rect(0, 0, this.width, this.height).stroke({ width: 1, color: 0x222222 });
+    } else {
+      g.rect(0, 0, this.width, this.height).fill({ color: this.isFocused ? 0x1a3a5a : 0x0a1a2a });
+      g.rect(0, 0, this.width, this.height).stroke({ width: 1, color: this.isFocused ? 0x88CCFF : 0x446688 });
+    }
   }
 }

@@ -1,0 +1,41 @@
+// cuserlocal::ApplyRecoveryOption
+
+void __thiscall CUserLocal::ApplyRecoveryOption(
+        CUserLocal *this,
+        int nItemOptionID,
+        int nLevel,
+        int *dRecoveryHP,
+        int *dRecoveryMP,
+        int bSit)
+{
+  ItemOptionInfo *p; // edx
+  ItemOptionLevelData *v7; // eax
+  int nRecoveryHP; // ecx
+  int nRecoveryMP; // eax
+  ItemOptionInfo *v10; // esi
+  volatile LONG *p_nReqLevel; // edi
+  ZRef<ItemOptionInfo> pOption; // [esp+10h] [ebp-14h] BYREF
+  int v13; // [esp+20h] [ebp-4h]
+
+  CItemOptionInfo::GetItemOption(TSingleton<CItemOptionInfo>::ms_pInstance, &pOption, nItemOptionID); /*0x909596*/
+  p = pOption.p; /*0x90959b*/
+  if ( pOption.p ) /*0x9095a1*/
+  {
+    v7 = &pOption.p->aLevelData.a[nLevel]; /*0x9095b1*/
+    nRecoveryHP = v7->nRecoveryHP; /*0x9095b4*/
+    if ( nRecoveryHP > 0 && (!bSit || nItemOptionID == 20181) ) /*0x9095c8*/
+      *dRecoveryHP += nRecoveryHP; /*0x9095ce*/
+    nRecoveryMP = v7->nRecoveryMP; /*0x9095d0*/
+    if ( nRecoveryMP > 0 && (!bSit || nItemOptionID == 20181) ) /*0x9095e4*/
+      *dRecoveryMP += nRecoveryMP; /*0x9095ea*/
+    v10 = p - 1; /*0x9095ec*/
+    p_nReqLevel = &p[-1].nReqLevel; /*0x9095ef*/
+    v13 = -1; /*0x9095f3*/
+    if ( !InterlockedDecrement(p_nReqLevel) ) /*0x9095fb*/
+    {
+      InterlockedIncrement(p_nReqLevel); /*0x909606*/
+      if ( v10 ) /*0x90960e*/
+        (*(void (__thiscall **)(ItemOptionInfo *, int))v10->nItemOptionID)(v10, 1); /*0x909618*/
+    }
+  }
+}

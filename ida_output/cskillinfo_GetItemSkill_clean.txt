@@ -1,0 +1,24 @@
+const ITEMSKILLENTRY *__thiscall CSkillInfo::GetItemSkill(CSkillInfo *this, int nSkillID)
+{
+  ITEMSKILLENTRY *v2; // edi
+  ITEMSKILLENTRY *v3; // esi
+  ZRef<ITEMSKILLENTRY> p; // [esp+10h] [ebp-14h] BYREF
+  int v6; // [esp+20h] [ebp-4h]
+
+  p.p = nullptr; /*0x6f3226*/
+  v6 = 0; /*0x6f323e*/
+  ZMap<long,ZRef<ITEMSKILLENTRY>,long>::GetAt(&this->m_mItemSkill, &nSkillID, &p); /*0x6f3246*/
+  v2 = p.p; /*0x6f324b*/
+  v6 = -1; /*0x6f324f*/
+  if ( p.p ) /*0x6f3259*/
+  {
+    v3 = p.p - 2; /*0x6f325b*/
+    if ( !InterlockedDecrement((volatile LONG *)&p.p[-2].apLevelData) ) /*0x6f3262*/
+    {
+      InterlockedIncrement((volatile LONG *)&v2[-2].apLevelData); /*0x6f326d*/
+      if ( v2 != (ITEMSKILLENTRY *)16 ) /*0x6f3275*/
+        (*(void (__thiscall **)(ITEMSKILLENTRY *, int))v3->nSkillID)(v2 - 2, 1); /*0x6f327f*/
+    }
+  }
+  return v2; /*0x6f3283*/
+}

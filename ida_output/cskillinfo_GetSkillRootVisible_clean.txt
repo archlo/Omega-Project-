@@ -1,0 +1,78 @@
+void __thiscall CSkillInfo::GetSkillRootVisible(
+        CSkillInfo *this,
+        const SKILLENTRY *nSkillRootID,
+        const CharacterData *cd,
+        SKILLROOT *SkillRootVisible)
+{
+  const SKILLROOT *SkillRoot; // eax
+  SKILLROOT *v5; // esi
+  const SKILLROOT *v6; // ebx
+  IWzCanvas *m_pInterface; // eax
+  IWzCanvas *v8; // edi
+  unsigned int i; // ebp
+  ZRef<SKILLENTRY> *a; // eax
+  const SKILLENTRY *p; // eax
+  int nSkillID; // edx
+  int v13; // esi
+  ZRef<SKILLENTRY> *v14; // edi
+  int v15; // eax
+  SKILLENTRY *v16; // eax
+  Ztl_bstr_t *p_sFinishUOL; // edi
+  volatile LONG *apCanvas; // ebp
+  const SKILLENTRY *v19; // ecx
+  ZArray<ZRef<SKILLENTRY> > *p_aSkill; // [esp+14h] [ebp-4h]
+
+  SkillRoot = CSkillInfo::GetSkillRoot(TSingleton<CSkillInfo>::ms_pInstance, (int)nSkillRootID); /*0x6f4066*/
+  v5 = SkillRootVisible; /*0x6f406b*/
+  v6 = SkillRoot; /*0x6f406f*/
+  SkillRootVisible->nSkillRootID = SkillRoot->nSkillRootID; /*0x6f4076*/
+  ZXString<char>::operator=(&v5->sBookName, &SkillRoot->sBookName); /*0x6f407c*/
+  m_pInterface = v6->pBookIcon.m_pInterface; /*0x6f4081*/
+  v8 = v5->pBookIcon.m_pInterface; /*0x6f4084*/
+  if ( v8 != m_pInterface ) /*0x6f4089*/
+  {
+    v5->pBookIcon.m_pInterface = m_pInterface; /*0x6f408b*/
+    if ( m_pInterface ) /*0x6f4090*/
+      m_pInterface->AddRef(m_pInterface); /*0x6f4098*/
+    if ( v8 ) /*0x6f409c*/
+      v8->Release(v8); /*0x6f40a4*/
+  }
+  p_aSkill = &v5->aSkill; /*0x6f40a9*/
+  ZArray<ZRef<SKILLENTRY>>::RemoveAll(&v5->aSkill); /*0x6f40ad*/
+  for ( i = 0; ; ++i ) /*0x6f40b2*/
+  {
+    a = v6->aSkill.a; /*0x6f40b4*/
+    SkillRootVisible = (SKILLROOT *)i; /*0x6f40b7*/
+    if ( !a || (SKILLENTRY *)i >= a[-1].p ) /*0x6f40c6*/
+      break; /*0x6f40c6*/
+    p = a[i].p; /*0x6f40d5*/
+    nSkillID = p->nSkillID; /*0x6f40d9*/
+    nSkillRootID = p; /*0x6f40e4*/
+    if ( CSkillInfo::IsSkillVisible(this, cd, nSkillID, &nSkillRootID) ) /*0x6f40ee*/
+    {
+      v13 = (int)&v6->aSkill.a[i]; /*0x6f4100*/
+      v14 = ZArray<ZRef<SKILLENTRY>>::InsertBefore(p_aSkill, -1); /*0x6f4107*/
+      v15 = *(_DWORD *)(v13 + 4); /*0x6f4109*/
+      nSkillRootID = (const SKILLENTRY *)v14; /*0x6f410c*/
+      if ( v15 ) /*0x6f4112*/
+        InterlockedIncrement((volatile LONG *)(v15 - 12)); /*0x6f4118*/
+      v16 = v14->p; /*0x6f411e*/
+      if ( v16 ) /*0x6f4123*/
+      {
+        p_sFinishUOL = &v16[-1].sFinishUOL; /*0x6f4125*/
+        apCanvas = (volatile LONG *)v16[-1].apCanvas; /*0x6f4128*/
+        if ( !InterlockedDecrement(apCanvas) ) /*0x6f412c*/
+        {
+          InterlockedIncrement(apCanvas); /*0x6f4137*/
+          if ( p_sFinishUOL ) /*0x6f413f*/
+            ((void (__thiscall *)(Ztl_bstr_t *, int))p_sFinishUOL->m_Data->m_wstr)(p_sFinishUOL, 1); /*0x6f4149*/
+        }
+        v19 = nSkillRootID; /*0x6f414b*/
+        i = (unsigned int)SkillRootVisible; /*0x6f414f*/
+        nSkillRootID->sName._m_pStr = nullptr; /*0x6f4153*/
+        v14 = (ZRef<SKILLENTRY> *)v19; /*0x6f415a*/
+      }
+      v14->p = *(SKILLENTRY **)(v13 + 4); /*0x6f415f*/
+    }
+  }
+}

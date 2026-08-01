@@ -36,6 +36,8 @@ export class EnchantSkill extends GamePanel {
     const title = new Text({ text: 'Skill Enchant', style: _titleStyle });
     title.x = 8; title.y = 5;
     this.container.addChild(title);
+    // OG: CUIWnd close button
+    this.createCloseButton(null, null, 1, 200);
   }
 
   Open(skills: { slot: number; name: string; level: number; maxLevel: number }[]): void {

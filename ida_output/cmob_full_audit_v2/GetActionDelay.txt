@@ -1,0 +1,32 @@
+﻿int __thiscall CMob::GetActionDelay(CMob *this, unsigned int nAction)
+{
+  int v2; // edi
+  ZList<ZRef<CActionMan::MOBACTIONFRAMEENTRY> > *v3; // esi
+  CMobTemplate *m_pTemplate; // eax
+  unsigned int v5; // eax
+  int v7; // edi
+
+  v2 = nAction;
+  if ( nAction > 0x2A )
+    return 0;
+  v3 = &this->m_aAction.a[nAction];
+  if ( !v3->_m_uCount )
+  {
+    if ( !this->m_stat.nDoom_ || (m_pTemplate = this->m_pTemplateByDoom) == nullptr )
+      m_pTemplate = this->m_pTemplate;
+    v5 = _ZtlSecureFuse<unsigned long>(
+           m_pTemplate->_ZtlSecureTear_dwTemplateID,
+           m_pTemplate->_ZtlSecureTear_dwTemplateID_CS);
+    CActionMan::LoadMobAction(TSingleton<CActionMan>::ms_pInstance, v5, v2, v3);
+    if ( !v3->_m_uCount )
+      return 0;
+  }
+  v7 = 0;
+  for ( nAction = (unsigned int)v3->_m_pHead;
+        nAction;
+        v7 += ZList<ZRef<CActionMan::MOBACTIONFRAMEENTRY>>::GetNext((__POSITION **)&nAction)->p->tDelay )
+  {
+    ;
+  }
+  return v7;
+}

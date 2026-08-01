@@ -1,0 +1,3 @@
+﻿=== 0x464e70 ===
+{"addr":"0x464e70","code":"void __thiscall CAvatar::SetGhostState(CAvatar *this, int nGhostIndex)\n{\n  this->m_nGhostIndex = nGhostIndex; /*0x464e79*/\n  CAvatar::ClearActionLayer(this, 0); /*0x464e7f*/\n  this->PrepareActionLayer(this, 6, 100, 0); /*0x464e91*/\n}","refs":[{"addr":"0x464d60","name":"?ClearActionLayer@CAvatar@@IAEXJ@Z"}]}
+

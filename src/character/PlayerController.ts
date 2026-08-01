@@ -50,6 +50,13 @@ export class PlayerController {
   private static readonly MaxElements = 12;
   private static readonly FallDamageThreshold = 500;
   private static readonly FallDamagePerPx = 0.08;
+  // OG: CVecCtrl::CalcWalk (0x992BA0) slip-branch constants — walkSlant is the
+  // shoe attribute threshold (m_pCurAttrShoe.walkSlant, defaults to 0.1); dSlipForce
+  // and dSlipSpeed are read from CONSTANTS+0x18/+0x20 (Physics.img/slipForce=5000,
+  // slipSpeed=100).
+  private static readonly WalkSlant = 0.1;
+  private static readonly SlipForce = 5000;
+  private static readonly SlipSpeed = 100;
 
   // OG: AccSpeed/DecSpeed (decompile/990850.c, 9908C0.c) — every walk/fly/
   // swim velocity update in CVecCtrl goes through one of these two. `f` is
@@ -283,37 +290,87 @@ export class PlayerController {
     }
     if (this._grounded) {
       // OG: CVecCtrl::CalcWalk — grounded movement with foothold drag
-      // IDA: drag = walkDrag * fieldDrag * footholdDrag
-      // The foothold drag multiplier affects how slippery the surface is
-      const fhDrag = 1.0; // Default foothold drag (would come from foothold attributes)
-      const effectiveDrag = PlayerController.WalkDrag * fhDrag;
-      if (dir !== 0) {
-        // OG: AccSpeed with walkForce and walkSpeed
-        const walkAcc = PlayerController.WalkForce * fhDrag;
-        const walkMax = this._walkSpeed * fhDrag;
-        this._velocity.x = PlayerController.accSpeed(this._velocity.x, dir * walkAcc, 1, walkMax, dt);
-      } else if (Math.abs(this._velocity.x) > 0.5) {
-        // OG: DecSpeed with walkDrag for deceleration
-        this._velocity.x = PlayerController.decSpeed(this._velocity.x, effectiveDrag, 1, 0, dt);
-      }
-      // OG: Slip/slope effects — when foothold slope > walkSlant, apply slip force
-      // IDA: if (sin1 > walkSlant) { slipForce = dSlipForce * sin * -hd; slipSpeed = sin * dSlipSpeed; }
       const fh = this._field.GetFoothold(this._currentFoothold);
-      if (fh && fh.X2 !== fh.X1) {
-        const slope = Math.abs((fh.Y2 - fh.Y1) / (fh.X2 - fh.X1));
-        if (slope > 0.1) { // walkSlant threshold
-          const slipForce = 5000 * slope; // dSlipForce * sin
-          const slipSpeed = slope * 100; // dSlipSpeed * sin
-          if (dir === 0) {
-            // No input — apply slip force downhill
-            const downhill = fh.Y2 > fh.Y1 ? 1 : -1;
-            this._velocity.x = PlayerController.accSpeed(this._velocity.x, slipForce * downhill, 1, slipSpeed, dt);
+      let sin1Sq = 0;
+      let slopeFactor = 1.0;
+      let forceMultiplier = 1.0;
+      let speedMultiplier = 1.0;
+
+      if (fh && !fh.IsWall) {
+        // OG: sin1 = |m_uvy| (screen-slope sine, never tan). The (1 ± sin²)
+        // factor multiplies the walk FORCE (faster downhill, slower uphill);
+        // the speed cap is always (1 + sin²) × maxSpeed.
+        const sin1 = Math.abs(fh.Uvy);
+        sin1Sq = sin1 * sin1;
+        slopeFactor = fh.Uvy >= 0 ? (1 + sin1Sq) : (1 - sin1Sq);
+
+        // Foothold force attribute (ice, conveyors, etc.)
+        if (fh.Force !== 0) {
+          const absForce = Math.abs(fh.Force);
+          if (dir !== 0 && dir * fh.Force > 0) {
+            forceMultiplier = 2 * absForce;
+            speedMultiplier = 2 * absForce;
+          } else if (dir !== 0) {
+            forceMultiplier = 0.2 / absForce;
+            speedMultiplier = 0.2 / absForce;
+          } else {
+            forceMultiplier = absForce;
+            speedMultiplier = absForce;
           }
-          // OG: Short drag — temporary reduced friction after sliding
-          if (this._shortDragTimer <= 0) {
-            this._shortDragTimer = 500; // 500ms of reduced drag
-            this._shortDragForce = effectiveDrag * 0.5;
+        }
+      }
+
+      // OG: effective force — the slope factor and force-foothold multiplier
+      // both scale the force; the cap is (1 + sin²)·maxSpeed.
+      let walkForce: number;
+      if (dir !== 0) {
+        walkForce = dir * PlayerController.WalkForce * slopeFactor * forceMultiplier;
+      } else if (fh && fh.Force !== 0) {
+        // No input on force foothold — auto-slide
+        walkForce = (fh.Force > 0 ? 1 : -1) * PlayerController.WalkForce * Math.abs(fh.Force) * slopeFactor;
+      } else {
+        walkForce = 0;
+      }
+      const walkMax = this._walkSpeed * (1 + sin1Sq) * speedMultiplier;
+
+      // Apply integrated physics: force + slope + drag
+      if (dir !== 0) {
+        this._velocity.x = PlayerController.accSpeed(this._velocity.x, walkForce, 1, walkMax, dt);
+      } else if (fh && fh.Force !== 0) {
+        // No input on force foothold — auto-slide
+        this._velocity.x = PlayerController.accSpeed(this._velocity.x, walkForce, 1, this._walkSpeed * Math.abs(fh.Force), dt);
+      } else if (Math.abs(this._velocity.x) > 0.5) {
+        // No input, no force — decelerate
+        this._velocity.x = PlayerController.decSpeed(this._velocity.x, PlayerController.WalkDrag, 1, 0, dt);
+      }
+
+      // OG: Slip on steep slopes — CalcWalk slip branch (sin1 > walkSlant):
+      // slipForce = dSlipForce·sin1·(-hd), capped at dSlipSpeed·sin1. Input
+      // aligned with the slip adds the walk force (cap grows by (1+sin²)·max);
+      // input opposing halves both; velocity opposing the slip is braked to 0
+      // first. Force footholds slip too — only walls are excluded.
+      if (fh && !fh.IsWall) {
+        const sin1 = Math.abs(fh.Uvy);
+        if (sin1 > PlayerController.WalkSlant) {
+          const hd = fh.Uvy >= 0 ? -1 : 1;
+          let slipForce = PlayerController.SlipForce * sin1 * -hd;
+          let slipSpeed = sin1 * PlayerController.SlipSpeed;
+          if (hd * dir <= 0) {
+            // Input zero or walking with the slip
+            if (dir !== 0 || fh.Force !== 0) {
+              slipForce += walkForce;
+              slipSpeed += walkMax;
+            }
+          } else {
+            // Walking against the slip — halve both
+            slipForce *= 0.5;
+            slipSpeed *= 0.5;
           }
+          if (hd * this._velocity.x > 0) {
+            // Velocity opposes the slip — brake to 0 first
+            this._velocity.x = PlayerController.decSpeed(this._velocity.x, PlayerController.WalkDrag, 1, 0, dt);
+          }
+          this._velocity.x = PlayerController.accSpeed(this._velocity.x, slipForce, 1, slipSpeed, dt);
         }
       }
       // OG: Apply short drag if active (reduces friction temporarily)
@@ -357,18 +414,36 @@ export class PlayerController {
           downJumped = true;
         }
       } else {
-        // CantThrough: block jump if a CantThrough foothold exists directly above
+        // OG TryDoingFlyingRush (0x90BC10): CantThrough is checked by the CALLER
+        // on the foothold returned from GetFootholdAbove, not inside the query.
         const aboveFh = this._field.GetFootholdAbove(this.Position.x, this.Position.y - PlayerController.BodyHeight, this.Position.y - 4);
-        if (aboveFh) {
+        if (aboveFh && aboveFh.CantThrough) {
           // Jump blocked by platform above — stay grounded
         } else {
+          // OG JustJump: vy = -(dJumpSpeed * walkJump / g)
+          // NOTE: OG uses pixels-per-tick velocity (30fps), not pixels-per-second.
+          // Our system uses dt-based physics, so we use -jumpSpeed directly.
+          // The gravity-dependency formula would require a full physics rewrite.
+          const jumpVy = -this._jumpSpeed;
+          // OG: horizontal boost — add (inputX × 0.8 × maxWalkSpeed) to current vx
+          // Only if player is moving slower than 0.8 × maxWalkSpeed in input direction
+          let jumpVx = this._velocity.x;
+          if (dir !== 0) {
+            const maxWalk = this._walkSpeed;
+            const boostThreshold = maxWalk * 0.8;
+            if (dir * this._velocity.x < boostThreshold) {
+              jumpVx = this._velocity.x + dir * boostThreshold;
+            }
+            // Clamp to maxWalkSpeed
+            jumpVx = Math.max(-maxWalk, Math.min(maxWalk, jumpVx));
+          }
           this._pending.push({
-            attr: 1, vx: this._velocity.x, vy: -this._jumpSpeed,
+            attr: 1, vx: jumpVx, vy: jumpVy,
             moveAction: StanceMoveAction(Stance.Jump, this.FacingLeft), elapse: 0,
             x: this.Position.x, y: this.Position.y, fh: this._currentFoothold,
             fhFallStart: 0, xOffset: 0, yOffset: 0, stat: 0,
           });
-          this._velocity.y = -this._jumpSpeed;
+          this._velocity = { x: jumpVx, y: jumpVy };
           this._grounded = false;
           this._lastFhX1 = 0; this._lastFhY1 = 0; this._lastFootholdId = 0;
         }
@@ -446,12 +521,26 @@ export class PlayerController {
         const nextId = fh.X2 >= fh.X1
           ? (newX < lo ? fh.Prev : fh.Next)
           : (newX < lo ? fh.Next : fh.Prev);
-        if (nextId === 0) { this.Position = { x: newX, y: edgeY }; this._grounded = false; return; }
+        if (nextId === 0) { this.Position = { x: edgeX, y: edgeY }; this._grounded = false; this._velocity = { x: 0, y: 0 }; return; }
         const nextFh = this._field.GetFoothold(nextId);
-        if (nextFh === null) { this.Position = { x: newX, y: edgeY }; this._grounded = false; return; }
+        if (nextFh === null) { this.Position = { x: edgeX, y: edgeY }; this._grounded = false; this._velocity = { x: 0, y: 0 }; return; }
+
+        // OG CollisionDetectWalk: check if linked foothold faces same direction
+        // m_uvx <= 0.0 means the linked foothold faces opposite direction or is a wall
+        // In that case, STOP at the edge with velocity = 0
+        const nextUvx = nextFh.Uvx;
+        if (nextUvx <= 0) {
+          // Linked foothold faces opposite direction — STOP at edge
+          this.Position = { x: edgeX, y: edgeY };
+          this._velocity = { x: 0, y: 0 };
+          this._grounded = false;
+          return;
+        }
+
+        // Linked foothold faces same direction — check step-up height
         const nextY = nextFh.YAt(newX);
         if (nextY !== null && Math.abs(nextY - edgeY) > PlayerController.MaxWalkStepUp) {
-          this.Position = { x: newX, y: edgeY }; this._grounded = false; return;
+          this.Position = { x: edgeX, y: edgeY }; this._grounded = false; this._velocity = { x: 0, y: 0 }; return;
         }
         fh = nextFh; continue;
       }
@@ -543,10 +632,18 @@ export class PlayerController {
       const fh = this._field.GetFootholdBelow(newX, this.Position.y);
       if (fh !== null && fh.YAt(newX) !== null) {
         const groundY = fh.YAt(newX)!;
-        if (this.Position.y <= groundY && newY >= groundY) {
+        // OG: player lands only if they cross the ground level from above
+        // Use < instead of <= so player at exact edge Y falls through
+        if (this.Position.y < groundY && newY >= groundY) {
           this.Position = { x: newX, y: groundY };
           this._velocity.y = 0;
           this._grounded = true;
+          // OG: project velocity onto foothold direction when landing on angled surface
+          // This prevents sliding off angled landings
+          if (!fh.IsWall && fh.Uvx !== 0) {
+            const dotProduct = this._velocity.x * fh.Uvx;
+            this._velocity.x = dotProduct * fh.Uvx;
+          }
           this._currentFoothold = fh.Id;
           this._applyFallDamage();
           return;
@@ -626,19 +723,30 @@ export class PlayerController {
       this.ClimbMoving = false;
       this._grounded = false;
       if (hopDir !== 0) this.FacingLeft = hopDir < 0;
-      this._velocity = { x: hopDir * this._walkSpeed, y: -this._jumpSpeed * 0.7 };
+      // OG ladder jump vy: -(dJumpSpeed × walkJump / g × vMax)
+      // NOTE: OG uses pixels-per-tick velocity. Our system uses dt-based physics.
+      // vMax = 0.5 for normal ladder jump
+      const ladderJumpVy = -this._jumpSpeed * 0.5;
+      // OG ladder jump vx: dWalkSpeed × walkSpeed × inputX × 1.3
+      const ladderJumpVx = hopDir * this._walkSpeed * 1.3;
+      this._velocity = { x: ladderJumpVx, y: ladderJumpVy };
       this.Stance = Stance.Jump;
       return true;
     }
 
-    // OG: climbing movement — walkSpeed * inputY * 3.0 (not ClimbSpeed * dt)
+    // OG: climbing movement — walkSpeed * inputY * 3.0 per frame
     // IDA: this->m_ap.y = walkSpeed * (inputY * 3.0) + currentY
-    // Skip first frame after grab to prevent immediate climbing
+    // OG uses pixels-per-tick velocity (30fps), not pixels-per-second.
+    // Our system uses dt-based physics, so we scale by 30 to get px/s.
     const iy = this._climbGrabFrame ? 0 : (input.Up ? -1 : 0) + (input.Down ? 1 : 0);
     this._climbGrabFrame = false;
-    const climbSpeed = this._walkSpeed * 3.0;
+    // OG displacement per frame = walkSpeed * inputY * 3.0
+    // Convert to px/s: multiply by 30 (frame rate)
+    const climbSpeed = this._walkSpeed * 3.0 * 30;
     this._velocity = { x: 0, y: iy * climbSpeed };
     this.ClimbMoving = iy !== 0;
+
+    // Position update uses dt (not raw per-frame like OG)
     const newY = this.Position.y + iy * climbSpeed * dt;
 
     // OG: boundary checks — top first, then bottom
@@ -650,14 +758,30 @@ export class PlayerController {
         this._leaveLadderOntoGround(lr.X, lr.Top - 6);
         return true;
       }
-      // Has upper foothold — snap to just below top
+      // OG: has upper foothold — snap to y1 - 5 and transition to foothold
+      // IDA: AbsPos::_ZtlSecurePut_y(&this->m_ap, (double)(v2->y1 - 5));
+      //      this->OnAttachedObjectChanged(this, nullptr, nullptr, 0);
       this.Position = { x: lr.X, y: lr.Top - 5 };
-      this.Stance = lr.IsLadder ? Stance.Ladder : Stance.Rope;
+      // Try to find a foothold at this position and attach to it
+      const fh = this._field.GetFootholdBelow(lr.X, lr.Top - 5);
+      if (fh !== null && fh.YAt(lr.X) !== null) {
+        this._climb = null;
+        this.ClimbMoving = false;
+        this._currentFoothold = fh.Id;
+        this._grounded = true;
+        this.Position = { x: lr.X, y: fh.YAt(lr.X)! };
+        this._velocity = { x: 0, y: 0 };
+        this.Stance = Stance.Stand1;
+      } else {
+        // No foothold found — stay on ladder
+        this.Stance = lr.IsLadder ? Stance.Ladder : Stance.Rope;
+      }
       return true;
     }
     if (iy > 0 && newY >= lr.Bottom) {
       // OG: going down past bottom — leave ladder
-      this._leaveLadderOntoGround(lr.X, lr.Bottom + 2);
+      // OG snaps to y2 + 1 (not y2 + 2)
+      this._leaveLadderOntoGround(lr.X, lr.Bottom + 1);
       return true;
     }
 

@@ -1,0 +1,24 @@
+// cuser::ShowEffectSiegeStart
+
+void __thiscall CUser::ShowEffectSiegeStart(CUser *this, const SKILLENTRY *pSkill, int nSLV, int bSpecial)
+{
+  CAvatar *v5; // esi
+  int v6; // eax
+
+  if ( pSkill ) /*0x8e058a*/
+  {
+    v5 = &this->CAvatar; /*0x8e058d*/
+    if ( CAvatar::GetOneTimeAction(&this->CAvatar) > -1 ) /*0x8e059f*/
+    {
+      this->m_nOneTimeAction = -1; /*0x8e05a1*/
+      this->m_nTamingMobOneTimeAction = -1; /*0x8e05a7*/
+      CAvatar::ClearActionLayer(&this->CAvatar, 1); /*0x8e05b1*/
+    }
+    if ( bSpecial == 1 ) /*0x8e05bb*/
+      v6 = 225; /*0x8e05bd*/
+    else
+      v6 = 4 * (pSkill->nSkillID != 35111004) + 215; /*0x8e05cf*/
+    this->m_nOneTimeAction = v6; /*0x8e05d8*/
+    v5->PrepareActionLayer(&this->CAvatar, 6, 100, 0); /*0x8e05e9*/
+  }
+}

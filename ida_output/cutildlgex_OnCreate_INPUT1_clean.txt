@@ -1,0 +1,159 @@
+// CUtilDlgEx::OnCreate_INPUT1
+// Address: 0x9813c0
+
+void __thiscall CUtilDlgEx::OnCreate_INPUT1(CUtilDlgEx *this)
+{
+  CCtrlEdit *v2; // eax
+  CCtrlEdit *v3; // eax
+  ZRefCounted *v4; // eax
+  CCtrlEdit *v5; // edi
+  CCtrlEdit *p; // eax
+  int m_nInputLen; // edx
+  CCtrlEdit *v8; // ecx
+  StringPool *Instance; // eax
+  const ZXString<unsigned short> *StringW; // eax
+  CCtrlButton *v11; // eax
+  CCtrlButton *v12; // eax
+  ZRefCounted *v13; // eax
+  CCtrlButton *v14; // edi
+  CCtrlButton *v15; // eax
+  StringPool *v16; // eax
+  const ZXString<unsigned short> *v17; // eax
+  CCtrlButton *v18; // eax
+  CCtrlButton *v19; // eax
+  ZRefCounted *v20; // eax
+  CCtrlButton *v21; // edi
+  CCtrlButton *v22; // eax
+  int v23; // [esp+18h] [ebp-80h]
+  ZRef<CCtrlEdit> v24; // [esp+38h] [ebp-60h] BYREF
+  CCtrlButton::CREATEPARAM paramButton; // [esp+40h] [ebp-58h] BYREF
+  CCtrlEdit::CREATEPARAM paramEdit; // [esp+50h] [ebp-48h] BYREF
+  int v27; // [esp+94h] [ebp-4h]
+
+  CCtrlEdit::CREATEPARAM::CREATEPARAM(&paramEdit); /*0x9813ec*/
+  v27 = 0; /*0x9813fd*/
+  paramEdit.nBackColor = -1; /*0x981401*/
+  paramEdit.nFontColor = -16777216; /*0x981409*/
+  v2 = (CCtrlEdit *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0xBCu); /*0x981411*/
+  *(_DWORD *)&v24.gap0 = v2; /*0x981416*/
+  LOBYTE(v27) = 1; /*0x98141a*/
+  if ( v2 ) /*0x981421*/
+    v3 = CCtrlEdit::CCtrlEdit(v2); /*0x981425*/
+  else
+    v3 = nullptr; /*0x98142c*/
+  LOBYTE(v27) = 0; /*0x98142e*/
+  if ( v3 && (v4 = &v3->ZRefCounted) != nullptr ) /*0x98143f*/
+  {
+    v5 = (CCtrlEdit *)&v4[-1].___u1; /*0x981445*/
+    if ( v4 != (ZRefCounted *)8 ) /*0x98144a*/
+      InterlockedIncrement(&v5->_m_nRef); /*0x981450*/
+  }
+  else
+  {
+    v5 = nullptr; /*0x981566*/
+  }
+  p = this->m_pEditInput.p; /*0x981456*/
+  this->m_pEditInput.p = v5; /*0x98145c*/
+  v24.p = p; /*0x981462*/
+  if ( p ) /*0x981468*/
+    ZRef<CCtrlEdit>::_ReleaseRaw(&v24, nullptr); /*0x98146f*/
+  ZXString<char>::operator=(&paramEdit.sText, &this->m_sInputDefault); /*0x98147f*/
+  m_nInputLen = this->m_nInputLen; /*0x98148a*/
+  v8 = this->m_pEditInput.p; /*0x981490*/
+  paramEdit.bPasswd = this->m_bInputStr_Passwd; /*0x981496*/
+  v23 = this->m_height - 62; /*0x9814ac*/
+  paramEdit.nHorzMax = m_nInputLen; /*0x9814af*/
+  paramEdit.ptText.x = 2; /*0x9814b3*/
+  paramEdit.ptText.y = 0; /*0x9814bb*/
+  paramEdit.ptCaret.x = 2; /*0x9814bf*/
+  paramEdit.ptCaret.y = 2; /*0x9814c7*/
+  v8->CreateCtrl(v8, this, 1000u, 22, v23, 216, 15, &paramEdit); /*0x9814da*/
+  CWnd::SetFocusChild(this, this->m_pEditInput.p); /*0x9814e5*/
+  paramButton.bAcceptFocus = 1; /*0x9814ee*/
+  memset(&paramButton.bDrawBack, 0, 12); /*0x9814f6*/
+  LOBYTE(v27) = 2; /*0x981508*/
+  Instance = StringPool::GetInstance(); /*0x98150d*/
+  StringW = StringPool::GetStringW(Instance, (ZXString<unsigned short> *)&v24, 0x1963u); /*0x981514*/
+  LOBYTE(v27) = 3; /*0x98151e*/
+  ZXString<unsigned short>::operator=(&paramButton.sUOL, StringW); /*0x981523*/
+  LOBYTE(v27) = 2; /*0x98152c*/
+  if ( *(_DWORD *)&v24.gap0 ) /*0x981533*/
+    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(*(_DWORD *)&v24.gap0 - 12)); /*0x981539*/
+  v11 = (CCtrlButton *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0xADCu); /*0x98154b*/
+  *(_DWORD *)&v24.gap0 = v11; /*0x981550*/
+  LOBYTE(v27) = 4; /*0x981554*/
+  if ( v11 ) /*0x98155b*/
+    v12 = CCtrlButton::CCtrlButton(v11); /*0x98155f*/
+  else
+    v12 = nullptr; /*0x98156d*/
+  LOBYTE(v27) = 2; /*0x98156f*/
+  if ( v12 && (v13 = &v12->ZRefCounted) != nullptr ) /*0x981581*/
+  {
+    v14 = (CCtrlButton *)&v13[-1].___u1; /*0x981587*/
+    if ( v13 != (ZRefCounted *)8 ) /*0x98158c*/
+      InterlockedIncrement(&v14->_m_nRef); /*0x981592*/
+  }
+  else
+  {
+    v14 = nullptr; /*0x98163b*/
+  }
+  v15 = this->m_apButton[0].p; /*0x981598*/
+  this->m_apButton[0].p = v14; /*0x98159e*/
+  v24.p = (CCtrlEdit *)v15; /*0x9815a4*/
+  if ( v15 ) /*0x9815aa*/
+    ZRef<CCtrlButton>::_ReleaseRaw((ZRef<CCtrlButton> *)&v24, nullptr); /*0x9815b1*/
+  this->m_apButton[0].p->CreateCtrl_2(this->m_apButton[0].p, this, 1u, 156, this->m_height - 31, 0, &paramButton); /*0x9815d6*/
+  v16 = StringPool::GetInstance(); /*0x9815e2*/
+  v17 = StringPool::GetStringW(v16, (ZXString<unsigned short> *)&v24, 0x1961u); /*0x9815e9*/
+  LOBYTE(v27) = 5; /*0x9815f3*/
+  ZXString<unsigned short>::operator=(&paramButton.sUOL, v17); /*0x9815f8*/
+  LOBYTE(v27) = 2; /*0x981601*/
+  if ( *(_DWORD *)&v24.gap0 ) /*0x981608*/
+    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(*(_DWORD *)&v24.gap0 - 12)); /*0x98160e*/
+  v18 = (CCtrlButton *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0xADCu); /*0x981620*/
+  *(_DWORD *)&v24.gap0 = v18; /*0x981625*/
+  LOBYTE(v27) = 6; /*0x981629*/
+  if ( v18 ) /*0x981630*/
+    v19 = CCtrlButton::CCtrlButton(v18); /*0x981634*/
+  else
+    v19 = nullptr; /*0x981642*/
+  LOBYTE(v27) = 2; /*0x981644*/
+  if ( v19 && (v20 = &v19->ZRefCounted) != nullptr ) /*0x981656*/
+  {
+    v21 = (CCtrlButton *)&v20[-1].___u1; /*0x98165c*/
+    if ( v20 != (ZRefCounted *)8 ) /*0x981661*/
+      InterlockedIncrement(&v21->_m_nRef); /*0x981667*/
+  }
+  else
+  {
+    v21 = nullptr; /*0x9816e9*/
+  }
+  v22 = this->m_apButton[1].p; /*0x98166d*/
+  this->m_apButton[1].p = v21; /*0x981673*/
+  v24.p = (CCtrlEdit *)v22; /*0x981679*/
+  if ( v22 ) /*0x98167f*/
+    ZRef<CCtrlButton>::_ReleaseRaw((ZRef<CCtrlButton> *)&v24, nullptr); /*0x981686*/
+  this->m_apButton[1].p->CreateCtrl_2(this->m_apButton[1].p, this, 2u, 198, this->m_height - 31, 0, &paramButton); /*0x9816ab*/
+  LOBYTE(v27) = 0; /*0x9816b1*/
+  if ( paramButton.sUOL._m_pStr ) /*0x9816b7*/
+    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)paramButton.sUOL._m_pStr - 1); /*0x9816bd*/
+  v27 = -1; /*0x9816c9*/
+  CCtrlEdit::CREATEPARAM::~CREATEPARAM(&paramEdit); /*0x9816d1*/
+}
+
+// References:
+//   ??0CREATEPARAM@CCtrlEdit@@QAE@XZ @ 0x4e09e0
+//   ?Alloc@?$ZAllocEx@VZAllocAnonSelector@@@@QAEPAXI@Z @ 0x402040
+//   ?_s_alloc@?$ZAllocEx@VZAllocAnonSelector@@@@0V1@A @ 0xc6e67c
+//   ??0CCtrlEdit@@QAE@XZ @ 0x4df870
+//   __imp__InterlockedIncrement@4 @ 0xb14074
+//   ?_ReleaseRaw@?$ZRef@VCCtrlEdit@@@@AAEXPAVZRefCounted@@@Z @ 0x47dd30
+//   ??4?$ZXString@D@@QAEAAV0@ABV0@@Z @ 0x42d1c0
+//   ?SetFocusChild@CWnd@@QAEXPAVCCtrlWnd@@@Z @ 0x9aecf0
+//   ?GetInstance@StringPool@@SAAAV1@XZ @ 0x7466a0
+//   ?GetStringW@StringPool@@QAE?AV?$ZXString@G@@I@Z @ 0x403b60
+//   ??4?$ZXString@G@@QAEAAV0@ABV0@@Z @ 0x416d20
+//   ?_Release@?$ZXString@G@@KAXPAU_ZXStringData@1@@Z @ 0x4034b0
+//   ??0CCtrlButton@@QAE@XZ @ 0x471740
+//   ?_ReleaseRaw@?$ZRef@VCCtrlButton@@@@AAEXPAVZRefCounted@@@Z @ 0x429d70
+//   ??1CREATEPARAM@CCtrlEdit@@QAE@XZ @ 0x484890

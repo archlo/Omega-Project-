@@ -1,0 +1,386 @@
+int __thiscall CSummoned::Init(
+        CSummoned *this,
+        Triangle *x,
+        int y,
+        const SKILLENTRY *nMoveAction,
+        Ztl_bstr_t nCurFoothold,
+        CAttrShoe *nMoveAbility,
+        int nAssistType,
+        int nEnterType,
+        AvatarLook *pAvatarLook)
+{
+  CUser *User; // eax
+  int v11; // eax
+  int v12; // eax
+  int v13; // eax
+  unsigned int v14; // eax
+  int m_nSkillID; // edx
+  int v16; // ecx
+  SKILLENTRY *Skill; // ebx
+  const SKILLLEVELDATA *LevelData; // eax
+  int v20; // eax
+  const SKILLLEVELDATA *v21; // eax
+  int v22; // eax
+  const SKILLLEVELDATA *v23; // eax
+  int v24; // eax
+  CAttrShoe *v25; // eax
+  CAttrShoe *v26; // eax
+  int m_nMoveAbility; // eax
+  CVecCtrlSummoned *Instance; // ebx
+  int v29; // eax
+  int v30; // ebp
+  int v31; // edi
+  int v32; // eax
+  HRESULT v33; // eax
+  const AvatarLook *v34; // ebx
+  int m_nMoveAction; // edx
+  CAvatar *p; // ecx
+  HRESULT v37; // eax
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzGr2DLayer *v39; // ebx
+  IWzGr2DLayer *v40; // ebx
+  HRESULT v41; // eax
+  IWzVector2D *v42; // eax
+  IWzGr2DLayer *v43; // ebx
+  HRESULT v44; // eax
+  IWzGr2DLayer *v45; // ebx
+  HRESULT v46; // eax
+  unsigned int v47; // eax
+  bool v48; // zf
+  int m_nTeslaCoilState; // eax
+  char v50; // al
+  int v51; // eax
+  CharacterData *v52; // edi
+  unsigned int v53; // ebx
+  int v54; // ebx
+  int SkillLevel; // eax
+  const SKILLLEVELDATA *v56; // eax
+  const SKILLLEVELDATA *v57; // eax
+  int v58; // eax
+  CUser *v59; // edi
+  IVecCtrlOwner *v60; // eax
+  int update_time; // edi
+  const SKILLLEVELDATA *v62; // eax
+  int v63; // eax
+  int v64; // ebx
+  Triangle *v65; // eax
+  unsigned int v66; // ecx
+  IWzVector2D *v67; // eax
+  char v68; // al
+  _bstr_t::Data_t *m_Data; // ebx
+  wchar_t *m_wstr; // ecx
+  int v71; // eax
+  int v72; // [esp+30h] [ebp-64h] BYREF
+  unsigned int ZtlSecureTear_m_nMoveAction_CS; // [esp+34h] [ebp-60h]
+  ZRef<Triangle> v74; // [esp+38h] [ebp-5Ch] BYREF
+  int v75; // [esp+40h] [ebp-54h]
+  long double data[3]; // [esp+44h] [ebp-50h] BYREF
+  CUser *pOwner; // [esp+60h] [ebp-34h]
+  const SKILLENTRY *pMastery; // [esp+64h] [ebp-30h] BYREF
+  Ztl_variant_t vCanvas; // [esp+68h] [ebp-2Ch] BYREF
+  VARIANTARG pvarg; // [esp+78h] [ebp-1Ch] BYREF
+  int v81; // [esp+90h] [ebp-4h]
+  SKILLENTRY *pSkill; // [esp+A0h] [ebp+Ch]
+
+  User = CUserPool::GetUser((CUserPool *)TSingleton<CUserPool>::ms_pInstance.m_pInterface, this->m_dwCharacterID); /*0x754e96*/
+  pOwner = User; /*0x754e9b*/
+  if ( User ) /*0x754ea1*/
+    v11 = User->IsLocalUser(User); /*0x754eaa*/
+  else
+    v11 = 0; /*0x754eae*/
+  HIDWORD(data[0]) = x; /*0x754eba*/
+  this->m_bOwnerIsLocal = v11; /*0x754ebb*/
+  TSecType<long>::SetData(&this->m_ptPos.x, SHIDWORD(data[0])); /*0x754ec1*/
+  TSecType<long>::SetData(&this->m_ptPos.y, y); /*0x754ed3*/
+  v12 = TSecType<long>::GetData(&this->m_ptPos.x); /*0x754ee1*/
+  TSecType<long>::SetData(&this->m_ptPosPrev.x, v12); /*0x754eea*/
+  v13 = TSecType<long>::GetData(&this->m_ptPos.y); /*0x754ef1*/
+  TSecType<long>::SetData(&this->m_ptPosPrev.y, v13); /*0x754ef9*/
+  v14 = _ZtlSecureTear<long>((int)nMoveAction, this->_ZtlSecureTear_m_nMoveAction); /*0x754f0a*/
+  m_nSkillID = this->m_nSkillID; /*0x754f0f*/
+  v16 = nAssistType; /*0x754f15*/
+  this->_ZtlSecureTear_m_nMoveAction_CS = v14; /*0x754f19*/
+  *(_QWORD *)&data[0] = __PAIR64__(m_nSkillID, (unsigned int)nMoveAbility); /*0x754f24*/
+  this->m_nMoveAbility = (int)nMoveAbility; /*0x754f25*/
+  this->m_nAssistType = v16; /*0x754f2b*/
+  this->m_bInvulnerable = is_invulnerable_summon_skill(SLODWORD(data[0]), SHIDWORD(data[0])); /*0x754f36*/
+  Skill = (SKILLENTRY *)CSkillInfo::GetSkill(TSingleton<CSkillInfo>::ms_pInstance, this->m_nSkillID); /*0x754f56*/
+  pSkill = Skill; /*0x754f5f*/
+  nCurFoothold.m_Data = (_bstr_t::Data_t *)CWvsPhysicalSpace2D::GetFoothold( /*0x754f68*/
+                                             TSingleton<CWvsPhysicalSpace2D>::ms_pInstance,
+                                             SLOWORD(nCurFoothold.m_Data));
+  if ( !Skill ) /*0x754f6e*/
+    return 0; /*0x754f70*/
+  LevelData = SKILLENTRY::GetLevelData(Skill, this->m_nSLV); /*0x754f80*/
+  v20 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nEPAD, LevelData->_ZtlSecureTear_nEPAD_CS); /*0x754f92*/
+  HIDWORD(data[0]) = this->m_nSLV; /*0x754fa0*/
+  this->m_nPAD = v20; /*0x754fa3*/
+  v21 = SKILLENTRY::GetLevelData(Skill, SHIDWORD(data[0])); /*0x754fa9*/
+  v22 = _ZtlSecureFuse<long>(v21->_ZtlSecureTear_nMAD, v21->_ZtlSecureTear_nMAD_CS); /*0x754fb6*/
+  HIDWORD(data[0]) = this->m_nSLV; /*0x754fc4*/
+  this->m_nMAD = v22; /*0x754fc7*/
+  v23 = SKILLENTRY::GetLevelData(Skill, SHIDWORD(data[0])); /*0x754fcd*/
+  v24 = _ZtlSecureFuse<long>(v23->_ZtlSecureTear_nDamage, v23->_ZtlSecureTear_nDamage_CS); /*0x754fdf*/
+  HIDWORD(data[0]) = 144; /*0x754fe7*/
+  this->m_nDamage = v24; /*0x754ff1*/
+  v25 = (CAttrShoe *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, HIDWORD(data[0])); /*0x754ff7*/
+  nMoveAbility = v25; /*0x754ffc*/
+  v81 = 0; /*0x755000*/
+  if ( v25 ) /*0x75500a*/
+    v26 = CAttrShoe::CAttrShoe(v25, 0); /*0x755010*/
+  else
+    v26 = nullptr; /*0x755017*/
+  v81 = -1; /*0x755020*/
+  ZRef<CAttrShoe>::operator=(&this->m_pAttrShoe, v26); /*0x755028*/
+  m_nMoveAbility = this->m_nMoveAbility; /*0x75502d*/
+  if ( m_nMoveAbility == 4 || m_nMoveAbility == 5 || m_nMoveAbility == 2 ) /*0x755040*/
+  {
+    TSecType<double>::SetData(&this->m_pAttrShoe.p->flyAcc, 1.0); /*0x755053*/
+    TSecType<double>::SetData(&this->m_pAttrShoe.p->flySpeed, 1.0); /*0x75506c*/
+  }
+  Instance = CVecCtrlSummoned::CreateInstance(); /*0x75508a*/
+  CVecCtrlSummoned::Init(Instance, &this->IVecCtrlOwner, this->m_dwSummonedID, this->m_nSkillID, this->m_nMoveAbility); /*0x755093*/
+  v29 = this->m_nMoveAbility; /*0x755098*/
+  if ( v29 == 4 || v29 == 5 ) /*0x7550a6*/
+    nCurFoothold.m_Data = nullptr; /*0x7550b2*/
+  v30 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nMoveAction, this->_ZtlSecureTear_m_nMoveAction_CS); /*0x7550cc*/
+  v31 = TSecType<long>::GetData(&this->m_ptPos.y); /*0x7550d9*/
+  v32 = TSecType<long>::GetData(&this->m_ptPos.x); /*0x7550db*/
+  Instance->SetActive(Instance, this->m_bOwnerIsLocal, v32, v31, 0, 0, v30, (CStaticFoothold *)nCurFoothold.m_Data); /*0x7550fa*/
+  v33 = _com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>::_QueryInterface<CVecCtrlSummoned *>( /*0x755105*/
+          &this->m_pvc,
+          Instance);
+  if ( v33 < 0 && v33 != -2147467262 ) /*0x755113*/
+    _com_issue_error(v33); /*0x755116*/
+  v34 = pAvatarLook; /*0x75511b*/
+  if ( pAvatarLook ) /*0x755121*/
+  {
+    ZRef<CAvatar>::_Alloc(&this->m_pAvatar); /*0x755129*/
+    if ( pOwner ) /*0x755134*/
+      m_nMoveAction = pOwner->m_nMoveAction; /*0x755136*/
+    else
+      m_nMoveAction = 2; /*0x75513e*/
+    *(_QWORD *)&data[0] = 100; /*0x75514d*/
+    v75 = y; /*0x75514f*/
+    v74.p = x; /*0x755150*/
+    *(_DWORD *)&v74.gap0 = 0; /*0x755151*/
+    ZtlSecureTear_m_nMoveAction_CS = 0; /*0x75515a*/
+    nCurFoothold.m_Data = (_bstr_t::Data_t *)&v72; /*0x755163*/
+    v72 = 0; /*0x755167*/
+    p = this->m_pAvatar.p; /*0x75516d*/
+    v81 = -1; /*0x75517d*/
+    CAvatar::Init(p, v34, m_nMoveAction, 0, 0, 0, (int)x, y, 100, 0); /*0x755185*/
+  }
+  CSummoned::_LoadEffect(this); /*0x75518c*/
+  VariantInit(&pvarg); /*0x755196*/
+  v37 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing); /*0x7551a6*/
+  if ( v37 < 0 ) /*0x7551b0*/
+    _com_issue_error(v37); /*0x7551b3*/
+  v81 = 3; /*0x7551bd*/
+  vCanvas.vt = 3; /*0x7551c5*/
+  vCanvas.decVal.Lo32 = 0; /*0x7551ca*/
+  if ( !g_gr.m_pInterface ) /*0x7551de*/
+    _com_issue_error(-2147467261); /*0x7551e5*/
+  m_pInterface = IWzGr2D::CreateLayer( /*0x755208*/
+                   g_gr.m_pInterface,
+                   (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&nCurFoothold,
+                   0,
+                   0,
+                   0,
+                   0,
+                   0,
+                   &vCanvas,
+                   (const Ztl_variant_t *)&pvarg)->m_pInterface;
+  v39 = this->m_pLayerAction.m_pInterface; /*0x75520a*/
+  if ( v39 != m_pInterface ) /*0x755212*/
+  {
+    this->m_pLayerAction.m_pInterface = m_pInterface; /*0x755214*/
+    if ( m_pInterface ) /*0x75521c*/
+      m_pInterface->AddRef(m_pInterface); /*0x755224*/
+    if ( v39 ) /*0x755228*/
+      v39->Release(v39); /*0x755230*/
+  }
+  if ( nCurFoothold.m_Data ) /*0x755238*/
+    (*((void (__stdcall **)(_bstr_t::Data_t *))nCurFoothold.m_Data->m_wstr + 2))(nCurFoothold.m_Data); /*0x755240*/
+  LOBYTE(v81) = 2; /*0x755247*/
+  if ( vCanvas.vt == 8 ) /*0x755251*/
+  {
+    vCanvas.vt = 0; /*0x755259*/
+    if ( vCanvas.decVal.Lo32 ) /*0x755260*/
+      ZAPI.CoTaskMemFree((void *)(vCanvas.decVal.Lo32 - 4)); /*0x755266*/
+  }
+  else
+  {
+    VariantClear(&vCanvas); /*0x755273*/
+  }
+  v81 = -1; /*0x755279*/
+  if ( pvarg.vt == 8 ) /*0x755286*/
+  {
+    pvarg.vt = 0; /*0x75528a*/
+    if ( pvarg.decVal.Lo32 ) /*0x755295*/
+      ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x75529b*/
+  }
+  else
+  {
+    VariantClear(&pvarg); /*0x7552a8*/
+  }
+  v40 = this->m_pLayerAction.m_pInterface; /*0x7552ae*/
+  if ( !v40 ) /*0x7552b6*/
+    _com_issue_error(-2147467261); /*0x7552bd*/
+  v41 = v40->put_color(v40, -1u); /*0x7552cd*/
+  if ( v41 < 0 ) /*0x7552d1*/
+    _com_issue_errorex(v41, v40, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x7552da*/
+  v42 = this->m_pvc.m_pInterface; /*0x7552df*/
+  vCanvas.vt = 13; /*0x7552e6*/
+  vCanvas.decVal.Lo32 = (unsigned int)v42; /*0x7552eb*/
+  if ( v42 ) /*0x7552f1*/
+    v42->AddRef(v42); /*0x7552f9*/
+  v43 = this->m_pLayerAction.m_pInterface; /*0x7552fb*/
+  v81 = 4; /*0x755301*/
+  if ( !v43 ) /*0x75530b*/
+    _com_issue_error(-2147467261); /*0x755312*/
+  v44 = ((int (__stdcall *)(IWzGr2DLayer *, _DWORD, unsigned int, unsigned int, unsigned int))v43->put_origin)( /*0x75533d*/
+          v43,
+          *(_DWORD *)&vCanvas.vt,
+          vCanvas.decVal.Hi32,
+          vCanvas.decVal.Lo32,
+          vCanvas.decVal.Mid32);
+  if ( v44 < 0 ) /*0x755341*/
+    _com_issue_errorex(v44, v43, &_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4); /*0x75534a*/
+  v81 = -1; /*0x75534f*/
+  if ( vCanvas.vt == 8 ) /*0x75535c*/
+  {
+    vCanvas.vt = 0; /*0x755364*/
+    if ( vCanvas.decVal.Lo32 ) /*0x75536b*/
+      ZAPI.CoTaskMemFree((void *)(vCanvas.decVal.Lo32 - 4)); /*0x755371*/
+  }
+  else
+  {
+    VariantClear(&vCanvas); /*0x75537e*/
+  }
+  v45 = this->m_pLayerAction.m_pInterface; /*0x755384*/
+  if ( !v45 ) /*0x75538c*/
+    _com_issue_error(-2147467261); /*0x755393*/
+  v46 = ((int (__stdcall *)(IWzGr2DLayer *, _DWORD, unsigned int, unsigned int, unsigned int))v45->put_overlay)( /*0x7553c9*/
+          v45,
+          *(_DWORD *)&vtEmpty.vt,
+          vtEmpty.decVal.Hi32,
+          vtEmpty.decVal.Lo32,
+          vtEmpty.decVal.Mid32);
+  if ( v46 < 0 ) /*0x7553cd*/
+    _com_issue_errorex(v46, v45, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x7553d6*/
+  if ( nEnterType == 1 ) /*0x7553e0*/
+  {
+    v47 = _ZtlSecureTear<long>(3, this->_ZtlSecureTear_m_nOneTimeAction); /*0x7553ef*/
+    v48 = this->m_nSkillID == 35111002; /*0x7553f4*/
+    this->_ZtlSecureTear_m_nOneTimeAction_CS = v47; /*0x7553fe*/
+    if ( v48 ) /*0x755404*/
+    {
+      m_nTeslaCoilState = this->m_nTeslaCoilState; /*0x755406*/
+      if ( m_nTeslaCoilState == 1 || m_nTeslaCoilState == 2 ) /*0x755414*/
+      {
+        v50 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nMoveAction, this->_ZtlSecureTear_m_nMoveAction_CS); /*0x755424*/
+        this->_ZtlSecureTear_m_nMoveAction_CS = _ZtlSecureTear<long>(v50 & 1 | 0x2A, this->_ZtlSecureTear_m_nMoveAction); /*0x755442*/
+        this->_ZtlSecureTear_m_nOneTimeAction_CS = _ZtlSecureTear<long>(18, this->_ZtlSecureTear_m_nOneTimeAction); /*0x75544d*/
+      }
+    }
+  }
+  this->m_effectAttack.tStart = 0; /*0x755453*/
+  this->m_tLastAttack = get_update_time(); /*0x755462*/
+  v51 = get_update_time() + 10000; /*0x75546d*/
+  this->m_tNextBuff = v51; /*0x755472*/
+  this->m_tNextHeal = v51; /*0x755478*/
+  this->m_tCreateTime = get_update_time(); /*0x755487*/
+  v52 = CWvsContext::GetCharacterData( /*0x75549d*/
+          (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+          (ZRef<CharacterData> *)&vCanvas)->p;
+  if ( vCanvas.decVal.Hi32 ) /*0x7554a2*/
+  {
+    v53 = vCanvas.decVal.Hi32 - 16; /*0x7554a4*/
+    if ( !InterlockedDecrement((volatile LONG *)(vCanvas.decVal.Hi32 - 16 + 4)) ) /*0x7554ab*/
+    {
+      InterlockedIncrement((volatile LONG *)(v53 + 4)); /*0x7554b6*/
+      if ( v53 ) /*0x7554be*/
+        (**(void (__thiscall ***)(unsigned int, int))v53)(v53, 1); /*0x7554c8*/
+    }
+    vCanvas.decVal.Hi32 = 0; /*0x7554ca*/
+  }
+  v54 = 0; /*0x7554e2*/
+  pMastery = nullptr; /*0x7554e5*/
+  SkillLevel = CSkillInfo::GetSkillLevel(TSingleton<CSkillInfo>::ms_pInstance, v52, 35120001, (int)&pMastery); /*0x7554e9*/
+  if ( pMastery && SkillLevel ) /*0x7554f8*/
+  {
+    v56 = SKILLENTRY::GetLevelData((SKILLENTRY *)pMastery, SkillLevel); /*0x7554fb*/
+    v54 = _ZtlSecureFuse<long>(v56->_ZtlSecureTear_nY, v56->_ZtlSecureTear_nY_CS); /*0x755515*/
+  }
+  v57 = SKILLENTRY::GetLevelData(pSkill, this->m_nSLV); /*0x755524*/
+  v58 = _ZtlSecureFuse<long>(v57->_ZtlSecureTear_tTime, v57->_ZtlSecureTear_tTime_CS); /*0x755536*/
+  this->m_tEndTime = v54 * 1000 * v58 / 100 + 1000 * v58 + this->m_tCreateTime; /*0x75556a*/
+  this->m_nSuspend = 0; /*0x755570*/
+  this->m_bSelfDestucted = 0; /*0x755576*/
+  CSummoned::PrepareActionLayer(this); /*0x75557c*/
+  CSummoned::SetLayerZ(this); /*0x755583*/
+  v59 = pOwner; /*0x755588*/
+  if ( pOwner ) /*0x75558e*/
+    v60 = &pOwner->IVecCtrlOwner; /*0x755590*/
+  else
+    v60 = nullptr; /*0x755595*/
+  CSummoned::ChaseTarget(this, 1, v60); /*0x75559c*/
+  if ( this->m_nSkillID == 35111002 && this->m_nTeslaCoilState == 1 ) /*0x7555b8*/
+  {
+    update_time = get_update_time(); /*0x7555c3*/
+    v62 = SKILLENTRY::GetLevelData(pSkill, this->m_nSLV); /*0x7555ce*/
+    v63 = _ZtlSecureFuse<long>(v62->_ZtlSecureTear_nY, v62->_ZtlSecureTear_nY_CS); /*0x7555e0*/
+    nCurFoothold.m_Data = (_bstr_t::Data_t *)((char *)data + 4); /*0x755608*/
+    v64 = v54 * 1000 * v63 / 100 + 1000 * v63 + update_time; /*0x75560c*/
+    SKILLENTRY::GetBallUOL(pSkill, (Ztl_bstr_t *)data + 1, 1, 1u, 0); /*0x75561a*/
+    v65 = this->m_pTriangle.p; /*0x75561f*/
+    LODWORD(data[0]) = v64; /*0x755625*/
+    v75 = update_time; /*0x755626*/
+    nCurFoothold.m_Data = (_bstr_t::Data_t *)&v74; /*0x75562c*/
+    v74.p = v65; /*0x755630*/
+    if ( v65 ) /*0x755635*/
+      InterlockedIncrement(&v65[-1].p[1].y); /*0x75563b*/
+    CSummoned::ShowTeslaCoilTriangle(this, v74, v75, SLODWORD(data[0]), *(Ztl_bstr_t *)((char *)data + 4)); /*0x755643*/
+    v59 = pOwner; /*0x755648*/
+  }
+  if ( this->m_bOwnerIsLocal && this->m_nSkillID == 35121003 ) /*0x755663*/
+  {
+    _bstr_t::_bstr_t(&nCurFoothold, L"Effect/BasicEff.img/Titan"); /*0x755672*/
+    *(_QWORD *)&data[0] = v66 | 0x300000000LL; /*0x755679*/
+    v81 = 5; /*0x755687*/
+    CAvatar::GetLayerUnderFace( /*0x75568f*/
+      &v59->CAvatar,
+      (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)data);
+    v67 = this->m_pvc.m_pInterface; /*0x755694*/
+    v75 = 0; /*0x75569a*/
+    LOBYTE(v81) = 6; /*0x7556a1*/
+    v74 = (ZRef<Triangle>)(unsigned int)v67; /*0x7556aa*/
+    if ( v67 ) /*0x7556ae*/
+      v67->AddRef(v67); /*0x7556b6*/
+    ZtlSecureTear_m_nMoveAction_CS = this->_ZtlSecureTear_m_nMoveAction_CS; /*0x7556be*/
+    LOBYTE(v81) = 7; /*0x7556c6*/
+    v68 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nMoveAction, ZtlSecureTear_m_nMoveAction_CS); /*0x7556cb*/
+    m_Data = nCurFoothold.m_Data; /*0x7556d0*/
+    if ( nCurFoothold.m_Data ) /*0x7556d9*/
+      m_wstr = nCurFoothold.m_Data->m_wstr; /*0x7556db*/
+    else
+      m_wstr = nullptr; /*0x7556df*/
+    LOBYTE(v81) = 5; /*0x7556e6*/
+    CAnimationDisplayer::Effect_General( /*0x7556f1*/
+      TSingleton<CAnimationDisplayer>::ms_pInstance,
+      m_wstr,
+      v68 & 1,
+      *(_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&v74.gap0,
+      (int)v74.p,
+      v75,
+      LODWORD(data[0]),
+      SHIDWORD(data[0]));
+    if ( m_Data ) /*0x7556f8*/
+      _bstr_t::Data_t::Release(m_Data); /*0x7556fc*/
+  }
+  v71 = this->m_nSkillID; /*0x755701*/
+  if ( v71 == 35121011 || v71 == 32111006 ) /*0x755713*/
+    this->m_nSuspend = 1; /*0x755715*/
+  return 1; /*0x755724*/
+}

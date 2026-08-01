@@ -1,0 +1,53 @@
+CSkillInfo *__thiscall CSkillInfo::CSkillInfo(CSkillInfo *this)
+{
+  ZMap<long,ZRef<SKILLENTRY>,long> *p_m_mSkill; // ecx
+
+  p_m_mSkill = &this->m_mSkill; /*0x9c48a5*/
+  if ( p_m_mSkill ) /*0x9c48ac*/
+    TSingleton<CSkillInfo>::ms_pInstance = (CSkillInfo *)&p_m_mSkill[-1]._m_uAutoGrowLimit; /*0x9c48b1*/
+  else
+    TSingleton<CSkillInfo>::ms_pInstance = nullptr; /*0x9c48b8*/
+  this->__vftable = (CSkillInfo_vtbl *)&CSkillInfo::`vftable'; /*0x9c48be*/
+  p_m_mSkill->__vftable = (ZMap<long,ZRef<SKILLENTRY>,long>_vtbl *)&ZMap<long,ZRef<SKILLENTRY>,long>::`vftable'; /*0x9c48cb*/
+  p_m_mSkill->_m_apTable = nullptr; /*0x9c48d1*/
+  p_m_mSkill->_m_uTableSize = 31; /*0x9c48d4*/
+  p_m_mSkill->_m_uCount = 0; /*0x9c48d7*/
+  ZMap<long,ZRef<SKILLENTRY>,long>::_CalcAutoGrow(p_m_mSkill, 0x64u); /*0x9c48da*/
+  this->m_mSkillRoot.__vftable = (ZMap<long,ZRef<SKILLROOT>,long>_vtbl *)&ZMap<long,ZRef<SKILLROOT>,long>::`vftable'; /*0x9c48e4*/
+  this->m_mSkillRoot._m_apTable = nullptr; /*0x9c48ea*/
+  this->m_mSkillRoot._m_uTableSize = 31; /*0x9c48ed*/
+  this->m_mSkillRoot._m_uCount = 0; /*0x9c48f0*/
+  ZMap<long,ZRef<SKILLROOT>,long>::_CalcAutoGrow(&this->m_mSkillRoot, 0x64u); /*0x9c48f3*/
+  this->m_mMobSkill.__vftable = (ZMap<long,ZRef<MOBSKILLENTRY>,long>_vtbl *)&ZMap<long,ZRef<MOBSKILLENTRY>,long>::`vftable'; /*0x9c48fd*/
+  this->m_mMobSkill._m_apTable = nullptr; /*0x9c4903*/
+  this->m_mMobSkill._m_uTableSize = 31; /*0x9c4906*/
+  this->m_mMobSkill._m_uCount = 0; /*0x9c4909*/
+  ZMap<long,ZRef<MOBSKILLENTRY>,long>::_CalcAutoGrow(&this->m_mMobSkill, 0x64u); /*0x9c490c*/
+  this->m_mMCSkill.__vftable = (ZMap<long,ZRef<MCSKILLENTRY>,long>_vtbl *)&ZMap<long,ZRef<MCSKILLENTRY>,long>::`vftable'; /*0x9c4916*/
+  this->m_mMCSkill._m_apTable = nullptr; /*0x9c491c*/
+  this->m_mMCSkill._m_uTableSize = 31; /*0x9c491f*/
+  this->m_mMCSkill._m_uCount = 0; /*0x9c4922*/
+  ZMap<long,ZRef<MCSKILLENTRY>,long>::_CalcAutoGrow(&this->m_mMCSkill, 0x64u); /*0x9c4925*/
+  this->m_aMCRandomSkill.a = nullptr; /*0x9c492d*/
+  this->m_mMCGuardian.__vftable = (ZMap<long,ZRef<MCGUARDIANENTRY>,long>_vtbl *)&ZMap<long,ZRef<MCGUARDIANENTRY>,long>::`vftable'; /*0x9c4932*/
+  this->m_mMCGuardian._m_apTable = nullptr; /*0x9c4938*/
+  this->m_mMCGuardian._m_uTableSize = 31; /*0x9c493b*/
+  this->m_mMCGuardian._m_uCount = 0; /*0x9c493e*/
+  ZMap<long,ZRef<MCGUARDIANENTRY>,long>::_CalcAutoGrow(&this->m_mMCGuardian, 0x64u); /*0x9c4941*/
+  this->m_mBFSkill.__vftable = (ZMap<long,ZRef<BFSKILLENTRY>,long>_vtbl *)&ZMap<long,ZRef<BFSKILLENTRY>,long>::`vftable'; /*0x9c494e*/
+  this->m_mBFSkill._m_apTable = nullptr; /*0x9c4954*/
+  this->m_mBFSkill._m_uTableSize = 31; /*0x9c4957*/
+  this->m_mBFSkill._m_uCount = 0; /*0x9c495a*/
+  ZMap<long,ZRef<BFSKILLENTRY>,long>::_CalcAutoGrow(&this->m_mBFSkill, 0x64u); /*0x9c495d*/
+  this->m_mItemSkill.__vftable = (ZMap<long,ZRef<ITEMSKILLENTRY>,long>_vtbl *)&ZMap<long,ZRef<ITEMSKILLENTRY>,long>::`vftable'; /*0x9c496a*/
+  this->m_mItemSkill._m_apTable = nullptr; /*0x9c4970*/
+  this->m_mItemSkill._m_uTableSize = 31; /*0x9c4973*/
+  this->m_mItemSkill._m_uCount = 0; /*0x9c4976*/
+  ZMap<long,ZRef<ITEMSKILLENTRY>,long>::_CalcAutoGrow(&this->m_mItemSkill, 0x64u); /*0x9c4979*/
+  this->m_mItemOptionSkill.__vftable = (ZMap<long,ZRef<ITEMOPTIONSKILLENTRY>,long>_vtbl *)&ZMap<long,ZRef<ITEMOPTIONSKILLENTRY>,long>::`vftable'; /*0x9c4986*/
+  this->m_mItemOptionSkill._m_apTable = nullptr; /*0x9c498c*/
+  this->m_mItemOptionSkill._m_uTableSize = 31; /*0x9c498f*/
+  this->m_mItemOptionSkill._m_uCount = 0; /*0x9c4992*/
+  ZMap<long,ZRef<ITEMOPTIONSKILLENTRY>,long>::_CalcAutoGrow(&this->m_mItemOptionSkill, 0x64u); /*0x9c4995*/
+  return this; /*0x9c499a*/
+}

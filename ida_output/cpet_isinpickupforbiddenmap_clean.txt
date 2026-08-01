@@ -1,0 +1,9 @@
+﻿BOOL __thiscall CPet::IsInPickupForbiddenMap(CPet *this)
+{
+  CStage *p; // esi
+
+  p = g_pStage.p;
+  return g_pStage.p
+      && g_pStage.p->IsKindOf(&g_pStage.p->IUIMsgHandler, &CField::ms_RTTI_CField)
+      && TSecType<unsigned long>::GetData((TSecType<unsigned long> *)&p[15].IUIMsgHandler) == 209080000;
+}

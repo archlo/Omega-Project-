@@ -1,0 +1,45 @@
+﻿int __thiscall CUIStatusBar::HitTest(CUIStatusBar *this, int rx, int ry, CCtrlWnd **ppCtrl)
+{
+  IUIMsgHandler *v5; // ecx
+  IUIMsgHandler *v6; // eax
+  int v7; // ebp
+  CCtrlComboBox *p; // eax
+  int v9; // ecx
+  int m_nChatWndHeight; // edx
+  int v11; // eax
+  int m_nInitX; // edx
+
+  if ( this )
+    v5 = &this->IUIMsgHandler;
+  else
+    v5 = nullptr;
+  if ( TSingleton<CWndMan>::ms_pInstance->m_lpCapture._m_uCount )
+    v6 = *TSingleton<CWndMan>::ms_pInstance->m_lpCapture._m_pTail;
+  else
+    v6 = nullptr;
+  v7 = CWnd::HitTest(this, rx, ry, v5 != v6 ? ppCtrl : nullptr);
+  if ( v7 != 2 )
+    return v7;
+  p = this->m_pCBChatTarget.p;
+  v9 = 506;
+  if ( p && p->m_pCtrlCBS.p )
+    v9 = -16 * p->m_lItemInfo._m_uCount;
+  m_nChatWndHeight = this->m_nChatWndHeight;
+  v11 = 489 - m_nChatWndHeight;
+  if ( v9 < 489 - m_nChatWndHeight )
+    v11 = v9;
+  if ( (rx >= 577 || this->m_nChatWndType != 1 || ry >= 506)
+    && (rx >= 276 || ry >= v11 || this->m_bDragChatWnd)
+    && ((unsigned int)(rx - 277) > 0x12B || ry >= 506 - m_nChatWndHeight || this->m_bDragChatWnd)
+    && ((m_nInitX = this->m_QuickSlot.m_nInitX, rx <= m_nInitX)
+     || (!CUIStatusBar::CQuickSlot::IsEnabled(&this->m_QuickSlot) || ry >= 439)
+     && (rx <= m_nInitX || CUIStatusBar::CQuickSlot::IsEnabled(&this->m_QuickSlot) || ry >= 506))
+    && (rx <= 577 || rx >= m_nInitX || ry >= 506) )
+  {
+    return v7;
+  }
+  else
+  {
+    return 0;
+  }
+}

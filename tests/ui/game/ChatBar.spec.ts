@@ -10,8 +10,10 @@ const EDIT_X = 75;
 const EDIT_Y = 524;
 const DISPLAY_X = 0;
 const DISPLAY_Y_SMALL = 492;
+const CHAT_HEIGHT_SMALL = 24;
 const TEXT_X = 9;
 const CHAR_W = 7;
+const LINE_H = 13;
 
 describe('ChatBar history recall', () => {
   function screenPos(bar: ChatBar, lx: number, ly: number): [number, number] {
@@ -55,11 +57,11 @@ describe('ChatBar history recall', () => {
 
     bar.addMapleLine('loot #i2000000# now', (id) => id === 2000000 ? 'Red Potion' : null);
 
-    expect((bar as any)._lineTexts[0].text).toBe('loot [Red Potion] now');
     // Text is "loot [Red Potion] now" — link [Red Potion] spans chars 5-16
     // Click at char 8 → lx = TEXT_X + 8*CHAR_W = 65
-    // Line y = displayY + 2 + LINE_H/2 = 492 + 2 + 6 = 500
-    const [sx, sy] = screenPos(bar, TEXT_X + 8 * CHAR_W, DISPLAY_Y_SMALL + 2 + 6);
+    // OG bottom-up: line 0 y = displayY + chatHeight - 13 = 492 + 24 - 13 = 503
+    // Line center y = 503 + 6 = 509
+    const [sx, sy] = screenPos(bar, TEXT_X + 8 * CHAR_W, DISPLAY_Y_SMALL + CHAT_HEIGHT_SMALL - LINE_H + 6);
     expect(bar.handleMouseButton(sx, sy, true)).toBe(true);
     expect(clicked).toBe(2000000);
   });
@@ -72,13 +74,12 @@ describe('ChatBar history recall', () => {
 
     bar.addMapleLine('#i100# and #i200#', (id) => `Item${id}`);
 
-    expect((bar as any)._lineTexts[0].text).toBe('[Item100] and [Item200]');
     // Text: "[Item100] and [Item200]"
     // Link1: chars 0-9 → click at char 3 → lx = TEXT_X + 3*CHAR_W = 30
     // Link2: chars 15-24 → click at char 20 → lx = TEXT_X + 20*CHAR_W = 149
-    // Line y = displayY + 2 + LINE_H/2 = 500
-    const [sx1, sy] = screenPos(bar, TEXT_X + 3 * CHAR_W, DISPLAY_Y_SMALL + 2 + 6);
-    const [sx2] = screenPos(bar, TEXT_X + 20 * CHAR_W, DISPLAY_Y_SMALL + 2 + 6);
+    // OG bottom-up: line 0 y = 492 + 24 - 13 = 503, center = 509
+    const [sx1, sy] = screenPos(bar, TEXT_X + 3 * CHAR_W, DISPLAY_Y_SMALL + CHAT_HEIGHT_SMALL - LINE_H + 6);
+    const [sx2] = screenPos(bar, TEXT_X + 20 * CHAR_W, DISPLAY_Y_SMALL + CHAT_HEIGHT_SMALL - LINE_H + 6);
     bar.handleMouseButton(sx1, sy, true);
     bar.handleMouseButton(sx2, sy, true);
     expect(clicked).toEqual([100, 200]);

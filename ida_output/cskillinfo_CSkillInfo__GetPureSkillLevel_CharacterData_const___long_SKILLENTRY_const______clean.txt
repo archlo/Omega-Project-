@@ -1,0 +1,35 @@
+// CSkillInfo::GetPureSkillLevel(CharacterData const &,long,SKILLENTRY const * *)
+
+const SKILLENTRY **__thiscall CSkillInfo::GetPureSkillLevel(
+        CSkillInfo *this,
+        const CharacterData *c,
+        int nSkillID,
+        SKILLENTRY **ppSkillEntry)
+{
+  int v4; // ebx
+  SKILLENTRY **i; // esi
+  SKILLENTRY *Skill; // edi
+  const SKILLENTRY **result; // eax
+
+  v4 = nSkillID;
+  for ( i = ppSkillEntry; ; i = nullptr )
+  {
+    if ( !i || (Skill = *i) == nullptr )
+      Skill = (SKILLENTRY *)CSkillInfo::GetSkill(this, v4);
+    if ( i && !*i )
+      *i = Skill;
+    if ( !Skill )
+      return nullptr;
+    if ( v4 != 4321001 )
+      break;
+    v4 = 4321000;
+    nSkillID = 4321000;
+  }
+  ppSkillEntry = nullptr;
+  if ( !ZMap<long,long,long>::GetAt(&c->mSkillRecord, &nSkillID, (int *)&ppSkillEntry) )
+    return nullptr;
+  result = (const SKILLENTRY **)SKILLENTRY::GetMaxLevel(Skill);
+  if ( (int)ppSkillEntry < (int)result )
+    return (const SKILLENTRY **)ppSkillEntry;
+  return result;
+}

@@ -1,0 +1,62 @@
+// cuser::UpdateFlyingWingEffect
+
+void __thiscall CUser::UpdateFlyingWingEffect(CUser *this)
+{
+  const SecondaryStat *v2; // eax
+  IWzGr2DLayer *v3; // eax
+  int (__thiscall *GetJobCode)(CUser *); // eax
+  int v5; // eax
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v6; // eax
+  IWzGr2DLayer *v7; // eax
+  IWzGr2DLayer *v8; // edi
+  const SecondaryStat *v9; // eax
+  IWzGr2DLayer *m_pInterface; // eax
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v11; // [esp-4h] [ebp-24h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > result; // [esp+Ch] [ebp-14h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v13; // [esp+10h] [ebp-10h]
+  int v14; // [esp+1Ch] [ebp-4h]
+
+  v2 = this->GetSecondaryStat(this); /*0x8f364c*/
+  if ( !_ZtlSecureFuse<long>(v2->_ZtlSecureTear_nFlying_, v2->_ZtlSecureTear_nFlying__CS) /*0x8f366b*/
+    || this->m_pLayerFlyingWing.m_pInterface )
+  {
+    v9 = this->GetSecondaryStat(this); /*0x8f371f*/
+    if ( !_ZtlSecureFuse<long>(v9->_ZtlSecureTear_nFlying_, v9->_ZtlSecureTear_nFlying__CS) ) /*0x8f372e*/
+    {
+      if ( this->m_pLayerFlyingWing.m_pInterface ) /*0x8f373a*/
+      {
+        m_pInterface = this->m_pLayerFlyingWing.m_pInterface; /*0x8f3742*/
+        if ( m_pInterface ) /*0x8f374a*/
+        {
+          this->m_pLayerFlyingWing.m_pInterface = nullptr; /*0x8f374c*/
+          m_pInterface->Release(m_pInterface); /*0x8f375c*/
+        }
+      }
+    }
+  }
+  else
+  {
+    v3 = this->m_pLayerUnderFace.m_pInterface; /*0x8f367d*/
+    v13 = &v11; /*0x8f3686*/
+    v11.m_pInterface = v3; /*0x8f368a*/
+    if ( v3 ) /*0x8f368e*/
+      v3->AddRef(v3); /*0x8f3696*/
+    GetJobCode = this->GetJobCode; /*0x8f369a*/
+    v14 = 0; /*0x8f369f*/
+    v5 = GetJobCode(this); /*0x8f36a7*/
+    v6.m_pInterface = (IWzVector2D *)get_novice_skill_as_race(1026, v5); /*0x8f36af*/
+    v14 = -1; /*0x8f36bf*/
+    v7 = CUser::LoadSkillRepeatEffect(this, &result, v6, v11)->m_pInterface; /*0x8f36cc*/
+    v8 = this->m_pLayerFlyingWing.m_pInterface; /*0x8f36ce*/
+    if ( v8 != v7 ) /*0x8f36d6*/
+    {
+      this->m_pLayerFlyingWing.m_pInterface = v7; /*0x8f36d8*/
+      if ( v7 ) /*0x8f36e0*/
+        v7->AddRef(v7); /*0x8f36e8*/
+      if ( v8 ) /*0x8f36ec*/
+        v8->Release(v8); /*0x8f36f4*/
+    }
+    if ( result.m_pInterface ) /*0x8f36fc*/
+      result.m_pInterface->Release(result.m_pInterface); /*0x8f3704*/
+  }
+}

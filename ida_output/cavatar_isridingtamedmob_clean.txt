@@ -1,0 +1,4 @@
+BOOL __thiscall CAvatar::IsRidingTamedMob(CAvatar *this)
+{
+  return this->m_nRidingVehicleID / 10000 == 190;
+}

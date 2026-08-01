@@ -1,0 +1,62 @@
+﻿int __thiscall CMob::GetBodyRect(CMob *this, tagRECT *rc, int bContinuous)
+{
+  tagRECT *p_m_rcBody; // ebp
+  int v6; // ebx
+  tagRECT *p_m_rcBodyFlip; // eax
+  char v8; // al
+  int v9; // eax
+  tagRECT *v10; // eax
+  int top; // edx
+  int right; // ecx
+  int bottom; // edx
+  int v14; // eax
+  int Data; // [esp-Ch] [ebp-24h]
+  int v16; // [esp-Ch] [ebp-24h]
+  tagRECT rcPrev; // [esp+8h] [ebp-10h] BYREF
+
+  p_m_rcBody = &this->m_rcBody;
+  if ( ZAPI.IsRectEmpty(&this->m_rcBody) )
+  {
+    ZAPI.SetRectEmpty(rc);
+    return 0;
+  }
+  else
+  {
+    if ( this->m_pTemplate->bNoFlip )
+    {
+      v6 = 1;
+      p_m_rcBodyFlip = p_m_rcBody;
+    }
+    else
+    {
+      v8 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nMoveAction, this->_ZtlSecureTear_m_nMoveAction_CS);
+      v6 = v8 & 1;
+      if ( (v8 & 1) != 0 )
+        p_m_rcBodyFlip = p_m_rcBody;
+      else
+        p_m_rcBodyFlip = &this->m_rcBodyFlip;
+    }
+    *rc = *p_m_rcBodyFlip;
+    Data = TSecType<long>::GetData(&this->m_ptPos.y);
+    v9 = TSecType<long>::GetData(&this->m_ptPos.x);
+    ZAPI.OffsetRect(rc, v9, Data);
+    if ( bContinuous )
+    {
+      v10 = p_m_rcBody;
+      if ( !v6 )
+        v10 = &this->m_rcBodyFlip;
+      top = v10->top;
+      rcPrev.left = v10->left;
+      right = v10->right;
+      rcPrev.top = top;
+      bottom = v10->bottom;
+      rcPrev.right = right;
+      rcPrev.bottom = bottom;
+      v16 = TSecType<long>::GetData(&this->m_ptPosPrev.y);
+      v14 = TSecType<long>::GetData(&this->m_ptPosPrev.x);
+      ZAPI.OffsetRect(&rcPrev, v14, v16);
+      ZAPI.UnionRect(rc, rc, &rcPrev);
+    }
+    return 1;
+  }
+}

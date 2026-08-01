@@ -1,0 +1,6 @@
+// cuser::IsTamingMobTired
+
+BOOL __thiscall CUser::IsTamingMobTired(CUser *this)
+{
+  return 10 * (this->m_nTamingMobLevel / 3) + 95 <= this->m_nTamingMobFatigue; /*0x8de236*/
+}

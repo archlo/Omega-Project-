@@ -1,0 +1,6 @@
+// cuserlocal::OnExJablinApply
+
+void __thiscall CUserLocal::OnExJablinApply(CUserLocal *this, CInPacket *iPacket)
+{
+  this->m_bNextShootExJablin = 1; /*0x9034e0*/
+}

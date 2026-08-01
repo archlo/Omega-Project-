@@ -1,0 +1,14 @@
+void __thiscall CMob::SetGuided(CMob *this, int nSkillID, int nDelay)
+{
+  int update_time; // edi
+  CMob::AFFECTEDSKILLENTRY *v5; // eax
+
+  update_time = get_update_time(); /*0x64457f*/
+  v5 = ZList<CMob::AFFECTEDSKILLENTRY>::AddTail(&this->m_lAffectedSkillEntry); /*0x644581*/
+  v5->nSkillID = nSkillID; /*0x64458e*/
+  v5->tStart = update_time + nDelay; /*0x644593*/
+  if ( !(update_time + nDelay) ) /*0x644590*/
+    v5->tStart = 1; /*0x64459a*/
+  v5->posList = nullptr; /*0x6445a1*/
+  this->m_posAffectedGuidedBullet = (__POSITION *)this->m_lAffectedSkillEntry._m_pTail; /*0x6445af*/
+}

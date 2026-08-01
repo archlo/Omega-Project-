@@ -1,0 +1,3 @@
+// CUserLocal::IsSealed @ 0x903ba0
+
+{"addr":"0x903ba0","code":"BOOL __thiscall CUserLocal::IsSealed(CUserLocal *this)\n{\n  const SecondaryStat *v1; // eax\n\n  v1 = this->GetSecondaryStat(this); /*0x903ba5*/\n  return _ZtlSecureFuse<long>(v1->_ZtlSecureTear_nSeal_, v1->_ZtlSecureTear_nSeal__CS) != 0; /*0x903bc2*/\n}","refs":[{"addr":"0x407520","name":"??$_ZtlSecureFuse@J@@YAJQBJI@Z"}]}

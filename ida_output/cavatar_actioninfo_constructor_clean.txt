@@ -1,0 +1,32 @@
+CAvatar::ACTIONINFO *__thiscall CAvatar::ACTIONINFO::ACTIONINFO(CAvatar::ACTIONINFO *this)
+{
+  this->nCurFrameIndex = -1;
+  this->tCurFrameRemain = 0;
+  this->tTotFrameDelay = 0;
+  this->aFrameDelay.a = nullptr;
+  this->bCurFrameStop = 0;
+  this->nCurTMFrameIndex = -1;
+  this->tCurTMFrameRemain = 0;
+  this->tTotTMFrameDelay = 0;
+  this->aTMFrameDelay.a = nullptr;
+  `eh vector constructor iterator'(
+    this->aaAction,
+    4u,
+    273,
+    (void (__thiscall *)(void *))ZArray<ZRef<CActionMan::CHARACTERACTIONFRAMEENTRY>>::ZArray<ZRef<CActionMan::CHARACTERACTIONFRAMEENTRY>>,
+    (void (__thiscall *)(void *))ZArray<ZRef<CActionMan::CHARACTERACTIONFRAMEENTRY>>::~ZArray<ZRef<CActionMan::CHARACTERACTIONFRAMEENTRY>>);
+  `eh vector constructor iterator'(
+    this->aaTamingMobAction,
+    4u,
+    273,
+    (void (__thiscall *)(void *))ZArray<ZRef<CActionMan::TAMINGMOBACTIONFRAMEENTRY>>::ZArray<ZRef<CActionMan::TAMINGMOBACTIONFRAMEENTRY>>,
+    (void (__thiscall *)(void *))ZArray<ZRef<CActionMan::TAMINGMOBACTIONFRAMEENTRY>>::~ZArray<ZRef<CActionMan::TAMINGMOBACTIONFRAMEENTRY>>);
+  `eh vector constructor iterator'(
+    this->aaMorphAction,
+    4u,
+    49,
+    (void (__thiscall *)(void *))ZArray<ZRef<CActionMan::MORPHACTIONFRAMEENTRY>>::ZArray<ZRef<CActionMan::MORPHACTIONFRAMEENTRY>>,
+    (void (__thiscall *)(void *))ZArray<ZRef<CActionMan::MORPHACTIONFRAMEENTRY>>::~ZArray<ZRef<CActionMan::MORPHACTIONFRAMEENTRY>>);
+  this->aSPAction.a = nullptr;
+  return this;
+}

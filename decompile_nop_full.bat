@@ -1,0 +1,10 @@
+@echo off
+"C:\Program Files\IDA Professional 9.3\idat.exe" -A -S"tools/ida_dump.py ida_output/nop_PlayEventSound.json 0x916d60" "ida\Maplestory95.exe.i64"
+"C:\Program Files\IDA Professional 9.3\idat.exe" -A -S"tools/ida_dump.py ida_output/nop_PlayMinigameSound.json 0x916e10" "ida\Maplestory95.exe.i64"
+"C:\Program Files\IDA Professional 9.3\idat.exe" -A -S"tools/ida_dump.py ida_output/nop_TutorMsg.json 0x916f60" "ida\Maplestory95.exe.i64"
+"C:\Program Files\IDA Professional 9.3\idat.exe" -A -S"tools/ida_dump.py ida_output/nop_ResignQuestReturn.json 0x905720" "ida\Maplestory95.exe.i64"
+"C:\Program Files\IDA Professional 9.3\idat.exe" -A -S"tools/ida_dump.py ida_output/nop_BuffzoneEffect.json 0x9183a0" "ida\Maplestory95.exe.i64"
+"C:\Program Files\IDA Professional 9.3\idat.exe" -A -S"tools/ida_dump.py ida_output/nop_DamageMeter.json 0x905620" "ida\Maplestory95.exe.i64"
+"C:\Program Files\IDA Professional 9.3\idat.exe" -A -S"tools/ida_dump.py ida_output/nop_TimeBombAttack.json 0x9323f0" "ida\Maplestory95.exe.i64"
+"C:\Program Files\IDA Professional 9.3\idat.exe" -A -S"tools/ida_dump.py ida_output/nop_VengeanceSkillApply.json 0x909b10" "ida\Maplestory95.exe.i64"
+"C:\Program Files\IDA Professional 9.3\idat.exe" -A -S"tools/ida_dump.py ida_output/nop_QuestResult.json 0x914080" "ida\Maplestory95.exe.i64"

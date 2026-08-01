@@ -1,0 +1,340 @@
+﻿void __thiscall CUIGameMenu::OnCreate(CUIGameMenu *this, void *pData)
+{
+  CCtrlButton *v3; // eax
+  CCtrlButton *v4; // eax
+  LONG (__stdcall *v5)(volatile LONG *); // ebx
+  ZRefCounted *v6; // eax
+  CCtrlButton *v7; // edi
+  CCtrlButton *p; // eax
+  CCtrlButton *v9; // eax
+  CCtrlButton *v10; // eax
+  ZRefCounted *v11; // eax
+  CCtrlButton *v12; // edi
+  CCtrlButton *v13; // eax
+  CCtrlButton *v14; // eax
+  CCtrlButton *v15; // eax
+  ZRefCounted *v16; // eax
+  CCtrlButton *v17; // edi
+  CCtrlButton *v18; // eax
+  CCtrlButton *v19; // eax
+  CCtrlButton *v20; // eax
+  ZRefCounted *v21; // eax
+  CCtrlButton *v22; // edi
+  CCtrlButton *v23; // eax
+  StringPool *Instance; // eax
+  const ZXString<unsigned short> *StringW; // eax
+  CCtrlButton *v26; // eax
+  CCtrlButton *v27; // eax
+  ZRefCounted *v28; // eax
+  CCtrlButton *v29; // edi
+  CCtrlButton *v30; // eax
+  CCtrlButton *v31; // eax
+  CCtrlButton *v32; // eax
+  ZRefCounted *v33; // eax
+  CCtrlButton *v34; // edi
+  CCtrlButton *v35; // eax
+  void (__stdcall *v36)(VARIANTARG *); // edi
+  HRESULT v37; // eax
+  HRESULT v38; // eax
+  IWzGr2DLayer *m_pInterface; // ecx
+  IWzVector2D *v40; // ecx
+  HRESULT (__stdcall *v41)(VARIANTARG *); // ebx
+  HRESULT v42; // eax
+  IWzGr2DLayer *v43; // edi
+  HRESULT (__stdcall *get_currentTime)(IWzVector2D *, int *); // eax
+  HRESULT v45; // eax
+  IWzGr2DLayer *v46; // ecx
+  IWzVector2D *v47; // ecx
+  ZXString<unsigned short> result; // [esp+CCh] [ebp-58h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v49; // [esp+D0h] [ebp-54h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v50; // [esp+D4h] [ebp-50h] BYREF
+  tagVARIANT v51; // [esp+D8h] [ebp-4Ch] BYREF
+  CCtrlButton::CREATEPARAM paramButton; // [esp+E8h] [ebp-3Ch] BYREF
+  VARIANTARG pvarg; // [esp+F8h] [ebp-2Ch] BYREF
+  VARIANTARG pvargDest; // [esp+108h] [ebp-1Ch] BYREF
+  int v55; // [esp+120h] [ebp-4h]
+
+  paramButton.bAcceptFocus = 1; /*0x7eed8f*/
+  memset(&paramButton.bDrawBack, 0, 12); /*0x7eed97*/
+  v55 = 0; /*0x7eeda8*/
+  ZXString<unsigned short>::operator=<unsigned short>(&paramButton.sUOL, L"UI/StatusBar2.img/mainBar/System/BtChannel"); /*0x7eedac*/
+  v3 = (CCtrlButton *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0xADCu); /*0x7eedbb*/
+  *(_DWORD *)&v51.vt = v3; /*0x7eedc0*/
+  LOBYTE(v55) = 1; /*0x7eedc4*/
+  if ( v3 ) /*0x7eedcb*/
+    v4 = CCtrlButton::CCtrlButton(v3); /*0x7eedcf*/
+  else
+    v4 = nullptr; /*0x7eedd6*/
+  v5 = InterlockedIncrement; /*0x7eedd8*/
+  LOBYTE(v55) = 0; /*0x7eedde*/
+  if ( v4 && (v6 = &v4->ZRefCounted) != nullptr ) /*0x7eedf0*/
+  {
+    v7 = (CCtrlButton *)&v6[-1].___u1; /*0x7eedf2*/
+    if ( v6 != (ZRefCounted *)8 ) /*0x7eedf7*/
+      InterlockedIncrement(&v7->_m_nRef); /*0x7eedfd*/
+  }
+  else
+  {
+    v7 = nullptr; /*0x7eee6d*/
+  }
+  p = this->m_pBtMenu[0].p; /*0x7eedff*/
+  this->m_pBtMenu[0].p = v7; /*0x7eee05*/
+  v51.decVal.Hi32 = (unsigned int)p; /*0x7eee0b*/
+  if ( p ) /*0x7eee11*/
+    ZRef<CCtrlButton>::_ReleaseRaw((ZRef<CCtrlButton> *)&v51, nullptr); /*0x7eee18*/
+  this->m_pBtMenu[0].p->CreateCtrl_2(this->m_pBtMenu[0].p, this, 1000u, 8, 20, 0, &paramButton); /*0x7eee38*/
+  ZXString<unsigned short>::operator=<unsigned short>( /*0x7eee43*/
+    &paramButton.sUOL,
+    L"UI/StatusBar2.img/mainBar/System/BtKeySetting");
+  v9 = (CCtrlButton *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0xADCu); /*0x7eee52*/
+  *(_DWORD *)&v51.vt = v9; /*0x7eee57*/
+  LOBYTE(v55) = 2; /*0x7eee5b*/
+  if ( v9 ) /*0x7eee62*/
+    v10 = CCtrlButton::CCtrlButton(v9); /*0x7eee66*/
+  else
+    v10 = nullptr; /*0x7eee71*/
+  LOBYTE(v55) = 0; /*0x7eee73*/
+  if ( v10 && (v11 = &v10->ZRefCounted) != nullptr ) /*0x7eee85*/
+  {
+    v12 = (CCtrlButton *)&v11[-1].___u1; /*0x7eee87*/
+    if ( v11 != (ZRefCounted *)8 ) /*0x7eee8c*/
+      v5(&v12->_m_nRef); /*0x7eee92*/
+  }
+  else
+  {
+    v12 = nullptr; /*0x7eef02*/
+  }
+  v13 = this->m_pBtMenu[1].p; /*0x7eee94*/
+  this->m_pBtMenu[1].p = v12; /*0x7eee9a*/
+  v51.decVal.Hi32 = (unsigned int)v13; /*0x7eeea0*/
+  if ( v13 ) /*0x7eeea6*/
+    ZRef<CCtrlButton>::_ReleaseRaw((ZRef<CCtrlButton> *)&v51, nullptr); /*0x7eeead*/
+  this->m_pBtMenu[1].p->CreateCtrl_2(this->m_pBtMenu[1].p, this, 1001u, 8, 45, 0, &paramButton); /*0x7eeecd*/
+  ZXString<unsigned short>::operator=<unsigned short>( /*0x7eeed8*/
+    &paramButton.sUOL,
+    L"UI/StatusBar2.img/mainBar/System/BtGameOption");
+  v14 = (CCtrlButton *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0xADCu); /*0x7eeee7*/
+  *(_DWORD *)&v51.vt = v14; /*0x7eeeec*/
+  LOBYTE(v55) = 3; /*0x7eeef0*/
+  if ( v14 ) /*0x7eeef7*/
+    v15 = CCtrlButton::CCtrlButton(v14); /*0x7eeefb*/
+  else
+    v15 = nullptr; /*0x7eef06*/
+  LOBYTE(v55) = 0; /*0x7eef08*/
+  if ( v15 && (v16 = &v15->ZRefCounted) != nullptr ) /*0x7eef1a*/
+  {
+    v17 = (CCtrlButton *)&v16[-1].___u1; /*0x7eef1c*/
+    if ( v16 != (ZRefCounted *)8 ) /*0x7eef21*/
+      v5(&v17->_m_nRef); /*0x7eef27*/
+  }
+  else
+  {
+    v17 = nullptr; /*0x7eef97*/
+  }
+  v18 = this->m_pBtMenu[2].p; /*0x7eef29*/
+  this->m_pBtMenu[2].p = v17; /*0x7eef2f*/
+  v51.decVal.Hi32 = (unsigned int)v18; /*0x7eef35*/
+  if ( v18 ) /*0x7eef3b*/
+    ZRef<CCtrlButton>::_ReleaseRaw((ZRef<CCtrlButton> *)&v51, nullptr); /*0x7eef42*/
+  this->m_pBtMenu[2].p->CreateCtrl_2(this->m_pBtMenu[2].p, this, 1002u, 8, 70, 0, &paramButton); /*0x7eef62*/
+  ZXString<unsigned short>::operator=<unsigned short>( /*0x7eef6d*/
+    &paramButton.sUOL,
+    L"UI/StatusBar2.img/mainBar/System/BtSystemOption");
+  v19 = (CCtrlButton *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0xADCu); /*0x7eef7c*/
+  *(_DWORD *)&v51.vt = v19; /*0x7eef81*/
+  LOBYTE(v55) = 4; /*0x7eef85*/
+  if ( v19 ) /*0x7eef8c*/
+    v20 = CCtrlButton::CCtrlButton(v19); /*0x7eef90*/
+  else
+    v20 = nullptr; /*0x7eef9b*/
+  LOBYTE(v55) = 0; /*0x7eef9d*/
+  if ( v20 && (v21 = &v20->ZRefCounted) != nullptr ) /*0x7eefaf*/
+  {
+    v22 = (CCtrlButton *)&v21[-1].___u1; /*0x7eefb5*/
+    if ( v21 != (ZRefCounted *)8 ) /*0x7eefba*/
+      v5(&v22->_m_nRef); /*0x7eefc0*/
+  }
+  else
+  {
+    v22 = nullptr; /*0x7ef060*/
+  }
+  v23 = this->m_pBtMenu[3].p; /*0x7eefc2*/
+  this->m_pBtMenu[3].p = v22; /*0x7eefc8*/
+  v51.decVal.Hi32 = (unsigned int)v23; /*0x7eefce*/
+  if ( v23 ) /*0x7eefd4*/
+    ZRef<CCtrlButton>::_ReleaseRaw((ZRef<CCtrlButton> *)&v51, nullptr); /*0x7eefdb*/
+  this->m_pBtMenu[3].p->CreateCtrl_2(this->m_pBtMenu[3].p, this, 1003u, 8, 95, 0, &paramButton); /*0x7eeffb*/
+  Instance = StringPool::GetInstance(); /*0x7ef007*/
+  StringW = StringPool::GetStringW(Instance, &result, 0x180Cu); /*0x7ef00e*/
+  LOBYTE(v55) = 5; /*0x7ef018*/
+  ZXString<unsigned short>::operator=(&paramButton.sUOL, StringW); /*0x7ef01d*/
+  LOBYTE(v55) = 0; /*0x7ef026*/
+  if ( result._m_pStr ) /*0x7ef02d*/
+    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)result._m_pStr - 1); /*0x7ef033*/
+  v26 = (CCtrlButton *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0xADCu); /*0x7ef045*/
+  *(_DWORD *)&v51.vt = v26; /*0x7ef04a*/
+  LOBYTE(v55) = 6; /*0x7ef04e*/
+  if ( v26 ) /*0x7ef055*/
+    v27 = CCtrlButton::CCtrlButton(v26); /*0x7ef059*/
+  else
+    v27 = nullptr; /*0x7ef067*/
+  LOBYTE(v55) = 0; /*0x7ef069*/
+  if ( v27 && (v28 = &v27->ZRefCounted) != nullptr ) /*0x7ef07b*/
+  {
+    v29 = (CCtrlButton *)&v28[-1].___u1; /*0x7ef07d*/
+    if ( v28 != (ZRefCounted *)8 ) /*0x7ef082*/
+      v5(&v29->_m_nRef); /*0x7ef088*/
+  }
+  else
+  {
+    v29 = nullptr; /*0x7ef0f8*/
+  }
+  v30 = this->m_pBtMenu[4].p; /*0x7ef08a*/
+  this->m_pBtMenu[4].p = v29; /*0x7ef090*/
+  v51.decVal.Hi32 = (unsigned int)v30; /*0x7ef096*/
+  if ( v30 ) /*0x7ef09c*/
+    ZRef<CCtrlButton>::_ReleaseRaw((ZRef<CCtrlButton> *)&v51, nullptr); /*0x7ef0a3*/
+  this->m_pBtMenu[4].p->CreateCtrl_2(this->m_pBtMenu[4].p, this, 1004u, 8, 120, 0, &paramButton); /*0x7ef0c3*/
+  ZXString<unsigned short>::operator=<unsigned short>(&paramButton.sUOL, L"UI/StatusBar2.img/mainBar/System/BtGameQuit"); /*0x7ef0ce*/
+  v31 = (CCtrlButton *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0xADCu); /*0x7ef0dd*/
+  *(_DWORD *)&v51.vt = v31; /*0x7ef0e2*/
+  LOBYTE(v55) = 7; /*0x7ef0e6*/
+  if ( v31 ) /*0x7ef0ed*/
+    v32 = CCtrlButton::CCtrlButton(v31); /*0x7ef0f1*/
+  else
+    v32 = nullptr; /*0x7ef0fc*/
+  LOBYTE(v55) = 0; /*0x7ef0fe*/
+  if ( v32 && (v33 = &v32->ZRefCounted) != nullptr ) /*0x7ef110*/
+  {
+    v34 = (CCtrlButton *)&v33[-1].___u1; /*0x7ef116*/
+    if ( v33 != (ZRefCounted *)8 ) /*0x7ef11b*/
+      v5(&v34->_m_nRef); /*0x7ef121*/
+  }
+  else
+  {
+    v34 = nullptr; /*0x7ef1ab*/
+  }
+  v35 = this->m_pBtMenu[5].p; /*0x7ef123*/
+  this->m_pBtMenu[5].p = v34; /*0x7ef129*/
+  v51.decVal.Hi32 = (unsigned int)v35; /*0x7ef12f*/
+  if ( v35 ) /*0x7ef135*/
+    ZRef<CCtrlButton>::_ReleaseRaw((ZRef<CCtrlButton> *)&v51, nullptr); /*0x7ef13c*/
+  this->m_pBtMenu[5].p->CreateCtrl_2(this->m_pBtMenu[5].p, this, 1005u, 8, 145, 0, &paramButton); /*0x7ef15f*/
+  this->m_bSelValid = 1; /*0x7ef163*/
+  this->m_nCurSel = 0; /*0x7ef16d*/
+  this->m_nResult = -1; /*0x7ef173*/
+  CUIGameMenu::ResetButtonState(this); /*0x7ef17d*/
+  v36 = VariantInit; /*0x7ef182*/
+  VariantInit(&pvarg); /*0x7ef18d*/
+  v37 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing); /*0x7ef199*/
+  if ( v37 < 0 ) /*0x7ef1a3*/
+    _com_issue_error(v37); /*0x7ef1a6*/
+  LOBYTE(v55) = 8; /*0x7ef1b7*/
+  v36(&v51); /*0x7ef1bc*/
+  v38 = ZComAPI::ZComVariantCopy(&v51, &vtMissing); /*0x7ef1c8*/
+  if ( v38 < 0 ) /*0x7ef1d2*/
+    _com_issue_error(v38); /*0x7ef1d5*/
+  LOBYTE(v55) = 9; /*0x7ef1e1*/
+  m_pInterface = CWnd::GetLayer(this, &v49)->m_pInterface; /*0x7ef1eb*/
+  LOBYTE(v55) = 10; /*0x7ef1ef*/
+  if ( !m_pInterface ) /*0x7ef1f5*/
+    _com_issue_error(-2147467261); /*0x7ef1fc*/
+  v40 = IWzGr2DLayer::Getalpha( /*0x7ef20b*/
+          m_pInterface,
+          (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&result)->m_pInterface;
+  LOBYTE(v55) = 11; /*0x7ef20d*/
+  if ( !v40 ) /*0x7ef214*/
+    _com_issue_error(-2147467261); /*0x7ef21b*/
+  IWzVector2D::RelMove(v40, 0, 255, (const Ztl_variant_t *)&v51, (const Ztl_variant_t *)&pvarg); /*0x7ef230*/
+  LOBYTE(v55) = 10; /*0x7ef239*/
+  if ( result._m_pStr ) /*0x7ef23f*/
+    (*(void (__stdcall **)(wchar_t *))(*(_DWORD *)result._m_pStr + 8))(result._m_pStr); /*0x7ef247*/
+  LOBYTE(v55) = 9; /*0x7ef24d*/
+  if ( v49.m_pInterface ) /*0x7ef254*/
+    v49.m_pInterface->Release(v49.m_pInterface); /*0x7ef25c*/
+  v41 = VariantClear; /*0x7ef264*/
+  LOBYTE(v55) = 8; /*0x7ef26a*/
+  if ( v51.vt == 8 ) /*0x7ef26f*/
+  {
+    v51.vt = 0; /*0x7ef273*/
+    if ( v51.decVal.Lo32 ) /*0x7ef27e*/
+      ZAPI.CoTaskMemFree((void *)(v51.decVal.Lo32 - 4)); /*0x7ef284*/
+  }
+  else
+  {
+    VariantClear(&v51); /*0x7ef291*/
+  }
+  LOBYTE(v55) = 0; /*0x7ef299*/
+  if ( pvarg.vt == 8 ) /*0x7ef29e*/
+  {
+    pvarg.vt = 0; /*0x7ef2a6*/
+    if ( pvarg.decVal.Lo32 ) /*0x7ef2ad*/
+      ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x7ef2b3*/
+  }
+  else
+  {
+    v41(&pvarg); /*0x7ef2c0*/
+  }
+  v36(&pvargDest); /*0x7ef2c7*/
+  v42 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing); /*0x7ef2d3*/
+  if ( v42 < 0 ) /*0x7ef2dd*/
+    _com_issue_error(v42); /*0x7ef2e0*/
+  LOBYTE(v55) = 12; /*0x7ef2ec*/
+  v43 = CWnd::GetLayer(this, (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v51)->m_pInterface; /*0x7ef2f6*/
+  LOBYTE(v55) = 13; /*0x7ef2f8*/
+  if ( !v43 ) /*0x7ef2ff*/
+    _com_issue_error(-2147467261); /*0x7ef306*/
+  get_currentTime = v43->get_currentTime; /*0x7ef30d*/
+  result._m_pStr = nullptr; /*0x7ef316*/
+  v45 = get_currentTime(v43, (int *)&result); /*0x7ef31a*/
+  if ( v45 < 0 ) /*0x7ef31e*/
+    _com_issue_errorex(v45, v43, &_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4); /*0x7ef327*/
+  pvarg.vt = 3; /*0x7ef33a*/
+  pvarg.decVal.Lo32 = (unsigned int)(result._m_pStr + 250); /*0x7ef33f*/
+  LOBYTE(v55) = 14; /*0x7ef34a*/
+  v46 = CWnd::GetLayer(this, &v50)->m_pInterface; /*0x7ef354*/
+  LOBYTE(v55) = 15; /*0x7ef358*/
+  if ( !v46 ) /*0x7ef35e*/
+    _com_issue_error(-2147467261); /*0x7ef365*/
+  v47 = IWzGr2DLayer::Getalpha( /*0x7ef374*/
+          v46,
+          (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&v49)->m_pInterface;
+  LOBYTE(v55) = 16; /*0x7ef376*/
+  if ( !v47 ) /*0x7ef37d*/
+    _com_issue_error(-2147467261); /*0x7ef384*/
+  IWzVector2D::RelMove(v47, 255, 255, (const Ztl_variant_t *)&pvarg, (const Ztl_variant_t *)&pvargDest); /*0x7ef39d*/
+  LOBYTE(v55) = 15; /*0x7ef3a6*/
+  if ( v49.m_pInterface ) /*0x7ef3ac*/
+    v49.m_pInterface->Release(v49.m_pInterface); /*0x7ef3b4*/
+  LOBYTE(v55) = 14; /*0x7ef3ba*/
+  if ( v50.m_pInterface ) /*0x7ef3c1*/
+    v50.m_pInterface->Release(v50.m_pInterface); /*0x7ef3c9*/
+  LOBYTE(v55) = 13; /*0x7ef3d0*/
+  if ( pvarg.vt == 8 ) /*0x7ef3da*/
+  {
+    pvarg.vt = 0; /*0x7ef3de*/
+    if ( pvarg.decVal.Lo32 ) /*0x7ef3e9*/
+      ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x7ef3ef*/
+  }
+  else
+  {
+    VariantClear(&pvarg); /*0x7ef3fc*/
+  }
+  LOBYTE(v55) = 12; /*0x7ef406*/
+  if ( *(_DWORD *)&v51.vt ) /*0x7ef40d*/
+    (*(void (__stdcall **)(_DWORD))(**(_DWORD **)&v51.vt + 8))(*(_DWORD *)&v51.vt); /*0x7ef415*/
+  LOBYTE(v55) = 0; /*0x7ef417*/
+  if ( pvargDest.vt == 8 ) /*0x7ef421*/
+  {
+    pvargDest.vt = 0; /*0x7ef429*/
+    if ( pvargDest.decVal.Lo32 ) /*0x7ef430*/
+      ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4)); /*0x7ef436*/
+  }
+  else
+  {
+    VariantClear(&pvargDest); /*0x7ef443*/
+  }
+  v55 = -1; /*0x7ef44d*/
+  if ( paramButton.sUOL._m_pStr ) /*0x7ef457*/
+    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)paramButton.sUOL._m_pStr - 1); /*0x7ef45d*/
+}

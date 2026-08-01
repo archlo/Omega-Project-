@@ -1,0 +1,3 @@
+// CUser::IsEvanJob @ 0x4bc000
+
+{"addr":"0x4bc000","code":"BOOL __thiscall CUser::IsEvanJob(CUser *this)\n{\n  int v1; // ecx\n\n  v1 = (*(int (__thiscall **)(char *))(*((_DWORD *)this - 34) + 64))((char *)this - 136); /*0x4bc011*/\n  return v1 / 100 == 22 || v1 == 2001; /*0x4bc033*/\n}"}

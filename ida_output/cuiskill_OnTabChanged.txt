@@ -1,0 +1,4 @@
+// CUISkill::OnTabChanged @ 0x84bfa0
+// Decompiled from v95 IDB
+
+{"addr":"0x84bfa0","code":"void __thiscall CUISkill::OnTabChanged(CUISkill *this, int nTab)\n{\n  this->m_nOption = nTab; /*0x84bfad*/\n  CUIToolTip::ClearToolTip(&this->m_uiToolTip); /*0x84bfb3*/\n  CUISkill::GetSkillRootVisible(this, 1); /*0x84bfbc*/\n  CUISkill::SetScrollBar(this); /*0x84bfc3*/\n  CUISkill::SetButtons(this); /*0x84bfca*/\n  CWnd::InvalidateRect(this, nullptr); /*0x84bfd3*/\n}","refs":[{"addr":"0x880f20","name":"?ClearToolTip@CUIToolTip@@QAEXXZ"},{"addr":"0x84a6f0","name":"?GetSkillRootVisible@CUISkill@@IAEPBUSKILLROOT@@H@Z"},{"addr":"0x84b1c0","name":"?SetScrollBar@CUISkill@@IAEXXZ"},{"addr":"0x84b220","name":"?SetButtons@CUISkill@@IAEXXZ"},{"addr":"0x9ad3f0","name":"?InvalidateRect@CWnd@@QAEXPBUtagRECT@@@Z"}]}

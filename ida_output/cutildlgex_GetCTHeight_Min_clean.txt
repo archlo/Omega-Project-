@@ -1,0 +1,27 @@
+// CUtilDlgEx::GetCTHeight_Min
+// Address: 0x97ae90
+
+int __thiscall CUtilDlgEx::GetCTHeight_Min(CUtilDlgEx *this)
+{
+  int result; // eax
+
+  switch ( this->m_dlgType )
+  {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 7:
+    case 8:
+      result = this->m_bNoNPC != 0 ? 0 : 110;
+      break; /*0x97aeb9*/
+    case 9:
+      result = 300; /*0x97aeba*/
+      break; /*0x97aebf*/
+    default:
+      result = 0; /*0x97aec0*/
+      break; /*0x97aec0*/
+  }
+  return result; /*0x97aeb9*/
+}

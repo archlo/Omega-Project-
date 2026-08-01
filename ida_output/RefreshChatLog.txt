@@ -1,0 +1,20 @@
+﻿void __thiscall CUIStatusBar::_RefreshChatLog(CUIStatusBar *this)
+{
+  int v2; // edi
+
+  v2 = 1 - this->m_nChatWndLineVisible + CUIStatusBar::_GetFilteredChatLogCount(this); /*0x879b86*/
+  if ( v2 <= 2 /*0x879bad*/
+    || this->m_pScrChatLog.p->m_nCurPos == this->m_pScrChatLog.p->m_nScrollRange - 1
+    || ZAPI.timeGetTime() - this->m_dwLastScrolled > 0x1388 )
+  {
+    CCtrlScrollBar::SetScrollRange(this->m_pScrChatLog.p, v2); /*0x879bb6*/
+    CCtrlScrollBar::SetCurPos(this->m_pScrChatLog.p, v2 - 1); /*0x879bc3*/
+    CUIStatusBar::ChatLogDraw(this); /*0x879bcc*/
+  }
+  else
+  {
+    CCtrlScrollBar::SetScrollRange(this->m_pScrChatLog.p, v2); /*0x879bd8*/
+    CCtrlScrollBar::SetCurPos(this->m_pScrChatLog.p, this->m_pScrChatLog.p->m_nCurPos - 1); /*0x879be8*/
+    CUIStatusBar::ChatLogDraw(this); /*0x879bf1*/
+  }
+}

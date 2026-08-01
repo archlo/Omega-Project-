@@ -1,0 +1,87 @@
+// cashshop::GetUsableCommodityIndexBySN
+
+int __thiscall CCashShop::GetUsableCommodityIndexBySN(CCashShop *this, int *nSN)
+{
+  int v2; // edx
+  char *v3; // ebp
+  int v4; // ebx
+  int v5; // edi
+  int v6; // eax
+  int v8; // eax
+  int v9; // esi
+  int Data; // ebp
+  bool v11; // zf
+  _DWORD *v12; // ebx
+  const ZArray<ZRef<CS_COMMODITY> > *aComm; // [esp+14h] [ebp-20h]
+  int nCommCount; // [esp+18h] [ebp-1Ch]
+  int j; // [esp+1Ch] [ebp-18h]
+
+  v2 = *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 4064); /*0x48254d*/
+  v3 = TSingleton<CWvsContext>::ms_pInstance._m_pStr + 16256; /*0x482553*/
+  aComm = (const ZArray<ZRef<CS_COMMODITY> > *)(TSingleton<CWvsContext>::ms_pInstance._m_pStr + 16256); /*0x482559*/
+  if ( v2 ) /*0x48255f*/
+    v4 = *(_DWORD *)(v2 - 4); /*0x482565*/
+  else
+    v4 = 0; /*0x482561*/
+  v5 = 0; /*0x482568*/
+  nCommCount = v4; /*0x48256a*/
+  if ( v4 > 0 ) /*0x482570*/
+  {
+    v6 = v2 + 4; /*0x482578*/
+    do /*0x48258d*/
+    {
+      if ( *(_DWORD *)(*(_DWORD *)v6 + 12) == *nSN ) /*0x482585*/
+        break; /*0x482585*/
+      ++v5; /*0x482587*/
+      v6 += 8; /*0x482588*/
+    }
+    while ( v5 < v4 ); /*0x48258d*/
+  }
+  if ( v5 == v4 ) /*0x482591*/
+  {
+    *nSN = 0; /*0x482597*/
+    return -1; /*0x4825a0*/
+  }
+  v8 = *(_DWORD *)(v2 + 8 * v5 + 4); /*0x4825a5*/
+  if ( *(_DWORD *)(v8 + 76) ) /*0x4825a9*/
+    return v5; /*0x4825ad*/
+  v9 = *(_DWORD *)(v2 + 8 * v5 + 4); /*0x4825b3*/
+  if ( v8 ) /*0x4825bb*/
+    InterlockedIncrement((volatile LONG *)(v8 + 4)); /*0x4825c1*/
+  j = v5; /*0x4825c7*/
+  v5 = 0; /*0x4825cb*/
+  if ( v4 > 0 ) /*0x4825d7*/
+  {
+    while ( 1 ) /*0x4825fa*/
+    {
+      Data = TSecType<long>::GetData((TSecType<long> *)(*(_DWORD *)(8 * v5 + *(_DWORD *)v3 + 4) + 16)); /*0x4825fa*/
+      v11 = Data == TSecType<long>::GetData((TSecType<long> *)(v9 + 16)); /*0x482601*/
+      v3 = (char *)aComm; /*0x482603*/
+      if ( v11 ) /*0x482607*/
+      {
+        v12 = &aComm->a[v5].p->__vftable; /*0x48260c*/
+        if ( v12[7] == *(_DWORD *)(v9 + 28) && v12[11] == *(_DWORD *)(v9 + 44) && v12[19] ) /*0x482620*/
+          break; /*0x482620*/
+      }
+      if ( ++v5 >= nCommCount ) /*0x48262b*/
+        goto LABEL_19; /*0x48262b*/
+    }
+    *nSN = aComm->a[v5].p->nSN; /*0x482681*/
+    if ( !InterlockedDecrement((volatile LONG *)(v9 + 4)) ) /*0x48268b*/
+    {
+      InterlockedIncrement((volatile LONG *)(v9 + 4)); /*0x482696*/
+      (**(void (__thiscall ***)(int, int))v9)(v9, 1); /*0x4826a4*/
+    }
+    return v5; /*0x4826a6*/
+  }
+LABEL_19:
+  if ( v9 ) /*0x482637*/
+  {
+    if ( !InterlockedDecrement((volatile LONG *)(v9 + 4)) ) /*0x48263d*/
+    {
+      InterlockedIncrement((volatile LONG *)(v9 + 4)); /*0x482648*/
+      (**(void (__thiscall ***)(int, int))v9)(v9, 1); /*0x482656*/
+    }
+  }
+  return j; /*0x48265c*/
+}

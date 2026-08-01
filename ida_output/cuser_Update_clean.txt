@@ -1,0 +1,2065 @@
+// CUserLocal::Update(void) @ 0x937330
+// Decompiled via IDA headless
+
+void __thiscall CUserLocal::Update(CUserLocal *this)
+{
+  CDualKeyChecker::KeyMsg *m_pHead; // eax
+  unsigned int wParam; // edi
+  unsigned int lParam; // ebx
+  int update_time; // ebx
+  IWzVector2D *m_pInterface; // eax
+  int v7; // ecx
+  IWzVector2D *v8; // eax
+  CStage *p; // edi
+  CStage *v10; // eax
+  CStage *v11; // edi
+  int v12; // edx
+  IWzProperty *v13; // ebx
+  int v14; // edi
+  StringPool *Instance; // eax
+  char *m_pStr; // eax
+  CStage *v17; // edi
+  unsigned int Data; // eax
+  void (__stdcall *v19)(VARIANTARG *); // edi
+  HRESULT v20; // eax
+  HRESULT v21; // eax
+  Ztl_variant_t *ObjectA; // eax
+  IUnknown *Unknown; // eax
+  HRESULT v24; // eax
+  void *v25; // esp
+  int v26; // ecx
+  Ztl_variant_t *v27; // eax
+  IUnknown *v28; // eax
+  HRESULT v29; // edi
+  unsigned int (__stdcall *Release)(IUnknown *); // eax
+  HRESULT v31; // eax
+  HRESULT v32; // eax
+  int v33; // ecx
+  Ztl_variant_t *v34; // eax
+  IUnknown *v35; // eax
+  HRESULT v36; // eax
+  void *v37; // esp
+  int v38; // ecx
+  Ztl_variant_t *v39; // eax
+  IUnknown *v40; // eax
+  HRESULT v41; // edi
+  unsigned int (__stdcall *v42)(IUnknown *); // eax
+  IWzGr2DLayer *right; // ebx
+  unsigned int (__stdcall *AddRef)(IUnknown *); // ecx
+  HRESULT v45; // eax
+  IWzGr2DLayer *v46; // eax
+  IUnknown v47; // ecx
+  HRESULT (__stdcall *QueryInterface)(IUnknown *, const _GUID *, void **); // eax
+  HRESULT v49; // eax
+  void (__stdcall *v50)(VARIANTARG *); // edi
+  HRESULT v51; // eax
+  HRESULT v52; // eax
+  IUnknown v53; // ecx
+  unsigned int (__stdcall *v54)(IUnknown *); // eax
+  HRESULT v55; // eax
+  unsigned int (__stdcall *v56)(IUnknown *); // eax
+  unsigned int (__stdcall *v57)(IUnknown *); // ecx
+  IWzVector2D *v58; // edi
+  CVecCtrl *top; // edi
+  void (__thiscall ***v60)(_DWORD, int); // edi
+  volatile LONG *v61; // ebx
+  unsigned int m_dwDriverID; // eax
+  CStage *v63; // edi
+  int *v64; // eax
+  int v65; // edx
+  int *v66; // eax
+  CStage *v67; // ebx
+  CStage *v68; // eax
+  __POSITION *HeadPosition; // eax
+  __POSITION *v70; // ebx
+  __POSITION *v71; // eax
+  BOOL v72; // eax
+  IWzGr2DLayer *v73; // edi
+  HRESULT v74; // eax
+  IWzGr2DLayer *v75; // ecx
+  IWzVector2D *v76; // edi
+  HRESULT (__stdcall *get_x)(IWzShape2D *, int *); // eax
+  HRESULT v78; // eax
+  void (__stdcall *v79)(VARIANTARG *); // edi
+  HRESULT v80; // eax
+  HRESULT v81; // eax
+  IWzGr2DLayer *v82; // ecx
+  IWzVector2D *v83; // ecx
+  IWzGr2DLayer *v84; // ecx
+  IWzVector2D *v85; // edi
+  HRESULT (__stdcall *v86)(IWzShape2D *, int *); // edx
+  HRESULT v87; // eax
+  char v88; // bl
+  void (__stdcall *v89)(VARIANTARG *); // edi
+  HRESULT v90; // eax
+  HRESULT v91; // eax
+  IWzGr2DLayer *v92; // ecx
+  IWzVector2D *v93; // ecx
+  IWzGr2DLayer *v94; // ecx
+  IWzVector2D *v95; // edi
+  HRESULT (__stdcall *v96)(IWzShape2D *, int *); // edx
+  HRESULT v97; // eax
+  char v98; // bl
+  void (__stdcall *v99)(VARIANTARG *); // edi
+  HRESULT v100; // eax
+  HRESULT v101; // eax
+  IWzGr2DLayer *v102; // ecx
+  IWzVector2D *v103; // ecx
+  IWzGr2DLayer *v104; // ecx
+  IWzVector2D *v105; // edi
+  HRESULT (__stdcall *v106)(IWzShape2D *, int *); // edx
+  HRESULT v107; // eax
+  char v108; // bl
+  void (__stdcall *v109)(VARIANTARG *); // edi
+  HRESULT v110; // eax
+  HRESULT v111; // eax
+  IWzGr2DLayer *v112; // ecx
+  IWzVector2D *v113; // ecx
+  int *ZtlSecureTear_nPoison; // edi
+  const SecondaryStat *v115; // eax
+  bool v116; // zf
+  PassiveSkillData *v117; // eax
+  int nTERr; // ebx
+  int v119; // edi
+  int v120; // edi
+  int v121; // eax
+  int AchillesReduce; // eax
+  int *ZtlSecureTear_nComboBarrier; // ebx
+  int v124; // edi
+  int v125; // eax
+  int v126; // ebx
+  int v127; // edi
+  unsigned int v128; // eax
+  int v129; // ebx
+  int *ZtlSecureTear_nStopMotion; // edi
+  int v131; // edi
+  int v132; // eax
+  StringPool *v133; // eax
+  ZXString<char> *String; // eax
+  unsigned int v135; // eax
+  tagPOINT (__thiscall *GetPos)(IVecCtrlOwner *); // eax
+  int m_nPhase; // edi
+  unsigned int m_dwCharacterId; // ebx
+  int *v139; // eax
+  int v140; // edx
+  CUserLocal_vtbl *v141; // eax
+  int v142; // eax
+  const SecondaryStat *v143; // eax
+  const SecondaryStat *v144; // eax
+  int v145; // eax
+  CMob *BodyAttackMob; // ebx
+  int v147; // eax
+  CMapLoadable *v148; // ecx
+  CMobTemplate *m_pTemplate; // eax
+  unsigned int v150; // eax
+  unsigned int m_dwMorphTemplateID; // edi
+  IWzProperty *v152; // ecx
+  int SkillLevel; // eax
+  const SKILLLEVELDATA *LevelData; // eax
+  unsigned int v155; // edi
+  int (__thiscall *GetJobCode)(struct CUserLocal *); // eax
+  int v157; // eax
+  int v158; // edi
+  int v159; // edi
+  int v160; // edi
+  _DWORD *v161; // eax
+  int v162; // ebx
+  int v163; // ebx
+  tagPOINT (__thiscall *GetPosPrev)(IVecCtrlOwner *); // eax
+  _DWORD *v165; // eax
+  int v166; // ebx
+  int v167; // eax
+  int (__thiscall *v168)(int, __int16 *); // edx
+  _DWORD *v169; // eax
+  const SecondaryStat *v170; // eax
+  unsigned int ZtlSecureTear_nGuard__CS; // ecx
+  const int *ZtlSecureTear_nGuard; // eax
+  const SecondaryStat *v173; // eax
+  int v174; // eax
+  int v175; // eax
+  int v176; // ebx
+  const SKILLLEVELDATA *v177; // eax
+  int v178; // eax
+  tagPOINT (__thiscall *v179)(IVecCtrlOwner *); // edx
+  int *v180; // eax
+  CMobPool *v181; // edi
+  SKILLLEVELDATA *v182; // eax
+  int v183; // eax
+  int HitMobInRect; // eax
+  int v185; // edi
+  CMob *v186; // ecx
+  CStage *v187; // edi
+  CMapLoadable *v188; // ecx
+  _DWORD *v189; // eax
+  int v190; // ebx
+  int v191; // eax
+  int v192; // eax
+  CStage *v193; // edi
+  CField *v194; // ecx
+  int v195; // eax
+  tagPOINT (__thiscall *v196)(IVecCtrlOwner *); // edx
+  int v197; // edi
+  CAffectedAreaPool *v198; // ebx
+  tagPOINT *v199; // eax
+  int v200; // ecx
+  CharacterData *v201; // ebx
+  int v202; // edi
+  int element_from_mobskillid; // eax
+  int resistance; // eax
+  int bottom; // eax
+  int v206; // eax
+  int v207; // ebx
+  int v208; // edi
+  int nComboBarrier; // eax
+  int v210; // ecx
+  int v211; // ebx
+  int v212; // edi
+  unsigned int v213; // eax
+  int v214; // edi
+  IWzVector2D *v215; // eax
+  IWzVector2D *v216; // ecx
+  int v217; // eax
+  int max_gauge_time; // eax
+  int v219; // eax
+  bool v220; // cc
+  int v221; // edx
+  void *nSkillID; // eax
+  BOOL v223; // edi
+  BOOL v224; // edx
+  BOOL v225; // ecx
+  int v226; // ebx
+  const SecondaryStat *v227; // eax
+  BOOL v228; // edi
+  StringPool *v229; // eax
+  ZXString<char> *v230; // eax
+  int v231; // edi
+  const SKILLLEVELDATA *v232; // eax
+  StringPool *v233; // eax
+  BOOL v234; // edi
+  int v235; // eax
+  int v236; // eax
+  CDragon *v237; // ecx
+  CWvsContext *v238; // edi
+  unsigned int v239; // eax
+  int v240; // edi
+  unsigned int Hi32; // eax
+  unsigned int v242; // edx
+  unsigned int v243; // eax
+  unsigned int v244; // eax
+  unsigned int v245; // edx
+  unsigned int v246; // eax
+  unsigned int v247; // eax
+  unsigned int v248; // edx
+  unsigned int v249; // eax
+  CUserLocal::CBalloonMsg *v250; // edi
+  CUserLocal::CBalloonMsg *v251; // edi
+  CTutor *v252; // ecx
+  int (__thiscall *v253)(struct CUserLocal *); // eax
+  CSkillInfo *v254; // edi
+  int v255; // eax
+  CStage *v256; // edi
+  CField *v257; // ecx
+  CStage *v258; // edi
+  CField *v259; // ecx
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > v260; // [esp-24h] [ebp-F2Ch] BYREF
+  _BYTE v261[32]; // [esp-20h] [ebp-F28h] BYREF
+  wchar_t v262[8]; // [esp+0h] [ebp-F08h] BYREF
+  CUIToolTip uiToolTip; // [esp+10h] [ebp-EF8h] BYREF
+  SKILLLEVELDATA sd; // [esp+A58h] [ebp-4B0h] BYREF
+  CMob *apMob[15]; // [esp+E74h] [ebp-94h] BYREF
+  _DWORD st[5]; // [esp+EB0h] [ebp-58h] BYREF
+  ZList<long> v267; // [esp+EC4h] [ebp-44h] BYREF
+  const SKILLENTRY *pComboAbility; // [esp+ED8h] [ebp-30h] BYREF
+  tagPOINT pSummon; // [esp+EDCh] [ebp-2Ch] BYREF
+  tagPOINT vecForce; // [esp+EE4h] [ebp-24h] BYREF
+  Ztl_variant_t result; // [esp+EECh] [ebp-1Ch] BYREF
+  int v272; // [esp+F04h] [ebp-4h]
+  __int16 oPacket; // [esp+F08h] [ebp+0h] BYREF
+  ZArray<unsigned char> v274; // [esp+F0Ch] [ebp+4h] BYREF
+  _FILETIME ft; // [esp+F10h] [ebp+8h] BYREF
+  CWvsContext *pCtx; // [esp+F18h] [ebp+10h]
+  int nShootRange0; // [esp+F1Ch] [ebp+14h] BYREF
+  int bRapidFire; // [esp+F20h] [ebp+18h] BYREF
+  ZRef<CharacterData> v279; // [esp+F24h] [ebp+1Ch] BYREF
+  tagVARIANT rcBody; // [esp+F2Ch] [ebp+24h] BYREF
+  SecondaryStat *p_m_secondaryStat; // [esp+F3Ch] [ebp+34h]
+  char pa[4]; // [esp+F40h] [ebp+38h] BYREF
+  int nMobCount; // [esp+F44h] [ebp+3Ch] BYREF
+  int tCur; // [esp+F48h] [ebp+40h]
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pProp; // [esp+F4Ch] [ebp+44h]
+  ZAllocHelper _ALLOC; // [esp+F53h] [ebp+4Bh] BYREF
+  Ztl_variant_t rcLocalUser; // [esp+F54h] [ebp+4Ch] BYREF
+  tagRECT rcAttack; // [esp+F64h] [ebp+5Ch] BYREF
+  int bSuccess; // [esp+F74h] [ebp+6Ch] BYREF
+
+  v279.p = nullptr;
+  pCtx = (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr;
+  if ( (TSecType<unsigned char>::GetData((TSecType<unsigned char> *)(TSingleton<CWvsContext>::ms_pInstance._m_pStr + 8260))
+      & 0x80u) != 0
+    && this->m_bMovingMode )
+  {
+    CUser::Update(this);
+    return;
+  }
+  if ( this->m_DualKeyChecker.m_lScanCode && timeGetTime() > this->m_DualKeyChecker.m_tInputTime + 50 )
+  {
+    this->m_DualKeyChecker.m_tInputTime = 0;
+    this->m_DualKeyChecker.m_lScanCode = 0;
+  }
+  if ( this->m_DualKeyChecker.m_lMsg._m_uCount )
+  {
+    m_pHead = this->m_DualKeyChecker.m_lMsg._m_pHead;
+    wParam = m_pHead->wParam;
+    lParam = m_pHead->lParam;
+    ZList<CDualKeyChecker::KeyMsg>::RemoveAt(&this->m_DualKeyChecker.m_lMsg, (__POSITION *)m_pHead);
+    CUserLocal::OnKey(this, wParam, lParam);
+  }
+  update_time = get_update_time();
+  tCur = update_time;
+  if ( this->m_bCurActionIsFlyingSkill )
+  {
+    if ( this->m_nOneTimeAction != 272 )
+    {
+      m_pInterface = this->m_pvc.m_pInterface;
+      this->m_bCurActionIsFlyingSkill = 0;
+      v7 = m_pInterface ? (int)&m_pInterface[-3] : 0;
+      if ( *(_DWORD *)(v7 + 416) )
+      {
+        if ( m_pInterface )
+          v8 = m_pInterface - 3;
+        else
+          v8 = nullptr;
+        v8[128].__vftable = (IWzVector2D_vtbl *)1;
+      }
+    }
+  }
+  else if ( this->m_nOneTimeAction == 272 )
+  {
+    this->m_bCurActionIsFlyingSkill = 1;
+  }
+  p = g_pStage.p;
+  if ( g_pStage.p && g_pStage.p->IsKindOf(&g_pStage.p->IUIMsgHandler, &CField::ms_RTTI_CField) )
+    v10 = p;
+  else
+    v10 = nullptr;
+  if ( TSecType<unsigned long>::GetData((TSecType<unsigned long> *)&v10[15].IUIMsgHandler) == 103000100 )
+    goto LABEL_30;
+  v11 = g_pStage.p;
+  if ( !g_pStage.p || !g_pStage.p->IsKindOf(&g_pStage.p->IUIMsgHandler, &CField::ms_RTTI_CField) )
+    v11 = nullptr;
+  if ( TSecType<unsigned long>::GetData((TSecType<unsigned long> *)&v11[15].IUIMsgHandler) == 600010001 )
+  {
+LABEL_30:
+    GetLocalTime((LPSYSTEMTIME)st);
+    SystemTimeToFileTime((const SYSTEMTIME *)st, &ft);
+    v12 = HIWORD(st[2]) % 5;
+    if ( v12 && update_time - this->m_tLastUpdatedNLCTransferTimer >= 5000 )
+    {
+      v13 = nullptr;
+      this->m_tLastUpdatedNLCTransferTimer = tCur;
+      rcAttack.right = 0;
+      v272 = 2;
+      pProp.m_pInterface = nullptr;
+      rcAttack.bottom = 0;
+      v14 = 5 - v12;
+      Instance = StringPool::GetInstance();
+      m_pStr = StringPool::GetString(Instance, (ZXString<char> *)&bSuccess, 0x1A15u)->_m_pStr;
+      LOBYTE(v272) = 3;
+      ZXString<char>::Format((ZXString<char> *)&rcAttack.bottom, m_pStr, v14);
+      LOBYTE(v272) = 2;
+      if ( bSuccess )
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(bSuccess - 12));
+      v17 = g_pStage.p;
+      if ( !g_pStage.p || !g_pStage.p->IsKindOf(&g_pStage.p->IUIMsgHandler, &CField::ms_RTTI_CField) )
+        v17 = nullptr;
+      Data = TSecType<unsigned long>::GetData((TSecType<unsigned long> *)&v17[15].IUIMsgHandler);
+      v19 = VariantInit;
+      if ( Data == 103000100 )
+      {
+        VariantInit(&rcBody);
+        v20 = ZComAPI::ZComVariantCopy(&rcBody, &vtMissing);
+        if ( v20 < 0 )
+          _com_issue_error(v20);
+        LOBYTE(v272) = 4;
+        v19(&rcLocalUser);
+        v21 = ZComAPI::ZComVariantCopy(&rcLocalUser, &vtMissing);
+        if ( v21 < 0 )
+          _com_issue_error(v21);
+        *(_QWORD *)&v261[24] = 0;
+        *(_DWORD *)&v261[20] = &rcBody;
+        *(_DWORD *)&v261[16] = &rcLocalUser;
+        *(_DWORD *)&v261[12] = &rcBody;
+        nMobCount = (int)&v261[12];
+        LOBYTE(v272) = 5;
+        _bstr_t::_bstr_t((_bstr_t *)&v261[12], L"Map/Obj/insideGL.img/inside1/aniK");
+        LOBYTE(v272) = 6;
+        if ( !g_rm.m_pInterface )
+          _com_issue_error(-2147467261);
+        LOBYTE(v272) = 5;
+        ObjectA = IWzResMan::GetObjectA(
+                    g_rm.m_pInterface,
+                    &result,
+                    *(Ztl_bstr_t *)&v261[12],
+                    *(const Ztl_variant_t **)&v261[16],
+                    *(const Ztl_variant_t **)&v261[20]);
+        LOBYTE(v272) = 7;
+        Unknown = Ztl_variant_t::GetUnknown(ObjectA, v261[24], v261[28]);
+        if ( Unknown )
+        {
+          v24 = Unknown->QueryInterface(Unknown, &_GUID_986515d9_0a0b_4929_8b4f_718682177b92, (void **)&bSuccess);
+          v13 = v24 < 0 ? nullptr : (IWzProperty *)bSuccess;
+          pProp.m_pInterface = v13;
+          if ( v24 < 0 && v24 != -2147467262 )
+            _com_issue_error(v24);
+        }
+        LOBYTE(v272) = 5;
+        if ( result.vt == 8 )
+        {
+          result.vt = 0;
+          if ( result.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(result.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&result);
+        }
+        LOBYTE(v272) = 4;
+        if ( rcLocalUser.vt == 8 )
+        {
+          rcLocalUser.vt = 0;
+          if ( rcLocalUser.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(rcLocalUser.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&rcLocalUser);
+        }
+        LOBYTE(v272) = 2;
+        if ( rcBody.vt == 8 )
+        {
+          rcBody.vt = 0;
+          if ( rcBody.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(rcBody.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&rcBody);
+        }
+        v25 = alloca(2 * ZAPI.MultiByteToWideChar(0, 0, (const char *)rcAttack.bottom, -1, nullptr, 0));
+        *(_QWORD *)&v261[24] = 0;
+        ZAPI.MultiByteToWideChar(0, 0, (const char *)rcAttack.bottom, -1, v262, 0x3FFFFFFF);
+        *(_DWORD *)&v261[20] = v26;
+        nMobCount = (int)&v261[20];
+        _bstr_t::_bstr_t((_bstr_t *)&v261[20], v262);
+        LOBYTE(v272) = 8;
+        if ( !v13 )
+          _com_issue_error(-2147467261);
+        LOBYTE(v272) = 2;
+        v27 = IWzProperty::Getitem(v13, &rcLocalUser, *(Ztl_bstr_t *)&v261[20]);
+        LOBYTE(v272) = 9;
+        v28 = Ztl_variant_t::GetUnknown(v27, v261[24], v261[28]);
+        if ( v28 )
+        {
+          v29 = v28->QueryInterface(v28, &_GUID_986515d9_0a0b_4929_8b4f_718682177b92, (void **)&bSuccess);
+          Release = v13->Release;
+          nShootRange0 = v29 < 0 ? 0 : bSuccess;
+          Release(v13);
+          pProp.m_pInterface = (IWzProperty *)nShootRange0;
+          if ( v29 < 0 && v29 != -2147467262 )
+            _com_issue_error(v29);
+        }
+        else
+        {
+          pProp.m_pInterface = nullptr;
+          v13->Release(v13);
+        }
+        LOBYTE(v272) = 2;
+        if ( rcLocalUser.vt == 8 )
+        {
+          rcLocalUser.vt = 0;
+          if ( rcLocalUser.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(rcLocalUser.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&rcLocalUser);
+        }
+        *(_QWORD *)&v261[24] = 255;
+        nMobCount = (int)&v261[16];
+        *(_QWORD *)&v261[16] = 0;
+        LOBYTE(v272) = 10;
+        *(_QWORD *)&v261[8] = 0xFFFFFFB500000169uLL;
+      }
+      else
+      {
+        VariantInit(&rcBody);
+        v31 = ZComAPI::ZComVariantCopy(&rcBody, &vtMissing);
+        if ( v31 < 0 )
+          _com_issue_error(v31);
+        LOBYTE(v272) = 11;
+        v19(&rcLocalUser);
+        v32 = ZComAPI::ZComVariantCopy(&rcLocalUser, &vtMissing);
+        if ( v32 < 0 )
+          _com_issue_error(v32);
+        *(_QWORD *)&v261[24] = 0;
+        *(_DWORD *)&v261[20] = &rcBody;
+        *(_DWORD *)&v261[16] = &rcLocalUser;
+        *(_DWORD *)&v261[12] = v33;
+        nMobCount = (int)&v261[12];
+        LOBYTE(v272) = 12;
+        _bstr_t::_bstr_t((_bstr_t *)&v261[12], L"Map/Obj/insideGL.img/inside1/aniN");
+        LOBYTE(v272) = 13;
+        if ( !g_rm.m_pInterface )
+          _com_issue_error(-2147467261);
+        LOBYTE(v272) = 12;
+        v34 = IWzResMan::GetObjectA(
+                g_rm.m_pInterface,
+                &result,
+                *(Ztl_bstr_t *)&v261[12],
+                *(const Ztl_variant_t **)&v261[16],
+                *(const Ztl_variant_t **)&v261[20]);
+        LOBYTE(v272) = 14;
+        v35 = Ztl_variant_t::GetUnknown(v34, v261[24], v261[28]);
+        if ( v35 )
+        {
+          v36 = v35->QueryInterface(v35, &_GUID_986515d9_0a0b_4929_8b4f_718682177b92, (void **)&bSuccess);
+          v13 = v36 < 0 ? nullptr : (IWzProperty *)bSuccess;
+          pProp.m_pInterface = v13;
+          if ( v36 < 0 && v36 != -2147467262 )
+            _com_issue_error(v36);
+        }
+        LOBYTE(v272) = 12;
+        if ( result.vt == 8 )
+        {
+          result.vt = 0;
+          if ( result.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(result.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&result);
+        }
+        LOBYTE(v272) = 11;
+        if ( rcLocalUser.vt == 8 )
+        {
+          rcLocalUser.vt = 0;
+          if ( rcLocalUser.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(rcLocalUser.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&rcLocalUser);
+        }
+        LOBYTE(v272) = 2;
+        if ( rcBody.vt == 8 )
+        {
+          rcBody.vt = 0;
+          if ( rcBody.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(rcBody.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&rcBody);
+        }
+        v37 = alloca(2 * ZAPI.MultiByteToWideChar(0, 0, (const char *)rcAttack.bottom, -1, nullptr, 0));
+        *(_QWORD *)&v261[24] = 0;
+        ZAPI.MultiByteToWideChar(0, 0, (const char *)rcAttack.bottom, -1, v262, 0x3FFFFFFF);
+        *(_DWORD *)&v261[20] = v38;
+        nMobCount = (int)&v261[20];
+        _bstr_t::_bstr_t((_bstr_t *)&v261[20], v262);
+        LOBYTE(v272) = 15;
+        if ( !v13 )
+          _com_issue_error(-2147467261);
+        LOBYTE(v272) = 2;
+        v39 = IWzProperty::Getitem(v13, &rcLocalUser, *(Ztl_bstr_t *)&v261[20]);
+        LOBYTE(v272) = 16;
+        v40 = Ztl_variant_t::GetUnknown(v39, v261[24], v261[28]);
+        if ( v40 )
+        {
+          v41 = v40->QueryInterface(v40, &_GUID_986515d9_0a0b_4929_8b4f_718682177b92, (void **)&bSuccess);
+          v42 = v13->Release;
+          nShootRange0 = v41 < 0 ? 0 : bSuccess;
+          v42(v13);
+          pProp.m_pInterface = (IWzProperty *)nShootRange0;
+          if ( v41 < 0 && v41 != -2147467262 )
+            _com_issue_error(v41);
+        }
+        else
+        {
+          pProp.m_pInterface = nullptr;
+          v13->Release(v13);
+        }
+        LOBYTE(v272) = 2;
+        if ( rcLocalUser.vt == 8 )
+        {
+          rcLocalUser.vt = 0;
+          if ( rcLocalUser.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(rcLocalUser.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&rcLocalUser);
+        }
+        *(_QWORD *)&v261[24] = 255;
+        nMobCount = (int)&v261[16];
+        *(_QWORD *)&v261[16] = 0;
+        LOBYTE(v272) = 17;
+        *(_QWORD *)&v261[8] = 0xFFFFFF6EFFFFFE6DuLL;
+      }
+      *(_QWORD *)v261 = 0;
+      v260.m_pInterface = pProp.m_pInterface;
+      nShootRange0 = (int)&v260;
+      if ( pProp.m_pInterface )
+        pProp.m_pInterface->AddRef(pProp.m_pInterface);
+      LOBYTE(v272) = 2;
+      right = CAnimationDisplayer::LoadLayer(
+                (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&bSuccess,
+                v260,
+                *(int *)v261,
+                *(_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&v261[4],
+                *(int *)&v261[8],
+                *(int *)&v261[12],
+                *(_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v261[16],
+                *(int *)&v261[20],
+                *(int *)&v261[24],
+                *(int *)&v261[28])->m_pInterface;
+      if ( right )
+      {
+        AddRef = right->AddRef;
+        rcAttack.right = (int)right;
+        AddRef(right);
+      }
+      else
+      {
+        right = (IWzGr2DLayer *)rcAttack.right;
+      }
+      if ( bSuccess )
+        (*(void (__stdcall **)(int))(*(_DWORD *)bSuccess + 8))(bSuccess);
+      if ( !right )
+        _com_issue_error(-2147467261);
+      v45 = right->put_color(right, -1u);
+      if ( v45 < 0 )
+        _com_issue_errorex(v45, right, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf);
+      v46 = this->m_pLayerUnderFace.m_pInterface;
+      rcLocalUser.vt = 13;
+      rcLocalUser.decVal.Lo32 = (unsigned int)v46;
+      if ( v46 )
+        v46->AddRef(v46);
+      v47.__vftable = (IUnknown_vtbl *)right->__vftable;
+      *(Ztl_variant_t *)&v261[16] = rcLocalUser;
+      QueryInterface = v47.__vftable[21].QueryInterface;
+      LOBYTE(v272) = 18;
+      v49 = ((int (__stdcall *)(IWzGr2DLayer *, _DWORD, unsigned int, unsigned int, unsigned int))QueryInterface)(
+              right,
+              *(_DWORD *)&rcLocalUser.vt,
+              rcLocalUser.decVal.Hi32,
+              rcLocalUser.decVal.Lo32,
+              rcLocalUser.decVal.Mid32);
+      if ( v49 < 0 )
+        _com_issue_errorex(v49, right, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf);
+      LOBYTE(v272) = 2;
+      if ( rcLocalUser.vt == 8 )
+      {
+        rcLocalUser.vt = 0;
+        if ( rcLocalUser.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(rcLocalUser.decVal.Lo32 - 4));
+      }
+      else
+      {
+        VariantClear(&rcLocalUser);
+      }
+      v50 = VariantInit;
+      VariantInit(&rcBody);
+      v51 = ZComAPI::ZComVariantCopy(&rcBody, &vtMissing);
+      if ( v51 < 0 )
+        _com_issue_error(v51);
+      LOBYTE(v272) = 19;
+      v50(&rcLocalUser);
+      v52 = ZComAPI::ZComVariantCopy(&rcLocalUser, &vtMissing);
+      if ( v52 < 0 )
+        _com_issue_error(v52);
+      v53.__vftable = (IUnknown_vtbl *)right->__vftable;
+      *(tagVARIANT *)&v261[16] = rcBody;
+      *(Ztl_variant_t *)v261 = rcLocalUser;
+      v260.m_pInterface = nullptr;
+      v54 = v53.__vftable[22].Release;
+      LOBYTE(v272) = 20;
+      v55 = ((int (__stdcall *)(IWzGr2DLayer *, _DWORD, _DWORD, unsigned int, unsigned int, unsigned int, _DWORD, unsigned int, unsigned int, unsigned int))v54)(
+              right,
+              0,
+              *(_DWORD *)&rcLocalUser.vt,
+              rcLocalUser.decVal.Hi32,
+              rcLocalUser.decVal.Lo32,
+              rcLocalUser.decVal.Mid32,
+              *(_DWORD *)&rcBody.vt,
+              rcBody.decVal.Hi32,
+              rcBody.decVal.Lo32,
+              rcBody.decVal.Mid32);
+      if ( v55 < 0 )
+        _com_issue_errorex(v55, right, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf);
+      LOBYTE(v272) = 19;
+      if ( rcLocalUser.vt == 8 )
+      {
+        rcLocalUser.vt = 0;
+        if ( rcLocalUser.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(rcLocalUser.decVal.Lo32 - 4));
+      }
+      else
+      {
+        VariantClear(&rcLocalUser);
+      }
+      LOBYTE(v272) = 2;
+      if ( rcBody.vt == 8 )
+      {
+        rcBody.vt = 0;
+        if ( rcBody.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(rcBody.decVal.Lo32 - 4));
+      }
+      else
+      {
+        VariantClear(&rcBody);
+      }
+      nMobCount = (int)&v261[28];
+      *(_QWORD *)&v261[24] = 0;
+      *(_DWORD *)&v261[20] = right;
+      v56 = right->AddRef;
+      nMobCount = (int)&v261[20];
+      v56(right);
+      CAnimationDisplayer::RegisterOneTimeAnimation(
+        TSingleton<CAnimationDisplayer>::ms_pInstance,
+        *(_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v261[20],
+        *(int *)&v261[24],
+        *(_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v261[28]);
+      LOBYTE(v272) = 1;
+      if ( rcAttack.bottom )
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(rcAttack.bottom - 12));
+      LOBYTE(v272) = 0;
+      if ( pProp.m_pInterface )
+        pProp.m_pInterface->Release(pProp.m_pInterface);
+      v57 = right->Release;
+      v272 = -1;
+      v57(right);
+    }
+  }
+  v58 = this->m_pvc.m_pInterface;
+  if ( v58 )
+    top = (CVecCtrl *)&v58[-3];
+  else
+    top = nullptr;
+  rcAttack.top = (int)top;
+  pProp.m_pInterface = (IWzProperty *)CWvsContext::GetCharacterData(pCtx, (ZRef<CharacterData> *)&st[2])->p;
+  if ( st[3] )
+  {
+    v60 = (void (__thiscall ***)(_DWORD, int))(st[3] - 16);
+    v61 = (volatile LONG *)(st[3] - 16 + 4);
+    if ( !InterlockedDecrement(v61) )
+    {
+      InterlockedIncrement(v61);
+      if ( v60 )
+        (**v60)(v60, 1);
+    }
+    top = (CVecCtrl *)rcAttack.top;
+    st[3] = 0;
+  }
+  p_m_secondaryStat = &pCtx->m_secondaryStat;
+  CSequencedKeyMan::Update(TSingleton<CSequencedKeyMan>::ms_pInstance);
+  if ( top->m_bWingsNow
+    && _ZtlSecureFuse<double>(top->m_ap._ZtlSecureTear_vy, top->m_ap._ZtlSecureTear_vy_CS) > DOUBLE_0_0
+    && this->m_tWingsEnd <= tCur )
+  {
+    top->m_bWingsNow = 0;
+  }
+  m_dwDriverID = this->m_dwDriverID;
+  if ( !m_dwDriverID || CUser::FixedPosTo(this, m_dwDriverID, 50, 30) < 0 )
+  {
+    CVecCtrl::UpdateActive(top);
+    this->SetMoveAction(&this->CAvatar, top->m_nMoveAction, 0);
+  }
+  v63 = g_pStage.p;
+  if ( !g_pStage.p || !g_pStage.p->IsKindOf(&g_pStage.p->IUIMsgHandler, &CField::ms_RTTI_CField) )
+    v63 = nullptr;
+  v64 = (int *)((int (__thiscall *)(IVecCtrlOwner *, _FILETIME *))this->GetPos)(&this->IVecCtrlOwner, &ft);
+  v65 = *v64;
+  *(_DWORD *)&v261[28] = v64[1];
+  *(_DWORD *)&v261[24] = v65;
+  CToolTipHelper::GetNearToolTip((CToolTipHelper *)&v63[13].___u1, &v267, *(tagPOINT *)&v261[24]);
+  v66 = v267._m_pHead;
+  v272 = 21;
+  for ( rcAttack.top = (int)v267._m_pHead; rcAttack.top; v66 = (int *)rcAttack.top )
+  {
+    bRapidFire = *v66;
+    if ( bRapidFire != this->m_nIdx_ToolTipByMouse
+      && !ZMap<long,CUIToolTip,long>::GetAt(&this->m_mCharToolTip, &bRapidFire, nullptr) )
+    {
+      CUIToolTip::CUIToolTip(&uiToolTip);
+      rcAttack.bottom = 0;
+      rcAttack.right = 0;
+      v67 = g_pStage.p;
+      LOBYTE(v272) = 24;
+      if ( g_pStage.p && g_pStage.p->IsKindOf(&g_pStage.p->IUIMsgHandler, &CField::ms_RTTI_CField) )
+        v68 = v67;
+      else
+        v68 = nullptr;
+      CToolTipHelper::GetCharToolTipInfo(
+        (CToolTipHelper *)&v68[13].___u1,
+        bRapidFire,
+        &pSummon,
+        (ZXString<char> *)&rcAttack.bottom,
+        (ZXString<char> *)&rcAttack.right);
+      *(_QWORD *)&v261[24] = 0x100000000LL;
+      *(_QWORD *)&v261[16] = 1;
+      nMobCount = (int)&v261[4];
+      memset(&v261[4], 0, 12);
+      ZXString<char>::operator=((ZXString<char> *)&v261[4], (const ZXString<char> *)&rcAttack.right);
+      bSuccess = (int)v261;
+      LOBYTE(v272) = 25;
+      *(_DWORD *)v261 = 0;
+      ZXString<char>::operator=((ZXString<char> *)v261, (const ZXString<char> *)&rcAttack.bottom);
+      LOBYTE(v272) = 24;
+      CUIToolTip::SetToolTip_String2(
+        &uiToolTip,
+        pSummon.x,
+        pSummon.y,
+        *(ZXString<char> *)v261,
+        *(ZXString<char> *)&v261[4],
+        *(int *)&v261[8],
+        *(int *)&v261[12],
+        *(int *)&v261[16],
+        *(int *)&v261[20],
+        *(int *)&v261[24],
+        *(int *)&v261[28]);
+      ZMap<long,CUIToolTip,long>::Insert(&this->m_mCharToolTip, &bRapidFire, &uiToolTip);
+      LOBYTE(v272) = 23;
+      if ( rcAttack.right )
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(rcAttack.right - 12));
+      LOBYTE(v272) = 22;
+      if ( rcAttack.bottom )
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(rcAttack.bottom - 12));
+      LOBYTE(v272) = 21;
+      CUIToolTip::~CUIToolTip(&uiToolTip);
+    }
+    ZList<long>::GetNext((__POSITION **)&rcAttack.top);
+  }
+  HeadPosition = ZMap<long,CUIToolTip,long>::GetHeadPosition(&this->m_mCharToolTip);
+  bRapidFire = (int)HeadPosition;
+  if ( HeadPosition )
+  {
+    do
+    {
+      v70 = HeadPosition;
+      rcAttack.top = *ZMap<long,CUIToolTip,long>::GetNext(&this->m_mCharToolTip, (__POSITION **)&bRapidFire, nullptr);
+      if ( rcAttack.top != this->m_nIdx_ToolTipByMouse && !ZList<long>::Find(&v267, &rcAttack.top, nullptr) )
+      {
+        v71 = ZMap<long,CUIToolTip,long>::Insert(&this->m_mCharToolTip, &rcAttack.top, nullptr);
+        CUIToolTip::ClearToolTip((CUIToolTip *)&v71[12]);
+        ZMap<long,CUIToolTip,long>::RemoveKey(&this->m_mCharToolTip, (const int *)&v70[8]);
+      }
+      HeadPosition = (__POSITION *)bRapidFire;
+    }
+    while ( bRapidFire );
+  }
+  v272 = -1;
+  v267.__vftable = (ZList<long>_vtbl *)&ZList<long>::`vftable';
+  ZList<long>::RemoveAll(&v267);
+  if ( TSingleton<CMacroSysMan>::ms_pInstance._m_pStr )
+    (**(void (__thiscall ***)(wchar_t *))TSingleton<CMacroSysMan>::ms_pInstance._m_pStr)(TSingleton<CMacroSysMan>::ms_pInstance._m_pStr);
+  if ( this->m_nVehicleValid && tCur - this->m_tLastVehicleValidSetting > 7000 )
+  {
+    this->m_tLastVehicleValidSetting = tCur;
+    this->m_nVehicleValid = 0;
+  }
+  if ( !this->m_pLayerPreCompleteQuest.m_pInterface )
+    goto LABEL_320;
+  v72 = CAvatar::GetOneTimeAction(&this->CAvatar) == 101
+     || CAvatar::GetOneTimeAction(&this->CAvatar) == 82
+     || CAvatar::GetOneTimeAction(&this->CAvatar) == 114
+     || CAvatar::GetOneTimeAction(&this->CAvatar) == 149
+     || CAvatar::GetOneTimeAction(&this->CAvatar) == 151
+     || CAvatar::GetOneTimeAction(&this->CAvatar) == 193;
+  v73 = this->m_pLayerPreCompleteQuest.m_pInterface;
+  if ( !v73 )
+    _com_issue_error(-2147467261);
+  v74 = v73->put_visible(v73, !v72);
+  if ( v74 < 0 )
+    _com_issue_errorex(v74, v73, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf);
+  if ( CAvatar::GetOneTimeAction(&this->CAvatar) != 101
+    && CAvatar::GetOneTimeAction(&this->CAvatar) != 82
+    && CAvatar::GetOneTimeAction(&this->CAvatar) != 114
+    && CAvatar::GetOneTimeAction(&this->CAvatar) != 149
+    && CAvatar::GetOneTimeAction(&this->CAvatar) != 151
+    && CAvatar::GetOneTimeAction(&this->CAvatar) != 193 )
+  {
+    goto LABEL_213;
+  }
+  v75 = this->m_pLayerPreCompleteQuest.m_pInterface;
+  if ( !v75 )
+    _com_issue_error(-2147467261);
+  v76 = IWzGr2DLayer::Getalpha(
+          v75,
+          (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&bSuccess)->m_pInterface;
+  v272 = 26;
+  v279.p = (CharacterData *)1;
+  if ( !v76 )
+    _com_issue_error(-2147467261);
+  get_x = v76->get_x;
+  rcAttack.top = 0;
+  v78 = get_x(v76, &rcAttack.top);
+  if ( v78 < 0 )
+    _com_issue_errorex(v78, v76, &_GUID_4cfb57c7_eae3_40b3_ac98_4b2750e3642a);
+  _ALLOC = (ZAllocHelper)1;
+  if ( rcAttack.top <= 0 )
+LABEL_213:
+    _ALLOC = 0;
+  v272 = -1;
+  if ( ((int)v279.p & 1) != 0 )
+  {
+    v279.p = (CharacterData *)((int)v279.p & ~1u);
+    if ( bSuccess )
+      (*(void (__stdcall **)(int))(*(_DWORD *)bSuccess + 8))(bSuccess);
+  }
+  if ( _ALLOC )
+  {
+    v79 = VariantInit;
+    VariantInit((VARIANTARG *)&oPacket);
+    v80 = ZComAPI::ZComVariantCopy((tagVARIANT *)&oPacket, &vtMissing);
+    if ( v80 < 0 )
+      _com_issue_error(v80);
+    v272 = 27;
+    v79(&rcLocalUser);
+    v81 = ZComAPI::ZComVariantCopy(&rcLocalUser, &vtMissing);
+    if ( v81 < 0 )
+      _com_issue_error(v81);
+    v82 = this->m_pLayerPreCompleteQuest.m_pInterface;
+    LOBYTE(v272) = 28;
+    if ( !v82 )
+      _com_issue_error(-2147467261);
+    v83 = IWzGr2DLayer::Getalpha(
+            v82,
+            (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&bSuccess)->m_pInterface;
+    LOBYTE(v272) = 29;
+    if ( !v83 )
+      _com_issue_error(-2147467261);
+    IWzVector2D::RelMove(v83, 0, 0, &rcLocalUser, (const Ztl_variant_t *)&oPacket);
+    LOBYTE(v272) = 28;
+    if ( bSuccess )
+      (*(void (__stdcall **)(int))(*(_DWORD *)bSuccess + 8))(bSuccess);
+    LOBYTE(v272) = 27;
+  }
+  else
+  {
+    if ( CAvatar::IsOnPlayingRotateAction(&this->CAvatar) )
+      goto LABEL_238;
+    v84 = this->m_pLayerPreCompleteQuest.m_pInterface;
+    if ( !v84 )
+      _com_issue_error(-2147467261);
+    v85 = IWzGr2DLayer::Getalpha(
+            v84,
+            (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&bSuccess)->m_pInterface;
+    v279.p = (CharacterData *)((int)v279.p | 2);
+    v272 = 30;
+    if ( !v85 )
+      _com_issue_error(-2147467261);
+    v86 = v85->get_x;
+    rcAttack.top = 0;
+    v87 = v86(v85, &rcAttack.top);
+    if ( v87 < 0 )
+      _com_issue_errorex(v87, v85, &_GUID_4cfb57c7_eae3_40b3_ac98_4b2750e3642a);
+    if ( rcAttack.top )
+LABEL_238:
+      v88 = 0;
+    else
+      v88 = 1;
+    v272 = -1;
+    if ( ((int)v279.p & 2) != 0 )
+    {
+      v279.p = (CharacterData *)((int)v279.p & ~2u);
+      if ( bSuccess )
+        (*(void (__stdcall **)(int))(*(_DWORD *)bSuccess + 8))(bSuccess);
+    }
+    if ( !v88 )
+      goto LABEL_262;
+    v89 = VariantInit;
+    VariantInit((VARIANTARG *)&oPacket);
+    v90 = ZComAPI::ZComVariantCopy((tagVARIANT *)&oPacket, &vtMissing);
+    if ( v90 < 0 )
+      _com_issue_error(v90);
+    v272 = 31;
+    v89(&rcLocalUser);
+    v91 = ZComAPI::ZComVariantCopy(&rcLocalUser, &vtMissing);
+    if ( v91 < 0 )
+      _com_issue_error(v91);
+    v92 = this->m_pLayerPreCompleteQuest.m_pInterface;
+    LOBYTE(v272) = 32;
+    if ( !v92 )
+      _com_issue_error(-2147467261);
+    v93 = IWzGr2DLayer::Getalpha(
+            v92,
+            (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&bSuccess)->m_pInterface;
+    LOBYTE(v272) = 33;
+    if ( !v93 )
+      _com_issue_error(-2147467261);
+    IWzVector2D::RelMove(v93, 255, 0, &rcLocalUser, (const Ztl_variant_t *)&oPacket);
+    LOBYTE(v272) = 32;
+    if ( bSuccess )
+      (*(void (__stdcall **)(int))(*(_DWORD *)bSuccess + 8))(bSuccess);
+    LOBYTE(v272) = 31;
+  }
+  if ( rcLocalUser.vt == 8 )
+  {
+    rcLocalUser.vt = 0;
+    if ( rcLocalUser.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(rcLocalUser.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&rcLocalUser);
+  }
+  v272 = -1;
+  if ( oPacket == 8 )
+  {
+    oPacket = 0;
+    if ( ft.dwLowDateTime )
+      ZAPI.CoTaskMemFree((void *)(ft.dwLowDateTime - 4));
+  }
+  else
+  {
+    VariantClear((VARIANTARG *)&oPacket);
+  }
+LABEL_262:
+  if ( !pCtx->m_bDirectionMode )
+    goto LABEL_271;
+  v94 = this->m_pLayerPreCompleteQuest.m_pInterface;
+  if ( !v94 )
+    _com_issue_error(-2147467261);
+  v95 = IWzGr2DLayer::Getalpha(
+          v94,
+          (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&bSuccess)->m_pInterface;
+  v279.p = (CharacterData *)((int)v279.p | 4);
+  v272 = 34;
+  if ( !v95 )
+    _com_issue_error(-2147467261);
+  v96 = v95->get_x;
+  rcAttack.top = 0;
+  v97 = v96(v95, &rcAttack.top);
+  if ( v97 < 0 )
+    _com_issue_errorex(v97, v95, &_GUID_4cfb57c7_eae3_40b3_ac98_4b2750e3642a);
+  if ( rcAttack.top > 0 )
+    v98 = 1;
+  else
+LABEL_271:
+    v98 = 0;
+  v272 = -1;
+  if ( ((int)v279.p & 4) != 0 )
+  {
+    v279.p = (CharacterData *)((int)v279.p & ~4u);
+    if ( bSuccess )
+      (*(void (__stdcall **)(int))(*(_DWORD *)bSuccess + 8))(bSuccess);
+  }
+  if ( v98 )
+  {
+    v99 = VariantInit;
+    VariantInit((VARIANTARG *)&oPacket);
+    v100 = ZComAPI::ZComVariantCopy((tagVARIANT *)&oPacket, &vtMissing);
+    if ( v100 < 0 )
+      _com_issue_error(v100);
+    v272 = 35;
+    v99(&rcLocalUser);
+    v101 = ZComAPI::ZComVariantCopy(&rcLocalUser, &vtMissing);
+    if ( v101 < 0 )
+      _com_issue_error(v101);
+    v102 = this->m_pLayerPreCompleteQuest.m_pInterface;
+    LOBYTE(v272) = 36;
+    if ( !v102 )
+      _com_issue_error(-2147467261);
+    v103 = IWzGr2DLayer::Getalpha(
+             v102,
+             (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&bSuccess)->m_pInterface;
+    LOBYTE(v272) = 37;
+    if ( !v103 )
+      _com_issue_error(-2147467261);
+    IWzVector2D::RelMove(v103, 0, 0, &rcLocalUser, (const Ztl_variant_t *)&oPacket);
+    LOBYTE(v272) = 36;
+    if ( bSuccess )
+      (*(void (__stdcall **)(int))(*(_DWORD *)bSuccess + 8))(bSuccess);
+    LOBYTE(v272) = 35;
+LABEL_312:
+    if ( rcLocalUser.vt == 8 )
+    {
+      rcLocalUser.vt = 0;
+      if ( rcLocalUser.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(rcLocalUser.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&rcLocalUser);
+    }
+    v272 = -1;
+    if ( oPacket == 8 )
+    {
+      oPacket = 0;
+      if ( ft.dwLowDateTime )
+        ZAPI.CoTaskMemFree((void *)(ft.dwLowDateTime - 4));
+    }
+    else
+    {
+      VariantClear((VARIANTARG *)&oPacket);
+    }
+    goto LABEL_320;
+  }
+  if ( pCtx->m_bDirectionMode )
+    goto LABEL_296;
+  v104 = this->m_pLayerPreCompleteQuest.m_pInterface;
+  if ( !v104 )
+    _com_issue_error(-2147467261);
+  v105 = IWzGr2DLayer::Getalpha(
+           v104,
+           (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&bSuccess)->m_pInterface;
+  v279.p = (CharacterData *)((int)v279.p | 8);
+  v272 = 38;
+  if ( !v105 )
+    _com_issue_error(-2147467261);
+  v106 = v105->get_x;
+  rcAttack.top = 0;
+  v107 = v106(v105, &rcAttack.top);
+  if ( v107 < 0 )
+    _com_issue_errorex(v107, v105, &_GUID_4cfb57c7_eae3_40b3_ac98_4b2750e3642a);
+  if ( rcAttack.top )
+LABEL_296:
+    v108 = 0;
+  else
+    v108 = 1;
+  v272 = -1;
+  if ( ((int)v279.p & 8) != 0 )
+  {
+    v279.p = (CharacterData *)((int)v279.p & ~8u);
+    if ( bSuccess )
+      (*(void (__stdcall **)(int))(*(_DWORD *)bSuccess + 8))(bSuccess);
+  }
+  if ( v108 )
+  {
+    v109 = VariantInit;
+    VariantInit((VARIANTARG *)&oPacket);
+    v110 = ZComAPI::ZComVariantCopy((tagVARIANT *)&oPacket, &vtMissing);
+    if ( v110 < 0 )
+      _com_issue_error(v110);
+    v272 = 39;
+    v109(&rcLocalUser);
+    v111 = ZComAPI::ZComVariantCopy(&rcLocalUser, &vtMissing);
+    if ( v111 < 0 )
+      _com_issue_error(v111);
+    v112 = this->m_pLayerPreCompleteQuest.m_pInterface;
+    LOBYTE(v272) = 40;
+    if ( !v112 )
+      _com_issue_error(-2147467261);
+    v113 = IWzGr2DLayer::Getalpha(
+             v112,
+             (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&bSuccess)->m_pInterface;
+    LOBYTE(v272) = 41;
+    if ( !v113 )
+      _com_issue_error(-2147467261);
+    IWzVector2D::RelMove(v113, 255, 0, &rcLocalUser, (const Ztl_variant_t *)&oPacket);
+    LOBYTE(v272) = 40;
+    if ( bSuccess )
+      (*(void (__stdcall **)(int))(*(_DWORD *)bSuccess + 8))(bSuccess);
+    LOBYTE(v272) = 39;
+    goto LABEL_312;
+  }
+LABEL_320:
+  ZtlSecureTear_nPoison = p_m_secondaryStat->_ZtlSecureTear_nPoison_;
+  if ( _ZtlSecureFuse<long>(p_m_secondaryStat->_ZtlSecureTear_nPoison_, p_m_secondaryStat->_ZtlSecureTear_nPoison__CS) )
+  {
+    if ( tCur - this->m_tLastPoisonDamage > 1000 && (this->m_nMoveAction & 0xFFFFFFFE) != 0x12 )
+    {
+      v115 = this->GetSecondaryStat(this);
+      if ( !_ZtlSecureFuse<long>(v115->_ZtlSecureTear_nCyclone_, v115->_ZtlSecureTear_nCyclone__CS) )
+      {
+        v116 = CUserLocal::GetPassiveSkillData(this, (const ZRef<PassiveSkillData> *)&vecForce)->p == nullptr;
+        v272 = 42;
+        if ( v116 )
+        {
+          nTERr = 0;
+        }
+        else
+        {
+          v117 = CUserLocal::GetPassiveSkillData(this, (const ZRef<PassiveSkillData> *)&pSummon)->p;
+          v279.p = (CharacterData *)((int)v279.p | 0x10);
+          nTERr = v117->nTERr;
+        }
+        if ( ((int)v279.p & 0x10) != 0 )
+        {
+          v279.p = (CharacterData *)((int)v279.p & ~0x10u);
+          ZRef<PassiveSkillData>::~ZRef<PassiveSkillData>((ZRef<PassiveSkillData> *)&pSummon);
+        }
+        v272 = -1;
+        ZRef<PassiveSkillData>::~ZRef<PassiveSkillData>((ZRef<PassiveSkillData> *)&vecForce);
+        v119 = _ZtlSecureFuse<long>(ZtlSecureTear_nPoison, p_m_secondaryStat->_ZtlSecureTear_nPoison__CS);
+        v120 = v119
+             * (100 - nTERr - get_resistance((const CharacterData *)pProp.m_pInterface, p_m_secondaryStat, 4))
+             / 100;
+        v121 = _ZtlSecureFuse<long>(
+                 (const int *)((char *)&pProp.m_pInterface[24].__vftable + 1),
+                 *(unsigned int *)((char *)&pProp.m_pInterface[26].__vftable + 1))
+             - 1;
+        if ( v121 >= v120 )
+        {
+          v121 = v120;
+          rcAttack.bottom = v120;
+        }
+        else
+        {
+          rcAttack.bottom = v121;
+        }
+        if ( v121 > 0 )
+        {
+          AchillesReduce = CUserLocal::GetAchillesReduce(this, rcAttack.bottom);
+          *(_DWORD *)&v261[28] = p_m_secondaryStat->_ZtlSecureTear_nComboBarrier__CS;
+          ZtlSecureTear_nComboBarrier = p_m_secondaryStat->_ZtlSecureTear_nComboBarrier_;
+          rcAttack.top = AchillesReduce;
+          v124 = 0;
+          if ( _ZtlSecureFuse<long>(p_m_secondaryStat->_ZtlSecureTear_nComboBarrier_, *(unsigned int *)&v261[28]) > 0 )
+          {
+            v125 = _ZtlSecureFuse<long>(
+                     ZtlSecureTear_nComboBarrier,
+                     p_m_secondaryStat->_ZtlSecureTear_nComboBarrier__CS);
+            v124 = (rcAttack.bottom - rcAttack.top) * (1000 - v125) / 1000;
+          }
+          v126 = rcAttack.bottom - v124 - rcAttack.top;
+          CUser::MakeIncDecHPEffect(this, rcAttack.top - (rcAttack.bottom - v124), 0);
+          v127 = 0;
+          rcAttack.right = (int)&pCtx->m_CalcDamage.m_RndForCheckDamageMiss;
+          do
+            st[v127++ + 4] = CRand32::Random((CRand32 *)rcAttack.right);
+          while ( v127 < 6 );
+          COutPacket::COutPacket((COutPacket *)&rcLocalUser, 52);
+          v272 = 43;
+          v128 = get_update_time();
+          COutPacket::Encode4((COutPacket *)&rcLocalUser, v128);
+          COutPacket::Encode1((COutPacket *)&rcLocalUser, 0xFCu);
+          COutPacket::Encode1((COutPacket *)&rcLocalUser, 4u);
+          COutPacket::Encode4((COutPacket *)&rcLocalUser, rcAttack.bottom);
+          COutPacket::Encode2((COutPacket *)&rcLocalUser, 0);
+          COutPacket::Encode1((COutPacket *)&rcLocalUser, 1u);
+          CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, (const COutPacket *)&rcLocalUser);
+          CUserLocal::TryConsumePetHP(this, v126, 0, 0);
+          this->m_tLastPoisonDamage = tCur;
+          v272 = -1;
+          ZArray<unsigned char>::RemoveAll((ZArray<unsigned char> *)&rcLocalUser.gap0[4]);
+        }
+      }
+    }
+  }
+  v129 = tCur;
+  ZtlSecureTear_nStopMotion = p_m_secondaryStat->_ZtlSecureTear_nStopMotion_;
+  if ( _ZtlSecureFuse<long>(
+         p_m_secondaryStat->_ZtlSecureTear_nStopMotion_,
+         p_m_secondaryStat->_ZtlSecureTear_nStopMotion__CS)
+    && v129 - this->m_tLastStopMotionDamage > 2000
+    && (this->m_nMoveAction & 0xFFFFFFFE) != 0x12 )
+  {
+    v131 = _ZtlSecureFuse<long>(ZtlSecureTear_nStopMotion, p_m_secondaryStat->_ZtlSecureTear_nStopMotion__CS);
+    v132 = _ZtlSecureFuse<long>(
+             (const int *)((char *)&pProp.m_pInterface[24].__vftable + 1),
+             *(unsigned int *)((char *)&pProp.m_pInterface[26].__vftable + 1))
+         - 1;
+    if ( v132 < v131 )
+      v131 = v132;
+    if ( v131 > 0 )
+    {
+      CUser::MakeIncDecHPEffect(this, v131, 0);
+      *(_DWORD *)&v261[28] = 5478;
+      *(_DWORD *)&v261[24] = &bSuccess;
+      v133 = StringPool::GetInstance();
+      String = StringPool::GetString(v133, *(ZXString<char> **)&v261[24], *(unsigned int *)&v261[28]);
+      v272 = 44;
+      if ( TSingleton<CUIStatusBar>::ms_pInstance._m_pStr )
+      {
+        nMobCount = (int)&v261[24];
+        *(_DWORD *)&v261[28] = 0;
+        CUIStatusBar::ChatLogAdd(
+          (CUIStatusBar *)TSingleton<CUIStatusBar>::ms_pInstance._m_pStr,
+          String->_m_pStr,
+          7,
+          -1,
+          0,
+          (ZRef<GW_ItemSlotBase>)*(unsigned int *)&v261[24]);
+      }
+      v272 = -1;
+      if ( bSuccess )
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(bSuccess - 12));
+      COutPacket::COutPacket((COutPacket *)&rcLocalUser, 52);
+      v272 = 45;
+      v135 = get_update_time();
+      COutPacket::Encode4((COutPacket *)&rcLocalUser, v135);
+      COutPacket::Encode1((COutPacket *)&rcLocalUser, 0xFCu);
+      COutPacket::Encode1((COutPacket *)&rcLocalUser, 4u);
+      COutPacket::Encode4((COutPacket *)&rcLocalUser, v131);
+      COutPacket::Encode2((COutPacket *)&rcLocalUser, 0);
+      COutPacket::Encode1((COutPacket *)&rcLocalUser, 3u);
+      CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, (const COutPacket *)&rcLocalUser);
+      CUserLocal::TryConsumePetHP(this, v131, 0, 0);
+      this->m_tLastStopMotionDamage = v129;
+      v272 = -1;
+      ZArray<unsigned char>::RemoveAll((ZArray<unsigned char> *)&rcLocalUser.gap0[4]);
+    }
+  }
+  if ( !TSecType<long>::GetData(&this->m_tHitPeriodRemain) && (this->m_nMoveAction & 0xFFFFFFFE) != 0x12 )
+  {
+    bRapidFire = 0;
+    v272 = 46;
+    CWvsContext::GetOnlinePartyMemberID(pCtx, (ZArray<unsigned long> *)&bRapidFire);
+    GetPos = this->GetPos;
+    m_nPhase = this->m_nPhase;
+    m_dwCharacterId = this->m_dwCharacterId;
+    bSuccess = (int)TSingleton<CAffectedAreaPool>::ms_pInstance;
+    v139 = (int *)((int (__thiscall *)(IVecCtrlOwner *, _FILETIME *))GetPos)(&this->IVecCtrlOwner, &ft);
+    v140 = *v139;
+    *(_DWORD *)&v261[24] = v139[1];
+    *(_DWORD *)&v261[20] = v140;
+    if ( !CAffectedAreaPool::IsSmokeAreaByPoint(
+            (CAffectedAreaPool *)bSuccess,
+            m_dwCharacterId,
+            (ZArray<unsigned long> *)&bRapidFire,
+            *(tagPOINT *)&v261[20],
+            m_nPhase) )
+    {
+      CAvatar::GetBodyRect(&this->CAvatar, (tagRECT *)&rcLocalUser, 1);
+      *(_QWORD *)&rcBody.vt = *(_QWORD *)&rcLocalUser.vt;
+      v141 = this->CUser::CLife::IGObj::__vftable;
+      rcBody.llVal = rcLocalUser.llVal;
+      v142 = (int)v141->GetSecondaryStat(this);
+      if ( _ZtlSecureFuse<long>((const int *)(v142 + 540), *(_DWORD *)(v142 + 548))
+        || (v143 = this->GetSecondaryStat(this),
+            _ZtlSecureFuse<long>(v143->_ZtlSecureTear_nWindWalk_, v143->_ZtlSecureTear_nWindWalk__CS))
+        || (v144 = this->GetSecondaryStat(this),
+            (v145 = _ZtlSecureFuse<long>(v144->_ZtlSecureTear_nSneak_, v144->_ZtlSecureTear_nSneak__CS)) != 0) )
+      {
+        v145 = 1;
+      }
+      BodyAttackMob = CMobPool::FindBodyAttackMob(
+                        TSingleton<CMobPool>::ms_pInstance,
+                        (const tagRECT *)&rcLocalUser,
+                        v145);
+      rcAttack.right = (int)BodyAttackMob;
+      if ( BodyAttackMob )
+      {
+        rcAttack.top = CAvatar::MoveAction2RawAction(&this->CAvatar, this->m_nMoveAction, nullptr);
+        v147 = CAvatar::GetOneTimeAction(&this->CAvatar) <= -1
+             ? rcAttack.top
+             : CAvatar::GetOneTimeAction(&this->CAvatar);
+        if ( (v147 < 2 || v147 > 3)
+          && v147 != 48
+          && v147 != 49
+          && v147 != 50
+          && v147 != 51
+          && v147 != 52
+          && v147 != 53
+          && v147 != 54
+          && v147 != 125
+          || ((rcAttack.top = (int)g_pStage.p) == 0
+           || !g_pStage.p->IsKindOf(&g_pStage.p->IUIMsgHandler, &CField::ms_RTTI_CField)
+            ? (v148 = nullptr)
+            : (v148 = (CMapLoadable *)rcAttack.top),
+              !CMapLoadable::IsInSafeZone(v148, (const tagRECT *)&rcLocalUser)) )
+        {
+          m_pTemplate = BodyAttackMob->m_pTemplate;
+          if ( m_pTemplate->nBanType == 1 )
+          {
+            v150 = _ZtlSecureFuse<unsigned long>(
+                     m_pTemplate->_ZtlSecureTear_dwTemplateID,
+                     m_pTemplate->_ZtlSecureTear_dwTemplateID_CS);
+            CUserLocal::SendBanMapByMobRequest(this, v150);
+          }
+          m_dwMorphTemplateID = this->m_dwMorphTemplateID;
+          if ( m_dwMorphTemplateID && CMorphTemplate::IsHideMorphed(m_dwMorphTemplateID) )
+          {
+            if ( tCur - this->m_tLastHideMorphedCheck >= 2000 )
+            {
+              v152 = pProp.m_pInterface;
+              this->m_tLastHideMorphedCheck = tCur;
+              rcAttack.top = 0;
+              SkillLevel = CSkillInfo::GetSkillLevel(
+                             TSingleton<CSkillInfo>::ms_pInstance,
+                             (const CharacterData *)v152,
+                             (int)&loc_4DD5CF,
+                             (const SKILLENTRY **)&rcAttack.top);
+              LevelData = SKILLENTRY::GetLevelData((SKILLENTRY *)rcAttack.top, SkillLevel);
+              SKILLLEVELDATA::SKILLLEVELDATA(&sd, LevelData);
+              LOBYTE(v272) = 47;
+              SKILLLEVELDATA::_ZtlSecureGet_nProp(&sd);
+              v155 = _ZtlSecureFuse<long>(sd._ZtlSecureTear_nProp, sd._ZtlSecureTear_nProp_CS);
+              if ( v155 >= CRand32::Random(&g_rand) % 0x64 )
+              {
+                CUserLocal::SendSkillCancelRequest(this, (int)&loc_4DD5CF);
+                LOBYTE(v272) = 46;
+                SKILLLEVELDATA::~SKILLLEVELDATA(&sd);
+                v272 = -1;
+                ZArray<unsigned long>::RemoveAll((ZArray<unsigned long> *)&bRapidFire);
+                return;
+              }
+              LOBYTE(v272) = 46;
+              SKILLLEVELDATA::~SKILLLEVELDATA(&sd);
+            }
+          }
+          else
+          {
+            if ( p_m_secondaryStat->aTemporaryStat[0].p->IsActivated(p_m_secondaryStat->aTemporaryStat[0].p) )
+            {
+              *(tagVARIANT *)&v261[16] = rcBody;
+              *(_DWORD *)&v261[12] = pa;
+              CMob::GetHitPoint(BodyAttackMob, *(tagRECT *)&v261[12]);
+              GetJobCode = this->GetJobCode;
+              rcAttack.top = 0;
+              v157 = GetJobCode(this);
+              v158 = CSkillInfo::GetSkillLevel(
+                       TSingleton<CSkillInfo>::ms_pInstance,
+                       (const CharacterData *)pProp.m_pInterface,
+                       (int)dword_E66864 + (v157 / 1000 != 1 ? 0xFF67908D : 0),
+                       (const SKILLENTRY **)&rcAttack.top);
+              if ( v158 > 0 && !SecondaryStat::IsRidingTamedMob(p_m_secondaryStat) )
+                CUserLocal::TryDoingBodyAttack(
+                  this,
+                  (const SKILLENTRY *)rcAttack.top,
+                  v158,
+                  BodyAttackMob,
+                  (tagPOINT)__PAIR64__(nMobCount, *(unsigned int *)pa));
+            }
+            if ( _ZtlSecureFuse<long>(
+                   p_m_secondaryStat->_ZtlSecureTear_nBodyPressure_,
+                   p_m_secondaryStat->_ZtlSecureTear_nBodyPressure__CS) )
+            {
+              *(tagVARIANT *)&v261[16] = rcBody;
+              *(_DWORD *)&v261[12] = pa;
+              CMob::GetHitPoint(BodyAttackMob, *(tagRECT *)&v261[12]);
+              rcAttack.top = 0;
+              v159 = CSkillInfo::GetSkillLevel(
+                       TSingleton<CSkillInfo>::ms_pInstance,
+                       (const CharacterData *)pProp.m_pInterface,
+                       21101003,
+                       (const SKILLENTRY **)&rcAttack.top);
+              if ( v159 > 0 && !SecondaryStat::IsRidingVehicle(p_m_secondaryStat) )
+                CUserLocal::TryDoingBodyAttack(
+                  this,
+                  (const SKILLENTRY *)rcAttack.top,
+                  v159,
+                  BodyAttackMob,
+                  (tagPOINT)__PAIR64__(nMobCount, *(unsigned int *)pa));
+            }
+            v160 = rcAttack.right + 4;
+            rcAttack.top = (*(int (__thiscall **)(int, _FILETIME *))(*(_DWORD *)(rcAttack.right + 4) + 20))(
+                             rcAttack.right + 4,
+                             &ft);
+            v161 = (_DWORD *)(*(int (__thiscall **)(int, __int16 *))(*(_DWORD *)v160 + 16))(v160, &result.iVal);
+            v162 = *v161 - *(_DWORD *)rcAttack.top;
+            v163 = v162
+                 - *(_DWORD *)((int (__thiscall *)(IVecCtrlOwner *, char *))this->GetPos)(&this->IVecCtrlOwner, pa);
+            GetPosPrev = this->GetPosPrev;
+            rcAttack.top = v163;
+            v165 = (_DWORD *)((int (__thiscall *)(IVecCtrlOwner *, __int16 *))GetPosPrev)(
+                               &this->IVecCtrlOwner,
+                               &rcBody.boolVal);
+            v166 = rcAttack.top + *v165;
+            v167 = *(_DWORD *)(rcAttack.right + 1480);
+            rcAttack.top = -1;
+            if ( v167 >= 0 )
+            {
+              v168 = *(int (__thiscall **)(int, __int16 *))(*(_DWORD *)v160 + 20);
+              rcAttack.top = v167;
+              nMobCount = v168(v160, &rcBody.iVal);
+              v169 = (_DWORD *)(*(int (__thiscall **)(int, _FILETIME *))(*(_DWORD *)v160 + 16))(v160, &ft);
+              v166 = *v169 - *(_DWORD *)nMobCount;
+            }
+            if ( this->GetJobCode(this) / 100 == 35 && this->m_nRidingVehicleID == 1932016 )
+            {
+              v170 = this->GetSecondaryStat(this);
+              ZtlSecureTear_nGuard__CS = v170->_ZtlSecureTear_nGuard__CS;
+              ZtlSecureTear_nGuard = v170->_ZtlSecureTear_nGuard_;
+            }
+            else
+            {
+              v173 = this->GetSecondaryStat(this);
+              ZtlSecureTear_nGuard__CS = v173->_ZtlSecureTear_nPowerGuard__CS;
+              ZtlSecureTear_nGuard = v173->_ZtlSecureTear_nPowerGuard_;
+            }
+            v174 = _ZtlSecureFuse<long>(ZtlSecureTear_nGuard, ZtlSecureTear_nGuard__CS);
+            this->SetDamaged(this, 0, 0, 0, 0, (CMob *)rcAttack.right, rcAttack.top, v166, v174, 1, 1);
+          }
+        }
+      }
+      CUser::GetSummoned(this, (ZRef<CSummoned> *)&pSummon, 35121003);
+      LOBYTE(v272) = 48;
+      if ( pSummon.y )
+      {
+        rcAttack.right = 0;
+        v175 = CSkillInfo::GetSkillLevel(
+                 TSingleton<CSkillInfo>::ms_pInstance,
+                 (const CharacterData *)pProp.m_pInterface,
+                 35121003,
+                 (const SKILLENTRY **)&rcAttack.right);
+        v176 = v175;
+        if ( rcAttack.right )
+        {
+          if ( v175 )
+          {
+            if ( !CWvsContext::IsUnderCover(pCtx) && (get_field()->m_dwOption & 2) != 0
+              || !CUser::IsDarkSight(this) && !CUser::IsWindWalk(this) && !CUser::IsSneak(this) )
+            {
+              result = rcLocalUser;
+              v177 = SKILLENTRY::GetLevelData((SKILLENTRY *)rcAttack.right, v176);
+              operator<<((tagRECT *)&v267.gap4, &v177->rcAffectedArea);
+              v178 = ((int (__thiscall *)(IVecCtrlOwner *, __int16 *))this->GetPos)(
+                       &this->IVecCtrlOwner,
+                       &rcBody.boolVal);
+              v179 = this->GetPos;
+              nMobCount = *(_DWORD *)(v178 + 4);
+              v180 = (int *)((int (__thiscall *)(IVecCtrlOwner *, _FILETIME *))v179)(&this->IVecCtrlOwner, &ft);
+              ZAPI.OffsetRect((tagRECT *)&v267.gap4, *v180, nMobCount);
+              v181 = TSingleton<CMobPool>::ms_pInstance;
+              memset(&v261[8], 0, 24);
+              v182 = (SKILLLEVELDATA *)SKILLENTRY::GetLevelData((SKILLENTRY *)rcAttack.right, v176);
+              v183 = SKILLLEVELDATA::_ZtlSecureGet_nMobCount(v182);
+              HitMobInRect = CMobPool::FindHitMobInRect(
+                               v181,
+                               (const tagRECT *)&v267.gap4,
+                               apMob,
+                               v183,
+                               *(CMob **)&v261[8],
+                               *(int *)&v261[12],
+                               *(int *)&v261[16],
+                               *(unsigned int *)&v261[20],
+                               *(int *)&v261[24],
+                               *(int *)&v261[28]);
+              v185 = 0;
+              for ( nMobCount = HitMobInRect; v185 < nMobCount; ++v185 )
+              {
+                *(Ztl_variant_t *)&v261[16] = result;
+                v186 = apMob[v185];
+                *(_DWORD *)&v261[12] = &rcAttack;
+                CMob::GetHitPoint(v186, *(tagRECT *)&v261[12]);
+                CUserLocal::TryDoingBodyAttack(
+                  this,
+                  (const SKILLENTRY *)rcAttack.right,
+                  v176,
+                  apMob[v185],
+                  *(tagPOINT *)&rcAttack.left);
+              }
+            }
+          }
+        }
+      }
+      v187 = g_pStage.p;
+      rcAttack.bottom = 0;
+      nShootRange0 = 0;
+      bSuccess = 0;
+      if ( g_pStage.p && g_pStage.p->IsKindOf(&g_pStage.p->IUIMsgHandler, &CField::ms_RTTI_CField) )
+        v188 = (CMapLoadable *)v187;
+      else
+        v188 = nullptr;
+      if ( CMapLoadable::GetCollideObstacleRect(
+             v188,
+             (const tagRECT *)&rcLocalUser,
+             &rcAttack.bottom,
+             (unsigned int *)&nShootRange0,
+             &vecForce,
+             (unsigned int *)&bSuccess,
+             0) )
+      {
+        if ( rcAttack.bottom > 0 )
+        {
+          if ( !vecForce.x && !vecForce.y )
+          {
+            nMobCount = ((int (__thiscall *)(IVecCtrlOwner *, __int16 *))this->GetPosPrev)(
+                          &this->IVecCtrlOwner,
+                          &rcBody.boolVal);
+            v189 = (_DWORD *)((int (__thiscall *)(IVecCtrlOwner *, _FILETIME *))this->GetPos)(&this->IVecCtrlOwner, &ft);
+            v190 = *v189 - *(_DWORD *)nMobCount;
+            nMobCount = ((int (__thiscall *)(IVecCtrlOwner *, __int16 *))this->GetPosPrev)(
+                          &this->IVecCtrlOwner,
+                          &result.boolVal)
+                      + 4;
+            v191 = ((int (__thiscall *)(IVecCtrlOwner *, __int16 *))this->GetPos)(&this->IVecCtrlOwner, &rcBody.boolVal);
+            v192 = *(_DWORD *)(v191 + 4) - *(_DWORD *)nMobCount;
+            if ( v190 >= 0 )
+            {
+              if ( v190 > 0 )
+                vecForce.x = 270;
+            }
+            else
+            {
+              vecForce.x = -270;
+            }
+            if ( v192 <= 0 )
+              vecForce.y = -270;
+          }
+          this->SetDamaged(this, rcAttack.bottom, vecForce.x, vecForce.y, nShootRange0, nullptr, 0, 0, 0, 1, 1);
+        }
+        v193 = g_pStage.p;
+        if ( g_pStage.p && g_pStage.p->IsKindOf(&g_pStage.p->IUIMsgHandler, &CField::ms_RTTI_CField) )
+          v194 = (CField *)v193;
+        else
+          v194 = nullptr;
+        if ( bSuccess && v194 )
+          CField::SendTransferFieldRequest(v194, bSuccess, nullptr, 0, 0, 0);
+      }
+      v195 = tCur - this->m_tLastArealDamage;
+      rcAttack.bottom = 0;
+      if ( v195 > 1000 )
+      {
+        v196 = this->GetPos;
+        v197 = this->m_nPhase;
+        v198 = TSingleton<CAffectedAreaPool>::ms_pInstance;
+        rcAttack.top = 0;
+        v199 = (tagPOINT *)((int (__thiscall *)(IVecCtrlOwner *, __int16 *))v196)(&this->IVecCtrlOwner, &rcBody.boolVal);
+        CAffectedAreaPool::GetAffectedAreaByPoint(
+          v198,
+          (ZRef<AFFECTEDAREA> *)pa,
+          *v199,
+          (unsigned int *)&rcAttack.top,
+          v197);
+        if ( nMobCount )
+        {
+          v116 = CUserLocal::GetPassiveSkillData(this, (const ZRef<PassiveSkillData> *)&ft)->p == nullptr;
+          LOBYTE(v272) = 50;
+          if ( v116 )
+          {
+            rcAttack.right = 0;
+          }
+          else
+          {
+            v200 = CUserLocal::GetPassiveSkillData(this, (const ZRef<PassiveSkillData> *)&result.boolVal)->p->nTERr;
+            v279.p = (CharacterData *)((int)v279.p | 0x20);
+            rcAttack.right = v200;
+          }
+          if ( ((int)v279.p & 0x20) != 0 )
+            ZRef<PassiveSkillData>::~ZRef<PassiveSkillData>((ZRef<PassiveSkillData> *)&result.boolVal);
+          LOBYTE(v272) = 49;
+          ZRef<PassiveSkillData>::~ZRef<PassiveSkillData>((ZRef<PassiveSkillData> *)&ft);
+          v201 = CWvsContext::GetCharacterData(pCtx, &v279)->p;
+          v202 = nMobCount;
+          LOBYTE(v272) = 51;
+          element_from_mobskillid = get_element_from_mobskillid((unsigned int)rcAttack.top >> 8);
+          resistance = get_resistance(v201, p_m_secondaryStat, element_from_mobskillid);
+          rcAttack.bottom = *(_DWORD *)(v202 + 52) * (100 - rcAttack.right - resistance) / 100;
+          LOBYTE(v272) = 49;
+          ZRef<CharacterData>::~ZRef<CharacterData>(&v279);
+          bottom = rcAttack.bottom;
+          if ( rcAttack.bottom <= 1 )
+          {
+            bottom = 1;
+            rcAttack.bottom = 1;
+          }
+          v206 = CUserLocal::CalcBuffDefenseAttr(this, *(_BYTE *)(nMobCount + 48), bottom);
+          rcAttack.bottom = v206;
+          if ( v206 > 0 )
+          {
+            v207 = CUserLocal::GetAchillesReduce(this, v206);
+            v208 = 0;
+            if ( _ZtlSecureFuse<long>(
+                   p_m_secondaryStat->_ZtlSecureTear_nComboBarrier_,
+                   p_m_secondaryStat->_ZtlSecureTear_nComboBarrier__CS) <= 0 )
+            {
+              v210 = rcAttack.bottom;
+            }
+            else
+            {
+              nComboBarrier = SecondaryStat::_ZtlSecureGet_nComboBarrier_(p_m_secondaryStat);
+              v210 = rcAttack.bottom;
+              v208 = (rcAttack.bottom - v207) * (1000 - nComboBarrier) / 1000;
+            }
+            v211 = v210 - v208 - v207;
+            CUser::MakeIncDecHPEffect(this, -v211, 0);
+            v212 = 0;
+            rcAttack.right = (int)&pCtx->m_CalcDamage.m_RndForCheckDamageMiss;
+            do
+            {
+              CRand32::Random((CRand32 *)rcAttack.right);
+              ++v212;
+            }
+            while ( v212 < 6 );
+            COutPacket::COutPacket((COutPacket *)&oPacket, 52);
+            LOBYTE(v272) = 52;
+            v213 = get_update_time();
+            COutPacket::Encode4((COutPacket *)&oPacket, v213);
+            COutPacket::Encode1((COutPacket *)&oPacket, 0xFCu);
+            COutPacket::Encode1((COutPacket *)&oPacket, *(_BYTE *)(nMobCount + 48));
+            COutPacket::Encode4((COutPacket *)&oPacket, rcAttack.bottom);
+            COutPacket::Encode2((COutPacket *)&oPacket, rcAttack.top);
+            COutPacket::Encode1((COutPacket *)&oPacket, 2u);
+            CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, (const COutPacket *)&oPacket);
+            CUserLocal::TryConsumePetHP(this, v211, 0, 0);
+            this->m_tLastArealDamage = tCur;
+            LOBYTE(v272) = 49;
+            ZArray<unsigned char>::RemoveAll(&v274);
+          }
+        }
+        LOBYTE(v272) = 48;
+        if ( nMobCount )
+        {
+          v214 = nMobCount - 16;
+          if ( !InterlockedDecrement((volatile LONG *)(nMobCount - 16 + 4)) )
+          {
+            InterlockedIncrement((volatile LONG *)(v214 + 4));
+            if ( v214 )
+              (**(void (__thiscall ***)(int, int))v214)(v214, 1);
+          }
+        }
+      }
+      if ( this->m_bKnockBackStun && tCur - this->m_tLastKnockBackStun > 5000 )
+        this->m_tLastKnockBackStun = tCur;
+      else
+        this->m_bKnockBackStun = 0;
+      LOBYTE(v272) = 46;
+      if ( pSummon.y )
+        ZRef<CSummoned>::_ReleaseRaw((ZRef<CSummoned> *)&pSummon, nullptr);
+    }
+    v272 = -1;
+    ZArray<unsigned long>::RemoveAll((ZArray<unsigned long> *)&bRapidFire);
+    v129 = tCur;
+  }
+  if ( this->m_bConsumePetMP )
+    CUserLocal::TryConsumePetMP(this, 0, 0, 0);
+  CUserLocal::CheckReactor_Collision(this);
+  CUserLocal::CheckPortal_Collision(this);
+  CUserLocal::TryDoingFinalAttack(this);
+  CUserLocal::TryDoingSerialAttack(this);
+  CUserLocal::TryDoingSparkAttack(this);
+  CUserLocal::TryDoingPreparedSkill(this);
+  CUserLocal::TryDoingRepeatSkill(this, v129);
+  CUserLocal::TryDoingTeleport(this);
+  CUserLocal::TryAutoRequestFollowCharacter(this);
+  CUserLocal::TryPassiveTransferField(this);
+  CUserLocal::TryLeaveDirectionMode(this, v129);
+  if ( this->m_rush.lElem._m_uCount && this->m_rush.bValid )
+  {
+    if ( is_jump_rush_skill(this->m_rush.nSkillID)
+      || ((v215 = this->m_pvc.m_pInterface) == nullptr ? (v216 = nullptr) : (v216 = v215 - 3),
+          ((int (__thiscall *)(IWzVector2D *))v216->Release)(v216)) )
+    {
+      CUserLocal::TryDoingFlyingRush(this);
+    }
+    else
+    {
+      CUserLocal::TryDoingRush(this);
+    }
+  }
+  CUserLocal::TryDoingFallDown(this);
+  CUserLocal::TryDoingRocketBooster(this);
+  CUserLocal::TryDoingRocketBoosterEnd(this);
+  CUserLocal::TryDoingSmoothingMovingShootAttack(this);
+  if ( this->m_repeatSkill.nSkillID == 35121003 )
+  {
+    v217 = 69 * this->m_repeatSkill.nPoint / 100;
+    if ( v217 >= 69 )
+      v217 = 69;
+    if ( this->m_nKeyDownBarPosition != v217 )
+    {
+      this->m_nKeyDownBarPosition = v217;
+      CUserLocal::DrawKeyDownBar(this);
+    }
+  }
+  if ( this->m_bKeyDown )
+  {
+    max_gauge_time = get_max_gauge_time(this->m_preparingSkill.nSkillID);
+    bSuccess = max_gauge_time;
+    if ( max_gauge_time == 1000 )
+    {
+      v221 = (get_update_time() - this->m_tLastKeyDown) / 15 + 2;
+    }
+    else
+    {
+      if ( max_gauge_time != 2000 )
+      {
+        nMobCount = (get_update_time() - this->m_tLastKeyDown) / 15;
+        v219 = (int)((double)nMobCount * (DOUBLE_1000_0 / (double)bSuccess) + DOUBLE_2_0);
+        v220 = v219 < 69;
+        goto LABEL_480;
+      }
+      v221 = (get_update_time() - this->m_tLastKeyDown) / 30 + 2;
+    }
+    v220 = v221 < 69;
+    v219 = v221;
+LABEL_480:
+    if ( !v220 )
+      v219 = 69;
+    if ( this->m_nKeyDownBarPosition != v219 )
+    {
+      this->m_nKeyDownBarPosition = v219;
+      CUserLocal::DrawKeyDownBar(this);
+    }
+    nSkillID = (void *)this->m_preparingSkill.nSkillID;
+    v223 = (nSkillID == (void *)3121004 || nSkillID == (void *)13111002 || nSkillID == (void *)33121009)
+        && v129 - this->m_tLastStormArrow > 100;
+    rcAttack.top = v223;
+    v224 = nSkillID == &loc_4FAA8C && v129 - this->m_tLastRapidFire > 100;
+    bRapidFire = v224;
+    v225 = (nSkillID == (void *)35001001 || nSkillID == (void *)35101009) && v129 - this->m_tLastFlameThrower > 300;
+    rcAttack.bottom = v225;
+    if ( !v223 && !v224 && !v225 )
+      goto LABEL_533;
+    rcAttack.right = 0;
+    v226 = CSkillInfo::GetSkillLevel(
+             TSingleton<CSkillInfo>::ms_pInstance,
+             (const CharacterData *)pProp.m_pInterface,
+             (int)nSkillID,
+             (const SKILLENTRY **)&rcAttack.right);
+    if ( this->m_preparingSkill.nSkillID == 35101009 )
+      v226 = CUserLocal::GetSkillLevel(this, 35001001);
+    bSuccess = 0;
+    v228 = false;
+    if ( rcAttack.top )
+    {
+      v227 = this->GetSecondaryStat(this);
+      if ( _ZtlSecureFuse<long>(v227->_ZtlSecureTear_nSoulArrow_, v227->_ZtlSecureTear_nSoulArrow__CS) )
+        v228 = true;
+    }
+    if ( this->GetJobCode(this) / 100 == 35
+      || v228
+      || CUserLocal::GetProperBulletPosition(this, (const SKILLENTRY *)rcAttack.right, v226, nullptr, nullptr, nullptr) )
+    {
+      v231 = _ZtlSecureFuse<long>(
+               (const int *)((char *)&pProp.m_pInterface[30].__vftable + 1),
+               *(unsigned int *)((char *)&pProp.m_pInterface[32].__vftable + 1));
+      v232 = SKILLENTRY::GetLevelData((SKILLENTRY *)rcAttack.right, v226);
+      if ( v231 >= _ZtlSecureFuse<long>(v232->_ZtlSecureTear_nMPCon, v232->_ZtlSecureTear_nMPCon_CS) )
+      {
+        bSuccess = 1;
+LABEL_519:
+        v234 = 0;
+        if ( CUserLocal::IsSkillAvailable(this) )
+          v234 = bSuccess != 0;
+        nShootRange0 = 65;
+        if ( v234
+          && ((CUserLocal::TryDoingMeleeAttack(
+                 this,
+                 v226,
+                 v234,
+                 (char *)this,
+                 0,
+                 &nShootRange0,
+                 nullptr,
+                 0,
+                 0,
+                 nullptr,
+                 nullptr,
+                 0,
+                 0,
+                 0),
+               !v235)
+           || is_shoot_skill_not_switched_to_melee_attack(*(_DWORD *)rcAttack.right)) )
+        {
+          CUserLocal::TryDoingShootAttack(
+            this,
+            v226,
+            v234,
+            this,
+            (SKILLENTRY *)rcAttack.right,
+            v226,
+            nShootRange0,
+            0,
+            0,
+            0);
+          if ( !bRapidFire )
+          {
+            v236 = CUserLocal::GetSkillLevel(this, this->m_preparingSkill.nSkillID);
+            play_skill_sound(this->m_preparingSkill.nSkillID, SE_SKILL_USE, v236);
+          }
+        }
+        else
+        {
+          CUserLocal::OnKeyDownSkillEnd(this);
+        }
+        if ( rcAttack.top )
+        {
+          this->m_tLastStormArrow = tCur;
+        }
+        else if ( bRapidFire )
+        {
+          this->m_tLastRapidFire = tCur;
+        }
+        else if ( rcAttack.bottom )
+        {
+          this->m_tLastFlameThrower = tCur;
+        }
+LABEL_533:
+        v237 = this->m_pDragon.p;
+        if ( v237 )
+          CDragon::UpdateKeyDownBar(v237, this->m_preparingSkill.nSkillID, this->m_tLastKeyDown);
+        if ( !CUserLocal::IsSkillAvailable(this)
+          || TSingleton<CScriptMan>::ms_pInstance->m_pDlg.p
+          || TSingleton<CScriptMan>::ms_pInstance->m_pSlideDlg.p )
+        {
+          CUserLocal::OnKeyDownSkillEnd(this);
+        }
+        goto LABEL_539;
+      }
+      *(_DWORD *)&v261[28] = 2885;
+      *(_DWORD *)&v261[24] = &nMobCount;
+      v233 = StringPool::GetInstance();
+      v230 = StringPool::GetString(v233, *(ZXString<char> **)&v261[24], *(unsigned int *)&v261[28]);
+      v272 = 54;
+    }
+    else
+    {
+      *(_DWORD *)&v261[28] = 2895;
+      *(_DWORD *)&v261[24] = &nMobCount;
+      v229 = StringPool::GetInstance();
+      v230 = StringPool::GetString(v229, *(ZXString<char> **)&v261[24], *(unsigned int *)&v261[28]);
+      v272 = 53;
+    }
+    if ( TSingleton<CUIStatusBar>::ms_pInstance._m_pStr )
+    {
+      v279.p = (CharacterData *)&v261[24];
+      *(_DWORD *)&v261[28] = 0;
+      CUIStatusBar::ChatLogAdd(
+        (CUIStatusBar *)TSingleton<CUIStatusBar>::ms_pInstance._m_pStr,
+        v230->_m_pStr,
+        12,
+        -1,
+        0,
+        (ZRef<GW_ItemSlotBase>)*(unsigned int *)&v261[24]);
+    }
+    v272 = -1;
+    if ( nMobCount )
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(nMobCount - 12));
+    goto LABEL_519;
+  }
+LABEL_539:
+  v238 = pCtx;
+  if ( !this->m_bAutoStartQuestSet )
+  {
+    CWvsContext::ResetAutoQuest(pCtx);
+    this->m_bAutoStartQuestSet = 1;
+  }
+  if ( get_update_time() - this->m_tLastCheck_AutoCompletionAlertQuest >= 0x2710 )
+  {
+    CWvsContext::CheckAutoCompletionAlertQuest(v238);
+    v239 = get_update_time();
+    *(_DWORD *)&v261[28] = 0;
+    this->m_tLastCheck_AutoCompletionAlertQuest = v239;
+    CWvsContext::CheckNewQuestAvailable(v238, *(int *)&v261[28]);
+  }
+  CWvsContext::UpdateAutoQuestAlertIcon(v238);
+  if ( this->m_bResetEmotion )
+  {
+    *(_DWORD *)&v261[28] = 56;
+    this->m_bResetEmotion = 0;
+    COutPacket::COutPacket((COutPacket *)&rcBody, *(int *)&v261[28]);
+    *(_DWORD *)&v261[28] = this->_ZtlSecureTear_m_nEmotion_CS;
+    v272 = 55;
+    v240 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nEmotion, *(unsigned int *)&v261[28]);
+    Hi32 = rcBody.decVal.Hi32;
+    if ( rcBody.decVal.Hi32 )
+      v242 = *(_DWORD *)(rcBody.decVal.Hi32 - 4);
+    else
+      v242 = 0;
+    if ( rcBody.decVal.Lo32 + 4 > v242 )
+    {
+      if ( rcBody.decVal.Hi32 )
+        v243 = *(_DWORD *)(rcBody.decVal.Hi32 - 4);
+      else
+        v243 = 0;
+      do
+        v243 *= 2;
+      while ( rcBody.decVal.Lo32 + 4 > v243 );
+      ZArray<unsigned char>::_Realloc((ZArray<unsigned char> *)&rcBody.gap0[4], v243, 0, &_ALLOC);
+      Hi32 = rcBody.decVal.Hi32;
+    }
+    *(_DWORD *)(Hi32 + rcBody.decVal.Lo32) = v240;
+    v244 = rcBody.decVal.Hi32;
+    rcBody.decVal.Lo32 += 4;
+    if ( rcBody.decVal.Hi32 )
+      v245 = *(_DWORD *)(rcBody.decVal.Hi32 - 4);
+    else
+      v245 = 0;
+    if ( rcBody.decVal.Lo32 + 4 > v245 )
+    {
+      if ( rcBody.decVal.Hi32 )
+        v246 = *(_DWORD *)(rcBody.decVal.Hi32 - 4);
+      else
+        v246 = 0;
+      do
+        v246 *= 2;
+      while ( rcBody.decVal.Lo32 + 4 > v246 );
+      ZArray<unsigned char>::_Realloc((ZArray<unsigned char> *)&rcBody.gap0[4], v246, 0, &_ALLOC);
+      v244 = rcBody.decVal.Hi32;
+    }
+    *(_DWORD *)(v244 + rcBody.decVal.Lo32) = -1;
+    v247 = rcBody.decVal.Hi32;
+    rcBody.decVal.Lo32 += 4;
+    if ( rcBody.decVal.Hi32 )
+      v248 = *(_DWORD *)(rcBody.decVal.Hi32 - 4);
+    else
+      v248 = 0;
+    if ( rcBody.decVal.Lo32 + 1 > v248 )
+    {
+      if ( rcBody.decVal.Hi32 )
+        v249 = *(_DWORD *)(rcBody.decVal.Hi32 - 4);
+      else
+        v249 = 0;
+      do
+        v249 *= 2;
+      while ( rcBody.decVal.Lo32 + 1 > v249 );
+      ZArray<unsigned char>::_Realloc((ZArray<unsigned char> *)&rcBody.gap0[4], v249, 0, &_ALLOC);
+      v247 = rcBody.decVal.Hi32;
+    }
+    *(_BYTE *)(v247 + rcBody.decVal.Lo32++) = 0;
+    CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, (const COutPacket *)&rcBody);
+    v272 = -1;
+    ZArray<unsigned char>::RemoveAll((ZArray<unsigned char> *)&rcBody.gap0[4]);
+  }
+  CUser::Update(this);
+  while ( this->m_lBalloonMsgAvatar._m_uCount )
+  {
+    v250 = this->m_lBalloonMsgAvatar._m_pHead;
+    if ( v250->m_tEnd >= get_update_time() )
+      break;
+    ZList<CUserLocal::CBalloonMsg>::RemoveAt(
+      &this->m_lBalloonMsgAvatar,
+      (__POSITION *)this->m_lBalloonMsgAvatar._m_pHead);
+  }
+  while ( this->m_lBalloonMsgField._m_uCount )
+  {
+    v251 = this->m_lBalloonMsgField._m_pHead;
+    if ( v251->m_tEnd >= get_update_time() )
+      break;
+    ZList<CUserLocal::CBalloonMsg>::RemoveAt(&this->m_lBalloonMsgField, (__POSITION *)this->m_lBalloonMsgField._m_pHead);
+  }
+  v252 = this->m_pTutor.p;
+  if ( v252 )
+    v252->Update(v252);
+  v253 = this->GetJobCode;
+  v254 = TSingleton<CSkillInfo>::ms_pInstance;
+  *(_DWORD *)&v261[28] = &pComboAbility;
+  pComboAbility = nullptr;
+  v255 = v253(this);
+  if ( CSkillInfo::GetSkillLevel(
+         v254,
+         (const CharacterData *)pProp.m_pInterface,
+         v255 != 20000017 ? 21000000 : 20000017,
+         *(const SKILLENTRY ***)&v261[28]) > 0
+    && this->m_nCombo > 0
+    && this->m_tLastSetCombo + 5000 < tCur )
+  {
+    CUserLocal::ClearCombo(this);
+  }
+  v256 = g_pStage.p;
+  if ( g_pStage.p && g_pStage.p->IsKindOf(&g_pStage.p->IUIMsgHandler, &CField::ms_RTTI_CField) )
+    v257 = (CField *)v256;
+  else
+    v257 = nullptr;
+  if ( CField::IsFearEffectOn(v257)
+    && _ZtlSecureFuse<long>(p_m_secondaryStat->_ZtlSecureTear_nFear_, p_m_secondaryStat->_ZtlSecureTear_nFear__CS) <= 0 )
+  {
+    v258 = g_pStage.p;
+    if ( g_pStage.p && g_pStage.p->IsKindOf(&g_pStage.p->IUIMsgHandler, &CField::ms_RTTI_CField) )
+      v259 = (CField *)v258;
+    else
+      v259 = nullptr;
+    CField::OffFearEffect(v259);
+  }
+  CUserLocal::TryDoingSwallowMobWriggle(this);
+  CUserLocal::TryDoingSwallowBuff(this);
+  CUserLocal::TryDoingMine(this);
+  CUserLocal::TryDoingCyclone(this);
+  CUserLocal::TryDoingSitdownHealing(this);
+  CUserLocal::UpdateClientTimer(this, tCur);
+}

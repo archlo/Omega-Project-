@@ -1,0 +1,12 @@
+// cuser::IsDoingHashing
+
+BOOL __thiscall CUser::IsDoingHashing(CUser *this)
+{
+  CAvatar *v1; // esi
+
+  v1 = &this->CAvatar; /*0x8df347*/
+  return this->m_dwMorphTemplateID /*0x8df37b*/
+      && CMorphTemplate::IsSuperMan(this->m_dwMorphTemplateID)
+      && CAvatar::GetOneTimeAction(v1) > -1
+      && CAvatar::GetOneTimeAction(v1) == 45;
+}

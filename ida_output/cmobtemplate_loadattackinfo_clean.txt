@@ -1,0 +1,36 @@
+// CMobTemplate::LoadAttackInfo
+// Address: 0x65b890
+
+ZRef<MobAttackInfo> *__thiscall CMobTemplate::LoadAttackInfo(CMobTemplate *this, ZRef<MobAttackInfo> *result, int nIdx)
+{
+  _bstr_t::Data_t *v4; // ebx
+  LONG (__stdcall *v5)(volatile LONG *); // edi
+  _bstr_t::Data_t *v6; // eax
+  IWzProperty *m_pInterface; // ecx
+  Ztl_variant_t *v8; // eax
+  IUnknown *Unknown; // eax
+  HRESULT v10; // eax
+  _bstr_t::Data_t *v11; // ecx
+  IWzProperty *v12; // ebx
+  StringPool *Instance; // eax
+  Ztl_variant_t *v15; // eax
+  IUnknown *v16; // eax
+  HRESULT v17; // eax
+  _bstr_t::Data_t *v18; // ecx
+  StringPool *v19; // eax
+  IWzProperty *v20; // esi
+  Ztl_variant_t *v21; // eax
+  MobAttackInfo *v22; // edi
+  _bstr_t::Data_t *v23; // ecx
+  StringPool *v24; // eax
+  Ztl_variant_t *v25; // eax
+  _bstr_t::Data_t *v26; // ecx
+  StringPool *v27; // eax
+  Ztl_variant_t *v28; // eax
+  _bstr_t::Data_t *v29; // ecx
+  StringPool *v30; // eax
+  Ztl_variant_t *v31; // eax
+  _bstr_t::Data_t *v32; // ecx
+  StringPool *v33; // eax
+  Ztl_variant_t *v34; // eax
+  _bst... [60461 chars total]

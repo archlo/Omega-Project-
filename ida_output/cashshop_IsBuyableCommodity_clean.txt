@@ -1,0 +1,95 @@
+// cashshop::IsBuyableCommodity
+
+int __thiscall CCashShop::IsBuyableCommodity(CCashShop *this, int nCommSN, ZXString<char> *sReq)
+{
+  StringPool *v3; // eax
+  const ZXString<char> *v4; // eax
+  CharacterData *p; // edi
+  char *p_m_uTableSize; // esi
+  volatile LONG *p_m_uCount; // ebp
+  unsigned __int8 v9; // al
+  StringPool *v10; // eax
+  ZXString<char> *v11; // eax
+  __int16 v12; // ax
+  StringPool *Instance; // eax
+  ZXString<char> *String; // eax
+  const char *v15; // [esp-8h] [ebp-38h]
+  const char *m_pStr; // [esp-8h] [ebp-38h]
+  int nReqLEV; // [esp-4h] [ebp-34h]
+  int nReqPOP; // [esp-4h] [ebp-34h]
+  ZRef<CS_COMMODITY> pComm; // [esp+14h] [ebp-1Ch] BYREF
+  ZRef<CharacterData> result; // [esp+1Ch] [ebp-14h] BYREF
+  int v21; // [esp+2Ch] [ebp-4h]
+
+  CWvsContext::GetCommodityBySN((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &pComm, nCommSN); /*0x487327*/
+  v21 = 0; /*0x48732e*/
+  if ( pComm.p ) /*0x487336*/
+  {
+    p = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &result)->p; /*0x4873cc*/
+    if ( result.p ) /*0x4873d5*/
+    {
+      p_m_uTableSize = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x4873d7*/
+      p_m_uCount = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount; /*0x4873da*/
+      if ( !InterlockedDecrement(p_m_uCount) ) /*0x4873de*/
+      {
+        InterlockedIncrement(p_m_uCount); /*0x4873e9*/
+        if ( p_m_uTableSize ) /*0x4873f1*/
+          (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1); /*0x4873fb*/
+      }
+      result.p = nullptr; /*0x4873fd*/
+    }
+    v9 = _ZtlSecureFuse<unsigned char>( /*0x487409*/
+           p->characterStat._ZtlSecureTear_nLevel,
+           p->characterStat._ZtlSecureTear_nLevel_CS);
+    if ( v9 >= pComm.p->nReqLEV ) /*0x48741b*/
+    {
+      if ( !pComm.p->nReqPOP /*0x4874ac*/
+        || (v12 = _ZtlSecureFuse<short>(p->characterStat._ZtlSecureTear_nPOP, p->characterStat._ZtlSecureTear_nPOP_CS),
+            v12 >= pComm.p->nReqPOP) )
+      {
+        v21 = -1; /*0x487512*/
+        ZRef<CS_COMMODITY>::~ZRef<CS_COMMODITY>(&pComm); /*0x48751a*/
+        return 1; /*0x48751f*/
+      }
+      Instance = StringPool::GetInstance(); /*0x4874b8*/
+      String = StringPool::GetString(Instance, (ZXString<char> *)&nCommSN, 0x16C6u); /*0x4874bf*/
+      nReqPOP = pComm.p->nReqPOP; /*0x4874d1*/
+      m_pStr = String->_m_pStr; /*0x4874d2*/
+      LOBYTE(v21) = 3; /*0x4874d4*/
+      ZXString<char>::Format(sReq, m_pStr, nReqPOP); /*0x4874d9*/
+      LOBYTE(v21) = 0; /*0x4874e5*/
+      if ( nCommSN ) /*0x4874eb*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(nCommSN - 12)); /*0x4874f1*/
+    }
+    else
+    {
+      v10 = StringPool::GetInstance(); /*0x487427*/
+      v11 = StringPool::GetString(v10, (ZXString<char> *)&nCommSN, 0x16C5u); /*0x48742e*/
+      nReqLEV = pComm.p->nReqLEV; /*0x48743c*/
+      v15 = v11->_m_pStr; /*0x48743d*/
+      LOBYTE(v21) = 2; /*0x487443*/
+      ZXString<char>::Format(sReq, v15, nReqLEV); /*0x487448*/
+      LOBYTE(v21) = 0; /*0x487454*/
+      if ( nCommSN ) /*0x48745a*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(nCommSN - 12)); /*0x487460*/
+    }
+    v21 = -1; /*0x48746c*/
+    ZRef<CS_COMMODITY>::~ZRef<CS_COMMODITY>(&pComm); /*0x487474*/
+    return 0; /*0x48747b*/
+  }
+  v3 = StringPool::GetInstance(); /*0x487346*/
+  v4 = StringPool::GetString(v3, (ZXString<char> *)&nCommSN, 0x23Fu); /*0x48734d*/
+  LOBYTE(v21) = 1; /*0x487357*/
+  ZXString<char>::operator=(sReq, v4); /*0x48735c*/
+  LOBYTE(v21) = 0; /*0x487365*/
+  if ( nCommSN ) /*0x48736b*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(nCommSN - 12)); /*0x487371*/
+  v21 = -1; /*0x48737d*/
+  if ( pComm.p && !InterlockedDecrement(&pComm.p->_m_nRef) ) /*0x48738d*/
+  {
+    InterlockedIncrement(&pComm.p->_m_nRef); /*0x48739f*/
+    if ( pComm.p ) /*0x4873ab*/
+      ((void (__thiscall *)(CS_COMMODITY *, int))pComm.p->dtr_ZRefCounted)(pComm.p, 1); /*0x4873b3*/
+  }
+  return 0; /*0x487524*/
+}

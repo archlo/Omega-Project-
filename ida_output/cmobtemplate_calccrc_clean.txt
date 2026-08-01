@@ -1,0 +1,336 @@
+// CMobTemplate::CalcCrc
+// Address: 0x660730
+
+unsigned int __thiscall CMobTemplate::CalcCrc(CMobTemplate *this, unsigned int dwKey)
+{
+  unsigned int Crc32; // ebx
+  int v4; // edi
+  int v5; // ebp
+  unsigned int v6; // edi
+  unsigned int v7; // ebp
+  unsigned int v8; // ebx
+  int v9; // edi
+  int v10; // ebp
+  int v11; // eax
+  unsigned int ZtlSecureTear_bOnlyNormalAttack_CS; // edx
+  unsigned int v13; // edi
+  unsigned int v14; // ebp
+  unsigned int v15; // eax
+  int v16; // ebx
+  int v17; // edi
+  int v18; // ebp
+  int v19; // eax
+  unsigned int v20; // edi
+  unsigned int v21; // ebp
+  unsigned int v22; // eax
+  int v23; // ebx
+  int v24; // edi
+  int v25; // ebp
+  unsigned int v26; // edi
+  unsigned int v27; // ebp
+  unsigned int v28; // eax
+  int v29; // ebx
+  int v30; // edi
+  int v31; // ebp
+  int v32; // eax
+  unsigned int ZtlSecureTear_bPickUpDrop_CS; // edx
+  unsigned int v34; // edi
+  unsigned int v35; // ebp
+  unsigned int v36; // eax
+  int nEscortType; // ecx
+  unsigned int v38; // eax
+  int v39; // ebx
+  int v40; // edi
+  int *aDamagedElemAttr; // ebp
+  int v42; // ebp
+  unsigned int v43; // eax
+  int v44; // ebx
+  int v45; // edi
+  int v46; // eax
+  int v47; // ebp
+  unsigned int v48; // edi
+  unsigned int v49; // eax
+  int v50; // ebx
+  unsigned int v51; // ebx
+  bool v52; // cc
+  MobAttackInfo *AttackInfo; // edi
+  unsigned int v54; // ebp
+  unsigned int v55; // eax
+  int bMagicAttack; // edx
+  unsigned int v57; // eax
+  int v58; // ebx
+  unsigned int v59; // ebp
+  unsigned int v60; // eax
+  int nBulletSpeed; // edx
+  unsigned int v62; // eax
+  int nBulletNumber; // ecx
+  unsigned int v64; // eax
+  int v65; // ebx
+  unsigned int v66; // ebp
+  unsigned int v67; // eax
+  int bDoFirst; // ecx
+  unsigned int v69; // eax
+  int v70; // ebx
+  unsigned int v71; // ebp
+  unsigned int v72; // eax
+  int v73; // ebx
+  unsigned int v74; // ebx
+  int nType; // eax
+  $8CF209827CE71A5121D2EDFDD374DD17 *p_rcAttack; // edi
+  unsigned int v77; // ebp
+  unsigned int v78; // eax
+  unsigned int v79; // edx
+  unsigned int v80; // eax
+  int v81; // eax
+  unsigned int v82; // ebp
+  unsigned int v83; // eax
+  unsigned int ZtlSecureTear_left_CS; // edx
+  unsigned int v85; // eax
+  int v86; // ebp
+  int v87; // eax
+  int v88; // edi
+  unsigned int v89; // eax
+  int v90; // edi
+  MobSkillInfo *a; // eax
+  unsigned int v92; // ebp
+  unsigned int v93; // eax
+  MobSkillInfo *v94; // edx
+  unsigned int v95; // eax
+  MobSkillInfo *v96; // edx
+  unsigned int v97; // eax
+  unsigned int ZtlSecureTear_right_CS; // [esp-14h] [ebp-44h]
+  unsigned int ZtlSecureTear_bNotAttack_CS; // [esp-Ch] [ebp-3Ch]
+  int i; // [esp+10h] [ebp-20h] BYREF
+  unsigned __int8 pData[4]; // [esp+14h] [ebp-1Ch] BYREF
+  unsigned __int8 v103[4]; // [esp+18h] [ebp-18h] BYREF
+  unsigned __int8 v104[8]; // [esp+1Ch] [ebp-14h] BYREF
+  unsigned __int8 v105[4]; // [esp+24h] [ebp-Ch] BYREF
+  unsigned __int8 v106[4]; // [esp+28h] [ebp-8h] BYREF
+  unsigned __int8 v107[4]; // [esp+2Ch] [ebp-4h] BYREF
+
+  Crc32 = CCrc32::GetCrc32((const unsigned __int8 *)&dwKey, 4u, 0, 0, nullptr, 0); /*0x660755*/
+  v4 = _ZtlSecureFuse<int>(this->_ZtlSecureTear_bBodyAttack, this->_ZtlSecureTear_bBodyAttack_CS); /*0x66075c*/
+  v5 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_nLevel, this->_ZtlSecureTear_nLevel_CS); /*0x660771*/
+  *(_DWORD *)v103 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_nMaxHP, this->_ZtlSecureTear_nMaxHP_CS); /*0x66078c*/
+  i = v4; /*0x660790*/
+  v6 = CCrc32::GetCrc32((const unsigned __int8 *)&i, 4u, 0, 0, nullptr, 0); /*0x6607ab*/
+  *(_DWORD *)pData = v5; /*0x6607ad*/
+  v7 = CCrc32::GetCrc32(pData, 4u, 0, 0, nullptr, 0); /*0x6607be*/
+  v8 = (v6 | v7 | CCrc32::GetCrc32(v103, 4u, 0, 0, nullptr, 0)) ^ Crc32; /*0x6607de*/
+  v9 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_nMaxMP, this->_ZtlSecureTear_nMaxMP_CS); /*0x6607fb*/
+  v10 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_nSpeed, this->_ZtlSecureTear_nSpeed_CS); /*0x660802*/
+  v11 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_nFlySpeed, this->_ZtlSecureTear_nFlySpeed_CS); /*0x660815*/
+  ZtlSecureTear_bOnlyNormalAttack_CS = this->_ZtlSecureTear_bOnlyNormalAttack_CS; /*0x66081a*/
+  i = v11; /*0x660820*/
+  *(_DWORD *)v104 = _ZtlSecureFuse<int>(this->_ZtlSecureTear_bOnlyNormalAttack, ZtlSecureTear_bOnlyNormalAttack_CS); /*0x660840*/
+  *(_DWORD *)v103 = v9; /*0x660844*/
+  v13 = CCrc32::GetCrc32(v103, 4u, 0, 0, nullptr, 0); /*0x66085c*/
+  *(_DWORD *)pData = v10; /*0x66085e*/
+  v14 = CCrc32::GetCrc32(pData, 4u, 0, 0, nullptr, 0); /*0x660872*/
+  *(_DWORD *)v105 = CCrc32::GetCrc32((const unsigned __int8 *)&i, 4u, 0, 0, nullptr, 0); /*0x660894*/
+  v15 = CCrc32::GetCrc32(v104, 4u, 0, 0, nullptr, 0); /*0x6608a3*/
+  v16 = (v13 | v14 | *(_DWORD *)v105 | v15) ^ v8; /*0x6608be*/
+  v17 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_nChaseSpeed, this->_ZtlSecureTear_nChaseSpeed_CS); /*0x6608c5*/
+  v18 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_nPAD, this->_ZtlSecureTear_nPAD_CS); /*0x6608e3*/
+  v19 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_nPDR, this->_ZtlSecureTear_nPDR_CS); /*0x6608ed*/
+  ZtlSecureTear_bNotAttack_CS = this->_ZtlSecureTear_bNotAttack_CS; /*0x6608f8*/
+  *(_DWORD *)v103 = v19; /*0x660900*/
+  *(_DWORD *)pData = _ZtlSecureFuse<int>(this->_ZtlSecureTear_bNotAttack, ZtlSecureTear_bNotAttack_CS); /*0x660909*/
+  *(_DWORD *)v105 = v17; /*0x66091c*/
+  v20 = CCrc32::GetCrc32(v105, 4u, 0, 0, nullptr, 0); /*0x660934*/
+  *(_DWORD *)v104 = v18; /*0x660936*/
+  v21 = CCrc32::GetCrc32(v104, 4u, 0, 0, nullptr, 0); /*0x66094e*/
+  i = CCrc32::GetCrc32(v103, 4u, 0, 0, nullptr, 0); /*0x660973*/
+  v22 = CCrc32::GetCrc32(pData, 4u, 0, 0, nullptr, 0); /*0x66097b*/
+  v23 = (v20 | v21 | i | v22) ^ v16; /*0x66098e*/
+  v24 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_nMAD, this->_ZtlSecureTear_nMAD_CS); /*0x6609a3*/
+  v25 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_nMDR, this->_ZtlSecureTear_nMDR_CS); /*0x6609c3*/
+  *(_DWORD *)v103 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_nACC, this->_ZtlSecureTear_nACC_CS); /*0x6609ca*/
+  *(_DWORD *)pData = _ZtlSecureFuse<int>( /*0x6609f0*/
+                       this->_ZtlSecureTear_bSelfDestruction,
+                       this->_ZtlSecureTear_bSelfDestruction_CS);
+  *(_DWORD *)v105 = v24; /*0x6609f4*/
+  v26 = CCrc32::GetCrc32(v105, 4u, 0, 0, nullptr, 0); /*0x6609fd*/
+  *(_DWORD *)v104 = v25; /*0x660a0e*/
+  v27 = CCrc32::GetCrc32(v104, 4u, 0, 0, nullptr, 0); /*0x660a2d*/
+  i = CCrc32::GetCrc32(v103, 4u, 0, 0, nullptr, 0); /*0x660a40*/
+  v28 = CCrc32::GetCrc32(pData, 4u, 0, 0, nullptr, 0); /*0x660a53*/
+  v29 = (v26 | v27 | i | v28) ^ v23; /*0x660a66*/
+  v30 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_nEVA, this->_ZtlSecureTear_nEVA_CS); /*0x660a83*/
+  v31 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_nEXP, this->_ZtlSecureTear_nEXP_CS); /*0x660a8a*/
+  v32 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_nPushedDamage, this->_ZtlSecureTear_nPushedDamage_CS); /*0x660a9d*/
+  ZtlSecureTear_bPickUpDrop_CS = this->_ZtlSecureTear_bPickUpDrop_CS; /*0x660aa2*/
+  *(_DWORD *)v103 = v32; /*0x660aa8*/
+  *(_DWORD *)pData = _ZtlSecureFuse<int>(this->_ZtlSecureTear_bPickUpDrop, ZtlSecureTear_bPickUpDrop_CS); /*0x660ac8*/
+  *(_DWORD *)v105 = v30; /*0x660acc*/
+  v34 = CCrc32::GetCrc32(v105, 4u, 0, 0, nullptr, 0); /*0x660ae4*/
+  *(_DWORD *)v104 = v31; /*0x660ae6*/
+  v35 = CCrc32::GetCrc32(v104, 4u, 0, 0, nullptr, 0); /*0x660afa*/
+  *(_DWORD *)v107 = CCrc32::GetCrc32(v103, 4u, 0, 0, nullptr, 0); /*0x660b1c*/
+  v36 = CCrc32::GetCrc32(pData, 4u, 0, 0, nullptr, 0); /*0x660b2b*/
+  nEscortType = this->nEscortType; /*0x660b30*/
+  *(_DWORD *)v106 = v36; /*0x660b45*/
+  i = nEscortType; /*0x660b49*/
+  v38 = CCrc32::GetCrc32((const unsigned __int8 *)&i, 4u, 0, 0, nullptr, 0); /*0x660b4d*/
+  i = 8; /*0x660b5d*/
+  v39 = (v34 | v35 | *(_DWORD *)v107 | *(_DWORD *)v106 | v38) ^ v29; /*0x660b69*/
+  v40 = 0; /*0x660b6b*/
+  aDamagedElemAttr = this->aDamagedElemAttr; /*0x660b6d*/
+  do /*0x660b9b*/
+  {
+    *(_DWORD *)v107 = *aDamagedElemAttr; /*0x660b85*/
+    v40 |= CCrc32::GetCrc32(v107, 4u, 0, 0, nullptr, 0); /*0x660b91*/
+    ++aDamagedElemAttr; /*0x660b93*/
+    --i; /*0x660b96*/
+  }
+  while ( i ); /*0x660b9b*/
+  v42 = _ZtlSecureFuse<int>(this->_ZtlSecureTear_bFirstAttack, this->_ZtlSecureTear_bFirstAttack_CS); /*0x660bc5*/
+  *(_DWORD *)v107 = this->nHPRecovery; /*0x660bc7*/
+  *(_DWORD *)v103 = CCrc32::GetCrc32(v107, 4u, 0, 0, nullptr, 0); /*0x660bd8*/
+  *(_DWORD *)v106 = this->nMPRecovery; /*0x660be9*/
+  *(_DWORD *)v104 = CCrc32::GetCrc32(v106, 4u, 0, 0, nullptr, 0); /*0x660c01*/
+  *(_DWORD *)v105 = v42; /*0x660c05*/
+  v43 = CCrc32::GetCrc32(v105, 4u, 0, 0, nullptr, 0); /*0x660c09*/
+  v44 = v40 ^ (*(_DWORD *)v103 | *(_DWORD *)v104 | v43) ^ v39; /*0x660c21*/
+  v45 = _ZtlSecureFuse<int>(this->_ZtlSecureTear_bInvincible, this->_ZtlSecureTear_bInvincible_CS); /*0x660c36*/
+  v46 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_nFixedDamage, this->_ZtlSecureTear_nFixedDamage_CS); /*0x660c40*/
+  *(double *)v104 = this->nFs; /*0x660c4d*/
+  v47 = v46; /*0x660c5e*/
+  *(_DWORD *)v105 = CCrc32::GetCrc32(v104, 8u, 0, 0, nullptr, 0); /*0x660c74*/
+  *(_DWORD *)v107 = v45; /*0x660c78*/
+  v48 = CCrc32::GetCrc32(v107, 4u, 0, 0, nullptr, 0); /*0x660c8a*/
+  *(_DWORD *)v106 = v47; /*0x660c8c*/
+  v49 = CCrc32::GetCrc32(v106, 4u, 0, 0, nullptr, 0); /*0x660c99*/
+  v50 = (*(_DWORD *)v105 | v48 | v49) ^ v44; /*0x660cac*/
+  *(_DWORD *)v107 = _ZtlSecureFuse<unsigned long>( /*0x660cbb*/
+                      this->_ZtlSecureTear_dwTemplateID,
+                      this->_ZtlSecureTear_dwTemplateID_CS);
+  v51 = CCrc32::GetCrc32(v107, 4u, 0, 0, nullptr, 0) ^ v50; /*0x660cce*/
+  v52 = this->nAttackCount <= 0; /*0x660cd0*/
+  i = 0; /*0x660cd7*/
+  if ( !v52 ) /*0x660cdf*/
+  {
+    while ( 1 ) /*0x660cf7*/
+    {
+      AttackInfo = CMobTemplate::GetAttackInfo(this, i); /*0x660cf7*/
+      *(_DWORD *)v107 = AttackInfo->nType; /*0x660d05*/
+      v54 = CCrc32::GetCrc32(v107, 4u, 0, 0, nullptr, 0); /*0x660d20*/
+      *(_DWORD *)v106 = AttackInfo->bInactive; /*0x660d22*/
+      *(_DWORD *)pData = CCrc32::GetCrc32(v106, 4u, 0, 0, nullptr, 0); /*0x660d33*/
+      *(_DWORD *)v105 = AttackInfo->nConMP; /*0x660d41*/
+      v55 = CCrc32::GetCrc32(v105, 4u, 0, 0, nullptr, 0); /*0x660d45*/
+      bMagicAttack = AttackInfo->bMagicAttack; /*0x660d4a*/
+      *(_DWORD *)v103 = v55; /*0x660d58*/
+      *(_DWORD *)v104 = bMagicAttack; /*0x660d63*/
+      v57 = CCrc32::GetCrc32(v104, 4u, 0, 0, nullptr, 0); /*0x660d67*/
+      v58 = (v54 | *(_DWORD *)pData | *(_DWORD *)v103 | v57) ^ v51; /*0x660d88*/
+      *(_DWORD *)v107 = AttackInfo->bJumpAttack; /*0x660d8a*/
+      v59 = CCrc32::GetCrc32(v107, 4u, 0, 0, nullptr, 0); /*0x660d9b*/
+      *(_DWORD *)v106 = AttackInfo->bMagicAttack; /*0x660da7*/
+      v60 = CCrc32::GetCrc32(v106, 4u, 0, 0, nullptr, 0); /*0x660dab*/
+      nBulletSpeed = AttackInfo->nBulletSpeed; /*0x660db0*/
+      *(_DWORD *)pData = v60; /*0x660dba*/
+      *(_DWORD *)v105 = nBulletSpeed; /*0x660dbe*/
+      v62 = CCrc32::GetCrc32(v105, 4u, 0, 0, nullptr, 0); /*0x660dcd*/
+      nBulletNumber = AttackInfo->nBulletNumber; /*0x660dd2*/
+      *(_DWORD *)v103 = v62; /*0x660de4*/
+      *(_DWORD *)v104 = nBulletNumber; /*0x660de8*/
+      v64 = CCrc32::GetCrc32(v104, 4u, 0, 0, nullptr, 0); /*0x660dec*/
+      v65 = (v59 | *(_DWORD *)pData | *(_DWORD *)v103 | v64) ^ v58; /*0x660e03*/
+      *(_DWORD *)v107 = AttackInfo->bDeadlyAttack; /*0x660e0f*/
+      v66 = CCrc32::GetCrc32(v107, 4u, 0, 0, nullptr, 0); /*0x660e26*/
+      *(_DWORD *)v106 = AttackInfo->bTremble; /*0x660e2f*/
+      v67 = CCrc32::GetCrc32(v106, 4u, 0, 0, nullptr, 0); /*0x660e33*/
+      bDoFirst = AttackInfo->bDoFirst; /*0x660e38*/
+      *(_DWORD *)pData = v67; /*0x660e4d*/
+      *(_DWORD *)v105 = bDoFirst; /*0x660e51*/
+      *(_DWORD *)v103 = CCrc32::GetCrc32(v105, 4u, 0, 0, nullptr, 0); /*0x660e62*/
+      *(_DWORD *)v104 = AttackInfo->nMPBurn; /*0x660e73*/
+      v69 = CCrc32::GetCrc32(v104, 4u, 0, 0, nullptr, 0); /*0x660e77*/
+      v70 = (v66 | *(_DWORD *)pData | *(_DWORD *)v103 | v69) ^ v65; /*0x660e97*/
+      *(_DWORD *)v107 = AttackInfo->bKnockBack; /*0x660ea0*/
+      v71 = CCrc32::GetCrc32(v107, 4u, 0, 0, nullptr, 0); /*0x660eaf*/
+      *(_DWORD *)v106 = AttackInfo->tRandDelayAttack; /*0x660ec0*/
+      *(_DWORD *)v104 = CCrc32::GetCrc32(v106, 4u, 0, 0, nullptr, 0); /*0x660ed1*/
+      *(_DWORD *)v105 = AttackInfo->bRush; /*0x660ee2*/
+      v72 = CCrc32::GetCrc32(v105, 4u, 0, 0, nullptr, 0); /*0x660ee6*/
+      v73 = (v71 | *(_DWORD *)v104 | v72) ^ v70; /*0x660f02*/
+      *(_DWORD *)v107 = AttackInfo->tAttackAfter; /*0x660f0b*/
+      v74 = CCrc32::GetCrc32(v107, 4u, 0, 0, nullptr, 0) ^ v73; /*0x660f14*/
+      nType = AttackInfo->nType; /*0x660f16*/
+      if ( !nType ) /*0x660f1e*/
+        break; /*0x660f1e*/
+      if ( nType == 3 || nType == 4 ) /*0x660f30*/
+      {
+        *(_DWORD *)v107 = AttackInfo->rcRange._ZtlSecureTear_left[0]; /*0x660fa7*/
+        v82 = CCrc32::GetCrc32(v107, 4u, 0, 0, nullptr, 0); /*0x660fb8*/
+        *(_DWORD *)v106 = AttackInfo->rcRange._ZtlSecureTear_left[1]; /*0x660fc4*/
+        v83 = CCrc32::GetCrc32(v106, 4u, 0, 0, nullptr, 0); /*0x660fc8*/
+        ZtlSecureTear_left_CS = AttackInfo->rcRange._ZtlSecureTear_left_CS; /*0x660fcd*/
+        *(_DWORD *)v104 = v83; /*0x660fd8*/
+        *(_DWORD *)v105 = ZtlSecureTear_left_CS; /*0x660fe3*/
+        v85 = CCrc32::GetCrc32(v105, 4u, 0, 0, nullptr, 0); /*0x660fe7*/
+        v74 ^= v82 | *(_DWORD *)v104 | v85; /*0x660ff5*/
+        p_rcAttack = ($8CF209827CE71A5121D2EDFDD374DD17 *)&AttackInfo->tzArea.rcAttack; /*0x660ff7*/
+        goto LABEL_10; /*0x660ff7*/
+      }
+      *(_DWORD *)v107 = AttackInfo->rcRange._ZtlSecureTear_left[0]; /*0x660f44*/
+      v77 = CCrc32::GetCrc32(v107, 4u, 0, 0, nullptr, 0); /*0x660f55*/
+      *(_DWORD *)v106 = AttackInfo->rcRange._ZtlSecureTear_left[1]; /*0x660f61*/
+      v78 = CCrc32::GetCrc32(v106, 4u, 0, 0, nullptr, 0); /*0x660f65*/
+      v79 = AttackInfo->rcRange._ZtlSecureTear_left_CS; /*0x660f6a*/
+      *(_DWORD *)v104 = v78; /*0x660f75*/
+      *(_DWORD *)v105 = v79; /*0x660f80*/
+      v80 = CCrc32::GetCrc32(v105, 4u, 0, 0, nullptr, 0); /*0x660f84*/
+      v81 = *(_DWORD *)v104 | v80; /*0x660f8c*/
+LABEL_11:
+      v51 = (v77 | v81) ^ v74; /*0x6610b7*/
+      v52 = ++i < this->nAttackCount; /*0x6610c0*/
+      if ( !v52 ) /*0x6610ca*/
+        goto LABEL_12; /*0x6610ca*/
+    }
+    p_rcAttack = &AttackInfo->___u9; /*0x660f20*/
+LABEL_10:
+    v86 = _ZtlSecureFuse<long>(p_rcAttack->rcRange._ZtlSecureTear_left, p_rcAttack->rcRange._ZtlSecureTear_left_CS); /*0x660ffa*/
+    v87 = _ZtlSecureFuse<long>(p_rcAttack->rcRange._ZtlSecureTear_top, p_rcAttack->rcRange._ZtlSecureTear_top_CS); /*0x66100e*/
+    ZtlSecureTear_right_CS = p_rcAttack->rcRange._ZtlSecureTear_right_CS; /*0x661016*/
+    *(_DWORD *)v106 = v87; /*0x66101b*/
+    *(_DWORD *)v105 = _ZtlSecureFuse<long>(p_rcAttack->rcRange._ZtlSecureTear_right, ZtlSecureTear_right_CS); /*0x661024*/
+    v88 = _ZtlSecureFuse<long>(p_rcAttack->rcRange._ZtlSecureTear_bottom, p_rcAttack->rcRange._ZtlSecureTear_bottom_CS); /*0x661044*/
+    *(_DWORD *)v107 = v86; /*0x661046*/
+    v77 = CCrc32::GetCrc32(v107, 4u, 0, 0, nullptr, 0); /*0x66105b*/
+    *(_DWORD *)pData = CCrc32::GetCrc32(v106, 4u, 0, 0, nullptr, 0); /*0x661083*/
+    *(_DWORD *)v103 = CCrc32::GetCrc32(v105, 4u, 0, 0, nullptr, 0); /*0x661098*/
+    *(_DWORD *)v104 = v88; /*0x6610a3*/
+    v89 = CCrc32::GetCrc32(v104, 4u, 0, 0, nullptr, 0); /*0x6610a7*/
+    v81 = *(_DWORD *)pData | *(_DWORD *)v103 | v89; /*0x6610b0*/
+    goto LABEL_11; /*0x6610b0*/
+  }
+LABEL_12:
+  v90 = 0; /*0x6610d0*/
+  i = 0; /*0x6610d2*/
+  while ( 1 ) /*0x6610e0*/
+  {
+    a = this->m_aSkillInfo.a; /*0x6610e0*/
+    if ( !a || (unsigned int)i >= a[-1].tEffectAfter ) /*0x6610f5*/
+      break; /*0x6610f5*/
+    *(_DWORD *)v107 = a[v90].nSkillID; /*0x661110*/
+    v92 = CCrc32::GetCrc32(v107, 4u, 0, 0, nullptr, 0); /*0x661127*/
+    *(_DWORD *)v106 = this->m_aSkillInfo.a[v90].nSLV; /*0x661134*/
+    v93 = CCrc32::GetCrc32(v106, 4u, 0, 0, nullptr, 0); /*0x661138*/
+    v94 = this->m_aSkillInfo.a; /*0x66113d*/
+    *(_DWORD *)pData = v93; /*0x66114b*/
+    *(_DWORD *)v105 = v94[v90].nAction; /*0x66115a*/
+    v95 = CCrc32::GetCrc32(v105, 4u, 0, 0, nullptr, 0); /*0x66115e*/
+    v96 = this->m_aSkillInfo.a; /*0x661163*/
+    *(_DWORD *)v103 = v95; /*0x661174*/
+    *(_DWORD *)v104 = v96[v90].tEffectAfter; /*0x661183*/
+    v97 = CCrc32::GetCrc32(v104, 4u, 0, 0, nullptr, 0); /*0x661187*/
+    ++i; /*0x661190*/
+    v51 ^= v92 | *(_DWORD *)pData | *(_DWORD *)v103 | v97; /*0x66119d*/
+    ++v90; /*0x66119f*/
+  }
+  if ( v51 != -1 ) /*0x6611aa*/
+    ++v51; /*0x6611ac*/
+  return v51; /*0x6611ad*/
+}

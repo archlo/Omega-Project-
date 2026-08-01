@@ -1,0 +1,3 @@
+// CUser::RemoveMagicShield @ 0x8e1190
+
+{"addr":"0x8e1190","code":"void __thiscall CUser::RemoveMagicShield(CUser *this)\n{\n  IWzGr2DLayer *m_pInterface; // eax\n\n  m_pInterface = this->m_pLayerMagicShield.m_pInterface; /*0x8e1190*/\n  if ( m_pInterface ) /*0x8e1198*/\n  {\n    this->m_pLayerMagicShield.m_pInterface = nullptr; /*0x8e119a*/\n    m_pInterface->Release(m_pInterface); /*0x8e11aa*/\n  }\n}"}

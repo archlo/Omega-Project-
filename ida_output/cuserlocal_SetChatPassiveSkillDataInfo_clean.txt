@@ -1,0 +1,160 @@
+// cuserlocal::SetChatPassiveSkillDataInfo
+
+void __thiscall CUserLocal::SetChatPassiveSkillDataInfo(CUserLocal *this)
+{
+  char *Buffer; // eax
+  PassiveSkillData *p; // eax
+  char *m_pStr; // eax
+  int v5; // ecx
+  PassiveSkillData *v6; // eax
+  int nOCr; // edx
+  int nPsdSpeed; // ecx
+  int nPsdJump; // edx
+  char *v10; // eax
+  int v11; // ecx
+  char *v12; // esi
+  int nMHPr; // [esp-60h] [ebp-84h]
+  int nMMPr; // [esp-5Ch] [ebp-80h]
+  int nCr; // [esp-58h] [ebp-7Ch]
+  int nCDMin; // [esp-54h] [ebp-78h]
+  int nACCr; // [esp-50h] [ebp-74h]
+  int nEVAr; // [esp-4Ch] [ebp-70h]
+  int nAr; // [esp-48h] [ebp-6Ch]
+  int nEr; // [esp-44h] [ebp-68h]
+  int nPDDr; // [esp-40h] [ebp-64h]
+  int nMDDr; // [esp-3Ch] [ebp-60h]
+  int nPDr; // [esp-38h] [ebp-5Ch]
+  int nMDr; // [esp-34h] [ebp-58h]
+  int nDIPr; // [esp-30h] [ebp-54h]
+  int nPDamr; // [esp-2Ch] [ebp-50h]
+  int nMDamr; // [esp-28h] [ebp-4Ch]
+  int nPADr; // [esp-24h] [ebp-48h]
+  int nMADr; // [esp-20h] [ebp-44h]
+  int nEXPr; // [esp-1Ch] [ebp-40h]
+  int nIMPr; // [esp-18h] [ebp-3Ch]
+  int nASRr; // [esp-14h] [ebp-38h]
+  int nIMDr; // [esp-14h] [ebp-38h]
+  int nTERr; // [esp-10h] [ebp-34h]
+  int nMESOr; // [esp-Ch] [ebp-30h]
+  int nPADx; // [esp-8h] [ebp-2Ch] BYREF
+  int nMADx; // [esp-4h] [ebp-28h]
+  ZXString<char> sMsg; // [esp+Ch] [ebp-18h] BYREF
+  ZXString<char> v39; // [esp+10h] [ebp-14h] BYREF
+  int *p_nPADx; // [esp+14h] [ebp-10h]
+  int v41; // [esp+20h] [ebp-4h]
+
+  if ( this->m_pPassiveSkillData.p ) /*0x910ef9*/
+  {
+    sMsg._m_pStr = nullptr; /*0x910f0c*/
+    Buffer = ZXString<char>::GetBuffer(&sMsg, 8, 0); /*0x910f10*/
+    *(_DWORD *)Buffer = *(_DWORD *)aClie; /*0x910f1b*/
+    nMADx = 8; /*0x910f23*/
+    *((_DWORD *)Buffer + 1) = dword_BA9994; /*0x910f29*/
+    ZXString<char>::ReleaseBuffer(&sMsg, nMADx); /*0x910f2c*/
+    v41 = 0; /*0x910f31*/
+    v39._m_pStr = nullptr; /*0x910f35*/
+    p = this->m_pPassiveSkillData.p; /*0x910f39*/
+    nMADx = p->nMADx; /*0x910f42*/
+    nPADx = p->nPADx; /*0x910f46*/
+    nMESOr = p->nMESOr; /*0x910f4d*/
+    nTERr = p->nTERr; /*0x910f51*/
+    nASRr = p->nASRr; /*0x910f55*/
+    nIMPr = p->nIMPr; /*0x910f59*/
+    nEXPr = p->nEXPr; /*0x910f5d*/
+    nMADr = p->nMADr; /*0x910f61*/
+    nPADr = p->nPADr; /*0x910f65*/
+    nMDamr = p->nMDamr; /*0x910f69*/
+    nPDamr = p->nPDamr; /*0x910f6d*/
+    nDIPr = p->nDIPr; /*0x910f71*/
+    nMDr = p->nMDr; /*0x910f75*/
+    nPDr = p->nPDr; /*0x910f79*/
+    nMDDr = p->nMDDr; /*0x910f7d*/
+    nPDDr = p->nPDDr; /*0x910f81*/
+    nEr = p->nEr; /*0x910f85*/
+    nAr = p->nAr; /*0x910f89*/
+    nEVAr = p->nEVAr; /*0x910f8d*/
+    nACCr = p->nACCr; /*0x910f91*/
+    nCDMin = p->nCDMin; /*0x910f95*/
+    nCr = p->nCr; /*0x910f99*/
+    nMMPr = p->nMMPr; /*0x910f9c*/
+    nMHPr = p->nMHPr; /*0x910f9d*/
+    LOBYTE(v41) = 1; /*0x910fa8*/
+    m_pStr = ZXString<char>::Format( /*0x910fb5*/
+               &v39,
+               "mhpR[%d] mmpR[%d] cr[%d] criticaldamageMin[%d] accR[%d] evaR[%d] ar[%d] er[%d] pddR[%d] mddR[%d] pdr[%d] "
+               "mdR[%d] damR[%d] pdR[%d] mdR[%d] padR[%d] madR[%d] expR[%d] ignoreMobpdpR[%d] asrR[%d] terR[%d] mesoR[%d]"
+               " padX[%d] madX[%d] ",
+               nMHPr,
+               nMMPr,
+               nCr,
+               nCDMin,
+               nACCr,
+               nEVAr,
+               nAr,
+               nEr,
+               nPDDr,
+               nMDDr,
+               nPDr,
+               nMDr,
+               nDIPr,
+               nPDamr,
+               nMDamr,
+               nPADr,
+               nMADr,
+               nEXPr,
+               nIMPr,
+               nASRr,
+               nTERr,
+               nMESOr,
+               nPADx,
+               nMADx)->_m_pStr;
+    if ( m_pStr ) /*0x910fbc*/
+      v5 = *((_DWORD *)m_pStr - 1); /*0x910fbe*/
+    else
+      v5 = 0; /*0x910fc3*/
+    ZXString<char>::_Cat(&sMsg, m_pStr, v5); /*0x910fcb*/
+    LOBYTE(v41) = 0; /*0x910fd4*/
+    if ( v39._m_pStr ) /*0x910fda*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v39._m_pStr - 1); /*0x910fe0*/
+    v39._m_pStr = nullptr; /*0x910fe8*/
+    v6 = this->m_pPassiveSkillData.p; /*0x910fec*/
+    nOCr = v6->nOCr; /*0x910ff5*/
+    nMADx = v6->nDCr; /*0x910ff8*/
+    nPsdSpeed = v6->nPsdSpeed; /*0x910ff9*/
+    nPADx = nOCr; /*0x910ffc*/
+    nPsdJump = v6->nPsdJump; /*0x910ffd*/
+    nIMDr = v6->nIMDr; /*0x911005*/
+    LOBYTE(v41) = 2; /*0x911010*/
+    v10 = ZXString<char>::Format( /*0x91101a*/
+            &v39,
+            "ignoreMobDamR[%d] psdJump[%d] psdSpeed[%d] overChargeR[%d] disCountR[%d] ",
+            nIMDr,
+            nPsdJump,
+            nPsdSpeed,
+            nPADx,
+            nMADx)->_m_pStr;
+    if ( v10 ) /*0x911021*/
+      v11 = *((_DWORD *)v10 - 1); /*0x911023*/
+    else
+      v11 = 0; /*0x911028*/
+    ZXString<char>::_Cat(&sMsg, v10, v11); /*0x911030*/
+    LOBYTE(v41) = 0; /*0x911039*/
+    if ( v39._m_pStr ) /*0x91103f*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v39._m_pStr - 1); /*0x911045*/
+    v12 = sMsg._m_pStr; /*0x91104d*/
+    if ( TSingleton<CUIStatusBar>::ms_pInstance._m_pStr ) /*0x911057*/
+    {
+      p_nPADx = &nPADx; /*0x91105e*/
+      CUIStatusBar::ChatLogAdd( /*0x911071*/
+        (CUIStatusBar *)TSingleton<CUIStatusBar>::ms_pInstance._m_pStr,
+        sMsg._m_pStr,
+        12,
+        -1,
+        0,
+        (ZRef<GW_ItemSlotBase>)(unsigned int)nPADx);
+    }
+    v41 = -1; /*0x911076*/
+    if ( v12 ) /*0x911080*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v12 - 1); /*0x911086*/
+  }
+}

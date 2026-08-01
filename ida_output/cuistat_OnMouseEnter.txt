@@ -1,0 +1,4 @@
+// CUIStat::OnMouseEnter @ 0x861480
+// Decompiled from v95 IDB
+
+{"addr":"0x861480","code":"void __thiscall CUIStat::OnMouseEnter(CUIStat *this, int bEnter)\n{\n  CWnd::OnMouseEnter(this, bEnter); /*0x861488*/\n  CUIToolTip::ClearToolTip((CUIToolTip *)&this->m_pBtClose.p); /*0x861493*/\n}","refs":[{"addr":"0x9ad370","name":"?OnMouseEnter@CWnd@@UAEXH@Z"},{"addr":"0x880f20","name":"?ClearToolTip@CUIToolTip@@QAEXXZ"}]}

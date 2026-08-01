@@ -1,0 +1,44 @@
+﻿void __thiscall CPet::SendUpdateExceptionListRequest(CPet *this, ZArray<long> *aList)
+{
+  ZArray<long> *v3; // edi
+  int *a; // eax
+  unsigned int i; // esi
+  int v6; // ebx
+  unsigned int v7; // eax
+  unsigned int v8; // edx
+  COutPacket oPacket; // [esp+10h] [ebp-1Ch] BYREF
+  int v10; // [esp+28h] [ebp-4h]
+
+  COutPacket::COutPacket(&oPacket, 204);
+  v10 = 0;
+  COutPacket::EncodeBuffer(&oPacket, &this->m_liPetLockerSN, 8u);
+  v3 = aList;
+  a = aList->a;
+  if ( aList->a )
+    a = (int *)*(a - 1);
+  COutPacket::Encode1(&oPacket, (unsigned __int8)a);
+  for ( i = 0; i < ZArray<long>::GetCount(v3); ++i )
+  {
+    v6 = v3->a[i];
+    v7 = (unsigned int)oPacket.m_aSendBuff.a;
+    if ( oPacket.m_aSendBuff.a )
+      v8 = *((_DWORD *)oPacket.m_aSendBuff.a - 1);
+    else
+      v8 = 0;
+    if ( oPacket.m_uOffset + 4 > v8 )
+    {
+      if ( oPacket.m_aSendBuff.a )
+        v7 = *((_DWORD *)oPacket.m_aSendBuff.a - 1);
+      do
+        v7 *= 2;
+      while ( oPacket.m_uOffset + 4 > v7 );
+      ZArray<unsigned char>::_Realloc(&oPacket.m_aSendBuff, v7, 0, (const ZAllocHelper *)&aList);
+      v7 = (unsigned int)oPacket.m_aSendBuff.a;
+    }
+    *(_DWORD *)(oPacket.m_uOffset + v7) = v6;
+    oPacket.m_uOffset += 4;
+  }
+  CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket);
+  v10 = -1;
+  ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff);
+}

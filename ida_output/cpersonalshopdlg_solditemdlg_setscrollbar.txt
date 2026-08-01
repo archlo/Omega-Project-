@@ -1,0 +1,11 @@
+// 0x697dc0
+void __thiscall CPersonalShopDlg::CSoldItemDlg::SetScrollBar(CPersonalShopDlg::CSoldItemDlg *this)
+{
+  CPersonalShopDlg::SOLD_ITEM *a; // edx
+
+  a = this->m_pDlg->m_aSoldItem.a; /*0x697dc6*/
+  if ( a && a[-1].sBuyerName._m_pStr > (char *)3 ) /*0x697dd4*/
+    CCtrlScrollBar::SetScrollRange(this->m_pSB.p, (int)(a[-1].sBuyerName._m_pStr - 2)); /*0x697dfb*/
+  else
+    CCtrlScrollBar::SetScrollRange(this->m_pSB.p, 0); /*0x697e0a*/
+}

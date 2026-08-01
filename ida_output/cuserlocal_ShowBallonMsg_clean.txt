@@ -1,0 +1,40 @@
+// cuserlocal::ShowBallonMsg
+
+void __thiscall CUserLocal::ShowBallonMsg(
+        CUserLocal *this,
+        ZXString<char> *str,
+        int nWidth,
+        int tTimeOut,
+        int x,
+        int y,
+        _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > pOrigin)
+{
+  ZList<CUserLocal::CBalloonMsg> *p_m_lBalloonMsgAvatar; // esi
+  ZList<CUserLocal::CBalloonMsg> *p_m_lBalloonMsgField; // ecx
+  CUserLocal::CBalloonMsg *v9; // esi
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v10[4]; // [esp-4h] [ebp-1Ch] BYREF
+  int v11; // [esp+14h] [ebp-4h]
+
+  v11 = 0; /*0x91d5a7*/
+  if ( pOrigin.m_pInterface ) /*0x91d5af*/
+  {
+    p_m_lBalloonMsgAvatar = &this->m_lBalloonMsgAvatar; /*0x91d5b1*/
+    ZList<CUserLocal::CBalloonMsg>::RemoveAll(&this->m_lBalloonMsgAvatar); /*0x91d5b9*/
+    p_m_lBalloonMsgField = p_m_lBalloonMsgAvatar; /*0x91d5be*/
+  }
+  else
+  {
+    p_m_lBalloonMsgField = &this->m_lBalloonMsgField; /*0x91d5c2*/
+  }
+  v9 = ZList<CUserLocal::CBalloonMsg>::AddTail(p_m_lBalloonMsgField); /*0x91d5d2*/
+  v10[0] = pOrigin; /*0x91d5d6*/
+  v10[3].m_pInterface = (IWzVector2D *)v10; /*0x91d5dc*/
+  if ( pOrigin.m_pInterface ) /*0x91d5e2*/
+    ((void (__thiscall *)(IWzVector2D *, IWzVector2D *))pOrigin.m_pInterface->AddRef)( /*0x91d5ea*/
+      pOrigin.m_pInterface,
+      pOrigin.m_pInterface);
+  CUserLocal::CBalloonMsg::Init(v9, str, nWidth, tTimeOut, x, y, v10[0]); /*0x91d607*/
+  v11 = -1; /*0x91d610*/
+  if ( pOrigin.m_pInterface ) /*0x91d61a*/
+    pOrigin.m_pInterface->Release(pOrigin.m_pInterface); /*0x91d622*/
+}

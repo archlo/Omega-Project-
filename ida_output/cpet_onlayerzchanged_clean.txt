@@ -1,0 +1,11 @@
+﻿void __thiscall CPet::OnLayerZChanged(CPet *this, const CVecCtrl *pvc)
+{
+  int *v2; // eax
+
+  if ( pvc )
+    v2 = (int *)&pvc->IWzVector2D;
+  else
+    v2 = nullptr;
+  if ( v2 == this->m_aExceptionList.a )
+    CPet::SetLayerZ((CPet *)((char *)this - 4));
+}

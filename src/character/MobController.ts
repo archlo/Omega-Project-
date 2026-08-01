@@ -1,6 +1,6 @@
 import { EncodeMovePath, type MoveElement } from '../net/packet/MovePathEncoder.js';
 import type { FieldScene } from '../map/FieldScene.js';
-import { Foothold } from '../map/Foothold.js';
+import { Foothold, isBlockedArea } from '../map/Foothold.js';
 import type { MobLook } from './MobLook.js';
 import { MobActionType } from './MobActionType.js';
 import type { MobInfo } from './MobInfo.js';
@@ -25,12 +25,18 @@ export class MobController {
   private static readonly HitKnockbackSec  = 0.2;
   private static readonly _fallGravity = 1500;
   private static readonly _maxMobFall = 500;
+  // OG CMob::AGGRO_RANGE — proximity aggro detection range
+  private static readonly AggroRangeX      = 200;
+  private static readonly AggroRangeY      = 150;
+  // OG CUser::BodyAttack — collision damage when mob touches player
+  private static readonly BodyAttackCooldown = 1.0;
 
   private readonly _mob: MobLook;
   private readonly _field: FieldScene;
   private readonly _info: MobInfo;
 
   onAttackPlayer: ((damage: number) => void) | null = null;
+  onBodyAttack: ((damage: number) => void) | null = null;
 
   private _state = State.Idle;
   private _stateTimer = 0;
@@ -45,6 +51,7 @@ export class MobController {
   private _currentFh = 0;
   private _flyTarget = { x: 0, y: 0 };
   private _flyTargetTimer = 0;
+  private _bodyAttackCooldown = 0;
 
   private readonly _pending: MoveElement[] = [];
   private _lastSyncPos = { x: 0, y: 0 };
@@ -127,7 +134,12 @@ export class MobController {
     this._knockedVx    = pushPx / MobController.HitKnockbackSec;
   }
 
+  private _firstUpdate = true;
   Update(dt: number, playerPos: { x: number; y: number }): void {
+    if (this._firstUpdate) {
+      this._firstUpdate = false;
+      console.log(`[MobCtrl.Update] mobId=${this._mob.MobId} IsStay=${this._info.IsStay} MoveAbility=${this._info.MoveAbility} pos=${this._mob.Position.x},${this._mob.Position.y} fh=${this._currentFh}`);
+    }
     if (this._info.IsStay) return;
 
     if (this._aggroTimer > 0 && this._aggroTimer !== Infinity) {
@@ -135,6 +147,24 @@ export class MobController {
     }
     if (this._attackCooldown > 0)    this._attackCooldown    -= dt;
     if (this._hitPlayerCooldown > 0) this._hitPlayerCooldown -= dt;
+    if (this._bodyAttackCooldown > 0) this._bodyAttackCooldown -= dt;
+
+    // OG: proximity-based aggro detection — mob detects player within range
+    if (this._aggroTimer <= 0 && this._aggroTimer !== Infinity) {
+      const dx = playerPos.x - this._mob.Position.x;
+      const dy = playerPos.y - this._mob.Position.y;
+      const distX = Math.abs(dx);
+      const distY = Math.abs(dy);
+      // Check if player is within aggro range (wider X range, narrower Y)
+      if (distX <= MobController.AggroRangeX && distY <= MobController.AggroRangeY) {
+        // OG: aggro chance increases with proximity — closer = higher chance
+        const proximity = 1 - (distX / MobController.AggroRangeX);
+        const aggroChance = 0.3 + proximity * 0.7; // 30% at edge, 100% at center
+        if (Math.random() < aggroChance) {
+          this._aggroTimer = MobController.AggroDurationSec;
+        }
+      }
+    }
 
     if (this._knockedTimer > 0) {
       this._knockedTimer -= dt;
@@ -149,7 +179,7 @@ export class MobController {
       } else {
         this._mob.Position = { x: nx, y: this._mob.Position.y };
       }
-      this._mob.OnHit();
+      this._mob.ShowHitEffect();
       this._velocity = { x: this._knockedVx, y: 0 };
       return;
     }
@@ -172,6 +202,18 @@ export class MobController {
         this._velocity = { x: 0, y: 0 };
       } else {
         this._state = State.Chasing;
+      }
+
+      // OG: body attack — collision damage when mob is close to player
+      if (this._info.BodyAttack && this._bodyAttackCooldown <= 0) {
+        const bodyDx = Math.abs(playerPos.x - this._mob.Position.x);
+        const bodyDy = Math.abs(playerPos.y - this._mob.Position.y);
+        // Body attack range: mob's half-width + player half-width (~20px)
+        if (bodyDx <= 40 && bodyDy <= 30) {
+          this._bodyAttackCooldown = MobController.BodyAttackCooldown;
+          const bodyDamage = Math.floor(this._info.Pad * (0.5 + Math.random() * 0.5));
+          this.onBodyAttack?.(bodyDamage);
+        }
       }
     } else {
       this._stateTimer -= dt;
@@ -216,6 +258,25 @@ export class MobController {
     this._pending.length = 0;
     this._mobCtrlSn++;
     return { blob, sn: this._mobCtrlSn };
+  }
+
+  /** OG: CMob::OnMove — server-driven movement overrides client AI temporarily */
+  OnServerMove(path: { originX: number; originY: number; elements: { attr: number; x: number; y: number; vx: number; vy: number; fh: number; moveAction: number; elapse: number }[] }, moveAction: number, facingLeft: boolean): void {
+    // Server movement temporarily takes over — reset idle state
+    this._state = State.Idle;
+    this._stateTimer = 0;
+    this._velocity = { x: 0, y: 0 };
+
+    // Update facing from server data
+    this._facingLeft = facingLeft;
+
+    // The server-driven path is interpolated by MobLook via _movePathElements
+    // (set by GameStage._onMobMove before calling us). Do NOT snap to the last
+    // element here — that would teleport the mob past the interpolated path.
+    if (path.elements.length > 0) {
+      const lastEl = path.elements[path.elements.length - 1];
+      if (lastEl.fh) this._currentFh = lastEl.fh;
+    }
   }
 
   get FacingLeft(): boolean { return this._facingLeft; }
@@ -265,22 +326,92 @@ export class MobController {
 
   private _stepWalk(dt: number): void {
     const dir = this._facingLeft ? -1 : 1;
-    this._velocity = { x: dir * this._walkSpeed, y: 0 };
-    let nextX = this._mob.Position.x + this._velocity.x * dt;
 
+    // OG: slope-aware speed calculation
     const fh = this._currentFh !== 0 ? this._getFh(this._currentFh) : null;
+    let effectiveSpeed = this._walkSpeed;
+    if (fh && !fh.IsWall) {
+      // OG: sin1 = abs(foothold.uvy), slopeFactor depends on direction
+      // uvy >= 0 means downhill (Y increases), uvy < 0 means uphill (Y decreases)
+      const slope = Math.abs(fh.Uvy);
+      const slopeSquared = slope * slope;
+      // OG: if uvy >= 0 (downhill), factor = 1 + sin² (faster)
+      //     if uvy < 0 (uphill), factor = 1 - sin² (slower)
+      const slopeFactor = fh.Uvy >= 0 ? (1 + slopeSquared) : (1 - slopeSquared);
+      effectiveSpeed *= Math.max(0.5, slopeFactor); // Clamp to prevent negative/zero speed
+    }
+
+    this._velocity = { x: dir * effectiveSpeed, y: 0 };
+    const prevX = this._mob.Position.x;
+    const prevY = this._mob.Position.y;
+    let nextX = prevX + this._velocity.x * dt;
+
     if (fh) {
       const leftEdge = this._fhLeftEdge(fh);
       const rightEdge = this._fhRightEdge(fh);
+
+      // OG: Calculate Y position based on slope
+      const newY = fh.YAt(nextX) ?? this._mob.Position.y;
+
+      // Check if we've reached the edge of the current foothold
       if (nextX < leftEdge + MobController.EdgeMargin) {
+        // Reached left edge — try to transition to previous foothold
+        const prevFh = fh.Prev !== 0 ? this._getFh(fh.Prev) : null;
+        if (prevFh && !prevFh.IsWall) {
+          // OG CollisionDetectWalk: check if linked foothold faces same direction
+          // prevFh.Uvx <= 0 means the linked foothold faces opposite direction
+          if (prevFh.Uvx <= 0) {
+            // Linked foothold faces opposite direction — stop at edge
+            nextX = leftEdge + MobController.EdgeMargin;
+            this._velocity = { x: 0, y: 0 };
+          } else {
+            // OG: Check if transition is blocked by connected footholds
+            const targetX = this._fhRightEdge(prevFh) - MobController.EdgeMargin;
+            if (!isBlockedArea(fh, prevFh, targetX, newY)) {
+              this._currentFh = prevFh.Id;
+              const targetY = prevFh.YAt(targetX);
+              if (targetY !== null) {
+                this._mob.Position = { x: targetX, y: targetY };
+                this._seatOnFoothold();
+                return;
+              }
+            }
+          }
+        }
+        // No valid previous foothold or blocked — always clamp to edge
         nextX = leftEdge + MobController.EdgeMargin;
         if (this._state !== State.Chasing) this._facingLeft = false;
       } else if (nextX > rightEdge - MobController.EdgeMargin) {
+        // Reached right edge — try to transition to next foothold
+        const nextFh = fh.Next !== 0 ? this._getFh(fh.Next) : null;
+        if (nextFh && !nextFh.IsWall) {
+          // OG CollisionDetectWalk: check if linked foothold faces same direction
+          // nextFh.Uvx <= 0 means the linked foothold faces opposite direction
+          if (nextFh.Uvx <= 0) {
+            // Linked foothold faces opposite direction — stop at edge
+            nextX = rightEdge - MobController.EdgeMargin;
+            this._velocity = { x: 0, y: 0 };
+          } else {
+            // OG: Check if transition is blocked by connected footholds
+            const targetX = this._fhLeftEdge(nextFh) + MobController.EdgeMargin;
+            if (!isBlockedArea(fh, nextFh, targetX, newY)) {
+              this._currentFh = nextFh.Id;
+              const targetY = nextFh.YAt(targetX);
+              if (targetY !== null) {
+                this._mob.Position = { x: targetX, y: targetY };
+                this._seatOnFoothold();
+                return;
+              }
+            }
+          }
+        }
+        // No valid next foothold or blocked — always clamp to edge
         nextX = rightEdge - MobController.EdgeMargin;
         if (this._state !== State.Chasing) this._facingLeft = true;
       }
-      const y = fh.YAt(nextX) ?? this._mob.Position.y;
-      this._mob.Position = { x: nextX, y };
+
+      // OG: Apply slope to Y position
+      this._mob.Position = { x: nextX, y: newY };
     } else {
       const below = this._getFootholdBelow(nextX, this._mob.Position.y);
       if (below) {

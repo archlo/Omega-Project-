@@ -1,0 +1,4 @@
+// CUISkill::SetButton @ 0x84a0a0
+// Decompiled from v95 IDB
+
+{"addr":"0x84a0a0","code":"void __thiscall CUISkill::SetButton(CUISkill *this, int nIdx, int bShow, int bEnable)\n{\n  CCtrlButton **p_p; // esi\n\n  p_p = &this->m_apBtUp[nIdx].p; /*0x84a0a5*/\n  (*p_p)->SetShow(&(*p_p)->IUIMsgHandler, bShow); /*0x84a0bc*/\n  (*p_p)->SetEnable(&(*p_p)->IUIMsgHandler, bEnable); /*0x84a0ce*/\n}"}

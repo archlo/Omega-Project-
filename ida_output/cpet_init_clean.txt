@@ -1,0 +1,226 @@
+﻿void __thiscall CPet::Init(CPet *this, CVecCtrl *pOwner, CInPacket *iPacket)
+{
+  CInPacket *v4; // ebp
+  CInPacket *v5; // ecx
+  unsigned int v6; // eax
+  CPetTemplate *PetTemplate; // eax
+  const ZXString<char> *v8; // eax
+  const ZXString<char> *v9; // eax
+  GW_ItemSlotPet *ItemSlot; // eax
+  GW_ItemSlotPet *v11; // edi
+  CPetTemplate *m_pTemplate; // eax
+  signed __int16 v13; // ax
+  signed __int16 v14; // ax
+  int Data; // eax
+  int v16; // eax
+  CWvsPhysicalSpace2D *v17; // edi
+  signed __int16 v18; // ax
+  CStaticFoothold *Foothold; // eax
+  CUser *m_pOwner; // ecx
+  IWzVector2D *m_pInterface; // eax
+  CVecCtrlPet *Instance; // edi
+  int v23; // ebx
+  int v24; // eax
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v25; // ecx
+  int v26; // eax
+  int v27; // eax
+  HRESULT v28; // eax
+  HRESULT v29; // eax
+  IWzGr2DLayer *v30; // eax
+  IWzGr2DLayer *v31; // ebx
+  unsigned __int8 v32; // al
+  unsigned __int8 v33; // al
+  unsigned int v34; // eax
+  int nNameTag; // eax
+  HRESULT v36; // eax
+  IWzGr2DLayer *v37; // eax
+  unsigned int ZtlSecureTear_m_pLadderOrRope_CS; // ecx
+  CLadderOrRope *v39; // eax
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v40; // [esp-Ch] [ebp-6Ch] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v41; // [esp-8h] [ebp-68h] BYREF
+  int v42; // [esp-4h] [ebp-64h]
+  int v43; // [esp+0h] [ebp-60h]
+  int v44; // [esp+4h] [ebp-5Ch]
+  int v45; // [esp+8h] [ebp-58h]
+  const int *m_nMoveAction; // [esp+Ch] [ebp-54h]
+  int p_pOwner; // [esp+10h] [ebp-50h]
+  CStaticFoothold *pfh; // [esp+28h] [ebp-38h]
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v49; // [esp+2Ch] [ebp-34h]
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > result; // [esp+30h] [ebp-30h] BYREF
+  Ztl_variant_t vCanvas; // [esp+34h] [ebp-2Ch] BYREF
+  VARIANTARG pvarg; // [esp+44h] [ebp-1Ch] BYREF
+  int v53; // [esp+5Ch] [ebp-4h]
+
+  v4 = iPacket;
+  v5 = iPacket;
+  this->m_pOwner = (CUser *)pOwner;
+  v6 = CInPacket::Decode4(v5);
+  PetTemplate = CPetTemplate::GetPetTemplate(v6);
+  p_pOwner = (int)&pOwner;
+  this->m_pTemplate = PetTemplate;
+  v8 = CInPacket::DecodeStr(v4, (ZXString<char> *)p_pOwner);
+  ZXString<char>::operator=(&this->m_sName, v8);
+  v53 = -1;
+  if ( pOwner )
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)((char *)&pOwner[-1].m_dShortDrag + 4));
+  v9 = ZXString<char>::ReplaceAll(&this->m_sName, (ZXString<char> *)&pOwner, asc_B53EA8, s0);
+  ZXString<char>::operator=(&this->m_sName, v9);
+  v53 = -1;
+  if ( pOwner )
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)((char *)&pOwner[-1].m_dShortDrag + 4));
+  CInPacket::DecodeBuffer(v4, &this->m_liPetLockerSN, 8u);
+  ItemSlot = CPet::GetItemSlot(this);
+  v11 = ItemSlot;
+  if ( ItemSlot )
+  {
+    this->m_nTameness = _ZtlSecureFuse<short>(ItemSlot->_ZtlSecureTear_nTameness, ItemSlot->_ZtlSecureTear_nTameness_CS);
+    this->m_nRepleteness = _ZtlSecureFuse<unsigned char>(
+                             v11->_ZtlSecureTear_nRepleteness,
+                             v11->_ZtlSecureTear_nRepleteness_CS);
+    this->m_nPetAttribute = _ZtlSecureFuse<short>(
+                              v11->_ZtlSecureTear_nPetAttribute,
+                              v11->_ZtlSecureTear_nPetAttribute_CS);
+    m_pTemplate = this->m_pTemplate;
+    if ( m_pTemplate )
+      TSecType<long>::SetData(&v11->nItemID, m_pTemplate->dwTemplateID);
+  }
+  CPet::SetShoeAttr(this);
+  v13 = CInPacket::Decode2(v4);
+  TSecType<long>::SetData(&this->m_ptPosPrev.x, v13);
+  v14 = CInPacket::Decode2(v4);
+  TSecType<long>::SetData(&this->m_ptPosPrev.y, v14);
+  Data = TSecType<long>::GetData(&this->m_ptPosPrev.x);
+  TSecType<long>::SetData(&this->m_ptPos.x, Data);
+  v16 = TSecType<long>::GetData(&this->m_ptPosPrev.y);
+  TSecType<long>::SetData(&this->m_ptPos.y, v16);
+  this->m_nMoveAction = CInPacket::Decode1(v4);
+  v17 = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance;
+  v18 = CInPacket::Decode2(v4);
+  Foothold = CWvsPhysicalSpace2D::GetFoothold(v17, v18);
+  m_pOwner = this->m_pOwner;
+  pfh = Foothold;
+  m_pInterface = CUser::GetVecCtrl(
+                   m_pOwner,
+                   (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&iPacket)->m_pInterface;
+  if ( m_pInterface )
+    pOwner = (CVecCtrl *)&m_pInterface[-3];
+  else
+    pOwner = nullptr;
+  if ( iPacket )
+    (*(void (__stdcall **)(CInPacket *))(iPacket->m_bLoopback + 8))(iPacket);
+  Instance = CVecCtrlPet::CreateInstance();
+  CVecCtrlPet::Init(Instance, &this->IVecCtrlOwner, this->m_pTemplate->nMoveAbility);
+  v23 = TSecType<long>::GetData(&this->m_ptPos.y);
+  v24 = TSecType<long>::GetData(&this->m_ptPos.x);
+  v25 = (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)Instance->CVecCtrl::ZRefCounted::__vftable;
+  p_pOwner = (int)pfh;
+  m_nMoveAction = (const int *)this->m_nMoveAction;
+  v49 = v25;
+  v26 = ((int (__thiscall *)(CUser *, int, int, _DWORD, _DWORD, const int *, CStaticFoothold *))this->m_pOwner->IsLocalUser)(
+          this->m_pOwner,
+          v24,
+          v23,
+          0,
+          0,
+          m_nMoveAction,
+          pfh);
+  (*(void (__thiscall **)(CVecCtrlPet *, int))(*(_DWORD *)&pvarg.vt + 4))(Instance, v26);
+  v27 = Instance->m_nMoveAction;
+  p_pOwner = (int)Instance;
+  this->m_nMoveAction = v27;
+  v28 = _com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>::_QueryInterface<CVecCtrlPet *>(
+          &this->m_pvc,
+          (CVecCtrlPet *)p_pOwner);
+  if ( v28 < 0 && v28 != -2147467262 )
+    _com_issue_error(v28);
+  p_pOwner = (int)&pvarg;
+  this->m_aAdditionalLayer[1].nData = 0;
+  VariantInit((VARIANTARG *)p_pOwner);
+  v29 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing);
+  if ( v29 < 0 )
+    _com_issue_error(v29);
+  v53 = 3;
+  vCanvas.vt = 3;
+  vCanvas.decVal.Lo32 = 0;
+  if ( !g_gr.m_pInterface )
+    _com_issue_error(-2147467261);
+  v30 = IWzGr2D::CreateLayer(g_gr.m_pInterface, &result, 0, 0, 0, 0, 0, &vCanvas, (const Ztl_variant_t *)&pvarg)->m_pInterface;
+  v31 = this->m_pLayerAction.m_pInterface;
+  if ( v31 != v30 )
+  {
+    this->m_pLayerAction.m_pInterface = v30;
+    if ( v30 )
+      v30->AddRef(v30);
+    if ( v31 )
+      v31->Release(v31);
+  }
+  if ( result.m_pInterface )
+    result.m_pInterface->Release(result.m_pInterface);
+  LOBYTE(v53) = 2;
+  if ( vCanvas.vt == 8 )
+  {
+    vCanvas.vt = 0;
+    if ( vCanvas.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(vCanvas.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&vCanvas);
+  }
+  v53 = -1;
+  if ( pvarg.vt == 8 )
+  {
+    pvarg.vt = 0;
+    if ( pvarg.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&pvarg);
+  }
+  v32 = CInPacket::Decode1(v4);
+  this->_ZtlSecureTear_m_bNameTag_CS = _ZtlSecureTear<int>(v32, this->_ZtlSecureTear_m_bNameTag);
+  v33 = CInPacket::Decode1(v4);
+  v34 = _ZtlSecureTear<int>(v33, this->_ZtlSecureTear_m_bChatBalloon);
+  p_pOwner = this->_ZtlSecureTear_m_bNameTag_CS;
+  m_nMoveAction = this->_ZtlSecureTear_m_bNameTag;
+  this->_ZtlSecureTear_m_bChatBalloon_CS = v34;
+  if ( _ZtlSecureFuse<int>(m_nMoveAction, p_pOwner) )
+    nNameTag = this->m_pTemplate->nNameTag;
+  else
+    nNameTag = 0;
+  p_pOwner = 0;
+  m_nMoveAction = nullptr;
+  v45 = 0;
+  v44 = 0;
+  v43 = nNameTag;
+  v42 = 1003;
+  v49 = (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v41;
+  v41.m_pInterface = nullptr;
+  v36 = _com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>::_QueryInterface<CVecCtrlPet *>(
+          &v41,
+          Instance);
+  if ( v36 < 0 && v36 != -2147467262 )
+    _com_issue_error(v36);
+  v37 = this->m_pLayerAction.m_pInterface;
+  v49 = &v40;
+  v40.m_pInterface = v37;
+  if ( v37 )
+    v37->AddRef(v37);
+  CLife::MakeNameTag(
+    this,
+    this->m_sName._m_pStr,
+    v40,
+    v41,
+    v42,
+    v43,
+    v44,
+    v45,
+    (unsigned __int16)m_nMoveAction,
+    p_pOwner);
+  ZtlSecureTear_m_pLadderOrRope_CS = pOwner->_ZtlSecureTear_m_pLadderOrRope_CS;
+  p_pOwner = 1;
+  v39 = _ZtlSecureFuse<CLadderOrRope *>(pOwner->_ZtlSecureTear_m_pLadderOrRope, ZtlSecureTear_m_pLadderOrRope_CS);
+  CPet::HangOnBack(this, v39 != nullptr, p_pOwner);
+  CPet::PrepareActionLayer(this);
+}

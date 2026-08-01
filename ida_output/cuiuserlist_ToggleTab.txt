@@ -1,0 +1,4 @@
+// CUIUserList::ToggleTab @ 0x9ccc00
+// Decompiled from v95 IDB
+
+{"addr":"0x9ccc00","code":"void __thiscall CUIUserList::ToggleTab(CUIUserList *this)\n{\n  CCtrlTab *p; // esi\n  signed int m_uCount; // edi\n  int v3; // edx\n\n  p = this->m_pTab.p; /*0x9ccc08*/\n  m_uCount = p->m_lTabInfo._m_uCount; /*0x9ccc0f*/\n  v3 = (this->m_nCurTab + 1) % m_uCount; /*0x9ccc13*/\n  if ( v3 >= 0 && v3 < m_uCount ) /*0x9ccc1b*/\n  {\n    this->m_nCurTab = v3; /*0x9ccc1d*/\n    CCtrlTab::SetTab(p, v3); /*0x9ccc26*/\n  }\n}","refs":[{"addr":"0x4ede60","name":"?SetTab@CCtrlTab@@QAEXJ@Z"}]}

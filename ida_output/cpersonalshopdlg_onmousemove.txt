@@ -1,0 +1,58 @@
+// 0x698c20
+int __thiscall CPersonalShopDlg::OnMouseMove(CPersonalShopDlg *this, int rx, int ry)
+{
+  int v4; // ebx
+  CPersonalShopDlg *v5; // edi
+  int RectIndexFromPoint; // eax
+  int v7; // eax
+  int ItemIndexFromPoint; // eax
+  int *v10; // eax
+  int v11; // eax
+  int v12; // [esp-1Ch] [ebp-3Ch]
+  GW_ItemSlotBase *v13; // [esp-18h] [ebp-38h]
+  int v14; // [esp-8h] [ebp-28h]
+  char *m_pStr; // [esp-4h] [ebp-24h]
+
+  v4 = ry; /*0x698c46*/
+  v5 = (CPersonalShopDlg *)((char *)this - 4); /*0x698c4f*/
+  RectIndexFromPoint = CPersonalShopDlg::GetRectIndexFromPoint((CPersonalShopDlg *)((char *)this - 4), rx, ry); /*0x698c55*/
+  if ( RectIndexFromPoint < 0 || RectIndexFromPoint >= this->m_nMyPosition ) /*0x698c64*/
+  {
+    ItemIndexFromPoint = CPersonalShopDlg::GetItemIndexFromPoint(v5, rx, v4); /*0x698ccc*/
+    if ( ItemIndexFromPoint >= 0 /*0x698ced*/
+      && (v10 = (int *)(this->m_nItem + 20 * ItemIndexFromPoint)) != nullptr
+      && *v10 >= 0
+      && (*v10 || v10[4]) )
+    {
+      v13 = (GW_ItemSlotBase *)v10[4]; /*0x698d02*/
+      v12 = ((int (__thiscall *)(CPersonalShopDlg *))this->IsMyAddon)(this) + v4 + 20; /*0x698d13*/
+      v11 = ((int (__thiscall *)(CPersonalShopDlg *))this->Draw)(this); /*0x698d16*/
+      CUIToolTip::ShowItemToolTip( /*0x698d21*/
+        (CUIToolTip *)&this->m_pSBBuy.p,
+        rx + v11,
+        v12,
+        v13,
+        nullptr,
+        nullptr,
+        0,
+        0,
+        ITCToolTip_None);
+      return 1; /*0x698d26*/
+    }
+    else
+    {
+      CUIToolTip::ClearToolTip((CUIToolTip *)&this->m_pSBBuy.p); /*0x698d33*/
+      return 0; /*0x698d38*/
+    }
+  }
+  else
+  {
+    m_pStr = CMiniRoomBaseDlg::GetUserID(v5, (ZXString<char> *)&ry, RectIndexFromPoint)->_m_pStr; /*0x698c77*/
+    v14 = ((int (__thiscall *)(CPersonalShopDlg *))this->IsMyAddon)(this) + v4 + 20; /*0x698c90*/
+    v7 = ((int (__thiscall *)(CPersonalShopDlg *))this->Draw)(this); /*0x698c93*/
+    CUIToolTip::SetToolTip_String((CUIToolTip *)&this->m_pSBBuy.p, v7 + rx + 20, v14, m_pStr); /*0x698ca0*/
+    if ( ry ) /*0x698cb3*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(ry - 12)); /*0x698cb9*/
+    return 1; /*0x698cc1*/
+  }
+}

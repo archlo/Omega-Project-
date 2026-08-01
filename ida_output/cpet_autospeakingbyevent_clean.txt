@@ -1,0 +1,64 @@
+﻿void __thiscall CPet::AutoSpeakingByEvent(CPet *this, const char *nEvent)
+{
+  const char *v3; // edi
+  int nChatBalloon; // edx
+  IWzVector2D *m_pInterface; // eax
+  IWzGr2DLayer *v6; // eax
+  _bstr_t::Data_t *v7; // ecx
+  _bstr_t v8; // [esp-24h] [ebp-48h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v9; // [esp-20h] [ebp-44h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v10; // [esp-1Ch] [ebp-40h] BYREF
+  int v11; // [esp-18h] [ebp-3Ch]
+  int v12; // [esp-14h] [ebp-38h]
+  int v13; // [esp-10h] [ebp-34h]
+  int v14; // [esp-Ch] [ebp-30h]
+  int v15; // [esp-8h] [ebp-2Ch]
+  int v16; // [esp-4h] [ebp-28h]
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *v17; // [esp+Ch] [ebp-18h]
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v18; // [esp+10h] [ebp-14h]
+  _bstr_t *v19; // [esp+14h] [ebp-10h]
+  int v20; // [esp+20h] [ebp-4h]
+
+  if ( (CPet::GetUpgradePetSkill(this) & 0x100) != 0 )
+  {
+    CPetTemplate::GetAutoSpeakingByEvent(this->m_pTemplate, (ZXString<char> *)&nEvent, (int)nEvent);
+    v3 = nEvent;
+    v20 = 0;
+    if ( nEvent && *nEvent )
+    {
+      nChatBalloon = this->m_pTemplate->nChatBalloon;
+      m_pInterface = this->m_pvc.m_pInterface;
+      v16 = 0;
+      v15 = 0;
+      v14 = 0;
+      v13 = nChatBalloon;
+      v12 = 1002;
+      v11 = 5000;
+      v17 = &v10;
+      v10.m_pInterface = m_pInterface;
+      if ( m_pInterface )
+        m_pInterface->AddRef(m_pInterface);
+      v6 = this->m_pLayerAction.m_pInterface;
+      v7 = (_bstr_t::Data_t *)&v9;
+      LOBYTE(v20) = 1;
+      v18 = &v9;
+      v9.m_pInterface = v6;
+      if ( v6 )
+        v6->AddRef(v6);
+      v8.m_Data = v7;
+      v19 = &v8;
+      LOBYTE(v20) = 2;
+      _bstr_t::_bstr_t(&v8, v3);
+      LOBYTE(v20) = 0;
+      CChatBalloon::MakeBalloon(&this->m_chatBalloon, (Ztl_bstr_t)v8.m_Data, v9, v10, v11, v12, v13, v14, v15, v16);
+      v20 = -1;
+    }
+    else
+    {
+      v20 = -1;
+      if ( !nEvent )
+        return;
+    }
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v3 - 1);
+  }
+}

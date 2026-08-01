@@ -1,0 +1,403 @@
+[
+  {
+    "query": "CQuestMan::",
+    "matches": [
+      {
+        "address": "0x460c10",
+        "name": "ZRecyclableAvBuffer<ZMap<ushort,ZArray<CQuestMan::Rank>,ushort>::_PAIR,16,ZMap<ushort,ZArray<CQuestMan::Rank>,ushort>::_PAIR>::`vector deleting destructor'(uint)"
+      },
+      {
+        "address": "0x460c40",
+        "name": "ZRecyclableAvBuffer<ZMap<ushort,CQuestMan::RankString,ushort>::_PAIR,16,ZMap<ushort,CQuestMan::RankString,ushort>::_PAIR>::`scalar deleting destructor'(uint)"
+      },
+      {
+        "address": "0x50abd0",
+        "name": "CQuestMan::IsPartyQuest(ushort)"
+      },
+      {
+        "address": "0x522c20",
+        "name": "CQuestMan::IsMedalQuest(ushort)"
+      },
+      {
+        "address": "0x523e80",
+        "name": "CQuestMan::GetQuestName(ushort)"
+      },
+      {
+        "address": "0x5297c0",
+        "name": "CQuestMan::GetPartyQuestIconPath(ushort)"
+      },
+      {
+        "address": "0x6417e0",
+        "name": "CQuestMan::GetQuestArray(void)"
+      },
+      {
+        "address": "0x66da10",
+        "name": "CQuestMan::GetCompleteDemand(ushort)"
+      },
+      {
+        "address": "0x670b50",
+        "name": "CQuestMan::GetStartDemand(ushort)"
+      },
+      {
+        "address": "0x6b4af0",
+        "name": "ZRecyclable<ZMap<ushort,CQuestMan::RankString,ushort>::_PAIR,16,ZMap<ushort,CQuestMan::RankString,ushort>::_PAIR>::~ZRecyclable<ZMap<ushort,CQuestMan::RankString,ushort>::_PAIR,16,ZMap<ushort,CQuestMan::RankString,ushort>::_PAIR>(void)"
+      },
+      {
+        "address": "0x6b4b20",
+        "name": "ZRecyclable<ZMap<ushort,ZArray<CQuestMan::Rank>,ushort>::_PAIR,16,ZMap<ushort,ZArray<CQuestMan::Rank>,ushort>::_PAIR>::~ZRecyclable<ZMap<ushort,ZArray<CQuestMan::Rank>,ushort>::_PAIR,16,ZMap<ushort,ZArray<CQuestMan::Rank>,ushort>::_PAIR>(void)"
+      },
+      {
+        "address": "0x6b4cf0",
+        "name": "ZMap<ushort,ZArray<CQuestMan::Rank>,ushort>::_CalcAutoGrow(uint)"
+      },
+      {
+        "address": "0x6b4d20",
+        "name": "ZMap<ushort,CQuestMan::RankString,ushort>::_CalcAutoGrow(uint)"
+      },
+      {
+        "address": "0x6b4db0",
+        "name": "CQuestMan::GetRecentlyUpdatedQuest(void)"
+      },
+      {
+        "address": "0x6b5070",
+        "name": "ZRecyclableAvBuffer<ZMap<ushort,CQuestMan::RankString,ushort>::_PAIR,16,ZMap<ushort,CQuestMan::RankString,ushort>::_PAIR>::raw_delete(void *)"
+      },
+      {
+        "address": "0x6b5130",
+        "name": "ZRecyclableAvBuffer<ZMap<ushort,ZArray<CQuestMan::Rank>,ushort>::_PAIR,16,ZMap<ushort,ZArray<CQuestMan::Rank>,ushort>::_PAIR>::raw_delete(void *)"
+      },
+      {
+        "address": "0x6b5530",
+        "name": "ZRecyclableAvBuffer<ZMap<ushort,CQuestMan::RankString,ushort>::_PAIR,16,ZMap<ushort,CQuestMan::RankString,ushort>::_PAIR>::raw_new(void)"
+      },
+      {
+        "address": "0x6b56b0",
+        "name": "ZRecyclableAvBuffer<ZMap<ushort,ZArray<CQuestMan::Rank>,ushort>::_PAIR,16,ZMap<ushort,ZArray<CQuestMan::Rank>,ushort>::_PAIR>::raw_new(void)"
+      },
+      {
+        "address": "0x6b57b0",
+        "name": "CQuestMan::IsEquipOnAutoStartQuest(long)"
+      },
+      {
+        "address": "0x6b57d0",
+        "name": "CQuestMan::IsFieldOnAutoStartQuest(long)"
+      },
+      {
+        "address": "0x6b5800",
+        "name": "CQuestMan::IsAutoStartQuest(ushort)"
+      },
+      {
+        "address": "0x6b5820",
+        "name": "CQuestMan::IsAutoAutoAcceptQuest(ushort)"
+      },
+      {
+        "address": "0x6b5840",
+        "name": "CQuestMan::IsAutoCompleteQuest(ushort)"
+      },
+      {
+        "address": "0x6b5860",
+        "name": "CQuestMan::IsTimeLimitQuest(ushort)"
+      },
+      {
+        "address": "0x6b5880",
+        "name": "CQuestMan::IsTimeLimitQuest2(ushort)"
+      },
+      {
+        "address": "0x6b58a0",
+        "name": "CQuestMan::IsDailyPlayQuest(ushort)"
+      },
+      {
+        "address": "0x6b58e0",
+        "name": "CQuestMan::IsDisallowedDeliveryQuest(ushort)"
+      },
+      {
+        "address": "0x6b5920",
+        "name": "CQuestMan::GetQuestTimeLimit(ushort)"
+      },
+      {
+        "address": "0x6b5940",
+        "name": "CQuestMan::GetExpRateByLevel(ushort,long &)"
+      },
+      {
+        "address": "0x6b5e30",
+        "name": "ZMap<ushort,ZArray<CQuestMan::Rank>,ushort>::RemoveAll(void)"
+      },
+      {
+        "address": "0x6b5ea0",
+        "name": "ZMap<ushort,CQuestMan::RankString,ushort>::RemoveAll(void)"
+      },
+      {
+        "address": "0x6b6690",
+        "name": "ZMap<ushort,ZArray<CQuestMan::Rank>,ushort>::ResizeHashTable(uint,uint)"
+      },
+      {
+        "address": "0x6b6750",
+        "name": "ZMap<ushort,CQuestMan::RankString,ushort>::ResizeHashTable(uint,uint)"
+      },
+      {
+        "address": "0x6b6870",
+        "name": "CQuestMan::IsAutoCompletionAlertQuest(ushort)"
+      },
+      {
+        "address": "0x6b6890",
+        "name": "CQuestMan::IsAutoAlertQuest(ushort)"
+      },
+      {
+        "address": "0x6b68c0",
+        "name": "CQuestMan::GetQuestCategory(ushort)"
+      },
+      {
+        "address": "0x6b68e0",
+        "name": "CQuestMan::GetQuestTimeLimit2(ushort)"
+      },
+      {
+        "address": "0x6b6900",
+        "name": "CQuestMan::GetQuestDailyPlayMinTime(ushort)"
+      },
+      {
+        "address": "0x6b6a10",
+        "name": "ZMap<ushort,ZArray<CQuestMan::Rank>,ushort>::~ZMap<ushort,ZArray<CQuestMan::Rank>,ushort>(void)"
+      },
+      {
+        "address": "0x6b6bd0",
+        "name": "ZMap<ushort,ZArray<CQuestMan::Rank>,ushort>::`vector deleting destructor'(uint)"
+      },
+      {
+        "address": "0x6b6c00",
+        "name": "ZMap<ushort,CQuestMan::RankString,ushort>::`vector deleting destructor'(uint)"
+      },
+      {
+        "address": "0x6b6d80",
+        "name": "ZRecyclable<ZMap<ushort,CQuestMan::RankString,ushort>::_PAIR,16,ZMap<ushort,CQuestMan::RankString,ushort>::_PAIR>::`scalar deleting destructor'(uint)"
+      },
+      {
+        "address": "0x6b6e10",
+        "name": "ZRecyclable<ZMap<ushort,ZArray<CQuestMan::Rank>,ushort>::_PAIR,16,ZMap<ushort,ZArray<CQuestMan::Rank>,ushort>::_PAIR>::`scalar deleting destructor'(uint)"
+      },
+      {
+        "address": "0x6b77e0",
+        "name": "ZArray<CQuestMan::Rank>::_Reserve(uint,ZAllocHelper const &)"
+      },
+      {
+        "address": "0x6b7870",
+        "name": "CQuestMan::GetQuestByNpc(ulong,ZArray<ushort> &)"
+      },
+      {
+        "address": "0x6b78a0",
+        "name": "CQuestMan::GetQuestByItem(long,ZArray<ushort> &)"
+      },
+      {
+        "address": "0x6b78d0",
+        "name": "CQuestMan::GetQuestByItemDemand(long,ZArray<ushort> &)"
+      },
+      {
+        "address": "0x6b7900",
+        "name": "CQuestMan::GetQuestByMeso(ZArray<ushort> &)"
+      },
+      {
+        "address": "0x6b7940",
+        "name": "CQuestMan::GetQuestByLevel(ZArray<ushort> &)"
+      },
+      {
+        "address": "0x6b7980",
+        "name": "CQuestMan::RemoveRecentlyUpdatedQuest(ushort)"
+      },
+      {
+        "address": "0x6b79b0",
+        "name": "CQuestMan::IsStartScriptLinkedQuest(ushort)"
+      },
+      {
+        "address": "0x6b7a70",
+        "name": "CQuestMan::IsCompleteScriptLinkedQuest(ushort)"
+      },
+      {
+        "address": "0x6b7b30",
+        "name": "CQuestMan::IsDeliveryAcceptQuest(ushort)"
+      },
+      {
+        "address": "0x6b7be0",
+        "name": "CQuestMan::IsDeliveryCompleteQuest(ushort)"
+      },
+      {
+        "address": "0x6b7c90",
+        "name": "CQuestMan::GetCompletedQuestCnt(CharacterData const &,int)"
+      },
+      {
+        "address": "0x6b86d0",
+        "name": "CQuestMan::DecodeDisallowedDeliveryList(CInPacket &)"
+      },
+      {
+        "address": "0x6b8740",
+        "name": "CQuestMan::GetTimeKeepInfo(ushort)"
+      },
+      {
+        "address": "0x6b8830",
+        "name": "CQuestMan::RankString::~RankString(void)"
+      },
+      {
+        "address": "0x6b8950",
+        "name": "CQuestMan::RankString::operator=(CQuestMan::RankString const &)"
+      },
+      {
+        "address": "0x6b8a60",
+        "name": "ZMap<ushort,CQuestMan::RankString,ushort>::_PAIR::~_PAIR(void)"
+      },
+      {
+        "address": "0x6b8ac0",
+        "name": "CQuestMan::SetQuestTime(long,_FILETIME,_FILETIME)"
+      },
+      {
+        "address": "0x6b8b70",
+        "name": "CQuestMan::RegisterDemandItem(ushort,long,long,long)"
+      },
+      {
+        "address": "0x6b8c80",
+        "name": "CQuestMan::GetKeepTime(ushort)"
+      },
+      {
+        "address": "0x6b8d20",
+        "name": "CQuestMan::GetPartyQuestRankCount(ZXString<char> &,CharacterData const &)"
+      },
+      {
+        "address": "0x6b8eb0",
+        "name": "ZMap<ushort,CQuestMan::RankString,ushort>::GetAt(ushort const &,CQuestMan::RankString &)"
+      },
+      {
+        "address": "0x6b8f10",
+        "name": "ZMap<ushort,CQuestMan::RankString,ushort>::Insert(ushort const &,CQuestMan::RankString const &)"
+      },
+      {
+        "address": "0x6b92f0",
+        "name": "ZMap<ushort,CQuestMan::RankString,ushort>::_PAIR::`scalar deleting destructor'(uint)"
+      },
+      {
+        "address": "0x6b9320",
+        "name": "CQuestMan::GetQuestCategoryName(long)"
+      },
+      {
+        "address": "0x6b9370",
+        "name": "CQuestMan::SetRecentlyUpdatedQuest(ushort)"
+      },
+      {
+        "address": "0x6b93a0",
+        "name": "CQuestMan::GetPartyQuestRankString(ushort,ZXString<char>)"
+      },
+      {
+        "address": "0x6b9670",
+        "name": "CQuestMan::LoadExclusive(void)"
+      },
+      {
+        "address": "0x6b9cc0",
+        "name": "CQuestMan::CheckExclusive(ushort,CharacterData const &)"
+      },
+      {
+        "address": "0x6b9d50",
+        "name": "CQuestMan::LoadQuestExpByLevelInfo(void)"
+      },
+      {
+        "address": "0x6ba0f0",
+        "name": "CQuestMan::LoadQuestPerformByDayInfo(void)"
+      },
+      {
+        "address": "0x6bac30",
+        "name": "CQuestMan::CQuestMan(void)"
+      },
+      {
+        "address": "0x6bb040",
+        "name": "CQuestMan::~CQuestMan(void)"
+      },
+      {
+        "address": "0x6bb3e0",
+        "name": "CQuestMan::`vector deleting destructor'(uint)"
+      },
+      {
+        "address": "0x6bb400",
+        "name": "CQuestMan::GetQuestDisplayMedal(ushort)"
+      },
+      {
+        "address": "0x6bb6e0",
+        "name": "CQuestMan::CheckStartDemand(ushort,ulong,CharacterData const &,SecondaryStat const &,long,long,int,long)"
+      },
+      {
+        "address": "0x6bc3d0",
+        "name": "CQuestMan::CheckCompleteDemand(ushort,ulong,CharacterData const &,SecondaryStat const &)"
+      },
+      {
+        "address": "0x6bddc0",
+        "name": "CQuestMan::LoadPartyQuestRankString(ushort,_com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>)"
+      },
+      {
+        "address": "0x6bec10",
+        "name": "CQuestMan::LoadQuestInfo(void)"
+      },
+      {
+        "address": "0x6bfd70",
+        "name": "construct<CQuestMan::Rank>(CQuestMan::Rank *)"
+      },
+      {
+        "address": "0x6bfe70",
+        "name": "ZArray<CQuestMan::Rank>::InsertBefore(int)"
+      },
+      {
+        "address": "0x6bff60",
+        "name": "ZArray<CQuestMan::Rank>::RemoveAll(void)"
+      },
+      {
+        "address": "0x6c0020",
+        "name": "CQuestMan::RegisterDemand(ushort,_com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>)"
+      },
+      {
+        "address": "0x6c3d10",
+        "name": "ZMap<ushort,ZArray<CQuestMan::Rank>,ushort>::_PAIR::~_PAIR(void)"
+      },
+      {
+        "address": "0x6c3d60",
+        "name": "CQuestMan::LoadDemand(void)"
+      },
+      {
+        "address": "0x6c4530",
+        "name": "ZMap<ushort,ZArray<CQuestMan::Rank>,ushort>::_PAIR::`scalar deleting destructor'(uint)"
+      },
+      {
+        "address": "0x6c4560",
+        "name": "construct<CQuestMan::Rank>(CQuestMan::Rank *,CQuestMan::Rank const &)"
+      },
+      {
+        "address": "0x6c45e0",
+        "name": "ZArray<CQuestMan::Rank>::operator=(ZArray<CQuestMan::Rank> const &)"
+      },
+      {
+        "address": "0x6c4650",
+        "name": "ZMap<ushort,ZArray<CQuestMan::Rank>,ushort>::Insert(ushort const &,ZArray<CQuestMan::Rank> const &)"
+      },
+      {
+        "address": "0x6c4720",
+        "name": "CQuestMan::LoadPartyQuestRank(ushort,_com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>)"
+      },
+      {
+        "address": "0x6c5540",
+        "name": "CQuestMan::LoadPartyQuestInfo(void)"
+      },
+      {
+        "address": "0x7e2eb0",
+        "name": "CQuestMan::GetSeriesQuest(ZXString<char>)"
+      },
+      {
+        "address": "0x9d83c0",
+        "name": "CQuestMan::GetNormalAutoStartQuest(void)"
+      },
+      {
+        "address": "0x9f79e0",
+        "name": "CQuestMan::GetSeriesQuestName(ushort)"
+      },
+      {
+        "address": "0xaf9b40",
+        "name": "_dynamic_initializer_for__ZRecyclableAvBuffer_ZMap_unsigned_short_ZArray_CQuestMan::Rank__unsigned_short_::_PAIR_16_ZMap_unsigned_short_ZArray_CQuestMan::Rank__unsigned_short_::_PAIR_::s_pInstance__"
+      },
+      {
+        "address": "0xaf9b90",
+        "name": "_dynamic_initializer_for__ZRecyclableAvBuffer_ZMap_unsigned_short_CQuestMan::RankString_unsigned_short_::_PAIR_16_ZMap_unsigned_short_CQuestMan::RankString_unsigned_short_::_PAIR_::s_pInstance__"
+      }
+    ]
+  }
+]

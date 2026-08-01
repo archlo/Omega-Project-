@@ -65,15 +65,6 @@ export class StatusBar extends GamePanel {
   private _hpPct = 0;
   private _mpPct = 0;
   private _expPct = 0;
-  private _hpTarget = -1;
-  private _mpTarget = -1;
-  private _expTarget = -1;
-  private _hpAnimFrom = 0;
-  private _mpAnimFrom = 0;
-  private _expAnimFrom = 0;
-  private _hpAnimT = 1;
-  private _mpAnimT = 1;
-  private _expAnimT = 1;
   private _pastHp = 25;
   private _pastMp = 15;
   private _hpFlashTime = 0;
@@ -106,14 +97,12 @@ export class StatusBar extends GamePanel {
 
   private readonly _hpOverlay: (Sprite | null)[] = [null, null];
   private readonly _mpOverlay: (Sprite | null)[] = [null, null];
-  private _aniHPTime = 0;
-  private _aniMPTime = 0;
+  private readonly _flashHp: { time: number; frame: number } = { time: 0, frame: 0 };
+  private readonly _flashMp: { time: number; frame: number } = { time: 0, frame: 0 };
 
   // OG: CUIToolTip — tooltip overlay for EXP gauge hover
   private _tooltipText: Text | null = null;
   private _tooltipBg: Graphics | null = null;
-  private _aniHPFrame = 0;
-  private _aniMPFrame = 0;
 
   private readonly _buttons: Button[] = [];
   private readonly _font: BuiltInFont;
@@ -241,102 +230,36 @@ export class StatusBar extends GamePanel {
   }
 
   update(dt: number): void {
-    // --- HP gauge animation (OG: smooth interpolation) ---
+    // OG CGauge::SetVal (0x86DEA0): CUIStatusBar::Draw re-targets every gauge
+    // to its live value each frame (SetNumberValue -> SetVal), so the fill
+    // approaches its target exponentially with tau = 700ms — never a one-shot
+    // cubic tween, never overshooting.
     const hpTarget = this.maxHp > 0 ? Math.min(1, Math.max(0, this.hp / this.maxHp)) : 0;
-    if (this._hpTarget < 0) {
-      // First frame: start animation from current value
-      this._hpAnimFrom = hpTarget;
-      this._hpTarget = hpTarget;
-      this._hpAnimT = 1;
-    } else if (Math.abs(hpTarget - this._hpTarget) > 1e-10) {
-      this._hpAnimFrom = this._hpPct;
-      this._hpTarget = hpTarget;
-      this._hpAnimT = 0;
-    }
-    if (this._hpAnimT < 1) {
-      this._hpAnimT = Math.min(1, this._hpAnimT + dt / 0.7);
-      // OG: smooth ease-out interpolation
-      const t = 1 - Math.pow(1 - this._hpAnimT, 3);
-      this._hpPct = this._hpAnimFrom + (this._hpTarget - this._hpAnimFrom) * t;
-    } else {
-      this._hpPct = this._hpTarget;
-    }
+    this._hpPct += (hpTarget - this._hpPct) * Math.min(1, dt / 0.7);
 
-    // --- MP gauge animation ---
     const mpTarget = this.maxMp > 0 ? Math.min(1, Math.max(0, this.mp / this.maxMp)) : 0;
-    if (this._mpTarget < 0) {
-      this._mpAnimFrom = mpTarget;
-      this._mpTarget = mpTarget;
-      this._mpAnimT = 1;
-    } else if (Math.abs(mpTarget - this._mpTarget) > 1e-10) {
-      this._mpAnimFrom = this._mpPct;
-      this._mpTarget = mpTarget;
-      this._mpAnimT = 0;
-    }
-    if (this._mpAnimT < 1) {
-      this._mpAnimT = Math.min(1, this._mpAnimT + dt / 0.7);
-      const t = 1 - Math.pow(1 - this._mpAnimT, 3);
-      this._mpPct = this._mpAnimFrom + (this._mpTarget - this._mpAnimFrom) * t;
-    } else {
-      this._mpPct = this._mpTarget;
-    }
+    this._mpPct += (mpTarget - this._mpPct) * Math.min(1, dt / 0.7);
 
-    // --- EXP gauge animation ---
-    const expTarget = this.nextExp > 0 ? Math.min(1, Math.max(0, this.exp / this.nextExp)) : 0;
-    if (this._expTarget < 0) {
-      this._expAnimFrom = expTarget;
-      this._expTarget = expTarget;
-      this._expAnimT = 1;
-    } else if (Math.abs(expTarget - this._expTarget) > 1e-10) {
-      this._expAnimFrom = this._expPct;
-      this._expTarget = expTarget;
-      this._expAnimT = 0;
-    }
-    if (this._expAnimT < 1) {
-      this._expAnimT = Math.min(1, this._expAnimT + dt / 0.7);
-      const t = 1 - Math.pow(1 - this._expAnimT, 3);
-      this._expPct = this._expAnimFrom + (this._expTarget - this._expAnimFrom) * t;
-    } else {
-      this._expPct = this._expTarget;
-    }
+    // OG SetNumberValue (0x873D50): EXP percent is clamped to 99.98 so the
+    // bar never renders fully full.
+    const expTarget = this.nextExp > 0 ? Math.min(0.9998, Math.max(0, this.exp / this.nextExp)) : 0;
+    this._expPct += (expTarget - this._expPct) * Math.min(1, dt / 0.7);
 
     this._updateWarningFlash();
     this._hpFlashTime = Math.max(0, this._hpFlashTime - dt);
     this._mpFlashTime = Math.max(0, this._mpFlashTime - dt);
 
-    // Overlay frame animation (delay=120ms per frame)
-    // OG: overlay only animates when gauge value actually changes, not constantly
-    if (Math.abs(this._hpPct - this._hpTarget) > 1e-10) {
-      this._aniHPTime += dt;
-      if (this._aniHPTime >= 0.12 && this._hpOverlay[0] && this._hpOverlay[1]) {
-        this._aniHPFrame = 1 - this._aniHPFrame;
-        this._hpOverlay[0].visible = this._aniHPFrame === 0;
-        this._hpOverlay[1].visible = this._aniHPFrame === 1;
-        this._aniHPTime -= 0.12;
-      }
-    } else {
-      // Stop overlay when gauge reaches target
-      if (this._hpOverlay[0]) this._hpOverlay[0].visible = false;
-      if (this._hpOverlay[1]) this._hpOverlay[1].visible = false;
-    }
-    if (Math.abs(this._mpPct - this._mpTarget) > 1e-10) {
-      this._aniMPTime += dt;
-      if (this._aniMPTime >= 0.12 && this._mpOverlay[0] && this._mpOverlay[1]) {
-        this._aniMPFrame = 1 - this._aniMPFrame;
-        this._mpOverlay[0].visible = this._aniMPFrame === 0;
-        this._mpOverlay[1].visible = this._aniMPFrame === 1;
-        this._aniMPTime -= 0.12;
-      }
-    } else {
-      if (this._mpOverlay[0]) this._mpOverlay[0].visible = false;
-      if (this._mpOverlay[1]) this._mpOverlay[1].visible = false;
-    }
+    // OG FlashHPBar (0x86D760) / FlashMPBar (0x86D8E0): the 2-frame
+    // aniHPGauge/aniMPGauge overlay flashes while the warning timer is active
+    // (RegisterRepeatAnimation 500ms). EXP never flashes.
+    const tl = this._barTopLeft;
+    this._tickFlashOverlay(this._hpFlashTime > 0, this._hpOverlay, HP_GAUGE, tl, dt, this._flashHp);
+    this._tickFlashOverlay(this._mpFlashTime > 0, this._mpOverlay, MP_GAUGE, tl, dt, this._flashMp);
 
     // Detect text value changes
     const hpText = `[${this.hp}\\${this.maxHp}]`;
     const mpText = `[${this.mp}\\${this.maxMp}]`;
-    const pct = this.nextExp > 0 ? (this._expPct * 100).toFixed(0) : '0';
-    const expText = `${this.exp}[${pct}%]`;
+    const expText = this._expText();
     if (hpText !== this._lastHpText || mpText !== this._lastMpText || expText !== this._lastExpText) {
       this._lastHpText = hpText;
       this._lastMpText = mpText;
@@ -473,13 +396,16 @@ export class StatusBar extends GamePanel {
     }
 
     // HP gauge
-    this._drawGauge(g, tl, this._hpCap, HP_GAUGE, this._hpPct, 0xff3333, this._hpOverlay);
+    this._drawGauge(g, tl, this._hpCap, HP_GAUGE, this._hpPct, 0xff3333);
     // MP gauge
-    this._drawGauge(g, tl, this._mpCap, MP_GAUGE, this._mpPct, 0x3c5adc, this._mpOverlay);
-    this._drawWarningFlash(g, tl, HP_GAUGE, this._hpFlashTime, 0xff6666);
-    this._drawWarningFlash(g, tl, MP_GAUGE, this._mpFlashTime, 0x66a0ff);
+    this._drawGauge(g, tl, this._mpCap, MP_GAUGE, this._mpPct, 0x3c5adc);
     // EXP gauge
-    this._drawGauge(g, tl, this._expCap, EXP_GAUGE, this._expPct, 0xdcb428, []);
+    this._drawGauge(g, tl, this._expCap, EXP_GAUGE, this._expPct, 0xdcb428);
+
+    // OG FlashHPBar/FlashMPBar use the ani*gauge sprite overlay (driven in
+    // update); fall back to a pulsing rect when the WZ frames are unavailable.
+    if (!this._hpOverlay[0]) this._drawWarningFlash(g, tl, HP_GAUGE, this._hpFlashTime, 0xff6666);
+    if (!this._mpOverlay[0]) this._drawWarningFlash(g, tl, MP_GAUGE, this._mpFlashTime, 0x66a0ff);
 
     if (this._gaugeCoverSprite) {
       this._gaugeCoverSprite.position.set(r.x, r.y);
@@ -502,8 +428,7 @@ export class StatusBar extends GamePanel {
     // Gauge numbers via bitmap glyphs or text fallback
     this._drawGaugeText(this._textLayer, `[${this.hp}\\${this.maxHp}]`, tl, HP_NUM);
     this._drawGaugeText(this._textLayer, `[${this.mp}\\${this.maxMp}]`, tl, MP_NUM);
-    const pct = this.nextExp > 0 ? (this._expPct * 100).toFixed(0) : '0';
-    this._drawGaugeText(this._textLayer, `${this.exp}[${pct}%]`, tl, EXP_NUM);
+    this._drawGaugeText(this._textLayer, this._expText(), tl, EXP_NUM);
 
     // Level digits
     this._drawLevelDigits(this._textLayer, tl);
@@ -518,9 +443,12 @@ export class StatusBar extends GamePanel {
     gauge: { x: number; y: number; len: number },
     pct: number,
     color: number,
-    overlay: (Sprite | null)[] | null = null,
   ): void {
-    const fill = Math.max(0, Math.min(gauge.len, Math.floor(gauge.len * pct)));
+    // OG CGauge::SetVal (0x86DEA0):
+    //   nLen = max(1, floor(m_nLength * dVal / 100))
+    //   center (1px) sprite stretched to nLen - 1, left edge pinned at m_nX
+    //   right cap at m_nX + nLen - 1; left cap static at m_nX
+    const nLen = StatusBar.gaugeFillLength(gauge.len, pct);
     const sx = tl.x + gauge.x;
     const sy = tl.y + gauge.y;
 
@@ -528,43 +456,63 @@ export class StatusBar extends GamePanel {
     const mid = caps[1];
     const rcap = caps[2];
     if (!lcap || !mid || !rcap) {
-      if (fill > 0) g.rect(sx, sy, fill, 10).fill({ color });
-      return;
-    }
-
-    if (fill <= 0) {
-      lcap.visible = false;
-      mid.visible = false;
-      rcap.visible = false;
-      if (overlay) { for (const o of overlay) if (o) o.visible = false; }
+      g.rect(sx, sy, nLen, 10).fill({ color });
       return;
     }
 
     lcap.visible = true;
     lcap.position.set(sx, sy);
 
-    const midW = Math.max(0, fill - lcap.width - rcap.width);
+    const midW = Math.max(0, nLen - 1);
     if (midW > 0) {
       mid.visible = true;
-      mid.position.set(sx + lcap.width, sy);
+      mid.position.set(sx, sy);
       mid.scale.x = midW / mid.width;
     } else {
       mid.visible = false;
     }
 
     rcap.visible = true;
-    rcap.position.set(sx + fill - rcap.width, sy);
+    rcap.position.set(sx + nLen - 1, sy);
+  }
 
-    // Animated overlay (aniHPGauge/aniMPGauge) clipped to fill width
-    if (overlay) {
-      const scale = fill / gauge.len;
-      for (const o of overlay) {
-        if (!o) continue;
-        o.visible = true;
-        o.position.set(sx, sy);
-        o.scale.x = scale;
-        o.alpha = 1;
-      }
+  // OG CGauge::SetVal fill width: max(1, floor(len * pct)). A full value maps
+  // to exactly len pixels — full bar = full gauge, never overshoots.
+  static gaugeFillLength(len: number, pct: number): number {
+    return Math.max(1, Math.min(len, Math.floor(len * pct)));
+  }
+
+  // OG SetNumberValue (0x873D50): EXP text shows the RAW exp/expMax percent
+  // (not the animated fill), clamped to 99.98, formatted "%d[%0.2f%%]".
+  private _expText(): string {
+    const pct = this.nextExp > 0 ? Math.min(99.98, (this.exp / this.nextExp) * 100) : 0;
+    return `${this.exp}[${pct.toFixed(2)}%]`;
+  }
+
+  private _tickFlashOverlay(
+    active: boolean,
+    overlay: (Sprite | null)[],
+    gauge: { x: number; y: number; len: number },
+    tl: { x: number; y: number },
+    dt: number,
+    state: { time: number; frame: number },
+  ): void {
+    if (!active) {
+      for (const o of overlay) if (o) o.visible = false;
+      return;
+    }
+    state.time += dt;
+    if (state.time >= 0.12 && overlay[0] && overlay[1]) {
+      state.time -= 0.12;
+      state.frame = 1 - state.frame;
+    }
+    for (let i = 0; i < overlay.length; i++) {
+      const o = overlay[i];
+      if (!o) continue;
+      o.visible = state.frame === i;
+      o.position.set(tl.x + gauge.x, tl.y + gauge.y);
+      o.scale.x = 1;
+      o.alpha = 1;
     }
   }
 

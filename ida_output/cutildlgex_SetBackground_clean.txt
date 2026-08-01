@@ -1,0 +1,50 @@
+// CUtilDlgEx::SetBackground
+// Address: 0x97f180
+
+// bad sp value at call has been detected, the output may be wrong!
+void __thiscall CUtilDlgEx::SetBackground(CUtilDlgEx *this)
+{
+  CUtilDlgEx *v1; // esi
+  IWzCanvas *m_pInterface; // ebp
+  int m_dlgType; // eax
+  StringPool *v4; // eax
+  wchar_t *v5; // eax
+  IWzCanvas **v6; // edi
+  IWzCanvas *v7; // ecx
+  StringPool *v8; // eax
+  Ztl_variant_t *v9; // eax
+  IUnknown *v10; // eax
+  HRESULT v11; // eax
+  IWzCanvas *v12; // ecx
+  void (__stdcall *v13)(VARIANTARG *); // ebp
+  int v14; // edi
+  void (__stdcall *v15)(VARIANTARG *); // esi
+  StringPool *v16; // eax
+  Ztl_variant_t *v17; // eax
+  IUnknown *v18; // eax
+  HRESULT (__stdcall *v19)(VARIANTARG *); // ebx
+  CUtilDlgEx *v20; // ebp
+  IWzCanvas *v21; // ecx
+  HRESULT v22; // eax
+  HRESULT v23; // eax
+  StringPool *v24; // eax
+  Ztl_variant_t *v25; // eax
+  IUnknown *v26; // eax
+  HRESULT v27; // eax
+  HRESULT v28; // eax
+  IWzCanvas *v29; // ecx
+  int m_wndHeight; // eax
+  void (__stdcall *v31)(VARIANTARG *); // esi
+  StringPool *... [67872 chars total]
+
+// References:
+//   ?GetInstance@StringPool@@SAAAV1@XZ @ 0x7466a0
+//   ?GetStringW@StringPool@@QAE?AV?$ZXString@G@@I@Z @ 0x403b60
+//   ??$PcCreateObject@V?$_com_ptr_t@V?$_com_IIID@UIWzCanvas@@$1?_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e@@3U__s_GUID@@B@@@@@@YAXPBGAAV?$_com_ptr_t@V?$_com_IIID@UIWzCanvas@@$1?_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e@@3U__s_GUID@@B@@@@PAUIUnknown@@@Z @ 0x4030f0
+//   ?_Release@?$ZXString@G@@KAXPAU_ZXStringData@1@@Z @ 0x4034b0
+//   ??0Ztl_variant_t@@QAE@ABV_variant_t@@@Z @ 0x401a10
+//   ?vtMissing@@3V_variant_t@@A @ 0xc626e8
+//   ?_com_issue_error@@YGXJ@Z @ 0xa2fd00
+//   ?Create@IWzCanvas@@QAEJKKABVZtl_variant_t@@0@Z @ 0x401c20
+//   ??1Ztl_variant_t@@QAE@XZ @ 0x401b90
+//   ?DrawRectangle@IWzCanvas@@QAEJJJKKK@Z @ 0x438640

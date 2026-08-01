@@ -1,0 +1,12 @@
+[
+  {
+    "query": "0x4c6320",
+    "matches": [
+      {
+        "address": "0x4c6320",
+        "name": "CItemInfo::IsEquipItem",
+        "pseudocode": "{\"addr\":\"0x4c6320\",\"code\":\"BOOL __thiscall CItemInfo::IsEquipItem(CItemInfo *this, int nItemId)\\n{\\n  return CItemInfo::GetEquipItem(this, nItemId) != nullptr; /*0x4c6330*/\\n}\",\"refs\":[{\"addr\":\"0x5c0820\",\"name\":\"?GetEquipItem@CItemInfo@@QAEPBUEQUIPITEM@1@J@Z\"}]}"
+      }
+    ]
+  }
+]

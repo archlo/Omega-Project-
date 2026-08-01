@@ -1,0 +1,13 @@
+// cuser::RemoveBlessingArmor
+
+void __thiscall CUser::RemoveBlessingArmor(CUser *this)
+{
+  IWzGr2DLayer *m_pInterface; // eax
+
+  m_pInterface = this->m_pLayerBlessingArmor.m_pInterface; /*0x8e1300*/
+  if ( m_pInterface ) /*0x8e1308*/
+  {
+    this->m_pLayerBlessingArmor.m_pInterface = nullptr; /*0x8e130a*/
+    m_pInterface->Release(m_pInterface); /*0x8e131a*/
+  }
+}

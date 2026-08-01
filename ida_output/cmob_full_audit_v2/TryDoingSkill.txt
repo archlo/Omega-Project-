@@ -1,0 +1,47 @@
+﻿int __thiscall CMob::TryDoingSkill(CMob *this, int *nAction, int *bLeft, CMob::TARGETINFO *ti)
+{
+  const MobSkillInfo *SkillInfo; // eax
+  const MobSkillInfo *v6; // edi
+  int IsLeft; // eax
+  int *v8; // ebx
+  CMob::TARGETINFO *v9; // ecx
+  const MOBSKILLENTRY *MobSkill; // eax
+  int update_time; // eax
+  int tEffectAfter; // ecx
+
+  if ( this->m_stat.nDoom_ )
+    return 0;
+  if ( this->m_stat.nSeal_ )
+    return 0;
+  if ( CMob::IsImmovable(this) )
+    return 0;
+  if ( !this->m_nSkillCommand )
+    return 0;
+  if ( this->m_stat.bDisable )
+    return 0;
+  SkillInfo = CMobTemplate::GetSkillInfo(this->m_pTemplate, this->m_nSkillCommand);
+  v6 = SkillInfo;
+  if ( !SkillInfo )
+    return 0;
+  *nAction = SkillInfo->nAction + 22;
+  IsLeft = CMob::IsLeft(this);
+  v8 = bLeft;
+  v9 = ti;
+  *bLeft = IsLeft;
+  v9->ptTarget.x = LOBYTE(this->m_nSkillCommand) | (unsigned __int16)(LOWORD(this->m_nSLV) << 8);
+  MobSkill = CSkillInfo::GetMobSkill(TSingleton<CSkillInfo>::ms_pInstance, v6->nSkillID);
+  MOBSKILLLEVELDATA::GetEffectUOL(&MobSkill->aLevelData.a[this->m_nSLV - 1], (Ztl_bstr_t *)&nAction);
+  if ( _bstr_t::length((_bstr_t *)&nAction) )
+  {
+    Ztl_bstr_t::operator=(&this->m_effectAttack.sEffect, (const Ztl_bstr_t *)&nAction);
+    this->m_effectAttack.bLeft = *v8;
+    update_time = get_update_time();
+    tEffectAfter = v6->tEffectAfter;
+    this->m_effectAttack.tStart = tEffectAfter + update_time;
+    if ( !(tEffectAfter + update_time) )
+      this->m_effectAttack.tStart = 1;
+  }
+  this->m_nSkillCommand = 0;
+  Ztl_bstr_t::~Ztl_bstr_t((Ztl_bstr_t *)&nAction);
+  return 1;
+}

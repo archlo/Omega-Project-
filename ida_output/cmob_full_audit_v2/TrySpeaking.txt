@@ -1,0 +1,377 @@
+﻿void __thiscall CMob::TrySpeaking(CMob *this, int nSpeakInfo, ZXString<char> nSpeech)
+{
+  CMobTemplate *m_pTemplate; // ebp
+  ZRef<MobSpeakInformation> *a; // eax
+  ZArray<ZRef<MobSpeakInformation> > *p_apSpeakInformation; // ebp
+  int p; // eax
+  unsigned int v8; // edi
+  int CurrentAction; // eax
+  int v10; // edi
+  int *ZtlSecureTear_m_nOneTimeAction; // ebx
+  MobSpeakInformation *v12; // esi
+  ZXString<char> *v13; // esi
+  unsigned int m_pStr; // eax
+  unsigned int rand; // esi
+  int v16; // eax
+  int ActionDelay; // ecx
+  ZArray<ZRef<MobSpeakInformation> > v18; // eax
+  MobSpeakInformation *v19; // eax
+  ZXString<char> *v20; // ecx
+  MobSpeakInformation *v21; // edi
+  ZXString<char> *v22; // eax
+  char *v23; // esi
+  ZArray<ZRef<MobSpeakCondition> > *p_apSpeakCondition; // ebx
+  int v25; // eax
+  const CPet *v26; // edi
+  int v27; // ebp
+  MobSpeakCondition *v28; // esi
+  int nPetID; // eax
+  unsigned int j; // ecx
+  unsigned __int16 v31; // ax
+  char *Buffer; // eax
+  ZXString<char> v33; // edi
+  int v34; // esi
+  char *v35; // edi
+  int v36; // eax
+  StringPool *Instance; // eax
+  ZXString<char> *String; // eax
+  char *v39; // ebp
+  char *v40; // edx
+  const char *v41; // eax
+  int v42; // esi
+  MobSpeakInformation *v43; // edi
+  ZXString<char>::_ZXStringData *v44; // eax
+  CMob *v45; // ebx
+  CMobTemplate *v46; // edx
+  int nChatBalloon; // eax
+  IWzVector2D *m_pInterface; // eax
+  IWzGr2DLayer *v49; // eax
+  _bstr_t::Data_t *v50; // ecx
+  _bstr_t v51; // [esp-1Ch] [ebp-74h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v52; // [esp-18h] [ebp-70h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v53; // [esp-14h] [ebp-6Ch] BYREF
+  int v54; // [esp-10h] [ebp-68h]
+  int v55; // [esp-Ch] [ebp-64h]
+  unsigned int v56; // [esp-8h] [ebp-60h] BYREF
+  signed int ZtlSecureTear_m_nOneTimeAction_CS; // [esp-4h] [ebp-5Ch]
+  ZXString<char> sSpeech; // [esp+14h] [ebp-44h] BYREF
+  CMob *v59; // [esp+18h] [ebp-40h]
+  int i; // [esp+1Ch] [ebp-3Ch]
+  int nFadeDelay; // [esp+20h] [ebp-38h]
+  int nTimeOut; // [esp+24h] [ebp-34h]
+  const CUserLocal *pUserLocal; // [esp+28h] [ebp-30h]
+  CWvsContext *pCtx; // [esp+2Ch] [ebp-2Ch]
+  const CPet *pPet[2]; // [esp+30h] [ebp-28h] BYREF
+  int nWidth; // [esp+38h] [ebp-20h]
+  ZRef<MobSpeakCondition> sc; // [esp+3Ch] [ebp-1Ch] BYREF
+  ZRef<MobSpeakInformation> v68; // [esp+44h] [ebp-14h] BYREF
+  int v69; // [esp+54h] [ebp-4h]
+
+  v59 = this;
+  sSpeech._m_pStr = nullptr;
+  m_pTemplate = this->m_pTemplate;
+  a = m_pTemplate->apSpeakInformation.a;
+  p_apSpeakInformation = &m_pTemplate->apSpeakInformation;
+  v69 = 0;
+  nTimeOut = 5000;
+  nFadeDelay = 600;
+  if ( !a )
+    return;
+  p = (int)a[-1].p;
+  if ( !p )
+    return;
+  v8 = nSpeakInfo;
+  if ( nSpeakInfo >= p )
+    return;
+  CurrentAction = CMob::GetCurrentAction(this, nullptr);
+  nWidth = this->m_pTemplate->nWidth;
+  if ( (unsigned int)(CurrentAction - 10) > 2 )
+  {
+    if ( v8 == -1 )
+      return;
+  }
+  else if ( v8 == -1 )
+  {
+    if ( nSpeech._m_pStr != (char *)-1 )
+      return;
+    v10 = 0;
+    if ( !ZArray<ZRef<MobSpeakInformation>>::GetCount(p_apSpeakInformation) )
+      return;
+    ZtlSecureTear_m_nOneTimeAction = this->_ZtlSecureTear_m_nOneTimeAction;
+    while ( 1 )
+    {
+      v12 = p_apSpeakInformation->a[v10].p;
+      pPet[1] = (const CPet *)v12;
+      if ( v12 )
+        InterlockedIncrement(&v12->_m_nRef);
+      ZtlSecureTear_m_nOneTimeAction_CS = v59->_ZtlSecureTear_m_nOneTimeAction_CS;
+      LOBYTE(v69) = 1;
+      if ( v12->nAction == _ZtlSecureFuse<long>(ZtlSecureTear_m_nOneTimeAction, ZtlSecureTear_m_nOneTimeAction_CS) )
+        break;
+      LOBYTE(v69) = 0;
+      ZRef<MobSpeakInformation>::~ZRef<MobSpeakInformation>((ZRef<MobSpeakInformation> *)pPet);
+      if ( ++v10 >= ZArray<ZRef<MobSpeakInformation>>::GetCount(p_apSpeakInformation) )
+        return;
+    }
+    v13 = v12->asSpeech.a;
+    nSpeakInfo = v10;
+    if ( v13 )
+      m_pStr = (unsigned int)v13[-1]._m_pStr;
+    else
+      m_pStr = 0;
+    rand = get_rand(m_pStr, 0);
+    v16 = _ZtlSecureFuse<long>(ZtlSecureTear_m_nOneTimeAction, v59->_ZtlSecureTear_m_nOneTimeAction_CS);
+    ActionDelay = CMob::GetActionDelay(v59, v16);
+    nFadeDelay = ActionDelay - 4 * ActionDelay / 5;
+    nTimeOut = 4 * ActionDelay / 5;
+    LOBYTE(v69) = 0;
+    ZRef<MobSpeakInformation>::~ZRef<MobSpeakInformation>((ZRef<MobSpeakInformation> *)pPet);
+    v8 = nSpeakInfo;
+    goto LABEL_26;
+  }
+  v18.a = p_apSpeakInformation->a;
+  if ( !p_apSpeakInformation->a )
+    return;
+  if ( v18.a[-1].p <= (MobSpeakInformation *)v8 )
+    return;
+  v19 = v18.a[v8].p;
+  v20 = v19->asSpeech.a;
+  if ( !v20 )
+    return;
+  rand = (unsigned int)nSpeech._m_pStr;
+  if ( v20[-1]._m_pStr <= nSpeech._m_pStr
+    || v19->nAction && v19->nAction < 43 && v59->m_chatBalloon.m_pLayerChat.m_pInterface )
+  {
+    return;
+  }
+LABEL_26:
+  v21 = p_apSpeakInformation->a[v8].p;
+  v68.p = v21;
+  if ( v21 )
+    InterlockedIncrement(&v21->_m_nRef);
+  v22 = v21->asSpeech.a;
+  LOBYTE(v69) = 2;
+  if ( !v22 || (char *)rand >= v22[-1]._m_pStr )
+  {
+    v23 = sSpeech._m_pStr;
+LABEL_48:
+    LOBYTE(v69) = 0;
+    ZRef<MobSpeakInformation>::~ZRef<MobSpeakInformation>(&v68);
+    v69 = -1;
+    if ( !v23 )
+      return;
+    ZtlSecureTear_m_nOneTimeAction_CS = (signed int)(v23 - 12);
+    goto LABEL_92;
+  }
+  ZXString<char>::operator=(&sSpeech, &v22[rand]);
+  v23 = sSpeech._m_pStr;
+  if ( !sSpeech._m_pStr || !*sSpeech._m_pStr )
+    goto LABEL_48;
+  p_apSpeakCondition = &v59->m_pTemplate->apSpeakCondition;
+  if ( !ZArray<ZRef<MobSpeakCondition>>::IsEmpty(p_apSpeakCondition) )
+  {
+    pCtx = (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr;
+    CWvsContext::GetCharacterData(
+      (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+      (ZRef<CharacterData> *)&sc);
+    ZRef<CharacterData>::~ZRef<CharacterData>((ZRef<CharacterData> *)&sc);
+    v25 = 0;
+    pUserLocal = (const CUserLocal *)TSingleton<CUserPool>::ms_pInstance.m_pInterface[2].__vftable;
+    nSpeakInfo = 0;
+    for ( i = 0; i < 24; i += 8 )
+    {
+      v26 = *(CPet **)((char *)&pUserLocal->m_apPet.a->p + v25);
+      pPet[0] = v26;
+      v27 = 0;
+      if ( ZArray<ZRef<MobSpeakCondition>>::GetCount(p_apSpeakCondition) )
+      {
+        while ( 1 )
+        {
+          if ( nSpeakInfo )
+            goto LABEL_57;
+          v28 = p_apSpeakCondition->a[v27].p;
+          sc.p = v28;
+          if ( v28 )
+            InterlockedIncrement(&v28->_m_nRef);
+          nPetID = v28->nPetID;
+          LOBYTE(v69) = 3;
+          if ( !nPetID )
+            goto LABEL_41;
+          if ( v26 )
+            break;
+          LOBYTE(v69) = 2;
+          ZRef<MobSpeakCondition>::~ZRef<MobSpeakCondition>(&sc);
+LABEL_56:
+          if ( ++v27 >= ZArray<ZRef<MobSpeakCondition>>::GetCount(p_apSpeakCondition) )
+            goto LABEL_57;
+        }
+        nSpeakInfo = v26->m_pTemplate->dwTemplateID == nPetID;
+LABEL_41:
+        if ( v28->nQuestID )
+        {
+          CQuestMan::GetQuestArray(TSingleton<CQuestMan>::ms_pInstance, (ZArray<unsigned short> *)&nSpeech);
+          LOBYTE(v69) = 4;
+          for ( j = 0; nSpeech._m_pStr && j < *((_DWORD *)nSpeech._m_pStr - 1); ++j )
+          {
+            v31 = *(_WORD *)&nSpeech._m_pStr[2 * j];
+            if ( v31 == v28->nQuestID )
+            {
+              nSpeakInfo = CWvsContext::GetQuestState(pCtx, v31) == v28->nState;
+              break;
+            }
+          }
+          LOBYTE(v69) = 3;
+          ZArray<unsigned short>::RemoveAll((ZArray<unsigned short> *)&nSpeech);
+        }
+        LOBYTE(v69) = 2;
+        if ( !InterlockedDecrement(&v28->_m_nRef) )
+        {
+          InterlockedIncrement(&v28->_m_nRef);
+          ((void (__thiscall *)(MobSpeakCondition *, int))v28->dtr_ZRefCounted)(v28, 1);
+        }
+        v26 = pPet[0];
+        sc.p = nullptr;
+        goto LABEL_56;
+      }
+LABEL_57:
+      v25 = i + 8;
+    }
+    if ( !nSpeakInfo )
+    {
+      if ( (_S3_3 & 1) == 0 )
+      {
+        _S3_3 |= 1u;
+        LOBYTE(v69) = 5;
+        sChar._m_pStr = nullptr;
+        *(_WORD *)ZXString<char>::GetBuffer(&sChar, 2, 0) = word_B51FF0;
+        ZXString<char>::ReleaseBuffer(&sChar, 2);
+        atexit(CMob::TrySpeaking_::_52_::_dynamic_atexit_destructor_for__sChar__);
+      }
+      if ( (_S3_3 & 2) == 0 )
+      {
+        _S3_3 |= 2u;
+        LOBYTE(v69) = 6;
+        sIgnoreSymbols._m_pStr = nullptr;
+        Buffer = ZXString<char>::GetBuffer(&sIgnoreSymbols, 7, 0);
+        *(_DWORD *)Buffer = *(_DWORD *)asc_B51FE8;
+        *((_WORD *)Buffer + 2) = word_B51FEC;
+        ZtlSecureTear_m_nOneTimeAction_CS = 7;
+        Buffer[6] = byte_B51FEE;
+        ZXString<char>::ReleaseBuffer(&sIgnoreSymbols, ZtlSecureTear_m_nOneTimeAction_CS);
+        atexit(CMob::TrySpeaking_::_52_::_dynamic_atexit_destructor_for__sIgnoreSymbols__);
+      }
+      v33._m_pStr = nullptr;
+      nSpeech._m_pStr = nullptr;
+      LOBYTE(v69) = 7;
+      v34 = 0;
+      if ( ZXString<char>::GetLength(&sSpeech) > 0 )
+      {
+        v35 = sSpeech._m_pStr;
+        do
+        {
+          LOBYTE(pPet[0]) = v35[v34];
+          if ( ZXString<char>::Find(&sIgnoreSymbols, (char)pPet[0], 0) == -1 )
+          {
+            if ( sChar._m_pStr )
+              v36 = *((_DWORD *)sChar._m_pStr - 1);
+            else
+              v36 = 0;
+            ZXString<char>::_Cat(&nSpeech, sChar._m_pStr, v36);
+            LOBYTE(pCtx) = v35[v34 + 1];
+            if ( ZXString<char>::Find(&sIgnoreSymbols, (char)pCtx, 0) == -1 )
+              ++v34;
+          }
+          else
+          {
+            LOBYTE(nSpeakInfo) = v35[v34];
+            ZXString<char>::_Cat(&nSpeech, (const char *)&nSpeakInfo, 1);
+          }
+          ++v34;
+        }
+        while ( v34 < ZXString<char>::GetLength(&sSpeech) );
+        v33._m_pStr = nSpeech._m_pStr;
+      }
+      ZXString<char>::operator=(&sSpeech, &nSpeech);
+      LOBYTE(v69) = 2;
+      if ( v33._m_pStr )
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v33._m_pStr - 1);
+    }
+  }
+  nSpeakInfo = 0;
+  LOBYTE(v69) = 8;
+  Instance = StringPool::GetInstance();
+  String = StringPool::GetString(Instance, &nSpeech, 0x72Du);
+  v39 = sSpeech._m_pStr;
+  v40 = v59->m_pTemplate->sName._m_pStr;
+  v41 = String->_m_pStr;
+  LOBYTE(v69) = 9;
+  ZXString<char>::Format((ZXString<char> *)&nSpeakInfo, v41, v40, sSpeech._m_pStr);
+  LOBYTE(v69) = 8;
+  if ( nSpeech._m_pStr )
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)nSpeech._m_pStr - 1);
+  v42 = nSpeakInfo;
+  if ( TSingleton<CUIStatusBar>::ms_pInstance._m_pStr )
+  {
+    pPet[0] = (const CPet *)&v56;
+    CUIStatusBar::ChatLogAdd(
+      (CUIStatusBar *)TSingleton<CUIStatusBar>::ms_pInstance._m_pStr,
+      (const char *)nSpeakInfo,
+      25,
+      -1,
+      0,
+      (ZRef<GW_ItemSlotBase>)v56);
+  }
+  v43 = v68.p;
+  v44 = (ZXString<char>::_ZXStringData *)v68.p->nWidth;
+  if ( !v44 )
+    v44 = (ZXString<char>::_ZXStringData *)nWidth;
+  v45 = v59;
+  v46 = v59->m_pTemplate;
+  ZtlSecureTear_m_nOneTimeAction_CS = (signed int)v44;
+  nChatBalloon = v46->nChatBalloon;
+  v56 = nFadeDelay;
+  v55 = nChatBalloon;
+  m_pInterface = v59->m_pvc.m_pInterface;
+  v54 = nTimeOut;
+  nWidth = (int)&v53;
+  v53.m_pInterface = m_pInterface;
+  if ( m_pInterface )
+    m_pInterface->AddRef(m_pInterface);
+  v49 = v45->m_pLayerAction.m_pInterface;
+  v50 = (_bstr_t::Data_t *)&v52;
+  LOBYTE(v69) = 10;
+  pPet[0] = (const CPet *)&v52;
+  v52.m_pInterface = v49;
+  if ( v49 )
+    v49->AddRef(v49);
+  v51.m_Data = v50;
+  pCtx = (CWvsContext *)&v51;
+  LOBYTE(v69) = 11;
+  _bstr_t::_bstr_t(&v51, v39);
+  LOBYTE(v69) = 8;
+  CChatBalloon::MakeMobBalloon(
+    &v45->m_chatBalloon,
+    (Ztl_bstr_t)v51.m_Data,
+    v52,
+    v53,
+    v54,
+    v55,
+    v56,
+    ZtlSecureTear_m_nOneTimeAction_CS);
+  LOBYTE(v69) = 2;
+  if ( v42 )
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(v42 - 12));
+  LOBYTE(v69) = 0;
+  if ( !InterlockedDecrement(&v43->_m_nRef) )
+  {
+    InterlockedIncrement(&v43->_m_nRef);
+    ((void (__thiscall *)(MobSpeakInformation *, int))v43->dtr_ZRefCounted)(v43, 1);
+  }
+  v69 = -1;
+  if ( v39 )
+  {
+    ZtlSecureTear_m_nOneTimeAction_CS = (signed int)(v39 - 12);
+LABEL_92:
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)ZtlSecureTear_m_nOneTimeAction_CS);
+  }
+}

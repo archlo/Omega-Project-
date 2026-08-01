@@ -1,0 +1,10 @@
+// CUtilDlgEx::ClearToolTip
+// Address: 0x986860
+
+void __thiscall CUtilDlgEx::ClearToolTip(CUtilDlgEx *this)
+{
+  CUIToolTip::ClearToolTip((CUIToolTip *)&this->m_pLayerPetInfo); /*0x986866*/
+}
+
+// References:
+//   ?ClearToolTip@CUIToolTip@@QAEXXZ @ 0x880f20

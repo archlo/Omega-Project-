@@ -1,0 +1,57 @@
+// cuser::RetrieveNewYearCardAdditionalLayer
+
+CUser::ADDITIONALLAYER *__thiscall CUser::RetrieveNewYearCardAdditionalLayer(CUser *this, unsigned int dwSN)
+{
+  int m_lRescentUsedNewYearCardLayer; // ebp
+  int v5; // edi
+  CUser::ADDITIONALLAYER *v6; // esi
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzGr2DLayer *v8; // eax
+  int i; // [esp+8h] [ebp-4h] BYREF
+
+  m_lRescentUsedNewYearCardLayer = this->m_lRescentUsedNewYearCardLayer; /*0x8e6925*/
+  if ( m_lRescentUsedNewYearCardLayer ) /*0x8e692d*/
+  {
+    v5 = 63; /*0x8e696b*/
+    i = 63; /*0x8e6970*/
+    do /*0x8e699c*/
+    {
+      if ( !ZMap<unsigned long,long,unsigned long>::FindInverse(&this->m_mapNewYearCardEffectMap, &i) ) /*0x8e698e*/
+      {
+        this->m_lRescentUsedNewYearCardLayer = v5; /*0x8e6a2d*/
+        *(_DWORD *)&ZMap<unsigned long,long,unsigned long>::Insert(&this->m_mapNewYearCardEffectMap, &dwSN, nullptr)[12] = this->m_lRescentUsedNewYearCardLayer; /*0x8e6a3e*/
+        return &this->m_aAdditionalLayer[v5]; /*0x8e6a46*/
+      }
+      i = ++v5; /*0x8e6998*/
+    }
+    while ( v5 <= 72 ); /*0x8e699c*/
+    this->m_lRescentUsedNewYearCardLayer = m_lRescentUsedNewYearCardLayer + 1; /*0x8e69a4*/
+    if ( m_lRescentUsedNewYearCardLayer + 1 > 72 ) /*0x8e69aa*/
+      this->m_lRescentUsedNewYearCardLayer = 63; /*0x8e69ac*/
+    *(_DWORD *)&ZMap<unsigned long,long,unsigned long>::Insert(&this->m_mapNewYearCardEffectMap, &dwSN, nullptr)[12] = this->m_lRescentUsedNewYearCardLayer; /*0x8e69cb*/
+    v6 = &this->m_aAdditionalLayer[this->m_lRescentUsedNewYearCardLayer]; /*0x8e69d7*/
+    v6->nData = -1; /*0x8e69e3*/
+    v6->l.bFixed = 1; /*0x8e69ea*/
+    m_pInterface = v6->l.pLayer.m_pInterface; /*0x8e69ed*/
+    if ( m_pInterface ) /*0x8e69f2*/
+    {
+      v6->l.pLayer.m_pInterface = nullptr; /*0x8e69f4*/
+      m_pInterface->Release(m_pInterface); /*0x8e69fd*/
+    }
+    v6->nDataForRepeat = -1; /*0x8e69ff*/
+    v6->l2.bFixed = 1; /*0x8e6a05*/
+    v8 = v6->l2.pLayer.m_pInterface; /*0x8e6a08*/
+    if ( v8 ) /*0x8e6a0d*/
+    {
+      v6->l2.pLayer.m_pInterface = nullptr; /*0x8e6a0f*/
+      v8->Release(v8); /*0x8e6a18*/
+    }
+    return v6; /*0x8e6a1c*/
+  }
+  else
+  {
+    this->m_lRescentUsedNewYearCardLayer = 63; /*0x8e693b*/
+    *(_DWORD *)&ZMap<unsigned long,long,unsigned long>::Insert(&this->m_mapNewYearCardEffectMap, &dwSN, nullptr)[12] = this->m_lRescentUsedNewYearCardLayer; /*0x8e6950*/
+    return &this->m_aAdditionalLayer[this->m_lRescentUsedNewYearCardLayer]; /*0x8e695c*/
+  }
+}

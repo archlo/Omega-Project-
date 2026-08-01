@@ -1,0 +1,3 @@
+// CUser::RemoveMoreWildFinishEffect @ 0x8e1340
+
+{"addr":"0x8e1340","code":"void __thiscall CUser::RemoveMoreWildFinishEffect(CUser *this)\n{\n  IWzGr2DLayer *m_pInterface; // eax\n\n  m_pInterface = this->m_pLayerMoreWildFinishEffect.m_pInterface; /*0x8e1340*/\n  if ( m_pInterface ) /*0x8e1348*/\n  {\n    this->m_pLayerMoreWildFinishEffect.m_pInterface = nullptr; /*0x8e134a*/\n    m_pInterface->Release(m_pInterface); /*0x8e135a*/\n  }\n}"}

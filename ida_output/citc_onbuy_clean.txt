@@ -1,0 +1,17 @@
+void __thiscall CITC::OnBuy(CITC *this, ZRef<ITCITEM> *ii)
+{
+  COutPacket oPacket; // [esp+8h] [ebp-1Ch] BYREF
+  int v4; // [esp+20h] [ebp-4h]
+
+  if ( !this->m_bITCRequestSent )
+  {
+    COutPacket::COutPacket(&oPacket, 308);
+    v4 = 0;
+    COutPacket::Encode1(&oPacket, 0x10u);
+    COutPacket::Encode4(&oPacket, ii->p->nITCSN);
+    CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket);
+    this->m_bITCRequestSent = 1;
+    v4 = -1;
+    ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff);
+  }
+}

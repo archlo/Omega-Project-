@@ -1,0 +1,1 @@
+{"addr":"0x9a4030","code":"HRESULT __stdcall CWebWnd::GetWindow(CWebWnd *this, HWND__ **phwnd)\n{\n  *phwnd = (HWND__ *)this->m_pAnimationLayer.m_pInterface; /*0x9a403b*/\n  return 0; /*0x9a403f*/\n}"}

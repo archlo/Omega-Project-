@@ -1,0 +1,20 @@
+// cuser::GetDashingSkill
+
+char *__thiscall CUser::GetDashingSkill(CUser *this)
+{
+  int v2; // edi
+  int v3; // eax
+  char *result; // eax
+  bool v5; // zf
+
+  this->GetSecondaryStat(this); /*0x8de38a*/
+  v2 = this->GetJobCode(this); /*0x8de395*/
+  v3 = this->GetJobCode(this) % 1000 / 100; /*0x8de3cc*/
+  if ( v3 == 5 )
+    return &byte_E4E5AB[v2 / 1000 != 1 ? 0xFF676982 : 0];
+  v5 = v3 == 4; /*0x8de3f9*/
+  result = (_BYTE *)(&loc_41EEE4 + 4); /*0x8de3fc*/
+  if ( !v5 ) /*0x8de401*/
+    return nullptr; /*0x8de403*/
+  return result; /*0x8de3eb*/
+}

@@ -1,0 +1,54 @@
+﻿void __thiscall CMapLoadable::Init(CMapLoadable *this, void *pParam)
+{
+  IWzGr2D *m_pInterface; // esi
+  HRESULT v4; // eax
+  IWzVector2D *v5; // esi
+  HRESULT v6; // eax
+  IWzVector2D *v7; // esi
+  HRESULT v8; // eax
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > result; // [esp+24h] [ebp-14h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v10; // [esp+28h] [ebp-10h] BYREF
+  int v11; // [esp+34h] [ebp-4h]
+
+  CONFIG_SYSOPT::GetVideo_MagLevel( /*0x614e0e*/
+    (CONFIG_SYSOPT *)(TSingleton<CConfig>::ms_pInstance._m_pStr + 108),
+    &this->m_nMagLevel_Obj,
+    &this->m_nMagLevel_Back);
+  if ( !g_gr.m_pInterface ) /*0x614e1a*/
+    _com_issue_error(-2147467261); /*0x614e21*/
+  m_pInterface = g_gr.m_pInterface; /*0x614e28*/
+  v4 = g_gr.m_pInterface->raw_SetFrameSkip(g_gr.m_pInterface); /*0x614e2e*/
+  if ( v4 < 0 ) /*0x614e32*/
+    _com_issue_errorex(v4, m_pInterface, &_GUID_e576ea33_d465_4f08_aab1_e78df73ee6d9); /*0x614e3b*/
+  if ( !g_gr.m_pInterface ) /*0x614e48*/
+    _com_issue_error(-2147467261); /*0x614e4f*/
+  v5 = IWzGr2D::Getcenter(g_gr.m_pInterface, &result)->m_pInterface; /*0x614e5e*/
+  v11 = 0; /*0x614e60*/
+  if ( !v5 ) /*0x614e6a*/
+    _com_issue_error(-2147467261); /*0x614e71*/
+  v6 = ((int (__stdcall *)(IWzVector2D *, _DWORD, unsigned int, unsigned int, unsigned int))v5->put_origin)( /*0x614ea4*/
+         v5,
+         *(_DWORD *)&vtEmpty.vt,
+         vtEmpty.decVal.Hi32,
+         vtEmpty.decVal.Lo32,
+         vtEmpty.decVal.Mid32);
+  if ( v6 < 0 ) /*0x614ea8*/
+    _com_issue_errorex(v6, v5, &_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4); /*0x614eb1*/
+  v11 = -1; /*0x614eba*/
+  if ( result.m_pInterface ) /*0x614ec4*/
+    result.m_pInterface->Release(result.m_pInterface); /*0x614ecc*/
+  if ( !g_gr.m_pInterface ) /*0x614ed6*/
+    _com_issue_error(-2147467261); /*0x614edd*/
+  v7 = IWzGr2D::Getcenter(g_gr.m_pInterface, &v10)->m_pInterface; /*0x614eec*/
+  v11 = 1; /*0x614eee*/
+  if ( !v7 ) /*0x614ef8*/
+    _com_issue_error(-2147467261); /*0x614eff*/
+  v8 = v7->raw_Move(v7, 0, 0); /*0x614f0e*/
+  if ( v8 < 0 ) /*0x614f12*/
+    _com_issue_errorex(v8, v7, &_GUID_4cfb57c7_eae3_40b3_ac98_4b2750e3642a); /*0x614f1b*/
+  v11 = -1; /*0x614f24*/
+  if ( v10.m_pInterface ) /*0x614f2e*/
+    v10.m_pInterface->Release(v10.m_pInterface); /*0x614f36*/
+  ZRef<CWvsPhysicalSpace2D>::_Alloc(&this->m_pSpace2D); /*0x614f3b*/
+  CInputSystem::ShowCursor(TSingleton<CInputSystem>::ms_pInstance, 1); /*0x614f48*/
+}

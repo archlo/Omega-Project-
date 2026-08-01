@@ -1,0 +1,56 @@
+// cashshop::ChangeLimitGoodsState
+
+int __thiscall CCashShop::ChangeLimitGoodsState(CCashShop *this, int nCommSN, int nStockFailReason)
+{
+  CS_LIMITGOODS *a; // ebx
+  unsigned int v4; // edi
+  int *nSN; // ebx
+  CS_LIMITGOODS *v6; // eax
+  int v7; // eax
+  int *v8; // edx
+  unsigned int v9; // edi
+
+  a = this->m_aLimitGoods.a; /*0x47e822*/
+  if ( !a || !a[-1].abWeek[6] ) /*0x47e837*/
+    return 0; /*0x47e8cf*/
+  v4 = 0; /*0x47e847*/
+  nSN = a->nSN; /*0x47e849*/
+LABEL_4:
+  v6 = this->m_aLimitGoods.a; /*0x47e850*/
+  if ( !v6 || v4 >= v6[-1].abWeek[6] ) /*0x47e85a*/
+    return 0; /*0x47e85a*/
+  v7 = 0; /*0x47e85c*/
+  v8 = nSN; /*0x47e85e*/
+  while ( 1 ) /*0x47e860*/
+  {
+    if ( !*v8 ) /*0x47e864*/
+    {
+LABEL_10:
+      ++v4; /*0x47e873*/
+      nSN += 26; /*0x47e874*/
+      goto LABEL_4; /*0x47e877*/
+    }
+    if ( *v8 == nCommSN ) /*0x47e868*/
+      break; /*0x47e868*/
+    ++v7; /*0x47e86a*/
+    ++v8; /*0x47e86b*/
+    if ( v7 >= 10 ) /*0x47e871*/
+      goto LABEL_10; /*0x47e871*/
+  }
+  v9 = v4; /*0x47e87d*/
+  if ( nStockFailReason == 29 ) /*0x47e883*/
+  {
+    this->m_aLimitGoods.a[v9].nState = 2; /*0x47e8bb*/
+    return 1; /*0x47e8c5*/
+  }
+  else
+  {
+    if ( nStockFailReason != 30 ) /*0x47e888*/
+    {
+      this->m_aLimitGoods.a[v9].nState = -1; /*0x47e88d*/
+      return 0; /*0x47e89c*/
+    }
+    this->m_aLimitGoods.a[v9].nState = 1; /*0x47e8a3*/
+    return 1; /*0x47e8ad*/
+  }
+}

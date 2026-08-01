@@ -1,0 +1,431 @@
+void __thiscall CUIToolTip::SetToolTip_ItemOption(CUIToolTip *this, int nItemOptionID, int nLevel)
+{
+  int v4; // ebp
+  char *v5; // ecx
+  ItemOptionLevelData *v6; // esi
+  StringPool *v7; // eax
+  StringPool *v8; // eax
+  StringPool *v9; // eax
+  StringPool *v10; // eax
+  StringPool *v11; // eax
+  StringPool *v12; // eax
+  StringPool *v13; // eax
+  StringPool *v14; // eax
+  StringPool *v15; // eax
+  StringPool *v16; // eax
+  StringPool *v17; // eax
+  StringPool *v18; // eax
+  StringPool *v19; // eax
+  StringPool *Instance; // eax
+  ZXString<char> *String; // eax
+  int nProb; // edx
+  const char *m_pStr; // eax
+  char *v24; // ecx
+  StringPool *v25; // eax
+  ZXString<char> *v26; // eax
+  int v27; // edx
+  const char *v28; // eax
+  StringPool *v29; // eax
+  ZXString<char> *v30; // eax
+  int v31; // edx
+  const char *v32; // eax
+  StringPool *v33; // eax
+  ZXString<char> *v34; // eax
+  int v35; // edx
+  const char *v36; // eax
+  StringPool *v37; // eax
+  ZXString<char> *v38; // eax
+  int v39; // edx
+  const char *v40; // eax
+  StringPool *v41; // eax
+  StringPool *v42; // eax
+  StringPool *v43; // eax
+  StringPool *v44; // eax
+  StringPool *v45; // eax
+  StringPool *v46; // eax
+  ZXString<char> *v47; // eax
+  int v48; // edx
+  const char *v49; // eax
+  StringPool *v50; // eax
+  ZXString<char> *v51; // eax
+  int v52; // edx
+  const char *v53; // eax
+  StringPool *v54; // eax
+  ZXString<char> *v55; // eax
+  int v56; // edx
+  const char *v57; // eax
+  StringPool *v58; // eax
+  ZXString<char> *v59; // eax
+  int v60; // edx
+  const char *v61; // eax
+  StringPool *v62; // eax
+  ZXString<char> *v63; // eax
+  int v64; // edx
+  const char *v65; // eax
+  StringPool *v66; // eax
+  ZXString<char> *v67; // eax
+  int v68; // edx
+  const char *v69; // eax
+  StringPool *v70; // eax
+  ZXString<char> *v71; // eax
+  int v72; // edx
+  const char *v73; // eax
+  StringPool *v74; // eax
+  ZXString<char> *v75; // eax
+  int v76; // edx
+  const char *v77; // eax
+  StringPool *v78; // eax
+  StringPool *v79; // eax
+  ZXString<char> *v80; // eax
+  int v81; // edx
+  const char *v82; // eax
+  StringPool *v83; // eax
+  ZXString<char> *v84; // eax
+  int v85; // edx
+  const char *v86; // eax
+  StringPool *v87; // eax
+  ZXString<char> *v88; // eax
+  int v89; // edx
+  const char *v90; // eax
+  StringPool *v91; // eax
+  ZXString<char> *v92; // eax
+  int v93; // ecx
+  const char *v94; // eax
+  StringPool *v95; // eax
+  ZXString<char> *v96; // eax
+  int v97; // ecx
+  const char *v98; // eax
+  StringPool *v99; // eax
+  StringPool *v100; // eax
+  StringPool *v101; // eax
+  ZXString<char> *v102; // eax
+  int v103; // edx
+  const char *v104; // eax
+  StringPool *v105; // eax
+  ZXString<char> *v106; // eax
+  int v107; // edx
+  const char *v108; // eax
+  StringPool *v109; // eax
+  StringPool *v110; // eax
+  StringPool *v111; // eax
+  StringPool *v112; // eax
+  StringPool *v113; // eax
+  StringPool *v114; // eax
+  StringPool *v115; // eax
+  StringPool *v116; // eax
+  StringPool *v117; // eax
+  StringPool *v118; // eax
+  StringPool *v119; // eax
+  StringPool *v120; // eax
+  StringPool *v121; // eax
+  StringPool *v122; // eax
+  StringPool *v123; // eax
+  StringPool *v124; // eax
+  StringPool *v125; // eax
+  StringPool *v126; // eax
+  ZXString<char> *v127; // eax
+  int v128; // edx
+  const char *v129; // eax
+  StringPool *v130; // eax
+  ZXString<char> *v131; // eax
+  int v132; // ecx
+  const char *v133; // eax
+  StringPool *v134; // eax
+  ZXString<char> *v135; // eax
+  int v136; // edx
+  const char *v137; // eax
+  StringPool *v138; // eax
+  StringPool *v139; // eax
+  StringPool *v140; // eax
+  int v141; // ebp
+  int v142; // ebp
+  StringPool *v143; // eax
+  ItemOptionInfo *v144; // esi
+  unsigned int v145; // [esp-Ch] [ebp-8Ch]
+  unsigned int v146; // [esp-Ch] [ebp-8Ch]
+  ZXString<char> v147; // [esp-8h] [ebp-88h] BYREF
+  int nTime; // [esp-4h] [ebp-84h]
+  ZXString<char> result; // [esp+10h] [ebp-70h] BYREF
+  ZXString<char> v150; // [esp+14h] [ebp-6Ch] BYREF
+  ZXString<char> v151; // [esp+18h] [ebp-68h] BYREF
+  ZXString<char> v152; // [esp+1Ch] [ebp-64h] BYREF
+  ZXString<char> v153; // [esp+20h] [ebp-60h] BYREF
+  ZXString<char> v154; // [esp+24h] [ebp-5Ch] BYREF
+  ZXString<char> v155; // [esp+28h] [ebp-58h] BYREF
+  ZXString<char> v156; // [esp+2Ch] [ebp-54h] BYREF
+  ZXString<char> v157; // [esp+30h] [ebp-50h] BYREF
+  ZXString<char> v158; // [esp+34h] [ebp-4Ch] BYREF
+  ZXString<char> v159; // [esp+38h] [ebp-48h] BYREF
+  ZXString<char> v160; // [esp+3Ch] [ebp-44h] BYREF
+  ZXString<char> v161; // [esp+40h] [ebp-40h] BYREF
+  ZXString<char> v162; // [esp+44h] [ebp-3Ch] BYREF
+  ZXString<char> v163; // [esp+48h] [ebp-38h] BYREF
+  ZXString<char> v164; // [esp+4Ch] [ebp-34h] BYREF
+  ZXString<char> v165; // [esp+50h] [ebp-30h] BYREF
+  ZXString<char> v166; // [esp+54h] [ebp-2Ch] BYREF
+  ZXString<char> v167; // [esp+58h] [ebp-28h] BYREF
+  ZXString<char> v168; // [esp+5Ch] [ebp-24h] BYREF
+  ZXString<char> v169; // [esp+60h] [ebp-20h] BYREF
+  ZXString<char> v170; // [esp+64h] [ebp-1Ch] BYREF
+  ZXString<char> *v171; // [esp+68h] [ebp-18h]
+  ZRef<ItemOptionInfo> pOption; // [esp+6Ch] [ebp-14h] BYREF
+  int v173; // [esp+7Ch] [ebp-4h]
+
+  v4 = nItemOptionID; /*0x891ca8*/
+  CItemOptionInfo::GetItemOption(TSingleton<CItemOptionInfo>::ms_pInstance, &pOption, nItemOptionID); /*0x891cbb*/
+  v173 = 0; /*0x891cc4*/
+  if ( !pOption.p ) /*0x891cce*/
+    return; /*0x891cce*/
+  v6 = &pOption.p->aLevelData.a[nLevel]; /*0x891ce1*/
+  nItemOptionID = 0; /*0x891ce4*/
+  LOBYTE(v173) = 1; /*0x891cf5*/
+  if ( v4 <= 901 ) /*0x891cfa*/
+  {
+    if ( v4 != 901 ) /*0x891d00*/
+    {
+      switch ( v4 ) /*0x891d12*/
+      {
+        case 1: /*0x891d12*/
+          goto $LN142_19;
+        case 2: /*0x891d12*/
+          goto $LN117_21;
+        case 3: /*0x891d12*/
+          goto $LN140_18;
+        case 4: /*0x891d12*/
+          goto $LN139_16;
+        case 5: /*0x891d12*/
+          goto $LN138_16;
+        case 6: /*0x891d12*/
+          goto $LN137_16;
+        case 7: /*0x891d12*/
+          goto $LN136_21;
+        case 8: /*0x891d12*/
+          goto $LN135_20;
+        case 9: /*0x891d12*/
+          goto $LN134_16;
+        case 10: /*0x891d12*/
+          goto $LN133_17;
+        case 11: /*0x891d12*/
+          goto $LN132_15;
+        case 12: /*0x891d12*/
+          goto $LN131_22;
+        case 13: /*0x891d12*/
+          goto $LN130_18;
+        case 14: /*0x891d12*/
+          goto $LN129_15;
+        default:
+          goto LABEL_191;
+      }
+    }
+    if ( v6->nProb <= 0 || v6->nTime <= 0 ) /*0x891f96*/
+      goto LABEL_196; /*0x891f96*/
+    Instance = StringPool::GetInstance(); /*0x891fa9*/
+    String = StringPool::GetString(Instance, (ZXString<char> *)&nLevel, 0x16BEu); /*0x891fb0*/
+    nProb = v6->nProb; /*0x891fb8*/
+    m_pStr = String->_m_pStr; /*0x891fba*/
+    nTime = v6->nTime; /*0x891fbc*/
+    LOBYTE(v173) = 2; /*0x891fc7*/
+    ZXString<char>::Format((ZXString<char> *)&nItemOptionID, m_pStr, nProb, nTime); /*0x891fcf*/
+    LOBYTE(v173) = 1; /*0x891fde*/
+    if ( nLevel ) /*0x891fe5*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(nLevel - 12)); /*0x891feb*/
+    goto LABEL_179; /*0x891feb*/
+  }
+  if ( v4 <= 10001 ) /*0x892019*/
+  {
+    if ( v4 != 10001 ) /*0x89201f*/
+    {
+      switch ( v4 ) /*0x892034*/
+      {
+        case 902: /*0x892034*/
+          if ( v6->nProb <= 0 || v6->nTime <= 0 ) /*0x892048*/
+            goto LABEL_196; /*0x892048*/
+          v25 = StringPool::GetInstance(); /*0x892058*/
+          v26 = StringPool::GetString(v25, &result, 0x16BFu); /*0x89205f*/
+          v27 = v6->nProb; /*0x892067*/
+          v28 = v26->_m_pStr; /*0x892069*/
+          nTime = v6->nTime; /*0x89206b*/
+          LOBYTE(v173) = 3; /*0x892076*/
+          ZXString<char>::Format((ZXString<char> *)&nItemOptionID, v28, v27, nTime); /*0x89207e*/
+          LOBYTE(v173) = 1; /*0x89208a*/
+          if ( result._m_pStr ) /*0x892091*/
+            ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x892097*/
+          break; /*0x892097*/
+        case 903: /*0x892034*/
+          if ( v6->nProb <= 0 || v6->nTime <= 0 ) /*0x8920cc*/
+            goto LABEL_196; /*0x8920cc*/
+          v29 = StringPool::GetInstance(); /*0x8920dc*/
+          v30 = StringPool::GetString(v29, &v150, 0x16C0u); /*0x8920e3*/
+          v31 = v6->nProb; /*0x8920eb*/
+          v32 = v30->_m_pStr; /*0x8920ed*/
+          nTime = v6->nTime; /*0x8920ef*/
+          LOBYTE(v173) = 4; /*0x8920fa*/
+          ZXString<char>::Format((ZXString<char> *)&nItemOptionID, v32, v31, nTime); /*0x892102*/
+          LOBYTE(v173) = 1; /*0x89210e*/
+          if ( v150._m_pStr ) /*0x892115*/
+            ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v150._m_pStr - 1); /*0x89211b*/
+          break; /*0x89211b*/
+        case 904: /*0x892034*/
+          if ( v6->nProb <= 0 || v6->nTime <= 0 ) /*0x892150*/
+            goto LABEL_196; /*0x892150*/
+          v33 = StringPool::GetInstance(); /*0x892160*/
+          v34 = StringPool::GetString(v33, &v151, 0x16C1u); /*0x892167*/
+          v35 = v6->nProb; /*0x89216f*/
+          v36 = v34->_m_pStr; /*0x892171*/
+          nTime = v6->nTime; /*0x892173*/
+          LOBYTE(v173) = 5; /*0x89217e*/
+          ZXString<char>::Format((ZXString<char> *)&nItemOptionID, v36, v35, nTime); /*0x892186*/
+          LOBYTE(v173) = 1; /*0x892192*/
+          if ( v151._m_pStr ) /*0x892199*/
+            ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v151._m_pStr - 1); /*0x89219f*/
+          break; /*0x89219f*/
+        case 905: /*0x892034*/
+          if ( v6->nProb <= 0 || v6->nTime <= 0 ) /*0x8921d4*/
+            goto LABEL_196; /*0x8921d4*/
+          v37 = StringPool::GetInstance(); /*0x8921e4*/
+          v38 = StringPool::GetString(v37, &v152, 0x16C2u); /*0x8921eb*/
+          v39 = v6->nProb; /*0x8921f3*/
+          v40 = v38->_m_pStr; /*0x8921f5*/
+          nTime = v6->nTime; /*0x8921f7*/
+          LOBYTE(v173) = 6; /*0x892202*/
+          ZXString<char>::Format((ZXString<char> *)&nItemOptionID, v40, v39, nTime); /*0x89220a*/
+          LOBYTE(v173) = 1; /*0x892216*/
+          if ( v152._m_pStr ) /*0x89221d*/
+            ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v152._m_pStr - 1); /*0x892223*/
+          break; /*0x892223*/
+        default:
+          goto LABEL_191;
+      }
+LABEL_179:
+      nTime = 1001; /*0x893759*/
+      v147._m_pStr = v24; /*0x89375e*/
+      v171 = &v147; /*0x893768*/
+      ZXString<char>::ZXString<char>(&v147, (const ZXString<char> *)&nItemOptionID); /*0x89376d*/
+      CUIToolTip::AddOptionInfo(this, 10, v147, nTime); /*0x893774*/
+      goto LABEL_196; /*0x893774*/
+    }
+$LN142_19: /*0x891d19*/
+    nTime = 0; /*0x891d19*/
+    v147._m_pStr = v5; /*0x891d1b*/
+    nLevel = (int)&v147; /*0x891d1e*/
+    v7 = StringPool::GetInstance(); /*0x891d2b*/
+    StringPool::GetString(v7, &v147, 0x1A61u); /*0x891d32*/
+    CUIToolTip::PrintValue(this, 3, v6->niSTR, v147, nTime); /*0x891d3f*/
+    goto LABEL_196; /*0x891d44*/
+  }
+  if ( v4 > 10291 ) /*0x892281*/
+  {
+    if ( v4 <= 20351 ) /*0x892ac2*/
+    {
+      if ( v4 == 20351 ) /*0x892ac8*/
+      {
+        if ( v6->nProb <= 0 || v6->nIgnoreDAM <= 0 ) /*0x892eee*/
+          goto LABEL_196; /*0x892eee*/
+        v87 = StringPool::GetInstance(); /*0x892efe*/
+        v88 = StringPool::GetString(v87, &v163, 0x171Au); /*0x892f05*/
+        v89 = v6->nProb; /*0x892f10*/
+        v90 = v88->_m_pStr; /*0x892f12*/
+        nTime = v6->nIgnoreDAM; /*0x892f14*/
+        LOBYTE(v173) = 17; /*0x892f1f*/
+        ZXString<char>::Format((ZXString<char> *)&nItemOptionID, v90, v89, nTime); /*0x892f27*/
+        LOBYTE(v173) = 1; /*0x892f33*/
+        if ( v163._m_pStr ) /*0x892f3a*/
+          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v163._m_pStr - 1); /*0x892f40*/
+      }
+      else
+      {
+        switch ( v4 ) /*0x892ae6*/
+        {
+          case 20041: /*0x892ae6*/
+            goto $LN69_24;
+          case 20042: /*0x892ae6*/
+            goto $LN35_32;
+          case 20043: /*0x892ae6*/
+            goto $LN34_22;
+          case 20044: /*0x892ae6*/
+            goto $LN33_24;
+          case 20045: /*0x892ae6*/
+            goto $LN32_25;
+          case 20046: /*0x892ae6*/
+            goto $LN31_29;
+          case 20047: /*0x892ae6*/
+            goto $LN30_33;
+          case 20048: /*0x892ae6*/
+            goto $LN29_27;
+          case 20051: /*0x892ae6*/
+            goto $LN28_30;
+          case 20052: /*0x892ae6*/
+            goto $LN27_34;
+          case 20053: /*0x892ae6*/
+            goto $LN26_29;
+          case 20054: /*0x892ae6*/
+            goto $LN25_39;
+          case 20055: /*0x892ae6*/
+            goto $LN24_53;
+          case 20056: /*0x892ae6*/
+            goto $LN23_46;
+          case 20070: /*0x892ae6*/
+            goto $LN22_70;
+          case 20086: /*0x892ae6*/
+            nTime = 0; /*0x892dc0*/
+            v147._m_pStr = v5; /*0x892dc2*/
+            nLevel = (int)&v147; /*0x892dc5*/
+            v145 = 6691; /*0x892dcc*/
+            goto LABEL_100; /*0x892dd1*/
+          case 20201: /*0x892ae6*/
+            if ( v6->nProb <= 0 || v6->niHP <= 0 ) /*0x892de3*/
+              goto LABEL_196; /*0x892de3*/
+            v79 = StringPool::GetInstance(); /*0x892df3*/
+            v80 = StringPool::GetString(v79, &v161, 0x1724u); /*0x892dfa*/
+            v81 = v6->nProb; /*0x892e02*/
+            v82 = v80->_m_pStr; /*0x892e04*/
+            nTime = v6->niHP; /*0x892e06*/
+            LOBYTE(v173) = 15; /*0x892e11*/
+            ZXString<char>::Format((ZXString<char> *)&nItemOptionID, v82, v81, nTime); /*0x892e19*/
+            LOBYTE(v173) = 1; /*0x892e25*/
+            if ( v161._m_pStr ) /*0x892e2c*/
+              ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v161._m_pStr - 1); /*0x892e32*/
+            break; /*0x892e32*/
+          case 20206: /*0x892ae6*/
+            if ( v6->nProb <= 0 || v6->niMP <= 0 ) /*0x892e67*/
+              goto LABEL_196; /*0x892e67*/
+            v83 = StringPool::GetInstance(); /*0x892e77*/
+            v84 = StringPool::GetString(v83, &v162, 0x1727u); /*0x892e7e*/
+            v85 = v6->nProb; /*0x892e86*/
+            v86 = v84->_m_pStr; /*0x892e88*/
+            nTime = v6->niMP; /*0x892e8a*/
+            LOBYTE(v173) = 16; /*0x892e95*/
+            ZXString<char>::Format((ZXString<char> *)&nItemOptionID, v86, v85, nTime); /*0x892e9d*/
+            LOBYTE(v173) = 1; /*0x892ea9*/
+            if ( v162._m_pStr ) /*0x892eb0*/
+              ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v162._m_pStr - 1); /*0x892eb6*/
+            break; /*0x892eb6*/
+          case 20291: /*0x892ae6*/
+            goto $LN18_71;
+          default:
+            goto LABEL_191;
+        }
+      }
+      goto LABEL_179; /*0x892eb6*/
+    }
+    if ( v4 <= 30041 ) /*0x892f6e*/
+    {
+      if ( v4 == 30041 ) /*0x892f74*/
+      {
+$LN69_24: /*0x892aed*/
+        nTime = 0; /*0x892aed*/
+        v147._m_pStr = v5; /*0x892aef*/
+        nLevel = (int)&v147; /*0x892af2*/
+        v145 = 6753; /*0x892af9*/
+LABEL_100:
+        v78 = StringPool::GetInstance(); /*0x892afe*/
+        StringPool::GetString(v78, &v147, v145); /*0x892b06*/
+        CUIToolTip::PrintValue(this, 4, v6->niSTRr, v147, nTime); /*0x892b13*/
+        goto LABEL_196; /*0x892b18*/
+      }
+      switch ( v4 ) /*0x892f90*/
+      {
+        case 20352: /*0x892f90*/
+          if ( v6->nProb <= 0 || v6->nIgnoreDAM <= 0 ) /*0x892fa7*/
+            goto LABEL_196; /*0x892fa7*/
+          v91 = StringPool::GetInstance(); /*0x892fb7*/

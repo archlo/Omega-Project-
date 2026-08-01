@@ -176,7 +176,7 @@ export class ClientSession {
     const ivSnapshot = new Uint8Array(this._recvIv);
     const { valid, payloadLength } = PacketCipher.ParseHeader(header, ivSnapshot);
     if (!valid) {
-      console.error('Bad packet header — closing connection');
+      console.error(`BAD HDR bytes=${Array.from(header).map(b=>b.toString(16).padStart(2,'0')).join(' ')} iv=${Array.from(ivSnapshot).map(b=>b.toString(16).padStart(2,'0')).join(' ')}`);
       this.disconnectAsync();
       this._pendingData = new Uint8Array(0);
       return true;
@@ -184,6 +184,8 @@ export class ClientSession {
     if (this._pendingData.length < PacketCipher.HeaderSize + payloadLength) return false;
     const body = new Uint8Array(this._pendingData.subarray(PacketCipher.HeaderSize, PacketCipher.HeaderSize + payloadLength));
     PacketCipher.DecryptBody(body, this._recvIv);
+    const opcode = (body[0] & 0xFF) | ((body[1] & 0xFF) << 8);
+    console.log(`[S→C] 0x${opcode.toString(16)} len=${payloadLength}`);
     this._packetQueue.push(body);
     this._pendingData = this._pendingData.subarray(PacketCipher.HeaderSize + payloadLength);
     return true;

@@ -1,0 +1,17 @@
+﻿void __thiscall CUIStatusBar::FloatNotice(CUIStatusBar *this, const char *sNotice, int nType, unsigned int dwDuration)
+{
+  if ( sNotice ) /*0x86d43a*/
+  {
+    if ( dwDuration ) /*0x86d443*/
+      this->m_dwFloatNotice = dwDuration + ZAPI.timeGetTime(); /*0x86d44d*/
+    else
+      this->m_dwFloatNotice = 0; /*0x86d455*/
+    CUIStatusBar::SetItemMsg(this, nullptr, 0, 0x1388u); /*0x86d46a*/
+    CFloatNotice::CreateFloatNotice(&this->m_floatNotice, sNotice, nType, 160, -1073342724); /*0x86d485*/
+  }
+  else
+  {
+    CFloatNotice::DeleteFloatNotice(&this->m_floatNotice); /*0x86d496*/
+    this->m_dwFloatNotice = 0; /*0x86d49b*/
+  }
+}

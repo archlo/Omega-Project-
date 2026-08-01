@@ -1,0 +1,59 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"addr\":\"0x994460\",\"code\":\"int __thiscall CVecCtrl::WorkUpdateActive(CVecCtrl *this, int tElapse)\\n{\\n  bool v3; // zf\\n  long double v4; // st7\\n  long double v5; // st7\\n  long double v6; // st7\\n  CStaticFoothold *m_pfh; // eax\\n  long double v8; // st7\\n  long double v10; // [esp+34h] [ebp-A0h]\\n  long double v11; // [esp+34h] [ebp-A0h]\\n  long double v12; // [esp+34h] [ebp-A0h]\\n  double v13; // [esp+34h] [ebp-A0h]\\n  double tSec; // [esp+3Ch] [ebp-98h]\\n  long double tSeca; // [esp+3Ch] [ebp-98h]\\n  RelPos rpl; // [esp+44h] [ebp-90h] BYREF\\n  AbsPos apl; // [esp+74h] [ebp-60h] BYREF\\n\\n  v3 = this->m_bJumpNext == 0; /*0x99446f*/\\n  this->m_bWingsPrev = this->m_bWingsNow; /*0x99447e*/\\n  if ( !v3 ) /*0x994484*/\\n    CVecCtrl::Jump(this); /*0x994486*/\\n  if ( this->m_impactNext.bValid ) /*0x99448b*/\\n    CVecCtrl::Impact(this); /*0x994496*/\\n  if ( this->m_falldownNext.bValid ) /*0x99449b*/\\n    CVecCtrl::FallDown(this); /*0x9944a6*/\\n  if ( this->m_bWingsNext ) /*0x9944ab*/\\n    CVecCtrl::Wings(this); /*0x9944b6*/\\n  if ( this->m_pfh ) /*0x9944bb*/\\n  {\\n    qmemcpy((void *)&rpl, &this->m_rp, sizeof(rpl)); /*0x9944d7*/\\n    CVecCtrl::CalcWalk(this, tElapse); /*0x9944df*/\\n    if ( this->CollisionDetectWalk(this, &rpl, &tElapse, 0) && tElapse > 0 ) /*0x994504*/\\n    {\\n      tSec = (double)tElapse / DOUBLE_1000_0; /*0x99451a*/\\n      if ( this->m_pfh ) /*0x99450a*/\\n      {\\n        qmemcpy((void *)&rpl, &this->m_rp, sizeof(rpl)); /*0x994531*/\\n        v10 = _ZtlSecureFuse<double>(this->m_rp._ZtlSecureTear_pos, this->m_rp._ZtlSecureTear_pos_CS); /*0x994542*/\\n        v4 = _ZtlSecureFuse<double>(rpl._ZtlSecureTear_v, rpl._ZtlSecureTear_v_CS); /*0x99454b*/\\n        RelPos::_ZtlSecurePut_pos(&this->m_rp, v4 * tSec + v10); /*0x994564*/\\n        this->CollisionDetectWalk(this, &rpl, &tElapse, 0); /*0x99457d*/\\n      }\\n      else\\n      {\\n        qmemcpy((void *)&apl, &this->m_ap, sizeof(apl)); /*0x994592*/\\n        v11 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_x, this->m_ap._ZtlSecureTear_x_CS); /*0x9945a6*/\\n        v5 = _ZtlSecureFuse<double>(apl._ZtlSecureTear_vx, apl._ZtlSecureTear_vx_CS); /*0x9945b2*/\\n        AbsPos::_ZtlSecurePut_x(&this->m_ap, v5 * tSec + v11); /*0x9945ca*/\\n        v12 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_y, this->m_ap._ZtlSecureTear_y_CS); /*0x9945de*/\\n        v6 = _ZtlSecureFuse<double>(apl._ZtlSecureTear_vy, apl._ZtlSecureTear_vy_CS); /*0x9945f2*/\\n        AbsPos::_ZtlSecurePut_y(&this->m_ap, v6 * tSec + v12); /*0x994607*/\\n        this->CollisionDetectFloat(this, &apl, &tElapse, 0); /*0x994620*/\\n      }\\n    }\\n  }\\n  else\\n  {\\n    qmemcpy((void *)&apl, &this->m_ap, sizeof(apl)); /*0x994636*/\\n    CVecCtrl::CalcFloat(this, tElapse); /*0x99463b*/\\n    this->SaveFloatStateBeforeCollision(this); /*0x994647*/\\n    if ( this->CollisionDetectFloat(this, &apl, &tElapse, 1) && tElapse > 0 ) /*0x994669*/\\n    {\\n      m_pfh = this->m_pfh; /*0x994672*/\\n      v13 = (double)tElapse / DOUBLE_1000_0; /*0x99467e*/\\n      if ( m_pfh && !m_pfh->m_nState ) /*0x994686*/\\n        this->m_pfh = nullptr; /*0x99468c*/\\n      if ( this->m_pfh ) /*0x994696*/\\n      {\\n        qmemcpy((void *)&rpl, &this->m_rp, sizeof(rpl)); /*0x9946b0*/\\n        tSeca = _ZtlSecureFuse<double>(this->m_rp._ZtlSecureTear_pos, this->m_rp._ZtlSecureTear_pos_CS); /*0x9946c1*/\\n        v8 = _ZtlSecureFuse<double>(rpl._ZtlSecureTear_v, rpl._ZtlSecureTear_v_CS); /*0x9946ca*/\\n        RelPos::_ZtlSecurePut_pos(&this->m_rp, v8 * v13 + tSeca); /*0x9946e3*/\\n        this->CollisionDetectWalk(this, &rpl, &tElapse, 1); /*0x9946fc*/\\n      }\\n      else\\n      {\\n        this->CollisionDetectFloat(this, &apl, &tElapse, 0); /*0x994712*/\\n      }\\n    }\\n    this->SaveFloatStateAfterCollision(this); /*0x99471b*/\\n  }\\n  this->MakeContinuousMovePath(this, tElapse); /*0x994728*/\\n  return 1; /*0x99472a*/\\n}\",\"refs\":[{\"addr\":\"0x994430\",\"name\":\"?Jump@CVecCtrl@@IAEXXZ\"},{\"addr\":\"0x992050\",\"name\":\"?Impact@CVecCtrl@@IAEXXZ\"},{\"addr\":\"0x993d80\",\"name\":\"?FallDown@CVecCtrl@@IAEXXZ\"},{\"addr\":\"0x994400\",\"name\":\"?Wings@CVecCtrl@@IAEXXZ\"},{\"addr\":\"0x992ba0\",\"name\":\"?CalcWalk@CVecCtrl@@QAEXJ@Z\"},{\"addr\":\"0xb473e8\",\"name\":\"__real@408f400000000000\"},{\"addr\":\"0x52a210\",\"name\":\"??$_ZtlSecureFuse@N@@YANQBNI@Z\"},{\"addr\":\"0x990b40\",\"name\":\"?_ZtlSecurePut_pos@RelPos@@QAINN@Z\"},{\"addr\":\"0x990b80\",\"name\":\"?_ZtlSecurePut_x@AbsPos@@QAINN@Z\"},{\"addr\":\"0x990ba0\",\"name\":\"?_ZtlSecurePut_y@AbsPos@@QAINN@Z\"},{\"addr\":\"0x9934c0\",\"name\":\"?CalcFloat@CVecCtrl@@QAEXJ@Z\"}]}"
+    }
+  ],
+  "structuredContent": {
+    "addr": "0x994460",
+    "code": "int __thiscall CVecCtrl::WorkUpdateActive(CVecCtrl *this, int tElapse)\n{\n  bool v3; // zf\n  long double v4; // st7\n  long double v5; // st7\n  long double v6; // st7\n  CStaticFoothold *m_pfh; // eax\n  long double v8; // st7\n  long double v10; // [esp+34h] [ebp-A0h]\n  long double v11; // [esp+34h] [ebp-A0h]\n  long double v12; // [esp+34h] [ebp-A0h]\n  double v13; // [esp+34h] [ebp-A0h]\n  double tSec; // [esp+3Ch] [ebp-98h]\n  long double tSeca; // [esp+3Ch] [ebp-98h]\n  RelPos rpl; // [esp+44h] [ebp-90h] BYREF\n  AbsPos apl; // [esp+74h] [ebp-60h] BYREF\n\n  v3 = this->m_bJumpNext == 0; /*0x99446f*/\n  this->m_bWingsPrev = this->m_bWingsNow; /*0x99447e*/\n  if ( !v3 ) /*0x994484*/\n    CVecCtrl::Jump(this); /*0x994486*/\n  if ( this->m_impactNext.bValid ) /*0x99448b*/\n    CVecCtrl::Impact(this); /*0x994496*/\n  if ( this->m_falldownNext.bValid ) /*0x99449b*/\n    CVecCtrl::FallDown(this); /*0x9944a6*/\n  if ( this->m_bWingsNext ) /*0x9944ab*/\n    CVecCtrl::Wings(this); /*0x9944b6*/\n  if ( this->m_pfh ) /*0x9944bb*/\n  {\n    qmemcpy((void *)&rpl, &this->m_rp, sizeof(rpl)); /*0x9944d7*/\n    CVecCtrl::CalcWalk(this, tElapse); /*0x9944df*/\n    if ( this->CollisionDetectWalk(this, &rpl, &tElapse, 0) && tElapse > 0 ) /*0x994504*/\n    {\n      tSec = (double)tElapse / DOUBLE_1000_0; /*0x99451a*/\n      if ( this->m_pfh ) /*0x99450a*/\n      {\n        qmemcpy((void *)&rpl, &this->m_rp, sizeof(rpl)); /*0x994531*/\n        v10 = _ZtlSecureFuse<double>(this->m_rp._ZtlSecureTear_pos, this->m_rp._ZtlSecureTear_pos_CS); /*0x994542*/\n        v4 = _ZtlSecureFuse<double>(rpl._ZtlSecureTear_v, rpl._ZtlSecureTear_v_CS); /*0x99454b*/\n        RelPos::_ZtlSecurePut_pos(&this->m_rp, v4 * tSec + v10); /*0x994564*/\n        this->CollisionDetectWalk(this, &rpl, &tElapse, 0); /*0x99457d*/\n      }\n      else\n      {\n        qmemcpy((void *)&apl, &this->m_ap, sizeof(apl)); /*0x994592*/\n        v11 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_x, this->m_ap._ZtlSecureTear_x_CS); /*0x9945a6*/\n        v5 = _ZtlSecureFuse<double>(apl._ZtlSecureTear_vx, apl._ZtlSecureTear_vx_CS); /*0x9945b2*/\n        AbsPos::_ZtlSecurePut_x(&this->m_ap, v5 * tSec + v11); /*0x9945ca*/\n        v12 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_y, this->m_ap._ZtlSecureTear_y_CS); /*0x9945de*/\n        v6 = _ZtlSecureFuse<double>(apl._ZtlSecureTear_vy, apl._ZtlSecureTear_vy_CS); /*0x9945f2*/\n        AbsPos::_ZtlSecurePut_y(&this->m_ap, v6 * tSec + v12); /*0x994607*/\n        this->CollisionDetectFloat(this, &apl, &tElapse, 0); /*0x994620*/\n      }\n    }\n  }\n  else\n  {\n    qmemcpy((void *)&apl, &this->m_ap, sizeof(apl)); /*0x994636*/\n    CVecCtrl::CalcFloat(this, tElapse); /*0x99463b*/\n    this->SaveFloatStateBeforeCollision(this); /*0x994647*/\n    if ( this->CollisionDetectFloat(this, &apl, &tElapse, 1) && tElapse > 0 ) /*0x994669*/\n    {\n      m_pfh = this->m_pfh; /*0x994672*/\n      v13 = (double)tElapse / DOUBLE_1000_0; /*0x99467e*/\n      if ( m_pfh && !m_pfh->m_nState ) /*0x994686*/\n        this->m_pfh = nullptr; /*0x99468c*/\n      if ( this->m_pfh ) /*0x994696*/\n      {\n        qmemcpy((void *)&rpl, &this->m_rp, sizeof(rpl)); /*0x9946b0*/\n        tSeca = _ZtlSecureFuse<double>(this->m_rp._ZtlSecureTear_pos, this->m_rp._ZtlSecureTear_pos_CS); /*0x9946c1*/\n        v8 = _ZtlSecureFuse<double>(rpl._ZtlSecureTear_v, rpl._ZtlSecureTear_v_CS); /*0x9946ca*/\n        RelPos::_ZtlSecurePut_pos(&this->m_rp, v8 * v13 + tSeca); /*0x9946e3*/\n        this->CollisionDetectWalk(this, &rpl, &tElapse, 1); /*0x9946fc*/\n      }\n      else\n      {\n        this->CollisionDetectFloat(this, &apl, &tElapse, 0); /*0x994712*/\n      }\n    }\n    this->SaveFloatStateAfterCollision(this); /*0x99471b*/\n  }\n  this->MakeContinuousMovePath(this, tElapse); /*0x994728*/\n  return 1; /*0x99472a*/\n}",
+    "refs": [
+      {
+        "addr": "0x994430",
+        "name": "?Jump@CVecCtrl@@IAEXXZ"
+      },
+      {
+        "addr": "0x992050",
+        "name": "?Impact@CVecCtrl@@IAEXXZ"
+      },
+      {
+        "addr": "0x993d80",
+        "name": "?FallDown@CVecCtrl@@IAEXXZ"
+      },
+      {
+        "addr": "0x994400",
+        "name": "?Wings@CVecCtrl@@IAEXXZ"
+      },
+      {
+        "addr": "0x992ba0",
+        "name": "?CalcWalk@CVecCtrl@@QAEXJ@Z"
+      },
+      {
+        "addr": "0xb473e8",
+        "name": "__real@408f400000000000"
+      },
+      {
+        "addr": "0x52a210",
+        "name": "??$_ZtlSecureFuse@N@@YANQBNI@Z"
+      },
+      {
+        "addr": "0x990b40",
+        "name": "?_ZtlSecurePut_pos@RelPos@@QAINN@Z"
+      },
+      {
+        "addr": "0x990b80",
+        "name": "?_ZtlSecurePut_x@AbsPos@@QAINN@Z"
+      },
+      {
+        "addr": "0x990ba0",
+        "name": "?_ZtlSecurePut_y@AbsPos@@QAINN@Z"
+      },
+      {
+        "addr": "0x9934c0",
+        "name": "?CalcFloat@CVecCtrl@@QAEXJ@Z"
+      }
+    ]
+  },
+  "isError": false
+}

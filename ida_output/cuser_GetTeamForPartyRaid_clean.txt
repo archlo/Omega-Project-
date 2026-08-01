@@ -1,0 +1,17 @@
+// cuser::GetTeamForPartyRaid
+
+int __thiscall CUser::GetTeamForPartyRaid(CUser *this)
+{
+  int v1; // edx
+
+  v1 = *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 4193); /*0x8dea48*/
+  if ( !v1 ) /*0x8dea51*/
+    return CWvsContext::IsPartyMemberID( /*0x8dea81*/
+             (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+             this->m_dwCharacterId) == 0;
+  if ( v1 == 1 ) /*0x8dea56*/
+    return CWvsContext::IsPartyMemberID( /*0x8dea6e*/
+             (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+             this->m_dwCharacterId) != 0;
+  return 255; /*0x8dea5d*/
+}

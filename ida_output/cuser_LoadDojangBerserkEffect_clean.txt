@@ -1,0 +1,41 @@
+// cuser::LoadDojangBerserkEffect
+
+void __thiscall CUser::LoadDojangBerserkEffect(CUser *this)
+{
+  IWzGr2DLayer *m_pInterface; // eax
+  int (__thiscall *GetJobCode)(CUser *); // edx
+  int v4; // eax
+  int novice_skill_as_race; // eax
+  IWzGr2DLayer *v6; // eax
+  IWzGr2DLayer *v7; // edi
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v8; // [esp-4h] [ebp-24h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > result; // [esp+Ch] [ebp-14h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v10; // [esp+10h] [ebp-10h]
+  int v11; // [esp+1Ch] [ebp-4h]
+
+  if ( !this->m_pLayerDojangBerserkEffect.m_pInterface ) /*0x8f6197*/
+  {
+    m_pInterface = this->m_pLayerUnderFace.m_pInterface; /*0x8f61a9*/
+    v10 = &v8; /*0x8f61b2*/
+    v8.m_pInterface = m_pInterface; /*0x8f61b6*/
+    if ( m_pInterface ) /*0x8f61ba*/
+      m_pInterface->AddRef(m_pInterface); /*0x8f61c2*/
+    GetJobCode = this->GetJobCode; /*0x8f61c6*/
+    v11 = 0; /*0x8f61cb*/
+    v4 = GetJobCode(this); /*0x8f61d3*/
+    novice_skill_as_race = get_novice_skill_as_race(1011, v4); /*0x8f61db*/
+    v11 = -1; /*0x8f61eb*/
+    v6 = CUser::LoadSkillRepeatEffect(this, &result, novice_skill_as_race, v8)->m_pInterface; /*0x8f61f8*/
+    v7 = this->m_pLayerDojangBerserkEffect.m_pInterface; /*0x8f61fa*/
+    if ( v7 != v6 ) /*0x8f6202*/
+    {
+      this->m_pLayerDojangBerserkEffect.m_pInterface = v6; /*0x8f6204*/
+      if ( v6 ) /*0x8f620c*/
+        v6->AddRef(v6); /*0x8f6214*/
+      if ( v7 ) /*0x8f6218*/
+        v7->Release(v7); /*0x8f6220*/
+    }
+    if ( result.m_pInterface ) /*0x8f6228*/
+      result.m_pInterface->Release(result.m_pInterface); /*0x8f6230*/
+  }
+}

@@ -1,0 +1,52 @@
+﻿void __thiscall CMob::ProcessAction(CMob *this, int tCur)
+{
+  int CurrentAction; // edi
+  int v4; // ebp
+  int v5; // ecx
+  __POSITION **p_m_posFrame; // edi
+  ZList<ZRef<CActionMan::MOBACTIONFRAMEENTRY> > *v7; // ebp
+  IWzGr2DLayer *m_pInterface; // ecx
+  Ztl_variant_t vValue; // [esp+14h] [ebp-1Ch] BYREF
+  int v10; // [esp+2Ch] [ebp-4h]
+
+  CurrentAction = CMob::GetCurrentAction(this, nullptr);
+  v4 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_tCurFrameRemain, this->_ZtlSecureTear_m_tCurFrameRemain_CS) - 30;
+  this->_ZtlSecureTear_m_tCurFrameRemain_CS = _ZtlSecureTear<long>(v4, this->_ZtlSecureTear_m_tCurFrameRemain);
+  if ( v4 <= 0 )
+  {
+    v5 = CurrentAction;
+    p_m_posFrame = &this->m_posFrame;
+    v7 = &this->m_aAction.a[v5];
+    ZList<ZRef<CActionMan::MOBACTIONFRAMEENTRY>>::GetNext(&this->m_posFrame);
+    if ( _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nOneTimeAction, this->_ZtlSecureTear_m_nOneTimeAction_CS) <= -1 )
+    {
+      if ( !*p_m_posFrame )
+        *p_m_posFrame = (__POSITION *)v7->_m_pHead;
+    }
+    else if ( !*p_m_posFrame )
+    {
+      this->_ZtlSecureTear_m_nOneTimeAction_CS = _ZtlSecureTear<long>(-1, this->_ZtlSecureTear_m_nOneTimeAction);
+      CMob::PrepareActionLayer(this);
+      return;
+    }
+    vValue.vt = 3;
+    vValue.decVal.Lo32 = 1;
+    m_pInterface = this->m_pLayerAction.m_pInterface;
+    v10 = 0;
+    if ( !m_pInterface )
+      _com_issue_error(-2147467261);
+    IWzGr2DLayer::ShiftCanvas(m_pInterface, &vValue);
+    v10 = -1;
+    if ( vValue.vt == 8 )
+    {
+      vValue.vt = 0;
+      if ( vValue.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(vValue.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&vValue);
+    }
+    CMob::SetFrameInfo(this, v7, *p_m_posFrame);
+  }
+}

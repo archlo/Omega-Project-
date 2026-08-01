@@ -1,0 +1,244 @@
+﻿void __thiscall CVecCtrl::CalcFloat(CVecCtrl *this, int tElapse)
+{
+  CONSTANTS *p; // ebx
+  long double v4; // st7
+  const CAttrField *m_pAttrField; // ecx
+  CONSTANTS *v6; // ebx
+  long double Data; // st7
+  bool v8; // zf
+  CONSTANTS *v9; // ebx
+  long double v10; // st7
+  CWvsPhysicalSpace2D *v11; // ebx
+  CONSTANTS *v12; // eax
+  CONSTANTS *v13; // ebx
+  CONSTANTS *v14; // ebx
+  long double v15; // st7
+  const CAttrField *v16; // eax
+  TSecType<double> *p_flySpeed; // eax
+  int v18; // eax
+  unsigned int ZtlSecureTear_m_nInputY_CS; // ecx
+  CAttrShoe *v20; // eax
+  long double v21; // st7
+  long double dSwimForce; // st7
+  unsigned int ZtlSecureTear_m_nInputX_CS; // eax
+  double v24; // st7
+  double v25; // st6
+  long double v26; // st7
+  long double v27; // st7
+  unsigned int v28; // eax
+  unsigned int v29; // eax
+  unsigned int v30; // [esp-8h] [ebp-ECh]
+  long double f; // [esp+0h] [ebp-E4h]
+  long double m; // [esp+8h] [ebp-DCh]
+  long double v33; // [esp+10h] [ebp-D4h]
+  long double op; // [esp+18h] [ebp-CCh]
+  long double opa; // [esp+18h] [ebp-CCh]
+  long double opb; // [esp+18h] [ebp-CCh]
+  unsigned int op_4; // [esp+1Ch] [ebp-C8h]
+  char vMax; // [esp+3Ch] [ebp-A8h]
+  int vMaxb; // [esp+3Ch] [ebp-A8h]
+  double vMaxa; // [esp+3Ch] [ebp-A8h]
+  double drag2; // [esp+44h] [ebp-A0h]
+  double vy; // [esp+4Ch] [ebp-98h] BYREF
+  long double tSec; // [esp+54h] [ebp-90h]
+  long double mass; // [esp+5Ch] [ebp-88h]
+  long double vx; // [esp+64h] [ebp-80h] BYREF
+  long double g; // [esp+6Ch] [ebp-78h]
+  long double vyMax; // [esp+74h] [ebp-70h]
+  long double fDef; // [esp+7Ch] [ebp-68h]
+  long double accShoe; // [esp+84h] [ebp-60h]
+  long double fx; // [esp+8Ch] [ebp-58h]
+  TSecType<double> v51; // [esp+98h] [ebp-4Ch] BYREF
+  int v52; // [esp+E0h] [ebp-4h]
+
+  vMax = 0; /*0x9934f4*/
+  mass = TSecType<double>::GetData(&this->m_pCurAttrShoe.p->mass); /*0x99350a*/
+  vx = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vx, this->m_ap._ZtlSecureTear_vx_CS); /*0x99351e*/
+  vy = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vy, this->m_ap._ZtlSecureTear_vy_CS); /*0x99352f*/
+  p = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p; /*0x993539*/
+  v4 = TSecType<double>::GetData(&this->m_pAttrField->drag) * p->dFloatDrag1; /*0x99354d*/
+  m_pAttrField = this->m_pAttrField; /*0x993550*/
+  v6 = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p; /*0x99355c*/
+  g = v4; /*0x99355f*/
+  Data = TSecType<double>::GetData(&m_pAttrField->drag); /*0x993566*/
+  v8 = this->m_pfh == nullptr; /*0x99356e*/
+  drag2 = Data * v6->dFloatDrag2; /*0x993575*/
+  tSec = (double)tElapse / DOUBLE_1000_0; /*0x993582*/
+  if ( v8 /*0x9935c5*/
+    && !CVecCtrl::IsSwimming(this)
+    && !this->IsUserFlying(this)
+    && TSecType<double>::GetData(&this->m_pCurAttrShoe.p->flyAcc) <= DOUBLE_0_0 )
+  {
+    v9 = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p; /*0x9935d6*/
+    v10 = TSecType<double>::GetData(&this->m_pAttrField->g) * v9->dFallSpeed; /*0x9935e1*/
+    v8 = this->m_bWingsNow == 0; /*0x9935e4*/
+    v11 = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance; /*0x9935eb*/
+    v12 = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p; /*0x9935f1*/
+    vyMax = v10; /*0x9935f4*/
+    accShoe = v12->dWalkSpeed / v12->dWalkForce * drag2; /*0x993605*/
+    if ( v8 ) /*0x993609*/
+    {
+      if ( vy > 0.0 ) /*0x99367f*/
+        DecSpeed(&vy, drag2, mass, v10, tSec); /*0x9936a2*/
+      v14 = v11->m_constants.p; /*0x9936b6*/
+      v15 = TSecType<double>::GetData(&this->m_pAttrField->g); /*0x9936bc*/
+      AccSpeed(&vy, v15 * v14->dGravityAcc * mass, mass, vyMax, tSec); /*0x9936eb*/
+    }
+    else if ( vy <= 0.0 ) /*0x99361a*/
+    {
+      v13 = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p; /*0x99363d*/
+      f = TSecType<double>::GetData(&this->m_pAttrField->g) * v13->dGravityAcc * mass; /*0x99366e*/
+      AccSpeed(&vy, f, mass, vyMax, tSec); /*0x993672*/
+    }
+    else
+    {
+      vy = (double)this->m_nWingsParam /*0x99362e*/
+         * TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p->dJumpSpeed
+         / DOUBLE_1000_0;
+    }
+    if ( _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, this->_ZtlSecureTear_m_nInputX_CS) ) /*0x993701*/
+    {
+      op = tSec; /*0x99377c*/
+      v33 = accShoe; /*0x993784*/
+      m = mass; /*0x99378c*/
+      vMaxb = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, this->_ZtlSecureTear_m_nInputX_CS); /*0x993796*/
+      AccSpeed(&vx, (double)vMaxb * drag2 + (double)vMaxb * drag2, m, v33, op); /*0x9937ac*/
+    }
+    else if ( vyMax > vy ) /*0x993737*/
+    {
+      DecSpeed( /*0x993762*/
+        &vx,
+        TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p->dFloatCoefficient * drag2,
+        mass,
+        0.0,
+        tSec);
+    }
+    else
+    {
+      DecSpeed(&vx, drag2, mass, 0.0, tSec); /*0x993741*/
+    }
+    goto LABEL_52; /*0x993749*/
+  }
+  if ( this->IsUserFlying(this) ) /*0x9937c0*/
+  {
+    v16 = this->m_pAttrField; /*0x9937ca*/
+    if ( v16 && TSecType<long>::GetData(&v16->nMapType) == 2 && this->m_pAttrField->bNeedSkillForFlying ) /*0x9937ec*/
+    {
+      p_flySpeed = &this->m_pCurAttrShoe.p->flySpeed; /*0x9937f8*/
+    }
+    else
+    {
+      p_flySpeed = TSecType<double>::TSecType<double>(&v51, 1.0); /*0x99380e*/
+      v52 = 0; /*0x993813*/
+      vMax = 1; /*0x99381e*/
+    }
+    fDef = TSecType<double>::GetData(p_flySpeed); /*0x993829*/
+    v52 = -1; /*0x99382d*/
+    if ( (vMax & 1) != 0 && v51.m_secdata ) /*0x993847*/
+      ZAllocEx<ZAllocAnonSelector>::Free(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, v51.m_secdata); /*0x99384f*/
+    accShoe = fabs(TSecType<double>::GetData(&this->m_pAttrField->fly)); /*0x99386a*/
+    op_4 = this->_ZtlSecureTear_m_nInputX_CS; /*0x99387e*/
+    vyMax = accShoe * (TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p->dFlySpeed * fDef); /*0x993888*/
+    fDef = vyMax; /*0x99388c*/
+    v18 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, op_4); /*0x993890*/
+    ZtlSecureTear_m_nInputY_CS = this->_ZtlSecureTear_m_nInputY_CS; /*0x99389e*/
+    fx = (double)v18 * TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p->dFlyForce * accShoe; /*0x9938bf*/
+    accShoe = (double)_ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputY, ZtlSecureTear_m_nInputY_CS) /*0x9938ea*/
+            * TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p->dFlyForce
+            * accShoe;
+    DecSpeed(&vx, g, mass, vyMax, tSec); /*0x993911*/
+    if ( _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, this->_ZtlSecureTear_m_nInputX_CS) ) /*0x99391e*/
+      AccSpeed(&vx, fx, mass, fDef, tSec); /*0x993954*/
+    else
+      DecSpeed(&vx, g, mass, 0.0, tSec); /*0x993975*/
+    DecSpeed(&vy, g, mass, vyMax, tSec); /*0x9939a4*/
+    if ( _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputY, this->_ZtlSecureTear_m_nInputY_CS) ) /*0x9939b5*/
+      AccSpeed(&vy, accShoe, mass, vyMax, tSec); /*0x9939eb*/
+    else
+      DecSpeed(&vy, g, mass, 0.0, tSec); /*0x993a12*/
+    goto LABEL_52; /*0x9939f3*/
+  }
+  vyMax = fabs(TSecType<double>::GetData(&this->m_pAttrField->fly)); /*0x993a31*/
+  v8 = CVecCtrl::IsSwimming(this) == 0; /*0x993a3a*/
+  v20 = this->m_pCurAttrShoe.p; /*0x993a3c*/
+  if ( v8 ) /*0x993a42*/
+  {
+    accShoe = TSecType<double>::GetData(&v20->flyAcc); /*0x993a74*/
+    v21 = TSecType<double>::GetData(&this->m_pCurAttrShoe.p->flySpeed) /*0x993a91*/
+        * TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p->dFlySpeed;
+  }
+  else
+  {
+    accShoe = TSecType<double>::GetData(&v20->swimAcc); /*0x993a4c*/
+    v21 = TSecType<double>::GetData(&this->m_pCurAttrShoe.p->swimSpeedH) /*0x993a67*/
+        * TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p->dSwimSpeed;
+  }
+  vMaxa = v21 * vyMax; /*0x993a9a*/
+  if ( CVecCtrl::IsSwimming(this) ) /*0x993a9e*/
+    dSwimForce = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p->dSwimForce; /*0x993ab0*/
+  else
+    dSwimForce = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p->dFlyForce; /*0x993abe*/
+  ZtlSecureTear_m_nInputX_CS = this->_ZtlSecureTear_m_nInputX_CS; /*0x993ac1*/
+  fDef = dSwimForce; /*0x993ac7*/
+  fx = (double)_ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, ZtlSecureTear_m_nInputX_CS) /*0x993af6*/
+     * dSwimForce
+     * accShoe
+     * vyMax;
+  DecSpeed(&vx, g, mass, vMaxa, tSec); /*0x993b1d*/
+  if ( _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, this->_ZtlSecureTear_m_nInputX_CS) ) /*0x993b2a*/
+    AccSpeed(&vx, fx, mass, vMaxa, tSec); /*0x993b60*/
+  else
+    DecSpeed(&vx, g, mass, 0.0, tSec); /*0x993b81*/
+  DecSpeed(&vy, g, mass, vMaxa, tSec); /*0x993bb0*/
+  v30 = this->_ZtlSecureTear_m_nInputY_CS; /*0x993bc6*/
+  g = fDef / mass / vyMax * accShoe; /*0x993bdc*/
+  if ( _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputY, v30) >= 0 ) /*0x993bea*/
+  {
+    if ( _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputY, this->_ZtlSecureTear_m_nInputY_CS) <= 0 ) /*0x993c4c*/
+    {
+      AccSpeed(&vy, mass * g, mass, vMaxa, tSec); /*0x993cb2*/
+      goto LABEL_52; /*0x993cb2*/
+    }
+    v24 = vMaxa * DOUBLE_1_5; /*0x993c52*/
+    v25 = vy; /*0x993c58*/
+    if ( vy > vMaxa * DOUBLE_1_5 ) /*0x993c63*/
+    {
+LABEL_44:
+      vy = v25 + g * DOUBLE_0_5 * tSec; /*0x993c10*/
+      if ( vy > v24 ) /*0x993c2b*/
+        vy = v24; /*0x993c31*/
+      goto LABEL_52; /*0x993c35*/
+    }
+    if ( vy >= v24 ) /*0x993c6c*/
+      goto LABEL_52; /*0x993c6c*/
+  }
+  else
+  {
+    v24 = vMaxa * DOUBLE_0_3; /*0x993bf0*/
+    v25 = vy; /*0x993bf6*/
+    if ( vy <= vMaxa * DOUBLE_0_3 ) /*0x993c01*/
+    {
+      if ( vy >= v24 ) /*0x993c0a*/
+        goto LABEL_52; /*0x993c0a*/
+      goto LABEL_44; /*0x993c0a*/
+    }
+  }
+  vy = v25 - g * tSec; /*0x993c78*/
+  if ( vy < v24 ) /*0x993c83*/
+    vy = v24; /*0x993c85*/
+LABEL_52:
+  fx = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_x, this->m_ap._ZtlSecureTear_x_CS); /*0x993cc0*/
+  v26 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vx, this->m_ap._ZtlSecureTear_vx_CS); /*0x993cd6*/
+  this->m_ap._ZtlSecureTear_x_CS = _ZtlSecureTear<double>( /*0x993cfa*/
+                                     (v26 + vx) * DOUBLE_0_5 * tSec + fx,
+                                     this->m_ap._ZtlSecureTear_x);
+  fx = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_y, this->m_ap._ZtlSecureTear_y_CS); /*0x993d0a*/
+  v27 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vy, this->m_ap._ZtlSecureTear_vy_CS); /*0x993d16*/
+  v28 = _ZtlSecureTear<double>((v27 + vy) * DOUBLE_0_5 * tSec + fx, this->m_ap._ZtlSecureTear_y); /*0x993d36*/
+  opa = vx; /*0x993d45*/
+  this->m_ap._ZtlSecureTear_y_CS = v28; /*0x993d48*/
+  v29 = _ZtlSecureTear<double>(opa, this->m_ap._ZtlSecureTear_vx); /*0x993d4b*/
+  opb = vy; /*0x993d5a*/
+  this->m_ap._ZtlSecureTear_vx_CS = v29; /*0x993d5d*/
+  this->m_ap._ZtlSecureTear_vy_CS = _ZtlSecureTear<double>(opb, this->m_ap._ZtlSecureTear_vy); /*0x993d65*/
+}

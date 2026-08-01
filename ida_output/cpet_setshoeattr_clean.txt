@@ -1,0 +1,33 @@
+﻿void __thiscall CPet::SetShoeAttr(CPet *this)
+{
+  GW_ItemSlotPet *ItemSlot; // eax
+  GW_ItemSlotPet *v3; // edi
+  TSecType<double> *p_mass; // ecx
+  ZRef<CAttrShoe> pAttrShoe; // [esp+Ch] [ebp-14h] BYREF
+  int v6; // [esp+1Ch] [ebp-4h]
+
+  ItemSlot = CPet::GetItemSlot(this);
+  v3 = ItemSlot;
+  if ( this->m_pOwner
+    && ItemSlot
+    && this->m_pOwner->IsLocalUser(this->m_pOwner)
+    && (_ZtlSecureFuse<short>(v3->_ZtlSecureTear_nPetAttribute, v3->_ZtlSecureTear_nPetAttribute_CS) & 1) != 0 )
+  {
+    this->m_pOwner->GetShoeAttr(&this->m_pOwner->IVecCtrlOwner, &pAttrShoe);
+    p_mass = &this->m_pAttrShoe.p->mass;
+    v6 = 0;
+    TSecType<double>::operator=(p_mass, &pAttrShoe.p->mass);
+    TSecType<double>::operator=(&this->m_pAttrShoe.p->walkAcc, &pAttrShoe.p->walkAcc);
+    TSecType<double>::operator=(&this->m_pAttrShoe.p->walkSpeed, &pAttrShoe.p->walkSpeed);
+    TSecType<double>::operator=(&this->m_pAttrShoe.p->walkDrag, &pAttrShoe.p->walkDrag);
+    TSecType<double>::operator=(&this->m_pAttrShoe.p->walkSlant, &pAttrShoe.p->walkSlant);
+    TSecType<double>::operator=(&this->m_pAttrShoe.p->walkJump, &pAttrShoe.p->walkJump);
+    TSecType<double>::operator=(&this->m_pAttrShoe.p->swimAcc, &pAttrShoe.p->swimAcc);
+    TSecType<double>::operator=(&this->m_pAttrShoe.p->swimSpeedH, &pAttrShoe.p->swimSpeedH);
+    TSecType<double>::operator=(&this->m_pAttrShoe.p->swimSpeedV, &pAttrShoe.p->swimSpeedV);
+    TSecType<double>::operator=(&this->m_pAttrShoe.p->flyAcc, &pAttrShoe.p->flyAcc);
+    TSecType<double>::operator=(&this->m_pAttrShoe.p->flySpeed, &pAttrShoe.p->flySpeed);
+    v6 = -1;
+    ZRef<CAttrShoe>::~ZRef<CAttrShoe>(&pAttrShoe);
+  }
+}

@@ -1,0 +1,44 @@
+// cuserlocal::TalkToNpc
+
+void __thiscall CUserLocal::TalkToNpc(CUserLocal *this, ZRef<CNpc> pNpc)
+{
+  bool v3; // zf
+  wchar_t *a; // eax
+  tagPOINT (__thiscall *GetPos)(IVecCtrlOwner *); // edx
+  IVecCtrlOwner *v6; // esi
+  unsigned __int16 *v7; // eax
+  int v8; // eax
+  unsigned int m_dwNpcId; // [esp-4h] [ebp-30h]
+  _BYTE v10[8]; // [esp+8h] [ebp-24h] BYREF
+  COutPacket oPacket; // [esp+10h] [ebp-1Ch] BYREF
+  int v12; // [esp+28h] [ebp-4h]
+
+  v3 = this->m_bKeyDown == 0; /*0x932216*/
+  v12 = 0; /*0x93221d*/
+  if ( !v3 ) /*0x932225*/
+    CUserLocal::OnKeyDownSkillEnd(this); /*0x932227*/
+  a = pNpc.p->m_aQuest.a; /*0x932230*/
+  if ( a && *((_DWORD *)a - 1) ) /*0x93223a*/
+  {
+    CNpc::ShowQuestList(pNpc.p); /*0x932240*/
+  }
+  else
+  {
+    COutPacket::COutPacket(&oPacket, 63); /*0x93224d*/
+    m_dwNpcId = pNpc.p->m_dwNpcId; /*0x93225c*/
+    LOBYTE(v12) = 1; /*0x932261*/
+    COutPacket::Encode4(&oPacket, m_dwNpcId); /*0x932266*/
+    GetPos = this->GetPos; /*0x93226e*/
+    v6 = &this->IVecCtrlOwner; /*0x932271*/
+    v7 = (unsigned __int16 *)((int (__thiscall *)(IVecCtrlOwner *, _BYTE *))GetPos)(v6, v10); /*0x93227b*/
+    COutPacket::Encode2(&oPacket, *v7); /*0x932285*/
+    v8 = ((int (__thiscall *)(IVecCtrlOwner *, _BYTE *))v6->GetPos)(v6, v10); /*0x932296*/
+    COutPacket::Encode2(&oPacket, *(_WORD *)(v8 + 4)); /*0x9322a1*/
+    CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket); /*0x9322b1*/
+    LOBYTE(v12) = 0; /*0x9322ba*/
+    ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff); /*0x9322bf*/
+  }
+  v12 = -1; /*0x9322c9*/
+  if ( pNpc.p ) /*0x9322d1*/
+    ZRef<CNpc>::_ReleaseRaw(&pNpc, nullptr); /*0x9322d9*/
+}

@@ -1,0 +1,27 @@
+// CSkillInfo::~CSkillInfo(void)
+
+void __thiscall CSkillInfo::~CSkillInfo(CSkillInfo *this)
+{
+  ZMap<long,ZRef<ITEMOPTIONSKILLENTRY>,long> *p_m_mItemOptionSkill; // ecx
+
+  this->__vftable = (CSkillInfo_vtbl *)&CSkillInfo::`vftable';
+  p_m_mItemOptionSkill = &this->m_mItemOptionSkill;
+  p_m_mItemOptionSkill->__vftable = (ZMap<long,ZRef<ITEMOPTIONSKILLENTRY>,long>_vtbl *)&ZMap<long,ZRef<ITEMOPTIONSKILLENTRY>,long>::`vftable';
+  ZMap<long,ZRef<ITEMOPTIONSKILLENTRY>,long>::RemoveAll(p_m_mItemOptionSkill);
+  this->m_mItemSkill.__vftable = (ZMap<long,ZRef<ITEMSKILLENTRY>,long>_vtbl *)&ZMap<long,ZRef<ITEMSKILLENTRY>,long>::`vftable';
+  ZMap<long,ZRef<ITEMSKILLENTRY>,long>::RemoveAll(&this->m_mItemSkill);
+  this->m_mBFSkill.__vftable = (ZMap<long,ZRef<BFSKILLENTRY>,long>_vtbl *)&ZMap<long,ZRef<BFSKILLENTRY>,long>::`vftable';
+  ZMap<long,ZRef<BFSKILLENTRY>,long>::RemoveAll(&this->m_mBFSkill);
+  this->m_mMCGuardian.__vftable = (ZMap<long,ZRef<MCGUARDIANENTRY>,long>_vtbl *)&ZMap<long,ZRef<MCGUARDIANENTRY>,long>::`vftable';
+  ZMap<long,ZRef<MCGUARDIANENTRY>,long>::RemoveAll(&this->m_mMCGuardian);
+  ZArray<long>::RemoveAll(&this->m_aMCRandomSkill);
+  this->m_mMCSkill.__vftable = (ZMap<long,ZRef<MCSKILLENTRY>,long>_vtbl *)&ZMap<long,ZRef<MCSKILLENTRY>,long>::`vftable';
+  ZMap<long,ZRef<MCSKILLENTRY>,long>::RemoveAll(&this->m_mMCSkill);
+  this->m_mMobSkill.__vftable = (ZMap<long,ZRef<MOBSKILLENTRY>,long>_vtbl *)&ZMap<long,ZRef<MOBSKILLENTRY>,long>::`vftable';
+  ZMap<long,ZRef<MOBSKILLENTRY>,long>::RemoveAll(&this->m_mMobSkill);
+  this->m_mSkillRoot.__vftable = (ZMap<long,ZRef<SKILLROOT>,long>_vtbl *)&ZMap<long,ZRef<SKILLROOT>,long>::`vftable';
+  ZMap<long,ZRef<SKILLROOT>,long>::RemoveAll(&this->m_mSkillRoot);
+  this->m_mSkill.__vftable = (ZMap<long,ZRef<SKILLENTRY>,long>_vtbl *)&ZMap<long,ZRef<SKILLENTRY>,long>::`vftable';
+  ZMap<long,ZRef<SKILLENTRY>,long>::RemoveAll(&this->m_mSkill);
+  TSingleton<CSkillInfo>::ms_pInstance = nullptr;
+}

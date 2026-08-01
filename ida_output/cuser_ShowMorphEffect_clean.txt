@@ -1,0 +1,57 @@
+// cuser::ShowMorphEffect
+
+void __thiscall CUser::ShowMorphEffect(CUser *this, int bOnLadderOrRope, int bSound)
+{
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzVector2D *v5; // ecx
+  int m_nMoveAction; // eax
+  wchar_t *m_pStr; // esi
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v8; // [esp-14h] [ebp-30h] BYREF
+  int v9; // [esp-10h] [ebp-2Ch]
+  int v10; // [esp-Ch] [ebp-28h]
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v11; // [esp-8h] [ebp-24h] BYREF
+  const wchar_t *v12; // [esp-4h] [ebp-20h]
+  ZXString<unsigned short> sUOL; // [esp+8h] [ebp-14h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *v14; // [esp+Ch] [ebp-10h]
+  int v15; // [esp+18h] [ebp-4h]
+
+  if ( !this->m_bDelayedLoad ) /*0x8e6776*/
+  {
+    sUOL._m_pStr = nullptr; /*0x8e6783*/
+    v15 = 0; /*0x8e6790*/
+    if ( bOnLadderOrRope ) /*0x8e679c*/
+      v12 = aEffectBasiceff_15; /*0x8e679e*/
+    else
+      v12 = aEffectBasiceff_14; /*0x8e67a5*/
+    ZXString<unsigned short>::operator=<unsigned short>(&sUOL, v12); /*0x8e67aa*/
+    m_pInterface = this->m_pLayerUnderFace.m_pInterface; /*0x8e67af*/
+    v12 = (const wchar_t *)5; /*0x8e67b5*/
+    v5 = (IWzVector2D *)&v11; /*0x8e67b8*/
+    v11.m_pInterface = m_pInterface; /*0x8e67be*/
+    if ( m_pInterface ) /*0x8e67c2*/
+      m_pInterface->AddRef(m_pInterface); /*0x8e67ca*/
+    v10 = 0; /*0x8e67cc*/
+    v9 = 0; /*0x8e67ce*/
+    v8.m_pInterface = v5; /*0x8e67d0*/
+    v14 = &v8; /*0x8e67d3*/
+    LOBYTE(v15) = 1; /*0x8e67da*/
+    CUser::GetVecCtrl(this, &v8); /*0x8e67df*/
+    m_nMoveAction = this->m_nMoveAction; /*0x8e67e4*/
+    m_pStr = sUOL._m_pStr; /*0x8e67ea*/
+    LOBYTE(v15) = 0; /*0x8e67f4*/
+    CAnimationDisplayer::Effect_General( /*0x8e6800*/
+      TSingleton<CAnimationDisplayer>::ms_pInstance,
+      sUOL._m_pStr,
+      (m_nMoveAction & 1) == 0,
+      v8,
+      v9,
+      v10,
+      v11,
+      (int)v12);
+    if ( bSound ) /*0x8e680a*/
+      play_game_sound(L"Transform", 0x64u); /*0x8e6813*/
+    v15 = -1; /*0x8e681b*/
+    if ( m_pStr ) /*0x8e6825*/
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)m_pStr - 1); /*0x8e682b*/
+  }
+}

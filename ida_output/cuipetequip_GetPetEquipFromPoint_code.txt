@@ -1,0 +1,144 @@
+﻿int __thiscall CUIPetEquip::GetPetEquipFromPoint(CUIPetEquip *this, int rx, int ry)
+{
+  int v3; // edx
+  int v4; // esi
+  int nX; // eax
+  int nY; // eax
+  int m_nPetIndex; // eax
+  int v8; // eax
+  int v10; // eax
+  int v11; // eax
+  int v12; // eax
+  int v13; // eax
+  int v14; // eax
+  int v15; // eax
+  int v16; // eax
+  int v17; // eax
+  int v18; // eax
+  int v19; // eax
+  int v20; // eax
+  int v21; // eax
+  int v22; // eax
+  int v23; // eax
+  int v24; // eax
+  int v25; // eax
+
+  v3 = 0; /*0x7a39bb*/
+  do /*0x7a3bad*/
+  {
+    v4 = v3 + 1; /*0x7a39c0*/
+    if ( v3 == 13 || v4 > 20 && v4 <= 48 ) /*0x7a39d4*/
+    {
+      nX = sEqSlotInfo[v3].nX; /*0x7a39da*/
+      if ( nX < rx && rx < nX + 32 ) /*0x7a39ee*/
+      {
+        nY = sEqSlotInfo[v3].nY; /*0x7a39f4*/
+        if ( nY < ry && ry < nY + 32 ) /*0x7a3a08*/
+        {
+          switch ( v3 ) /*0x7a3a11*/
+          {
+            case 13: /*0x7a3a11*/
+              m_nPetIndex = this->m_nPetIndex; /*0x7a3a13*/
+              if ( !m_nPetIndex ) /*0x7a3a1c*/
+                return 14; /*0x7a3be9*/
+              v8 = m_nPetIndex - 1; /*0x7a3a22*/
+              if ( !v8 ) /*0x7a3a25*/
+                return 30; /*0x7a3bde*/
+              if ( v8 == 1 ) /*0x7a3a2e*/
+                return 38; /*0x7a3a3a*/
+              break;
+            case 20: /*0x7a3a11*/
+              v10 = this->m_nPetIndex; /*0x7a3a42*/
+              if ( !v10 ) /*0x7a3a4b*/
+                return 21; /*0x7a3bff*/
+              v11 = v10 - 1; /*0x7a3a51*/
+              if ( !v11 ) /*0x7a3a54*/
+                return 31; /*0x7a3bf4*/
+              if ( v11 == 1 ) /*0x7a3a5d*/
+                return 39; /*0x7a3a69*/
+              break;
+            case 28: /*0x7a3a11*/
+              v12 = this->m_nPetIndex; /*0x7a3a71*/
+              if ( !v12 ) /*0x7a3a7a*/
+                return 29; /*0x7a3c15*/
+              v13 = v12 - 1; /*0x7a3a80*/
+              if ( !v13 ) /*0x7a3a83*/
+                return 32; /*0x7a3c0a*/
+              if ( v13 == 1 ) /*0x7a3a8c*/
+                return 40; /*0x7a3a98*/
+              break;
+            case 21: /*0x7a3a11*/
+              v14 = this->m_nPetIndex; /*0x7a3aa0*/
+              if ( !v14 ) /*0x7a3aa9*/
+                return 22; /*0x7a3c2b*/
+              v15 = v14 - 1; /*0x7a3aaf*/
+              if ( !v15 ) /*0x7a3ab2*/
+                return 33; /*0x7a3c20*/
+              if ( v15 == 1 ) /*0x7a3abb*/
+                return 41; /*0x7a3ac7*/
+              break;
+            case 22: /*0x7a3a11*/
+              v16 = this->m_nPetIndex; /*0x7a3acf*/
+              if ( !v16 ) /*0x7a3ad8*/
+                return 23; /*0x7a3c41*/
+              v17 = v16 - 1; /*0x7a3ade*/
+              if ( !v17 ) /*0x7a3ae1*/
+                return 34; /*0x7a3c36*/
+              if ( v17 == 1 ) /*0x7a3aea*/
+                return 42; /*0x7a3af6*/
+              break;
+            case 25: /*0x7a3a11*/
+              v18 = this->m_nPetIndex; /*0x7a3afe*/
+              if ( !v18 ) /*0x7a3b07*/
+                return 26; /*0x7a3c57*/
+              v19 = v18 - 1; /*0x7a3b0d*/
+              if ( !v19 ) /*0x7a3b10*/
+                return 35; /*0x7a3c4c*/
+              if ( v19 == 1 ) /*0x7a3b19*/
+                return 43; /*0x7a3b25*/
+              break;
+            case 26: /*0x7a3a11*/
+              v20 = this->m_nPetIndex; /*0x7a3b2d*/
+              if ( !v20 ) /*0x7a3b36*/
+                return 27; /*0x7a3c6d*/
+              v21 = v20 - 1; /*0x7a3b3c*/
+              if ( !v21 ) /*0x7a3b3f*/
+                return 36; /*0x7a3c62*/
+              if ( v21 == 1 ) /*0x7a3b48*/
+                return 44; /*0x7a3b50*/
+              break;
+            case 27: /*0x7a3a11*/
+              v22 = this->m_nPetIndex; /*0x7a3b58*/
+              if ( !v22 ) /*0x7a3b61*/
+                return 28; /*0x7a3c83*/
+              v23 = v22 - 1; /*0x7a3b67*/
+              if ( !v23 ) /*0x7a3b6a*/
+                return 37; /*0x7a3c78*/
+              if ( v23 == 1 ) /*0x7a3b73*/
+                return 45; /*0x7a3b7b*/
+              break;
+            case 45: /*0x7a3a11*/
+              v24 = this->m_nPetIndex; /*0x7a3b87*/
+              if ( !v24 ) /*0x7a3b90*/
+                return 46; /*0x7a3ca4*/
+              v25 = v24 - 1; /*0x7a3b96*/
+              if ( !v25 ) /*0x7a3b99*/
+                return 47; /*0x7a3c99*/
+              if ( v25 == 1 ) /*0x7a3ba2*/
+                return 48; /*0x7a3c8e*/
+              break;
+            default:
+              return v3 + 1; /*0x7a3cad*/
+          }
+        }
+      }
+    }
+    ++v3; /*0x7a3ba8*/
+  }
+  while ( (unsigned int)v4 < 0x32 ); /*0x7a3bad*/
+  if ( (unsigned int)(rx - 45) <= 0x1E && (unsigned int)(ry - 24) <= 0x1E ) /*0x7a3bc5*/
+    return 200; /*0x7a3bcd*/
+  if ( (unsigned int)(rx - 111) > 0x1E || (unsigned int)(ry - 24) > 0x1E ) /*0x7a3cbe*/
+    return 0; /*0x7a3ccd*/
+  return 201; /*0x7a3a34*/
+}

@@ -1,0 +1,4 @@
+int __thiscall CMob::GetOneTimeAction(CMob *this)
+{
+  return _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nOneTimeAction, this->_ZtlSecureTear_m_nOneTimeAction_CS); /*0x63c606*/
+}

@@ -1,0 +1,7 @@
+// _ZtlSecureGet_bInvincible
+// Address: 0x659120
+
+int __fastcall CMobTemplate::_ZtlSecureGet_bInvincible(CMobTemplate *this)
+{
+  return _ZtlSecureFuse<int>(this->_ZtlSecureTear_bInvincible, this->_ZtlSecureTear_bInvincible_CS); /*0x659136*/
+}

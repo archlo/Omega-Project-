@@ -1,0 +1,21 @@
+void __thiscall CMob::ResetGuided(CMob *this)
+{
+  __POSITION *m_posAffectedGuidedBullet; // eax
+  ZList<_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > > *p_m_lpLayerASIcon; // ecx
+
+  m_posAffectedGuidedBullet = this->m_posAffectedGuidedBullet; /*0x6410b3*/
+  if ( m_posAffectedGuidedBullet ) /*0x6410bb*/
+  {
+    if ( *(_DWORD *)&m_posAffectedGuidedBullet[8] ) /*0x6410bd*/
+    {
+      p_m_lpLayerASIcon = &this->m_lpLayerASIcon; /*0x6410c9*/
+      if ( !*(_DWORD *)&m_posAffectedGuidedBullet[12] ) /*0x6410c4*/
+        p_m_lpLayerASIcon = &this->m_lpLayerASAni; /*0x6410d1*/
+      ZList<_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>>::RemoveAt( /*0x6410d7*/
+        p_m_lpLayerASIcon,
+        *(__POSITION **)&m_posAffectedGuidedBullet[8]);
+    }
+    ZList<CMob::AFFECTEDSKILLENTRY>::RemoveAt(&this->m_lAffectedSkillEntry, this->m_posAffectedGuidedBullet); /*0x6410e9*/
+    this->m_posAffectedGuidedBullet = nullptr; /*0x6410ee*/
+  }
+}

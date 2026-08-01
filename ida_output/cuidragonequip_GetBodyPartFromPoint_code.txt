@@ -1,0 +1,21 @@
+﻿int __thiscall CUIDragonEquip::GetBodyPartFromPoint(CUIDragonEquip *this, int rx, int ry)
+{
+  int v3; // eax
+  int nX; // ecx
+  int v5; // ecx
+
+  v3 = 0; /*0x7a38c9*/
+  while ( 1 ) /*0x7a38d0*/
+  {
+    nX = CUIDragonEquip::ms_aRegion[v3].nX; /*0x7a38d0*/
+    if ( nX < rx && rx < nX + 32 ) /*0x7a38e0*/
+    {
+      v5 = dword_C6E83C[2 * v3]; /*0x7a38e2*/
+      if ( v5 < ry && ry < v5 + 32 ) /*0x7a38f2*/
+        break; /*0x7a38f2*/
+    }
+    if ( ++v3 >= 4 ) /*0x7a38f8*/
+      return -1; /*0x7a38fe*/
+  }
+  return v3 + 1000; /*0x7a38fd*/
+}

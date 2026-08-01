@@ -24,6 +24,13 @@ export class MobAttack {
   Ball         = '';
   AreaWarning  = '';
 
+  // Attack type: 0=melee, 1=target, 2=bullet, 3/4=area
+  nType = 0;
+  // Attack range rect (relative to mob position)
+  rcRange: { left: number; top: number; right: number; bottom: number } | null = null;
+  // Bullet speed for type 2 attacks
+  nBulletSpeed = 200;
+
   // TODO_AUDIT.md Thirty-fourth pass: CMob::GetAttackBodyRect/GetMultiBodyRect
   // (real range check behind CMob::IsTargetInAttackRange, 0x645f50) derive
   // the hit rect from this attack's own frame-0 `lt`/`rb` vectors in

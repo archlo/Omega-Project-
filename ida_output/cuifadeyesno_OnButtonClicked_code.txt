@@ -1,0 +1,188 @@
+﻿void __thiscall CUIFadeYesNo::OnButtonClicked(CUIFadeYesNo *this, ZXString<char> *nId)
+{
+  int m_nType; // eax
+  CField *field; // eax
+  unsigned int v5; // eax
+  char *v6; // ecx
+  StringPool *Instance; // eax
+  char *m_pStr; // eax
+  char *v9; // ecx
+  int v10; // eax
+  char *m_dwInviterID; // edx
+  ZXString<char> v12; // [esp-14h] [ebp-44h] BYREF
+  const wchar_t *v13; // [esp-10h] [ebp-40h]
+  ZXString<char> v14; // [esp-Ch] [ebp-3Ch] BYREF
+  ZXString<char> v15; // [esp-8h] [ebp-38h] BYREF
+  ZXString<char> v16[4]; // [esp-4h] [ebp-34h] BYREF
+  ZXString<char> result; // [esp+Ch] [ebp-24h] BYREF
+  ZXString<char> *v18; // [esp+10h] [ebp-20h]
+  COutPacket oPacket; // [esp+14h] [ebp-1Ch] BYREF
+  int v20; // [esp+2Ch] [ebp-4h]
+
+  if ( !*((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 3604) && !this->m_bOnceClicked ) /*0x529c9a*/
+  {
+    m_nType = this->m_nType; /*0x529ca6*/
+    if ( m_nType != 4 ) /*0x529caf*/
+      this->m_bOnceClicked = 1; /*0x529cb1*/
+    if ( nId != (ZXString<char> *)2000 ) /*0x529cc5*/
+    {
+      if ( nId != (ZXString<char> *)2001 ) /*0x529cca*/
+        return; /*0x529cca*/
+      if ( m_nType == 16 ) /*0x529cd3*/
+        CWvsContext::SendFollowRequestApply((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, 0); /*0x529cdc*/
+      v16[0]._m_pStr = nullptr; /*0x529ce1*/
+      goto LABEL_38; /*0x529ce3*/
+    }
+    switch ( m_nType ) /*0x529cf1*/
+    {
+      case 0: /*0x529cf1*/
+        CUIMessenger::TryNew(this->m_dwSN); /*0x529cff*/
+        goto LABEL_35; /*0x529d07*/
+      case 1: /*0x529cf1*/
+        v16[0] = (ZXString<char>)this->m_dwFriendID; /*0x529d12*/
+        field = get_field(); /*0x529d13*/
+        CField::SendAcceptFriendMsg(field, (unsigned int)v16[0]._m_pStr); /*0x529d1a*/
+        goto LABEL_35; /*0x529d1f*/
+      case 2: /*0x529cf1*/
+        CMiniRoomBaseDlg::SendInviteResult(this->m_dwSN, 0); /*0x529d2d*/
+        goto LABEL_35; /*0x529d35*/
+      case 3: /*0x529cf1*/
+        CMiniRoomBaseDlg::SendCashInviteResult(this->m_dwSN, 0); /*0x529d43*/
+        goto LABEL_35; /*0x529d4b*/
+      case 4: /*0x529cf1*/
+        CUIFadeYesNo::TryShowMemoListDlg(this, 446, 92); /*0x529d59*/
+        goto LABEL_35; /*0x529d5e*/
+      case 5: /*0x529cf1*/
+        if ( this->m_bGameOpt_Party ) /*0x529d63*/
+        {
+          COutPacket::COutPacket(&oPacket, 146); /*0x529d79*/
+          v20 = 0; /*0x529d84*/
+          COutPacket::Encode1(&oPacket, 0x1Bu); /*0x529d8c*/
+          v5 = this->GetInviterID(this); /*0x529d98*/
+          COutPacket::Encode4(&oPacket, v5); /*0x529d9f*/
+          v16[0]._m_pStr = (char *)&oPacket; /*0x529da8*/
+          break; /*0x529da8*/
+        }
+        goto LABEL_35; /*0x529d6a*/
+      case 6: /*0x529cf1*/
+        COutPacket::COutPacket(&oPacket, 167); /*0x529ea9*/
+        v20 = 3; /*0x529eb4*/
+        COutPacket::Encode1(&oPacket, 4u); /*0x529ebc*/
+        COutPacket::Encode4(&oPacket, this->m_dwInviterID); /*0x529ecc*/
+        v16[0]._m_pStr = v6; /*0x529ed1*/
+        nId = v16; /*0x529ed4*/
+        CWvsContext::GetGuildName((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, v16); /*0x529edf*/
+        COutPacket::EncodeStr(&oPacket, v16[0]); /*0x529ee8*/
+        v16[0]._m_pStr = (char *)&oPacket; /*0x529ef1*/
+        break; /*0x529ef2*/
+      case 7: /*0x529cf1*/
+        if ( CWvsContext::GetQuestState((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, this->m_usQuestID) == 1 ) /*0x529e23*/
+          CWvsContext::ShowQuestInfoDetail( /*0x529e38*/
+            (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+            1,
+            this->m_usQuestID);
+        goto LABEL_35; /*0x529e3d*/
+      case 8: /*0x529cf1*/
+        if ( !this->m_bGameOpt_Guild ) /*0x529e49*/
+          goto LABEL_35; /*0x529e49*/
+        COutPacket::COutPacket(&oPacket, 149); /*0x529e58*/
+        v20 = 2; /*0x529e63*/
+        COutPacket::Encode1(&oPacket, 6u); /*0x529e6b*/
+        COutPacket::Encode4(&oPacket, this->m_dwInviterID); /*0x529e7b*/
+        COutPacket::Encode4(&oPacket, *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 2093)); /*0x529e91*/
+        v16[0]._m_pStr = (char *)&oPacket; /*0x529e9a*/
+        break; /*0x529e9b*/
+      case 10: /*0x529cf1*/
+        if ( !this->m_bQuickDelivery ) /*0x529efe*/
+          goto LABEL_35; /*0x529efe*/
+        COutPacket::COutPacket(&oPacket, 70); /*0x529f0a*/
+        v20 = 4; /*0x529f15*/
+        COutPacket::Encode1(&oPacket, 0); /*0x529f1d*/
+        COutPacket::Encode4(&oPacket, 0xFFFFFFFF); /*0x529f28*/
+        COutPacket::Encode4(&oPacket, 2u); /*0x529f33*/
+        v16[0]._m_pStr = (char *)&oPacket; /*0x529f3c*/
+        break; /*0x529f3d*/
+      case 11: /*0x529cf1*/
+        CWvsContext::ShowQuestInfoDetail( /*0x529f8d*/
+          (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+          0,
+          this->m_usQuestID);
+        goto LABEL_35; /*0x529f92*/
+      case 12: /*0x529cf1*/
+        nId = nullptr; /*0x529f97*/
+        v20 = 6; /*0x529fa9*/
+        Instance = StringPool::GetInstance(); /*0x529fb1*/
+        m_pStr = StringPool::GetString(Instance, &result, 0x1216u)->_m_pStr; /*0x529fc3*/
+        v15._m_pStr = this->m_sInviter._m_pStr; /*0x529fce*/
+        LOBYTE(v20) = 7; /*0x529fd5*/
+        ZXString<char>::Format((ZXString<char> *)&nId, m_pStr, v15._m_pStr, v15._m_pStr); /*0x529fda*/
+        LOBYTE(v20) = 6; /*0x529fe6*/
+        if ( result._m_pStr ) /*0x529fed*/
+          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x529ff3*/
+        v16[0]._m_pStr = nullptr; /*0x529ffb*/
+        v15._m_pStr = (char *)1; /*0x529ffd*/
+        v14._m_pStr = nullptr; /*0x529fff*/
+        v13 = nullptr; /*0x52a001*/
+        v12._m_pStr = v9; /*0x52a003*/
+        v18 = &v12; /*0x52a00a*/
+        ZXString<char>::ZXString<char>(&v12, (const ZXString<char> *)&nId); /*0x52a00f*/
+        v10 = CUtilDlg::YesNo(v12, v13, (ZRef<CDialog> *)v14._m_pStr, (int)v15._m_pStr, (int)v16[0]._m_pStr); /*0x52a014*/
+        m_dwInviterID = (char *)this->m_dwInviterID; /*0x52a019*/
+        v16[0]._m_pStr = (char *)(v10 == 6); /*0x52a02c*/
+        v15._m_pStr = m_dwInviterID; /*0x52a02d*/
+        v14._m_pStr = v16[0]._m_pStr; /*0x52a02e*/
+        v18 = &v14; /*0x52a031*/
+        ZXString<char>::ZXString<char>(&v14, &this->m_sInviter); /*0x52a036*/
+        CWvsContext::SendFamilyInviteResult( /*0x52a041*/
+          (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+          v14,
+          (unsigned int)v15._m_pStr,
+          (int)v16[0]._m_pStr);
+        v20 = -1; /*0x52a04a*/
+        if ( nId ) /*0x52a054*/
+          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&nId[-3]); /*0x52a05a*/
+        goto LABEL_35; /*0x52a062*/
+      case 13: /*0x529cf1*/
+      case 15: /*0x529cf1*/
+        COutPacket::COutPacket(&oPacket, 148); /*0x529dd3*/
+        v20 = 1; /*0x529dde*/
+        COutPacket::Encode1(&oPacket, 0x56u); /*0x529de6*/
+        COutPacket::Encode4(&oPacket, 0xDu); /*0x529df1*/
+        COutPacket::Encode4(&oPacket, this->m_dwApplierID); /*0x529e01*/
+        v16[0]._m_pStr = (char *)&oPacket; /*0x529e0a*/
+        break; /*0x529e0b*/
+      case 14: /*0x529cf1*/
+        v16[0]._m_pStr = (char *)1; /*0x52a064*/
+        v15._m_pStr = (char *)&nId[-500]; /*0x52a066*/
+        nId = &v15; /*0x52a06f*/
+        ZXString<char>::ZXString<char>(&v15, &this->m_sInviter); /*0x52a074*/
+        ExpeditionIntermediary::SendResponseInvitePacket( /*0x52a07f*/
+          (ExpeditionIntermediary *)TSingleton<ExpeditionIntermediary>::ms_pInstance._m_pStr,
+          v15,
+          (int)v16[0]._m_pStr);
+        goto LABEL_35; /*0x52a084*/
+      case 16: /*0x529cf1*/
+        CWvsContext::SendFollowRequestApply((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, 1); /*0x52a08e*/
+        goto LABEL_35; /*0x52a08e*/
+      case 17: /*0x529cf1*/
+        COutPacket::COutPacket(&oPacket, 183); /*0x529f4b*/
+        v20 = 5; /*0x529f56*/
+        COutPacket::Encode1(&oPacket, 1u); /*0x529f5e*/
+        COutPacket::Encode4(&oPacket, this->m_dwSN); /*0x529f6e*/
+        v16[0]._m_pStr = (char *)&oPacket; /*0x529f77*/
+        break; /*0x529f78*/
+      default:
+        goto LABEL_35;
+    }
+    CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, (const COutPacket *)v16[0]._m_pStr); /*0x529da9*/
+    v20 = -1; /*0x529db8*/
+    ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff); /*0x529dc0*/
+LABEL_35:
+    if ( this->m_nType != 4 || !*((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 4045) ) /*0x52a0a2*/
+    {
+      v16[0]._m_pStr = (char *)1; /*0x52a0ab*/
+LABEL_38:
+      CFadeWnd::Close(this, (int)v16[0]._m_pStr); /*0x52a0ad*/
+    }
+  }
+}

@@ -140,6 +140,9 @@ export class OtherCharLook {
     // TODO_AUDIT.md Hundred-and-forty-sixth pass: remote UserHit now drives
     // an actual avatar one-shot instead of only a chat/toast line.
     this._hitFlash = 0.25;
+    // OG: when hit, show "hit" face expression (emotionId=1) for ~1 second
+    // The face should show pain expression during the hit animation
+    this._charLook?.SetEmotion(1); // emotionId=1 = "hit" expression
     this._charLook?.PlayOneTimeAction('hit1');
   }
 

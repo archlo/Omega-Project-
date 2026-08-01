@@ -1,0 +1,131 @@
+// CUISkill::GetMaxSkillDegreeSPDualJob
+// Decompiled from v95 IDB
+
+void __thiscall CUISkill::GetMaxSkillDegreeSPDualJob(
+        CUISkill *this,
+        __POSITION *nDualJobSkillDegree,
+        int *nMaxSP,
+        int *nJobSP,
+        int *nSpecialSP)
+{
+  int v5; // ebx
+  char *p_m_uTableSize; // esi
+  volatile LONG *p_m_uCount; // edi
+  int *v8; // edx
+  int v9; // eax
+  int *v10; // esi
+  int v11; // ebp
+  const int *Next; // eax
+  int v13; // edi
+  const SKILLENTRY *Skill; // eax
+  int nDefaultMasterLev; // ecx
+  int v16; // esi
+  int v17; // esi
+  int v18; // eax
+  CharacterData *cd; // [esp+10h] [ebp-Ch]
+  ZRef<CharacterData> result; // [esp+14h] [ebp-8h] BYREF
+
+  v5 = 0; /*0x84ac2e*/
+  cd = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &result)->p; /*0x84ac30*/
+  if ( result.p ) /*0x84ac36*/
+  {
+    p_m_uTableSize = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x84ac38*/
+    p_m_uCount = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount; /*0x84ac3b*/
+    if ( !InterlockedDecrement(p_m_uCount) ) /*0x84ac3f*/
+    {
+      InterlockedIncrement(p_m_uCount); /*0x84ac4a*/
+      if ( p_m_uTableSize ) /*0x84ac52*/
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1); /*0x84ac5c*/
+    }
+    result.p = nullptr; /*0x84ac5e*/
+  }
+  v8 = nMaxSP; /*0x84ac66*/
+  v9 = (int)nDualJobSkillDegree; /*0x84ac6a*/
+  v10 = nJobSP; /*0x84ac6e*/
+  *nSpecialSP = 0; /*0x84ac72*/
+  v11 = 0; /*0x84ac74*/
+  *v8 = 0; /*0x84ac76*/
+  *v10 = 0; /*0x84ac78*/
+  if ( v9 <= 0 ) /*0x84ac7c*/
+  {
+    v11 = 400; /*0x84ac7e*/
+    v5 = 430; /*0x84ac83*/
+    *v10 = 1; /*0x84ac86*/
+    goto LABEL_15; /*0x84ac8c*/
+  }
+  if ( v9 <= 1 ) /*0x84ac91*/
+  {
+    v11 = 431; /*0x84ac93*/
+    *v10 = 1; /*0x84ac98*/
+LABEL_14:
+    v5 = v11; /*0x84acda*/
+    goto LABEL_15; /*0x84acda*/
+  }
+  if ( v9 <= 3 ) /*0x84aca3*/
+  {
+    v11 = 432; /*0x84acb0*/
+    v5 = 433; /*0x84acb6*/
+    *v10 = _ZtlSecureFuse<unsigned char>( /*0x84acc6*/
+             cd->characterStat._ZtlSecureTear_nLevel,
+             cd->characterStat._ZtlSecureTear_nLevel_CS) >= 0x46u;
+    goto LABEL_15; /*0x84acc8*/
+  }
+  if ( v9 <= 4 ) /*0x84accd*/
+  {
+    v11 = 434; /*0x84accf*/
+    *v10 = 3; /*0x84acd4*/
+    goto LABEL_14; /*0x84acd4*/
+  }
+LABEL_15:
+  nDualJobSkillDegree = ZMap<long,long,long>::GetHeadPosition(&cd->mSkillMasterLev); /*0x84acdc*/
+  while ( nDualJobSkillDegree ) /*0x84acf1*/
+  {
+    nJobSP = nullptr; /*0x84ad0b*/
+    Next = ZMap<long,long,long>::GetNext(&cd->mSkillMasterLev, &nDualJobSkillDegree, (int *)&nJobSP); /*0x84ad13*/
+    v13 = *Next; /*0x84ad18*/
+    Skill = CSkillInfo::GetSkill(TSingleton<CSkillInfo>::ms_pInstance, *Next); /*0x84ad21*/
+    if ( Skill ) /*0x84ad2a*/
+    {
+      nDefaultMasterLev = Skill->nDefaultMasterLev; /*0x84ad30*/
+      v16 = v13 / 10000; /*0x84ad42*/
+      if ( nDefaultMasterLev > 0 /*0x84adc4*/
+        && (int)nJobSP > nDefaultMasterLev
+        && v16 % 1000
+        && v16 != 2001
+        && ((_UNKNOWN *)v13 == (_UNKNOWN *)((char *)&loc_41C7D6 + 5)
+         || v13 == 4321000
+         || (_UNKNOWN *)v13 == (_UNKNOWN *)((char *)&loc_4215F9 + 1)
+         || (_UNKNOWN *)v13 == (_UNKNOWN *)((char *)&loc_4215FC + 1)
+         || v13 == 4341004
+         || (_UNKNOWN *)v13 == (_UNKNOWN *)((char *)&loc_423D0E + 1))
+        && CSkillInfo::IsSkillVisible(TSingleton<CSkillInfo>::ms_pInstance, cd, v13, nullptr)
+        && (v16 == v11 || v16 == v5) )
+      {
+        ++*nSpecialSP; /*0x84adca*/
+      }
+    }
+  }
+  if ( (unsigned int)(v5 - 430) <= 3 ) /*0x84ade0*/
+  {
+    v17 = get_dualjob_change_level(v5 + 1); /*0x84adea*/
+    v18 = get_dualjob_change_level(v11); /*0x84adec*/
+    *nMaxSP = 3 * (v17 - v18); /*0x84adfd*/
+  }
+}
+
+// References:
+//   ?GetCharacterData@CWvsContext@@QAE?AV?$ZRef@VCharacterData@@@@XZ @ 0x42b960
+//   ?ms_pInstance@?$TSingleton@VCWvsContext@@@@1PAVCWvsContext@@A @ 0xc64068
+//   __imp__InterlockedIncrement@4 @ 0xb14074
+//   __imp__InterlockedDecrement@4 @ 0xb14078
+//   ??$_ZtlSecureFuse@E@@YAEQBEI@Z @ 0x47d4d0
+//   ?GetHeadPosition@?$ZMap@JJJ@@QBEPAU__POSITION@@XZ @ 0x4f1d20
+//   ?GetNext@?$ZMap@JJJ@@QBEABJAAPAU__POSITION@@AAJ@Z @ 0x4f2090
+//   ?GetSkill@CSkillInfo@@QAEPBUSKILLENTRY@@J@Z @ 0x6f1bb0
+//   ?ms_pInstance@?$TSingleton@VCSkillInfo@@@@1PAVCSkillInfo@@A @ 0xc63ea8
+//   loc_41C7D6 @ 0x41c7d6
+//   loc_4215F9 @ 0x4215f9
+//   loc_4215FC @ 0x4215fc
+//   loc_423D0E @ 0x423d0e
+//   ?IsSkillVisible@CSkillInfo@@QAEHABVCharacterData@@JPAPBUSKILLENTRY@@@Z @ 0x6f20d0
+//   ?get_dualjob_change_level@@YAJJ@Z @ 0x849cd0

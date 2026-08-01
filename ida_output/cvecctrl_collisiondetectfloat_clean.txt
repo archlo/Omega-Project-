@@ -1,0 +1,450 @@
+int __thiscall CVecCtrl::CollisionDetectFloat(CVecCtrl *this, const AbsPos *p1, int *tElapse, int bCalcFloat)
+{
+  AbsPos *p_m_ap; // ebp
+  long double v6; // st7
+  int v7; // ebx
+  long double v8; // st7
+  int v9; // edi
+  long double v10; // st7
+  int v11; // esi
+  long double v12; // st7
+  long double v13; // st7
+  CStaticFoothold *v14; // ebp
+  CStaticFoothold *p; // esi
+  CStaticFoothold *v16; // eax
+  int m_lZMass; // eax
+  CStaticFoothold *m_pfhLast; // eax
+  int m_y1; // edi
+  int v20; // ecx
+  int v21; // edi
+  int v22; // eax
+  int v23; // ecx
+  int v24; // edi
+  int v25; // ebx
+  bool v26; // cc
+  signed int v27; // ecx
+  int v28; // eax
+  unsigned int v29; // esi
+  __int64 v30; // rax
+  bool v31; // cf
+  int v32; // ebp
+  bool v33; // of
+  int v34; // eax
+  double v35; // st7
+  double v36; // st7
+  CStaticFoothold *m_pfhPrev; // edi
+  CStaticFoothold *m_pfhNext; // edi
+  AbsPos *v39; // ebx
+  RelPos *p_m_rp; // esi
+  CStaticFoothold *v41; // edi
+  long double t; // st7
+  long double v43; // st6
+  CStaticFoothold *m_pfhFallStart; // eax
+  long double m_uvy; // st7
+  double v47; // st6
+  unsigned int v48; // eax
+  long double v49; // st7
+  long double v50; // st7
+  long double v51; // st7
+  long double v52; // st7
+  bool v53; // c0
+  bool v54; // c3
+  long double v55; // st7
+  CStaticFoothold *v56; // edi
+  long double v57; // st7
+  unsigned int v58; // eax
+  long double v59; // st7
+  double v60; // st6
+  int vx; // [esp+20h] [ebp-A8h]
+  long double vxb; // [esp+20h] [ebp-A8h]
+  double vxa; // [esp+20h] [ebp-A8h]
+  int vxc; // [esp+20h] [ebp-A8h]
+  int vxd; // [esp+20h] [ebp-A8h]
+  int vxe; // [esp+20h] [ebp-A8h]
+  CStaticFoothold *pfhFirstCollideCW; // [esp+28h] [ebp-A0h]
+  CStaticFoothold *pfhFirstCollideCCW; // [esp+2Ch] [ebp-9Ch]
+  int xm1; // [esp+30h] [ebp-98h]
+  CStaticFoothold *pfhCCW; // [esp+34h] [ebp-94h]
+  int tCollide; // [esp+38h] [ebp-90h]
+  int tCollidea; // [esp+38h] [ebp-90h]
+  long double vBackupa; // [esp+3Ch] [ebp-8Ch]
+  long double vBackupb; // [esp+3Ch] [ebp-8Ch]
+  long double vBackup; // [esp+3Ch] [ebp-8Ch]
+  long double vBackupc; // [esp+3Ch] [ebp-8Ch]
+  long double vBackupd; // [esp+3Ch] [ebp-8Ch]
+  long double vBackupe; // [esp+3Ch] [ebp-8Ch]
+  int ym1; // [esp+44h] [ebp-84h]
+  double v; // [esp+48h] [ebp-80h]
+  double va; // [esp+48h] [ebp-80h]
+  long double vc; // [esp+48h] [ebp-80h]
+  long double vd; // [esp+48h] [ebp-80h]
+  long double ve; // [esp+48h] [ebp-80h]
+  long double vf; // [esp+48h] [ebp-80h]
+  double vb; // [esp+48h] [ebp-80h]
+  double vya; // [esp+50h] [ebp-78h]
+  double vy; // [esp+50h] [ebp-78h]
+  long double vyb; // [esp+50h] [ebp-78h]
+  long double vyc; // [esp+50h] [ebp-78h]
+  CStaticFoothold *pfhCW; // [esp+58h] [ebp-70h]
+  int xm2; // [esp+5Ch] [ebp-6Ch]
+  int dxm; // [esp+60h] [ebp-68h]
+  int dxf; // [esp+64h] [ebp-64h]
+  int tElapseMax; // [esp+68h] [ebp-60h]
+  int yf2; // [esp+6Ch] [ebp-5Ch]
+  int yf2a; // [esp+6Ch] [ebp-5Ch]
+  int xf2; // [esp+70h] [ebp-58h]
+  int xf2a; // [esp+70h] [ebp-58h]
+  int qFirstCollide; // [esp+74h] [ebp-54h]
+  int xf1; // [esp+78h] [ebp-50h]
+  int ym2; // [esp+7Ch] [ebp-4Ch]
+  int bNeedToLandOnReservedFh; // [esp+80h] [ebp-48h]
+  int yf1; // [esp+84h] [ebp-44h]
+  int v106; // [esp+88h] [ebp-40h]
+  long double v107; // [esp+88h] [ebp-40h]
+  long double v108; // [esp+88h] [ebp-40h]
+  long double v109; // [esp+88h] [ebp-40h]
+  int dyf; // [esp+90h] [ebp-38h]
+  CWvsPhysicalSpace2D *pSpace2D; // [esp+94h] [ebp-34h]
+  __POSITION *pos; // [esp+98h] [ebp-30h] BYREF
+  int dym; // [esp+9Ch] [ebp-2Ch]
+  double tSec; // [esp+A0h] [ebp-28h]
+  ZList<ZRef<CStaticFoothold> > lCrossCandidate; // [esp+A8h] [ebp-20h] BYREF
+  int v116; // [esp+C4h] [ebp-4h]
+
+  tElapseMax = CVecCtrl::BoundPosMapRange(this, p1, *tElapse); /*0x994792*/
+  pSpace2D = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance; /*0x99479b*/
+  p_m_ap = &this->m_ap; /*0x9947a2*/
+  v6 = _ZtlSecureFuse<double>(p1->_ZtlSecureTear_x, p1->_ZtlSecureTear_x_CS); /*0x9947a5*/
+  if ( v6 < 0.0 ) /*0x9947b6*/
+    v7 = (int)(v6 - DOUBLE_0_499999999); /*0x9947d6*/
+  else
+    v7 = (int)(v6 + DOUBLE_0_5); /*0x9947c3*/
+  xm1 = v7; /*0x9947c5*/
+  v8 = _ZtlSecureFuse<double>(p1->_ZtlSecureTear_y, p1->_ZtlSecureTear_y_CS); /*0x9947e4*/
+  if ( v8 < 0.0 ) /*0x9947f5*/
+    v9 = (int)(v8 - DOUBLE_0_499999999); /*0x994815*/
+  else
+    v9 = (int)(v8 + DOUBLE_0_5); /*0x994802*/
+  ym1 = v9; /*0x994804*/
+  v10 = _ZtlSecureFuse<double>(p_m_ap->_ZtlSecureTear_x, p_m_ap->_ZtlSecureTear_x_CS); /*0x994820*/
+  if ( v10 < 0.0 ) /*0x994831*/
+    v11 = (int)(v10 - DOUBLE_0_499999999); /*0x994851*/
+  else
+    v11 = (int)(v10 + DOUBLE_0_5); /*0x99483e*/
+  xm2 = v11; /*0x994840*/
+  v12 = _ZtlSecureFuse<double>(p_m_ap->_ZtlSecureTear_y, p_m_ap->_ZtlSecureTear_y_CS); /*0x99485f*/
+  if ( v12 < 0.0 ) /*0x994870*/
+    v13 = v12 - DOUBLE_0_499999999; /*0x99487a*/
+  else
+    v13 = v12 + DOUBLE_0_5; /*0x994872*/
+  v14 = nullptr; /*0x99488d*/
+  ym2 = (int)v13; /*0x99488f*/
+  vx = v11 - v7; /*0x994893*/
+  dxm = v11 - v7; /*0x994897*/
+  v106 = (int)v13 - v9; /*0x99489b*/
+  dym = v106; /*0x9948a2*/
+  if ( v11 == v7 && (int)v13 == v9 ) /*0x99488b*/
+  {
+    *tElapse -= tElapseMax; /*0x9948bc*/
+    this->MakeContinuousMovePath(this, tElapseMax); /*0x9948c8*/
+    return 0; /*0x994f32*/
+  }
+  tCollide = 1; /*0x9948cf*/
+  qFirstCollide = 2; /*0x9948d7*/
+  pfhFirstCollideCW = nullptr; /*0x9948df*/
+  pfhFirstCollideCCW = nullptr; /*0x9948e3*/
+  bNeedToLandOnReservedFh = 0; /*0x9948e7*/
+  lCrossCandidate.__vftable = (ZList<ZRef<CStaticFoothold> >_vtbl *)&ZList<ZRef<CStaticFoothold>>::`vftable'; /*0x9948eb*/
+  memset(&lCrossCandidate._m_uCount, 0, 12); /*0x9948f6*/
+  v116 = 0; /*0x99491e*/
+  CWvsPhysicalSpace2D::GetCrossCandidate(pSpace2D, v7, v9, v11, (int)v13, &lCrossCandidate); /*0x994925*/
+  pos = (__POSITION *)lCrossCandidate._m_pHead; /*0x994931*/
+  if ( !lCrossCandidate._m_pHead ) /*0x99493a*/
+    goto LABEL_82; /*0x99493a*/
+  do /*0x994d0b*/
+  {
+    p = ZList<ZRef<CStaticFoothold>>::GetNext(&pos)->p; /*0x994951*/
+    v16 = this->m_pfhLandingNext.p; /*0x994954*/
+    if ( v16 && v16 != p ) /*0x994963*/
+      continue; /*0x994963*/
+    if ( v16 == p && _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vy, this->m_ap._ZtlSecureTear_vy_CS) > DOUBLE_0_0 ) /*0x994988*/
+      bNeedToLandOnReservedFh = 1; /*0x99498a*/
+    if ( p->m_uvx <= 0.0 ) /*0x99499e*/
+    {
+      m_lZMass = p->m_lZMass; /*0x9949a0*/
+      if ( m_lZMass != pSpace2D->m_nBaseZMass && m_lZMass != this->m_lZMass ) /*0x9949b5*/
+      {
+        if ( this->m_pOwner->GetType(this->m_pOwner) != 7 ) /*0x9949c3*/
+          continue; /*0x9949c3*/
+        m_pfhLast = this->m_pfhLast; /*0x9949cd*/
+        if ( m_pfhLast ) /*0x9949d5*/
+        {
+          if ( m_pfhLast->m_lPage != p->m_lPage ) /*0x9949dd*/
+            continue; /*0x9949dd*/
+        }
+      }
+    }
+    if ( !p->m_nState ) /*0x9949e3*/
+      continue; /*0x9949e7*/
+    m_y1 = p->m_y1; /*0x9949f3*/
+    xf1 = p->m_x1; /*0x9949fd*/
+    xf2 = p->m_x2; /*0x994a01*/
+    yf2 = p->m_y2; /*0x994a10*/
+    v20 = yf2 - m_y1; /*0x994a14*/
+    yf1 = m_y1; /*0x994a19*/
+    v21 = -m_y1; /*0x994a1d*/
+    v22 = (xf2 - xf1) * (v21 + ym1) - v20 * (xm1 - xf1); /*0x994a24*/
+    dyf = v20; /*0x994a33*/
+    v23 = (xf2 - xf1) * (v21 + ym2) - v20 * (xm2 - xf1); /*0x994a40*/
+    dxf = xf2 - xf1; /*0x994a42*/
+    if ( v22 > 0 || v23 < 0 || !v22 && !v23 ) /*0x994a5c*/
+      goto LABEL_63; /*0x994a5c*/
+    v24 = vx * (yf1 - ym1) - v106 * (xf1 - xm1); /*0x994a85*/
+    v25 = vx * (yf2 - ym1) - v106 * (xf2 - xm1); /*0x994aa3*/
+    v26 = v24 <= 0; /*0x994aa5*/
+    if ( v24 < 0 ) /*0x994aa7*/
+    {
+      if ( v25 < 0 ) /*0x994aab*/
+        goto LABEL_63; /*0x994aab*/
+      v26 = v24 <= 0; /*0x994ab1*/
+    }
+    if ( !v26 && v25 > 0 ) /*0x994ab7*/
+    {
+LABEL_63:
+      v14 = pfhFirstCollideCCW; /*0x994cff*/
+      continue; /*0x994cff*/
+    }
+    if ( this->m_pfhLandingNext.p == p /*0x994aeb*/
+      && _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vy, this->m_ap._ZtlSecureTear_vy_CS) > DOUBLE_0_0 )
+    {
+      bNeedToLandOnReservedFh = 0; /*0x994af1*/
+    }
+    else
+    {
+      if ( !v24 ) /*0x994c15*/
+      {
+        m_pfhPrev = p->m_pfhPrev; /*0x994c17*/
+        if ( !m_pfhPrev || !is_blocked_area(m_pfhPrev, p, xm2, ym2) ) /*0x994c2a*/
+          goto LABEL_63; /*0x994c34*/
+        pfhCCW = m_pfhPrev; /*0x994c3a*/
+        goto LABEL_42; /*0x994c3e*/
+      }
+      if ( !v25 ) /*0x994c45*/
+      {
+        m_pfhNext = p->m_pfhNext; /*0x994c4b*/
+        if ( !m_pfhNext || !is_blocked_area(p, m_pfhNext, xm2, ym2) ) /*0x994c5e*/
+          goto LABEL_63; /*0x994c68*/
+        pfhCW = m_pfhNext; /*0x994c6e*/
+        pfhCCW = p; /*0x994c72*/
+        goto LABEL_43; /*0x994c76*/
+      }
+    }
+    pfhCCW = p; /*0x994af9*/
+LABEL_42:
+    pfhCW = p; /*0x994afd*/
+LABEL_43:
+    v27 = abs32(dxm * dyf - dym * dxf); /*0x994b01*/
+    v28 = xf1 * yf2 + ym1 * dxf - xm1 * dyf - yf1 * xf2; /*0x994b4a*/
+    xf2a = yf1 * xf2; /*0x994b4c*/
+    yf2a = xf1 * yf2; /*0x994b51*/
+    v29 = abs32(v28); /*0x994b59*/
+    v30 = (int)(tCollide * v29); /*0x994b6e*/
+    v31 = qFirstCollide * v27 < (unsigned int)v30; /*0x994b6f*/
+    v32 = qFirstCollide * v27 - v30; /*0x994b6f*/
+    LODWORD(v30) = (unsigned __int64)(qFirstCollide * (__int64)v27) >> 32; /*0x994b71*/
+    v33 = __OFSUB__((_DWORD)v30, v31 + HIDWORD(v30)); /*0x994b75*/
+    v34 = v30 - (v31 + HIDWORD(v30)); /*0x994b75*/
+    if ( v34 < 0 || (v34 < 0) ^ v33 | (v34 == 0) && !v32 ) /*0x994b81*/
+    {
+      if ( v34 | v32 ) /*0x994c97*/
+        goto LABEL_63; /*0x994c99*/
+      if ( get_cross_product( /*0x994cc5*/
+             pfhFirstCollideCW->m_x1,
+             pfhFirstCollideCW->m_y1,
+             pfhFirstCollideCW->m_x2,
+             pfhFirstCollideCW->m_y2,
+             pfhCW->m_x1,
+             pfhCW->m_y1) < 0 )
+        pfhFirstCollideCW = pfhCW; /*0x994cc7*/
+      v14 = pfhFirstCollideCCW; /*0x994cd2*/
+      if ( get_cross_product( /*0x994cf5*/
+             pfhFirstCollideCCW->m_x1,
+             pfhFirstCollideCCW->m_y1,
+             pfhFirstCollideCCW->m_x2,
+             pfhFirstCollideCCW->m_y2,
+             pfhCCW->m_x2,
+             pfhCCW->m_y2) < 0 )
+      {
+        v14 = pfhCCW; /*0x994cf7*/
+        pfhFirstCollideCCW = pfhCCW; /*0x994cf9*/
+      }
+    }
+    else
+    {
+      tCollide = v27; /*0x994b9f*/
+      pfhFirstCollideCW = pfhCW; /*0x994ba7*/
+      v14 = pfhCCW; /*0x994bb5*/
+      qFirstCollide = v29; /*0x994bb9*/
+      pfhFirstCollideCCW = pfhCCW; /*0x994bd0*/
+      v35 = (double)((dxm * (__int64)(xf2a - yf2a) + dxf * (__int64)(xm1 * ym2 - ym1 * xm2)) / (dym * dxf - dxm * dyf)); /*0x994be6*/
+      v = v35; /*0x994bea*/
+      if ( dxm ) /*0x994bee*/
+        v36 = (v35 - (double)xm1) * (double)dym / (double)dxm + (double)ym1; /*0x994c03*/
+      else
+        v36 = (v35 - (double)xf1) * (double)dyf / (double)dxf + (double)yf1; /*0x994c8a*/
+      tSec = v36; /*0x994c07*/
+    }
+  }
+  while ( pos ); /*0x994d0b*/
+  if ( !pfhFirstCollideCW || !v14 ) /*0x994d1e*/
+  {
+    if ( bNeedToLandOnReservedFh ) /*0x99523c*/
+    {
+      v56 = this->m_pfhLandingNext.p; /*0x995249*/
+      v57 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_x, this->m_ap._ZtlSecureTear_x_CS); /*0x995254*/
+      v58 = _ZtlSecureTear<double>((v57 - (double)v56->m_x1) / v56->m_uvx, this->m_rp._ZtlSecureTear_pos); /*0x995274*/
+      this->m_rp._ZtlSecureTear_pos_CS = v58; /*0x99527b*/
+      vb = v56->m_len; /*0x995282*/
+      v59 = _ZtlSecureFuse<double>(this->m_rp._ZtlSecureTear_pos, v58); /*0x995287*/
+      v60 = 0.0; /*0x99528c*/
+      if ( v59 < 0.0 || (v60 = vb, vb < v59) ) /*0x9952a7*/
+        v59 = v60; /*0x9952a9*/
+      this->m_rp._ZtlSecureTear_pos_CS = _ZtlSecureTear<double>(v59, this->m_rp._ZtlSecureTear_pos); /*0x9952c7*/
+      this->m_rp._ZtlSecureTear_v_CS = _ZtlSecureTear<double>(0.0, this->m_rp._ZtlSecureTear_v); /*0x9952d3*/
+      AbsPos::SetFromRelPos(&this->m_ap, &this->m_rp, v56); /*0x9952d6*/
+      this->OnAttachedObjectChanged(this, v56, nullptr, tElapseMax); /*0x9952ea*/
+      *tElapse -= tElapseMax; /*0x9952f3*/
+      goto LABEL_99; /*0x9952f5*/
+    }
+LABEL_82:
+    *tElapse -= tElapseMax; /*0x994edc*/
+    this->MakeContinuousMovePath(this, tElapseMax); /*0x994ef3*/
+    v116 = -1; /*0x994efc*/
+    lCrossCandidate.__vftable = (ZList<ZRef<CStaticFoothold> >_vtbl *)&ZList<ZRef<CStaticFoothold>>::`vftable'; /*0x994f07*/
+    ZList<ZRef<CStaticFoothold>>::RemoveAll(&lCrossCandidate); /*0x994f12*/
+    return 0; /*0x994f12*/
+  }
+  vya = (double)qFirstCollide / (double)tCollide; /*0x994d2c*/
+  tCollidea = (int)(vya * (double)tElapseMax); /*0x994d39*/
+  vxb = _ZtlSecureFuse<double>(p1->_ZtlSecureTear_vx, p1->_ZtlSecureTear_vx_CS); /*0x994d51*/
+  v39 = &this->m_ap; /*0x994d5c*/
+  vBackupa = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vx, this->m_ap._ZtlSecureTear_vx_CS); /*0x994d69*/
+  vxa = (vBackupa - _ZtlSecureFuse<double>(p1->_ZtlSecureTear_vx, p1->_ZtlSecureTear_vx_CS)) * vya + vxb; /*0x994d99*/
+  v107 = _ZtlSecureFuse<double>(p1->_ZtlSecureTear_vy, p1->_ZtlSecureTear_vy_CS); /*0x994da5*/
+  vBackupb = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vy, this->m_ap._ZtlSecureTear_vy_CS); /*0x994db6*/
+  p_m_rp = &this->m_rp; /*0x994dd5*/
+  vy = (vBackupb - _ZtlSecureFuse<double>(p1->_ZtlSecureTear_vy, p1->_ZtlSecureTear_vy_CS)) * vya + v107; /*0x994deb*/
+  vBackup = _ZtlSecureFuse<double>(this->m_rp._ZtlSecureTear_v, this->m_rp._ZtlSecureTear_v_CS); /*0x994dfb*/
+  if ( pfhFirstCollideCW == v14 ) /*0x994e04*/
+  {
+    v41 = pfhFirstCollideCW; /*0x994e06*/
+    this->m_rp._ZtlSecureTear_v_CS = _ZtlSecureTear<double>( /*0x994e28*/
+                                       pfhFirstCollideCW->m_uvy * vy + pfhFirstCollideCW->m_uvx * vxa,
+                                       this->m_rp._ZtlSecureTear_v);
+  }
+  else
+  {
+    t = pfhFirstCollideCW->m_uvx * vxa + pfhFirstCollideCW->m_uvy * vy; /*0x994e44*/
+    v43 = vxa * v14->m_uvx + vy * v14->m_uvy; /*0x994e50*/
+    if ( DOUBLE_0_001 >= t || DOUBLE_0_001 >= v43 ) /*0x994e68*/
+    {
+      if ( DOUBLE_N0_001 <= t || (t = v43, v43 >= DOUBLE_N0_001) ) /*0x994e8e*/
+      {
+        v41 = v14; /*0x994e9e*/
+        if ( pfhFirstCollideCW->m_x1 < pfhFirstCollideCW->m_x2 ) /*0x994ea0*/
+          v41 = pfhFirstCollideCW; /*0x994ea2*/
+        t = 0.0; /*0x994ea6*/
+      }
+      else
+      {
+        v41 = v14; /*0x994e90*/
+      }
+    }
+    else
+    {
+      v41 = pfhFirstCollideCW; /*0x994e6a*/
+    }
+    RelPos::_ZtlSecurePut_v(p_m_rp, t); /*0x994eb0*/
+  }
+  m_pfhFallStart = this->m_pfhFallStart; /*0x994ebb*/
+  if ( m_pfhFallStart && m_pfhFallStart == v41 ) /*0x994ec7*/
+  {
+    RelPos::_ZtlSecurePut_v(p_m_rp, vBackup); /*0x994ed5*/
+    goto LABEL_82; /*0x994ed5*/
+  }
+  *tElapse -= tCollidea; /*0x994f40*/
+  if ( fabs(v41->m_uvx) <= DOUBLE_0_5 ) /*0x994f52*/
+  {
+    m_uvy = v41->m_uvy; /*0x994f6b*/
+    v47 = tSec - (double)v41->m_y1; /*0x994f76*/
+  }
+  else
+  {
+    m_uvy = v41->m_uvx; /*0x994f57*/
+    v47 = v - (double)v41->m_x1; /*0x994f62*/
+  }
+  v48 = _ZtlSecureTear<double>(v47 / m_uvy, p_m_rp->_ZtlSecureTear_pos); /*0x994f87*/
+  this->m_rp._ZtlSecureTear_pos_CS = v48; /*0x994f8e*/
+  va = v41->m_len; /*0x994f95*/
+  v49 = _ZtlSecureFuse<double>(p_m_rp->_ZtlSecureTear_pos, v48); /*0x994f9a*/
+  if ( v49 >= 0.0 ) /*0x994fab*/
+  {
+    if ( va < v49 ) /*0x994fbe*/
+      v49 = va; /*0x994fc0*/
+  }
+  else
+  {
+    v49 = 0.0; /*0x994fad*/
+  }
+  this->m_rp._ZtlSecureTear_pos_CS = _ZtlSecureTear<double>(v49, this->m_rp._ZtlSecureTear_pos); /*0x994fd3*/
+  if ( v41->m_uvx > 0.0 ) /*0x994fe2*/
+  {
+    vxe = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, this->_ZtlSecureTear_m_nInputX_CS); /*0x9951a8*/
+    v52 = _ZtlSecureFuse<double>(this->m_rp._ZtlSecureTear_v, this->m_rp._ZtlSecureTear_v_CS) * (double)vxe; /*0x9951b6*/
+    v53 = v52 > 0.0; /*0x9951bf*/
+    v54 = 0.0 == v52; /*0x9951bf*/
+    v55 = 0.0; /*0x9951c3*/
+    if ( v53 || v54 ) /*0x9951c5*/
+      v55 = _ZtlSecureFuse<double>(this->m_rp._ZtlSecureTear_v, this->m_rp._ZtlSecureTear_v_CS) * DOUBLE_0_5; /*0x9951de*/
+    RelPos::_ZtlSecurePut_v(p_m_rp, v55); /*0x9951e9*/
+    AbsPos::SetFromRelPos(v39, p_m_rp, v41); /*0x9951f4*/
+    this->OnAttachedObjectChanged(this, v41, nullptr, tCollidea); /*0x995209*/
+  }
+  else
+  {
+    if ( bCalcFloat ) /*0x994ff0*/
+    {
+      vBackupc = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vx, this->m_ap._ZtlSecureTear_vx_CS); /*0x995003*/
+      vc = v41->m_uvx; /*0x99500e*/
+      vd = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vy, this->m_ap._ZtlSecureTear_vy_CS) * v41->m_uvy /*0x995032*/
+         + vc * vBackupc;
+      tSec = (double)*tElapse / DOUBLE_1000_0; /*0x995040*/
+      AbsPos::_ZtlSecurePut_vx(v39, vd * v41->m_uvx); /*0x99504d*/
+      AbsPos::_ZtlSecurePut_vy(v39, v41->m_uvy * vd); /*0x995063*/
+      vxc = v41->m_x1; /*0x995072*/
+      v108 = _ZtlSecureFuse<double>(this->m_rp._ZtlSecureTear_pos, this->m_rp._ZtlSecureTear_pos_CS); /*0x99507b*/
+      vyb = v41->m_uvx; /*0x995089*/
+      vBackupd = _ZtlSecureFuse<double>(this->m_rp._ZtlSecureTear_v, this->m_rp._ZtlSecureTear_v_CS); /*0x995096*/
+      ve = v41->m_uvx; /*0x9950a1*/
+      v50 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vx, this->m_ap._ZtlSecureTear_vx_CS); /*0x9950a6*/
+      AbsPos::_ZtlSecurePut_x(v39, (v50 + ve * vBackupd) * DOUBLE_0_5 * tSec + vyb * v108 + (double)vxc); /*0x9950db*/
+      vxd = v41->m_y1; /*0x9950ea*/
+      v109 = _ZtlSecureFuse<double>(this->m_rp._ZtlSecureTear_pos, this->m_rp._ZtlSecureTear_pos_CS); /*0x9950f3*/
+      vyc = v41->m_uvy; /*0x995100*/
+      vBackupe = _ZtlSecureFuse<double>(this->m_rp._ZtlSecureTear_v, this->m_rp._ZtlSecureTear_v_CS); /*0x99510e*/
+      vf = v41->m_uvy; /*0x995119*/
+      v51 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vy, this->m_ap._ZtlSecureTear_vy_CS); /*0x995121*/
+      AbsPos::_ZtlSecurePut_y(v39, (v51 + vf * vBackupe) * DOUBLE_0_5 * tSec + vyc * v109 + (double)vxd); /*0x995156*/
+    }
+    else
+    {
+      AbsPos::SetFromRelPos(v39, p_m_rp, v41); /*0x995179*/
+    }
+    this->MakeContinuousMovePath(this, tCollidea); /*0x99516e*/
+  }
+LABEL_99:
+  v116 = -1; /*0x99520b*/
+  lCrossCandidate.__vftable = (ZList<ZRef<CStaticFoothold> >_vtbl *)&ZList<ZRef<CStaticFoothold>>::`vftable'; /*0x99521d*/
+  ZList<ZRef<CStaticFoothold>>::RemoveAll(&lCrossCandidate); /*0x995228*/
+  return 1; /*0x994f19*/
+}

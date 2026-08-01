@@ -1,0 +1,35 @@
+void __thiscall CUIStatDetail::Draw(CUIStatDetail *this, const tagRECT *pRect)
+{
+  char v2; // bl
+  _bstr_t::Data_t *m_Data; // esi
+  const ZRef<PassiveSkillData> *PassiveSkillData; // eax
+  unsigned int v5; // ebx
+  unsigned int v6; // ebx
+  unsigned int v7; // ebx
+  unsigned int v8; // ebx
+  unsigned int v9; // ebx
+  unsigned int v10; // ebx
+  unsigned int v11; // ebx
+  unsigned int v12; // ebx
+  unsigned int v13; // ebx
+  void (__thiscall ***v14)(_DWORD, int); // ebx
+  volatile LONG *v15; // edi
+  unsigned int v16; // esi
+  CWvsContext *m_pStr; // edi
+  void (__thiscall ***v18)(_DWORD, int); // esi
+  volatile LONG *v19; // ebx
+  SecondaryStat *p_m_secondaryStat; // esi
+  GW_ItemSlotBase *p; // edi
+  int Data; // eax
+  int weapon_type; // eax
+  ZRef<GW_ItemSlotBase> *a; // eax
+  GW_ItemSlotBase *v25; // eax
+  int v26; // eax
+  GW_ItemSlotBase *v27; // edi
+  TSecType<long> *p_nItemID; // edi
+  int v29; // ebx
+  int v30; // eax
+  int v31; // eax
+  int v32; // eax
+  int v33; // eax
+  in... [88999 chars total]

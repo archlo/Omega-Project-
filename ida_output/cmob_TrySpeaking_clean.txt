@@ -1,0 +1,377 @@
+void __thiscall CMob::TrySpeaking(CMob *this, int nSpeakInfo, ZXString<char> nSpeech)
+{
+  CMobTemplate *m_pTemplate; // ebp
+  ZRef<MobSpeakInformation> *a; // eax
+  ZArray<ZRef<MobSpeakInformation> > *p_apSpeakInformation; // ebp
+  int p; // eax
+  unsigned int v8; // edi
+  int CurrentAction; // eax
+  int v10; // edi
+  int *ZtlSecureTear_m_nOneTimeAction; // ebx
+  MobSpeakInformation *v12; // esi
+  ZXString<char> *v13; // esi
+  unsigned int m_pStr; // eax
+  unsigned int rand; // esi
+  int v16; // eax
+  int ActionDelay; // ecx
+  ZArray<ZRef<MobSpeakInformation> > v18; // eax
+  MobSpeakInformation *v19; // eax
+  ZXString<char> *v20; // ecx
+  MobSpeakInformation *v21; // edi
+  ZXString<char> *v22; // eax
+  char *v23; // esi
+  ZArray<ZRef<MobSpeakCondition> > *p_apSpeakCondition; // ebx
+  int v25; // eax
+  const CPet *v26; // edi
+  int v27; // ebp
+  MobSpeakCondition *v28; // esi
+  int nPetID; // eax
+  unsigned int j; // ecx
+  unsigned __int16 v31; // ax
+  char *Buffer; // eax
+  ZXString<char> v33; // edi
+  int v34; // esi
+  char *v35; // edi
+  int v36; // eax
+  StringPool *Instance; // eax
+  ZXString<char> *String; // eax
+  char *v39; // ebp
+  char *v40; // edx
+  const char *v41; // eax
+  int v42; // esi
+  MobSpeakInformation *v43; // edi
+  ZXString<char>::_ZXStringData *v44; // eax
+  CMob *v45; // ebx
+  CMobTemplate *v46; // edx
+  int nChatBalloon; // eax
+  IWzVector2D *m_pInterface; // eax
+  IWzGr2DLayer *v49; // eax
+  _bstr_t::Data_t *v50; // ecx
+  _bstr_t v51; // [esp-1Ch] [ebp-74h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v52; // [esp-18h] [ebp-70h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v53; // [esp-14h] [ebp-6Ch] BYREF
+  int v54; // [esp-10h] [ebp-68h]
+  int v55; // [esp-Ch] [ebp-64h]
+  unsigned int v56; // [esp-8h] [ebp-60h] BYREF
+  signed int ZtlSecureTear_m_nOneTimeAction_CS; // [esp-4h] [ebp-5Ch]
+  ZXString<char> sSpeech; // [esp+14h] [ebp-44h] BYREF
+  CMob *v59; // [esp+18h] [ebp-40h]
+  int i; // [esp+1Ch] [ebp-3Ch]
+  int nFadeDelay; // [esp+20h] [ebp-38h]
+  int nTimeOut; // [esp+24h] [ebp-34h]
+  const CUserLocal *pUserLocal; // [esp+28h] [ebp-30h]
+  CWvsContext *pCtx; // [esp+2Ch] [ebp-2Ch]
+  const CPet *pPet[2]; // [esp+30h] [ebp-28h] BYREF
+  int nWidth; // [esp+38h] [ebp-20h]
+  ZRef<MobSpeakCondition> sc; // [esp+3Ch] [ebp-1Ch] BYREF
+  ZRef<MobSpeakInformation> v68; // [esp+44h] [ebp-14h] BYREF
+  int v69; // [esp+54h] [ebp-4h]
+
+  v59 = this; /*0x64b6f9*/
+  sSpeech._m_pStr = nullptr; /*0x64b6ff*/
+  m_pTemplate = this->m_pTemplate; /*0x64b703*/
+  a = m_pTemplate->apSpeakInformation.a; /*0x64b709*/
+  p_apSpeakInformation = &m_pTemplate->apSpeakInformation; /*0x64b70f*/
+  v69 = 0; /*0x64b715*/
+  nTimeOut = 5000; /*0x64b719*/
+  nFadeDelay = 600; /*0x64b721*/
+  if ( !a ) /*0x64b72b*/
+    return; /*0x64b72b*/
+  p = (int)a[-1].p; /*0x64b731*/
+  if ( !p ) /*0x64b736*/
+    return; /*0x64b736*/
+  v8 = nSpeakInfo; /*0x64b73c*/
+  if ( nSpeakInfo >= p ) /*0x64b742*/
+    return; /*0x64b742*/
+  CurrentAction = CMob::GetCurrentAction(this, nullptr); /*0x64b749*/
+  nWidth = this->m_pTemplate->nWidth; /*0x64b75d*/
+  if ( (unsigned int)(CurrentAction - 10) > 2 ) /*0x64b764*/
+  {
+    if ( v8 == -1 ) /*0x64b867*/
+      return; /*0x64b867*/
+  }
+  else if ( v8 == -1 ) /*0x64b76d*/
+  {
+    if ( nSpeech._m_pStr != (char *)-1 ) /*0x64b777*/
+      return; /*0x64b777*/
+    v10 = 0; /*0x64b77f*/
+    if ( !ZArray<ZRef<MobSpeakInformation>>::GetCount(p_apSpeakInformation) ) /*0x64b781*/
+      return; /*0x64b788*/
+    ZtlSecureTear_m_nOneTimeAction = this->_ZtlSecureTear_m_nOneTimeAction; /*0x64b78e*/
+    while ( 1 ) /*0x64b797*/
+    {
+      v12 = p_apSpeakInformation->a[v10].p; /*0x64b797*/
+      pPet[1] = (const CPet *)v12; /*0x64b79e*/
+      if ( v12 ) /*0x64b7a4*/
+        InterlockedIncrement(&v12->_m_nRef); /*0x64b7aa*/
+      ZtlSecureTear_m_nOneTimeAction_CS = v59->_ZtlSecureTear_m_nOneTimeAction_CS; /*0x64b7ba*/
+      LOBYTE(v69) = 1; /*0x64b7bc*/
+      if ( v12->nAction == _ZtlSecureFuse<long>(ZtlSecureTear_m_nOneTimeAction, ZtlSecureTear_m_nOneTimeAction_CS) ) /*0x64b7d5*/
+        break; /*0x64b7d5*/
+      LOBYTE(v69) = 0; /*0x64b7d7*/
+      ZRef<MobSpeakInformation>::~ZRef<MobSpeakInformation>((ZRef<MobSpeakInformation> *)pPet); /*0x64b7df*/
+      if ( ++v10 >= ZArray<ZRef<MobSpeakInformation>>::GetCount(p_apSpeakInformation) ) /*0x64b7ee*/
+        return; /*0x64b7ee*/
+    }
+    v13 = v12->asSpeech.a; /*0x64b7f5*/
+    nSpeakInfo = v10; /*0x64b7f8*/
+    if ( v13 ) /*0x64b7fe*/
+      m_pStr = (unsigned int)v13[-1]._m_pStr; /*0x64b804*/
+    else
+      m_pStr = 0; /*0x64b800*/
+    rand = get_rand(m_pStr, 0); /*0x64b81b*/
+    v16 = _ZtlSecureFuse<long>(ZtlSecureTear_m_nOneTimeAction, v59->_ZtlSecureTear_m_nOneTimeAction_CS); /*0x64b81d*/
+    ActionDelay = CMob::GetActionDelay(v59, v16); /*0x64b82d*/
+    nFadeDelay = ActionDelay - 4 * ActionDelay / 5; /*0x64b848*/
+    nTimeOut = 4 * ActionDelay / 5; /*0x64b850*/
+    LOBYTE(v69) = 0; /*0x64b854*/
+    ZRef<MobSpeakInformation>::~ZRef<MobSpeakInformation>((ZRef<MobSpeakInformation> *)pPet); /*0x64b859*/
+    v8 = nSpeakInfo; /*0x64b85e*/
+    goto LABEL_26; /*0x64b862*/
+  }
+  v18.a = p_apSpeakInformation->a; /*0x64b86d*/
+  if ( !p_apSpeakInformation->a ) /*0x64b86d*/
+    return; /*0x64b86d*/
+  if ( v18.a[-1].p <= (MobSpeakInformation *)v8 ) /*0x64b87b*/
+    return; /*0x64b87b*/
+  v19 = v18.a[v8].p; /*0x64b881*/
+  v20 = v19->asSpeech.a; /*0x64b885*/
+  if ( !v20 ) /*0x64b88a*/
+    return; /*0x64b88a*/
+  rand = (unsigned int)nSpeech._m_pStr; /*0x64b893*/
+  if ( v20[-1]._m_pStr <= nSpeech._m_pStr /*0x64b8af*/
+    || v19->nAction && v19->nAction < 43 && v59->m_chatBalloon.m_pLayerChat.m_pInterface )
+  {
+    return; /*0x64b8b3*/
+  }
+LABEL_26:
+  v21 = p_apSpeakInformation->a[v8].p; /*0x64b8b9*/
+  v68.p = v21; /*0x64b8c2*/
+  if ( v21 ) /*0x64b8c8*/
+    InterlockedIncrement(&v21->_m_nRef); /*0x64b8ce*/
+  v22 = v21->asSpeech.a; /*0x64b8d4*/
+  LOBYTE(v69) = 2; /*0x64b8d7*/
+  if ( !v22 || (char *)rand >= v22[-1]._m_pStr ) /*0x64b8e7*/
+  {
+    v23 = sSpeech._m_pStr; /*0x64ba0b*/
+LABEL_48:
+    LOBYTE(v69) = 0; /*0x64ba0f*/
+    ZRef<MobSpeakInformation>::~ZRef<MobSpeakInformation>(&v68); /*0x64ba18*/
+    v69 = -1; /*0x64ba1d*/
+    if ( !v23 ) /*0x64ba27*/
+      return; /*0x64ba27*/
+    ZtlSecureTear_m_nOneTimeAction_CS = (signed int)(v23 - 12); /*0x64ba30*/
+    goto LABEL_92; /*0x64ba31*/
+  }
+  ZXString<char>::operator=(&sSpeech, &v22[rand]); /*0x64b8f5*/
+  v23 = sSpeech._m_pStr; /*0x64b8fa*/
+  if ( !sSpeech._m_pStr || !*sSpeech._m_pStr ) /*0x64b906*/
+    goto LABEL_48; /*0x64b909*/
+  p_apSpeakCondition = &v59->m_pTemplate->apSpeakCondition; /*0x64b919*/
+  if ( !ZArray<ZRef<MobSpeakCondition>>::IsEmpty(p_apSpeakCondition) ) /*0x64b921*/
+  {
+    pCtx = (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x64b939*/
+    CWvsContext::GetCharacterData( /*0x64b93d*/
+      (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+      (ZRef<CharacterData> *)&sc);
+    ZRef<CharacterData>::~ZRef<CharacterData>((ZRef<CharacterData> *)&sc); /*0x64b946*/
+    v25 = 0; /*0x64b954*/
+    pUserLocal = (const CUserLocal *)TSingleton<CUserPool>::ms_pInstance.m_pInterface[2].__vftable; /*0x64b956*/
+    nSpeakInfo = 0; /*0x64b95a*/
+    for ( i = 0; i < 24; i += 8 ) /*0x64b95e*/
+    {
+      v26 = *(CPet **)((char *)&pUserLocal->m_apPet.a->p + v25); /*0x64b96c*/
+      pPet[0] = v26; /*0x64b972*/
+      v27 = 0; /*0x64b976*/
+      if ( ZArray<ZRef<MobSpeakCondition>>::GetCount(p_apSpeakCondition) ) /*0x64b978*/
+      {
+        while ( 1 ) /*0x64b985*/
+        {
+          if ( nSpeakInfo ) /*0x64b98a*/
+            goto LABEL_57; /*0x64b98a*/
+          v28 = p_apSpeakCondition->a[v27].p; /*0x64b992*/
+          sc.p = v28; /*0x64b999*/
+          if ( v28 ) /*0x64b99f*/
+            InterlockedIncrement(&v28->_m_nRef); /*0x64b9a5*/
+          nPetID = v28->nPetID; /*0x64b9ab*/
+          LOBYTE(v69) = 3; /*0x64b9ae*/
+          if ( !nPetID ) /*0x64b9b5*/
+            goto LABEL_41; /*0x64b9b5*/
+          if ( v26 ) /*0x64b9b9*/
+            break; /*0x64b9b9*/
+          LOBYTE(v69) = 2; /*0x64ba3e*/
+          ZRef<MobSpeakCondition>::~ZRef<MobSpeakCondition>(&sc); /*0x64ba43*/
+LABEL_56:
+          if ( ++v27 >= ZArray<ZRef<MobSpeakCondition>>::GetCount(p_apSpeakCondition) ) /*0x64baa8*/
+            goto LABEL_57; /*0x64baa8*/
+        }
+        nSpeakInfo = v26->m_pTemplate->dwTemplateID == nPetID; /*0x64b9ca*/
+LABEL_41:
+        if ( v28->nQuestID ) /*0x64b9ce*/
+        {
+          CQuestMan::GetQuestArray(TSingleton<CQuestMan>::ms_pInstance, (ZArray<unsigned short> *)&nSpeech); /*0x64b9e3*/
+          LOBYTE(v69) = 4; /*0x64b9ec*/
+          for ( j = 0; nSpeech._m_pStr && j < *((_DWORD *)nSpeech._m_pStr - 1); ++j ) /*0x64b9f1*/
+          {
+            v31 = *(_WORD *)&nSpeech._m_pStr[2 * j]; /*0x64b9fc*/
+            if ( v31 == v28->nQuestID ) /*0x64ba06*/
+            {
+              nSpeakInfo = CWvsContext::GetQuestState(pCtx, v31) == v28->nState; /*0x64ba5c*/
+              break; /*0x64ba5c*/
+            }
+          }
+          LOBYTE(v69) = 3; /*0x64ba60*/
+          ZArray<unsigned short>::RemoveAll((ZArray<unsigned short> *)&nSpeech); /*0x64ba69*/
+        }
+        LOBYTE(v69) = 2; /*0x64ba72*/
+        if ( !InterlockedDecrement(&v28->_m_nRef) ) /*0x64ba77*/
+        {
+          InterlockedIncrement(&v28->_m_nRef); /*0x64ba82*/
+          ((void (__thiscall *)(MobSpeakCondition *, int))v28->dtr_ZRefCounted)(v28, 1); /*0x64ba90*/
+        }
+        v26 = pPet[0]; /*0x64ba92*/
+        sc.p = nullptr; /*0x64ba96*/
+        goto LABEL_56; /*0x64ba96*/
+      }
+LABEL_57:
+      v25 = i + 8; /*0x64baae*/
+    }
+    if ( !nSpeakInfo ) /*0x64bac8*/
+    {
+      if ( (_S3_3 & 1) == 0 ) /*0x64bad5*/
+      {
+        _S3_3 |= 1u; /*0x64bad7*/
+        LOBYTE(v69) = 5; /*0x64bae6*/
+        sChar._m_pStr = nullptr; /*0x64baeb*/
+        *(_WORD *)ZXString<char>::GetBuffer(&sChar, 2, 0) = word_B51FF0; /*0x64bafd*/
+        ZXString<char>::ReleaseBuffer(&sChar, 2); /*0x64bb07*/
+        atexit(CMob::TrySpeaking_::_52_::_dynamic_atexit_destructor_for__sChar__); /*0x64bb11*/
+      }
+      if ( (_S3_3 & 2) == 0 ) /*0x64bb20*/
+      {
+        _S3_3 |= 2u; /*0x64bb22*/
+        LOBYTE(v69) = 6; /*0x64bb31*/
+        sIgnoreSymbols._m_pStr = nullptr; /*0x64bb36*/
+        Buffer = ZXString<char>::GetBuffer(&sIgnoreSymbols, 7, 0); /*0x64bb3c*/
+        *(_DWORD *)Buffer = *(_DWORD *)asc_B51FE8; /*0x64bb47*/
+        *((_WORD *)Buffer + 2) = word_B51FEC; /*0x64bb50*/
+        ZtlSecureTear_m_nOneTimeAction_CS = 7; /*0x64bb5a*/
+        Buffer[6] = byte_B51FEE; /*0x64bb61*/
+        ZXString<char>::ReleaseBuffer(&sIgnoreSymbols, ZtlSecureTear_m_nOneTimeAction_CS); /*0x64bb64*/
+        atexit(CMob::TrySpeaking_::_52_::_dynamic_atexit_destructor_for__sIgnoreSymbols__); /*0x64bb6e*/
+      }
+      v33._m_pStr = nullptr; /*0x64bb76*/
+      nSpeech._m_pStr = nullptr; /*0x64bb78*/
+      LOBYTE(v69) = 7; /*0x64bb80*/
+      v34 = 0; /*0x64bb85*/
+      if ( ZXString<char>::GetLength(&sSpeech) > 0 ) /*0x64bb8e*/
+      {
+        v35 = sSpeech._m_pStr; /*0x64bb94*/
+        do /*0x64bc1d*/
+        {
+          LOBYTE(pPet[0]) = v35[v34]; /*0x64bba3*/
+          if ( ZXString<char>::Find(&sIgnoreSymbols, (char)pPet[0], 0) == -1 ) /*0x64bbbb*/
+          {
+            if ( sChar._m_pStr ) /*0x64bbc5*/
+              v36 = *((_DWORD *)sChar._m_pStr - 1); /*0x64bbc7*/
+            else
+              v36 = 0; /*0x64bbcc*/
+            ZXString<char>::_Cat(&nSpeech, sChar._m_pStr, v36); /*0x64bbd4*/
+            LOBYTE(pCtx) = v35[v34 + 1]; /*0x64bbdd*/
+            if ( ZXString<char>::Find(&sIgnoreSymbols, (char)pCtx, 0) == -1 ) /*0x64bbf5*/
+              ++v34; /*0x64bbf7*/
+          }
+          else
+          {
+            LOBYTE(nSpeakInfo) = v35[v34]; /*0x64bc03*/
+            ZXString<char>::_Cat(&nSpeech, (const char *)&nSpeakInfo, 1); /*0x64bc0c*/
+          }
+          ++v34; /*0x64bc15*/
+        }
+        while ( v34 < ZXString<char>::GetLength(&sSpeech) ); /*0x64bc1d*/
+        v33._m_pStr = nSpeech._m_pStr; /*0x64bc1f*/
+      }
+      ZXString<char>::operator=(&sSpeech, &nSpeech); /*0x64bc2c*/
+      LOBYTE(v69) = 2; /*0x64bc31*/
+      if ( v33._m_pStr ) /*0x64bc38*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v33._m_pStr - 1); /*0x64bc3e*/
+    }
+  }
+  nSpeakInfo = 0; /*0x64bc46*/
+  LOBYTE(v69) = 8; /*0x64bc58*/
+  Instance = StringPool::GetInstance(); /*0x64bc5d*/
+  String = StringPool::GetString(Instance, &nSpeech, 0x72Du); /*0x64bc64*/
+  v39 = sSpeech._m_pStr; /*0x64bc73*/
+  v40 = v59->m_pTemplate->sName._m_pStr; /*0x64bc77*/
+  v41 = String->_m_pStr; /*0x64bc7a*/
+  LOBYTE(v69) = 9; /*0x64bc84*/
+  ZXString<char>::Format((ZXString<char> *)&nSpeakInfo, v41, v40, sSpeech._m_pStr); /*0x64bc89*/
+  LOBYTE(v69) = 8; /*0x64bc95*/
+  if ( nSpeech._m_pStr ) /*0x64bc9c*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)nSpeech._m_pStr - 1); /*0x64bca2*/
+  v42 = nSpeakInfo; /*0x64bcb1*/
+  if ( TSingleton<CUIStatusBar>::ms_pInstance._m_pStr ) /*0x64bcb5*/
+  {
+    pPet[0] = (const CPet *)&v56; /*0x64bcbc*/
+    CUIStatusBar::ChatLogAdd( /*0x64bcd4*/
+      (CUIStatusBar *)TSingleton<CUIStatusBar>::ms_pInstance._m_pStr,
+      (const char *)nSpeakInfo,
+      25,
+      -1,
+      0,
+      (ZRef<GW_ItemSlotBase>)v56);
+  }
+  v43 = v68.p; /*0x64bcd9*/
+  v44 = (ZXString<char>::_ZXStringData *)v68.p->nWidth; /*0x64bcdd*/
+  if ( !v44 ) /*0x64bce2*/
+    v44 = (ZXString<char>::_ZXStringData *)nWidth; /*0x64bce4*/
+  v45 = v59; /*0x64bce8*/
+  v46 = v59->m_pTemplate; /*0x64bcf0*/
+  ZtlSecureTear_m_nOneTimeAction_CS = (signed int)v44; /*0x64bcf6*/
+  nChatBalloon = v46->nChatBalloon; /*0x64bcf7*/
+  v56 = nFadeDelay; /*0x64bcfd*/
+  v55 = nChatBalloon; /*0x64bd02*/
+  m_pInterface = v59->m_pvc.m_pInterface; /*0x64bd03*/
+  v54 = nTimeOut; /*0x64bd09*/
+  nWidth = (int)&v53; /*0x64bd0d*/
+  v53.m_pInterface = m_pInterface; /*0x64bd11*/
+  if ( m_pInterface ) /*0x64bd15*/
+    m_pInterface->AddRef(m_pInterface); /*0x64bd1d*/
+  v49 = v45->m_pLayerAction.m_pInterface; /*0x64bd1f*/
+  v50 = (_bstr_t::Data_t *)&v52; /*0x64bd26*/
+  LOBYTE(v69) = 10; /*0x64bd28*/
+  pPet[0] = (const CPet *)&v52; /*0x64bd2d*/
+  v52.m_pInterface = v49; /*0x64bd31*/
+  if ( v49 ) /*0x64bd35*/
+    v49->AddRef(v49); /*0x64bd3d*/
+  v51.m_Data = v50; /*0x64bd3f*/
+  pCtx = (CWvsContext *)&v51; /*0x64bd40*/
+  LOBYTE(v69) = 11; /*0x64bd47*/
+  _bstr_t::_bstr_t(&v51, v39); /*0x64bd4c*/
+  LOBYTE(v69) = 8; /*0x64bd54*/
+  CChatBalloon::MakeMobBalloon( /*0x64bd59*/
+    &v45->m_chatBalloon,
+    (Ztl_bstr_t)v51.m_Data,
+    v52,
+    v53,
+    v54,
+    v55,
+    v56,
+    ZtlSecureTear_m_nOneTimeAction_CS);
+  LOBYTE(v69) = 2; /*0x64bd5e*/
+  if ( v42 ) /*0x64bd65*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(v42 - 12)); /*0x64bd6b*/
+  LOBYTE(v69) = 0; /*0x64bd77*/
+  if ( !InterlockedDecrement(&v43->_m_nRef) ) /*0x64bd7c*/
+  {
+    InterlockedIncrement(&v43->_m_nRef); /*0x64bd87*/
+    ((void (__thiscall *)(MobSpeakInformation *, int))v43->dtr_ZRefCounted)(v43, 1); /*0x64bd95*/
+  }
+  v69 = -1; /*0x64bd97*/
+  if ( v39 ) /*0x64bda1*/
+  {
+    ZtlSecureTear_m_nOneTimeAction_CS = (signed int)(v39 - 12); /*0x64bda6*/
+LABEL_92:
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)ZtlSecureTear_m_nOneTimeAction_CS); /*0x64bda7*/
+  }
+}

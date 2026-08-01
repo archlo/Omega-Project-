@@ -1,0 +1,19 @@
+// cuistat::OnDestroy
+
+void __thiscall CUIStat::OnDestroy(CUIStat *this)
+{
+  CUIStatDetail *p; // ecx
+
+  CWvsContext::RemoveFromStackForTab((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, this); /*0x86181a*/
+  p = this->m_pUIStatDetail.p; /*0x86181f*/
+  if ( p ) /*0x861827*/
+  {
+    CWnd::Destroy(p); /*0x86182a*/
+    if ( this->m_pUIStatDetail.p ) /*0x86182f*/
+    {
+      ZRef<CUIStatDetail>::_ReleaseRaw(&this->m_pUIStatDetail, nullptr); /*0x861842*/
+      this->m_pUIStatDetail.p = nullptr; /*0x861847*/
+    }
+  }
+  CUIWnd::OnDestroy(this); /*0x861852*/
+}

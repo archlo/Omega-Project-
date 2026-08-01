@@ -1,0 +1,113 @@
+// cuserlocal::OnMouseMove
+
+int __thiscall CUserLocal::OnMouseMove(CUserLocal *this, int rx, int ry)
+{
+  CUserRemote *Balloon; // eax
+  MESSAGEBOX *MessageBox; // esi
+  StringPool *Instance; // eax
+  ZXString<char> *String; // eax
+  StringPool *v8; // eax
+  const ZXString<char> *ItemString; // eax
+  const ZXString<char> *v10; // eax
+  char *v11; // esi
+  CStage *p; // edi
+  CStage *v13; // eax
+  int v14; // eax
+  __POSITION *v15; // eax
+  const char *v17; // [esp-8h] [ebp-3Ch]
+  int nItemID; // [esp-8h] [ebp-3Ch]
+  char *m_pStr; // [esp-4h] [ebp-38h]
+  char *v20; // [esp-4h] [ebp-38h]
+  char *v21; // [esp-4h] [ebp-38h]
+  ZXString<char> sWisher; // [esp+10h] [ebp-24h] BYREF
+  ZXString<char> result; // [esp+14h] [ebp-20h] BYREF
+  ZXString<char> v24; // [esp+18h] [ebp-1Ch] BYREF
+  ZXString<char> v25; // [esp+1Ch] [ebp-18h] BYREF
+  tagPOINT pt; // [esp+20h] [ebp-14h] BYREF
+  int v27; // [esp+30h] [ebp-4h]
+
+  CWndMan::GetCursorPos(TSingleton<CWndMan>::ms_pInstance, &pt, 1); /*0x91b275*/
+  Balloon = CUserPool::FindBalloon((CUserPool *)TSingleton<CUserPool>::ms_pInstance.m_pInterface, &pt); /*0x91b285*/
+  if ( Balloon && Balloon->m_chatBalloon.m_bAbbreviated ) /*0x91b28e*/
+  {
+    m_pStr = CUser::GetMiniRoomTitle(Balloon, &sWisher)->_m_pStr; /*0x91b2a6*/
+    v27 = 0; /*0x91b2b9*/
+    CUIToolTip::SetToolTip_String(&this->m_uiToolTip, rx + 20, ry + 20, m_pStr); /*0x91b2c1*/
+    v27 = -1; /*0x91b2ca*/
+    if ( sWisher._m_pStr ) /*0x91b2d4*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sWisher._m_pStr - 1); /*0x91b2de*/
+  }
+  else
+  {
+    MessageBox = CMessageBoxPool::FindMessageBox(TSingleton<CMessageBoxPool>::ms_pInstance, &pt); /*0x91b2fb*/
+    if ( MessageBox ) /*0x91b2ff*/
+    {
+      sWisher._m_pStr = nullptr; /*0x91b305*/
+      v27 = 1; /*0x91b317*/
+      Instance = StringPool::GetInstance(); /*0x91b31f*/
+      String = StringPool::GetString(Instance, &result, 0x1A19u); /*0x91b326*/
+      v20 = MessageBox->sCharacterName._m_pStr; /*0x91b330*/
+      v17 = String->_m_pStr; /*0x91b331*/
+      LOBYTE(v27) = 2; /*0x91b337*/
+      ZXString<char>::Format(&sWisher, v17, v20); /*0x91b33c*/
+      LOBYTE(v27) = 1; /*0x91b348*/
+      if ( result._m_pStr ) /*0x91b34f*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x91b355*/
+      v8 = StringPool::GetInstance(); /*0x91b367*/
+      v21 = StringPool::GetString(v8, &v25, 0x1AC3u)->_m_pStr; /*0x91b378*/
+      nItemID = MessageBox->nItemID; /*0x91b379*/
+      LOBYTE(v27) = 3; /*0x91b385*/
+      ItemString = CItemInfo::GetItemString( /*0x91b38a*/
+                     (CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr,
+                     &v24,
+                     nItemID,
+                     v21);
+      LOBYTE(v27) = 4; /*0x91b399*/
+      v10 = ZXString<char>::operator+(&sWisher, &result, ItemString); /*0x91b39e*/
+      LOBYTE(v27) = 5; /*0x91b3a8*/
+      ZXString<char>::operator=(&sWisher, v10); /*0x91b3ad*/
+      LOBYTE(v27) = 4; /*0x91b3b6*/
+      if ( result._m_pStr ) /*0x91b3bd*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x91b3c3*/
+      LOBYTE(v27) = 3; /*0x91b3cf*/
+      if ( v24._m_pStr ) /*0x91b3d6*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v24._m_pStr - 1); /*0x91b3dc*/
+      LOBYTE(v27) = 1; /*0x91b3e8*/
+      if ( v25._m_pStr ) /*0x91b3ef*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v25._m_pStr - 1); /*0x91b3f5*/
+      v11 = sWisher._m_pStr; /*0x91b3fd*/
+      CUIToolTip::SetToolTip_String(&this->m_uiToolTip, rx + 20, ry + 20, sWisher._m_pStr); /*0x91b418*/
+      v27 = -1; /*0x91b41d*/
+      if ( v11 ) /*0x91b427*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v11 - 1); /*0x91b431*/
+    }
+    else
+    {
+      CWndMan::GetCursorPos(TSingleton<CWndMan>::ms_pInstance, &pt, 0); /*0x91b44b*/
+      if ( !CTemporaryStatView::ShowToolTip( /*0x91b472*/
+              (CTemporaryStatView *)(TSingleton<CWvsContext>::ms_pInstance._m_pStr + 13780),
+              &this->m_uiToolTip,
+              &pt,
+              rx,
+              ry) )
+      {
+        CWndMan::GetCursorPos(TSingleton<CWndMan>::ms_pInstance, &pt, 1); /*0x91b48c*/
+        p = g_pStage.p; /*0x91b491*/
+        if ( g_pStage.p && g_pStage.p->IsKindOf(&g_pStage.p->IUIMsgHandler, &CField::ms_RTTI_CField) ) /*0x91b4a9*/
+          v13 = p; /*0x91b4af*/
+        else
+          v13 = nullptr; /*0x91b4b3*/
+        v14 = CToolTipHelper::CheckAndShow((CToolTipHelper *)&v13[13].___u1, &this->m_uiToolTip, pt.x, pt.y, 1, 0); /*0x91b4ca*/
+        this->m_nIdx_ToolTipByMouse = v14; /*0x91b4d5*/
+        if ( v14 >= 0 && ZMap<long,CUIToolTip,long>::GetAt(&this->m_mCharToolTip, &this->m_nIdx_ToolTipByMouse, nullptr) ) /*0x91b4e6*/
+        {
+          v15 = ZMap<long,CUIToolTip,long>::Insert(&this->m_mCharToolTip, &this->m_nIdx_ToolTipByMouse, nullptr); /*0x91b4f4*/
+          CUIToolTip::ClearToolTip((CUIToolTip *)&v15[12]); /*0x91b4fc*/
+          ZMap<long,CUIToolTip,long>::RemoveKey(&this->m_mCharToolTip, &this->m_nIdx_ToolTipByMouse); /*0x91b504*/
+        }
+        CChatBalloon::ADBoardMouseMove(&this->m_chatBalloon, pt); /*0x91b516*/
+      }
+    }
+  }
+  return 0; /*0x91b51d*/
+}

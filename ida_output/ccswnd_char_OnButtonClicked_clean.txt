@@ -1,0 +1,18 @@
+// ccswnd::char::OnButtonClicked
+
+void __thiscall CCSWnd_Char::OnButtonClicked(CCSWnd_Char *this, unsigned int nId)
+{
+  CCashShop::RestoreFocus(this->m_pCashShop); /*0x4bb639*/
+  switch ( nId ) /*0x4bb647*/
+  {
+    case 0x3E8u: /*0x4bb647*/
+      CCashShop::OnBuyAvatar(this->m_pCashShop); /*0x4bb677*/
+      break;
+    case 0x3E9u: /*0x4bb647*/
+      CCashShop::OnDefaultAvatar(this->m_pCashShop); /*0x4bb668*/
+      break;
+    case 0x3EAu: /*0x4bb647*/
+      CCashShop::OnTakeOff(this->m_pCashShop); /*0x4bb659*/
+      break;
+  }
+}

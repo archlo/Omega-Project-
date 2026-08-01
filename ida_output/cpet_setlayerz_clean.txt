@@ -1,0 +1,45 @@
+﻿void __thiscall CPet::SetLayerZ(CPet *this)
+{
+  IWzGr2DLayer *m_pInterface; // ecx
+  bool v3; // bl
+  IWzVector2D *v4; // eax
+  _DWORD *v5; // eax
+  IWzGr2DLayer *v6; // esi
+  int v7; // edx
+  int v8; // ecx
+  int v9; // eax
+  HRESULT v10; // eax
+  Ztl_variant_t result; // [esp+4h] [ebp-10h] BYREF
+
+  m_pInterface = this->m_pLayerAction.m_pInterface;
+  if ( !m_pInterface )
+    _com_issue_error(-2147467261);
+  v3 = IWzGr2DLayer::Getoverlay(m_pInterface, &result)->vt != 0;
+  if ( result.vt == 8 )
+  {
+    result.vt = 0;
+    if ( result.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(result.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&result);
+  }
+  if ( !v3 )
+  {
+    v4 = this->m_pvc.m_pInterface;
+    if ( v4 )
+      v5 = &v4[-3].__vftable;
+    else
+      v5 = nullptr;
+    v6 = this->m_pLayerAction.m_pInterface;
+    v7 = v5[113];
+    v8 = v5[112];
+    v9 = v5[6];
+    if ( !v6 )
+      _com_issue_error(-2147467261);
+    v10 = v6->put_z(v6, (v9 != 0 ? 8 : 3) + 10 * (3000 * v8 - v7) - 1073711834);
+    if ( v10 < 0 )
+      _com_issue_errorex(v10, v6, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf);
+  }
+}

@@ -1,0 +1,9 @@
+﻿void __thiscall CMob::OnEffectByItem(CMob *this, CInPacket *iPacket)
+{
+  int v3; // ebx
+  unsigned __int8 v4; // al
+
+  v3 = CInPacket::Decode4(iPacket);
+  v4 = CInPacket::Decode1(iPacket);
+  CMob::ShowEffectByItem(this, v3, v4);
+}

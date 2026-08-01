@@ -1,0 +1,5 @@
+// 0x69e850
+unsigned __int8 __thiscall CPersonalShopDlg::GetMiniRoomType(CPersonalShopDlg *this)
+{
+  return 4; /*0x69e852*/
+}

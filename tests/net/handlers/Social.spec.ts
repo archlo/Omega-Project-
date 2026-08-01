@@ -91,21 +91,21 @@ describe('Social', () => {
     expect(p.readByte()).toBe(0);
   });
 
-  it('WhisperSend encodes flag 0x02 updateTarget text (Phase 5.1 fix)', () => {
+  it('WhisperSend encodes targetName and text (OG format)', () => {
     const p = new InPacket(GameSender.Whisper('Dave', 'yo').toArray());
     expect(p.readShort()).toBe(InHeader.Whisper);
-    expect(p.readByte()).toBe(0x2);
-    expect(p.readInt()).toBe(0);
+    // OG: encode str(targetName), str(text)
     expect(p.readString()).toBe('Dave');
     expect(p.readString()).toBe('yo');
   });
 
-  it('GroupChat encodes updateTime type count ids text', () => {
+  it('GroupChat encodes updateTime type count ids text (OG format)', () => {
     const ids = [11, 22, 33];
     const p = new InPacket(GameSender.GroupChat(ChatGroupType.Party, ids, 'go').toArray());
     expect(p.readShort()).toBe(InHeader.GroupMessage);
-    expect(p.readInt()).toBe(0);
-    expect(p.readByte()).toBe(1);
+    // OG: str(update_time), byte(nChatTarget), byte(nMemberCnt), int[](memberIDs), str(text)
+    expect(p.readString()).toBeTruthy(); // update_time (timestamp string)
+    expect(p.readByte()).toBe(ChatGroupType.Party); // Party = 2
     expect(p.readByte()).toBe(3);
     expect(p.readInt()).toBe(11);
     expect(p.readInt()).toBe(22);

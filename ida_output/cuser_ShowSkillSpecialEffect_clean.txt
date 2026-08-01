@@ -1,0 +1,176 @@
+// cuser::ShowSkillSpecialEffect
+
+void __thiscall CUser::ShowSkillSpecialEffect(
+        CUser *this,
+        IWzVector2D *pSkill,
+        int nDelayRate,
+        CGrenade *pGrenade,
+        _bstr_t::Data_t *nSLV,
+        _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *nTimeBombX,
+        int nTimeBombY)
+{
+  CUser *v7; // ebp
+  SKILLENTRY *v8; // esi
+  unsigned __int8 v9; // al
+  _bstr_t::Data_t *v10; // edi
+  const _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *v11; // eax
+  int v12; // edi
+  int v13; // ebx
+  CGrenade *v14; // esi
+  StringPool *v15; // eax
+  wchar_t *v16; // eax
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *VecCtrl; // edi
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *v18; // esi
+  IWzVector2D *v19; // ebp
+  IWzVector2D *v20; // eax
+  IWzVector2D *v21; // eax
+  int v22; // eax
+  StringPool *Instance; // eax
+  wchar_t *m_pStr; // eax
+  IWzGr2DLayer *m_pInterface; // eax
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v26; // [esp-20h] [ebp-64h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v27; // [esp-1Ch] [ebp-60h] BYREF
+  int v28; // [esp-18h] [ebp-5Ch]
+  int v29; // [esp-14h] [ebp-58h]
+  int v30; // [esp-10h] [ebp-54h]
+  int v31; // [esp-Ch] [ebp-50h]
+  int v32; // [esp-8h] [ebp-4Ch]
+  int nSkillID; // [esp-4h] [ebp-48h]
+  CUser *v34; // [esp+14h] [ebp-30h]
+  Ztl_variant_t nTime; // [esp+18h] [ebp-2Ch] BYREF
+  Ztl_variant_t nType; // [esp+28h] [ebp-1Ch] BYREF
+  int v37; // [esp+40h] [ebp-4h]
+
+  v7 = this; /*0x8ecab7*/
+  v34 = this; /*0x8ecab9*/
+  v8 = (SKILLENTRY *)pSkill; /*0x8ecabd*/
+  if ( pSkill && !this->m_bDelayedLoad ) /*0x8ecacb*/
+  {
+    if ( !pSkill[131].__vftable || (v9 = (unsigned __int8)nSLV, !nSLV) ) /*0x8ecae5*/
+      v9 = this->GetCharacterLevel(this); /*0x8ecaed*/
+    SKILLENTRY::GetSpecialUOL(v8, (Ztl_bstr_t *)&nSLV, v9); /*0x8ecafa*/
+    v10 = nSLV; /*0x8ecaff*/
+    v37 = 0; /*0x8ecb03*/
+    if ( nSLV ) /*0x8ecb09*/
+    {
+      if ( nSLV->m_wstr && *((_DWORD *)nSLV->m_wstr - 1) >> 1 ) /*0x8ecb24*/
+      {
+        pSkill = nullptr; /*0x8ecb2e*/
+        nSkillID = v8->nSkillID; /*0x8ecb34*/
+        LOBYTE(v37) = 1; /*0x8ecb35*/
+        if ( is_throw_bomb_skill(nSkillID) ) /*0x8ecb3a*/
+        {
+          v12 = (int)nTimeBombX; /*0x8ecb75*/
+          v13 = nTimeBombY; /*0x8ecb7b*/
+          if ( nTimeBombX || nTimeBombY || (v14 = pGrenade) == nullptr ) /*0x8ecb93*/
+          {
+            Instance = StringPool::GetInstance(); /*0x8eccc1*/
+            m_pStr = StringPool::GetStringW(Instance, (ZXString<unsigned short> *)&nTimeBombX, 0x3D2u)->_m_pStr; /*0x8ecccd*/
+            PcCreateObject<_com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>>( /*0x8eccdc*/
+              m_pStr,
+              (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&pSkill,
+              nullptr);
+            LOBYTE(v37) = 1; /*0x8ecce8*/
+            if ( nTimeBombX ) /*0x8eccef*/
+              ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&nTimeBombX[-3]); /*0x8eccf5*/
+            Ztl_variant_t::Ztl_variant_t(&nTime, &vtMissing); /*0x8ecd06*/
+            LOBYTE(v37) = 8; /*0x8ecd14*/
+            Ztl_variant_t::Ztl_variant_t(&nType, &vtMissing); /*0x8ecd19*/
+            LOBYTE(v37) = 9; /*0x8ecd22*/
+            if ( !pSkill ) /*0x8ecd29*/
+              _com_issue_error(-2147467261); /*0x8ecd30*/
+            IWzVector2D::RelMove(pSkill, v12, v13, &nType, &nTime); /*0x8ecd41*/
+            Ztl_variant_t::~Ztl_variant_t(&nType); /*0x8ecd4a*/
+            LOBYTE(v37) = 1; /*0x8ecd53*/
+            Ztl_variant_t::~Ztl_variant_t(&nTime); /*0x8ecd58*/
+          }
+          else
+          {
+            v15 = StringPool::GetInstance(); /*0x8ecba3*/
+            v16 = StringPool::GetStringW(v15, (ZXString<unsigned short> *)&nTimeBombX, 0x3D2u)->_m_pStr; /*0x8ecbaf*/
+            PcCreateObject<_com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>>( /*0x8ecbbd*/
+              v16,
+              (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&pSkill,
+              nullptr);
+            LOBYTE(v37) = 1; /*0x8ecbc9*/
+            if ( nTimeBombX ) /*0x8ecbd0*/
+              ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&nTimeBombX[-3]); /*0x8ecbd6*/
+            Ztl_variant_t::Ztl_variant_t(&nType, &vtMissing); /*0x8ecbe7*/
+            LOBYTE(v37) = 3; /*0x8ecbf5*/
+            Ztl_variant_t::Ztl_variant_t(&nTime, &vtMissing); /*0x8ecbfa*/
+            LOBYTE(v37) = 4; /*0x8ecc06*/
+            VecCtrl = CGrenade::GetVecCtrl( /*0x8ecc10*/
+                        v14,
+                        (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&nTimeBombY);
+            LOBYTE(v37) = 5; /*0x8ecc1b*/
+            v18 = CGrenade::GetVecCtrl( /*0x8ecc24*/
+                    v14,
+                    (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&nTimeBombX);
+            LOBYTE(v37) = 6; /*0x8ecc2a*/
+            if ( !pSkill ) /*0x8ecc31*/
+              _com_issue_error(-2147467261); /*0x8ecc38*/
+            v19 = pSkill; /*0x8ecc49*/
+            v20 = _com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>::operator->(VecCtrl); /*0x8ecc4b*/
+            v31 = IWzShape2D::Gety(v20); /*0x8ecc57*/
+            v21 = _com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>::operator->(v18); /*0x8ecc5a*/
+            v22 = IWzShape2D::Getx(v21); /*0x8ecc61*/
+            IWzVector2D::RelMove(v19, v22, v31, &nTime, &nType); /*0x8ecc69*/
+            LOBYTE(v37) = 5; /*0x8ecc72*/
+            if ( nTimeBombX ) /*0x8ecc78*/
+              ((void (__stdcall *)(_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *))nTimeBombX->m_pInterface[2].__vftable)(nTimeBombX); /*0x8ecc80*/
+            LOBYTE(v37) = 4; /*0x8ecc86*/
+            if ( nTimeBombY ) /*0x8ecc8d*/
+              (*(void (__stdcall **)(int))(*(_DWORD *)nTimeBombY + 8))(nTimeBombY); /*0x8ecc95*/
+            Ztl_variant_t::~Ztl_variant_t(&nTime); /*0x8ecc9b*/
+            LOBYTE(v37) = 1; /*0x8ecca4*/
+            Ztl_variant_t::~Ztl_variant_t(&nType); /*0x8ecca9*/
+            v7 = v34; /*0x8eccae*/
+          }
+          v10 = nSLV; /*0x8ecd5d*/
+        }
+        else
+        {
+          v11 = CUser::GetVecCtrl( /*0x8ecb4d*/
+                  v7,
+                  (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&nTimeBombX);
+          _com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>::operator=( /*0x8ecb57*/
+            (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&pSkill,
+            v11);
+          if ( nTimeBombX ) /*0x8ecb62*/
+            ((void (__stdcall *)(_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *))nTimeBombX->m_pInterface[2].__vftable)(nTimeBombX); /*0x8ecb6e*/
+        }
+        m_pInterface = v7->m_pLayerUnderFace.m_pInterface; /*0x8ecd65*/
+        nSkillID = 0; /*0x8ecd6b*/
+        v32 = 0; /*0x8ecd6d*/
+        v31 = 0; /*0x8ecd6f*/
+        v30 = 3; /*0x8ecd71*/
+        v29 = 0x7FFFFFFF; /*0x8ecd73*/
+        v28 = nDelayRate; /*0x8ecd78*/
+        nTimeBombX = &v27; /*0x8ecd7c*/
+        v27.m_pInterface = m_pInterface; /*0x8ecd80*/
+        if ( m_pInterface ) /*0x8ecd84*/
+          m_pInterface->AddRef(m_pInterface); /*0x8ecd8c*/
+        v26.m_pInterface = pSkill; /*0x8ecd95*/
+        nTimeBombX = (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v26; /*0x8ecd9b*/
+        if ( pSkill ) /*0x8ecda1*/
+          ((void (__thiscall *)(IWzVector2D *, IWzVector2D *))pSkill->AddRef)(pSkill, pSkill); /*0x8ecda9*/
+        CAnimationDisplayer::Effect_SkillUse( /*0x8ecdc0*/
+          TSingleton<CAnimationDisplayer>::ms_pInstance,
+          v10->m_wstr,
+          (v7->m_nMoveAction & 1) == 0,
+          v26,
+          v27,
+          v28,
+          v29,
+          v30,
+          v31,
+          v32,
+          nSkillID);
+        LOBYTE(v37) = 0; /*0x8ecdc9*/
+        if ( pSkill ) /*0x8ecdd0*/
+          pSkill->Release(pSkill); /*0x8ecdd8*/
+      }
+      _bstr_t::Data_t::Release(v10); /*0x8ecddc*/
+    }
+  }
+}

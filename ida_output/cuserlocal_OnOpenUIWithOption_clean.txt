@@ -1,0 +1,36 @@
+// cuserlocal::OnOpenUIWithOption
+
+void __thiscall CUserLocal::OnOpenUIWithOption(CUserLocal *this, CInPacket *iPacket)
+{
+  int v2; // esi
+  unsigned int v3; // eax
+  char *m_pStr; // ecx
+  unsigned int v5; // edi
+  CRepairDurabilityDlg *v6; // eax
+
+  v2 = CInPacket::Decode4(iPacket); /*0x93232f*/
+  v3 = CInPacket::Decode4(iPacket); /*0x932331*/
+  m_pStr = TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x932336*/
+  v5 = v3; /*0x93233c*/
+  if ( TSingleton<CWvsContext>::ms_pInstance._m_pStr ) /*0x932340*/
+  {
+    CWvsContext::UI_Open((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, v2, -1); /*0x932345*/
+    m_pStr = TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x93234a*/
+  }
+  if ( v2 == 7 ) /*0x932353*/
+  {
+    CWvsContext::UI_Close((CWvsContext *)m_pStr, 7); /*0x9323c9*/
+    CWvsContext::UI_Toggle((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, 7, v5); /*0x9323d7*/
+  }
+  else if ( v2 == 21 ) /*0x932358*/
+  {
+    if ( TSingleton<CUIPartySearch>::ms_pInstance ) /*0x9323ab*/
+      CUIPartySearch::RequestPartyAdverSearch(TSingleton<CUIPartySearch>::ms_pInstance, v5); /*0x9323ae*/
+  }
+  else if ( v2 == 33 && !TSingleton<CUniqueModeless>::ms_pInstance ) /*0x932366*/
+  {
+    v6 = (CRepairDurabilityDlg *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0xB38u); /*0x932372*/
+    if ( v6 ) /*0x932385*/
+      CRepairDurabilityDlg::CRepairDurabilityDlg(v6, v5); /*0x93238a*/
+  }
+}

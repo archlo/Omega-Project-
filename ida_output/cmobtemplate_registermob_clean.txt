@@ -1,0 +1,2906 @@
+// CMobTemplate::RegisterMob
+// Address: 0x65d510
+
+// bad sp value at call has been detected, the output may be wrong!
+int __cdecl CMobTemplate::RegisterMob(
+        IWzProperty *dwTemplateID,
+        _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pProp)
+{
+  _bstr_t::Data_t *v2; // ecx
+  StringPool *Instance; // eax
+  Ztl_variant_t *v4; // eax
+  IUnknown *Unknown; // eax
+  int v6; // eax
+  CMobTemplate *v7; // edi
+  unsigned int v8; // eax
+  _bstr_t::Data_t *v9; // ecx
+  StringPool *v10; // eax
+  _bstr_t::Data_t *v11; // ecx
+  StringPool *v12; // eax
+  wchar_t *m_pStr; // eax
+  unsigned int v14; // ebx
+  unsigned int v15; // eax
+  void (__stdcall *v16)(VARIANTARG *); // esi
+  _bstr_t::Data_t *v17; // ecx
+  Ztl_variant_t *ObjectA; // eax
+  IUnknown *v19; // eax
+  HRESULT v20; // ebx
+  IWzProperty *v21; // esi
+  IWzProperty *m_pInterface; // eax
+  HRESULT (__stdcall *v23)(VARIANTARG *); // esi
+  _bstr_t::Data_t *v24; // ecx
+  IWzProperty *v25; // ebx
+  StringPool *v26; // eax
+  Ztl_variant_t *v27; // eax
+  IUnknown *v28; // eax
+  IEnumVARIANT *v29; // ebx
+  StringPool *v30; // eax
+  Ztl_variant_t *v31; // eax
+  unsigned int (__stdcall *Release)(IUnknown *); // edx
+  unsigned int (__stdcall *v33)(IUnknown *); // edx
+  IWzProperty *v34; // ebx
+  Ztl_variant_t *v35; // eax
+  int int32; // esi
+  _bstr_t::Data_t *v37; // ecx
+  Ztl_variant_t *v38; // eax
+  unsigned int v39; // eax
+  unsigned int (__stdcall *v40)(IUnknown *); // ecx
+  _bstr_t::Data_t *v41; // ecx
+  StringPool *v42; // eax
+  IWzProperty *v43; // ebx
+  void (*AddRef)(void); // edx
+  IWzProperty *v45; // esi
+  void (*v46)(void); // ecx
+  StringPool *v47; // eax
+  void (*v48)(void); // eax
+  void (*v49)(void); // edx
+  StringPool *v50; // eax
+  void (*v51)(void); // eax
+  void (*v52)(void); // edx
+  StringPool *v53; // eax
+  void (*v54)(void); // eax
+  void (*v55)(void); // edx
+  _bstr_t::Data_t *v56; // ecx
+  StringPool *v57; // eax
+  Ztl_variant_t *v58; // eax
+  _bstr_t::Data_t *v59; // ecx
+  StringPool *v60; // eax
+  Ztl_variant_t *v61; // eax
+  _bstr_t::Data_t *v62; // ecx
+  StringPool *v63; // eax
+  void (*v64)(void); // edx
+  void (*v65)(void); // ecx
+  _bstr_t::Data_t *v66; // ecx
+  StringPool *v67; // eax
+  IWzProperty *v68; // esi
+  Ztl_variant_t *v69; // eax
+  _bstr_t::Data_t *v70; // ecx
+  bool v71; // zf
+  const wchar_t *bstrVal; // eax
+  int mobspecies_code_from_name; // eax
+  int v74; // ecx
+  StringPool *v75; // eax
+  Ztl_variant_t *v76; // eax
+  int v77; // eax
+  int v78; // ecx
+  StringPool *v79; // eax
+  Ztl_variant_t *v80; // eax
+  int v81; // eax
+  int v82; // ecx
+  StringPool *v83; // eax
+  Ztl_variant_t *v84; // eax
+  int v85; // ecx
+  StringPool *v86; // eax
+  Ztl_variant_t *v87; // eax
+  int v88; // ecx
+  StringPool *v89; // eax
+  Ztl_variant_t *v90; // eax
+  unsigned int v91; // ecx
+  StringPool *v92; // eax
+  wchar_t *v93; // eax
+  void (__stdcall *v94)(VARIANTARG *); // esi
+  HRESULT v95; // eax
+  HRESULT v96; // eax
+  Ztl_variant_t *v97; // eax
+  IUnknown *v98; // eax
+  HRESULT v99; // eax
+  _bstr_t::Data_t *v100; // ecx
+  StringPool *v101; // eax
+  IWzProperty *v102; // esi
+  Ztl_variant_t *v103; // eax
+  const wchar_t *v104; // eax
+  unsigned int (__stdcall *v105)(IUnknown *); // eax
+  StringPool *v106; // eax
+  Ztl_variant_t *v107; // eax
+  int v108; // eax
+  unsigned int v109; // ecx
+  StringPool *v110; // eax
+  Ztl_variant_t *v111; // eax
+  int v112; // eax
+  unsigned int v113; // ecx
+  StringPool *v114; // eax
+  Ztl_variant_t *v115; // eax
+  int v116; // eax
+  unsigned int v117; // ecx
+  StringPool *v118; // eax
+  Ztl_variant_t *v119; // eax
+  int v120; // eax
+  int v121; // ecx
+  unsigned int v122; // ecx
+  StringPool *v123; // eax
+  Ztl_variant_t *v124; // eax
+  int v125; // eax
+  int v126; // ecx
+  unsigned int v127; // ecx
+  StringPool *v128; // eax
+  Ztl_variant_t *v129; // eax
+  int v130; // eax
+  int v131; // ecx
+  unsigned int v132; // ecx
+  StringPool *v133; // eax
+  Ztl_variant_t *v134; // eax
+  int v135; // eax
+  int v136; // ecx
+  unsigned int v137; // ecx
+  StringPool *v138; // eax
+  Ztl_variant_t *v139; // eax
+  int v140; // eax
+  int v141; // ecx
+  unsigned int v142; // ecx
+  StringPool *v143; // eax
+  Ztl_variant_t *v144; // eax
+  int v145; // eax
+  int v146; // ecx
+  unsigned int v147; // ecx
+  StringPool *v148; // eax
+  Ztl_variant_t *v149; // eax
+  int v150; // eax
+  int v151; // ecx
+  unsigned int v152; // ecx
+  StringPool *v153; // eax
+  Ztl_variant_t *v154; // eax
+  int v155; // eax
+  unsigned int v156; // ecx
+  StringPool *v157; // eax
+  Ztl_variant_t *v158; // eax
+  int v159; // eax
+  unsigned int v160; // ecx
+  StringPool *v161; // eax
+  Ztl_variant_t *v162; // eax
+  int v163; // eax
+  unsigned int v164; // ecx
+  StringPool *v165; // eax
+  Ztl_variant_t *v166; // eax
+  int v167; // eax
+  int v168; // ecx
+  StringPool *v169; // eax
+  Ztl_variant_t *v170; // eax
+  HRESULT v171; // eax
+  const wchar_t *v172; // edx
+  unsigned int v173; // ecx
+  HRESULT (__stdcall *v174)(VARIANTARG *); // esi
+  StringPool *v175; // eax
+  IWzProperty *v176; // esi
+  Ztl_variant_t *v177; // eax
+  unsigned int v178; // ecx
+  StringPool *v179; // eax
+  Ztl_variant_t *v180; // eax
+  unsigned int v181; // ecx
+  StringPool *v182; // eax
+  Ztl_variant_t *v183; // eax
+  int v184; // eax
+  unsigned int v185; // ecx
+  StringPool *v186; // eax
+  Ztl_variant_t *v187; // eax
+  int v188; // eax
+  unsigned int v189; // ecx
+  StringPool *v190; // eax
+  Ztl_variant_t *v191; // eax
+  int v192; // eax
+  unsigned int v193; // ecx
+  StringPool *v194; // eax
+  Ztl_variant_t *v195; // eax
+  int v196; // eax
+  StringPool *v197; // eax
+  Ztl_variant_t *v198; // eax
+  unsigned int v199; // ecx
+  StringPool *v200; // eax
+  Ztl_variant_t *v201; // eax
+  int v202; // eax
+  unsigned int v203; // ecx
+  StringPool *v204; // eax
+  Ztl_variant_t *v205; // eax
+  int v206; // eax
+  unsigned int v207; // ecx
+  StringPool *v208; // eax
+  Ztl_variant_t *v209; // eax
+  unsigned int v210; // ecx
+  StringPool *v211; // eax
+  Ztl_variant_t *v212; // eax
+  int v213; // eax
+  unsigned int v214; // ecx
+  StringPool *v215; // eax
+  Ztl_variant_t *v216; // eax
+  int v217; // eax
+  unsigned int v218; // ecx
+  Ztl_variant_t *v219; // eax
+  int v220; // eax
+  unsigned int v221; // ecx
+  Ztl_variant_t *v222; // eax
+  int v223; // eax
+  unsigned int v224; // ecx
+  Ztl_variant_t *v225; // eax
+  int v226; // eax
+  unsigned int v227; // ecx
+  Ztl_variant_t *v228; // eax
+  int v229; // eax
+  unsigned int v230; // ecx
+  Ztl_variant_t *v231; // eax
+  int v232; // eax
+  unsigned int v233; // ecx
+  Ztl_variant_t *v234; // eax
+  unsigned int v235; // ecx
+  Ztl_variant_t *v236; // eax
+  int v237; // eax
+  unsigned int v238; // ecx
+  StringPool *v239; // eax
+  Ztl_variant_t *v240; // eax
+  int v241; // eax
+  unsigned int v242; // ecx
+  StringPool *v243; // eax
+  Ztl_variant_t *v244; // eax
+  int v245; // eax
+  unsigned int v246; // ecx
+  Ztl_variant_t *v247; // eax
+  int v248; // eax
+  unsigned int v249; // ecx
+  Ztl_variant_t *v250; // eax
+  int v251; // eax
+  _bstr_t::Data_t *v252; // ecx
+  StringPool *v253; // eax
+  Ztl_variant_t *v254; // eax
+  IUnknown *v255; // eax
+  unsigned int v256; // ecx
+  StringPool *v257; // eax
+  Ztl_variant_t *v258; // eax
+  const _com_ptr_t<_com_IIID<IUnknown,&_GUID_00000000_0000_0000_c000_000000000046> > *NewEnum; // eax
+  IWzProperty_vtbl *v260; // eax
+  StringPool *v261; // eax
+  wchar_t *v262; // ecx
+  IWzProperty_vtbl *v263; // eax
+  StringPool *v264; // eax
+  wchar_t *v265; // ecx
+  IWzProperty_vtbl *v266; // eax
+  StringPool *v267; // eax
+  wchar_t *v268; // ecx
+  IWzProperty_vtbl *v269; // eax
+  StringPool *v270; // eax
+  wchar_t *v271; // ecx
+  IWzProperty_vtbl *v272; // eax
+  _bstr_t::Data_t *v273; // ecx
+  StringPool *v274; // eax
+  Ztl_variant_t *v275; // eax
+  IUnknown *v276; // eax
+  HRESULT v277; // eax
+  _bstr_t::Data_t *v278; // ecx
+  void (*v279)(void); // edx
+  StringPool *v280; // eax
+  Ztl_variant_t *v281; // eax
+  _bstr_t::Data_t *v282; // ecx
+  StringPool *v283; // eax
+  Ztl_variant_t *v284; // eax
+  _bstr_t::Data_t *v285; // ecx
+  StringPool *v286; // eax
+  Ztl_variant_t *v287; // eax
+  IUnknown *v288; // eax
+  HRESULT v289; // eax
+  void *v290; // esp
+  const wchar_t *v291; // eax
+  Ztl_variant_t *v292; // eax
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *v293; // eax
+  StringPool *v294; // eax
+  Ztl_variant_t *v295; // eax
+  IUnknown *v296; // eax
+  HRESULT v297; // eax
+  _bstr_t::Data_t *v298; // ecx
+  StringPool *v299; // eax
+  Ztl_variant_t *v300; // eax
+  int v301; // eax
+  StringPool *v302; // eax
+  Ztl_variant_t *v303; // eax
+  IUnknown *v304; // eax
+  HRESULT v305; // eax
+  const _com_ptr_t<_com_IIID<IUnknown,&_GUID_00000000_0000_0000_c000_000000000046> > *v306; // eax
+  _bstr_t::Data_t *v307; // ecx
+  Ztl_variant_t *v308; // eax
+  int *v309; // eax
+  void (__cdecl *v310)(int); // edx
+  _bstr_t::Data_t *v311; // ecx
+  Ztl_variant_t *v312; // eax
+  IUnknown *v313; // eax
+  HRESULT v314; // eax
+  _bstr_t::Data_t *v315; // ecx
+  Ztl_variant_t *v316; // eax
+  _bstr_t::Data_t *v317; // ecx
+  Ztl_variant_t *v318; // eax
+  void *v319; // esp
+  const wchar_t *v320; // eax
+  Ztl_variant_t *v321; // eax
+  IUnknown *v322; // eax
+  _bstr_t::Data_t *v323; // ecx
+  void (*v324)(void); // edx
+  Ztl_variant_t *v325; // eax
+  IUnknown *v326; // eax
+  HRESULT v327; // eax
+  void (*v328)(void); // edx
+  _bstr_t::Data_t *v329; // eax
+  void (*v330)(void); // edx
+  void (*v331)(void); // edx
+  _bstr_t::Data_t *v332; // ecx
+  IWzProperty *v333; // eax
+  Ztl_variant_t *v334; // eax
+  IUnknown *v335; // eax
+  void (*v336)(void); // edx
+  HRESULT (__stdcall *v337)(VARIANTARG *); // ebx
+  unsigned int (__stdcall *v338)(IUnknown *); // ecx
+  IWzProperty_vtbl *v340; // edx
+  unsigned int (__stdcall *v341)(IUnknown *); // eax
+  _bstr_t v342; // [esp-78h] [ebp-1F0h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > v343; // [esp-74h] [ebp-1ECh] BYREF
+  Ztl_bstr_t v344; // [esp-70h] [ebp-1E8h]
+  _bstr_t v345; // [esp-6Ch] [ebp-1E4h] BYREF
+  _bstr_t v346; // [esp-68h] [ebp-1E0h] BYREF
+  IWzProperty *v347; // [esp-64h] [ebp-1DCh] BYREF
+  int v348; // [esp-60h] [ebp-1D8h]
+  unsigned __int16 v349; // [esp-5Ch] [ebp-1D4h] BYREF
+  _bstr_t v350; // [esp-48h] [ebp-1C0h] BYREF
+  _bstr_t v351; // [esp-44h] [ebp-1BCh] BYREF
+  _bstr_t v352; // [esp-40h] [ebp-1B8h] BYREF
+  int v353; // [esp-3Ch] [ebp-1B4h]
+  Ztl_bstr_t v354; // [esp-30h] [ebp-1A8h] BYREF
+  Ztl_bstr_t v355; // [esp-2Ch] [ebp-1A4h] BYREF
+  _bstr_t v356; // [esp-28h] [ebp-1A0h] BYREF
+  int v357; // [esp-24h] [ebp-19Ch]
+  unsigned __int16 v358; // [esp-20h] [ebp-198h] BYREF
+  Ztl_bstr_t v359; // [esp-Ch] [ebp-184h] BYREF
+  Ztl_bstr_t v360; // [esp-8h] [ebp-180h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > v361; // [esp-4h] [ebp-17Ch]
+  IEnumVARIANT *v362; // [esp+0h] [ebp-178h] BYREF
+  IEnumVARIANT *v363; // [esp+4h] [ebp-174h]
+  _bstr_t v364; // [esp+10h] [ebp-168h] BYREF
+  Ztl_bstr_t v365; // [esp+14h] [ebp-164h] BYREF
+  long double dDefault; // [esp+18h] [ebp-160h] BYREF
+  _bstr_t v367; // [esp+20h] [ebp-158h] BYREF
+  Ztl_bstr_t v368; // [esp+24h] [ebp-154h] BYREF
+  Ztl_bstr_t v369; // [esp+28h] [ebp-150h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > v370; // [esp+2Ch] [ebp-14Ch] BYREF
+  Ztl_bstr_t v371; // [esp+30h] [ebp-148h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > v372; // [esp+34h] [ebp-144h] BYREF
+  Ztl_bstr_t v373; // [esp+38h] [ebp-140h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > v374; // [esp+3Ch] [ebp-13Ch] BYREF
+  Ztl_bstr_t v375; // [esp+40h] [ebp-138h] BYREF
+  _bstr_t v376; // [esp+44h] [ebp-134h] BYREF
+  Ztl_bstr_t v377; // [esp+48h] [ebp-130h] BYREF
+  Ztl_bstr_t v378; // [esp+4Ch] [ebp-12Ch] BYREF
+  Ztl_bstr_t v379; // [esp+50h] [ebp-128h] BYREF
+  BOOL v380; // [esp+54h] [ebp-124h]
+  _bstr_t v381; // [esp+58h] [ebp-120h] BYREF
+  const Ztl_variant_t *p_vName; // [esp+5Ch] [ebp-11Ch]
+  Ztl_bstr_t *p_pvarg; // [esp+60h] [ebp-118h]
+  Ztl_bstr_t v384; // [esp+64h] [ebp-114h] BYREF
+  Ztl_bstr_t v385; // [esp+68h] [ebp-110h] BYREF
+  BOOL v386; // [esp+6Ch] [ebp-10Ch]
+  Ztl_variant_t v387; // [esp+80h] [ebp-F8h] BYREF
+  ZMap<ZXString<char>,int,ZXString<char> > mLoadedInfo; // [esp+90h] [ebp-E8h] BYREF
+  Ztl_variant_t result; // [esp+A8h] [ebp-D0h] BYREF
+  ZXString<unsigned short> v390; // [esp+B8h] [ebp-C0h] BYREF
+  Ztl_variant_t vRegen; // [esp+BCh] [ebp-BCh] BYREF
+  Ztl_variant_t vMove; // [esp+CCh] [ebp-ACh] BYREF
+  Ztl_variant_t vJump; // [esp+DCh] [ebp-9Ch] BYREF
+  Ztl_variant_t vChase; // [esp+ECh] [ebp-8Ch] BYREF
+  Ztl_variant_t vFly; // [esp+FCh] [ebp-7Ch] BYREF
+  Ztl_variant_t v; // [esp+10Ch] [ebp-6Ch] BYREF
+  ZRef<CMobTemplate> p; // [esp+11Ch] [ebp-5Ch] BYREF
+  ZXString<unsigned short> v398; // [esp+124h] [ebp-54h] BYREF
+  Ztl_variant_t v399; // [esp+128h] [ebp-50h] BYREF
+  Ztl_variant_t vLink; // [esp+138h] [ebp-40h] BYREF
+  int nSkillID; // [esp+148h] [ebp-30h] BYREF
+  VARIANTARG pvarg; // [esp+14Ch] [ebp-2Ch] BYREF
+  Ztl_variant_t v403; // [esp+15Ch] [ebp-1Ch] BYREF
+  int v404; // [esp+174h] [ebp-4h]
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pConditions; // [esp+178h] [ebp+0h] BYREF
+  unsigned int f; // [esp+17Ch] [ebp+4h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pAction; // [esp+180h] [ebp+8h]
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pSpeakAction; // [esp+184h] [ebp+Ch] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pInfo; // [esp+188h] [ebp+10h] BYREF
+  Ztl_variant_t v410; // [esp+18Ch] [ebp+14h] BYREF
+  Ztl_variant_t vName; // [esp+19Ch] [ebp+24h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pMobString; // [esp+1ACh] [ebp+34h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pLink; // [esp+1B0h] [ebp+38h]
+  _com_ptr_t<_com_IIID<IEnumVARIANT,&_GUID_00020404_0000_0000_c000_000000000046> > pEnum; // [esp+1B4h] [ebp+3Ch] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pDamagedBySelectedMob; // [esp+1B8h] [ebp+40h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pSpeakInformations; // [esp+1BCh] [ebp+44h] BYREF
+  int j; // [esp+1C0h] [ebp+48h] BYREF
+  Ztl_variant_t v418; // [esp+1C4h] [ebp+4Ch] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pSubSpeakAction; // [esp+1D4h] [ebp+5Ch] BYREF
+  bool v420; // [esp+1DBh] [ebp+63h]
+  ZXString<unsigned short> v421; // [esp+1DCh] [ebp+64h] BYREF
+
+  pSpeakInformations.m_pInterface = nullptr;
+  v386 = 0;
+  v385.m_Data = nullptr;
+  v384.m_Data = v2;
+  v421._m_pStr = (wchar_t *)&v384;
+  v404 = 0;
+  Instance = StringPool::GetInstance();
+  StringPool::GetBSTR(Instance, &v384, 0x3D5u);
+  LOBYTE(v404) = 1;
+  if ( !pProp.m_pInterface )
+LABEL_2:
+    _com_issue_error(-2147467261);
+  LOBYTE(v404) = 0;
+  v4 = IWzProperty::Getitem(pProp.m_pInterface, &result, v384);
+  LOBYTE(v404) = 2;
+  Unknown = Ztl_variant_t::GetUnknown(v4, (bool)v385.m_Data, v386);
+  pInfo.m_pInterface = nullptr;
+  v6 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+         &pInfo,
+         Unknown);
+  if ( v6 < 0 && v6 != -2147467262 )
+LABEL_5:
+    _com_issue_error(v6);
+  LOBYTE(v404) = 4;
+  if ( result.vt == 8 )
+  {
+    result.vt = 0;
+    if ( result.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(result.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&result);
+  }
+  pAction.m_pInterface = pProp.m_pInterface;
+  ((void (__cdecl *)(IWzProperty *))pProp.m_pInterface->AddRef)(pProp.m_pInterface);
+  LOBYTE(v404) = 5;
+  p.p = nullptr;
+  ZRef<CMobTemplate>::_Alloc(&p);
+  v7 = p.p;
+  LOBYTE(v404) = 6;
+  v7->_ZtlSecureTear_dwTemplateID_CS = _ZtlSecureTear<unsigned long>(
+                                         (unsigned int)dwTemplateID,
+                                         p.p->_ZtlSecureTear_dwTemplateID);
+  v7->_ZtlSecureTear_dwMonsterBookID_CS = _ZtlSecureTear<unsigned long>(
+                                            (unsigned int)dwTemplateID,
+                                            v7->_ZtlSecureTear_dwMonsterBookID);
+  v8 = _ZtlSecureTear<unsigned long>(0, v7->_ZtlSecureTear_dwLinkedTemplateID);
+  v385.m_Data = v9;
+  v421._m_pStr = (wchar_t *)&v385;
+  v384.m_Data = (_bstr_t::Data_t *)982;
+  p_pvarg = &v385;
+  v7->_ZtlSecureTear_dwLinkedTemplateID_CS = v8;
+  v10 = StringPool::GetInstance();
+  StringPool::GetBSTR(v10, p_pvarg, (unsigned int)v384.m_Data);
+  LOBYTE(v404) = 7;
+  if ( !pInfo.m_pInterface )
+    _com_issue_error(-2147467261);
+  LOBYTE(v404) = 6;
+  IWzProperty::Getitem(pInfo.m_pInterface, &vLink, v385);
+  pLink.m_pInterface = nullptr;
+  LOBYTE(v404) = 9;
+  if ( vLink.vt == 8 )
+  {
+    while ( 1 )
+    {
+      pSubSpeakAction.m_pInterface = nullptr;
+      v385.m_Data = (_bstr_t::Data_t *)1648;
+      v384.m_Data = (_bstr_t::Data_t *)&pMobString;
+      LOBYTE(v404) = 10;
+      v12 = StringPool::GetInstance();
+      m_pStr = StringPool::GetStringW(v12, (ZXString<unsigned short> *)v384.m_Data, (unsigned int)v385.m_Data)->_m_pStr;
+      LOBYTE(v404) = 11;
+      ZXString<unsigned short>::Format((ZXString<unsigned short> *)&pSubSpeakAction, m_pStr, vLink.decVal.Lo32);
+      LOBYTE(v404) = 10;
+      if ( pMobString.m_pInterface )
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&pMobString.m_pInterface[-3]);
+      v14 = _wtoi(vLink.bstrVal);
+      v7->_ZtlSecureTear_dwLinkedTemplateID_CS = _ZtlSecureTear<unsigned long>(
+                                                   v14,
+                                                   v7->_ZtlSecureTear_dwLinkedTemplateID);
+      v15 = _ZtlSecureTear<unsigned long>(v14, v7->_ZtlSecureTear_dwMonsterBookID);
+      v16 = VariantInit;
+      v385.m_Data = (_bstr_t::Data_t *)&pvarg;
+      v7->_ZtlSecureTear_dwMonsterBookID_CS = v15;
+      v16((VARIANTARG *)v385.m_Data);
+      v6 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing);
+      if ( v6 < 0 )
+        goto LABEL_5;
+      LOBYTE(v404) = 12;
+      v16(&vName);
+      v6 = ZComAPI::ZComVariantCopy(&vName, &vtMissing);
+      if ( v6 < 0 )
+        goto LABEL_5;
+      v385.m_Data = nullptr;
+      v384.m_Data = nullptr;
+      p_pvarg = (Ztl_bstr_t *)&pvarg;
+      p_vName = &vName;
+      v381.m_Data = v17;
+      v421._m_pStr = (wchar_t *)&v381;
+      LOBYTE(v404) = 13;
+      _bstr_t::_bstr_t(&v381, (const wchar_t *)pSubSpeakAction.m_pInterface);
+      LOBYTE(v404) = 14;
+      if ( !g_rm.m_pInterface )
+        goto LABEL_2;
+      LOBYTE(v404) = 13;
+      ObjectA = IWzResMan::GetObjectA(
+                  g_rm.m_pInterface,
+                  &v399,
+                  (Ztl_bstr_t)v381.m_Data,
+                  p_vName,
+                  (const Ztl_variant_t *)p_pvarg);
+      LOBYTE(v404) = 15;
+      v19 = Ztl_variant_t::GetUnknown(ObjectA, (bool)v384.m_Data, (bool)v385.m_Data);
+      if ( v19 )
+      {
+        v20 = ((int (__cdecl *)(IUnknown *, GUID *, int *))v19->QueryInterface)(
+                v19,
+                &_GUID_986515d9_0a0b_4929_8b4f_718682177b92,
+                &j);
+        v21 = v20 < 0 ? nullptr : (IWzProperty *)j;
+        if ( pLink.m_pInterface )
+          ((void (__cdecl *)(IWzProperty *))pLink.m_pInterface->Release)(pLink.m_pInterface);
+        pLink.m_pInterface = v21;
+        if ( v20 < 0 && v20 != -2147467262 )
+          _com_issue_error(v20);
+      }
+      else if ( pLink.m_pInterface )
+      {
+        m_pInterface = pLink.m_pInterface;
+        pLink.m_pInterface = nullptr;
+        ((void (__cdecl *)(IWzProperty *))m_pInterface->Release)(m_pInterface);
+      }
+      LOBYTE(v404) = 13;
+      if ( v399.vt == 8 )
+      {
+        v399.vt = 0;
+        if ( v399.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(v399.decVal.Lo32 - 4));
+      }
+      else
+      {
+        VariantClear(&v399);
+      }
+      LOBYTE(v404) = 12;
+      if ( vName.vt == 8 )
+      {
+        vName.vt = 0;
+        if ( vName.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(vName.decVal.Lo32 - 4));
+        v23 = VariantClear;
+      }
+      else
+      {
+        v23 = VariantClear;
+        VariantClear(&vName);
+      }
+      LOBYTE(v404) = 10;
+      if ( pvarg.vt == 8 )
+      {
+        v24 = nullptr;
+        pvarg.vt = 0;
+        if ( pvarg.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4));
+      }
+      else
+      {
+        v23(&pvarg);
+      }
+      v25 = pLink.m_pInterface;
+      if ( !pLink.m_pInterface )
+        break;
+      v381.m_Data = nullptr;
+      v380 = 0;
+      v379.m_Data = v24;
+      v421._m_pStr = (wchar_t *)&v379;
+      v378.m_Data = (_bstr_t::Data_t *)981;
+      v26 = StringPool::GetInstance();
+      StringPool::GetBSTR(v26, &v379, (unsigned int)v378.m_Data);
+      LOBYTE(v404) = 10;
+      v27 = IWzProperty::Getitem(v25, &v403, v379);
+      LOBYTE(v404) = 17;
+      v28 = Ztl_variant_t::GetUnknown(v27, v380, (bool)v381.m_Data);
+      v29 = nullptr;
+      pEnum.m_pInterface = nullptr;
+      if ( v28 )
+      {
+        v6 = ((int (__cdecl *)(IUnknown *, GUID *, _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *))v28->QueryInterface)(
+               v28,
+               &_GUID_986515d9_0a0b_4929_8b4f_718682177b92,
+               &pSpeakAction);
+        LOBYTE(v29) = v6 < 0;
+        v29 = (IEnumVARIANT *)((unsigned int)pSpeakAction.m_pInterface & ((unsigned int)&v29[-1].__vftable + 3));
+        pEnum.m_pInterface = v29;
+        if ( v6 < 0 && v6 != -2147467262 )
+          goto LABEL_5;
+      }
+      LOBYTE(v404) = 19;
+      if ( v403.vt == 8 )
+      {
+        v403.vt = 0;
+        if ( v403.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(v403.decVal.Lo32 - 4));
+      }
+      else
+      {
+        v23(&v403);
+      }
+      if ( !v29 )
+      {
+        LOBYTE(v404) = 9;
+        if ( pSubSpeakAction.m_pInterface )
+          ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&pSubSpeakAction.m_pInterface[-3]);
+        goto LABEL_70;
+      }
+      v378.m_Data = v11;
+      v421._m_pStr = (wchar_t *)&v378;
+      v30 = StringPool::GetInstance();
+      StringPool::GetBSTR(v30, &v378, 0x3D6u);
+      LOBYTE(v404) = 19;
+      v31 = IWzProperty::Getitem((IWzProperty *)v29, &v418, v378);
+      LOBYTE(v404) = 21;
+      v6 = ZComAPI::ZComVariantCopy(&vLink, v31);
+      if ( v6 < 0 )
+        goto LABEL_5;
+      LOBYTE(v404) = 19;
+      if ( v418.vt == 8 )
+      {
+        v418.vt = 0;
+        if ( v418.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+      }
+      else
+      {
+        v23(&v418);
+      }
+      Release = v29->Release;
+      LOBYTE(v404) = 10;
+      ((void (__cdecl *)(IEnumVARIANT *))Release)(v29);
+      LOBYTE(v404) = 9;
+      if ( pSubSpeakAction.m_pInterface )
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&pSubSpeakAction.m_pInterface[-3]);
+      if ( vLink.vt != 8 )
+        goto LABEL_70;
+    }
+    LOBYTE(v404) = 9;
+    if ( pSubSpeakAction.m_pInterface )
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&pSubSpeakAction.m_pInterface[-3]);
+    LOBYTE(v404) = 6;
+    if ( vLink.vt == 8 )
+    {
+      vLink.vt = 0;
+      if ( vLink.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(vLink.decVal.Lo32 - 4));
+    }
+    else
+    {
+      v23(&vLink);
+    }
+    LOBYTE(v404) = 5;
+    if ( !InterlockedDecrement(&v7->_m_nRef) )
+    {
+      InterlockedIncrement(&v7->_m_nRef);
+      ((void (__thiscall *)(CMobTemplate *, int))v7->dtr_ZRefCounted)(v7, 1);
+    }
+    goto LABEL_65;
+  }
+LABEL_70:
+  v377.m_Data = nullptr;
+  v376.m_Data = v11;
+  v421._m_pStr = (wchar_t *)&v376;
+  _bstr_t::_bstr_t(&v376, L"mbookID");
+  v34 = pInfo.m_pInterface;
+  LOBYTE(v404) = 9;
+  v35 = IWzProperty::Getitem(pInfo.m_pInterface, &v418, (Ztl_bstr_t)v376.m_Data);
+  LOBYTE(v404) = 23;
+  int32 = get_int32(v35, (int)v377.m_Data);
+  LOBYTE(v404) = 9;
+  if ( v418.vt == 8 )
+  {
+    v37 = nullptr;
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  if ( int32 )
+  {
+    v377.m_Data = nullptr;
+    v376.m_Data = v37;
+    v421._m_pStr = (wchar_t *)&v376;
+    _bstr_t::_bstr_t(&v376, L"mbookID");
+    LOBYTE(v404) = 9;
+    v38 = IWzProperty::Getitem(v34, &v418, (Ztl_bstr_t)v376.m_Data);
+    LOBYTE(v404) = 25;
+    v39 = get_int32(v38, (int)v377.m_Data);
+    v7->_ZtlSecureTear_dwMonsterBookID_CS = _ZtlSecureTear<unsigned long>(v39, v7->_ZtlSecureTear_dwMonsterBookID);
+    LOBYTE(v404) = 9;
+    if ( v418.vt == 8 )
+    {
+      v418.vt = 0;
+      if ( v418.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&v418);
+    }
+  }
+  pMobString.m_pInterface = dwTemplateID;
+  if ( ZMap<long,ZRef<CMobTemplate>,long>::GetAt(&CMobTemplate::ms_mMobTemplate, (const int *)&pMobString, nullptr) )
+  {
+    LOBYTE(v404) = 8;
+    if ( pLink.m_pInterface )
+      ((void (__cdecl *)(IWzProperty *))pLink.m_pInterface->Release)(pLink.m_pInterface);
+    LOBYTE(v404) = 6;
+    if ( vLink.vt == 8 )
+    {
+      vLink.vt = 0;
+      if ( vLink.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(vLink.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&vLink);
+    }
+    LOBYTE(v404) = 5;
+    if ( !InterlockedDecrement(&v7->_m_nRef) )
+    {
+      InterlockedIncrement(&v7->_m_nRef);
+      ((void (__thiscall *)(CMobTemplate *, int))v7->dtr_ZRefCounted)(v7, 1);
+    }
+    LOBYTE(v404) = 4;
+    if ( pAction.m_pInterface )
+      ((void (__cdecl *)(IWzProperty *))pAction.m_pInterface->Release)(pAction.m_pInterface);
+    v40 = v34->Release;
+    LOBYTE(v404) = 0;
+    ((void (__cdecl *)(IWzProperty *))v40)(v34);
+    v404 = -1;
+    ((void (__cdecl *)(IWzProperty *))pProp.m_pInterface->Release)(pProp.m_pInterface);
+    return 0;
+  }
+  pMobString.m_pInterface = dwTemplateID;
+  ZMap<long,ZRef<CMobTemplate>,long>::Insert(&CMobTemplate::ms_mMobTemplate, (const int *)&pMobString, &p);
+  v377.m_Data = v41;
+  v421._m_pStr = (wchar_t *)&v377;
+  v376.m_Data = (_bstr_t::Data_t *)3444;
+  v42 = StringPool::GetInstance();
+  StringPool::GetBSTR(v42, &v377, (unsigned int)v376.m_Data);
+  v43 = pLink.m_pInterface;
+  v421._m_pStr = (wchar_t *)&v376;
+  v376.m_Data = (_bstr_t::Data_t *)pLink.m_pInterface;
+  if ( pLink.m_pInterface )
+  {
+    AddRef = (void (*)(void))pLink.m_pInterface->AddRef;
+    v375.m_Data = (_bstr_t::Data_t *)pLink.m_pInterface;
+    AddRef();
+  }
+  v45 = pAction.m_pInterface;
+  v421._m_pStr = (wchar_t *)&v374;
+  v374.m_pInterface = pAction.m_pInterface;
+  if ( pAction.m_pInterface )
+  {
+    v46 = (void (*)(void))pAction.m_pInterface->AddRef;
+    v373.m_Data = (_bstr_t::Data_t *)pAction.m_pInterface;
+    v46();
+  }
+  GetVariantLinkData(
+    &vChase,
+    (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> >)v373.m_Data,
+    v374,
+    v375);
+  LOBYTE(v404) = 26;
+  v421._m_pStr = (wchar_t *)&v375;
+  v374.m_pInterface = (IWzProperty *)6844;
+  v373.m_Data = (_bstr_t::Data_t *)&v375;
+  v7->bChase = vChase.vt != 0;
+  v47 = StringPool::GetInstance();
+  StringPool::GetBSTR(v47, (Ztl_bstr_t *)v373.m_Data, (unsigned int)v374.m_pInterface);
+  v421._m_pStr = (wchar_t *)&v374;
+  v374.m_pInterface = v43;
+  if ( v43 )
+  {
+    v48 = (void (*)(void))v43->AddRef;
+    v373.m_Data = (_bstr_t::Data_t *)v43;
+    v48();
+  }
+  v421._m_pStr = (wchar_t *)&v372;
+  v372.m_pInterface = v45;
+  if ( v45 )
+  {
+    v49 = (void (*)(void))v45->AddRef;
+    v371.m_Data = (_bstr_t::Data_t *)v45;
+    v49();
+  }
+  GetVariantLinkData(
+    &vJump,
+    (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> >)v371.m_Data,
+    v372,
+    v373);
+  v421._m_pStr = (wchar_t *)&v373;
+  v372.m_pInterface = (IWzProperty *)6850;
+  LOBYTE(v404) = 27;
+  v50 = StringPool::GetInstance();
+  StringPool::GetBSTR(v50, &v373, (unsigned int)v372.m_pInterface);
+  v421._m_pStr = (wchar_t *)&v372;
+  v372.m_pInterface = v43;
+  if ( v43 )
+  {
+    v51 = (void (*)(void))v43->AddRef;
+    v371.m_Data = (_bstr_t::Data_t *)v43;
+    v51();
+  }
+  v421._m_pStr = (wchar_t *)&v370;
+  v370.m_pInterface = v45;
+  if ( v45 )
+  {
+    v52 = (void (*)(void))v45->AddRef;
+    v369.m_Data = (_bstr_t::Data_t *)v45;
+    v52();
+  }
+  GetVariantLinkData(
+    &vMove,
+    (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> >)v369.m_Data,
+    v370,
+    v371);
+  v421._m_pStr = (wchar_t *)&v371;
+  v370.m_pInterface = (IWzProperty *)6833;
+  LOBYTE(v404) = 28;
+  v53 = StringPool::GetInstance();
+  StringPool::GetBSTR(v53, &v371, (unsigned int)v370.m_pInterface);
+  v421._m_pStr = (wchar_t *)&v370;
+  v370.m_pInterface = v43;
+  if ( v43 )
+  {
+    v54 = (void (*)(void))v43->AddRef;
+    v369.m_Data = (_bstr_t::Data_t *)v43;
+    v54();
+  }
+  v421._m_pStr = (wchar_t *)&v368;
+  v368.m_Data = (_bstr_t::Data_t *)v45;
+  if ( v45 )
+  {
+    v55 = (void (*)(void))v45->AddRef;
+    v367.m_Data = (_bstr_t::Data_t *)v45;
+    v55();
+  }
+  GetVariantLinkData(
+    &vFly,
+    (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> >)v367.m_Data,
+    (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> >)v368.m_Data,
+    v369);
+  LOBYTE(v404) = 29;
+  if ( vFly.vt )
+  {
+    v7->_ZtlSecureTear_nMoveAbility_CS = _ZtlSecureTear<long>(4, v7->_ZtlSecureTear_nMoveAbility);
+  }
+  else if ( vJump.vt )
+  {
+    if ( !vMove.vt )
+    {
+      Ztl_variant_t::~Ztl_variant_t(&vFly);
+      Ztl_variant_t::~Ztl_variant_t(&vMove);
+      Ztl_variant_t::~Ztl_variant_t(&vJump);
+      Ztl_variant_t::~Ztl_variant_t(&vChase);
+      LOBYTE(v404) = 8;
+      if ( v43 )
+        ((void (__cdecl *)(IWzProperty *, IWzProperty *))v43->Release)(v43, v370.m_pInterface);
+      Ztl_variant_t::~Ztl_variant_t(&vLink);
+      LOBYTE(v404) = 5;
+      ZRef<CMobTemplate>::~ZRef<CMobTemplate>(&p);
+      LOBYTE(v404) = 4;
+      if ( v45 )
+        ((void (__cdecl *)(IWzProperty *))v45->Release)(v45);
+      v340 = pInfo.m_pInterface->__vftable;
+      v367.m_Data = (_bstr_t::Data_t *)pInfo.m_pInterface;
+      v341 = v340->Release;
+      LOBYTE(v404) = 0;
+      ((void (__cdecl *)(IWzProperty *))v341)(pInfo.m_pInterface);
+      goto LABEL_579;
+    }
+    v7->_ZtlSecureTear_nMoveAbility_CS = _ZtlSecureTear<long>(3, v7->_ZtlSecureTear_nMoveAbility);
+  }
+  else
+  {
+    CMobTemplate::_ZtlSecurePut_nMoveAbility(v7, vMove.vt != 0);
+  }
+  v369.m_Data = nullptr;
+  v368.m_Data = v56;
+  v421._m_pStr = (wchar_t *)&v368;
+  v57 = StringPool::GetInstance();
+  StringPool::GetBSTR(v57, &v368, 0x1786u);
+  LOBYTE(v404) = 29;
+  v58 = IWzProperty::Getitem(pInfo.m_pInterface, &v418, v368);
+  LOBYTE(v404) = 31;
+  v420 = get_int32(v58, (int)v369.m_Data) != 0;
+  LOBYTE(v404) = 29;
+  if ( v418.vt == 8 )
+  {
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  if ( v420 )
+    v7->_ZtlSecureTear_nMoveAbility_CS = _ZtlSecureTear<long>(6, v7->_ZtlSecureTear_nMoveAbility);
+  v369.m_Data = nullptr;
+  v368.m_Data = v59;
+  v421._m_pStr = (wchar_t *)&v368;
+  v60 = StringPool::GetInstance();
+  StringPool::GetBSTR(v60, &v368, 0x1786u);
+  LOBYTE(v404) = 29;
+  v61 = IWzProperty::Getitem(pInfo.m_pInterface, &v418, v368);
+  LOBYTE(v404) = 33;
+  v7->nEscortType = get_int32(v61, (int)v369.m_Data);
+  LOBYTE(v404) = 29;
+  if ( v418.vt == 8 )
+  {
+    v62 = nullptr;
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  v369.m_Data = v62;
+  v421._m_pStr = (wchar_t *)&v369;
+  v368.m_Data = (_bstr_t::Data_t *)6863;
+  v63 = StringPool::GetInstance();
+  StringPool::GetBSTR(v63, &v369, (unsigned int)v368.m_Data);
+  v421._m_pStr = (wchar_t *)&v368;
+  v368.m_Data = (_bstr_t::Data_t *)v43;
+  if ( v43 )
+  {
+    v64 = (void (*)(void))v43->AddRef;
+    v367.m_Data = (_bstr_t::Data_t *)v43;
+    v64();
+  }
+  v421._m_pStr = (wchar_t *)&dDefault + 2;
+  HIDWORD(dDefault) = v45;
+  if ( v45 )
+  {
+    v65 = (void (*)(void))v45->AddRef;
+    LODWORD(dDefault) = v45;
+    v65();
+  }
+  GetVariantLinkData(
+    &vRegen,
+    LODWORD(dDefault),
+    *(_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *)((char *)&dDefault + 4),
+    (Ztl_bstr_t)v367.m_Data);
+  LOBYTE(v404) = 34;
+  v7->_ZtlSecureTear_bRegenAction_CS = _ZtlSecureTear<int>(vRegen.vt != 0, v7->_ZtlSecureTear_bRegenAction);
+  VariantInit(&v);
+  v367.m_Data = v66;
+  v421._m_pStr = (wchar_t *)&v367;
+  HIDWORD(dDefault) = 1651;
+  LOBYTE(v404) = 35;
+  v67 = StringPool::GetInstance();
+  StringPool::GetBSTR(v67, (Ztl_bstr_t *)&v367, HIDWORD(dDefault));
+  v68 = pInfo.m_pInterface;
+  LOBYTE(v404) = 35;
+  v69 = IWzProperty::Getitem(pInfo.m_pInterface, &v418, (Ztl_bstr_t)v367.m_Data);
+  v71 = v69->vt == 8;
+  LOBYTE(v404) = 37;
+  if ( v71 )
+    bstrVal = v69->bstrVal;
+  else
+    bstrVal = &sDefault;
+  v367.m_Data = v70;
+  v421._m_pStr = (wchar_t *)&v367;
+  _bstr_t::_bstr_t(&v367, bstrVal);
+  mobspecies_code_from_name = get_mobspecies_code_from_name((Ztl_bstr_t)v367.m_Data);
+  v7->_ZtlSecureTear_nSpecies_CS = _ZtlSecureTear<long>(mobspecies_code_from_name, v7->_ZtlSecureTear_nSpecies);
+  LOBYTE(v404) = 35;
+  if ( v418.vt == 8 )
+  {
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  v367.m_Data = nullptr;
+  HIDWORD(dDefault) = v74;
+  v421._m_pStr = (wchar_t *)&dDefault + 2;
+  v75 = StringPool::GetInstance();
+  StringPool::GetBSTR(v75, (Ztl_bstr_t *)&dDefault + 1, 0x674u);
+  LOBYTE(v404) = 35;
+  v76 = IWzProperty::Getitem(v68, &v418, *(Ztl_bstr_t *)((char *)&dDefault + 4));
+  LOBYTE(v404) = 39;
+  v77 = get_int32(v76, (int)v367.m_Data);
+  v7->_ZtlSecureTear_bBodyAttack_CS = _ZtlSecureTear<int>(v77 != 0, v7->_ZtlSecureTear_bBodyAttack);
+  LOBYTE(v404) = 35;
+  if ( v418.vt == 8 )
+  {
+    v78 = 0;
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  v367.m_Data = nullptr;
+  HIDWORD(dDefault) = v78;
+  v421._m_pStr = (wchar_t *)&dDefault + 2;
+  v79 = StringPool::GetInstance();
+  StringPool::GetBSTR(v79, (Ztl_bstr_t *)&dDefault + 1, 0x1AA4u);
+  LOBYTE(v404) = 35;
+  v80 = IWzProperty::Getitem(v68, &v418, *(Ztl_bstr_t *)((char *)&dDefault + 4));
+  LOBYTE(v404) = 41;
+  v81 = get_int32(v80, (int)v367.m_Data);
+  v7->_ZtlSecureTear_bBoss_CS = _ZtlSecureTear<int>(v81 != 0, v7->_ZtlSecureTear_bBoss);
+  LOBYTE(v404) = 35;
+  if ( v418.vt == 8 )
+  {
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  v367.m_Data = nullptr;
+  HIDWORD(dDefault) = v82;
+  v421._m_pStr = (wchar_t *)&dDefault + 2;
+  v83 = StringPool::GetInstance();
+  StringPool::GetBSTR(v83, (Ztl_bstr_t *)&dDefault + 1, 0x675u);
+  LOBYTE(v404) = 35;
+  v84 = IWzProperty::Getitem(v68, &v418, *(Ztl_bstr_t *)((char *)&dDefault + 4));
+  LOBYTE(v404) = 43;
+  v7->bHideHP = get_int32(v84, (int)v367.m_Data) != 0;
+  LOBYTE(v404) = 35;
+  if ( v418.vt == 8 )
+  {
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  v367.m_Data = nullptr;
+  HIDWORD(dDefault) = v85;
+  v421._m_pStr = (wchar_t *)&dDefault + 2;
+  v86 = StringPool::GetInstance();
+  StringPool::GetBSTR(v86, (Ztl_bstr_t *)&dDefault + 1, 0x1AB6u);
+  LOBYTE(v404) = 35;
+  v87 = IWzProperty::Getitem(v68, &v418, *(Ztl_bstr_t *)((char *)&dDefault + 4));
+  LOBYTE(v404) = 45;
+  v7->bHideName = get_int32(v87, (int)v367.m_Data) != 0;
+  LOBYTE(v404) = 35;
+  if ( v418.vt == 8 )
+  {
+    v88 = 0;
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  v367.m_Data = nullptr;
+  HIDWORD(dDefault) = v88;
+  v421._m_pStr = (wchar_t *)&dDefault + 2;
+  v89 = StringPool::GetInstance();
+  StringPool::GetBSTR(v89, (Ztl_bstr_t *)&dDefault + 1, 0x676u);
+  LOBYTE(v404) = 35;
+  v90 = IWzProperty::Getitem(v68, &v418, *(Ztl_bstr_t *)((char *)&dDefault + 4));
+  LOBYTE(v404) = 47;
+  v7->bHideLevel = get_int32(v90, (int)v367.m_Data) != 0;
+  LOBYTE(v404) = 35;
+  if ( v418.vt == 8 )
+  {
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  if ( !v7->bHideName )
+  {
+    pEnum.m_pInterface = nullptr;
+    v367.m_Data = (_bstr_t::Data_t *)2278;
+    HIDWORD(dDefault) = &pMobString;
+    LOBYTE(v404) = 48;
+    v92 = StringPool::GetInstance();
+    v93 = StringPool::GetStringW(v92, (ZXString<unsigned short> *)HIDWORD(dDefault), (unsigned int)v367.m_Data)->_m_pStr;
+    LOBYTE(v404) = 49;
+    ZXString<unsigned short>::Format((ZXString<unsigned short> *)&pEnum, L"%s/%d", v93, dwTemplateID);
+    LOBYTE(v404) = 48;
+    if ( pMobString.m_pInterface )
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&pMobString.m_pInterface[-3]);
+    v94 = VariantInit;
+    VariantInit(&vName);
+    v95 = ZComAPI::ZComVariantCopy(&vName, &vtMissing);
+    if ( v95 < 0 )
+      _com_issue_error(v95);
+    LOBYTE(v404) = 50;
+    v94(&pvarg);
+    v96 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing);
+    if ( v96 < 0 )
+      _com_issue_error(v96);
+    v367.m_Data = nullptr;
+    *(_QWORD *)&dDefault = (unsigned int)&vName;
+    v365.m_Data = (_bstr_t::Data_t *)&pvarg;
+    v364.m_Data = (_bstr_t::Data_t *)&pvarg;
+    v421._m_pStr = (wchar_t *)&v364;
+    LOBYTE(v404) = 51;
+    _bstr_t::_bstr_t(&v364, (const wchar_t *)pEnum.m_pInterface);
+    LOBYTE(v404) = 52;
+    if ( !g_rm.m_pInterface )
+      _com_issue_error(-2147467261);
+    LOBYTE(v404) = 51;
+    v97 = IWzResMan::GetObjectA(
+            g_rm.m_pInterface,
+            &v418,
+            (Ztl_bstr_t)v364.m_Data,
+            (const Ztl_variant_t *)v365.m_Data,
+            (const Ztl_variant_t *)LODWORD(dDefault));
+    LOBYTE(v404) = 53;
+    v98 = Ztl_variant_t::GetUnknown(v97, SBYTE4(dDefault), (bool)v367.m_Data);
+    pMobString.m_pInterface = nullptr;
+    v99 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+            &pMobString,
+            v98);
+    if ( v99 < 0 && v99 != -2147467262 )
+      _com_issue_error(v99);
+    LOBYTE(v404) = 55;
+    if ( v418.vt == 8 )
+    {
+      v100 = nullptr;
+      v418.vt = 0;
+      if ( v418.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&v418);
+    }
+    LOBYTE(v404) = 56;
+    if ( pvarg.vt == 8 )
+    {
+      pvarg.vt = 0;
+      if ( pvarg.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&pvarg);
+    }
+    LOBYTE(v404) = 57;
+    if ( vName.vt == 8 )
+    {
+      vName.vt = 0;
+      if ( vName.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(vName.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&vName);
+    }
+    v367.m_Data = v100;
+    v421._m_pStr = (wchar_t *)&v367;
+    HIDWORD(dDefault) = 1649;
+    LODWORD(dDefault) = &v367;
+    v101 = StringPool::GetInstance();
+    StringPool::GetBSTR(v101, (Ztl_bstr_t *)LODWORD(dDefault), HIDWORD(dDefault));
+    v102 = pMobString.m_pInterface;
+    LOBYTE(v404) = 58;
+    if ( !pMobString.m_pInterface )
+      _com_issue_error(-2147467261);
+    LOBYTE(v404) = 57;
+    v103 = IWzProperty::Getitem(pMobString.m_pInterface, &v403, (Ztl_bstr_t)v367.m_Data);
+    v71 = v103->vt == 8;
+    LOBYTE(v404) = 59;
+    if ( v71 )
+      v104 = v103->bstrVal;
+    else
+      v104 = &sDefault;
+    ZXString<char>::Assign<unsigned short>(&v7->sName, v104, -1);
+    LOBYTE(v404) = 57;
+    if ( v403.vt == 8 )
+    {
+      v403.vt = 0;
+      if ( v403.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(v403.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&v403);
+    }
+    v105 = v102->Release;
+    LOBYTE(v404) = 48;
+    ((void (__cdecl *)(IWzProperty *, _bstr_t::Data_t *))v105)(v102, v368.m_Data);
+    LOBYTE(v404) = 35;
+    if ( pEnum.m_pInterface )
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&pEnum.m_pInterface[-3]);
+    v68 = pInfo.m_pInterface;
+  }
+  *(_QWORD *)&dDefault = v91 | 0x100000000LL;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)1655;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v106 = StringPool::GetInstance();
+  StringPool::GetBSTR(v106, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v107 = IWzProperty::Getitem(v68, &v418, LODWORD(dDefault));
+  LOBYTE(v404) = 61;
+  v108 = get_int32(v107, SHIDWORD(dDefault));
+  v7->_ZtlSecureTear_nLevel_CS = _ZtlSecureTear<long>(v108, v7->_ZtlSecureTear_nLevel);
+  LOBYTE(v404) = 35;
+  if ( v418.vt == 8 )
+  {
+    v109 = 0;
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  *(_QWORD *)&dDefault = v109;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)1656;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v110 = StringPool::GetInstance();
+  StringPool::GetBSTR(v110, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v111 = IWzProperty::Getitem(v68, &v418, LODWORD(dDefault));
+  LOBYTE(v404) = 63;
+  v112 = get_int32(v111, SHIDWORD(dDefault));
+  v7->_ZtlSecureTear_nMaxHP_CS = _ZtlSecureTear<long>(v112, v7->_ZtlSecureTear_nMaxHP);
+  LOBYTE(v404) = 35;
+  if ( v418.vt == 8 )
+  {
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  *(_QWORD *)&dDefault = v113;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)1657;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v114 = StringPool::GetInstance();
+  StringPool::GetBSTR(v114, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v115 = IWzProperty::Getitem(v68, &v418, LODWORD(dDefault));
+  LOBYTE(v404) = 65;
+  v116 = get_int32(v115, SHIDWORD(dDefault));
+  v7->_ZtlSecureTear_nMaxMP_CS = _ZtlSecureTear<long>(v116, v7->_ZtlSecureTear_nMaxMP);
+  LOBYTE(v404) = 35;
+  if ( v418.vt == 8 )
+  {
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  *(_QWORD *)&dDefault = v117;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)1658;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v118 = StringPool::GetInstance();
+  StringPool::GetBSTR(v118, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v119 = IWzProperty::Getitem(v68, &v418, LODWORD(dDefault));
+  LOBYTE(v404) = 67;
+  v120 = get_int32(v119, SHIDWORD(dDefault)) + 100;
+  if ( v120 >= 0 )
+  {
+    if ( v120 >= 140 )
+      v121 = 140;
+    else
+      v121 = v120;
+  }
+  else
+  {
+    v121 = 0;
+  }
+  v7->_ZtlSecureTear_nSpeed_CS = _ZtlSecureTear<long>(v121, v7->_ZtlSecureTear_nSpeed);
+  LOBYTE(v404) = 35;
+  if ( v418.vt == 8 )
+  {
+    v122 = 0;
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  *(_QWORD *)&dDefault = v122;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)1659;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v123 = StringPool::GetInstance();
+  StringPool::GetBSTR(v123, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v124 = IWzProperty::Getitem(v68, &v418, LODWORD(dDefault));
+  LOBYTE(v404) = 69;
+  v125 = get_int32(v124, SHIDWORD(dDefault)) + 100;
+  if ( v125 >= 0 )
+  {
+    if ( v125 >= 140 )
+      v126 = 140;
+    else
+      v126 = v125;
+  }
+  else
+  {
+    v126 = 0;
+  }
+  v7->_ZtlSecureTear_nFlySpeed_CS = _ZtlSecureTear<long>(v126, v7->_ZtlSecureTear_nFlySpeed);
+  LOBYTE(v404) = 35;
+  if ( v418.vt == 8 )
+  {
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  *(_QWORD *)&dDefault = v127;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)1660;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v128 = StringPool::GetInstance();
+  StringPool::GetBSTR(v128, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v129 = IWzProperty::Getitem(v68, &v418, LODWORD(dDefault));
+  LOBYTE(v404) = 71;
+  v130 = get_int32(v129, SHIDWORD(dDefault)) + 100;
+  if ( v130 >= 0 )
+  {
+    if ( v130 >= 140 )
+      v131 = 140;
+    else
+      v131 = v130;
+  }
+  else
+  {
+    v131 = 0;
+  }
+  v7->_ZtlSecureTear_nChaseSpeed_CS = _ZtlSecureTear<long>(v131, v7->_ZtlSecureTear_nChaseSpeed);
+  LOBYTE(v404) = 35;
+  if ( v418.vt == 8 )
+  {
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  *(_QWORD *)&dDefault = v132;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)1661;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v133 = StringPool::GetInstance();
+  StringPool::GetBSTR(v133, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v134 = IWzProperty::Getitem(v68, &v418, LODWORD(dDefault));
+  LOBYTE(v404) = 73;
+  v135 = get_int32(v134, SHIDWORD(dDefault));
+  if ( v135 >= 0 )
+  {
+    if ( v135 >= 29999 )
+      v136 = 29999;
+    else
+      v136 = v135;
+  }
+  else
+  {
+    v136 = 0;
+  }
+  v7->_ZtlSecureTear_nPAD_CS = _ZtlSecureTear<long>(v136, v7->_ZtlSecureTear_nPAD);
+  LOBYTE(v404) = 35;
+  if ( v418.vt == 8 )
+  {
+    v137 = 0;
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  *(_QWORD *)&dDefault = v137;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)6455;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v138 = StringPool::GetInstance();
+  StringPool::GetBSTR(v138, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v139 = IWzProperty::Getitem(v68, &v418, LODWORD(dDefault));
+  LOBYTE(v404) = 75;
+  v140 = get_int32(v139, SHIDWORD(dDefault));
+  if ( v140 >= 0 )
+  {
+    if ( v140 >= 100 )
+      v141 = 100;
+    else
+      v141 = v140;
+  }
+  else
+  {
+    v141 = 0;
+  }
+  v7->_ZtlSecureTear_nPDR_CS = _ZtlSecureTear<long>(v141, v7->_ZtlSecureTear_nPDR);
+  LOBYTE(v404) = 35;
+  if ( v418.vt == 8 )
+  {
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  *(_QWORD *)&dDefault = v142;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)1663;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v143 = StringPool::GetInstance();
+  StringPool::GetBSTR(v143, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v144 = IWzProperty::Getitem(v68, &v418, LODWORD(dDefault));
+  LOBYTE(v404) = 77;
+  v145 = get_int32(v144, SHIDWORD(dDefault));
+  if ( v145 >= 0 )
+  {
+    if ( v145 >= 29999 )
+      v146 = 29999;
+    else
+      v146 = v145;
+  }
+  else
+  {
+    v146 = 0;
+  }
+  v7->_ZtlSecureTear_nMAD_CS = _ZtlSecureTear<long>(v146, v7->_ZtlSecureTear_nMAD);
+  LOBYTE(v404) = 35;
+  if ( v418.vt == 8 )
+  {
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  *(_QWORD *)&dDefault = v147;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)6437;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v148 = StringPool::GetInstance();
+  StringPool::GetBSTR(v148, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v149 = IWzProperty::Getitem(v68, &v418, LODWORD(dDefault));
+  LOBYTE(v404) = 79;
+  v150 = get_int32(v149, SHIDWORD(dDefault));
+  if ( v150 >= 0 )
+  {
+    if ( v150 >= 100 )
+      v151 = 100;
+    else
+      v151 = v150;
+  }
+  else
+  {
+    v151 = 0;
+  }
+  v7->_ZtlSecureTear_nMDR_CS = _ZtlSecureTear<long>(v151, v7->_ZtlSecureTear_nMDR);
+  LOBYTE(v404) = 35;
+  if ( v418.vt == 8 )
+  {
+    v152 = 0;
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  *(_QWORD *)&dDefault = v152;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)1665;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v153 = StringPool::GetInstance();
+  StringPool::GetBSTR(v153, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v154 = IWzProperty::Getitem(v68, &v418, LODWORD(dDefault));
+  LOBYTE(v404) = 81;
+  v155 = get_int32(v154, SHIDWORD(dDefault));
+  v7->_ZtlSecureTear_nACC_CS = _ZtlSecureTear<long>(v155, v7->_ZtlSecureTear_nACC);
+  LOBYTE(v404) = 35;
+  if ( v418.vt == 8 )
+  {
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  *(_QWORD *)&dDefault = v156;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)1666;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v157 = StringPool::GetInstance();
+  StringPool::GetBSTR(v157, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v158 = IWzProperty::Getitem(v68, &v418, LODWORD(dDefault));
+  LOBYTE(v404) = 83;
+  v159 = get_int32(v158, SHIDWORD(dDefault));
+  v7->_ZtlSecureTear_nEVA_CS = _ZtlSecureTear<long>(v159, v7->_ZtlSecureTear_nEVA);
+  LOBYTE(v404) = 35;
+  if ( v418.vt == 8 )
+  {
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  *(_QWORD *)&dDefault = v160;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)1667;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v161 = StringPool::GetInstance();
+  StringPool::GetBSTR(v161, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v162 = IWzProperty::Getitem(v68, &v418, LODWORD(dDefault));
+  LOBYTE(v404) = 85;
+  v163 = get_int32(v162, SHIDWORD(dDefault));
+  v7->_ZtlSecureTear_nEXP_CS = _ZtlSecureTear<long>(v163, v7->_ZtlSecureTear_nEXP);
+  LOBYTE(v404) = 35;
+  if ( v418.vt == 8 )
+  {
+    v164 = 0;
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  *(_QWORD *)&dDefault = v164 | 0x100000000LL;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)1668;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v165 = StringPool::GetInstance();
+  StringPool::GetBSTR(v165, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v166 = IWzProperty::Getitem(v68, &v418, LODWORD(dDefault));
+  LOBYTE(v404) = 87;
+  v167 = get_int32(v166, SHIDWORD(dDefault));
+  v7->_ZtlSecureTear_nPushedDamage_CS = _ZtlSecureTear<long>(v167, v7->_ZtlSecureTear_nPushedDamage);
+  LOBYTE(v404) = 35;
+  if ( v418.vt == 8 )
+  {
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  HIDWORD(dDefault) = v168;
+  v421._m_pStr = (wchar_t *)&dDefault + 2;
+  LODWORD(dDefault) = 1669;
+  v365.m_Data = (_bstr_t::Data_t *)((char *)&dDefault + 4);
+  v169 = StringPool::GetInstance();
+  StringPool::GetBSTR(v169, (Ztl_bstr_t *)v365.m_Data, LODWORD(dDefault));
+  LOBYTE(v404) = 35;
+  v170 = IWzProperty::Getitem(v68, &v418, *(Ztl_bstr_t *)((char *)&dDefault + 4));
+  LOBYTE(v404) = 89;
+  v171 = ZComAPI::ZComVariantCopy(&v, v170);
+  if ( v171 < 0 )
+    _com_issue_error(v171);
+  LOBYTE(v404) = 35;
+  if ( v418.vt == 8 )
+  {
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  v172 = v.bstrVal;
+  if ( v.vt != 8 )
+    v172 = &sDefault;
+  if ( !get_element_attribute(v172, v7->aDamagedElemAttr) )
+  {
+    LOBYTE(v404) = 34;
+    if ( v.vt == 8 )
+    {
+      v.vt = 0;
+      if ( v.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(v.decVal.Lo32 - 4));
+      v174 = VariantClear;
+    }
+    else
+    {
+      v174 = VariantClear;
+      VariantClear(&v);
+    }
+    LOBYTE(v404) = 29;
+    if ( vRegen.vt == 8 )
+    {
+      vRegen.vt = 0;
+      if ( vRegen.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(vRegen.decVal.Lo32 - 4));
+    }
+    else
+    {
+      v174(&vRegen);
+    }
+    LOBYTE(v404) = 28;
+    if ( vFly.vt == 8 )
+    {
+      vFly.vt = 0;
+      if ( vFly.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(vFly.decVal.Lo32 - 4));
+    }
+    else
+    {
+      v174(&vFly);
+    }
+    LOBYTE(v404) = 27;
+    if ( vMove.vt == 8 )
+    {
+      vMove.vt = 0;
+      if ( vMove.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(vMove.decVal.Lo32 - 4));
+    }
+    else
+    {
+      v174(&vMove);
+    }
+    LOBYTE(v404) = 26;
+    if ( vJump.vt == 8 )
+    {
+      vJump.vt = 0;
+      if ( vJump.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(vJump.decVal.Lo32 - 4));
+    }
+    else
+    {
+      v174(&vJump);
+    }
+    LOBYTE(v404) = 9;
+    if ( vChase.vt == 8 )
+    {
+      vChase.vt = 0;
+      if ( vChase.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(vChase.decVal.Lo32 - 4));
+    }
+    else
+    {
+      v174(&vChase);
+    }
+    LOBYTE(v404) = 8;
+    if ( pLink.m_pInterface )
+      ((void (__cdecl *)(IWzProperty *))pLink.m_pInterface->Release)(pLink.m_pInterface);
+    Ztl_variant_t::~Ztl_variant_t(&vLink);
+    LOBYTE(v404) = 5;
+    ZRef<CMobTemplate>::~ZRef<CMobTemplate>(&p);
+LABEL_65:
+    LOBYTE(v404) = 4;
+    if ( pAction.m_pInterface )
+      ((void (__cdecl *)(IWzProperty *))pAction.m_pInterface->Release)(pAction.m_pInterface);
+    v33 = pInfo.m_pInterface->Release;
+    LOBYTE(v404) = 0;
+    ((void (__cdecl *)(IWzProperty *))v33)(pInfo.m_pInterface);
+LABEL_579:
+    v404 = -1;
+    ((void (__stdcall *)(IWzProperty *, _bstr_t::Data_t *, _DWORD, _DWORD, _bstr_t::Data_t *, _bstr_t::Data_t *, _bstr_t::Data_t *, IWzProperty *, _bstr_t::Data_t *, IWzProperty *))pProp.m_pInterface->Release)(
+      pProp.m_pInterface,
+      v365.m_Data,
+      LODWORD(dDefault),
+      HIDWORD(dDefault),
+      v367.m_Data,
+      v368.m_Data,
+      v369.m_Data,
+      v370.m_pInterface,
+      v371.m_Data,
+      v372.m_pInterface);
+    return 0;
+  }
+  *(_QWORD *)&dDefault = v173;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)1670;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v175 = StringPool::GetInstance();
+  StringPool::GetBSTR(v175, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  v176 = pInfo.m_pInterface;
+  LOBYTE(v404) = 35;
+  v177 = IWzProperty::Getitem(pInfo.m_pInterface, &v410, LODWORD(dDefault));
+  LOBYTE(v404) = 91;
+  v7->nHPRecovery = get_int32(v177, SHIDWORD(dDefault));
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  *(_QWORD *)&dDefault = v178;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)1671;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v179 = StringPool::GetInstance();
+  StringPool::GetBSTR(v179, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v180 = IWzProperty::Getitem(v176, &v410, LODWORD(dDefault));
+  LOBYTE(v404) = 93;
+  v7->nMPRecovery = get_int32(v180, SHIDWORD(dDefault));
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  *(_QWORD *)&dDefault = v181;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)6881;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v182 = StringPool::GetInstance();
+  StringPool::GetBSTR(v182, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v183 = IWzProperty::Getitem(v176, &v410, LODWORD(dDefault));
+  LOBYTE(v404) = 95;
+  v184 = get_int32(v183, SHIDWORD(dDefault));
+  CMobTemplate::_ZtlSecurePut_bUndead(v7, v184 != 0);
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  *(_QWORD *)&dDefault = v185;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)1675;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v186 = StringPool::GetInstance();
+  StringPool::GetBSTR(v186, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v187 = IWzProperty::Getitem(v176, &v410, LODWORD(dDefault));
+  LOBYTE(v404) = 97;
+  v188 = get_int32(v187, SHIDWORD(dDefault));
+  CMobTemplate::_ZtlSecurePut_bPickUpDrop(v7, v188 != 0);
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  *(_QWORD *)&dDefault = v189;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)1676;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v190 = StringPool::GetInstance();
+  StringPool::GetBSTR(v190, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v191 = IWzProperty::Getitem(v176, &v410, LODWORD(dDefault));
+  LOBYTE(v404) = 99;
+  v192 = get_int32(v191, SHIDWORD(dDefault));
+  CMobTemplate::_ZtlSecurePut_bFirstAttack(v7, v192 != 0);
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  *(_QWORD *)&dDefault = v193;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)2950;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v194 = StringPool::GetInstance();
+  StringPool::GetBSTR(v194, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v195 = IWzProperty::Getitem(v176, &v410, LODWORD(dDefault));
+  LOBYTE(v404) = 101;
+  v196 = get_int32(v195, SHIDWORD(dDefault));
+  CMobTemplate::_ZtlSecurePut_bSelfDestruction(v7, v196 != 0);
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  dDefault = 1.0;
+  v421._m_pStr = (wchar_t *)&v365;
+  v364.m_Data = (_bstr_t::Data_t *)1677;
+  v197 = StringPool::GetInstance();
+  StringPool::GetBSTR(v197, &v365, (unsigned int)v364.m_Data);
+  LOBYTE(v404) = 35;
+  v198 = IWzProperty::Getitem(v176, &v410, v365);
+  LOBYTE(v404) = 103;
+  v7->nFs = get_double(v198, dDefault);
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  *(_QWORD *)&dDefault = v199;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)2951;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v200 = StringPool::GetInstance();
+  StringPool::GetBSTR(v200, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v201 = IWzProperty::Getitem(v176, &v410, LODWORD(dDefault));
+  LOBYTE(v404) = 105;
+  v202 = get_int32(v201, SHIDWORD(dDefault));
+  CMobTemplate::_ZtlSecurePut_bInvincible(v7, v202 != 0);
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  *(_QWORD *)&dDefault = v203;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)6827;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v204 = StringPool::GetInstance();
+  StringPool::GetBSTR(v204, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v205 = IWzProperty::Getitem(v176, &v410, LODWORD(dDefault));
+  LOBYTE(v404) = 107;
+  v206 = get_int32(v205, SHIDWORD(dDefault));
+  CMobTemplate::_ZtlSecurePut_bDisable(v7, v206 != 0);
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  *(_QWORD *)&dDefault = v207;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)3025;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v208 = StringPool::GetInstance();
+  StringPool::GetBSTR(v208, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v209 = IWzProperty::Getitem(v176, &v410, LODWORD(dDefault));
+  LOBYTE(v404) = 109;
+  v7->bNoFlip = get_int32(v209, SHIDWORD(dDefault)) != 0;
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  *(_QWORD *)&dDefault = v210;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)3305;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v211 = StringPool::GetInstance();
+  StringPool::GetBSTR(v211, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v212 = IWzProperty::Getitem(v176, &v410, LODWORD(dDefault));
+  LOBYTE(v404) = 111;
+  v213 = get_int32(v212, SHIDWORD(dDefault));
+  CMobTemplate::_ZtlSecurePut_bNotAttack(v7, v213 != 0);
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  *(_QWORD *)&dDefault = v214;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)1672;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v215 = StringPool::GetInstance();
+  StringPool::GetBSTR(v215, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v216 = IWzProperty::Getitem(v176, &v410, LODWORD(dDefault));
+  LOBYTE(v404) = 113;
+  v217 = get_int32(v216, SHIDWORD(dDefault));
+  CMobTemplate::_ZtlSecurePut_bHPGaugeHide(v7, v217 != 0);
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  *(_QWORD *)&dDefault = v218;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  _bstr_t::_bstr_t((_bstr_t *)&dDefault, L"hpTagColor");
+  LOBYTE(v404) = 35;
+  v219 = IWzProperty::Getitem(v176, &v410, LODWORD(dDefault));
+  LOBYTE(v404) = 115;
+  v220 = get_int32(v219, SHIDWORD(dDefault));
+  CMobTemplate::_ZtlSecurePut_nHPTagColor(v7, v220);
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  *(_QWORD *)&dDefault = v221;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  _bstr_t::_bstr_t((_bstr_t *)&dDefault, L"hpTagBgcolor");
+  LOBYTE(v404) = 35;
+  v222 = IWzProperty::Getitem(v176, &v410, LODWORD(dDefault));
+  LOBYTE(v404) = 117;
+  v223 = get_int32(v222, SHIDWORD(dDefault));
+  CMobTemplate::_ZtlSecurePut_nHPTagBgColor(v7, v223);
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  *(_QWORD *)&dDefault = v224;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  _bstr_t::_bstr_t((_bstr_t *)&dDefault, L"fixedDamage");
+  LOBYTE(v404) = 35;
+  v225 = IWzProperty::Getitem(v176, &v410, LODWORD(dDefault));
+  LOBYTE(v404) = 119;
+  v226 = get_int32(v225, SHIDWORD(dDefault));
+  CMobTemplate::_ZtlSecurePut_nFixedDamage(v7, v226);
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  *(_QWORD *)&dDefault = v227;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  _bstr_t::_bstr_t((_bstr_t *)&dDefault, L"onlyNormalAttack");
+  LOBYTE(v404) = 35;
+  v228 = IWzProperty::Getitem(v176, &v410, LODWORD(dDefault));
+  LOBYTE(v404) = 121;
+  v229 = get_int32(v228, SHIDWORD(dDefault));
+  CMobTemplate::_ZtlSecurePut_bOnlyNormalAttack(v7, v229 != 0);
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  *(_QWORD *)&dDefault = v230;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  _bstr_t::_bstr_t((_bstr_t *)&dDefault, L"category");
+  LOBYTE(v404) = 35;
+  v231 = IWzProperty::Getitem(v176, &v410, LODWORD(dDefault));
+  LOBYTE(v404) = 123;
+  v232 = get_int32(v231, SHIDWORD(dDefault));
+  CMobTemplate::_ZtlSecurePut_nCategory(v7, v232);
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  *(_QWORD *)&dDefault = v233;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  _bstr_t::_bstr_t((_bstr_t *)&dDefault, L"cantPassByTeleport");
+  LOBYTE(v404) = 35;
+  v234 = IWzProperty::Getitem(v176, &v410, LODWORD(dDefault));
+  LOBYTE(v404) = 125;
+  v7->bCantPassByTeleport = get_int32(v234, SHIDWORD(dDefault)) != 0;
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  *(_QWORD *)&dDefault = v235;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  _bstr_t::_bstr_t((_bstr_t *)&dDefault, L"weapon");
+  LOBYTE(v404) = 35;
+  v236 = IWzProperty::Getitem(v176, &v410, LODWORD(dDefault));
+  LOBYTE(v404) = 127;
+  v237 = get_int32(v236, SHIDWORD(dDefault));
+  CMobTemplate::_ZtlSecurePut_nWeaponID(v7, v237);
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  *(_QWORD *)&dDefault = v238;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)1673;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v239 = StringPool::GetInstance();
+  StringPool::GetBSTR(v239, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v240 = IWzProperty::Getitem(v176, &v410, LODWORD(dDefault));
+  LOBYTE(v404) = -127;
+  v241 = get_int32(v240, SHIDWORD(dDefault));
+  CMobTemplate::_ZtlSecurePut_bAngerGauge(v7, v241 != 0);
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  *(_QWORD *)&dDefault = v242;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  v365.m_Data = (_bstr_t::Data_t *)1674;
+  v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+  v243 = StringPool::GetInstance();
+  StringPool::GetBSTR(v243, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+  LOBYTE(v404) = 35;
+  v244 = IWzProperty::Getitem(v176, &v410, LODWORD(dDefault));
+  LOBYTE(v404) = -125;
+  v245 = get_int32(v244, SHIDWORD(dDefault));
+  CMobTemplate::_ZtlSecurePut_nChargeCount(v7, v245);
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  *(_QWORD *)&dDefault = v246;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  _bstr_t::_bstr_t((_bstr_t *)&dDefault, L"cannotEvade");
+  LOBYTE(v404) = 35;
+  v247 = IWzProperty::Getitem(v176, &v410, LODWORD(dDefault));
+  LOBYTE(v404) = -123;
+  v248 = get_int32(v247, SHIDWORD(dDefault));
+  CMobTemplate::_ZtlSecurePut_bCannotEvade(v7, v248 != 0);
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  *(_QWORD *)&dDefault = v249;
+  v421._m_pStr = (wchar_t *)&dDefault;
+  _bstr_t::_bstr_t((_bstr_t *)&dDefault, L"upperMostLayer");
+  LOBYTE(v404) = 35;
+  v250 = IWzProperty::Getitem(v176, &v410, LODWORD(dDefault));
+  LOBYTE(v404) = -121;
+  v251 = get_int32(v250, SHIDWORD(dDefault));
+  CMobTemplate::_ZtlSecurePut_bUpperMostLayer(v7, v251 != 0);
+  LOBYTE(v404) = 35;
+  Ztl_variant_t::~Ztl_variant_t(&v410);
+  dDefault = 0.0;
+  v365.m_Data = v252;
+  v421._m_pStr = (wchar_t *)&v365;
+  v364.m_Data = (_bstr_t::Data_t *)2950;
+  v253 = StringPool::GetInstance();
+  StringPool::GetBSTR(v253, &v365, (unsigned int)v364.m_Data);
+  LOBYTE(v404) = 35;
+  v254 = IWzProperty::Getitem(v176, &v387, v365);
+  LOBYTE(v404) = -119;
+  v255 = Ztl_variant_t::GetUnknown(v254, SLOBYTE(dDefault), SBYTE4(dDefault));
+  _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>(
+    &pMobString,
+    v255);
+  LOBYTE(v404) = -117;
+  Ztl_variant_t::~Ztl_variant_t(&v387);
+  if ( pMobString.m_pInterface )
+  {
+    *(_QWORD *)&dDefault = v256;
+    v421._m_pStr = (wchar_t *)&dDefault;
+    v365.m_Data = (_bstr_t::Data_t *)6810;
+    v364.m_Data = (_bstr_t::Data_t *)&dDefault;
+    v257 = StringPool::GetInstance();
+    StringPool::GetBSTR(v257, (Ztl_bstr_t *)v364.m_Data, (unsigned int)v365.m_Data);
+    LOBYTE(v404) = -117;
+    v258 = IWzProperty::Getitem(pMobString.m_pInterface, &v410, LODWORD(dDefault));
+    LOBYTE(v404) = -115;
+    j = get_int32(v258, SHIDWORD(dDefault));
+    LOBYTE(v404) = -117;
+    Ztl_variant_t::~Ztl_variant_t(&v410);
+    CMobTemplate::_ZtlSecurePut_bSelfDestruction(v7, j != 0);
+    CMobTemplate::_ZtlSecurePut_bFirstSelfDestruction(v7, ((unsigned int)j >> 1) & 1);
+  }
+  else
+  {
+    CMobTemplate::_ZtlSecurePut_bSelfDestruction(v7, 0);
+  }
+  v7->nDieCount = 0;
+  v7->nHitCount = 0;
+  HIDWORD(dDefault) = 100;
+  v7->nSkillCount = 0;
+  LODWORD(dDefault) = 31;
+  v7->nAttackCount = 0;
+  ZMap<ZXString<char>,int,ZXString<char>>::ZMap<ZXString<char>,int,ZXString<char>>(
+    &mLoadedInfo,
+    LODWORD(dDefault),
+    HIDWORD(dDefault));
+  j = 0;
+  while ( 1 )
+  {
+    VariantInit(&vName);
+    LOBYTE(v404) = -113;
+    if ( j )
+    {
+      if ( !pLink.m_pInterface )
+        goto LABEL_2;
+      NewEnum = IWzProperty::Get_NewEnum(
+                  pLink.m_pInterface,
+                  (_com_ptr_t<_com_IIID<IUnknown,&_GUID_00000000_0000_0000_c000_000000000046> > *)&pSpeakAction);
+      pSpeakInformations.m_pInterface = (IWzProperty *)((unsigned int)pSpeakInformations.m_pInterface | 2);
+      v404 = 145;
+    }
+    else
+    {
+      if ( !pAction.m_pInterface )
+        goto LABEL_2;
+      NewEnum = IWzProperty::Get_NewEnum(
+                  pAction.m_pInterface,
+                  (_com_ptr_t<_com_IIID<IUnknown,&_GUID_00000000_0000_0000_c000_000000000046> > *)&pConditions);
+      pSpeakInformations.m_pInterface = (IWzProperty *)((unsigned int)pSpeakInformations.m_pInterface | 1);
+      LOBYTE(v404) = -112;
+    }
+    _com_ptr_t<_com_IIID<IEnumVARIANT,&__s_GUID const _GUID_00020404_0000_0000_c000_000000000046>>::_com_ptr_t<_com_IIID<IEnumVARIANT,&__s_GUID const _GUID_00020404_0000_0000_c000_000000000046>>(
+      &pEnum,
+      NewEnum);
+    v404 = 147;
+    if ( ((int)pSpeakInformations.m_pInterface & 2) != 0 )
+    {
+      pSpeakInformations.m_pInterface = (IWzProperty *)((unsigned int)pSpeakInformations.m_pInterface & 0xFFFFFFFD);
+      if ( pSpeakAction.m_pInterface )
+        ((void (__cdecl *)(IWzProperty *))pSpeakAction.m_pInterface->Release)(pSpeakAction.m_pInterface);
+    }
+    LOBYTE(v404) = -108;
+    if ( ((int)pSpeakInformations.m_pInterface & 1) != 0 )
+    {
+      pSpeakInformations.m_pInterface = (IWzProperty *)((unsigned int)pSpeakInformations.m_pInterface & 0xFFFFFFFE);
+      if ( pConditions.m_pInterface )
+        ((void (__cdecl *)(IWzProperty *))pConditions.m_pInterface->Release)(pConditions.m_pInterface);
+    }
+    f = 0;
+    while ( 1 )
+    {
+      if ( !pEnum.m_pInterface )
+        goto LABEL_2;
+      if ( ((int (__cdecl *)(IEnumVARIANT *, int, Ztl_variant_t *, unsigned int *))pEnum.m_pInterface->Next)(
+             pEnum.m_pInterface,
+             1,
+             &vName,
+             &f) )
+      {
+        break;
+      }
+      DetachBSTR((Ztl_bstr_t *)&pSubSpeakAction, &vName);
+      LOBYTE(v404) = -107;
+      if ( pSubSpeakAction.m_pInterface )
+        v260 = pSubSpeakAction.m_pInterface->__vftable;
+      else
+        v260 = nullptr;
+      pDamagedBySelectedMob.m_pInterface = nullptr;
+      ZXString<char>::Assign<unsigned short>((ZXString<char> *)&pDamagedBySelectedMob, (const wchar_t *)v260, -1);
+      LOBYTE(v404) = -106;
+      if ( !ZMap<ZXString<char>,int,ZXString<char>>::GetAt(
+              &mLoadedInfo,
+              (const ZXString<char> *)&pDamagedBySelectedMob,
+              nullptr) )
+      {
+        ZMap<ZXString<char>,int,ZXString<char>>::Insert(
+          &mLoadedInfo,
+          (const ZXString<char> *)&pDamagedBySelectedMob,
+          nullptr);
+        v261 = StringPool::GetInstance();
+        v262 = StringPool::GetStringW(v261, &v390, 0x1A9Eu)->_m_pStr;
+        if ( pSubSpeakAction.m_pInterface )
+          v263 = pSubSpeakAction.m_pInterface->__vftable;
+        else
+          v263 = nullptr;
+        v420 = _wcsnicmp((const wchar_t *)v263, v262, 6u) == 0;
+        if ( v390._m_pStr )
+          ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)v390._m_pStr - 1);
+        if ( v420 )
+          ++v7->nAttackCount;
+        v264 = StringPool::GetInstance();
+        v265 = StringPool::GetStringW(v264, (ZXString<unsigned short> *)&nSkillID, 0x1AD8u)->_m_pStr;
+        if ( pSubSpeakAction.m_pInterface )
+          v266 = pSubSpeakAction.m_pInterface->__vftable;
+        else
+          v266 = nullptr;
+        v420 = _wcsnicmp((const wchar_t *)v266, v265, 5u) == 0;
+        if ( nSkillID )
+          ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(nSkillID - 12));
+        if ( v420 )
+        {
+          ++v7->nSkillCount;
+        }
+        else
+        {
+          v267 = StringPool::GetInstance();
+          v268 = StringPool::GetStringW(v267, &v398, 0x44Fu)->_m_pStr;
+          if ( pSubSpeakAction.m_pInterface )
+            v269 = pSubSpeakAction.m_pInterface->__vftable;
+          else
+            v269 = nullptr;
+          v420 = _wcsnicmp((const wchar_t *)v269, v268, 3u) == 0;
+          if ( v398._m_pStr )
+            ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)v398._m_pStr - 1);
+          if ( v420 )
+          {
+            ++v7->nDieCount;
+          }
+          else
+          {
+            v270 = StringPool::GetInstance();
+            v271 = StringPool::GetStringW(v270, &v421, 0x1AB7u)->_m_pStr;
+            if ( pSubSpeakAction.m_pInterface )
+              v272 = pSubSpeakAction.m_pInterface->__vftable;
+            else
+              v272 = nullptr;
+            v420 = _wcsnicmp((const wchar_t *)v272, v271, 3u) == 0;
+            if ( v421._m_pStr )
+              ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)v421._m_pStr - 1);
+            if ( v420 )
+              ++v7->nHitCount;
+          }
+        }
+      }
+      LOBYTE(v404) = -107;
+      if ( pDamagedBySelectedMob.m_pInterface )
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&pDamagedBySelectedMob.m_pInterface[-3]);
+      LOBYTE(v404) = -108;
+      if ( pSubSpeakAction.m_pInterface )
+      {
+        _bstr_t::Data_t::Release((_bstr_t::Data_t *)pSubSpeakAction.m_pInterface);
+        pSubSpeakAction.m_pInterface = nullptr;
+      }
+      if ( vName.vt == 8 )
+      {
+        vName.vt = 0;
+        if ( vName.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(vName.decVal.Lo32 - 4));
+      }
+      else
+      {
+        v6 = VariantClear(&vName);
+        if ( v6 < 0 )
+          goto LABEL_5;
+      }
+    }
+    LOBYTE(v404) = -113;
+    v363 = pEnum.m_pInterface;
+    if ( !pLink.m_pInterface )
+      break;
+    ((void (__cdecl *)(IEnumVARIANT *))pEnum.m_pInterface->Release)(v363);
+    LOBYTE(v404) = -114;
+    if ( vName.vt == 8 )
+    {
+      v273 = nullptr;
+      vName.vt = 0;
+      if ( vName.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(vName.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&vName);
+    }
+    if ( ++j >= 2 )
+      goto LABEL_388;
+  }
+  ((void (__cdecl *)(IEnumVARIANT *))pEnum.m_pInterface->Release)(v363);
+  LOBYTE(v404) = -114;
+  if ( vName.vt == 8 )
+  {
+    vName.vt = 0;
+    if ( vName.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(vName.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&vName);
+  }
+LABEL_388:
+  v362 = nullptr;
+  v361.m_pInterface = nullptr;
+  v360.m_Data = v273;
+  v421._m_pStr = (wchar_t *)&v360;
+  v274 = StringPool::GetInstance();
+  StringPool::GetBSTR(v274, &v360, 0x1AD8u);
+  LOBYTE(v404) = -114;
+  v275 = IWzProperty::Getitem(v176, &v418, v360);
+  LOBYTE(v404) = -104;
+  v276 = Ztl_variant_t::GetUnknown(v275, (bool)v361.m_pInterface, (bool)v362);
+  pEnum.m_pInterface = nullptr;
+  v277 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+           (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *)&pEnum,
+           v276);
+  if ( v277 < 0 && v277 != -2147467262 )
+    _com_issue_error(v277);
+  LOBYTE(v404) = -102;
+  if ( v418.vt == 8 )
+  {
+    v278 = nullptr;
+    v418.vt = 0;
+    if ( v418.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v418.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v418);
+  }
+  LOBYTE(v278) = pEnum.m_pInterface != nullptr;
+  if ( pEnum.m_pInterface )
+  {
+    v421._m_pStr = (wchar_t *)&v362;
+    v362 = pEnum.m_pInterface;
+    v279 = (void (*)(void))pEnum.m_pInterface->AddRef;
+    v361.m_pInterface = (IWzProperty *)pEnum.m_pInterface;
+    v279();
+    CMobTemplate::LoadSkillInfo(v7, v361);
+  }
+  v361.m_pInterface = nullptr;
+  v360.m_Data = v278;
+  v421._m_pStr = (wchar_t *)&v360;
+  v280 = StringPool::GetInstance();
+  StringPool::GetBSTR(v280, &v360, 0xEE5u);
+  LOBYTE(v404) = -102;
+  v281 = IWzProperty::Getitem(v176, &v403, v360);
+  LOBYTE(v404) = -100;
+  v7->bDamagedByMob = get_int32(v281, (int)v361.m_pInterface) != 0;
+  LOBYTE(v404) = -102;
+  if ( v403.vt == 8 )
+  {
+    v403.vt = 0;
+    if ( v403.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v403.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v403);
+  }
+  v361.m_pInterface = nullptr;
+  v360.m_Data = v282;
+  v421._m_pStr = (wchar_t *)&v360;
+  v283 = StringPool::GetInstance();
+  StringPool::GetBSTR(v283, &v360, 0xEE6u);
+  LOBYTE(v404) = -102;
+  v284 = IWzProperty::Getitem(v176, &v403, v360);
+  LOBYTE(v404) = -98;
+  v7->nDropItemPeriod = get_int32(v284, (int)v361.m_pInterface);
+  LOBYTE(v404) = -102;
+  if ( v403.vt == 8 )
+  {
+    v403.vt = 0;
+    if ( v403.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v403.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v403);
+  }
+  if ( v7->bDamagedByMob )
+  {
+    v361.m_pInterface = nullptr;
+    v360.m_Data = nullptr;
+    v359.m_Data = v285;
+    v421._m_pStr = (wchar_t *)&v359;
+    v286 = StringPool::GetInstance();
+    StringPool::GetBSTR(v286, &v359, 0x10C3u);
+    LOBYTE(v404) = -102;
+    v287 = IWzProperty::Getitem(v176, &v403, v359);
+    LOBYTE(v404) = -96;
+    v288 = Ztl_variant_t::GetUnknown(v287, (bool)v360.m_Data, (bool)v361.m_pInterface);
+    pDamagedBySelectedMob.m_pInterface = nullptr;
+    v289 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+             &pDamagedBySelectedMob,
+             v288);
+    if ( v289 < 0 && v289 != -2147467262 )
+      _com_issue_error(v289);
+    LOBYTE(v404) = -94;
+    if ( v403.vt == 8 )
+    {
+      v285 = nullptr;
+      v403.vt = 0;
+      if ( v403.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(v403.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&v403);
+    }
+    if ( pDamagedBySelectedMob.m_pInterface )
+    {
+      j = 0;
+      while ( 1 )
+      {
+        v290 = alloca(32);
+        v357 = 0x7FFFFFFF;
+        v291 = _itow(j, &v358, 10);
+        v421._m_pStr = (wchar_t *)&v356;
+        _bstr_t::_bstr_t(&v356, v291);
+        LOBYTE(v404) = -94;
+        v292 = IWzProperty::Getitem(pDamagedBySelectedMob.m_pInterface, &v399, (Ztl_bstr_t)v356.m_Data);
+        LOBYTE(v404) = -92;
+        pSpeakAction.m_pInterface = (IWzProperty *)get_int32(v292, v357);
+        LOBYTE(v404) = -94;
+        if ( v399.vt == 8 )
+        {
+          v399.vt = 0;
+          if ( v399.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(v399.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&v399);
+        }
+        if ( pSpeakAction.m_pInterface == (IWzProperty *)0x7FFFFFFF )
+          break;
+        v293 = (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *)ZArray<unsigned long>::InsertBefore(
+                                                                                                    &v7->m_aDamagedBySelectedMob,
+                                                                                                    -1);
+        ++j;
+        v293->m_pInterface = pSpeakAction.m_pInterface;
+      }
+    }
+    LOBYTE(v404) = -102;
+    if ( pDamagedBySelectedMob.m_pInterface )
+      ((void (__cdecl *)(IWzProperty *))pDamagedBySelectedMob.m_pInterface->Release)(pDamagedBySelectedMob.m_pInterface);
+  }
+  v356.m_Data = nullptr;
+  v355.m_Data = nullptr;
+  v354.m_Data = v285;
+  v421._m_pStr = (wchar_t *)&v354;
+  v294 = StringPool::GetInstance();
+  StringPool::GetBSTR(v294, &v354, 0xFE5u);
+  LOBYTE(v404) = -102;
+  v295 = IWzProperty::Getitem(v176, &v403, v354);
+  LOBYTE(v404) = -90;
+  v296 = Ztl_variant_t::GetUnknown(v295, (bool)v355.m_Data, (bool)v356.m_Data);
+  pDamagedBySelectedMob.m_pInterface = nullptr;
+  v297 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+           &pDamagedBySelectedMob,
+           v296);
+  if ( v297 < 0 && v297 != -2147467262 )
+    _com_issue_error(v297);
+  LOBYTE(v404) = -88;
+  if ( v403.vt == 8 )
+  {
+    v403.vt = 0;
+    if ( v403.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v403.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v403);
+  }
+  if ( pDamagedBySelectedMob.m_pInterface )
+  {
+    v356.m_Data = nullptr;
+    v355.m_Data = v298;
+    v421._m_pStr = (wchar_t *)&v355;
+    v354.m_Data = (_bstr_t::Data_t *)4070;
+    v299 = StringPool::GetInstance();
+    StringPool::GetBSTR(v299, &v355, (unsigned int)v354.m_Data);
+    LOBYTE(v404) = -87;
+    if ( !pDamagedBySelectedMob.m_pInterface )
+      _com_issue_error(-2147467261);
+    LOBYTE(v404) = -88;
+    v300 = IWzProperty::Getitem(pDamagedBySelectedMob.m_pInterface, &v399, v355);
+    pSpeakInformations.m_pInterface = (IWzProperty *)((unsigned int)pSpeakInformations.m_pInterface | 4);
+    LOBYTE(v404) = -86;
+    v301 = get_int32(v300, (int)v356.m_Data);
+  }
+  else
+  {
+    v301 = 0;
+  }
+  v71 = ((int)pSpeakInformations.m_pInterface & 4) == 0;
+  v7->nBanType = v301;
+  v404 = 168;
+  if ( !v71 )
+  {
+    if ( v399.vt == 8 )
+    {
+      v298 = nullptr;
+      v399.vt = 0;
+      if ( v399.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(v399.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&v399);
+    }
+  }
+  v356.m_Data = nullptr;
+  v355.m_Data = nullptr;
+  v354.m_Data = v298;
+  v421._m_pStr = (wchar_t *)&v354;
+  v302 = StringPool::GetInstance();
+  StringPool::GetBSTR(v302, &v354, 0x10C4u);
+  LOBYTE(v404) = -88;
+  v303 = IWzProperty::Getitem(v176, &v399, v354);
+  LOBYTE(v404) = -84;
+  v304 = Ztl_variant_t::GetUnknown(v303, (bool)v355.m_Data, (bool)v356.m_Data);
+  f = 0;
+  v305 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+           (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > *)&f,
+           v304);
+  if ( v305 < 0 && v305 != -2147467262 )
+    _com_issue_error(v305);
+  LOBYTE(v404) = -82;
+  if ( v399.vt == 8 )
+  {
+    v399.vt = 0;
+    if ( v399.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v399.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v399);
+  }
+  if ( f )
+  {
+    v306 = IWzProperty::Get_NewEnum(
+             (IWzProperty *)f,
+             (_com_ptr_t<_com_IIID<IUnknown,&_GUID_00000000_0000_0000_c000_000000000046> > *)&v421);
+    LOBYTE(v404) = -81;
+    _com_ptr_t<_com_IIID<IEnumVARIANT,&__s_GUID const _GUID_00020404_0000_0000_c000_000000000046>>::_com_ptr_t<_com_IIID<IEnumVARIANT,&__s_GUID const _GUID_00020404_0000_0000_c000_000000000046>>(
+      (_com_ptr_t<_com_IIID<IEnumVARIANT,&_GUID_00020404_0000_0000_c000_000000000046> > *)&j,
+      v306);
+    LOBYTE(v404) = -79;
+    if ( v421._m_pStr )
+      (*(void (__cdecl **)(wchar_t *))(*(_DWORD *)v421._m_pStr + 8))(v421._m_pStr);
+    VariantInit(&vName);
+    LOBYTE(v404) = -78;
+    v398._m_pStr = nullptr;
+    while ( 1 )
+    {
+      if ( !j )
+        goto LABEL_2;
+      if ( (*(int (__cdecl **)(int, int, Ztl_variant_t *, ZXString<unsigned short> *))(*(_DWORD *)j + 12))(
+             j,
+             1,
+             &vName,
+             &v398) )
+      {
+        break;
+      }
+      v353 = 0;
+      v352.m_Data = v307;
+      nSkillID = (int)&v352;
+      _bstr_t::_bstr_t(&v352, vName.bstrVal);
+      LOBYTE(v404) = -78;
+      v308 = IWzProperty::Getitem((IWzProperty *)f, (Ztl_variant_t *)&pvarg, (Ztl_bstr_t)v352.m_Data);
+      LOBYTE(v404) = -76;
+      nSkillID = get_int32(v308, v353);
+      LOBYTE(v404) = -78;
+      if ( pvarg.vt == 8 )
+      {
+        pvarg.vt = 0;
+        if ( pvarg.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4));
+      }
+      else
+      {
+        VariantClear(&pvarg);
+      }
+      v309 = ZArray<long>::InsertBefore(&v7->m_aDamagedBySelectedSkill, -1);
+      *v309 = nSkillID;
+      if ( vName.vt == 8 )
+      {
+        vName.vt = 0;
+        if ( vName.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(vName.decVal.Lo32 - 4));
+      }
+      else
+      {
+        v6 = VariantClear(&vName);
+        if ( v6 < 0 )
+          goto LABEL_5;
+      }
+    }
+    LOBYTE(v404) = -79;
+    if ( vName.vt == 8 )
+    {
+      vName.vt = 0;
+      if ( vName.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(vName.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&vName);
+    }
+    v310 = *(void (__cdecl **)(int))(*(_DWORD *)j + 8);
+    LOBYTE(v404) = -82;
+    v310(j);
+  }
+  v7->nChatBalloon = -1;
+  v7->nWidth = 0;
+  ZArray<ZRef<MobSpeakInformation>>::RemoveAll(&v7->apSpeakInformation);
+  v352.m_Data = nullptr;
+  v351.m_Data = nullptr;
+  v350.m_Data = v311;
+  v421._m_pStr = (wchar_t *)&v350;
+  _bstr_t::_bstr_t(&v350, L"speak");
+  LOBYTE(v404) = -82;
+  v312 = IWzProperty::Getitem(v176, (Ztl_variant_t *)&pvarg, (Ztl_bstr_t)v350.m_Data);
+  LOBYTE(v404) = -74;
+  v313 = Ztl_variant_t::GetUnknown(v312, (bool)v351.m_Data, (bool)v352.m_Data);
+  pSpeakInformations.m_pInterface = nullptr;
+  v314 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+           &pSpeakInformations,
+           v313);
+  if ( v314 < 0 && v314 != -2147467262 )
+    _com_issue_error(v314);
+  LOBYTE(v404) = -72;
+  if ( pvarg.vt == 8 )
+  {
+    v315 = nullptr;
+    pvarg.vt = 0;
+    if ( pvarg.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&pvarg);
+  }
+  if ( pSpeakInformations.m_pInterface )
+  {
+    v352.m_Data = nullptr;
+    v351.m_Data = v315;
+    v421._m_pStr = (wchar_t *)&v351;
+    _bstr_t::_bstr_t(&v351, L"chatBalloon");
+    LOBYTE(v404) = -72;
+    v316 = IWzProperty::Getitem(pSpeakInformations.m_pInterface, &vName, (Ztl_bstr_t)v351.m_Data);
+    LOBYTE(v404) = -70;
+    v7->nChatBalloon = get_int32(v316, (int)v352.m_Data);
+    LOBYTE(v404) = -72;
+    if ( vName.vt == 8 )
+    {
+      v317 = nullptr;
+      vName.vt = 0;
+      if ( vName.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(vName.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&vName);
+    }
+    v352.m_Data = nullptr;
+    v351.m_Data = v317;
+    v421._m_pStr = (wchar_t *)&v351;
+    _bstr_t::_bstr_t(&v351, L"widthSize");
+    LOBYTE(v404) = -72;
+    v318 = IWzProperty::Getitem(pSpeakInformations.m_pInterface, &vName, (Ztl_bstr_t)v351.m_Data);
+    LOBYTE(v404) = -68;
+    v7->nWidth = get_int32(v318, (int)v352.m_Data);
+    LOBYTE(v404) = -72;
+    if ( vName.vt == 8 )
+    {
+      vName.vt = 0;
+      if ( vName.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(vName.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&vName);
+    }
+    for ( j = 0; ; ++j )
+    {
+      v319 = alloca(32);
+      v348 = 0;
+      v347 = nullptr;
+      v320 = _itow(j, &v349, 10);
+      v421._m_pStr = (wchar_t *)&v346;
+      _bstr_t::_bstr_t(&v346, v320);
+      LOBYTE(v404) = -72;
+      v321 = IWzProperty::Getitem(pSpeakInformations.m_pInterface, &vName, (Ztl_bstr_t)v346.m_Data);
+      LOBYTE(v404) = -66;
+      v322 = Ztl_variant_t::GetUnknown(v321, (bool)v347, v348);
+      pSubSpeakAction.m_pInterface = nullptr;
+      v6 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+             &pSubSpeakAction,
+             v322);
+      if ( v6 < 0 && v6 != -2147467262 )
+        goto LABEL_5;
+      LOBYTE(v404) = -64;
+      if ( vName.vt == 8 )
+      {
+        vName.vt = 0;
+        if ( vName.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(vName.decVal.Lo32 - 4));
+      }
+      else
+      {
+        VariantClear(&vName);
+      }
+      if ( !pSubSpeakAction.m_pInterface )
+        break;
+      v348 = -1;
+      v421._m_pStr = (wchar_t *)&v347;
+      v347 = pSubSpeakAction.m_pInterface;
+      v324 = (void (*)(void))pSubSpeakAction.m_pInterface->AddRef;
+      v346.m_Data = (_bstr_t::Data_t *)pSubSpeakAction.m_pInterface;
+      v324();
+      CMobTemplate::LoadSpeakInformation(
+        v7,
+        (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> >)v346.m_Data,
+        (int)v347);
+      LOBYTE(v404) = -72;
+      if ( pSubSpeakAction.m_pInterface )
+        ((void (__cdecl *)(IWzProperty *, int))pSubSpeakAction.m_pInterface->Release)(
+          pSubSpeakAction.m_pInterface,
+          v348);
+    }
+    LOBYTE(v404) = -72;
+    v347 = nullptr;
+    v346.m_Data = nullptr;
+    LOBYTE(v323) = 1;
+    v345.m_Data = v323;
+    v421._m_pStr = (wchar_t *)&v345;
+    _bstr_t::_bstr_t(&v345, L"con");
+    LOBYTE(v404) = -72;
+    v325 = IWzProperty::Getitem(pSpeakInformations.m_pInterface, &vName, (Ztl_bstr_t)v345.m_Data);
+    LOBYTE(v404) = -62;
+    v326 = Ztl_variant_t::GetUnknown(v325, (bool)v346.m_Data, (bool)v347);
+    pConditions.m_pInterface = nullptr;
+    v327 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+             &pConditions,
+             v326);
+    if ( v327 < 0 && v327 != -2147467262 )
+      _com_issue_error(v327);
+    LOBYTE(v404) = -60;
+    if ( vName.vt == 8 )
+    {
+      vName.vt = 0;
+      if ( vName.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(vName.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&vName);
+    }
+    if ( pConditions.m_pInterface )
+    {
+      v347 = pConditions.m_pInterface;
+      v328 = (void (*)(void))pConditions.m_pInterface->AddRef;
+      v421._m_pStr = (wchar_t *)&v347;
+      v346.m_Data = (_bstr_t::Data_t *)pConditions.m_pInterface;
+      v328();
+      CMobTemplate::LoadSpeakCondition(
+        v7,
+        (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> >)v346.m_Data);
+    }
+    for ( j = 0; j < 43; ++j )
+    {
+      v329 = *(&s_sMobAction.m_Data + j);
+      v421._m_pStr = (wchar_t *)&v346;
+      v346.m_Data = v329;
+      if ( v329 )
+        InterlockedIncrement((volatile LONG *)&v329->m_RefCount);
+      v421._m_pStr = (wchar_t *)&v345;
+      v345.m_Data = (_bstr_t::Data_t *)pLink.m_pInterface;
+      if ( pLink.m_pInterface )
+      {
+        v330 = (void (*)(void))pLink.m_pInterface->AddRef;
+        v344.m_Data = (_bstr_t::Data_t *)pLink.m_pInterface;
+        v330();
+      }
+      v421._m_pStr = (wchar_t *)&v343;
+      v343.m_pInterface = pAction.m_pInterface;
+      if ( pAction.m_pInterface )
+      {
+        v331 = (void (*)(void))pAction.m_pInterface->AddRef;
+        v342.m_Data = (_bstr_t::Data_t *)pAction.m_pInterface;
+        v331();
+      }
+      GetPropertyLinkData(
+        &pSpeakAction,
+        (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> >)v342.m_Data,
+        v343,
+        v344);
+      v333 = pSpeakAction.m_pInterface;
+      LOBYTE(v404) = -59;
+      if ( pSpeakAction.m_pInterface )
+      {
+        v344.m_Data = nullptr;
+        v343.m_pInterface = nullptr;
+        v342.m_Data = v332;
+        v421._m_pStr = (wchar_t *)&v342;
+        _bstr_t::_bstr_t(&v342, L"speak");
+        LOBYTE(v404) = -58;
+        if ( !pSpeakAction.m_pInterface )
+          goto LABEL_2;
+        LOBYTE(v404) = -59;
+        v334 = IWzProperty::Getitem(pSpeakAction.m_pInterface, &v410, (Ztl_bstr_t)v342.m_Data);
+        LOBYTE(v404) = -57;
+        v335 = Ztl_variant_t::GetUnknown(v334, (bool)v343.m_pInterface, (bool)v344.m_Data);
+        pSubSpeakAction.m_pInterface = nullptr;
+        v6 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+               &pSubSpeakAction,
+               v335);
+        if ( v6 < 0 && v6 != -2147467262 )
+          goto LABEL_5;
+        LOBYTE(v404) = -55;
+        if ( v410.vt == 8 )
+        {
+          v410.vt = 0;
+          if ( v410.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(v410.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&v410);
+        }
+        if ( pSubSpeakAction.m_pInterface )
+        {
+          v344.m_Data = (_bstr_t::Data_t *)j;
+          v343.m_pInterface = pSubSpeakAction.m_pInterface;
+          v336 = (void (*)(void))pSubSpeakAction.m_pInterface->AddRef;
+          v421._m_pStr = (wchar_t *)&v343;
+          v342.m_Data = (_bstr_t::Data_t *)pSubSpeakAction.m_pInterface;
+          v336();
+          CMobTemplate::LoadSpeakInformation(
+            v7,
+            (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> >)v342.m_Data,
+            (int)v343.m_pInterface);
+        }
+        LOBYTE(v404) = -59;
+        if ( pSubSpeakAction.m_pInterface )
+          ((void (__cdecl *)(IWzProperty *))pSubSpeakAction.m_pInterface->Release)(pSubSpeakAction.m_pInterface);
+        v333 = pSpeakAction.m_pInterface;
+      }
+      LOBYTE(v404) = -60;
+      if ( v333 )
+        ((void (__cdecl *)(IWzProperty *))v333->Release)(v333);
+    }
+    LOBYTE(v404) = -72;
+    if ( pConditions.m_pInterface )
+      ((void (__cdecl *)(IWzProperty *))pConditions.m_pInterface->Release)(pConditions.m_pInterface);
+  }
+  LOBYTE(v404) = -82;
+  if ( pSpeakInformations.m_pInterface )
+    ((void (__cdecl *)(IWzProperty *))pSpeakInformations.m_pInterface->Release)(pSpeakInformations.m_pInterface);
+  LOBYTE(v404) = -88;
+  if ( f )
+    (*(void (__cdecl **)(unsigned int))(*(_DWORD *)f + 8))(f);
+  LOBYTE(v404) = -102;
+  if ( pDamagedBySelectedMob.m_pInterface )
+    ((void (__cdecl *)(IWzProperty *))pDamagedBySelectedMob.m_pInterface->Release)(pDamagedBySelectedMob.m_pInterface);
+  LOBYTE(v404) = -114;
+  if ( pEnum.m_pInterface )
+    ((void (__cdecl *)(IEnumVARIANT *))pEnum.m_pInterface->Release)(pEnum.m_pInterface);
+  LOBYTE(v404) = -117;
+  mLoadedInfo.__vftable = (ZMap<ZXString<char>,int,ZXString<char> >_vtbl *)&ZMap<ZXString<char>,int,ZXString<char>>::`vftable';
+  ZMap<ZXString<char>,int,ZXString<char>>::RemoveAll(&mLoadedInfo);
+  LOBYTE(v404) = 35;
+  if ( pMobString.m_pInterface )
+    ((void (__cdecl *)(IWzProperty *))pMobString.m_pInterface->Release)(pMobString.m_pInterface);
+  LOBYTE(v404) = 34;
+  if ( v.vt == 8 )
+  {
+    v.vt = 0;
+    if ( v.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v.decVal.Lo32 - 4));
+    v337 = VariantClear;
+  }
+  else
+  {
+    v337 = VariantClear;
+    VariantClear(&v);
+  }
+  LOBYTE(v404) = 29;
+  if ( vRegen.vt == 8 )
+  {
+    vRegen.vt = 0;
+    if ( vRegen.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(vRegen.decVal.Lo32 - 4));
+  }
+  else
+  {
+    v337(&vRegen);
+  }
+  LOBYTE(v404) = 28;
+  if ( vFly.vt == 8 )
+  {
+    vFly.vt = 0;
+    if ( vFly.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(vFly.decVal.Lo32 - 4));
+  }
+  else
+  {
+    v337(&vFly);
+  }
+  LOBYTE(v404) = 27;
+  if ( vMove.vt == 8 )
+  {
+    vMove.vt = 0;
+    if ( vMove.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(vMove.decVal.Lo32 - 4));
+  }
+  else
+  {
+    v337(&vMove);
+  }
+  LOBYTE(v404) = 26;
+  if ( vJump.vt == 8 )
+  {
+    vJump.vt = 0;
+    if ( vJump.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(vJump.decVal.Lo32 - 4));
+  }
+  else
+  {
+    v337(&vJump);
+  }
+  LOBYTE(v404) = 9;
+  if ( vChase.vt == 8 )
+  {
+    vChase.vt = 0;
+    if ( vChase.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(vChase.decVal.Lo32 - 4));
+  }
+  else
+  {
+    v337(&vChase);
+  }
+  LOBYTE(v404) = 8;
+  if ( pLink.m_pInterface )
+    ((void (__cdecl *)(IWzProperty *))pLink.m_pInterface->Release)(pLink.m_pInterface);
+  LOBYTE(v404) = 6;
+  if ( vLink.vt == 8 )
+  {
+    vL

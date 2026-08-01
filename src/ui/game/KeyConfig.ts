@@ -90,6 +90,14 @@ export class KeyConfig extends GamePanel implements DragTarget {
   private readonly _btQuickSlot: Button | null;
   private readonly _allButtons: Button[] = [];
 
+  // OG: Notice dialog backgrounds — notice/0-2
+  private _noticeBgs: (Sprite | null)[] = [];
+  // OG: QuickSlot config sub-dialog
+  private _qsBg: Sprite | null = null;
+  private _qsBtOK: Button | null = null;
+  private _qsBtCancel: Button | null = null;
+  private _qsBtQuickSetting: Button | null = null;
+
   private _dragActive = false;
   private _dragIcon: FuncKeyMappedRecord = FuncKeyMappedNone;
   private _dragFromScancode = -1;
@@ -131,6 +139,28 @@ export class KeyConfig extends GamePanel implements DragTarget {
     this._panelW = this._bg?.width ?? 622;
     this._panelH = this._bg?.height ?? 374;
 
+    // OG: Notice dialog backgrounds — notice/0-2 (260x84 each)
+    this._noticeBgs = [];
+    const noticeProp = this._kc2?.Get('notice');
+    if (noticeProp instanceof WzProperty) {
+      for (let i = 0; i < 3; i++) {
+        const node = noticeProp.Get(String(i));
+        if (node instanceof WzCanvas) {
+          const s = this._loader.Load(node)?.ToPixi() ?? null;
+          this._noticeBgs.push(s);
+        } else {
+          this._noticeBgs.push(null);
+        }
+      }
+    }
+
+    // OG: QuickSlot config sub-dialog — quickslotConfig/backgrnd (230x210)
+    const qsProp = this._kc2?.Get('quickslotConfig') as WzProperty | null;
+    this._qsBg = this._loadCanvas(qsProp, 'backgrnd');
+    this._qsBtOK = this._makeQsBtn(qsProp, 'BtOK');
+    this._qsBtCancel = this._makeQsBtn(qsProp, 'BtCancel');
+    this._qsBtQuickSetting = this._makeQsBtn(qsProp, 'BtQuickSetting');
+
     this._btClose = this._makeBtn('BtClose', () => this._closeCancel());
     this._btHelp = this._makeBtn('BtHelp', () => { });
     this._btOk = this._makeBtn('BtOK', () => this._closeOk());
@@ -157,6 +187,13 @@ export class KeyConfig extends GamePanel implements DragTarget {
     const b = Button.fromWz(this._loader, pr);
     b.onClick = onClick;
     this._allButtons.push(b);
+    return b;
+  }
+
+  private _makeQsBtn(qsProp: WzProperty | undefined | null, name: string): Button | null {
+    const pr = qsProp?.Get(name) as WzProperty | null;
+    if (!pr) return null;
+    const b = Button.fromWz(this._loader, pr);
     return b;
   }
 
@@ -192,9 +229,10 @@ export class KeyConfig extends GamePanel implements DragTarget {
   }
 
   private _rightMod(sc: number): string | null {
-    if (sc === ScLCtrl) return 'Control';
-    if (sc === ScLShift) return 'Shift';
-    if (sc === ScLAlt) return 'Alt';
+    // OG: right modifier keys map to left modifier for binding lookup
+    if (sc === ScLCtrl || sc === ScRCtrl) return 'Control';
+    if (sc === ScLShift || sc === ScRShift) return 'Shift';
+    if (sc === ScLAlt || sc === ScRAlt) return 'Alt';
     return null;
   }
 
@@ -420,10 +458,11 @@ export class KeyConfig extends GamePanel implements DragTarget {
     for (let slot = 0; slot < PaletteCount; slot++) {
       const fk = paletteBinding(slot);
       if (fk.type === FuncKeyType.Menu && fk.id === 22) continue;
-      if (this._isPlaced(fk)) continue;
       if (this._dragActive && fk.type === this._dragIcon.type && fk.id === this._dragIcon.id) continue;
       const cell = paletteCell(slot);
-      this._drawIconAt(cell.x, cell.y, fk);
+      // OG: placed items shown dimmed, unplaced items shown fully
+      const isPlaced = this._isPlaced(fk);
+      this._drawIconAt(cell.x, cell.y, fk, isPlaced ? 0.4 : 1.0);
     }
   }
 
@@ -434,13 +473,14 @@ export class KeyConfig extends GamePanel implements DragTarget {
     return false;
   }
 
-  private _drawIconAt(cellX: number, cellY: number, fk: FuncKeyMappedRecord): void {
+  private _drawIconAt(cellX: number, cellY: number, fk: FuncKeyMappedRecord, alpha = 1.0): void {
     const icon = this._iconFor(fk);
     const anchorX = cellX;
     const anchorY = cellY + 32;
     if (icon) {
       const s = icon.ToPixi();
       s.position.set(anchorX, anchorY);
+      s.alpha = alpha;
       this._content.addChild(s);
     } else {
       this._drawPlaceholder(cellX, cellY, fk);
@@ -702,7 +742,7 @@ export class KeyConfig extends GamePanel implements DragTarget {
     const map: Record<string, number> = {
       'Digit1': 2, 'Digit2': 3, 'Digit3': 4, 'Digit4': 5, 'Digit5': 6,
       'Digit6': 7, 'Digit7': 8, 'Digit8': 9, 'Digit9': 10, 'Digit0': 11,
-      'Minus': 12, 'Equal': 13, 'Backspace': 14,
+      'Minus': 12, 'Equal': 13, 'Backspace': 14, 'Tab': 15,
       'KeyQ': 16, 'KeyW': 17, 'KeyE': 18, 'KeyR': 19, 'KeyT': 20,
       'KeyY': 21, 'KeyU': 22, 'KeyI': 23, 'KeyO': 24, 'KeyP': 25,
       'BracketLeft': 26, 'BracketRight': 27, 'Enter': 28,
@@ -719,7 +759,10 @@ export class KeyConfig extends GamePanel implements DragTarget {
       'Home': 71, 'PageUp': 73, 'End': 79, 'PageDown': 81,
       'Insert': 82, 'Delete': 83,
       'F11': 87, 'F12': 88,
-      'ControlLeft': 29,
+      'ControlLeft': 29, 'ControlRight': 89,
+      'AltRight': 90,
+      // Arrow keys — hardcoded in isActionDown but good to map
+      'ArrowLeft': -1, 'ArrowRight': -1, 'ArrowUp': -1, 'ArrowDown': -1,
     };
     return map[key] ?? -1;
   }
@@ -728,7 +771,7 @@ export class KeyConfig extends GamePanel implements DragTarget {
     const map: Record<number, string> = {
       2: 'Digit1', 3: 'Digit2', 4: 'Digit3', 5: 'Digit4', 6: 'Digit5',
       7: 'Digit6', 8: 'Digit7', 9: 'Digit8', 10: 'Digit9', 11: 'Digit0',
-      12: 'Minus', 13: 'Equal', 14: 'Backspace',
+      12: 'Minus', 13: 'Equal', 14: 'Backspace', 15: 'Tab',
       16: 'KeyQ', 17: 'KeyW', 18: 'KeyE', 19: 'KeyR', 20: 'KeyT',
       21: 'KeyY', 22: 'KeyU', 23: 'KeyI', 24: 'KeyO', 25: 'KeyP',
       26: 'BracketLeft', 27: 'BracketRight', 28: 'Enter',
@@ -746,6 +789,7 @@ export class KeyConfig extends GamePanel implements DragTarget {
       71: 'Home', 73: 'PageUp', 79: 'End', 81: 'PageDown',
       82: 'Insert', 83: 'Delete',
       87: 'F11', 88: 'F12',
+      89: 'ControlRight', 90: 'AltRight',
     };
     return map[sc] ?? null;
   }

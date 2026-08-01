@@ -68,6 +68,8 @@ export class Maker extends GamePanel {
     const title = new Text({ text: 'Maker', style: _titleStyle });
     title.x = 8; title.y = 5;
     this.container.addChild(title);
+    // OG: CUIWnd close button
+    this.createCloseButton(null, null, 1, 300);
   }
 
   Open(recipes: { id: number; name: string }[]): void {

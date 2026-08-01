@@ -1,0 +1,145 @@
+// CMobTemplate::GetMobTemplate
+// Address: 0x6611f0
+
+CMobTemplate *__cdecl CMobTemplate::GetMobTemplate(const wchar_t *dwTemplateID)
+{
+  unsigned int v1; // ebp
+  CMobTemplate *p; // esi
+  StringPool *Instance; // eax
+  wchar_t *m_pStr; // eax
+  void (__stdcall *v5)(VARIANTARG *); // esi
+  HRESULT v6; // eax
+  HRESULT v7; // eax
+  _bstr_t::Data_t *v8; // ecx
+  Ztl_variant_t *ObjectA; // eax
+  IUnknown *Unknown; // eax
+  HRESULT v11; // eax
+  HRESULT (__stdcall *v12)(VARIANTARG *); // esi
+  IWzProperty *m_pInterface; // esi
+  _bstr_t v15; // [esp-14h] [ebp-78h] BYREF
+  const Ztl_variant_t *p_pvargDest; // [esp-10h] [ebp-74h]
+  const Ztl_variant_t *p_pvarg; // [esp-Ch] [ebp-70h]
+  BOOL v18; // [esp-8h] [ebp-6Ch]
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > v19; // [esp-4h] [ebp-68h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pProp; // [esp+14h] [ebp-50h] BYREF
+  CMSException v21; // [esp+18h] [ebp-4Ch] BYREF
+  _bstr_t *pExceptionObject; // [esp+1Ch] [ebp-48h] BYREF
+  ZRef<CMobTemplate> pTemplate; // [esp+20h] [ebp-44h] BYREF
+  VARIANTARG pvargDest; // [esp+28h] [ebp-3Ch] BYREF
+  VARIANTARG pvarg; // [esp+38h] [ebp-2Ch] BYREF
+  Ztl_variant_t result; // [esp+48h] [ebp-1Ch] BYREF
+  int v27; // [esp+60h] [ebp-4h]
+
+  pTemplate.p = nullptr; /*0x661219*/
+  v1 = (unsigned int)dwTemplateID; /*0x66121d*/
+  v27 = 0; /*0x661230*/
+  ZMap<long,ZRef<CMobTemplate>,long>::GetAt(&CMobTemplate::ms_mMobTemplate, (const int *)&dwTemplateID, &pTemplate); /*0x661238*/
+  p = pTemplate.p; /*0x66123d*/
+  if ( !pTemplate.p ) /*0x661243*/
+  {
+    dwTemplateID = nullptr; /*0x661249*/
+    LOBYTE(v27) = 1; /*0x661257*/
+    Instance = StringPool::GetInstance(); /*0x66125c*/
+    m_pStr = StringPool::GetStringW(Instance, (ZXString<unsigned short> *)&pProp, 0x3CEu)->_m_pStr; /*0x661268*/
+    LOBYTE(v27) = 2; /*0x661271*/
+    ZXString<unsigned short>::Format((ZXString<unsigned short> *)&dwTemplateID, m_pStr, v1); /*0x661276*/
+    LOBYTE(v27) = 1; /*0x661282*/
+    if ( pProp.m_pInterface ) /*0x661289*/
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&pProp.m_pInterface[-3]); /*0x66128f*/
+    v5 = VariantInit; /*0x661297*/
+    VariantInit(&pvarg); /*0x6612a2*/
+    v6 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing); /*0x6612ae*/
+    if ( v6 < 0 ) /*0x6612b8*/
+      _com_issue_error(v6); /*0x6612bb*/
+    LOBYTE(v27) = 3; /*0x6612c5*/
+    v5(&pvargDest); /*0x6612ca*/
+    v7 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing); /*0x6612d6*/
+    if ( v7 < 0 ) /*0x6612e0*/
+      _com_issue_error(v7); /*0x6612e3*/
+    v19.m_pInterface = nullptr; /*0x6612e8*/
+    v18 = 0; /*0x6612e9*/
+    p_pvarg = (const Ztl_variant_t *)&pvarg; /*0x6612ee*/
+    p_pvargDest = (const Ztl_variant_t *)&pvargDest; /*0x6612f7*/
+    v15.m_Data = v8; /*0x6612f8*/
+    pExceptionObject = &v15; /*0x6612f9*/
+    LOBYTE(v27) = 4; /*0x661302*/
+    _bstr_t::_bstr_t(&v15, dwTemplateID); /*0x661306*/
+    LOBYTE(v27) = 5; /*0x66130b*/
+    if ( !g_rm.m_pInterface ) /*0x661316*/
+      _com_issue_error(-2147467261); /*0x66131d*/
+    LOBYTE(v27) = 4; /*0x661326*/
+    ObjectA = IWzResMan::GetObjectA(g_rm.m_pInterface, &result, (Ztl_bstr_t)v15.m_Data, p_pvargDest, p_pvarg); /*0x661331*/
+    LOBYTE(v27) = 6; /*0x661338*/
+    Unknown = Ztl_variant_t::GetUnknown(ObjectA, v18, (bool)v19.m_pInterface); /*0x66133d*/
+    pProp.m_pInterface = nullptr; /*0x661347*/
+    v11 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>( /*0x66134b*/
+            &pProp,
+            Unknown);
+    if ( v11 < 0 && v11 != -2147467262 ) /*0x661359*/
+      _com_issue_error(v11); /*0x66135c*/
+    v12 = VariantClear; /*0x661361*/
+    LOBYTE(v27) = 8; /*0x66136c*/
+    if ( result.vt == 8 ) /*0x661375*/
+    {
+      result.vt = 0; /*0x66137d*/
+      if ( result.decVal.Lo32 ) /*0x661384*/
+        ZAPI.CoTaskMemFree((void *)(result.decVal.Lo32 - 4)); /*0x66138a*/
+    }
+    else
+    {
+      VariantClear(&result); /*0x661397*/
+    }
+    LOBYTE(v27) = 9; /*0x661399*/
+    if ( pvargDest.vt == 8 ) /*0x6613a3*/
+    {
+      pvargDest.vt = 0; /*0x6613a7*/
+      if ( pvargDest.decVal.Lo32 ) /*0x6613b2*/
+        ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4)); /*0x6613b8*/
+    }
+    else
+    {
+      v12(&pvargDest); /*0x6613c5*/
+    }
+    LOBYTE(v27) = 10; /*0x6613c7*/
+    if ( pvarg.vt == 8 ) /*0x6613d1*/
+    {
+      pvarg.vt = 0; /*0x6613d9*/
+      if ( pvarg.decVal.Lo32 ) /*0x6613e0*/
+        ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x6613e6*/
+    }
+    else
+    {
+      v12(&pvarg); /*0x6613f3*/
+    }
+    m_pInterface = pProp.m_pInterface; /*0x6613f5*/
+    pExceptionObject = (_bstr_t *)&v19; /*0x6613fc*/
+    v19.m_pInterface = pProp.m_pInterface; /*0x661400*/
+    if ( pProp.m_pInterface ) /*0x661404*/
+      pProp.m_pInterface->AddRef(pProp.m_pInterface); /*0x66140c*/
+    if ( !CMobTemplate::RegisterMob(v1, v19) ) /*0x66140f*/
+    {
+      CMSException::CMSException(&v21, 570425350); /*0x661424*/
+      pExceptionObject = (_bstr_t *)v21.m_hr; /*0x661437*/
+      _CxxThrowException(&pExceptionObject, &_TI3_AVCTerminateException__); /*0x66143b*/
+    }
+    pExceptionObject = (_bstr_t *)v1; /*0x66144f*/
+    ZMap<long,ZRef<CMobTemplate>,long>::GetAt( /*0x661453*/
+      &CMobTemplate::ms_mMobTemplate,
+      (const int *)&pExceptionObject,
+      &pTemplate);
+    LOBYTE(v27) = 1; /*0x661458*/
+    if ( m_pInterface ) /*0x66145f*/
+      m_pInterface->Release(m_pInterface); /*0x661467*/
+    LOBYTE(v27) = 0; /*0x66146d*/
+    if ( dwTemplateID ) /*0x661474*/
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)dwTemplateID - 1); /*0x66147a*/
+    p = pTemplate.p; /*0x661482*/
+  }
+  v27 = -1; /*0x661486*/
+  if ( p && !InterlockedDecrement(&p->_m_nRef) ) /*0x661496*/
+  {
+    InterlockedIncrement(&p->_m_nRef); /*0x6614a1*/
+    ((void (__thiscall *)(CMobTemplate *, int))p->dtr_ZRefCounted)(p, 1); /*0x6614af*/
+  }
+  return p; /*0x6614b3*/
+}

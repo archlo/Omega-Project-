@@ -1,0 +1,48 @@
+// cuiuserlist::ctor
+
+CUIUserList *__thiscall CUIUserList::CUIUserList(CUIUserList *this, int nDefaultTab)
+{
+  CUIWnd::CUIWnd(this, 7, 5, 244, 7, 1, 0, 0); /*0x8d0baa*/
+  if ( this == (CUIUserList *)-2824 ) /*0x8d0bbb*/
+    TSingleton<CUIUserList>::ms_pInstance = nullptr; /*0x8d0bcb*/
+  else
+    TSingleton<CUIUserList>::ms_pInstance = this; /*0x8d0bc3*/
+  this->CUIWnd::CWnd::IGObj::__vftable = (CUIUserList_vtbl *)&CUIUserList::`vftable'{for `IGObj'}; /*0x8d0bd1*/
+  this->CUIWnd::CWnd::IUIMsgHandler::__vftable = (IUIMsgHandler_vtbl *)&CUIUserList::`vftable'{for `IUIMsgHandler'}; /*0x8d0bd7*/
+  this->CUIWnd::CWnd::ZRefCounted::__vftable = (ZRefCounted_vtbl *)&CUIUserList::`vftable'{for `ZRefCounted'}; /*0x8d0bde*/
+  this->m_sLocationInfo._m_pStr = nullptr; /*0x8d0be5*/
+  this->m_pTab.p = nullptr; /*0x8d0be7*/
+  this->m_pSB.p = nullptr; /*0x8d0bed*/
+  `eh vector constructor iterator'( /*0x8d0c0d*/
+    this->m_pBtGuild_Dynamic,
+    8u,
+    6,
+    (void (__thiscall *)(void *))ZRef<CCtrlButton>::ZRef<CCtrlButton>,
+    (void (__thiscall *)(void *))ZRef<CCtrlButton>::~ZRef<CCtrlButton>);
+  `eh vector constructor iterator'( /*0x8d0c2c*/
+    this->m_pBtAlliance_Dynamic,
+    8u,
+    15,
+    (void (__thiscall *)(void *))ZRef<CCtrlButton>::ZRef<CCtrlButton>,
+    (void (__thiscall *)(void *))ZRef<CCtrlButton>::~ZRef<CCtrlButton>);
+  this->m_dwCurCID = 0; /*0x8d0c31*/
+  this->m_sCurGroup._m_pStr = nullptr; /*0x8d0c37*/
+  this->m_pFontWhite.m_pInterface = nullptr; /*0x8d0c3d*/
+  this->m_pFontBlack.m_pInterface = nullptr; /*0x8d0c43*/
+  this->m_pFontGray.m_pInterface = nullptr; /*0x8d0c49*/
+  this->m_pFontGray_B5.m_pInterface = nullptr; /*0x8d0c4f*/
+  this->m_pFontGray_77.m_pInterface = nullptr; /*0x8d0c55*/
+  this->m_pFontGroupName.m_pInterface = nullptr; /*0x8d0c5b*/
+  this->m_pFontBlocked.m_pInterface = nullptr; /*0x8d0c61*/
+  this->m_pFontOnline.m_pInterface = nullptr; /*0x8d0c67*/
+  this->m_pFontOffline.m_pInterface = nullptr; /*0x8d0c6d*/
+  this->m_pFontLocation.m_pInterface = nullptr; /*0x8d0c73*/
+  this->m_lm.m_pWnd = nullptr; /*0x8d0c79*/
+  this->m_lm.m_nOffsetX = 0; /*0x8d0c7f*/
+  this->m_lm.m_nOffsetY = 0; /*0x8d0c85*/
+  this->m_lm.m_aLayer.a = nullptr; /*0x8d0c8b*/
+  this->m_lm.m_aButton.a = nullptr; /*0x8d0c91*/
+  this->m_nCurTab = nDefaultTab; /*0x8d0ca2*/
+  CUIWnd::CreateUIWndPosSaved(this, 264, 382, 10); /*0x8d0cb4*/
+  return this; /*0x8d0cbb*/
+}

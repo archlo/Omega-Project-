@@ -1,0 +1,91 @@
+// CUtilDlgEx::OnCreate
+// Address: 0x98edd0
+
+void __thiscall CUtilDlgEx::OnCreate(CUtilDlgEx *this, void *pData)
+{
+  int v3; // edi
+  CCtrlScrollBar *v4; // eax
+  CCtrlScrollBar *v5; // eax
+  CCtrlScrollBar_vtbl *v6; // ebx
+  int BasicCTWidth; // eax
+  CCtrlScrollBar *v8; // edx
+  int v9; // [esp+0h] [ebp-2Ch]
+  int m_scrHeight; // [esp+4h] [ebp-28h]
+
+  CUtilDlgEx::SetBackground(this); /*0x98edf6*/
+  switch ( this->m_dlgType ) /*0x98ee06*/
+  {
+    case 0: /*0x98ee06*/
+      CUtilDlgEx::OnCreate_TEXT(this); /*0x98ee0f*/
+      break; /*0x98ee14*/
+    case 1: /*0x98ee06*/
+      CUtilDlgEx::OnCreate_YESNO(this); /*0x98ee18*/
+      break; /*0x98ee1d*/
+    case 2: /*0x98ee06*/
+    case 3: /*0x98ee06*/
+      if ( this->m_bNoNPC ) /*0x98ee1f*/
+        CUtilDlgEx::OnCreate_INPUT1(this); /*0x98ee2a*/
+      else
+        CUtilDlgEx::OnCreate_INPUT(this); /*0x98ee31*/
+      break; /*0x98ee2f*/
+    case 4: /*0x98ee06*/
+      CUtilDlgEx::OnCreate_LIST(this); /*0x98ee43*/
+      break; /*0x98ee48*/
+    case 5: /*0x98ee06*/
+      CUtilDlgEx::OnCreate_AVATAR(this); /*0x98ee4c*/
+      break; /*0x98ee51*/
+    case 6: /*0x98ee06*/
+      CUtilDlgEx::OnCreate_PET(this); /*0x98ee55*/
+      break; /*0x98ee5a*/
+    case 7: /*0x98ee06*/
+      CUtilDlgEx::OnCreate_COMBOBOX_EDITABLE(this); /*0x98ee5e*/
+      break; /*0x98ee63*/
+    case 8: /*0x98ee06*/
+      CUtilDlgEx::OnCreate_MLINPUT(this); /*0x98ee3a*/
+      break; /*0x98ee3f*/
+    case 9: /*0x98ee06*/
+      CUtilDlgEx::OnCreate_IMAGE(this); /*0x98ee67*/
+      break; /*0x98ee67*/
+    default:
+      break;
+  }
+  if ( this->m_bScrollBar ) /*0x98ee6c*/
+  {
+    v3 = (this->m_ctHeight - this->m_scrHeight) / 8; /*0x98ee94*/
+    v4 = (CCtrlScrollBar *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0x74u); /*0x98ee97*/
+    if ( v4 ) /*0x98eeaa*/
+      v5 = CCtrlScrollBar::CCtrlScrollBar(v4); /*0x98eeae*/
+    else
+      v5 = nullptr; /*0x98eeb5*/
+    ZRef<CCtrlScrollBar>::operator=(&this->m_pScrollBar, v5); /*0x98eec6*/
+    v6 = this->m_pScrollBar.p->__vftable; /*0x98eedd*/
+    m_scrHeight = this->m_scrHeight; /*0x98eee1*/
+    v9 = this->m_ctTop + 5; /*0x98eee5*/
+    BasicCTWidth = CUtilDlgEx::GetBasicCTWidth(this); /*0x98eee8*/
+    v6->CreateCtrl_2(v8, this, 1001u, 1, 8, BasicCTWidth + this->m_ctLeft - 2, v9, m_scrHeight, nullptr); /*0x98ef07*/
+    CCtrlScrollBar::SetScrollRange(this->m_pScrollBar.p, v3 + (v3 < 1) + 1); /*0x98ef1b*/
+    this->m_pScrollBar.p->m_nWheelRange = CUtilDlgEx::GetBasicCTWidth(this); /*0x98ef2d*/
+  }
+  if ( !this->m_bNoNPC ) /*0x98ef30*/
+    CUtilDlgEx::SetNPC(this); /*0x98ef3b*/
+}
+
+// References:
+//   ?SetBackground@CUtilDlgEx@@IAEXXZ @ 0x97f180
+//   ?OnCreate_TEXT@CUtilDlgEx@@IAEXXZ @ 0x97ddc0
+//   ?OnCreate_YESNO@CUtilDlgEx@@IAEXXZ @ 0x97e1a0
+//   ?OnCreate_INPUT1@CUtilDlgEx@@IAEXXZ @ 0x9813c0
+//   ?OnCreate_INPUT@CUtilDlgEx@@IAEXXZ @ 0x9839a0
+//   ?OnCreate_LIST@CUtilDlgEx@@IAEXXZ @ 0x9816f0
+//   ?OnCreate_AVATAR@CUtilDlgEx@@IAEXXZ @ 0x9846c0
+//   ?OnCreate_PET@CUtilDlgEx@@IAEXXZ @ 0x981ac0
+//   ?OnCreate_COMBOBOX_EDITABLE@CUtilDlgEx@@IAEXXZ @ 0x984380
+//   ?OnCreate_MLINPUT@CUtilDlgEx@@IAEXXZ @ 0x983d70
+//   ?OnCreate_IMAGE@CUtilDlgEx@@IAEXXZ @ 0x984f70
+//   ?Alloc@?$ZAllocEx@VZAllocAnonSelector@@@@QAEPAXI@Z @ 0x402040
+//   ?_s_alloc@?$ZAllocEx@VZAllocAnonSelector@@@@0V1@A @ 0xc6e67c
+//   ??0CCtrlScrollBar@@QAE@XZ @ 0x4e9fc0
+//   ??4?$ZRef@VCCtrlScrollBar@@@@QAEAAV0@PAVCCtrlScrollBar@@@Z @ 0x42c470
+//   ?GetBasicCTWidth@CUtilDlgEx@@IAEJXZ @ 0x97add0
+//   ?SetScrollRange@CCtrlScrollBar@@QAEXJ@Z @ 0x4e9b70
+//   ?SetNPC@CUtilDlgEx@@IAEXXZ @ 0x98c9b0

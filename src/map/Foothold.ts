@@ -12,8 +12,39 @@ export class Foothold {
   CantThrough = false;
   ForbidFallDown = false;
   Force = 0;
+  Drag = 0;
   ZMass = 0;
   State = 1;
+
+  // OG CStaticFoothold fields — computed from endpoints
+  // m_uvx, m_uvy: unit vector direction (used for edge transition checks)
+  // m_len: foothold length (distance between endpoints)
+  private _uvx = 0;
+  private _uvy = 0;
+  private _len = 0;
+
+  /** Initialize computed fields after endpoints are set */
+  InitVectors(): void {
+    const dx = this.X2 - this.X1;
+    const dy = this.Y2 - this.Y1;
+    this._len = Math.sqrt(dx * dx + dy * dy);
+    if (this._len > 0) {
+      this._uvx = dx / this._len;
+      this._uvy = dy / this._len;
+    } else {
+      this._uvx = 0;
+      this._uvy = 0;
+    }
+  }
+
+  /** OG: m_uvx — unit vector X component */
+  get Uvx(): number { return this._uvx; }
+
+  /** OG: m_uvy — unit vector Y component */
+  get Uvy(): number { return this._uvy; }
+
+  /** OG: m_len — foothold length */
+  get Length(): number { return this._len; }
 
   get Slope(): number {
     return this.X1 === this.X2 ? 0 : (this.Y2 - this.Y1) / (this.X2 - this.X1);
@@ -55,9 +86,11 @@ export class Foothold {
     return ex * ex + ey * ey;
   }
 
-  /** OG: CStaticFoothold::IsVertical — checks if foothold is vertical (X1 === X2) */
+  /** OG: CStaticFoothold::IsVertical (0xA12AF0) — returns m_uvx <= 0.0, i.e. the
+   *  foothold does not point right (vertical walls have m_uvx = 0, left-pointing
+   *  footholds have m_uvx < 0). Used by the OG space queries as the walkable test. */
   IsVertical(): boolean {
-    return this.X1 === this.X2;
+    return this.X2 - this.X1 <= 0;
   }
 
   /** OG: CStaticFoothold::GetForwardLink — follows foothold chain in a direction
@@ -99,4 +132,42 @@ export class Foothold {
     const dy = this.Y2 - this.Y1;
     return Math.sqrt(dx * dx + dy * dy);
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// OG helper functions — from decompiled.c
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** OG cross product helper */
+function cross(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number): number {
+  return (x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1);
+}
+
+/** OG is_blocked_area (0x990770) — true when point p lies on the blocked side of the
+ *  corner formed by two connected footholds fh1 → fh2. Same cross-product test as the
+ *  IDB: cross12 = cross(fh1, fh2); cross1p = cross(fh1, p); cross2p = cross(fh2, p);
+ *  returns cross1p>0 && cross2p>0 when cross12 <= 0, else cross1p>0 || cross2p>0. */
+export function isBlockedArea(fh1: Foothold, fh2: Foothold, x: number, y: number): boolean {
+  const cross12 = (fh1.X2 - fh1.X1) * (fh2.Y2 - fh2.Y1) - (fh2.X2 - fh2.X1) * (fh1.Y2 - fh1.Y1);
+  const cross1p = (y - fh1.Y1) * (fh1.X2 - fh1.X1) - (x - fh1.X1) * (fh1.Y2 - fh1.Y1);
+  const cross2p = (y - fh2.Y1) * (fh2.X2 - fh2.X1) - (x - fh2.X1) * (fh2.Y2 - fh2.Y1);
+  if (cross12 <= 0) return cross1p > 0 && cross2p > 0;
+  return cross1p > 0 || cross2p > 0;
+}
+
+/** Line segment intersection check for collision detection */
+export function segmentsIntersect(
+  x1: number, y1: number, x2: number, y2: number,
+  x3: number, y3: number, x4: number, y4: number,
+): boolean {
+  const d1 = cross(x3, y3, x4, y4, x1, y1);
+  const d2 = cross(x3, y3, x4, y4, x2, y2);
+  const d3 = cross(x1, y1, x2, y2, x3, y3);
+  const d4 = cross(x1, y1, x2, y2, x4, y4);
+
+  if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) &&
+      ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) {
+    return true;
+  }
+  return false;
 }

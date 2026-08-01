@@ -1,0 +1,9 @@
+// CSkillInfo::`vector deleting destructor'(uint)
+
+CSkillInfo *__thiscall CSkillInfo::`vector deleting destructor'(CSkillInfo *this, char a2)
+{
+  CSkillInfo::~CSkillInfo(this);
+  if ( (a2 & 1) != 0 )
+    ZAllocEx<ZAllocAnonSelector>::Free(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, this);
+  return this;
+}

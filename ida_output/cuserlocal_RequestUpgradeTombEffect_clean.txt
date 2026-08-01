@@ -1,0 +1,21 @@
+// cuserlocal::RequestUpgradeTombEffect
+
+void __thiscall CUserLocal::RequestUpgradeTombEffect(CUserLocal *this)
+{
+  int x; // edi
+  int y; // ebx
+  COutPacket oPacket; // [esp+10h] [ebp-1Ch] BYREF
+  int v5; // [esp+28h] [ebp-4h]
+
+  x = this->m_ptRevive.x; /*0x908348*/
+  y = this->m_ptRevive.y; /*0x90834e*/
+  COutPacket::COutPacket(&oPacket, 58); /*0x90835a*/
+  v5 = 0; /*0x908368*/
+  COutPacket::Encode4(&oPacket, (unsigned int)&loc_54136E + 2); /*0x908370*/
+  COutPacket::Encode4(&oPacket, x); /*0x90837a*/
+  COutPacket::Encode4(&oPacket, y); /*0x908384*/
+  CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket); /*0x908394*/
+  CUser::ShowUpgradeTombEffect(this, (int)&loc_54136E + 2, x, y); /*0x9083a2*/
+  v5 = -1; /*0x9083ab*/
+  ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff); /*0x9083b3*/
+}

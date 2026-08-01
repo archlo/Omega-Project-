@@ -1,0 +1,166 @@
+int __thiscall CSkillInfo::LoadReqSkill(
+        CSkillInfo *this,
+        ZList<GW_SkillRecord> *l,
+        _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > p)
+{
+  IUnknown *m_pInterface; // eax
+  void (*AddRef)(void); // edx
+  int v5; // eax
+  Ztl_bstr_t *v6; // ebp
+  GW_SkillRecord *v7; // eax
+  _bstr_t::Data_t *m_Data; // esi
+  GW_SkillRecord *v9; // edi
+  wchar_t *m_wstr; // eax
+  int v11; // eax
+  Ztl_variant_t *v12; // eax
+  int int32; // eax
+  bool v14; // zf
+  void (__cdecl *m_RefCount)(Ztl_bstr_t *); // edx
+  Ztl_bstr_t v17; // [esp-20h] [ebp-74h] BYREF
+  int v18; // [esp-1Ch] [ebp-70h]
+  int v19; // [esp-18h] [ebp-6Ch]
+  int v20; // [esp-14h] [ebp-68h]
+  int v21; // [esp-10h] [ebp-64h]
+  int v22; // [esp-Ch] [ebp-60h]
+  _com_ptr_t<_com_IIID<IUnknown,&_GUID_00000000_0000_0000_c000_000000000046> > v23; // [esp-8h] [ebp-5Ch]
+  IUnknown *v24; // [esp-4h] [ebp-58h] BYREF
+  Ztl_bstr_t v25; // [esp+0h] [ebp-54h] BYREF
+  Ztl_bstr_t *v26; // [esp+Ch] [ebp-48h]
+  __int16 v27; // [esp+10h] [ebp-44h] BYREF
+  _com_ptr_t<_com_IIID<IEnumVARIANT,&_GUID_00020404_0000_0000_c000_000000000046> > pEnum; // [esp+14h] [ebp-40h]
+  Ztl_bstr_t sName; // [esp+18h] [ebp-3Ch] BYREF
+  _com_ptr_t<_com_IIID<IUnknown,&_GUID_00000000_0000_0000_c000_000000000046> > result; // [esp+1Ch] [ebp-38h] BYREF
+  unsigned int f[2]; // [esp+20h] [ebp-34h] BYREF
+  Ztl_variant_t vName; // [esp+28h] [ebp-2Ch]
+  char v33; // [esp+38h] [ebp-1Ch]
+  ZList<GW_SkillRecord> *pExceptionObject; // [esp+40h] [ebp-14h] BYREF
+  IWzProperty *v35; // [esp+44h] [ebp-10h]
+  char v36; // [esp+48h] [ebp-Ch]
+  char v37; // [esp+4Ch] [ebp-8h]
+  int v38; // [esp+50h] [ebp-4h]
+
+  v38 = 0; /*0x6f7ad2*/
+  if ( p.m_pInterface ) /*0x6f7ad8*/
+  {
+    m_pInterface = IWzProperty::Get_NewEnum(p.m_pInterface, &result)->m_pInterface; /*0x6f7b0f*/
+    LOBYTE(v38) = 1; /*0x6f7b14*/
+    pEnum.m_pInterface = nullptr; /*0x6f7b19*/
+    f[0] = (unsigned int)&v24; /*0x6f7b1d*/
+    v24 = m_pInterface; /*0x6f7b21*/
+    if ( m_pInterface ) /*0x6f7b25*/
+    {
+      AddRef = (void (*)(void))m_pInterface->AddRef; /*0x6f7b29*/
+      v23.m_pInterface = m_pInterface; /*0x6f7b2c*/
+      AddRef(); /*0x6f7b2d*/
+    }
+    v5 = _com_ptr_t<_com_IIID<IEnumVARIANT,&__s_GUID const _GUID_00020404_0000_0000_c000_000000000046>>::_QueryInterface<_com_ptr_t<_com_IIID<IUnknown,&__s_GUID const _GUID_00000000_0000_0000_c000_000000000046>>>( /*0x6f7b33*/
+           (_com_ptr_t<_com_IIID<IEnumVARIANT,&_GUID_00020404_0000_0000_c000_000000000046> > *)&v27,
+           v23);
+    if ( v5 < 0 && v5 != -2147467262 ) /*0x6f7b41*/
+LABEL_9:
+      _com_issue_error(v5); /*0x6f7b43*/
+    v37 = 3; /*0x6f7b4d*/
+    if ( sName.m_Data ) /*0x6f7b54*/
+      (*((void (__cdecl **)(_bstr_t::Data_t *, IUnknown *))sName.m_Data->m_wstr + 2))(sName.m_Data, v24); /*0x6f7b5c*/
+    VariantInit((VARIANTARG *)f); /*0x6f7b63*/
+    v6 = v26; /*0x6f7b69*/
+    v36 = 4; /*0x6f7b6d*/
+    sName.m_Data = nullptr; /*0x6f7b72*/
+    while ( 1 ) /*0x6f7b76*/
+    {
+      if ( !v6 ) /*0x6f7b78*/
+LABEL_4:
+        _com_issue_error(-2147467261); /*0x6f7afb*/
+      if ( ((int (__cdecl *)(Ztl_bstr_t *, int, unsigned int *, Ztl_bstr_t *))v6->m_Data[1].m_wstr)(v6, 1, f, &sName) ) /*0x6f7b8d*/
+        break; /*0x6f7b8d*/
+      DetachBSTR(&v25, (tagVARIANT *)&v27); /*0x6f7ba1*/
+      v33 = 5; /*0x6f7bad*/
+      v7 = ZList<GW_SkillRecord>::AddTail(pExceptionObject); /*0x6f7bb2*/
+      m_Data = v25.m_Data; /*0x6f7bb7*/
+      v9 = v7; /*0x6f7bbb*/
+      if ( v25.m_Data ) /*0x6f7bbf*/
+        m_wstr = v25.m_Data->m_wstr; /*0x6f7bc1*/
+      else
+        m_wstr = nullptr; /*0x6f7bc5*/
+      v11 = _wtoi(m_wstr); /*0x6f7bc8*/
+      v18 = 0; /*0x6f7bd0*/
+      v9->nSkillID = v11; /*0x6f7bd2*/
+      v26 = &v17; /*0x6f7bd6*/
+      v17.m_Data = m_Data; /*0x6f7bda*/
+      if ( m_Data ) /*0x6f7bde*/
+        InterlockedIncrement((volatile LONG *)&m_Data->m_RefCount); /*0x6f7be4*/
+      v33 = 6; /*0x6f7bee*/
+      if ( !v35 ) /*0x6f7bf5*/
+        goto LABEL_4; /*0x6f7bf5*/
+      v33 = 5; /*0x6f7c00*/
+      v12 = IWzProperty::Getitem(v35, (Ztl_variant_t *)f, v17); /*0x6f7c05*/
+      v33 = 7; /*0x6f7c0b*/
+      int32 = get_int32(v12, v18); /*0x6f7c10*/
+      v14 = LOWORD(f[0]) == 8; /*0x6f7c18*/
+      v9->nInfo = int32; /*0x6f7c1e*/
+      v33 = 5; /*0x6f7c21*/
+      if ( v14 ) /*0x6f7c26*/
+      {
+        LOWORD(f[0]) = 0; /*0x6f7c2a*/
+        if ( *(_DWORD *)&vName.vt ) /*0x6f7c35*/
+          ZAPI.CoTaskMemFree((void *)(*(_DWORD *)&vName.vt - 4)); /*0x6f7c3b*/
+      }
+      else
+      {
+        VariantClear((VARIANTARG *)f); /*0x6f7c48*/
+      }
+      if ( v9->nInfo < 0 ) /*0x6f7c51*/
+      {
+        pExceptionObject = (ZList<GW_SkillRecord> *)-2147467259; /*0x6f7cb3*/
+        _CxxThrowException(&pExceptionObject, &_TI1_AVZException__); /*0x6f7cbb*/
+      }
+      v33 = 4; /*0x6f7c53*/
+      if ( m_Data ) /*0x6f7c5a*/
+      {
+        _bstr_t::Data_t::Release(m_Data); /*0x6f7c5e*/
+        v25.m_Data = nullptr; /*0x6f7c63*/
+      }
+      if ( v27 == 8 ) /*0x6f7c6d*/
+      {
+        v27 = 0; /*0x6f7c75*/
+        if ( sName.m_Data ) /*0x6f7c7c*/
+          ZAPI.CoTaskMemFree(&sName.m_Data[-1].m_RefCount); /*0x6f7c86*/
+      }
+      else
+      {
+        v5 = VariantClear((VARIANTARG *)&v27); /*0x6f7c96*/
+        if ( v5 < 0 ) /*0x6f7c9e*/
+          goto LABEL_9; /*0x6f7c9e*/
+      }
+    }
+    v33 = 3; /*0x6f7cc6*/
+    if ( v27 == 8 ) /*0x6f7ccb*/
+    {
+      v27 = 0; /*0x6f7cd3*/
+      if ( sName.m_Data ) /*0x6f7cda*/
+        ZAPI.CoTaskMemFree(&sName.m_Data[-1].m_RefCount); /*0x6f7ce0*/
+    }
+    else
+    {
+      VariantClear((VARIANTARG *)&v27); /*0x6f7ced*/
+    }
+    m_RefCount = (void (__cdecl *)(Ztl_bstr_t *))v6->m_Data->m_RefCount; /*0x6f7cf6*/
+    v33 = 0; /*0x6f7cfa*/
+    m_RefCount(v6); /*0x6f7cfe*/
+    vName.decVal.Mid32 = -1; /*0x6f7d04*/
+    if ( pExceptionObject ) /*0x6f7d0e*/
+      ((void (__stdcall *)(ZList<GW_SkillRecord> *, int, int, int, int, int, IUnknown *))pExceptionObject->__vftable[2].dtr_ZList<GW_SkillRecord>)( /*0x6f7d16*/
+        pExceptionObject,
+        v18,
+        v19,
+        v20,
+        v21,
+        v22,
+        v23.m_pInterface);
+  }
+  else
+  {
+    v38 = -1; /*0x6f7ada*/
+  }
+  return 1; /*0x6f7d1d*/
+}

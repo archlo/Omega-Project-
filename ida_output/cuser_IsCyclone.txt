@@ -1,0 +1,3 @@
+// CUser::IsCyclone @ 0x903b30
+
+{"addr":"0x903b30","code":"BOOL __thiscall CUser::IsCyclone(CUser *this)\n{\n  const SecondaryStat *v1; // eax\n\n  v1 = this->GetSecondaryStat(this); /*0x903b35*/\n  return _ZtlSecureFuse<long>(v1->_ZtlSecureTear_nCyclone_, v1->_ZtlSecureTear_nCyclone__CS) != 0; /*0x903b52*/\n}","refs":[{"addr":"0x407520","name":"??$_ZtlSecureFuse@J@@YAJQBJI@Z"}]}

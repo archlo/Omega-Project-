@@ -1,0 +1,4 @@
+﻿int __fastcall CMob::_ZtlSecureGet_m_nMoveAction(CMob *this)
+{
+  return _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nMoveAction, this->_ZtlSecureTear_m_nMoveAction_CS);
+}

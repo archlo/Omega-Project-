@@ -1,0 +1,8 @@
+﻿void __thiscall CUIKeyConfig::GetShortCutPos(CUIKeyConfig *this, int nIdx, int *x, int *y)
+{
+  if ( nIdx < 145 ) /*0x7d8329*/
+  {
+    *x = s_ptShortKeyPos_0[nIdx].x; /*0x7d8336*/
+    *y = s_ptShortKeyPos_0[nIdx].y; /*0x7d8343*/
+  }
+}

@@ -1,0 +1,225 @@
+﻿void __thiscall CMob::ShiftAffectedSkillAnimation(
+        CMob *this,
+        _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > bForced)
+{
+  unsigned int m_uCount; // eax
+  IWzGr2DLayer *m_pInterface; // esi
+  HRESULT (__stdcall *get_color)(IWzGr2DLayer *, unsigned int *); // ecx
+  HRESULT v6; // eax
+  unsigned int (__stdcall *Release)(IUnknown *); // eax
+  unsigned int v8; // eax
+  IWzGr2DLayer *v9; // esi
+  unsigned int (__stdcall *AddRef)(IUnknown *); // edx
+  HRESULT (__stdcall *v11)(IWzGr2DLayer *, unsigned int *); // edx
+  HRESULT v12; // eax
+  void (__stdcall *v13)(VARIANTARG *); // edi
+  HRESULT v14; // eax
+  HRESULT v15; // eax
+  IWzVector2D *v16; // ecx
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *m_pTail; // edi
+  CMob::AFFECTEDSKILLENTRY *Next; // eax
+  void (__stdcall *v19)(VARIANTARG *); // edi
+  HRESULT v20; // eax
+  HRESULT v21; // eax
+  IWzVector2D *v22; // ecx
+  HRESULT v23; // eax
+  HRESULT v24; // eax
+  unsigned int (__stdcall *v25)(IUnknown *); // eax
+  __POSITION *pos[2]; // [esp+30h] [ebp-34h] BYREF
+  VARIANTARG pvargDest; // [esp+38h] [ebp-2Ch] BYREF
+  VARIANTARG pvarg; // [esp+48h] [ebp-1Ch] BYREF
+  int v29; // [esp+60h] [ebp-4h]
+
+  m_uCount = this->m_lpLayerASAni._m_uCount;
+  if ( m_uCount )
+  {
+    if ( m_uCount == 1 )
+    {
+      m_pInterface = this->m_lpLayerASAni._m_pTail->m_pInterface;
+      pos[1] = (__POSITION *)m_pInterface;
+      if ( m_pInterface )
+        m_pInterface->AddRef(m_pInterface);
+      v29 = 0;
+      if ( !m_pInterface )
+LABEL_6:
+        _com_issue_error(-2147467261);
+      get_color = m_pInterface->get_color;
+      pos[0] = nullptr;
+      v6 = get_color(m_pInterface, (unsigned int *)pos);
+      if ( v6 < 0 )
+        _com_issue_errorex(v6, m_pInterface, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf);
+      Release = m_pInterface->Release;
+      v29 = -1;
+      Release(m_pInterface);
+    }
+    if ( bForced.m_pInterface )
+    {
+      dwCounter = 1;
+    }
+    else
+    {
+      v8 = dwCounter % 0x16;
+      ++dwCounter;
+      if ( v8 )
+        return;
+    }
+    bForced.m_pInterface = nullptr;
+    v9 = this->m_lpLayerASAni._m_pTail->m_pInterface;
+    v29 = 6;
+    if ( !v9 )
+      goto LABEL_6;
+    AddRef = v9->AddRef;
+    bForced.m_pInterface = v9;
+    AddRef(v9);
+    v11 = v9->get_color;
+    pos[0] = nullptr;
+    v12 = v11(v9, (unsigned int *)pos);
+    if ( v12 < 0 )
+      _com_issue_errorex(v12, v9, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf);
+    if ( ((int)pos[0] & 0xFF000000) != 0 )
+    {
+      v13 = VariantInit;
+      VariantInit(&pvarg);
+      v14 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing);
+      if ( v14 < 0 )
+        _com_issue_error(v14);
+      LOBYTE(v29) = 7;
+      v13(&pvargDest);
+      v15 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing);
+      if ( v15 < 0 )
+        _com_issue_error(v15);
+      LOBYTE(v29) = 8;
+      v16 = IWzGr2DLayer::Getalpha(
+              v9,
+              (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)pos)->m_pInterface;
+      LOBYTE(v29) = 9;
+      if ( !v16 )
+        _com_issue_error(-2147467261);
+      IWzVector2D::RelMove(v16, 0, 0, (const Ztl_variant_t *)&pvargDest, (const Ztl_variant_t *)&pvarg);
+      LOBYTE(v29) = 8;
+      if ( pos[0] )
+        (*(void (__stdcall **)(__POSITION *))(*(_DWORD *)pos[0] + 8))(pos[0]);
+      LOBYTE(v29) = 7;
+      if ( pvargDest.vt == 8 )
+      {
+        pvargDest.vt = 0;
+        if ( pvargDest.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4));
+      }
+      else
+      {
+        VariantClear(&pvargDest);
+      }
+      LOBYTE(v29) = 6;
+      if ( pvarg.vt == 8 )
+      {
+        pvarg.vt = 0;
+        if ( pvarg.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4));
+      }
+      else
+      {
+        VariantClear(&pvarg);
+      }
+      m_pTail = this->m_lpLayerASAni._m_pTail;
+      ZList<_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>>::RemoveAt(
+        &this->m_lpLayerASAni,
+        (__POSITION *)m_pTail);
+      ZList<_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>>::AddHead(
+        &this->m_lpLayerASAni,
+        &bForced);
+      pos[0] = (__POSITION *)this->m_lAffectedSkillEntry._m_pHead;
+      while ( pos[0] )
+      {
+        Next = ZList<CMob::AFFECTEDSKILLENTRY>::GetNext(pos);
+        if ( (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)Next->posList == m_pTail )
+          Next->posList = (__POSITION *)this->m_lpLayerASAni._m_pHead;
+      }
+      _com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::operator=(
+        &bForced,
+        this->m_lpLayerASAni._m_pTail);
+      v9 = bForced.m_pInterface;
+    }
+    v19 = VariantInit;
+    VariantInit(&pvargDest);
+    v20 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing);
+    if ( v20 < 0 )
+      _com_issue_error(v20);
+    LOBYTE(v29) = 10;
+    v19(&pvarg);
+    v21 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing);
+    if ( v21 < 0 )
+      _com_issue_error(v21);
+    LOBYTE(v29) = 11;
+    if ( !v9 )
+      _com_issue_error(-2147467261);
+    v22 = IWzGr2DLayer::Getalpha(
+            v9,
+            (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)pos)->m_pInterface;
+    LOBYTE(v29) = 12;
+    if ( !v22 )
+      _com_issue_error(-2147467261);
+    IWzVector2D::RelMove(v22, 255, 0, (const Ztl_variant_t *)&pvarg, (const Ztl_variant_t *)&pvargDest);
+    LOBYTE(v29) = 11;
+    if ( pos[0] )
+      (*(void (__stdcall **)(__POSITION *))(*(_DWORD *)pos[0] + 8))(pos[0]);
+    LOBYTE(v29) = 10;
+    if ( pvarg.vt == 8 )
+    {
+      pvarg.vt = 0;
+      if ( pvarg.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&pvarg);
+    }
+    LOBYTE(v29) = 6;
+    if ( pvargDest.vt == 8 )
+    {
+      pvargDest.vt = 0;
+      if ( pvargDest.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&pvargDest);
+    }
+    VariantInit(&pvargDest);
+    v23 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing);
+    if ( v23 < 0 )
+      _com_issue_error(v23);
+    LOBYTE(v29) = 13;
+    VariantInit(&pvarg);
+    v24 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing);
+    if ( v24 < 0 )
+      _com_issue_error(v24);
+    LOBYTE(v29) = 14;
+    IWzGr2DLayer::Animate(v9, GA_REPEAT, (const Ztl_variant_t *)&pvarg, (const Ztl_variant_t *)&pvargDest);
+    LOBYTE(v29) = 13;
+    if ( pvarg.vt == 8 )
+    {
+      pvarg.vt = 0;
+      if ( pvarg.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&pvarg);
+    }
+    LOBYTE(v29) = 6;
+    if ( pvargDest.vt == 8 )
+    {
+      pvargDest.vt = 0;
+      if ( pvargDest.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&pvargDest);
+    }
+    v25 = v9->Release;
+    v29 = -1;
+    v25(v9);
+  }
+}

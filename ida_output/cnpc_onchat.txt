@@ -1,0 +1,152 @@
+﻿void __thiscall CNpc::OnChat(CNpc *this, Ztl_bstr_t bsText)
+{
+  bool v3; // zf
+  IWzGr2DLayer *m_pInterface; // ecx
+  const char *v5; // eax
+  IWzVector2D *v6; // ecx
+  int i; // esi
+  const ZXString<char> *v8; // ebp
+  ZXString<char> *v9; // eax
+  ZXString<char> *v10; // eax
+  const ZXString<char> *v11; // eax
+  int y; // edx
+  char *m_pStr; // esi
+  _bstr_t::Data_t *v14; // ecx
+  int v15; // eax
+  IWzVector2D *v16; // eax
+  IWzGr2DLayer *v17; // eax
+  _bstr_t v18; // [esp-24h] [ebp-58h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v19; // [esp-20h] [ebp-54h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v20; // [esp-1Ch] [ebp-50h] BYREF
+  int v21; // [esp-18h] [ebp-4Ch]
+  int v22; // [esp-14h] [ebp-48h]
+  int v23; // [esp-10h] [ebp-44h]
+  int v24; // [esp-Ch] [ebp-40h]
+  int v25; // [esp-8h] [ebp-3Ch]
+  const ZXString<char> *p_sName; // [esp-4h] [ebp-38h]
+  ZXString<char> str; // [esp+14h] [ebp-20h] BYREF
+  ZXString<char> v28; // [esp+18h] [ebp-1Ch] BYREF
+  ZXString<char> v29; // [esp+1Ch] [ebp-18h] BYREF
+  ZXString<char> v30; // [esp+20h] [ebp-14h] BYREF
+  ZXString<char> result; // [esp+24h] [ebp-10h] BYREF
+  int v32; // [esp+30h] [ebp-4h]
+
+  v3 = this->m_bEnabled == 0; /*0x675549*/
+  v32 = 0; /*0x675550*/
+  if ( !v3 && !this->m_bHideToLocalUser ) /*0x67555e*/
+  {
+    if ( !this->m_pLayerQuestInfo.m_pInterface ) /*0x67556b*/
+      goto LABEL_31; /*0x67556b*/
+    m_pInterface = this->m_pLayerQuestInfo.m_pInterface; /*0x67557e*/
+    if ( !m_pInterface ) /*0x675586*/
+      _com_issue_error(-2147467261); /*0x67558d*/
+    if ( !IWzGr2DLayer::Getvisible(m_pInterface) ) /*0x675592*/
+    {
+LABEL_31:
+      if ( this->m_pImitatedLook.p ) /*0x67559f*/
+      {
+        v5 = _bstr_t::operator char const *(&bsText); /*0x6755b3*/
+        ZXString<char>::ZXString<char>(&str, v5, -1); /*0x6755bd*/
+        LOBYTE(v32) = 1; /*0x6755cf*/
+        for ( i = ZXString<char>::Find(&str, aName, 0, 0); i >= 0; i = ZXString<char>::Find(&str, aName, 0, 0) ) /*0x6755dd*/
+        {
+          v8 = ZXString<char>::Substring(&str, &result, i + 5, -1); /*0x6755fc*/
+          LOBYTE(v32) = 2; /*0x67560a*/
+          v9 = ZXString<char>::Substring(&str, &v30, 0, i); /*0x67560f*/
+          p_sName = &this->m_pTemplate->sName; /*0x67561c*/
+          LOBYTE(v32) = 3; /*0x675624*/
+          v10 = ZXString<char>::operator+(v9, &v29, p_sName); /*0x675629*/
+          LOBYTE(v32) = 4; /*0x675636*/
+          v11 = ZXString<char>::operator+(v10, &v28, v8); /*0x67563a*/
+          LOBYTE(v32) = 5; /*0x675644*/
+          ZXString<char>::operator=(&str, v11); /*0x675649*/
+          LOBYTE(v32) = 4; /*0x675652*/
+          if ( v28._m_pStr ) /*0x675658*/
+            ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v28._m_pStr - 1); /*0x67565e*/
+          LOBYTE(v32) = 3; /*0x67566a*/
+          if ( v29._m_pStr ) /*0x675671*/
+            ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v29._m_pStr - 1); /*0x675677*/
+          LOBYTE(v32) = 2; /*0x675683*/
+          if ( v30._m_pStr ) /*0x67568a*/
+            ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v30._m_pStr - 1); /*0x675690*/
+          LOBYTE(v32) = 1; /*0x67569c*/
+          if ( result._m_pStr ) /*0x6756a3*/
+            ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x6756a9*/
+        }
+        y = this->m_ptBalloonOffset.y; /*0x6756cd*/
+        p_sName = nullptr; /*0x6756d3*/
+        v25 = y; /*0x6756d5*/
+        v24 = 0; /*0x6756d6*/
+        v23 = 0; /*0x6756d8*/
+        v22 = 1001; /*0x6756da*/
+        v21 = 5000; /*0x6756df*/
+        v20.m_pInterface = v6; /*0x6756e4*/
+        result._m_pStr = (char *)&v20; /*0x6756ed*/
+        _com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>::_com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>( /*0x6756f2*/
+          &v20,
+          &this->m_pvc);
+        v19.m_pInterface = (IWzGr2DLayer *)this->m_pImitatedLook.p; /*0x6756fd*/
+        v30._m_pStr = (char *)&v19; /*0x675700*/
+        LOBYTE(v32) = 6; /*0x675705*/
+        CAvatar::GetLayerUnderFace((CAvatar *)v19.m_pInterface, &v19); /*0x67570a*/
+        m_pStr = str._m_pStr; /*0x67570f*/
+        v18.m_Data = v14; /*0x675713*/
+        v29._m_pStr = (char *)&v18; /*0x675714*/
+        LOBYTE(v32) = 7; /*0x67571b*/
+        _bstr_t::_bstr_t(&v18, str._m_pStr); /*0x675720*/
+        LOBYTE(v32) = 1; /*0x675728*/
+        CChatBalloon::MakeBalloon( /*0x67572d*/
+          &this->m_chatBalloon,
+          (Ztl_bstr_t)v18.m_Data,
+          v19,
+          v20,
+          v21,
+          v22,
+          v23,
+          v24,
+          v25,
+          (int)p_sName);
+        LOBYTE(v32) = 0; /*0x675732*/
+        if ( m_pStr ) /*0x675739*/
+          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)m_pStr - 1); /*0x675743*/
+      }
+      else
+      {
+        v15 = this->m_ptBalloonOffset.y; /*0x67574d*/
+        p_sName = nullptr; /*0x675753*/
+        v25 = v15; /*0x675755*/
+        v16 = this->m_pvc.m_pInterface; /*0x675756*/
+        v24 = 0; /*0x67575c*/
+        v23 = 0; /*0x67575e*/
+        v22 = 1001; /*0x675760*/
+        v21 = 5000; /*0x675765*/
+        result._m_pStr = (char *)&v20; /*0x67576d*/
+        v20.m_pInterface = v16; /*0x675771*/
+        if ( v16 ) /*0x675775*/
+          v16->AddRef(v16); /*0x67577d*/
+        v17 = this->m_pLayerAction.m_pInterface; /*0x67577f*/
+        result._m_pStr = (char *)&v19; /*0x675788*/
+        v19.m_pInterface = v17; /*0x67578c*/
+        if ( v17 ) /*0x675790*/
+          v17->AddRef(v17); /*0x675798*/
+        v18.m_Data = bsText.m_Data; /*0x6757a1*/
+        result._m_pStr = (char *)&v18; /*0x6757a7*/
+        if ( bsText.m_Data ) /*0x6757ad*/
+          InterlockedIncrement((volatile LONG *)&bsText.m_Data->m_RefCount); /*0x6757b3*/
+        CChatBalloon::MakeBalloon( /*0x6757bc*/
+          &this->m_chatBalloon,
+          (Ztl_bstr_t)v18.m_Data,
+          v19,
+          v20,
+          v21,
+          v22,
+          v23,
+          v24,
+          v25,
+          (int)p_sName);
+      }
+    }
+  }
+  if ( bsText.m_Data ) /*0x6757c7*/
+    _bstr_t::Data_t::Release(bsText.m_Data); /*0x6757c9*/
+}

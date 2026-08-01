@@ -1,0 +1,24 @@
+// cuserlocal::IsImmovable
+
+BOOL __thiscall CUserLocal::IsImmovable(CUserLocal *this)
+{
+  const SecondaryStat *v2; // eax
+  int nSkillID; // esi
+  BOOL result; // eax
+
+  result = true; /*0x9054b2*/
+  if ( (!this->m_preparingSkill.nSkillID || is_able_to_move_during_gauge_skill(this->m_preparingSkill.nSkillID)) /*0x905458*/
+    && !_ZtlSecureFuse<int>(this->_ZtlSecureTear_m_bSit, this->_ZtlSecureTear_m_bSit_CS) )
+  {
+    v2 = this->GetSecondaryStat(this); /*0x90546b*/
+    if ( !_ZtlSecureFuse<long>(v2->_ZtlSecureTear_nStun_, v2->_ZtlSecureTear_nStun__CS) /*0x905494*/
+      && (this->m_nMoveAction & 0xFFFFFFFE) != 0x12
+      && !this->m_bKnockBackStun )
+    {
+      nSkillID = this->m_repeatSkill.nSkillID; /*0x90549c*/
+      if ( !nSkillID || nSkillID == 35121005 ) /*0x9054ac*/
+        return false; /*0x905448*/
+    }
+  }
+  return result; /*0x9054b0*/
+}

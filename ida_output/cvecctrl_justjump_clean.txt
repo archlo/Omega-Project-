@@ -1,0 +1,180 @@
+int __thiscall CVecCtrl::JustJump(CVecCtrl *this)
+{
+  CAttrShoe *p; // eax
+  BOOL v3; // ebx
+  double v4; // st7
+  CONSTANTS *v5; // edi
+  long double v6; // st7
+  CONSTANTS *v8; // edi
+  CStaticFoothold *m_pfh; // ebp
+  CONSTANTS *v10; // edi
+  long double v11; // st7
+  unsigned int v12; // eax
+  long double v13; // st7
+  int v14; // ecx
+  long double vx; // st7
+  StringPool *Instance; // eax
+  long double v17; // st7
+  int v18; // eax
+  TSecType<double> *p_flySpeed; // ecx
+  long double v20; // st7
+  unsigned int ZtlSecureTear_m_nInputX_CS; // [esp+8h] [ebp-90h]
+  wchar_t *t; // [esp+Ch] [ebp-8Ch]
+  unsigned int t_4; // [esp+10h] [ebp-88h]
+  int flya; // [esp+38h] [ebp-60h]
+  int flyb; // [esp+38h] [ebp-60h]
+  int flyc; // [esp+38h] [ebp-60h]
+  int flyd; // [esp+38h] [ebp-60h]
+  double fly; // [esp+38h] [ebp-60h]
+  double vMax; // [esp+40h] [ebp-58h] BYREF
+  double Data; // [esp+48h] [ebp-50h]
+  double v31; // [esp+50h] [ebp-48h]
+  int v32; // [esp+94h] [ebp-4h]
+
+  v3 = true; /*0x993f08*/
+  if ( !this->IsUserFlying(this) && !CVecCtrl::IsSwimming(this) ) /*0x993edc*/
+  {
+    p = this->m_pCurAttrShoe.p; /*0x993ee5*/
+    if ( !p || TSecType<double>::GetData(&p->flyAcc) <= DOUBLE_0_0 ) /*0x993f02*/
+      v3 = false; /*0x993ed8*/
+  }
+  if ( !_ZtlSecureFuse<CLadderOrRope *>(this->_ZtlSecureTear_m_pLadderOrRope, this->_ZtlSecureTear_m_pLadderOrRope_CS) ) /*0x993f25*/
+  {
+    m_pfh = this->m_pfh; /*0x99406b*/
+    if ( m_pfh ) /*0x994073*/
+    {
+      CVecCtrl::DetachFromFoothold(this); /*0x99407b*/
+      v10 = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p; /*0x99408c*/
+      Data = TSecType<double>::GetData(&this->m_pCurAttrShoe.p->walkJump); /*0x994097*/
+      v11 = TSecType<double>::GetData(&this->m_pAttrField->g); /*0x9940a4*/
+      v12 = _ZtlSecureTear<double>(-(v10->dJumpSpeed * Data / v11), this->m_ap._ZtlSecureTear_vy); /*0x9940c0*/
+      this->m_ap._ZtlSecureTear_vy_CS = v12; /*0x9940c5*/
+      if ( v3 ) /*0x9940ca*/
+      {
+        v13 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vy, v12); /*0x9940d3*/
+        this->m_ap._ZtlSecureTear_vy_CS = _ZtlSecureTear<double>(v13 * DOUBLE_0_7, this->m_ap._ZtlSecureTear_vy); /*0x9940e9*/
+      }
+      if ( _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, this->_ZtlSecureTear_m_nInputX_CS) ) /*0x9940fa*/
+      {
+        t_4 = this->_ZtlSecureTear_m_nInputX_CS; /*0x994113*/
+        Data = m_pfh->m_uvy; /*0x994114*/
+        if ( (double)_ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, t_4) * Data >= DOUBLE_0_0 ) /*0x994138*/
+          v14 = 1; /*0x99413f*/
+        else
+          v14 = -1; /*0x99413a*/
+        vMax = max_walk_speed(m_pfh, this->m_pCurAttrShoe.p, v14); /*0x994152*/
+        if ( this->m_bEscortMob ) /*0x994159*/
+        {
+          flyc = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, this->_ZtlSecureTear_m_nInputX_CS); /*0x99416f*/
+          AbsPos::_ZtlSecurePut_vx(&this->m_ap, (double)flyc * DOUBLE_125_0); /*0x994182*/
+        }
+        else
+        {
+          v31 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vx, this->m_ap._ZtlSecureTear_vx_CS); /*0x994199*/
+          ZtlSecureTear_m_nInputX_CS = this->_ZtlSecureTear_m_nInputX_CS; /*0x9941ad*/
+          Data = vMax * DOUBLE_0_8; /*0x9941af*/
+          if ( (double)_ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, ZtlSecureTear_m_nInputX_CS) * v31 < Data ) /*0x9941d0*/
+          {
+            v31 = (double)CVecCtrl::_ZtlSecureGet_m_nInputX(this) * Data; /*0x9941e7*/
+            vx = AbsPos::_ZtlSecureGet_vx(&this->m_ap); /*0x9941eb*/
+            AbsPos::_ZtlSecurePut_vx(&this->m_ap, vx + v31); /*0x9941fc*/
+          }
+          v31 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vx, this->m_ap._ZtlSecureTear_vx_CS); /*0x994210*/
+          if ( (double)_ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, this->_ZtlSecureTear_m_nInputX_CS) * v31 > vMax ) /*0x994239*/
+          {
+            flyd = CVecCtrl::_ZtlSecureGet_m_nInputX(this); /*0x994242*/
+            AbsPos::_ZtlSecurePut_vx(&this->m_ap, (double)flyd * vMax); /*0x994256*/
+          }
+        }
+      }
+      else
+      {
+        _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vx, this->m_ap._ZtlSecureTear_vx_CS); /*0x994265*/
+      }
+      if ( !this->m_pOwner->GetType(this->m_pOwner) ) /*0x994278*/
+      {
+        Instance = StringPool::GetInstance(); /*0x99428c*/
+        t = StringPool::GetStringW(Instance, (ZXString<unsigned short> *)&vMax, 0x907u)->_m_pStr; /*0x99429c*/
+        v32 = 0; /*0x99429d*/
+        play_game_sound(t, 0x64u); /*0x9942a8*/
+        v32 = -1; /*0x9942b4*/
+        if ( LODWORD(vMax) ) /*0x9942c1*/
+        {
+          ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(LODWORD(vMax) - 12)); /*0x9942cb*/
+          return 1; /*0x9942eb*/
+        }
+      }
+    }
+    else
+    {
+      if ( !v3 ) /*0x9942ee*/
+        return 0; /*0x9943e4*/
+      fly = fabs(TSecType<double>::GetData(&this->m_pAttrField->fly)); /*0x994306*/
+      if ( CVecCtrl::IsSwimming(this) ) /*0x99430a*/
+      {
+        v17 = TSecType<double>::GetData(&this->m_pCurAttrShoe.p->swimSpeedV) /*0x994331*/
+            * TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p->dSwimSpeed
+            * fly
+            * DOUBLE_5_0;
+      }
+      else
+      {
+        v18 = this->IsUserFlying(this); /*0x994340*/
+        p_flySpeed = &this->m_pCurAttrShoe.p->flySpeed; /*0x99434a*/
+        if ( v18 ) /*0x994350*/
+        {
+          Data = TSecType<double>::GetData(p_flySpeed) /*0x994375*/
+               * TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p->dFlySpeed
+               * fly
+               * DOUBLE_5_0
+               * TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p->dFlyJumpDec;
+          if ( CVecCtrl::_ZtlSecureGet_m_nInputX(this) ) /*0x994379*/
+          {
+            v20 = AbsPos::_ZtlSecureGet_vx(&this->m_ap); /*0x994387*/
+            AbsPos::_ZtlSecurePut_vx(&this->m_ap, v20 + v20); /*0x994396*/
+          }
+          v17 = Data; /*0x99439d*/
+        }
+        else
+        {
+          v17 = TSecType<double>::GetData(p_flySpeed) /*0x9943de*/
+              * TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p->dFlySpeed
+              * fly;
+        }
+      }
+      this->m_ap._ZtlSecureTear_vy_CS = _ZtlSecureTear<double>(-v17, this->m_ap._ZtlSecureTear_vy); /*0x9943b1*/
+    }
+    return 1; /*0x9943cc*/
+  }
+  if ( !_ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, this->_ZtlSecureTear_m_nInputX_CS) ) /*0x993f43*/
+    return 1; /*0x993f43*/
+  this->OnAttachedObjectChanged(this, nullptr, nullptr, 0); /*0x993f56*/
+  if ( v3 ) /*0x993f5a*/
+    v4 = DOUBLE_0_3; /*0x993f5c*/
+  else
+    v4 = DOUBLE_0_5; /*0x993f64*/
+  vMax = v4; /*0x993f6f*/
+  v5 = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p; /*0x993f73*/
+  Data = TSecType<double>::GetData(&this->m_pCurAttrShoe.p->walkJump); /*0x993f84*/
+  v6 = TSecType<double>::GetData(&this->m_pAttrField->g); /*0x993f91*/
+  this->m_ap._ZtlSecureTear_vy_CS = _ZtlSecureTear<double>( /*0x993fb3*/
+                                      -(v5->dJumpSpeed * Data / v6 * vMax),
+                                      this->m_ap._ZtlSecureTear_vy);
+  if ( this->m_bEscortMob ) /*0x993fb6*/
+  {
+    flya = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, this->_ZtlSecureTear_m_nInputX_CS); /*0x993fcc*/
+    this->m_ap._ZtlSecureTear_vx_CS = _ZtlSecureTear<double>( /*0x993feb*/
+                                        (double)flya * DOUBLE_125_0 * DOUBLE_1_3,
+                                        this->m_ap._ZtlSecureTear_vx);
+  }
+  else
+  {
+    v8 = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p; /*0x994013*/
+    Data = TSecType<double>::GetData(&this->m_pCurAttrShoe.p->walkSpeed); /*0x99401e*/
+    flyb = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, this->_ZtlSecureTear_m_nInputX_CS); /*0x994036*/
+    this->m_ap._ZtlSecureTear_vx_CS = _ZtlSecureTear<double>( /*0x99404f*/
+                                        v8->dWalkSpeed * Data * (double)flyb * DOUBLE_1_3,
+                                        this->m_ap._ZtlSecureTear_vx);
+  }
+  return 1; /*0x993ff3*/
+}

@@ -1,0 +1,5 @@
+// attributes: thunk
+void __thiscall CITC::OnStatusCheck(CITC *this)
+{
+  CITC::TrySendQueryCashRequest(this);
+}

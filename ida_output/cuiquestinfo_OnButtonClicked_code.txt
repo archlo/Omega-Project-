@@ -1,0 +1,110 @@
+﻿void __thiscall CUIQuestInfo::OnButtonClicked(CUIQuestInfo *this, unsigned int nId)
+{
+  unsigned int v2; // ebx
+  ZXString<char> *a; // eax
+  unsigned __int8 *v5; // eax
+  ZArray<unsigned char> *p_m_abOption; // esi
+  unsigned int v7; // edi
+  unsigned int v8; // ebx
+  unsigned int i; // eax
+  unsigned __int8 *v10; // ecx
+  ZXString<char> *m_pStr; // eax
+  unsigned __int8 *v12; // eax
+  ZArray<unsigned char> *v13; // esi
+  unsigned int v14; // edi
+  unsigned int v15; // ebx
+  unsigned int j; // eax
+  unsigned __int8 *v17; // ecx
+  CUIQuestDelivery *v18; // esi
+  char nBits; // [esp+10h] [ebp-4h]
+  char nBitsa; // [esp+10h] [ebp-4h]
+
+  v2 = nId; /*0x8345c2*/
+  if ( nId >= 0xBB8 ) /*0x8345d7*/
+  {
+    a = TSingleton<CQuestMan>::ms_pInstance->m_asQuestCategoryName.a; /*0x8345dd*/
+    if ( a ) /*0x8345e5*/
+      a = (ZXString<char> *)a[-1]._m_pStr; /*0x8345e7*/
+    if ( nId < 4 * (int)a + 3000 ) /*0x8345f3*/
+    {
+      v5 = this->m_abOption.a; /*0x834605*/
+      p_m_abOption = &this->m_abOption; /*0x83460e*/
+      v7 = (int)(nId - 3000) / 8 + 1; /*0x834617*/
+      nBits = (nId + 72) & 7; /*0x834618*/
+      if ( v5 ) /*0x83461e*/
+        v5 = *((unsigned __int8 **)v5 - 1); /*0x834620*/
+      if ( v7 > (unsigned int)v5 ) /*0x834625*/
+      {
+        if ( p_m_abOption->a ) /*0x834627*/
+          v8 = *((_DWORD *)p_m_abOption->a - 1); /*0x834631*/
+        else
+          v8 = 0; /*0x83462d*/
+        ZArray<unsigned char>::_Realloc(&this->m_abOption, v7, 0, (const ZAllocHelper *)&nId); /*0x83463e*/
+        for ( i = v8; ; ++i ) /*0x834643*/
+        {
+          v10 = p_m_abOption->a; /*0x834645*/
+          if ( !p_m_abOption->a || i >= *((_DWORD *)v10 - 1) ) /*0x83464e*/
+            break; /*0x83464e*/
+          v10[i] = 0; /*0x834652*/
+        }
+        v2 = nId; /*0x834659*/
+      }
+      p_m_abOption->a[v7 - 1] |= 1 << nBits; /*0x83466b*/
+LABEL_33:
+      CUIQuestInfo::ResetInfo(this, 1); /*0x83471a*/
+      goto LABEL_34; /*0x83471e*/
+    }
+  }
+  if ( nId >= 0xFA0 ) /*0x834678*/
+  {
+    m_pStr = TSingleton<CQuestMan>::ms_pInstance->m_asQuestCategoryName.a; /*0x83467e*/
+    if ( m_pStr ) /*0x834686*/
+      m_pStr = (ZXString<char> *)m_pStr[-1]._m_pStr; /*0x834688*/
+    if ( nId < 4 * (int)m_pStr + 4000 ) /*0x834694*/
+    {
+      v12 = this->m_abOption.a; /*0x8346aa*/
+      v13 = &this->m_abOption; /*0x8346b3*/
+      v14 = (int)(nId - 4000) / 8 + 1; /*0x8346bc*/
+      nBitsa = (nId + 96) & 7; /*0x8346bd*/
+      if ( v12 ) /*0x8346c3*/
+        v12 = *((unsigned __int8 **)v12 - 1); /*0x8346c5*/
+      if ( v14 > (unsigned int)v12 ) /*0x8346ca*/
+      {
+        if ( v13->a ) /*0x8346cc*/
+          v15 = *((_DWORD *)v13->a - 1); /*0x8346d6*/
+        else
+          v15 = 0; /*0x8346d2*/
+        ZArray<unsigned char>::_Realloc(&this->m_abOption, v14, 0, (const ZAllocHelper *)&nId); /*0x8346e3*/
+        for ( j = v15; ; ++j ) /*0x8346e8*/
+        {
+          v17 = v13->a; /*0x8346f0*/
+          if ( !v13->a || j >= *((_DWORD *)v17 - 1) ) /*0x8346f9*/
+            break; /*0x8346f9*/
+          v17[j] = 0; /*0x8346fd*/
+        }
+        v2 = nId; /*0x834704*/
+      }
+      v13->a[v14 - 1] &= ~(1 << nBitsa); /*0x834718*/
+      goto LABEL_33; /*0x834718*/
+    }
+  }
+LABEL_34:
+  if ( v2 >= 0x1388 && v2 <= 0x1389 )
+  {
+    CUIQuestInfo::SetQuestViewState_ToOption(this, v2 == 5000); /*0x834741*/
+    if ( TSingleton<CWvsContext>::ms_pInstance._m_pStr ) /*0x83474d*/
+      *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 4245) = (this->m_nOption & 0xF0000000) == 0x10000000; /*0x834766*/
+    CUIQuestInfo::ResetInfo(this, 1); /*0x834770*/
+    if ( TSingleton<CUniqueModeless>::ms_pInstance )
+    {
+      v18 = TSingleton<CUniqueModeless>::ms_pInstance->IsKindOf(
+              &TSingleton<CUniqueModeless>::ms_pInstance->IUIMsgHandler,
+              &CUIQuestDelivery::ms_RTTI_CUIQuestDelivery) != 0
+          ? (CUIQuestDelivery *)TSingleton<CUniqueModeless>::ms_pInstance
+          : nullptr;
+      CUIQuestDelivery::LoadData(v18); /*0x83479b*/
+      v18->ResetInfo(v18); /*0x8347a7*/
+    }
+  }
+  CUIWnd::OnButtonClicked(this, v2); /*0x8347ac*/
+}

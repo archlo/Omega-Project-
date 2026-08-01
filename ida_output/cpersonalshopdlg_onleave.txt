@@ -1,0 +1,115 @@
+// 0x699c40
+void __thiscall CPersonalShopDlg::OnLeave(CPersonalShopDlg *this, ZXString<char> nSlot, CInPacket *iPacket)
+{
+  int m_nMyPosition; // eax
+  ZXString<char> v5; // edi
+  int v6; // ecx
+  int v7; // edi
+  StringPool *Instance; // eax
+  const ZXString<char> *String; // eax
+  char *m_pStr; // eax
+  StringPool *v11; // eax
+  const ZXString<char> *v12; // eax
+  StringPool *v13; // eax
+  const ZXString<char> *v14; // eax
+  StringPool *v15; // eax
+  const ZXString<char> *v16; // eax
+  StringPool *v17; // eax
+  const ZXString<char> *v18; // eax
+  StringPool *v19; // eax
+  const ZXString<char> *v20; // eax
+  ZXString<char> v21; // [esp-14h] [ebp-48h] BYREF
+  const wchar_t *v22; // [esp-10h] [ebp-44h]
+  ZRef<CDialog> *v23; // [esp-Ch] [ebp-40h]
+  int v24; // [esp-8h] [ebp-3Ch]
+  int v25; // [esp-4h] [ebp-38h]
+  ZXString<char> result; // [esp+10h] [ebp-24h] BYREF
+  ZXString<char> v27; // [esp+14h] [ebp-20h] BYREF
+  ZXString<char> v28; // [esp+18h] [ebp-1Ch] BYREF
+  ZXString<char> v29; // [esp+1Ch] [ebp-18h] BYREF
+  ZXString<char> v30; // [esp+20h] [ebp-14h] BYREF
+  ZXString<char> *v31; // [esp+24h] [ebp-10h]
+  int v32; // [esp+30h] [ebp-4h]
+
+  m_nMyPosition = this->m_nMyPosition; /*0x699c68*/
+  v5._m_pStr = nSlot._m_pStr; /*0x699c6e*/
+  if ( nSlot._m_pStr == (char *)m_nMyPosition ) /*0x699c74*/
+  {
+    v7 = CInPacket::Decode1(iPacket); /*0x699cbb*/
+    this->SetRet(this, 8); /*0x699cc7*/
+    nSlot._m_pStr = nullptr; /*0x699ccb*/
+    v32 = 0; /*0x699cd2*/
+    switch ( v7 ) /*0x699ce6*/
+    {
+      case 1: /*0x699ce6*/
+        Instance = StringPool::GetInstance(); /*0x699cf7*/
+        String = StringPool::GetString(Instance, (ZXString<char> *)&iPacket, 0x1A0u); /*0x699cfe*/
+        LOBYTE(v32) = 1; /*0x699d08*/
+        ZXString<char>::operator=(&nSlot, String); /*0x699d0d*/
+        m_pStr = (char *)iPacket; /*0x699d12*/
+        goto LABEL_12; /*0x699d16*/
+      case 3: /*0x699ce6*/
+        v11 = StringPool::GetInstance(); /*0x699d25*/
+        v12 = StringPool::GetString(v11, &result, 0x1B0u); /*0x699d2c*/
+        LOBYTE(v32) = 2; /*0x699d36*/
+        ZXString<char>::operator=(&nSlot, v12); /*0x699d3b*/
+        m_pStr = result._m_pStr; /*0x699d40*/
+        goto LABEL_12; /*0x699d44*/
+      case 5: /*0x699ce6*/
+        v13 = StringPool::GetInstance(); /*0x699d53*/
+        v14 = StringPool::GetString(v13, &v27, 0x1BDu); /*0x699d5a*/
+        LOBYTE(v32) = 3; /*0x699d64*/
+        ZXString<char>::operator=(&nSlot, v14); /*0x699d69*/
+        m_pStr = v27._m_pStr; /*0x699d6e*/
+        goto LABEL_12; /*0x699d72*/
+      case 6: /*0x699ce6*/
+        v15 = StringPool::GetInstance(); /*0x699d7e*/
+        v16 = StringPool::GetString(v15, &v28, 0x1A69u); /*0x699d85*/
+        LOBYTE(v32) = 4; /*0x699d8f*/
+        ZXString<char>::operator=(&nSlot, v16); /*0x699d94*/
+        m_pStr = v28._m_pStr; /*0x699d99*/
+        goto LABEL_12; /*0x699d9d*/
+      case 14: /*0x699ce6*/
+        v17 = StringPool::GetInstance(); /*0x699da9*/
+        v18 = StringPool::GetString(v17, &v29, 0x1B1u); /*0x699db0*/
+        LOBYTE(v32) = 5; /*0x699dba*/
+        ZXString<char>::operator=(&nSlot, v18); /*0x699dbf*/
+        m_pStr = v29._m_pStr; /*0x699dc4*/
+        goto LABEL_12; /*0x699dc8*/
+      case 15: /*0x699ce6*/
+        v19 = StringPool::GetInstance(); /*0x699dd4*/
+        v20 = StringPool::GetString(v19, &v30, 0x1BEu); /*0x699ddb*/
+        LOBYTE(v32) = 6; /*0x699de5*/
+        ZXString<char>::operator=(&nSlot, v20); /*0x699dea*/
+        m_pStr = v30._m_pStr; /*0x699def*/
+LABEL_12:
+        LOBYTE(v32) = 0; /*0x699df3*/
+        if ( m_pStr ) /*0x699df9*/
+          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)m_pStr - 1); /*0x699dff*/
+        break; /*0x699dff*/
+      default:
+        break;
+    }
+    v25 = 0; /*0x699e07*/
+    v24 = 0; /*0x699e08*/
+    v23 = nullptr; /*0x699e09*/
+    v22 = nullptr; /*0x699e0a*/
+    v31 = &v21; /*0x699e12*/
+    v21._m_pStr = nullptr; /*0x699e17*/
+    ZXString<char>::operator=(&v21, &nSlot); /*0x699e19*/
+    CUtilDlg::Notice(v21, v22, v23, v24, v25); /*0x699e1e*/
+    v32 = -1; /*0x699e2a*/
+    if ( nSlot._m_pStr ) /*0x699e34*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)nSlot._m_pStr - 1); /*0x699e3a*/
+  }
+  else
+  {
+    if ( !m_nMyPosition ) /*0x699c7a*/
+    {
+      v6 = *((_DWORD *)&this->m_pBtBuy.p + 2 * (int)nSlot._m_pStr) + 4; /*0x699c83*/
+      (*(void (__thiscall **)(int, _DWORD))(*(_DWORD *)v6 + 36))(v6, 0); /*0x699c8c*/
+      *(&this->m_nItemMaxCount + (int)v5._m_pStr) = 0; /*0x699c8e*/
+    }
+    CWnd::InvalidateRect(this, nullptr); /*0x699c98*/
+  }
+}

@@ -1,0 +1,3 @@
+﻿=== 0x45f070 ===
+{"addr":"0x45f070","code":"BOOL __thiscall CAvatar::IsActionHold(CAvatar *this, int nAction, int nIndex)\n{\n  bool v3; // zf\n\n  if ( nAction == 122 ) /*0x45f07b*/\n  {\n    v3 = nIndex == 0; /*0x45f07d*/\n    goto LABEL_5; /*0x45f07f*/\n  }\n  if ( nAction == 31 ) /*0x45f084*/\n  {\n    v3 = nIndex == 2; /*0x45f086*/\nLABEL_5:\n    if ( v3 ) /*0x45f089*/\n      return 1; /*0x45f089*/\n  }\n  return nIndex == 4; /*0x45f08e*/\n}"}
+

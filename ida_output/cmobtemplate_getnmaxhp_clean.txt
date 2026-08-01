@@ -1,0 +1,7 @@
+// _ZtlSecureGet_nMaxHP (GetHP)
+// Address: 0x52a5b0
+
+int __fastcall CMobTemplate::_ZtlSecureGet_nMaxHP(CMobTemplate *this)
+{
+  return _ZtlSecureFuse<long>(this->_ZtlSecureTear_nMaxHP, this->_ZtlSecureTear_nMaxHP_CS); /*0x52a5c3*/
+}

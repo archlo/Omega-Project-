@@ -1,0 +1,22 @@
+// CMobTemplate::CMobTemplate (constructor/Init)
+// Address: 0x65a340
+
+CMobTemplate *__thiscall CMobTemplate::CMobTemplate(CMobTemplate *this)
+{
+  this->_m_nRef = 0; /*0x65a36b*/
+  this->_m_pPrev = nullptr; /*0x65a370*/
+  this->__vftable = (CMobTemplate_vtbl *)&CMobTemplate::`vftable'; /*0x65a373*/
+  this->sName._m_pStr = nullptr; /*0x65a37d*/
+  this->m_aDamagedBySelectedMob.a = nullptr; /*0x65a380*/
+  `eh vector constructor iterator'( /*0x65a3a0*/
+    this->m_apAttackInfo,
+    8u,
+    9,
+    (void (__thiscall *)(void *))ZRef<MobAttackInfo>::ZRef<MobAttackInfo>,
+    (void (__thiscall *)(void *))ZRef<MobAttackInfo>::~ZRef<MobAttackInfo>);
+  this->m_aSkillInfo.a = nullptr; /*0x65a3a5*/
+  this->apSpeakInformation.a = nullptr; /*0x65a3ab*/
+  this->apSpeakCondition.a = nullptr; /*0x65a3b1*/
+  this->m_aDamagedBySelectedSkill.a = nullptr; /*0x65a3b7*/
+  return this; /*0x65a3bf*/
+}

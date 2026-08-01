@@ -1,0 +1,36 @@
+// cuserlocal::SetNewYearCardPairCharacterID
+
+void __thiscall CUserLocal::SetNewYearCardPairCharacterID(CUserLocal *this)
+{
+  CharacterData *p; // ebp
+  void (__thiscall ***v3)(_DWORD, int); // esi
+  volatile LONG *v4; // ebx
+  GW_NewYearCardRecord *Next; // eax
+  __POSITION *pos; // [esp+8h] [ebp-8h] BYREF
+  int v7; // [esp+Ch] [ebp-4h]
+
+  CUserPool::OnNewYearCardRecordRemoveAll( /*0x908b04*/
+    (CUserPool *)TSingleton<CUserPool>::ms_pInstance.m_pInterface,
+    this->m_dwCharacterId);
+  p = CWvsContext::GetCharacterData( /*0x908b19*/
+        (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+        (ZRef<CharacterData> *)&pos)->p;
+  if ( v7 ) /*0x908b22*/
+  {
+    v3 = (void (__thiscall ***)(_DWORD, int))(v7 - 16); /*0x908b26*/
+    v4 = (volatile LONG *)(v7 - 16 + 4); /*0x908b29*/
+    if ( !InterlockedDecrement(v4) ) /*0x908b2d*/
+    {
+      InterlockedIncrement(v4); /*0x908b38*/
+      if ( v3 ) /*0x908b40*/
+        (**v3)(v3, 1); /*0x908b4a*/
+    }
+    v7 = 0; /*0x908b4d*/
+  }
+  pos = (__POSITION *)p->lNewYearCardRecord._m_pHead; /*0x908b5c*/
+  while ( pos ) /*0x908b62*/
+  {
+    Next = ZList<GW_NewYearCardRecord>::GetNext(&pos); /*0x908b69*/
+    CUserPool::OnNewYearCardRecordAdd((CUserPool *)TSingleton<CUserPool>::ms_pInstance.m_pInterface, this, Next->m_dwSN); /*0x908b7b*/
+  }
+}

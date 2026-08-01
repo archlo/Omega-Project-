@@ -1,0 +1,226 @@
+// cuserlocal::SendSkillUseRequest
+
+int __thiscall CUserLocal::SendSkillUseRequest(
+        CUserLocal *this,
+        SKILLENTRY *pSkill,
+        int nSLV,
+        unsigned int dwAffectedMemberBitmap,
+        int nMobCount,
+        unsigned int *adwMobID,
+        unsigned int nSpiritJavelinItemID,
+        int nPelletPOS)
+{
+  const SKILLENTRY *v9; // ebx
+  bool v10; // zf
+  CWvsContext *m_pStr; // edi
+  CharacterData *p; // ebp
+  char *p_m_uTableSize; // edi
+  volatile LONG *p_m_uCount; // ebx
+  int v15; // edx
+  IWzVector2D *m_pInterface; // eax
+  int OneTimeAction; // eax
+  SKILLENTRY *v18; // ebx
+  int v19; // edi
+  int RandomAppointedAction; // eax
+  unsigned int v21; // eax
+  CAvatar_vtbl *v22; // edx
+  unsigned int v23; // eax
+  int v24; // eax
+  _bstr_t::Data_t *v25; // ecx
+  unsigned int dragon_action_code_from_name; // edi
+  int m_nMoveAction; // ebx
+  int MoveAction; // eax
+  int v29; // eax
+  int *v30; // ebp
+  int v31; // eax
+  StringPool *Instance; // eax
+  ZXString<char> *String; // eax
+  unsigned int update_time; // eax
+  tagPOINT (__thiscall *GetPos)(IVecCtrlOwner *); // edx
+  IVecCtrlOwner *v37; // esi
+  unsigned __int16 *v38; // eax
+  int v39; // eax
+  int v40; // edi
+  int v41; // esi
+  unsigned int *v42; // ebx
+  CWvsContext *v43; // esi
+  Ztl_bstr_t v44[6]; // [esp+4h] [ebp-54h] BYREF
+  CVecCtrl *pvc; // [esp+1Ch] [ebp-3Ch] BYREF
+  int tDelay; // [esp+24h] [ebp-34h]
+  ZRef<CharacterData> result; // [esp+28h] [ebp-30h] BYREF
+  CWvsContext *pCtx; // [esp+30h] [ebp-28h]
+  _BYTE v49[8]; // [esp+34h] [ebp-24h] BYREF
+  COutPacket oPacket; // [esp+3Ch] [ebp-1Ch] BYREF
+  int v51; // [esp+54h] [ebp-4h]
+
+  v9 = pSkill; /*0x93e959*/
+  v10 = pSkill->nSkillID == 33101006; /*0x93e95d*/
+  m_pStr = (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x93e963*/
+  pCtx = (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x93e969*/
+  if ( !v10 /*0x93e9aa*/
+    && (*((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 2094)
+     || _ZtlSecureFuse<long>(
+          (const int *)(*((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 2099) + 97),
+          *(_DWORD *)(*((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 2099) + 105)) <= 0
+     || get_update_time() - m_pStr->m_tExclRequestSent < 300) )
+  {
+    return 0; /*0x93e9aa*/
+  }
+  p = CWvsContext::GetCharacterData(m_pStr, &result)->p; /*0x93e9bc*/
+  if ( result.p ) /*0x93e9c5*/
+  {
+    p_m_uTableSize = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x93e9c7*/
+    p_m_uCount = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount; /*0x93e9ca*/
+    if ( !InterlockedDecrement(p_m_uCount) ) /*0x93e9ce*/
+    {
+      InterlockedIncrement(p_m_uCount); /*0x93e9d9*/
+      if ( p_m_uTableSize ) /*0x93e9e1*/
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1); /*0x93e9eb*/
+    }
+    v9 = pSkill; /*0x93e9ed*/
+    result.p = nullptr; /*0x93e9f1*/
+  }
+  if ( CSkillInfo::GetSkillLevel(TSingleton<CSkillInfo>::ms_pInstance, p, v9->nSkillID, nullptr) <= 0 ) /*0x93ea0d*/
+    return 0; /*0x93ea0d*/
+  v15 = v9->nSkillID / 1000 % 10; /*0x93ea2c*/
+  if ( (!v15 || v15 == 9) && !is_command_skill(v9->nSkillID) ) /*0x93ea38*/
+    return 0; /*0x93ea38*/
+  tDelay = 0; /*0x93ea4f*/
+  m_pInterface = CUser::GetVecCtrl( /*0x93ea58*/
+                   this,
+                   (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&result)->m_pInterface;
+  if ( m_pInterface ) /*0x93ea5c*/
+    pvc = (CVecCtrl *)&m_pInterface[-3]; /*0x93ea61*/
+  else
+    pvc = nullptr; /*0x93ea67*/
+  if ( *(_DWORD *)&result.gap0 ) /*0x93ea71*/
+    (*(void (__stdcall **)(_DWORD))(**(_DWORD **)&result.gap0 + 8))(*(_DWORD *)&result.gap0); /*0x93ea79*/
+  OneTimeAction = CAvatar::GetOneTimeAction(&this->CAvatar); /*0x93ea83*/
+  v18 = pSkill; /*0x93ea8b*/
+  if ( OneTimeAction > -1 && (pSkill->nSkillID == 32111004 || pSkill->nSkillID == 32121008) ) /*0x93eaa3*/
+    return 0; /*0x93eaa3*/
+  v19 = nSLV; /*0x93eaa9*/
+  if ( SKILLENTRY::IsActionAppointed(pSkill, nSLV) ) /*0x93eab0*/
+  {
+    if ( CAvatar::GetOneTimeAction(&this->CAvatar) > -1 ) /*0x93eac7*/
+      return 0; /*0x93eac7*/
+    if ( v18->nSkillID == 35101004 ) /*0x93ead3*/
+      this->m_nOneTimeAction = 210; /*0x93ead5*/
+    if ( CVecCtrl::IsOnLadder(pvc) ) /*0x93eae3*/
+    {
+      RandomAppointedAction = 64; /*0x93eaec*/
+    }
+    else if ( CVecCtrl::IsOnRope(pvc) ) /*0x93eaf7*/
+    {
+      RandomAppointedAction = 65; /*0x93eb00*/
+    }
+    else
+    {
+      v21 = rand(); /*0x93eb07*/
+      RandomAppointedAction = SKILLENTRY::GetRandomAppointedAction(v18, v19, v21); /*0x93eb10*/
+    }
+    v22 = this->CUser::CAvatar::__vftable; /*0x93eb15*/
+    v44[0].m_Data = nullptr; /*0x93eb18*/
+    this->m_nOneTimeAction = RandomAppointedAction; /*0x93eb1c*/
+    v22->PrepareActionLayer(&this->CAvatar, 6, 100, (int)v44[0].m_Data); /*0x93eb29*/
+    if ( this->m_pDragon.p ) /*0x93eb2b*/
+    {
+      v23 = rand(); /*0x93eb34*/
+      v24 = SKILLENTRY::GetRandomAppointedAction(v18, v19, v23); /*0x93eb3d*/
+      v44[0].m_Data = v25; /*0x93eb42*/
+      *(_DWORD *)&result.gap0 = v44; /*0x93eb45*/
+      get_action_name_from_code(v44, v24); /*0x93eb4b*/
+      dragon_action_code_from_name = get_dragon_action_code_from_name(v44[0]); /*0x93eb58*/
+      if ( dragon_action_code_from_name > 0x1C ) /*0x93eb5f*/
+        dragon_action_code_from_name = 0; /*0x93eb66*/
+      m_nMoveAction = this->m_nMoveAction; /*0x93eb6e*/
+      MoveAction = CDragon::GetMoveAction(this->m_pDragon.p); /*0x93eb74*/
+      CDragon::SetMoveAction( /*0x93eb8b*/
+        this->m_pDragon.p,
+        MoveAction ^ ((unsigned __int8)m_nMoveAction ^ (unsigned __int8)MoveAction) & 1,
+        0);
+      CDragon::SetOneTimeAction(this->m_pDragon.p, dragon_action_code_from_name); /*0x93eb97*/
+      v18 = pSkill; /*0x93eb9c*/
+    }
+    v19 = 24 * this->m_nOneTimeAction + 13012592; /*0x93ebab*/
+    v29 = *(_DWORD *)(v19 + 16) * CAvatar::GetActionInfo(&this->CAvatar)->tTotFrameDelay / *(_DWORD *)(v19 + 12); /*0x93ebbf*/
+    LOBYTE(v19) = nSLV; /*0x93ebc2*/
+    tDelay = v29; /*0x93ebc6*/
+  }
+  if ( v18->nSkillID == 2321006 && !dwAffectedMemberBitmap ) /*0x93ebd8*/
+    return 1; /*0x93ebd8*/
+  if ( is_antirepeat_buff_skill(v18->nSkillID) ) /*0x93ebdf*/
+  {
+    v30 = (int *)((int (__thiscall *)(IVecCtrlOwner *, ZRef<CharacterData> *))this->GetPos)( /*0x93ebfd*/
+                   &this->IVecCtrlOwner,
+                   &result);
+    v31 = ((int (__thiscall *)(IVecCtrlOwner *, CVecCtrl **))this->GetPos)(&this->IVecCtrlOwner, &pvc); /*0x93ec0b*/
+    if ( CAntiRepeat::TryRepeat(&this->m_antiRepeat_Buff, *v30, *(_DWORD *)(v31 + 4)) ) /*0x93ec1b*/
+    {
+      LOBYTE(v19) = nSLV; /*0x93ec24*/
+      goto LABEL_41; /*0x93ec24*/
+    }
+    return 0; /*0x93ec8f*/
+  }
+LABEL_41:
+  if ( is_event_vehicle_skill(v18->nSkillID) && (get_field()->m_dwOption & 0x200) != 0 ) /*0x93ec46*/
+  {
+    v44[0].m_Data = (_bstr_t::Data_t *)5568; /*0x93ec4c*/
+    Instance = StringPool::GetInstance(); /*0x93ec52*/
+    String = StringPool::GetString(Instance, (ZXString<char> *)&pSkill, (unsigned int)v44[0].m_Data); /*0x93ec59*/
+    v51 = 0; /*0x93ec61*/
+    CHATLOG_ADD(String, 0xCu); /*0x93ec69*/
+    v51 = -1; /*0x93ec75*/
+    if ( pSkill ) /*0x93ec7f*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)pSkill[-1].apCanvas); /*0x93ec85*/
+    return 0; /*0x93ec85*/
+  }
+  COutPacket::COutPacket(&oPacket, 103); /*0x93ec9a*/
+  v51 = 1; /*0x93ec9f*/
+  update_time = get_update_time(); /*0x93eca7*/
+  COutPacket::Encode4(&oPacket, update_time); /*0x93ecb1*/
+  COutPacket::Encode4(&oPacket, v18->nSkillID); /*0x93ecbd*/
+  COutPacket::Encode1(&oPacket, v19); /*0x93ecc7*/
+  if ( is_antirepeat_buff_skill(v18->nSkillID) ) /*0x93eccf*/
+  {
+    GetPos = this->GetPos; /*0x93ecde*/
+    v37 = &this->IVecCtrlOwner; /*0x93ece1*/
+    v38 = (unsigned __int16 *)((int (__thiscall *)(IVecCtrlOwner *, ZRef<CharacterData> *))GetPos)(v37, &result); /*0x93eceb*/
+    COutPacket::Encode2(&oPacket, *v38); /*0x93ecf5*/
+    v39 = ((int (__thiscall *)(IVecCtrlOwner *, _BYTE *))v37->GetPos)(v37, v49); /*0x93ed06*/
+    COutPacket::Encode2(&oPacket, *(_WORD *)(v39 + 4)); /*0x93ed11*/
+  }
+  if ( v18->nSkillID == 4121006 ) /*0x93ed1c*/
+    COutPacket::Encode4(&oPacket, nSpiritJavelinItemID); /*0x93ed27*/
+  if ( dwAffectedMemberBitmap ) /*0x93ed32*/
+  {
+    COutPacket::Encode1(&oPacket, dwAffectedMemberBitmap); /*0x93ed39*/
+    if ( v18->nSkillID == 2311001 ) /*0x93ed44*/
+      COutPacket::Encode2(&oPacket, tDelay); /*0x93ed4f*/
+  }
+  v40 = nMobCount; /*0x93ed54*/
+  if ( nMobCount >= 0 ) /*0x93ed5a*/
+  {
+    COutPacket::Encode1(&oPacket, nMobCount); /*0x93ed61*/
+    v41 = 0; /*0x93ed66*/
+    if ( v40 > 0 ) /*0x93ed6a*/
+    {
+      v42 = adwMobID; /*0x93ed6c*/
+      do /*0x93ed80*/
+        COutPacket::Encode4(&oPacket, v42[v41++]); /*0x93ed78*/
+      while ( v41 < v40 ); /*0x93ed80*/
+      v18 = pSkill; /*0x93ed82*/
+    }
+  }
+  COutPacket::Encode2(&oPacket, tDelay); /*0x93ed8f*/
+  CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket); /*0x93ed9f*/
+  if ( v18->nSkillID != 35001002 ) /*0x93edaa*/
+  {
+    v43 = pCtx; /*0x93edac*/
+    pCtx->m_bExclRequestSent = 1; /*0x93edb0*/
+    v43->m_tExclRequestSent = get_update_time(); /*0x93edbf*/
+  }
+  v51 = -1; /*0x93edc9*/
+  ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff); /*0x93edd1*/
+  return 1; /*0x93eddb*/
+}

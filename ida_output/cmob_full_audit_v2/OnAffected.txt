@@ -1,0 +1,17 @@
+﻿void __thiscall CMob::OnAffected(CMob *this, CInPacket *iPacket)
+{
+  int update_time; // edi
+  unsigned int v4; // ebp
+  int v5; // ebx
+  CMob::AFFECTEDSKILLENTRY *v6; // eax
+
+  update_time = get_update_time();
+  v4 = CInPacket::Decode4(iPacket);
+  v5 = (__int16)CInPacket::Decode2(iPacket);
+  v6 = ZList<CMob::AFFECTEDSKILLENTRY>::AddTail(&this->m_lAffectedSkillEntry);
+  v6->nSkillID = v4;
+  v6->tStart = v5 + update_time;
+  v6->posList = nullptr;
+  if ( !(v5 + update_time) )
+    v6->tStart = 1;
+}

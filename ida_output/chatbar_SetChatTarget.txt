@@ -1,0 +1,42 @@
+﻿void __thiscall CUIStatusBar::SetChatTarget(CUIStatusBar *this, int nTarget)
+{
+  ZXString<char> v3; // [esp-8h] [ebp-14h] BYREF
+  int v4; // [esp-4h] [ebp-10h]
+
+  if ( this->m_bDoNotAskTarget )
+  {
+LABEL_8:
+    this->m_nChatTarget = nTarget;
+    this->m_bDoNotAskTarget = 0;
+  }
+  else
+  {
+    switch ( nTarget )
+    {
+      case 0:
+      case 2:
+      case 3:
+      case 4:
+      case 5:
+      case 6:
+      case 8:
+        CUIStatusBar::StartChat(this, nullptr);
+        v4 = 0;
+        v3._m_pStr = nullptr;
+        ZXString<char>::GetBuffer(&v3, 0, 0);
+        ZXString<char>::ReleaseBuffer(&v3, 0);
+        CUIStatusBar::SetWhisperTarget(this, v3, v4);
+        goto LABEL_8;
+      case 1:
+        if ( CUIStatusBar::ChangeGroupWhisperTarget(this) )
+          goto LABEL_8;
+        break;
+      case 7:
+        if ( CUIStatusBar::ChangeWhisperTarget(this) )
+          goto LABEL_8;
+        break;
+      default:
+        goto LABEL_8;
+    }
+  }
+}

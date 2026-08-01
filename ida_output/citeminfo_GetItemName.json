@@ -1,0 +1,13 @@
+[
+  {
+    "query": "0x5b1640",
+    "matches": [
+      {
+        "address": "0x5b1640",
+        "name": "CItemInfo::GetItemName(long)",
+        "disasm": "push    0FFFFFFFFh\npush    offset __ehhandler$?GetItemName@CItemInfo@@QAE?AV?$ZXString@D@@J@Z\nmov     eax, large fs:0\npush    eax\nsub     esp, 8\npush    esi\npush    edi\nmov     eax, ___security_cookie\nxor     eax, esp\npush    eax\nlea     eax, [esp+20h+var_C]\nmov     large fs:0, eax\nmov     esi, this\nlea     eax, [esp+20h+var_10]\npush    671h; nIdx\npush    eax; result\nmov     [esp+28h+var_14], 0\ncall    ?GetInstance@StringPool@@SAAAV1@XZ; StringPool::GetInstance(void)\nmov     this, eax; this\ncall    ?GetString@StringPool@@QAE?AV?$ZXString@D@@I@Z; StringPool::GetString(uint)\nmov     eax, [eax]\nmov     this, [esp+20h+nItemID]\nmov     edi, [esp+20h+result]\npush    eax; sKey\npush    this; nItemID\npush    edi; result\nmov     this, esi; this\nmov     [esp+2Ch+var_4], 1\ncall    ?GetItemString@CItemInfo@@QAE?AV?$ZXString@D@@JPBD@Z; CItemInfo::GetItemString(long,char const *)\nmov     eax, [esp+20h+var_10._m_pStr]\nmov     [esp+20h+var_14], 1\nmov     byte ptr [esp+20h+var_4], 0\ntest    eax, eax\njz      short loc_5B16C2\nadd     eax, 0FFFFFFF4h\npush    eax; pData\ncall    ?_Release@?$ZXString@D@@KAXPAU_ZXStringData@1@@Z; ZXString<char>::_Release(ZXString<char>::_ZXStringData *)\nadd     esp, 4\nmov     eax, edi\nmov     this, [esp+20h+var_C]\nmov     large fs:0, this\npop     this\npop     edi\npop     esi\nadd     esp, 14h\nretn    8",
+        "pseudocode": "ZXString<char> *__thiscall CItemInfo::GetItemName(CItemInfo *this, ZXString<char> *result, int nItemID)\n{\n  StringPool *Instance; // eax\n  char *m_pStr; // [esp-4h] [ebp-24h]\n  ZXString<char> v7; // [esp+10h] [ebp-10h] BYREF\n  int v8; // [esp+1Ch] [ebp-4h]\n\n  Instance = StringPool::GetInstance();\n  m_pStr = StringPool::GetString(Instance, &v7, 0x671u)->_m_pStr;\n  v8 = 1;\n  CItemInfo::GetItemString(this, result, nItemID, m_pStr);\n  LOBYTE(v8) = 0;\n  if ( v7._m_pStr )\n    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v7._m_pStr - 1);\n  return result;\n}\n"
+      }
+    ]
+  }
+]

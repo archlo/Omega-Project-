@@ -1,0 +1,161 @@
+// ccswnd::status::Draw
+
+void __thiscall CCSWnd_Locker::OnCreate(CCSWnd_Locker *this, CCashShop *pData)
+{
+  CharacterData *p; // eax
+  int v4; // edi
+  char *p_m_uTableSize; // ebp
+  volatile LONG *p_m_uCount; // ebx
+  int v7; // ebx
+  CCtrlScrollBar *v8; // edi
+  CCtrlScrollBar *v9; // eax
+  CCtrlScrollBar *v10; // eax
+  ZRefCounted *v11; // eax
+  CCtrlScrollBar *v12; // eax
+  CCtrlScrollBar *v13; // eax
+  void (__stdcall *v14)(VARIANTARG *); // edi
+  HRESULT v15; // eax
+  HRESULT v16; // eax
+  _bstr_t::Data_t *v17; // ecx
+  StringPool *Instance; // eax
+  Ztl_variant_t *ObjectA; // eax
+  IUnknown *Unknown; // eax
+  HRESULT v21; // eax
+  HRESULT (__stdcall *v22)(VARIANTARG *); // ebx
+  Ztl_bstr_t v23; // [esp+0h] [ebp-7Ch] BYREF
+  const Ztl_variant_t *p_pvargDest; // [esp+4h] [ebp-78h]
+  const Ztl_variant_t *p_pvarg; // [esp+8h] [ebp-74h]
+  BOOL v26; // [esp+Ch] [ebp-70h]
+  VARIANTARG *ZtlSecureTear_nJob_CS; // [esp+10h] [ebp-6Ch]
+  ZRef<CharacterData> result; // [esp+28h] [ebp-54h] BYREF
+  VARIANTARG pvargDest; // [esp+30h] [ebp-4Ch] BYREF
+  VARIANTARG pvarg; // [esp+40h] [ebp-3Ch] BYREF
+  Ztl_variant_t v31; // [esp+50h] [ebp-2Ch] BYREF
+  CCtrlButton::CREATEPARAM paramButton; // [esp+60h] [ebp-1Ch] BYREF
+  int v33; // [esp+78h] [ebp-4h]
+
+  this->m_pCashShop = pData; /*0x4c31f1*/
+  p = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &result)->p; /*0x4c3203*/
+  ZtlSecureTear_nJob_CS = (VARIANTARG *)p->characterStat._ZtlSecureTear_nJob_CS; /*0x4c3209*/
+  v33 = 0; /*0x4c320e*/
+  v4 = _ZtlSecureFuse<short>(p->characterStat._ZtlSecureTear_nJob, (unsigned int)ZtlSecureTear_nJob_CS); /*0x4c321b*/
+  v33 = -1; /*0x4c3225*/
+  if ( result.p ) /*0x4c322f*/
+  {
+    p_m_uTableSize = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x4c3231*/
+    p_m_uCount = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount; /*0x4c3234*/
+    if ( !InterlockedDecrement(p_m_uCount) ) /*0x4c3238*/
+    {
+      InterlockedIncrement(p_m_uCount); /*0x4c3243*/
+      if ( p_m_uTableSize ) /*0x4c324b*/
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1); /*0x4c3256*/
+    }
+  }
+  if ( v4 / 1000 == 1 )
+  {
+    v7 = 5; /*0x4c326e*/
+  }
+  else if ( v4 / 100 == 21 || v4 == 2000 )
+  {
+    v7 = 6; /*0x4c3291*/
+  }
+  else
+  {
+    v7 = v4 / 1000 != 3 ? 0 : 9;
+  }
+  v8 = nullptr; /*0x4c32a4*/
+  paramButton.bAcceptFocus = 1; /*0x4c32b3*/
+  memset(&paramButton.bDrawBack, 0, 12); /*0x4c32b7*/
+  v33 = 1; /*0x4c32c6*/
+  v9 = (CCtrlScrollBar *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0x74u); /*0x4c32ca*/
+  LOBYTE(v33) = 2; /*0x4c32d3*/
+  if ( v9 ) /*0x4c32da*/
+    v10 = CCtrlScrollBar::CCtrlScrollBar(v9); /*0x4c32de*/
+  else
+    v10 = nullptr; /*0x4c32e5*/
+  LOBYTE(v33) = 1; /*0x4c32e7*/
+  if ( v10 ) /*0x4c32ee*/
+  {
+    v11 = &v10->ZRefCounted; /*0x4c32f0*/
+    if ( v11 ) /*0x4c32f5*/
+    {
+      v8 = (CCtrlScrollBar *)&v11[-1].___u1; /*0x4c32f7*/
+      if ( v11 != (ZRefCounted *)8 ) /*0x4c32fc*/
+        InterlockedIncrement(&v8->_m_nRef); /*0x4c3302*/
+    }
+  }
+  v12 = this->m_pScrollBar.p; /*0x4c3308*/
+  this->m_pScrollBar.p = v8; /*0x4c330e*/
+  result.p = (CharacterData *)v12; /*0x4c3314*/
+  if ( v12 ) /*0x4c331a*/
+    ZRef<CCtrlScrollBar>::_ReleaseRaw((ZRef<CCtrlScrollBar> *)&result, nullptr); /*0x4c3322*/
+  this->m_pScrollBar.p->CreateCtrl_2(this->m_pScrollBar.p, this, 1001u, 1, v7, 229, 29, 67, nullptr); /*0x4c3345*/
+  v13 = this->m_pScrollBar.p; /*0x4c3347*/
+  v14 = VariantInit; /*0x4c334d*/
+  ZtlSecureTear_nJob_CS = &pvarg; /*0x4c3357*/
+  v13->m_nWheelRange = 208; /*0x4c3358*/
+  v14(ZtlSecureTear_nJob_CS); /*0x4c335f*/
+  v15 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing); /*0x4c336b*/
+  if ( v15 < 0 ) /*0x4c3375*/
+    _com_issue_error(v15); /*0x4c3378*/
+  LOBYTE(v33) = 3; /*0x4c3382*/
+  v14(&pvargDest); /*0x4c3387*/
+  v16 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing); /*0x4c3393*/
+  if ( v16 < 0 ) /*0x4c339d*/
+    _com_issue_error(v16); /*0x4c33a0*/
+  ZtlSecureTear_nJob_CS = nullptr; /*0x4c33a5*/
+  v26 = 0; /*0x4c33a7*/
+  p_pvarg = (const Ztl_variant_t *)&pvarg; /*0x4c33ad*/
+  p_pvargDest = (const Ztl_variant_t *)&pvargDest; /*0x4c33b2*/
+  v23.m_Data = v17; /*0x4c33b3*/
+  LOBYTE(v33) = 4; /*0x4c33c5*/
+  Instance = StringPool::GetInstance(); /*0x4c33cc*/
+  StringPool::GetBSTR(Instance, &v23, 0x50Eu); /*0x4c33d3*/
+  LOBYTE(v33) = 5; /*0x4c33df*/
+  if ( !g_rm.m_pInterface ) /*0x4c33e4*/
+    _com_issue_error(-2147467261); /*0x4c33eb*/
+  LOBYTE(v33) = 4; /*0x4c33f4*/
+  ObjectA = IWzResMan::GetObjectA(g_rm.m_pInterface, &v31, v23, p_pvargDest, p_pvarg); /*0x4c33ff*/
+  LOBYTE(v33) = 6; /*0x4c3406*/
+  Unknown = Ztl_variant_t::GetUnknown(ObjectA, v26, (bool)ZtlSecureTear_nJob_CS); /*0x4c340b*/
+  v21 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>( /*0x4c3417*/
+          &this->m_pImgFontNumber,
+          Unknown);
+  if ( v21 < 0 && v21 != -2147467262 ) /*0x4c3425*/
+    _com_issue_error(v21); /*0x4c3428*/
+  LOBYTE(v33) = 4; /*0x4c3432*/
+  v22 = VariantClear; /*0x4c3436*/
+  if ( v31.vt == 8 ) /*0x4c3441*/
+  {
+    v31.vt = 0; /*0x4c3445*/
+    if ( v31.decVal.Lo32 ) /*0x4c3450*/
+      ZAPI.CoTaskMemFree((void *)(v31.decVal.Lo32 - 4)); /*0x4c3456*/
+  }
+  else
+  {
+    VariantClear(&v31); /*0x4c3463*/
+  }
+  LOBYTE(v33) = 3; /*0x4c3465*/
+  if ( pvargDest.vt == 8 ) /*0x4c346f*/
+  {
+    pvargDest.vt = 0; /*0x4c3477*/
+    if ( pvargDest.decVal.Lo32 ) /*0x4c347e*/
+      ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4)); /*0x4c3484*/
+  }
+  else
+  {
+    v22(&pvargDest); /*0x4c3491*/
+  }
+  LOBYTE(v33) = 1; /*0x4c3493*/
+  if ( pvarg.vt == 8 ) /*0x4c349d*/
+  {
+    pvarg.vt = 0; /*0x4c34a5*/
+    if ( pvarg.decVal.Lo32 ) /*0x4c34ac*/
+      ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x4c34b2*/
+  }
+  else
+  {
+    v22(&pvarg); /*0x4c34bf*/
+  }
+  this->m_nSelectedNo = -1; /*0x4c34c1*/
+}

@@ -1,0 +1,108 @@
+// cuiuserlist::SetButton
+
+void __thiscall CUIUserList::SetButton(CUIUserList *this)
+{
+  int i; // edi
+  CCtrlButton *p; // eax
+  int j; // edi
+  CCtrlButton *v5; // eax
+  int k; // edi
+  CCtrlButton *v7; // eax
+  int m; // edi
+  CCtrlButton *v9; // eax
+  int n; // edi
+  CCtrlButton *v11; // eax
+  int ii; // edi
+  CCtrlButton *v13; // eax
+  CCtrlButton *v14; // ecx
+  int jj; // edi
+  CCtrlButton *v16; // eax
+  CCtrlButton *v17; // ecx
+  int kk; // edi
+  CCtrlButton *v19; // eax
+  CCtrlButton *v20; // ecx
+  int mm; // edi
+  CCtrlButton *v22; // eax
+  CCtrlButton *v23; // ecx
+  int nn; // edi
+  CCtrlButton *v25; // eax
+  CCtrlButton *v26; // ecx
+
+  for ( i = 0; i < 15; ++i ) /*0x8b76e4*/
+  {
+    p = this->m_pTabFriend->m_pBtFriend[i].p; /*0x8b76f6*/
+    p->SetShow(&p->IUIMsgHandler, 0); /*0x8b7705*/
+  }
+  for ( j = 0; j < 9; ++j ) /*0x8b770f*/
+  {
+    v5 = this->m_pTabParty->m_pBtParty[j].p; /*0x8b7717*/
+    v5->SetShow(&v5->IUIMsgHandler, 0); /*0x8b7726*/
+  }
+  for ( k = 0; k < 13; ++k ) /*0x8b7730*/
+  {
+    v7 = this->m_pTabGuild->m_pBtGuild[k].p; /*0x8b7738*/
+    v7->SetShow(&v7->IUIMsgHandler, 0); /*0x8b7747*/
+  }
+  for ( m = 0; m < 11; ++m ) /*0x8b7751*/
+  {
+    v9 = this->m_pTabGuildAlliance->m_pBtGuildAlliance[m].p; /*0x8b7759*/
+    v9->SetShow(&v9->IUIMsgHandler, 0); /*0x8b7768*/
+  }
+  for ( n = 0; n < 2; ++n ) /*0x8b7772*/
+  {
+    v11 = this->m_pTabBlackList->m_pBtBlackList[n].p; /*0x8b7786*/
+    v11->SetShow(&v11->IUIMsgHandler, 0); /*0x8b7795*/
+  }
+  switch ( this->m_nCurTab ) /*0x8b77ae*/
+  {
+    case 0: /*0x8b77ae*/
+      for ( ii = 0; ii < 15; ++ii ) /*0x8b77b5*/
+      {
+        v13 = this->m_pTabFriend->m_pBtFriend[ii].p; /*0x8b77c6*/
+        v13->SetShow(&v13->IUIMsgHandler, 1); /*0x8b77d5*/
+        v14 = this->m_pTabFriend->m_pBtFriend[ii].p; /*0x8b77dd*/
+        v14->SetAbove(v14, nullptr); /*0x8b77e8*/
+        if ( ii == 13 ) /*0x8b77ed*/
+          this->m_pTabFriend->m_pBtFriend[13].p->SetShow(&this->m_pTabFriend->m_pBtFriend[13].p->IUIMsgHandler, 0); /*0x8b7803*/
+      }
+      break; /*0x8b7809*/
+    case 1: /*0x8b77ae*/
+      for ( jj = 0; jj < 9; ++jj ) /*0x8b780e*/
+      {
+        v16 = this->m_pTabParty->m_pBtParty[jj].p; /*0x8b7816*/
+        v16->SetShow(&v16->IUIMsgHandler, 1); /*0x8b7825*/
+        v17 = this->m_pTabParty->m_pBtParty[jj].p; /*0x8b782d*/
+        v17->SetAbove(v17, nullptr); /*0x8b7838*/
+      }
+      break; /*0x8b7840*/
+    case 3: /*0x8b77ae*/
+      for ( kk = 0; kk < 13; ++kk ) /*0x8b7845*/
+      {
+        v19 = this->m_pTabGuild->m_pBtGuild[kk].p; /*0x8b7856*/
+        v19->SetShow(&v19->IUIMsgHandler, 1); /*0x8b7865*/
+        v20 = this->m_pTabGuild->m_pBtGuild[kk].p; /*0x8b786d*/
+        v20->SetAbove(v20, nullptr); /*0x8b7878*/
+      }
+      break; /*0x8b7880*/
+    case 4: /*0x8b77ae*/
+      for ( mm = 0; mm < 11; ++mm ) /*0x8b7885*/
+      {
+        v22 = this->m_pTabGuildAlliance->m_pBtGuildAlliance[mm].p; /*0x8b7896*/
+        v22->SetShow(&v22->IUIMsgHandler, 1); /*0x8b78a5*/
+        v23 = this->m_pTabGuildAlliance->m_pBtGuildAlliance[mm].p; /*0x8b78ad*/
+        v23->SetAbove(v23, nullptr); /*0x8b78b8*/
+      }
+      break; /*0x8b78c0*/
+    case 5: /*0x8b77ae*/
+      for ( nn = 0; nn < 2; ++nn ) /*0x8b78c5*/
+      {
+        v25 = this->m_pTabBlackList->m_pBtBlackList[nn].p; /*0x8b78d6*/
+        v25->SetShow(&v25->IUIMsgHandler, 1); /*0x8b78e5*/
+        v26 = this->m_pTabBlackList->m_pBtBlackList[nn].p; /*0x8b78ed*/
+        v26->SetAbove(v26, nullptr); /*0x8b78f8*/
+      }
+      break; /*0x8b7900*/
+    default:
+      return;
+  }
+}

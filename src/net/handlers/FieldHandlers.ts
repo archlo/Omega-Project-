@@ -1720,18 +1720,25 @@ export class FieldHandlers {
   }
 
   private handleMobMove(p: InPacket): void {
+    // OG: CMob::OnMove (0x652200)
+    // Packet: mobId(4) bNotForceLandingWhenDiscard(1) bNotChangeAction(1) bNextAttackPossible(1) bLeft(1)
+    //         skillEffectId(4) multiTargetCount(4) [targets...] randTimeCount(4) [randTimes...] MovePath(variable)
     const mobId = p.readInt();
-    p.readByte(); p.readByte(); p.readByte(); p.readByte();
+    const bNotForceLandingWhenDiscard = p.readByte();
+    const bNotChangeAction = p.readByte() !== 0;
+    const bNextAttackPossible = p.readByte() !== 0;
+    const bLeft = p.readByte();
+    // skill effect ID (4 bytes) — used for mob skill visual effects
     p.readInt();
+    // multi-target ball positions
     const multiCount = p.readInt();
     for (let i = 0; i < multiCount; i++) { p.readInt(); p.readInt(); }
+    // random times for area attack
     const randCount = p.readInt();
     for (let i = 0; i < randCount; i++) p.readInt();
-    try {
-      const x = p.readShort();
-      const y = p.readShort();
-      this.onMobMove?.({ mobId, x, y });
-    } catch { /* skip */ }
+    // Decode the full MovePath blob
+    const movePath = DecodeMovePath(p);
+    this.onMobMove?.({ mobId, bNotForceLandingWhenDiscard, bNotChangeAction, bNextAttackPossible, bLeft, movePath });
   }
 
   private handleMobDamaged(p: InPacket): void {
@@ -1796,17 +1803,18 @@ export class FieldHandlers {
   }
 
   private handleNpcEnter(p: InPacket): void {
+    // OG: CNpcPool::OnNpcEnterField (0x679680) → CNpc::Init (0x676770)
+    // Packet: objId(4) templateId(4) x(2) y(2) moveAction(1) footholdId(2) rgHorzLow(2) rgHorzHigh(2) bEnabled(1)
     const objId = p.readInt();
     const templateId = p.readInt();
     const x = p.readShort();
     const y = p.readShort();
-    const facingLeft = p.readBool();
-    const nCy = p.readShort();
-    const rx0 = p.readShort();
-    const rx1 = p.readShort();
-    let fhId: number | undefined;
-    try { fhId = p.readShort(); } catch { /* optional trailing */ }
-    this.onNpcEnter?.({ objId, templateId, x, y, facingLeft, nCy, rx0, rx1, fhId });
+    const moveAction = p.readByte();
+    const footholdId = p.readShort();
+    const rgHorzLow = p.readShort();
+    const rgHorzHigh = p.readShort();
+    const bEnabled = p.readByte() !== 0;
+    this.onNpcEnter?.({ objId, templateId, x, y, moveAction, footholdId, rgHorzLow, rgHorzHigh, bEnabled });
   }
 
   private handleNpcLeave(p: InPacket): void {
@@ -2316,10 +2324,10 @@ export class FieldHandlers {
 
   private handleUserChat(p: InPacket): void {
     const charId = p.readInt();
-    const isAdmin = p.readBool();
+    const chatType = p.readByte();
     const text = p.readString();
-    p.readBool(); // hide username
-    this.onUserChat?.({ charId, text });
+    p.readBool(); // onlyBalloon
+    this.onUserChat?.({ charId, chatType, text });
   }
 
   private handleGroupMessage(p: InPacket): void {
@@ -3075,19 +3083,27 @@ export class FieldHandlers {
     const count = p.readShort();
     const items: ShopItemEntry[] = [];
     for (let i = 0; i < count; i++) {
+      // OG: CShopDlg::SetShopDlg (0x6EAB00) — per-item decode
       const itemId = p.readInt();
       const price = p.readInt();
-      p.readByte(); p.readInt(); p.readInt(); p.readInt(); p.readInt();
-      let quantity: number;
+      const discountRate = p.readByte();
+      const tokenId = p.readInt();
+      const tokenPrice = p.readInt();
+      const itemPeriod = p.readInt();
+      const levelLimited = p.readInt();
+      let unitPrice = 0;
+      let quantity = 0;
+      let maxPerSlot = 0;
       const prefix = Math.floor(itemId / 10000);
+      // OG: if prefix==207 or 233, read double unitPrice; else read short quantity + short maxPerSlot
       if (prefix === ShopItemPrefix.ThrowArrow || prefix === ShopItemPrefix.Bullet) {
-        p.readDouble();
+        unitPrice = p.readDouble();
         quantity = p.readShort();
       } else {
         quantity = p.readShort();
-        p.readShort();
+        maxPerSlot = p.readShort();
       }
-      items.push({ itemId, price, quantity });
+      items.push({ itemId, price, discountRate, tokenId, tokenPrice, itemPeriod, levelLimited, quantity, maxPerSlot, unitPrice });
     }
     this.onShopOpen?.({ npcId, items });
   }

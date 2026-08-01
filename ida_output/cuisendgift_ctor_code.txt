@@ -1,0 +1,32 @@
+﻿CUISendGift *__thiscall CUISendGift::CUISendGift(CUISendGift *this)
+{
+  StringPool *Instance; // eax
+  wchar_t *m_pStr; // [esp-10h] [ebp-30h]
+  ZXString<unsigned short> result; // [esp+Ch] [ebp-14h] BYREF
+  CUISendGift *v6; // [esp+10h] [ebp-10h]
+  int v7; // [esp+1Ch] [ebp-4h]
+
+  v6 = this; /*0x780807*/
+  CDialog::CDialog(this); /*0x78080b*/
+  this->CDialog::CWnd::IGObj::__vftable = (CUISendGift_vtbl *)&CUISendGift::`vftable'{for `IGObj'}; /*0x780812*/
+  this->CDialog::CWnd::IUIMsgHandler::__vftable = (IUIMsgHandler_vtbl *)&CUISendGift::`vftable'{for `IUIMsgHandler'}; /*0x780818*/
+  this->CDialog::CWnd::ZRefCounted::__vftable = (ZRefCounted_vtbl *)&CUISendGift::`vftable'{for `ZRefCounted'}; /*0x78081f*/
+  v7 = 0; /*0x780826*/
+  this->m_pBtOK.p = nullptr; /*0x78082a*/
+  this->m_pBtCancel.p = nullptr; /*0x780830*/
+  this->m_pEditReceiver.p = nullptr; /*0x780836*/
+  this->m_pEditContent1.p = nullptr; /*0x78083c*/
+  this->m_pEditContent2.p = nullptr; /*0x780842*/
+  this->m_sReceiver._m_pStr = nullptr; /*0x780848*/
+  this->m_sContent._m_pStr = nullptr; /*0x78084e*/
+  this->m_pLayerMessage.m_pInterface = nullptr; /*0x780854*/
+  LOBYTE(v7) = 8; /*0x780864*/
+  Instance = StringPool::GetInstance(); /*0x780869*/
+  m_pStr = StringPool::GetStringW(Instance, &result, 0xC4Eu)->_m_pStr; /*0x78087b*/
+  LOBYTE(v7) = 9; /*0x78087e*/
+  CDialog::CreateDlg(this, m_pStr, 1, nullptr, 0); /*0x780883*/
+  LOBYTE(v7) = 8; /*0x78088c*/
+  if ( result._m_pStr ) /*0x780893*/
+    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)result._m_pStr - 1); /*0x780899*/
+  return this; /*0x7808a3*/
+}

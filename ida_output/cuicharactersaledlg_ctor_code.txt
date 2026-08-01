@@ -1,0 +1,9 @@
+﻿ZRecyclableAvBuffer<ZRefCountedDummy<CUICharacterSaleDlg::NEWEQUIP>,16,CUICharacterSaleDlg::NEWEQUIP> *__thiscall ZRecyclableAvBuffer<ZRefCountedDummy<CUICharacterSaleDlg::NEWEQUIP>,16,CUICharacterSaleDlg::NEWEQUIP>::`vector deleting destructor'(
+        ZRecyclableAvBuffer<ZRefCountedDummy<CUICharacterSaleDlg::NEWEQUIP>,16,CUICharacterSaleDlg::NEWEQUIP> *this,
+        char a2)
+{
+  this->__vftable = (ZRecyclableAvBuffer<ZRefCountedDummy<CUICharacterSaleDlg::NEWEQUIP>,16,CUICharacterSaleDlg::NEWEQUIP>_vtbl *)&ZRecyclableStatic::CallBack::`vftable'; /*0x52c618*/
+  if ( (a2 & 1) != 0 ) /*0x52c61e*/
+    ZAllocEx<ZAllocAnonSelector>::Free(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, this); /*0x52c626*/
+  return this; /*0x52c62d*/
+}

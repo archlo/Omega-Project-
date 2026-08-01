@@ -1,0 +1,51 @@
+// 0x698240
+int __thiscall CPersonalShopDlg::GetRectIndexFromPoint(CPersonalShopDlg *this, unsigned int rx, unsigned int ry)
+{
+  char v4; // bl
+  ZRef<CAvatar> result; // [esp+10h] [ebp-18h] BYREF
+  tagRECT rc; // [esp+18h] [ebp-10h] BYREF
+  char rxa; // [esp+2Ch] [ebp+4h]
+  char rxb; // [esp+2Ch] [ebp+4h]
+  char rxc; // [esp+2Ch] [ebp+4h]
+
+  v4 = 0; /*0x698261*/
+  *(_DWORD *)&result.gap0 = 0; /*0x698266*/
+  ZAPI.SetRect(&rc, 10, 131, 99, 150); /*0x69826a*/
+  if ( ZAPI.PtInRect(&rc, (tagPOINT)__PAIR64__(ry, rx)) ) /*0x698277*/
+    return 0; /*0x698284*/
+  ZAPI.SetRect(&rc, 225, 130, 314, 150); /*0x6982a6*/
+  if ( !ZAPI.PtInRect(&rc, (tagPOINT)__PAIR64__(ry, rx)) /*0x6982cb*/
+    || (v4 = 1, rxa = 1, !CMiniRoomBaseDlg::GetAvatar(this, &result, 1)->p) )
+  {
+    rxa = 0; /*0x6982da*/
+  }
+  if ( (v4 & 1) != 0 ) /*0x6982e2*/
+  {
+    v4 &= ~1u; /*0x6982e8*/
+    ZRef<CAvatar>::~ZRef<CAvatar>(&result); /*0x6982eb*/
+  }
+  if ( rxa ) /*0x6982f5*/
+    return 1; /*0x6982fa*/
+  ZAPI.SetRect(&rc, 317, 130, 406, 150); /*0x69831f*/
+  if ( !ZAPI.PtInRect(&rc, (tagPOINT)__PAIR64__(ry, rx)) /*0x698347*/
+    || (v4 |= 2u, rxb = 1, !CMiniRoomBaseDlg::GetAvatar(this, &result, 2)->p) )
+  {
+    rxb = 0; /*0x698352*/
+  }
+  if ( (v4 & 2) != 0 ) /*0x69835a*/
+  {
+    v4 &= ~2u; /*0x698360*/
+    ZRef<CAvatar>::~ZRef<CAvatar>(&result); /*0x698363*/
+  }
+  if ( rxb ) /*0x69836d*/
+    return 2; /*0x698372*/
+  ZAPI.SetRect(&rc, 409, 130, 498, 150); /*0x698397*/
+  if ( !ZAPI.PtInRect(&rc, (tagPOINT)__PAIR64__(ry, rx)) /*0x6983bf*/
+    || (v4 |= 4u, rxc = 1, !CMiniRoomBaseDlg::GetAvatar(this, &result, 3)->p) )
+  {
+    rxc = 0; /*0x6983ca*/
+  }
+  if ( (v4 & 4) != 0 ) /*0x6983d2*/
+    ZRef<CAvatar>::~ZRef<CAvatar>(&result); /*0x6983d8*/
+  return 4 * (rxc != 0) - 1; /*0x698281*/
+}

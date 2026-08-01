@@ -1,0 +1,210 @@
+// cashshop::OnBuyFriendship
+
+void __thiscall CCashShop::OnBuyFriendship(CCashShop *this, int nCommSN)
+{
+  char *m_pStr; // eax
+  bool v4; // zf
+  int v5; // ecx
+  int Data; // eax
+  int nPrice; // edi
+  unsigned int v8; // ebp
+  char *v9; // ecx
+  StringPool *Instance; // eax
+  char *v11; // eax
+  CUISendGift *v12; // eax
+  ZRefCounted *v13; // eax
+  CUISendGift *v14; // ebp
+  StringPool *v15; // eax
+  char *v16; // eax
+  char *v17; // ecx
+  char *v18; // ecx
+  char *v19; // ecx
+  ZXString<char> v20; // [esp-18h] [ebp-7Ch] BYREF
+  ZXString<char> v21; // [esp-14h] [ebp-78h] BYREF
+  unsigned int *p_dwOption; // [esp-10h] [ebp-74h]
+  ZRef<CS_COMMODITY> v23; // [esp-Ch] [ebp-70h] BYREF
+  ZXString<char> v24[6]; // [esp-4h] [ebp-68h] BYREF
+  ZXString<char> sSPW; // [esp+14h] [ebp-50h] BYREF
+  ZXString<char> sGiveTo; // [esp+18h] [ebp-4Ch] BYREF
+  ZXString<char> sItemName; // [esp+1Ch] [ebp-48h] BYREF
+  unsigned int dwOption; // [esp+20h] [ebp-44h] BYREF
+  ZXString<char> sText; // [esp+24h] [ebp-40h] BYREF
+  ZXString<char> sFormat; // [esp+28h] [ebp-3Ch] BYREF
+  ZXString<char> result; // [esp+2Ch] [ebp-38h] BYREF
+  ZRef<CS_COMMODITY> *v32; // [esp+30h] [ebp-34h]
+  ZXString<char> *v33; // [esp+34h] [ebp-30h]
+  ZRef<CS_COMMODITY> pComm; // [esp+38h] [ebp-2Ch] BYREF
+  ZRef<CUISendGift> pDlg; // [esp+40h] [ebp-24h] BYREF
+  COutPacket oPacket; // [esp+48h] [ebp-1Ch] BYREF
+  int v37; // [esp+60h] [ebp-4h]
+
+  if ( !this->m_bCashShopRequestSent ) /*0x491b5b*/
+  {
+    ask_SPW(&sSPW); /*0x491b69*/
+    m_pStr = sSPW._m_pStr; /*0x491b71*/
+    v37 = 0; /*0x491b75*/
+    v4 = sSPW._m_pStr == nullptr; /*0x491b79*/
+    if ( !sSPW._m_pStr ) /*0x491b7b*/
+      goto LABEL_15; /*0x491b7b*/
+    v5 = *((_DWORD *)sSPW._m_pStr - 1); /*0x491b81*/
+    if ( v5 < 6 || v5 > 16 ) /*0x491b90*/
+      goto LABEL_14; /*0x491b90*/
+    sFormat._m_pStr = nullptr; /*0x491b96*/
+    LOBYTE(v37) = 1; /*0x491baa*/
+    CWvsContext::GetCommodityBySN((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &pComm, nCommSN); /*0x491baf*/
+    LOBYTE(v37) = 2; /*0x491bbb*/
+    Data = TSecType<long>::GetData(&pComm.p->nItemId); /*0x491bc0*/
+    CItemInfo::GetItemName((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, &sItemName, Data); /*0x491bd1*/
+    nPrice = pComm.p->nPrice; /*0x491bdd*/
+    v24[0] = (ZXString<char>)this->_ZtlSecureTear_m_nNexonCash_CS; /*0x491be0*/
+    v8 = 0; /*0x491be4*/
+    LOBYTE(v37) = 3; /*0x491be7*/
+    dwOption = 0; /*0x491bec*/
+    if ( _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nNexonCash, (unsigned int)v24[0]._m_pStr) >= nPrice ) /*0x491bfa*/
+    {
+      v8 = 1; /*0x491bfc*/
+      dwOption = 1; /*0x491c01*/
+    }
+    if ( _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nPrepaidNXCash, this->_ZtlSecureTear_m_nPrepaidNXCash_CS) >= nPrice ) /*0x491c17*/
+    {
+      v8 |= 4u; /*0x491c19*/
+      dwOption = v8; /*0x491c1c*/
+    }
+    if ( !v8 ) /*0x491c22*/
+    {
+      v24[0]._m_pStr = nullptr; /*0x491c24*/
+      v23.p = nullptr; /*0x491c25*/
+      *(_DWORD *)&v23.gap0 = 0; /*0x491c26*/
+      p_dwOption = nullptr; /*0x491c27*/
+      v21._m_pStr = v9; /*0x491c28*/
+      Instance = StringPool::GetInstance(); /*0x491c35*/
+      StringPool::GetString(Instance, &v21, 0x229u); /*0x491c3c*/
+      CUtilDlg::Notice(v21, (const wchar_t *)p_dwOption, *(ZRef<CDialog> **)&v23.gap0, (int)v23.p, (int)v24[0]._m_pStr); /*0x491c41*/
+LABEL_11:
+      LOBYTE(v37) = 2; /*0x491c49*/
+      if ( sItemName._m_pStr ) /*0x491c54*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sItemName._m_pStr - 1); /*0x491c5a*/
+      LOBYTE(v37) = 1; /*0x491c66*/
+      ZRef<CS_COMMODITY>::~ZRef<CS_COMMODITY>(&pComm); /*0x491c6b*/
+      m_pStr = sSPW._m_pStr; /*0x491c70*/
+LABEL_14:
+      v4 = m_pStr == nullptr; /*0x491c74*/
+      goto LABEL_15; /*0x491c74*/
+    }
+    v11 = (char *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0xC8u); /*0x491cac*/
+    result._m_pStr = v11; /*0x491cb1*/
+    LOBYTE(v37) = 4; /*0x491cb5*/
+    if ( v11 && (v12 = CUISendGift::CUISendGift((CUISendGift *)v11)) != nullptr && (v13 = &v12->ZRefCounted) != nullptr ) /*0x491cce*/
+    {
+      v14 = (CUISendGift *)&v13[-1].___u1; /*0x491cd0*/
+      pDlg.p = (CUISendGift *)&v13[-1].___u1; /*0x491cd3*/
+      if ( v13 != (ZRefCounted *)8 ) /*0x491cd9*/
+        InterlockedIncrement(&v14->_m_nRef); /*0x491cdf*/
+    }
+    else
+    {
+      v14 = nullptr; /*0x491d09*/
+      pDlg.p = nullptr; /*0x491d0b*/
+    }
+    LOBYTE(v37) = 5; /*0x491ce7*/
+    if ( CDialog::DoModal(v14) != 1 ) /*0x491cf4*/
+    {
+      LOBYTE(v37) = 3; /*0x491cfa*/
+      ZRef<CUISendGift>::~ZRef<CUISendGift>(&pDlg); /*0x491cff*/
+      goto LABEL_11; /*0x491d04*/
+    }
+    sGiveTo._m_pStr = nullptr; /*0x491d11*/
+    sText._m_pStr = nullptr; /*0x491d15*/
+    LOBYTE(v37) = 7; /*0x491d27*/
+    CUISendGift::GetResult(v14, &sGiveTo, &sText); /*0x491d2b*/
+    v15 = StringPool::GetInstance(); /*0x491d3a*/
+    v16 = StringPool::GetString(v15, &result, 0x211u)->_m_pStr; /*0x491d4e*/
+    LOBYTE(v37) = 8; /*0x491d59*/
+    ZXString<char>::Format(&sFormat, v16, sItemName._m_pStr, nPrice, sGiveTo._m_pStr); /*0x491d5e*/
+    LOBYTE(v37) = 7; /*0x491d6a*/
+    if ( result._m_pStr ) /*0x491d70*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x491d76*/
+    v24[0]._m_pStr = nullptr; /*0x491d7e*/
+    v32 = &v23; /*0x491d89*/
+    ZRef<CS_COMMODITY>::ZRef<CS_COMMODITY>(&v23, &pComm); /*0x491d8e*/
+    p_dwOption = &dwOption; /*0x491d97*/
+    v21._m_pStr = (char *)2; /*0x491d98*/
+    v20._m_pStr = (char *)&dwOption; /*0x491d9a*/
+    v33 = &v20; /*0x491da1*/
+    LOBYTE(v37) = 9; /*0x491da6*/
+    ZXString<char>::ZXString<char>(&v20, &sFormat); /*0x491dab*/
+    LOBYTE(v37) = 7; /*0x491db0*/
+    if ( CConfirmPurchaseDlg::Confirm(v20, (int)v21._m_pStr, p_dwOption, v23, (int)v24[0]._m_pStr) == 1 ) /*0x491dbf*/
+    {
+      COutPacket::COutPacket(&oPacket, 275); /*0x491e59*/
+      LOBYTE(v37) = 10; /*0x491e64*/
+      COutPacket::Encode1(&oPacket, 0x25u); /*0x491e69*/
+      v24[0]._m_pStr = v17; /*0x491e6e*/
+      v33 = v24; /*0x491e75*/
+      ZXString<char>::ZXString<char>(v24, &sSPW); /*0x491e7a*/
+      COutPacket::EncodeStr(&oPacket, v24[0]); /*0x491e83*/
+      COutPacket::Encode4(&oPacket, dwOption); /*0x491e91*/
+      COutPacket::Encode4(&oPacket, nCommSN); /*0x491e9f*/
+      v24[0]._m_pStr = v18; /*0x491ea4*/
+      ZXString<char>::ZXString<char>(v24, &sGiveTo); /*0x491eb0*/
+      COutPacket::EncodeStr(&oPacket, v24[0]); /*0x491eb9*/
+      v24[0]._m_pStr = v19; /*0x491ebe*/
+      ZXString<char>::ZXString<char>(v24, &sText); /*0x491eca*/
+      COutPacket::EncodeStr(&oPacket, v24[0]); /*0x491ed3*/
+      CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket); /*0x491ee3*/
+      v4 = this->m_nCurCategory == 9; /*0x491ee8*/
+      this->m_bCashShopRequestSent = 1; /*0x491eef*/
+      if ( v4 ) /*0x491ef6*/
+        this->m_nWishBuyOrGift = nCommSN; /*0x491ef8*/
+      LOBYTE(v37) = 7; /*0x491f02*/
+      ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff); /*0x491f06*/
+      LOBYTE(v37) = 6; /*0x491f0f*/
+      if ( sText._m_pStr ) /*0x491f16*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sText._m_pStr - 1); /*0x491f1c*/
+      LOBYTE(v37) = 5; /*0x491f28*/
+      if ( sGiveTo._m_pStr ) /*0x491f2f*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sGiveTo._m_pStr - 1); /*0x491f35*/
+      LOBYTE(v37) = 3; /*0x491f41*/
+      ZRef<CUISendGift>::~ZRef<CUISendGift>(&pDlg); /*0x491f46*/
+      LOBYTE(v37) = 2; /*0x491f4f*/
+      if ( sItemName._m_pStr ) /*0x491f56*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sItemName._m_pStr - 1); /*0x491f5c*/
+      LOBYTE(v37) = 1; /*0x491f68*/
+      ZRef<CS_COMMODITY>::~ZRef<CS_COMMODITY>(&pComm); /*0x491f6d*/
+      LOBYTE(v37) = 0; /*0x491f76*/
+      if ( sFormat._m_pStr ) /*0x491f7d*/
+      {
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sFormat._m_pStr - 1); /*0x491f87*/
+        m_pStr = sSPW._m_pStr; /*0x491f8c*/
+        v4 = sSPW._m_pStr == nullptr; /*0x491f93*/
+LABEL_15:
+        v37 = -1; /*0x491c76*/
+        if ( !v4 ) /*0x491c7e*/
+          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)m_pStr - 1); /*0x491c84*/
+        return; /*0x491c84*/
+      }
+    }
+    else
+    {
+      LOBYTE(v37) = 6; /*0x491dc9*/
+      if ( sText._m_pStr ) /*0x491dd0*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sText._m_pStr - 1); /*0x491dd6*/
+      LOBYTE(v37) = 5; /*0x491de2*/
+      if ( sGiveTo._m_pStr ) /*0x491de9*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sGiveTo._m_pStr - 1); /*0x491def*/
+      LOBYTE(v37) = 3; /*0x491dfb*/
+      ZRef<CUISendGift>::~ZRef<CUISendGift>(&pDlg); /*0x491e00*/
+      LOBYTE(v37) = 2; /*0x491e09*/
+      if ( sItemName._m_pStr ) /*0x491e10*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sItemName._m_pStr - 1); /*0x491e16*/
+      LOBYTE(v37) = 1; /*0x491e22*/
+      ZRef<CS_COMMODITY>::~ZRef<CS_COMMODITY>(&pComm); /*0x491e27*/
+      LOBYTE(v37) = 0; /*0x491e30*/
+      if ( sFormat._m_pStr ) /*0x491e37*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sFormat._m_pStr - 1); /*0x491e3d*/
+    }
+    m_pStr = sSPW._m_pStr; /*0x491e45*/
+    v4 = sSPW._m_pStr == nullptr; /*0x491e49*/
+    goto LABEL_15; /*0x491e4b*/
+  }
+}

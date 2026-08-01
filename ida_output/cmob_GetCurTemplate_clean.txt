@@ -1,0 +1,11 @@
+CMobTemplate *__thiscall CMob::GetCurTemplate(CMob *this)
+{
+  CMobTemplate *result; // eax
+
+  if ( !this->m_stat.nDoom_ ) /*0x639f40*/
+    return this->m_pTemplate; /*0x639f40*/
+  result = this->m_pTemplateByDoom; /*0x639f49*/
+  if ( !result ) /*0x639f51*/
+    return this->m_pTemplate; /*0x639f53*/
+  return result; /*0x639f59*/
+}

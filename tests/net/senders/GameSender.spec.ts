@@ -202,11 +202,13 @@ describe('GameSender', () => {
     expect(new DataView(body.buffer, body.byteOffset + 2, 4).getInt32(0, true)).toBe(42);
   });
 
-  it('Whisper writes 0x02 (C++ spec — Phase 5.1 fix)', () => {
+  it('Whisper writes str(targetName) str(text) — OG format', () => {
     const pkt = GameSender.Whisper('Bob', 'hi');
     expect(opcode(pkt)).toBe(InHeader.Whisper);
-    const body = payload(pkt);
-    expect(body[0]).toBe(WhisperSendBit.SendOnly); // 0x02
+    const p = new InPacket(pkt.toArray());
+    expect(p.readShort()).toBe(InHeader.Whisper);
+    expect(p.readString()).toBe('Bob');
+    expect(p.readString()).toBe('hi');
   });
 });
 

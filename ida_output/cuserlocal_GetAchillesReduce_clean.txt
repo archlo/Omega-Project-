@@ -1,0 +1,56 @@
+// cuserlocal::GetAchillesReduce
+
+int __thiscall CUserLocal::GetAchillesReduce(CUserLocal *this, int nDamage)
+{
+  CharacterData *p; // edi
+  char *p_m_uTableSize; // esi
+  volatile LONG *p_m_uCount; // ebx
+  int v5; // esi
+  __int16 v6; // ax
+  int SkillLevel; // eax
+  const SKILLLEVELDATA *LevelData; // eax
+  const SKILLENTRY *s_pAchilles; // [esp+Ch] [ebp-Ch] BYREF
+  ZRef<CharacterData> result; // [esp+10h] [ebp-8h] BYREF
+
+  p = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &result)->p; /*0x908c56*/
+  if ( result.p ) /*0x908c5f*/
+  {
+    p_m_uTableSize = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x908c61*/
+    p_m_uCount = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount; /*0x908c64*/
+    if ( !InterlockedDecrement(p_m_uCount) ) /*0x908c68*/
+    {
+      InterlockedIncrement(p_m_uCount); /*0x908c73*/
+      if ( p_m_uTableSize ) /*0x908c7b*/
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1); /*0x908c85*/
+    }
+    result.p = nullptr; /*0x908c87*/
+  }
+  v5 = 0; /*0x908c99*/
+  v6 = _ZtlSecureFuse<short>(p->characterStat._ZtlSecureTear_nJob, p->characterStat._ZtlSecureTear_nJob_CS); /*0x908c9b*/
+  if ( v6 > 132 ) /*0x908ca9*/
+  {
+    if ( v6 == 2112 ) /*0x908cd1*/
+      v5 = 21120004; /*0x908cd3*/
+  }
+  else
+  {
+    switch ( v6 ) /*0x908cab*/
+    {
+      case 132: /*0x908cab*/
+        v5 = 1320005; /*0x908cc5*/
+        break;
+      case 112: /*0x908cab*/
+        v5 = 1120004; /*0x908cbe*/
+        break;
+      case 122: /*0x908cab*/
+        v5 = 1220005; /*0x908cb7*/
+        break;
+    }
+  }
+  s_pAchilles = nullptr; /*0x908ce5*/
+  SkillLevel = CSkillInfo::GetSkillLevel(TSingleton<CSkillInfo>::ms_pInstance, p, v5, &s_pAchilles); /*0x908ced*/
+  if ( !SkillLevel ) /*0x908cf4*/
+    return 0; /*0x908d3d*/
+  LevelData = SKILLENTRY::GetLevelData((SKILLENTRY *)s_pAchilles, SkillLevel); /*0x908cfb*/
+  return nDamage * (1000 - _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nX, LevelData->_ZtlSecureTear_nX_CS)) / 1000; /*0x908d2b*/
+}

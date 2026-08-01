@@ -1,0 +1,209 @@
+﻿void __thiscall CMob::SetDamagedByMob(
+        CMob *this,
+        CMob *nDamage,
+        unsigned __int8 vx,
+        int vy,
+        CMob *pAttackMob,
+        int nAttackIdx,
+        int nDir)
+{
+  IWzVector2D *m_pInterface; // edx
+  int v9; // eax
+  int v10; // edx
+  IWzVector2D *v11; // eax
+  IWzVector2D *v12; // eax
+  int v13; // eax
+  CVecCtrl *v14; // ecx
+  IWzVector2D *v15; // eax
+  IWzVector2D *v16; // ecx
+  CVecCtrl *v17; // eax
+  int update_time; // eax
+  char *m_pStr; // ebp
+  MobAttackInfo *AttackInfo; // eax
+  MobAttackInfo *v21; // edi
+  int v22; // eax
+  unsigned int v23; // ebx
+  unsigned int rand; // ebp
+  IWzVector2D *v25; // eax
+  bool v26; // zf
+  const wchar_t **v27; // edi
+  const wchar_t *v28; // ebp
+  CAnimationDisplayer *v29; // edi
+  int IsLeft; // eax
+  const wchar_t **p_m_wstr; // edi
+  const wchar_t *v32; // edi
+  int nHitCount; // edi
+  IWzVector2D *v34; // eax
+  IWzVector2D *v35; // eax
+  int v36; // eax
+  unsigned int dwTemplateID; // eax
+  int v38; // edi
+  int v39; // ebp
+  unsigned int MobID; // eax
+  unsigned int v41; // eax
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v42; // [esp-14h] [ebp-78h] BYREF
+  unsigned int v43; // [esp-10h] [ebp-74h]
+  IWzVector2D *v44; // [esp-Ch] [ebp-70h]
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v45; // [esp-8h] [ebp-6Ch] BYREF
+  unsigned int sound_volume_by_pos; // [esp-4h] [ebp-68h]
+  int x; // [esp+14h] [ebp-50h]
+  int y; // [esp+18h] [ebp-4Ch]
+  CMobTemplate *pTemplate; // [esp+1Ch] [ebp-48h] BYREF
+  ZArray<unsigned char> v50; // [esp+20h] [ebp-44h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v51; // [esp+24h] [ebp-40h]
+  tagRECT rc; // [esp+38h] [ebp-2Ch] BYREF
+  tagRECT rcBody; // [esp+48h] [ebp-1Ch] BYREF
+  int v54; // [esp+60h] [ebp-4h]
+
+  if ( pAttackMob
+    && (pAttackMob->m_stat.nDazzle_ != this->m_stat.nDazzle_
+     || (this->m_pTemplate->nEscortType == 1) != (pAttackMob->m_pTemplate->nEscortType == 1))
+    && pAttackMob != this )
+  {
+    m_pInterface = this->m_pvc.m_pInterface;
+    v9 = m_pInterface ? (int)&m_pInterface[-3] : 0;
+    if ( *(_DWORD *)(v9 + 416) )
+    {
+      if ( !CMob::IsActive(this)
+        || ((v11 = this->m_pvcActive.m_pInterface) == nullptr ? (v12 = nullptr) : (v12 = v11 - 3), v12[104].__vftable) )
+      {
+        v13 = v10 ? v10 - 12 : 0;
+        if ( !*(_DWORD *)(v13 + 1868) )
+        {
+          v14 = v10 ? (CVecCtrl *)(v10 - 12) : nullptr;
+          if ( !CVecCtrl::GetLadderOrRope(v14) )
+          {
+            if ( !CMob::IsActive(this)
+              || ((v15 = this->m_pvcActive.m_pInterface) == nullptr ? (v16 = nullptr) : (v16 = v15 - 3),
+                  !v16[467].__vftable
+               && (!v15 ? (v17 = nullptr) : (v17 = (CVecCtrl *)&v15[-3]), !CVecCtrl::GetLadderOrRope(v17))) )
+            {
+              update_time = get_update_time();
+              if ( update_time - this->m_tLastHitByMob >= (this->m_pTemplate->nEscortType != 1 ? 2000 : 1500) )
+              {
+                this->m_tLastHitByMob = update_time;
+                m_pStr = TSingleton<CWvsContext>::ms_pInstance._m_pStr;
+                pTemplate = pAttackMob->m_pTemplate;
+                AttackInfo = CMobTemplate::GetAttackInfo(pTemplate, nAttackIdx);
+                v21 = AttackInfo;
+                if ( AttackInfo && AttackInfo->bMagicAttack )
+                  v22 = CalcDamage::MDamage((CalcDamage *)(m_pStr + 15480), &pAttackMob->m_stat, &this->m_stat);
+                else
+                  v22 = CalcDamage::PDamage((CalcDamage *)(m_pStr + 15480), &pAttackMob->m_stat, &this->m_stat);
+                v23 = v22;
+                if ( v21 )
+                {
+                  CMob::GetBodyRect(this, &rc, 1);
+                  rand = get_rand(rc.right - rc.left, rc.left);
+                  x = rand;
+                  v25 = (IWzVector2D *)get_rand(rc.bottom - rc.top, rc.top);
+                  v26 = v21->bHitAttach == 0;
+                  sound_volume_by_pos = -1073343324;
+                  y = (int)v25;
+                  v45.m_pInterface = nullptr;
+                  if ( v26 )
+                  {
+                    v51 = &v45;
+                    v44 = v25;
+                    v43 = rand;
+                    v42.m_pInterface = nullptr;
+                    p_m_wstr = (const wchar_t **)&v21->sHit.m_Data->m_wstr;
+                    v54 = 2;
+                    v51 = (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v42;
+                    if ( p_m_wstr )
+                      v32 = *p_m_wstr;
+                    else
+                      v32 = nullptr;
+                    v54 = -1;
+                    CAnimationDisplayer::Effect_General(
+                      TSingleton<CAnimationDisplayer>::ms_pInstance,
+                      v32,
+                      nDir > 0,
+                      v42,
+                      v43,
+                      (int)v44,
+                      v45,
+                      sound_volume_by_pos);
+                  }
+                  else
+                  {
+                    v50.a = (unsigned __int8 *)&v45;
+                    v44 = nullptr;
+                    v43 = 0;
+                    v42.m_pInterface = v25;
+                    v51 = (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v42;
+                    v54 = 0;
+                    CMob::GetVecCtrl(this, &v42);
+                    v27 = (const wchar_t **)&v21->sHit.m_Data->m_wstr;
+                    LOBYTE(v54) = 1;
+                    if ( v27 )
+                      v28 = *v27;
+                    else
+                      v28 = nullptr;
+                    v29 = TSingleton<CAnimationDisplayer>::ms_pInstance;
+                    IsLeft = CMob::IsLeft(this);
+                    v54 = -1;
+                    CAnimationDisplayer::Effect_General(
+                      v29,
+                      v28,
+                      IsLeft == 0,
+                      v42,
+                      v43,
+                      (int)v44,
+                      v45,
+                      sound_volume_by_pos);
+                    rand = x;
+                  }
+                  if ( this->m_pTemplate->nEscortType == 1 )
+                  {
+                    nHitCount = CMob::GetCurTemplate(this)->nHitCount;
+                    if ( nHitCount > 0 )
+                    {
+                      v34 = this->m_pvcActive.m_pInterface;
+                      if ( v34 )
+                        v35 = v34 - 3;
+                      else
+                        v35 = nullptr;
+                      if ( !v35[472].__vftable )
+                      {
+                        v36 = ::rand();
+                        CMob::_ZtlSecurePut_m_nOneTimeAction(this, v36 % nHitCount + 7);
+                        CMob::PrepareActionLayer(this);
+                      }
+                    }
+                  }
+                  sound_volume_by_pos = get_sound_volume_by_pos(rand, y);
+                  v45.m_pInterface = (IWzGr2DLayer *)(nAttackIdx + 11);
+                  dwTemplateID = CMobTemplate::_ZtlSecureGet_dwTemplateID(pTemplate);
+                  play_mob_sound(dwTemplateID, (SE_TYPE)v45.m_pInterface, sound_volume_by_pos);
+                }
+                CMob::ShowDamage(this, (int)this, v23, 0, 0, 0, 0, 0);
+                CMob::GetBodyRect(this, &rcBody, 0);
+                v38 = (rcBody.right + rcBody.left) / 2;
+                v39 = (rcBody.top + rcBody.bottom) / 2;
+                CMob::ChaseTarget(this, 1, &pAttackMob->IVecCtrlOwner, 0);
+                COutPacket::COutPacket((COutPacket *)&pTemplate, 233);
+                rcBody.bottom = 3;
+                MobID = CMob::GetMobID(nDamage);
+                COutPacket::Encode4((COutPacket *)&pTemplate, MobID);
+                COutPacket::Encode4(
+                  (COutPacket *)&pTemplate,
+                  *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 2093));
+                v41 = CMob::GetMobID(this);
+                COutPacket::Encode4((COutPacket *)&pTemplate, v41);
+                COutPacket::Encode1((COutPacket *)&pTemplate, vx);
+                COutPacket::Encode4((COutPacket *)&pTemplate, v23);
+                COutPacket::Encode1((COutPacket *)&pTemplate, vy < 0);
+                COutPacket::Encode2((COutPacket *)&pTemplate, v38);
+                COutPacket::Encode2((COutPacket *)&pTemplate, v39);
+                CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, (const COutPacket *)&pTemplate);
+                rcBody.bottom = -1;
+                ZArray<unsigned char>::RemoveAll(&v50);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

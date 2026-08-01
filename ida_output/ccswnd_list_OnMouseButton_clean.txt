@@ -1,0 +1,121 @@
+// CCSWnd_List::OnMouseButton @ 0x4c91a0
+// Decompiled from v95 IDB
+
+void __thiscall CCSWnd_List::OnMouseButton(
+        CCSWnd_List *this,
+        int *msg,
+        unsigned int wParam,
+        unsigned int rx,
+        unsigned int ry)
+{
+  CCSWnd_List *v5; // esi
+  int v6; // edi
+  CCSWnd_List *v7; // ebp
+  CS_COMMODITY_EX *p; // ecx
+  ZRef<CS_COMMODITY> *v9; // eax
+  bool v10; // bl
+  CPet *v11; // esi
+  ZRef<CS_COMMODITY> v12[3]; // [esp-8h] [ebp-64h] BYREF
+  int v13; // [esp+14h] [ebp-48h]
+  CCSWnd_List *v14; // [esp+18h] [ebp-44h]
+  ZRef<CS_COMMODITY> *v15; // [esp+1Ch] [ebp-40h]
+  ZRef<CS_COMMODITY_EX> pComm; // [esp+20h] [ebp-3Ch] BYREF
+  ZRef<CS_COMMODITY> result; // [esp+28h] [ebp-34h] BYREF
+  tagRECT rectIcon; // [esp+30h] [ebp-2Ch] BYREF
+  tagRECT rectPlate; // [esp+40h] [ebp-1Ch] BYREF
+  int v20; // [esp+58h] [ebp-4h]
+
+  v5 = this; /*0x4c91c7*/
+  v14 = this; /*0x4c91c9*/
+  v6 = 0; /*0x4c91cd*/
+  v13 = 0; /*0x4c91d5*/
+  CUIToolTip::ClearToolTip((CUIToolTip *)&this->m_apLimitLayer); /*0x4c91d9*/
+  CCSWnd_Char::EndChat((CCSWnd_Char *)(v5->m_bCannotBuy[9] + 1380)); /*0x4c91ea*/
+  if ( msg != (int *)515 ) /*0x4c91f7*/
+    return; /*0x4c91f7*/
+  v7 = (CCSWnd_List *)((char *)v5 - 4); /*0x4c9203*/
+  msg = &v5->m_nButtonFocus; /*0x4c9206*/
+  while ( 1 ) /*0x4c9212*/
+  {
+    CCSWnd_List::GetPlateRect(v7, &rectPlate, v6); /*0x4c9212*/
+    rectIcon.left = rectPlate.left + 5; /*0x4c9222*/
+    rectIcon.right = rectPlate.left + 69; /*0x4c9229*/
+    rectIcon.top = rectPlate.top + 5; /*0x4c9239*/
+    rectIcon.bottom = rectPlate.top + 69; /*0x4c9246*/
+    if ( !ZAPI.PtInRect(&rectIcon, (tagPOINT)__PAIR64__(ry, rx)) || *msg < 0 ) /*0x4c9260*/
+      goto LABEL_26; /*0x4c9260*/
+    CWvsCommodityEx::GetCommodityExByIndex(TSingleton<CWvsCommodityEx>::ms_pInstance, &pComm, *msg); /*0x4c9272*/
+    p = pComm.p; /*0x4c9277*/
+    v20 = 0; /*0x4c927b*/
+    v10 = true; /*0x4c92a0*/
+    if ( pComm.p ) /*0x4c9285*/
+    {
+      v9 = CS_COMMODITY_EX::ToOldData(pComm.p, &result); /*0x4c928c*/
+      v13 |= 1u; /*0x4c9291*/
+      p = pComm.p; /*0x4c929a*/
+      if ( v9->p ) /*0x4c9296*/
+        v10 = false; /*0x4c9285*/
+    }
+    if ( (v13 & 1) != 0 ) /*0x4c92ab*/
+    {
+      v13 &= ~1u; /*0x4c92b1*/
+      if ( result.p ) /*0x4c92b8*/
+      {
+        if ( !InterlockedDecrement(&result.p->_m_nRef) ) /*0x4c92be*/
+        {
+          InterlockedIncrement(&result.p->_m_nRef); /*0x4c92d0*/
+          if ( result.p ) /*0x4c92dc*/
+            ((void (__thiscall *)(CS_COMMODITY *, int))result.p->dtr_ZRefCounted)(result.p, 1); /*0x4c92e4*/
+        }
+        p = pComm.p; /*0x4c92e6*/
+        result.p = nullptr; /*0x4c92ea*/
+      }
+    }
+    if ( v10 ) /*0x4c92f4*/
+    {
+      v20 = -1; /*0x4c92f6*/
+      if ( p ) /*0x4c9300*/
+      {
+        if ( !InterlockedDecrement(&p->_m_nRef) ) /*0x4c930a*/
+        {
+          InterlockedIncrement(&pComm.p->_m_nRef); /*0x4c931c*/
+          if ( pComm.p ) /*0x4c9328*/
+            ((void (__thiscall *)(CS_COMMODITY_EX *, int))pComm.p->dtr_ZRefCounted)(pComm.p, 1); /*0x4c9330*/
+        }
+        pComm.p = nullptr; /*0x4c9332*/
+      }
+      goto LABEL_26; /*0x4c933a*/
+    }
+    v15 = v12; /*0x4c9341*/
+    CS_COMMODITY_EX::ToOldData(p, v12); /*0x4c9346*/
+    CCSWnd_List::WearCommodity(v7, v12[0]); /*0x4c934d*/
+    v12[0].p = nullptr; /*0x4c9352*/
+    v5->m_nPlateNo = v6; /*0x4c9356*/
+    CWnd::InvalidateRect(v7, (const tagRECT *)v12[0].p); /*0x4c935c*/
+    if ( TSecType<long>::GetData(&pComm.p->nItemId) == 1832000 ) /*0x4c9372*/
+      break; /*0x4c9372*/
+LABEL_25:
+    v20 = -1; /*0x4c9396*/
+    ZRef<CS_COMMODITY_EX>::~ZRef<CS_COMMODITY_EX>(&pComm); /*0x4c93a2*/
+LABEL_26:
+    ++msg; /*0x4c93a7*/
+    if ( ++v6 >= 10 ) /*0x4c93b0*/
+      return; /*0x4c93b0*/
+  }
+  v11 = TSingleton<CUserPreview>::ms_pInstance->m_apPet.a->p; /*0x4c937f*/
+  if ( !v11 || !v11->m_pTemplate->nChatBalloon ) /*0x4c938c*/
+  {
+    v5 = v14; /*0x4c9392*/
+    goto LABEL_25; /*0x4c9392*/
+  }
+  msg = nullptr; /*0x4c93c3*/
+  qmemcpy(ZXString<char>::GetBuffer((ZXString<char> *)&msg, 14, 0), "Pet Quote Ring", 14); /*0x4c93d6*/
+  ZXString<char>::ReleaseBuffer((ZXString<char> *)&msg, 14); /*0x4c93fb*/
+  LOBYTE(v20) = 1; /*0x4c9407*/
+  CPet::ChatCommandInPreview(v11, (const ZXString<char> *)&msg); /*0x4c940c*/
+  LOBYTE(v20) = 0; /*0x4c9415*/
+  if ( msg ) /*0x4c941c*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)msg - 1); /*0x4c9422*/
+  v20 = -1; /*0x4c942e*/
+  ZRef<CS_COMMODITY_EX>::~ZRef<CS_COMMODITY_EX>(&pComm); /*0x4c9436*/
+}

@@ -1,0 +1,171 @@
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "structuredContent": {
+      "result": [
+        {
+          "addr": "0x898f70",
+          "blocks": [
+            {
+              "start": "0x898f70",
+              "end": "0x898fbf",
+              "size": 79,
+              "type": 0,
+              "successors": [
+                "0x898fbf",
+                "0x898fdb"
+              ],
+              "predecessors": []
+            },
+            {
+              "start": "0x898fbf",
+              "end": "0x898fcb",
+              "size": 12,
+              "type": 0,
+              "successors": [
+                "0x898fcb",
+                "0x898fdb"
+              ],
+              "predecessors": [
+                "0x898f70"
+              ]
+            },
+            {
+              "start": "0x898fcb",
+              "end": "0x898fdb",
+              "size": 16,
+              "type": 0,
+              "successors": [
+                "0x898fdb",
+                "0x8999b2"
+              ],
+              "predecessors": [
+                "0x898fbf"
+              ]
+            },
+            {
+              "start": "0x898fdb",
+              "end": "0x899002",
+              "size": 39,
+              "type": 0,
+              "successors": [
+                "0x899002",
+                "0x899046"
+              ],
+              "predecessors": [
+                "0x898f70",
+                "0x898fbf",
+                "0x898fcb"
+              ]
+            },
+            {
+              "start": "0x899002",
+              "end": "0x89903a",
+              "size": 56,
+              "type": 0,
+              "successors": [
+                "0x89903a",
+                "0x899046"
+              ],
+              "predecessors": [
+                "0x898fdb"
+              ]
+            },
+            {
+              "start": "0x89903a",
+              "end": "0x899046",
+              "size": 12,
+              "type": 0,
+              "successors": [
+                "0x899046"
+              ],
+              "predecessors": [
+                "0x899002"
+              ]
+            },
+            {
+              "start": "0x899046",
+              "end": "0x89905a",
+              "size": 20,
+              "type": 0,
+              "successors": [
+                "0x89905a",
+                "0x899197"
+              ],
+              "predecessors": [
+                "0x898fdb",
+                "0x899002",
+                "0x89903a"
+              ]
+            },
+            {
+              "start": "0x89905a",
+              "end": "0x899062",
+              "size": 8,
+              "type": 0,
+              "successors": [
+                "0x899062",
+                "0x899067"
+              ],
+              "predecessors": [
+                "0x899046"
+              ]
+            },
+            {
+              "start": "0x899062",
+              "end": "0x899067",
+              "size": 5,
+              "type": 0,
+              "successors": [
+                "0x899067",
+                "0x89907e"
+              ],
+              "predecessors": [
+                "0x89905a"
+              ]
+            },
+            {
+              "start": "0x899067",
+              "end": "0x89907e",
+              "size": 23,
+              "type": 0,
+              "successors": [
+                "0x8990bb"
+              ],
+              "predecessors": [
+                "0x89905a",
+                "0x899062"
+              ]
+            }
+          ],
+          "count": 549,
+          "total_blocks": 549,
+          "cursor": {
+            "done": true
+          }
+        }
+      ]
+    },
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"result\":[{\"addr\":\"0x898f70\",\"blocks\":[{\"start\":\"0x898f70\",\"end\":\"0x898fbf\",\"size\":79,\"type\":0,\"successors\":[\"0x898fbf\",\"0x898fdb\"],\"predecessors\":[]},{\"start\":\"0x898fbf\",\"end\":\"0x898fcb\",\"size\":12,\"type\":0,\"successors\":[\"0x898fcb\",\"0x898fdb\"],\"predecessors\":[\"0x898f70\"]},{\"start\":\"0x898fcb\",\"end\":\"0x898fdb\",\"size\":16,\"type\":0,\"successors\":[\"0x898fdb\",\"0x8999b2\"],\"predecessors\":[\"0x898fbf\"]},{\"start\":\"0x898fdb\",\"end\":\"0x899002\",\"size\":39,\"type\":0,\"successors\":[\"0x899002\",\"0x899046\"],\"predecessors\":[\"0x898f70\",\"0x898fbf\",\"0x898fcb\"]},{\"start\":\"0x899002\",\"end\":\"0x89903a\",\"size\":56,\"type\":0,\"successors\":[\"0x89903a\",\"0x899046\"],\"predecessors\":[\"0x898fdb\"]},{\"start\":\"0x89903a\",\"end\":\"0x899046\",\"size\":12,\"type\":0,\"successors\":[\"0x899046\"],\"predecessors\":[\"0x899002\"]},{\"start\":\"0x899046\",\"end\":\"0x89905a\",\"size\":20,\"type\":0,\"successors\":[\"0x89905a\",\"0x899197\"],\"predecessors\":[\"0x898fdb\",\"0x899002\",\"0x89903a\"]},{\"start\":\"0x89905a\",\"end\":\"0x899062\",\"size\":8,\"type\":0,\"successors\":[\"0x899062\",\"0x899067\"],\"predecessors\":[\"0x899046\"]},{\"start\":\"0x899062\",\"end\":\"0x899067\",\"size\":5,\"type\":0,\"successors\":[\"0x899067\",\"0x89907e\"],\"predecessors\":[\"0x89905a\"]},{\"start\":\"0x899067\",\"end\":\"0x89907e\",\"size\":23,\"type\":0,\"successors\":[\"0x8990bb\"],\"predecessors\":[\"0x89905a\",\"0x899062\"]}],\"count\":549,\"total_blocks\":549,\"cursor\":{\"done\":true}}]}"
+      },
+      {
+        "type": "text",
+        "text": "Output truncated. Run: curl -o .ida-mcp/e4ddacd6-49b6-4b24-85e5-f2dabe5d5f9d.json http://127.0.0.1:13337/output/e4ddacd6-49b6-4b24-85e5-f2dabe5d5f9d.json"
+      }
+    ],
+    "isError": false,
+    "_meta": {
+      "ida_mcp": {
+        "output_truncated": true,
+        "total_chars": 73468,
+        "output_id": "e4ddacd6-49b6-4b24-85e5-f2dabe5d5f9d",
+        "download_url": "http://127.0.0.1:13337/output/e4ddacd6-49b6-4b24-85e5-f2dabe5d5f9d.json",
+        "download_hint": "Output truncated. Run: curl -o .ida-mcp/e4ddacd6-49b6-4b24-85e5-f2dabe5d5f9d.json http://127.0.0.1:13337/output/e4ddacd6-49b6-4b24-85e5-f2dabe5d5f9d.json"
+      }
+    }
+  },
+  "id": 1
+}

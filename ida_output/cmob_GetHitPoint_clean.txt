@@ -1,0 +1,35 @@
+int __thiscall CMob::GetHitPoint(CMob *this, tagRECT rcAttack, int rcAttack_12)
+{
+  int bottom; // ecx
+  tagRECT rcBody; // [esp+4h] [ebp-20h] BYREF
+  tagRECT rcIntersect; // [esp+14h] [ebp-10h] BYREF
+
+  *(_DWORD *)rcAttack.left = 0; /*0x64226f*/
+  *(_DWORD *)(rcAttack.left + 4) = 0; /*0x642275*/
+  if ( CMob::GetBodyRect(this, &rcBody, 0) ) /*0x64227c*/
+  {
+    if ( rcAttack.top < rcBody.right ) /*0x64228d*/
+    {
+      if ( rcAttack.bottom <= rcBody.left ) /*0x64229e*/
+        rcAttack.bottom = rcBody.left + 1; /*0x6422a1*/
+    }
+    else
+    {
+      rcAttack.top = rcBody.right - 1; /*0x642290*/
+    }
+    if ( rcAttack.right < rcBody.bottom ) /*0x6422ad*/
+    {
+      if ( rcAttack_12 <= rcBody.top ) /*0x6422be*/
+        rcAttack_12 = rcBody.top + 1; /*0x6422c1*/
+    }
+    else
+    {
+      rcAttack.right = rcBody.bottom - 1; /*0x6422b0*/
+    }
+    ZAPI.IntersectRect(&rcIntersect, (const tagRECT *)&rcAttack.top, &rcBody); /*0x6422d4*/
+    bottom = rcIntersect.bottom; /*0x6422e5*/
+    *(_DWORD *)rcAttack.left = (rcIntersect.right + rcIntersect.left) / 2; /*0x6422ee*/
+    *(_DWORD *)(rcAttack.left + 4) = (bottom + rcIntersect.top) / 2; /*0x6422fb*/
+  }
+  return rcAttack.left; /*0x642300*/
+}

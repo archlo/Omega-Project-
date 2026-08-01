@@ -1,0 +1,278 @@
+﻿void __thiscall CMob::OnSwallowed(CMob *this)
+{
+  CUser *User; // eax
+  CUser *v3; // esi
+  char *m_pStr; // ebp
+  unsigned int v5; // ecx
+  unsigned int v6; // eax
+  IWzCanvas *m_pInterface; // ebp
+  StringPool *Instance; // eax
+  wchar_t *v9; // eax
+  CMobTemplate *m_pTemplate; // eax
+  unsigned int v11; // eax
+  IWzGr2DLayer *v12; // ecx
+  IWzCanvas *v13; // eax
+  unsigned int (__stdcall *v14)(IUnknown *); // edx
+  unsigned int (__stdcall *AddRef)(IUnknown *); // ecx
+  HRESULT (__stdcall *get_height)(IWzCanvas *, unsigned int *); // ecx
+  HRESULT v17; // eax
+  HRESULT (__stdcall *get_width)(IWzCanvas *, unsigned int *); // ecx
+  HRESULT v19; // eax
+  void (__stdcall *v20)(VARIANTARG *); // edi
+  HRESULT v21; // eax
+  HRESULT v22; // eax
+  HRESULT v23; // eax
+  HRESULT v24; // eax
+  HRESULT v25; // eax
+  CMob *v26; // esi
+  IWzGr2DLayer *v27; // ecx
+  IWzVector2D *v28; // ecx
+  unsigned int (__stdcall *Release)(IUnknown *); // edx
+  int v30; // [esp+18h] [ebp-90h] BYREF
+  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > v31; // [esp+20h] [ebp-88h] BYREF
+  unsigned int ZtlSecureTear_dwTemplateID_CS; // [esp+24h] [ebp-84h]
+  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > pCanvas; // [esp+3Ch] [ebp-6Ch] BYREF
+  unsigned int uHeight; // [esp+40h] [ebp-68h] BYREF
+  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > pTempCanvas; // [esp+44h] [ebp-64h]
+  int dLen; // [esp+48h] [ebp-60h] BYREF
+  int tCur; // [esp+4Ch] [ebp-5Ch]
+  CMob *v38; // [esp+50h] [ebp-58h]
+  int tEnd; // [esp+54h] [ebp-54h]
+  tagPOINT ptUser; // [esp+58h] [ebp-50h] BYREF
+  tagPOINT ptMob; // [esp+60h] [ebp-48h] BYREF
+  Ztl_variant_t vIndex; // [esp+68h] [ebp-40h] BYREF
+  VARIANTARG pvarg; // [esp+78h] [ebp-30h] BYREF
+  ZList<ZRef<CActionMan::MOBACTIONFRAMEENTRY> > l; // [esp+88h] [ebp-20h] BYREF
+  int v45; // [esp+A4h] [ebp-4h]
+
+  v38 = this;
+  tCur = get_update_time();
+  User = CUserPool::GetUser((CUserPool *)TSingleton<CUserPool>::ms_pInstance.m_pInterface, this->m_dwSwallowCharacterID);
+  v3 = User;
+  if ( User )
+  {
+    if ( User->IsLocalUser(User) )
+    {
+      m_pStr = TSingleton<CWvsContext>::ms_pInstance._m_pStr;
+      *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 2094) = 0;
+      *((_DWORD *)m_pStr + 2095) = get_update_time();
+      v3[1].m_aiAction[0].aaTamingMobAction[160].a = (ZRef<CActionMan::TAMINGMOBACTIONFRAMEENTRY> *)1;
+      v3[1].m_aiAction[0].aaTamingMobAction[161].a = (ZRef<CActionMan::TAMINGMOBACTIONFRAMEENTRY> *)get_update_time();
+    }
+    play_skill_sound(33101005, SE_SKILL_USE, 0);
+    CUser::LoadSwallowingEffect(v3);
+    ((void (__thiscall *)(IVecCtrlOwner *, tagPOINT *))this->GetPos)(&this->IVecCtrlOwner, &ptMob);
+    ((void (__thiscall *)(IVecCtrlOwner *, tagPOINT *))v3->GetPos)(&v3->IVecCtrlOwner, &ptUser);
+    v5 = abs32(ptUser.x - ptMob.x);
+    v6 = abs32(ptUser.y - ptMob.y);
+    dLen = (int)sqrt((double)(int)(v5 * v5 + v6 * v6));
+    tEnd = (int)((double)dLen * DOUBLE_1_5 + (double)tCur);
+    pCanvas.m_pInterface = nullptr;
+    m_pInterface = nullptr;
+    v45 = 1;
+    pTempCanvas.m_pInterface = nullptr;
+    Instance = StringPool::GetInstance();
+    v9 = StringPool::GetStringW(Instance, (ZXString<unsigned short> *)&dLen, 0x3D0u)->_m_pStr;
+    LOBYTE(v45) = 2;
+    PcCreateObject<_com_ptr_t<_com_IIID<IWzCanvas,&__s_GUID const _GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e>>>(
+      v9,
+      &pCanvas,
+      nullptr);
+    LOBYTE(v45) = 1;
+    if ( dLen )
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(dLen - 12));
+    l.__vftable = (ZList<ZRef<CActionMan::MOBACTIONFRAMEENTRY> >_vtbl *)&ZList<ZRef<CActionMan::MOBACTIONFRAMEENTRY>>::`vftable';
+    memset(&l._m_uCount, 0, 12);
+    m_pTemplate = this->m_pTemplate;
+    ZtlSecureTear_dwTemplateID_CS = m_pTemplate->_ZtlSecureTear_dwTemplateID_CS;
+    LOBYTE(v45) = 3;
+    v11 = _ZtlSecureFuse<unsigned long>(m_pTemplate->_ZtlSecureTear_dwTemplateID, ZtlSecureTear_dwTemplateID_CS);
+    CActionMan::LoadMobAction(TSingleton<CActionMan>::ms_pInstance, v11, 1, &l);
+    if ( l._m_uCount )
+    {
+      m_pInterface = l._m_pHead->p->pCanvas.m_pInterface;
+      if ( !m_pInterface )
+        goto LABEL_20;
+      AddRef = m_pInterface->AddRef;
+      pTempCanvas.m_pInterface = l._m_pHead->p->pCanvas.m_pInterface;
+      AddRef(m_pInterface);
+    }
+    else
+    {
+      vIndex.vt = 3;
+      vIndex.decVal.Lo32 = 0;
+      v12 = this->m_pLayerAction.m_pInterface;
+      LOBYTE(v45) = 4;
+      if ( !v12 )
+        _com_issue_error(-2147467261);
+      v13 = IWzGr2DLayer::Getcanvas(
+              v12,
+              (_com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > *)&dLen,
+              &vIndex)->m_pInterface;
+      if ( v13 )
+      {
+        v14 = v13->AddRef;
+        m_pInterface = v13;
+        pTempCanvas.m_pInterface = v13;
+        v14(v13);
+      }
+      if ( dLen )
+        (*(void (__stdcall **)(int))(*(_DWORD *)dLen + 8))(dLen);
+      LOBYTE(v45) = 3;
+      if ( vIndex.vt == 8 )
+      {
+        vIndex.vt = 0;
+        if ( vIndex.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(vIndex.decVal.Lo32 - 4));
+      }
+      else
+      {
+        VariantClear(&vIndex);
+      }
+    }
+    if ( !m_pInterface )
+LABEL_20:
+      _com_issue_error(-2147467261);
+    get_height = m_pInterface->get_height;
+    uHeight = 0;
+    v17 = get_height(m_pInterface, &uHeight);
+    if ( v17 < 0 )
+      _com_issue_errorex(v17, m_pInterface, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e);
+    get_width = m_pInterface->get_width;
+    dLen = 0;
+    v19 = get_width(m_pInterface, (unsigned int *)&dLen);
+    if ( v19 < 0 )
+      _com_issue_errorex(v19, m_pInterface, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e);
+    v20 = VariantInit;
+    VariantInit(&pvarg);
+    v21 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing);
+    if ( v21 < 0 )
+      _com_issue_error(v21);
+    LOBYTE(v45) = 5;
+    v20(&vIndex);
+    v22 = ZComAPI::ZComVariantCopy(&vIndex, &vtMissing);
+    if ( v22 < 0 )
+      _com_issue_error(v22);
+    LOBYTE(v45) = 6;
+    if ( !pCanvas.m_pInterface )
+      _com_issue_error(-2147467261);
+    IWzCanvas::Create(pCanvas.m_pInterface, dLen, uHeight, &vIndex, (const Ztl_variant_t *)&pvarg);
+    LOBYTE(v45) = 5;
+    if ( vIndex.vt == 8 )
+    {
+      vIndex.vt = 0;
+      if ( vIndex.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(vIndex.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&vIndex);
+    }
+    LOBYTE(v45) = 3;
+    if ( pvarg.vt == 8 )
+    {
+      pvarg.vt = 0;
+      if ( pvarg.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&pvarg);
+    }
+    v20(&pvarg);
+    v23 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing);
+    if ( v23 < 0 )
+      _com_issue_error(v23);
+    LOBYTE(v45) = 7;
+    if ( !pCanvas.m_pInterface )
+      _com_issue_error(-2147467261);
+    IWzCanvas::Copy(pCanvas.m_pInterface, 0, 0, m_pInterface, (const Ztl_variant_t *)&pvarg);
+    LOBYTE(v45) = 3;
+    if ( pvarg.vt == 8 )
+    {
+      pvarg.vt = 0;
+      if ( pvarg.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&pvarg);
+    }
+    ptUser.y -= 40;
+    ptMob.y += (int)uHeight / -2;
+    ptUser.x += 70 * (2 * ((v3->m_nMoveAction & 1) == 0) - 1);
+    v20(&vIndex);
+    v24 = ZComAPI::ZComVariantCopy(&vIndex, &vtMissing);
+    if ( v24 < 0 )
+      _com_issue_error(v24);
+    LOBYTE(v45) = 8;
+    v20(&pvarg);
+    v25 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing);
+    if ( v25 < 0 )
+      _com_issue_error(v25);
+    v26 = v38;
+    v27 = v38->m_pLayerAction.m_pInterface;
+    LOBYTE(v45) = 9;
+    if ( !v27 )
+      _com_issue_error(-2147467261);
+    v28 = IWzGr2DLayer::Getalpha(
+            v27,
+            (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&dLen)->m_pInterface;
+    LOBYTE(v45) = 10;
+    if ( !v28 )
+      _com_issue_error(-2147467261);
+    IWzVector2D::RelMove(v28, 0, 0, (const Ztl_variant_t *)&pvarg, &vIndex);
+    LOBYTE(v45) = 9;
+    if ( dLen )
+      (*(void (__stdcall **)(int))(*(_DWORD *)dLen + 8))(dLen);
+    LOBYTE(v45) = 8;
+    if ( pvarg.vt == 8 )
+    {
+      pvarg.vt = 0;
+      if ( pvarg.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&pvarg);
+    }
+    LOBYTE(v45) = 3;
+    if ( vIndex.vt == 8 )
+    {
+      vIndex.vt = 0;
+      if ( vIndex.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(vIndex.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&vIndex);
+    }
+    ZtlSecureTear_dwTemplateID_CS = 0;
+    v31.m_pInterface = pCanvas.m_pInterface;
+    v38 = (CMob *)&v31;
+    if ( pCanvas.m_pInterface )
+      pCanvas.m_pInterface->AddRef(pCanvas.m_pInterface);
+    v38 = (CMob *)&v30;
+    LOBYTE(v45) = 3;
+    CAnimationDisplayer::RegisterMobSwallowAnimation(
+      TSingleton<CAnimationDisplayer>::ms_pInstance,
+      tCur,
+      tEnd,
+      ptMob,
+      ptUser,
+      0,
+      -1073343324,
+      v31,
+      ZtlSecureTear_dwTemplateID_CS);
+    v26->_ZtlSecureTear_m_nSuspended_CS = _ZtlSecureTear<int>(2, v26->_ZtlSecureTear_m_nSuspended);
+    LOBYTE(v45) = 1;
+    l.__vftable = (ZList<ZRef<CActionMan::MOBACTIONFRAMEENTRY> >_vtbl *)&ZList<ZRef<CActionMan::MOBACTIONFRAMEENTRY>>::`vftable';
+    ZList<ZRef<CActionMan::MOBACTIONFRAMEENTRY>>::RemoveAll(&l);
+    Release = m_pInterface->Release;
+    LOBYTE(v45) = 0;
+    Release(m_pInterface);
+    v45 = -1;
+    if ( pCanvas.m_pInterface )
+      pCanvas.m_pInterface->Release(pCanvas.m_pInterface);
+  }
+}

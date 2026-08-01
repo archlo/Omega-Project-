@@ -1,0 +1,48 @@
+// cuser::GetShootDelay
+
+int __cdecl CUser::GetShootDelay(const SKILLENTRY *pSkill, int nDefault)
+{
+  int nSkillID; // eax
+  int v4; // eax
+
+  if ( !pSkill ) /*0x8de246*/
+    return nDefault; /*0x8de246*/
+  nSkillID = pSkill->nSkillID; /*0x8de24d*/
+  if ( pSkill->nSkillID > 13111006 ) /*0x8de254*/
+  {
+    if ( nSkillID > 33101001 ) /*0x8de298*/
+    {
+      if ( nSkillID != 33121005 ) /*0x8de2bb*/
+        return nDefault; /*0x8de2bb*/
+    }
+    else if ( nSkillID != 33101001 ) /*0x8de29a*/
+    {
+      if ( nSkillID == 13111007 ) /*0x8de2a1*/
+        return 561; /*0x8de2b0*/
+      if ( (char *)nSkillID != &byte_E6935F ) /*0x8de2a8*/
+        return nDefault; /*0x8de2a8*/
+      return 449; /*0x8de2af*/
+    }
+    return pSkill->tBallDelay; /*0x8de2bd*/
+  }
+  if ( pSkill->nSkillID == 13111006 ) /*0x8de256*/
+    return 618; /*0x8de292*/
+  if ( nSkillID <= (int)&loc_4F7F90 ) /*0x8de25d*/
+  {
+    if ( (_UNKNOWN *)nSkillID == &loc_4F7F90 ) /*0x8de25f*/
+      return 90; /*0x8de274*/
+    if ( nSkillID != 3221001 ) /*0x8de266*/
+    {
+      if ( (_UNKNOWN *)nSkillID == (_UNKNOWN *)((char *)&loc_4C4F2A + 1) ) /*0x8de26d*/
+        return 90; /*0x8de26d*/
+      return nDefault; /*0x8de24c*/
+    }
+    return pSkill->tBallDelay; /*0x8de266*/
+  }
+  v4 = nSkillID - 5221007; /*0x8de275*/
+  if ( !v4 ) /*0x8de27a*/
+    return 180; /*0x8de287*/
+  if ( v4 != 1 ) /*0x8de27f*/
+    return nDefault; /*0x8de27f*/
+  return 600; /*0x8de24c*/
+}

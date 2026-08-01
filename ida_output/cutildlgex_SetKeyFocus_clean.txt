@@ -1,0 +1,21 @@
+// CUtilDlgEx::SetKeyFocus
+// Address: 0x97b7c0
+
+void __thiscall CUtilDlgEx::SetKeyFocus(CUtilDlgEx *this, int nIdx)
+{
+  CCtrlButton *i; // esi
+  ZRef<CCtrlButton> *a; // eax
+
+  for ( i = nullptr; ; i = (CCtrlButton *)((char *)i + 1) ) /*0x97b7c4*/
+  {
+    a = this->m_apBtnFocus.a; /*0x97b7c6*/
+    if ( !a || i >= a[-1].p ) /*0x97b7d3*/
+      break; /*0x97b7d3*/
+    CCtrlButton::SetKeyFocus(a[(_DWORD)i].p, 0); /*0x97b7db*/
+  }
+  if ( nIdx >= 0 && a && (CCtrlButton *)nIdx < a[-1].p ) /*0x97b7f2*/
+    CCtrlButton::SetKeyFocus(a[nIdx].p, 1); /*0x97b7fc*/
+}
+
+// References:
+//   ?SetKeyFocus@CCtrlButton@@QAEXH@Z @ 0x4d5250
