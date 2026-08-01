@@ -175,6 +175,7 @@ export class SkillInfoService {
   private readonly _cache = new Map<number, SkillInfo | null>();
   private readonly _idsByRoot = new Map<number, number[]>();
   private readonly _bookIcons = new Map<number, WzCanvas | null>();
+  private readonly _bookNames = new Map<number, string>();
   private readonly _castCache = new Map<number, SkillCastInfo | null>();
   private readonly _mobSkillCache = new Map<number, MobSkillEntry | null>();
   private readonly _itemSkillCache = new Map<number, ItemSkillEntry | null>();
@@ -236,6 +237,46 @@ export class SkillInfoService {
     }
     this._bookIcons.set(root, icon);
     return icon;
+  }
+
+  // OG: get_labeled_string — book name from String.wz or Skill.wz info/name
+  GetBookName(root: number): string {
+    const cached = this._bookNames.get(root);
+    if (cached !== undefined) return cached;
+    const wz = this._skillWz();
+    if (!wz) return '';
+    let name = '';
+    try {
+      const item = SkillInfoService._jobItem(wz, root, 'info/name');
+      if (typeof item === 'string') name = item;
+    } catch { /* ignore */ }
+    this._bookNames.set(root, name);
+    return name;
+  }
+
+  // OG: GetRecommendSKill — WZ-driven recommendation from Skill.wz/<root>.img/recommend
+  // Returns the skill ID recommended at the given SP threshold
+  GetRecommendSkill(root: number, totalSp: number): number {
+    const wz = this._skillWz();
+    if (!wz) return 0;
+    try {
+      const recNode = SkillInfoService._jobItem(wz, root, 'recommend');
+      if (!(recNode instanceof WzProperty)) return 0;
+      // OG: enumerate entries, sort by nSP ascending, pick last where nSP <= totalSp
+      let bestSkillId = 0;
+      let bestSp = -1;
+      for (const key of Object.keys(recNode)) {
+        const sp = parseInt(key, 10);
+        if (isNaN(sp)) continue;
+        const val = recNode.Get(key);
+        const skillId = typeof val === 'number' ? val : 0;
+        if (sp <= totalSp && sp > bestSp) {
+          bestSp = sp;
+          bestSkillId = skillId;
+        }
+      }
+      return bestSkillId;
+    } catch { return 0; }
   }
 
   GetCastInfo(skillId: number): SkillCastInfo | null {
