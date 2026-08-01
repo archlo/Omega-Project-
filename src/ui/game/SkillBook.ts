@@ -65,8 +65,8 @@ const _bookNameStyle = new TextStyle({ fill: '#DCC896', fontSize: 11, fontFamily
 
 // OG: Tab labels from StringPool — loaded per job category
 // Tab 0=Beginner, 1=Warrior, 2=Magician, 3=Bowman, 4=Thief, 5=Pirate, 6=Aran, 7=DualBlade
-const TAB_LABELS = ['Beginner', 'Warrior', 'Magician', 'Bowman', 'Thief', 'Pirate'];
-const TAB_PREFIXES = [0, 100, 200, 300, 400, 500];
+const TAB_LABELS = ['Beginner', '1st Job', '2nd Job', '3rd Job', '4th Job'];
+const TAB_PREFIXES = [0, 100, 200, 300, 400];
 
 // OG: get_skill_root_from_job — builds skill root list from job
 // Returns array of skill root IDs for the character's job
@@ -106,6 +106,16 @@ function skillRootToTabIndex(root: number): number {
     if (tabRoot >= TAB_PREFIXES[i]) return i;
   }
   return 0;
+}
+
+function explorerSkillDegree(root: number): number {
+  if (root <= 0) return 0;
+  const suffix = root % 100;
+  if (suffix === 0) return 1;
+  if (suffix === 10) return 2;
+  if (suffix === 11) return 3;
+  if (suffix === 12) return 4;
+  return 1;
 }
 
 // ─── OG Helper functions (from IDA) ──────────────────────────────────────
@@ -284,9 +294,10 @@ export class SkillBook extends GamePanel {
   private _rowCoolTimeSprites: Sprite[] = [];
   // OG: Aran special tab buttons — Tab/AranButton/Bt1-Bt4
   private _aranBtnTex: Texture[] = [];
+  private _aranBtnDisabledTex: Texture[] = [];
   // OG: DualBlade tab textures — Tab/DualTab/disabled and Tab/DualTab/enabled
-  private _dualTabDisabledTex: Texture | null = null;
-  private _dualTabEnabledTex: Texture | null = null;
+  private _dualTabDisabledTex: Texture[] = [];
+  private _dualTabEnabledTex: Texture[] = [];
   // OG: CUISkillInc/Dec/DecEX sub-panels (skill increment/decrement windows)
   public skillIncPanel: SkillIncPanel;
   public skillDecPanel: SkillDecPanel;
@@ -417,11 +428,16 @@ export class SkillBook extends GamePanel {
           for (let i = 1; i <= 4; i++) {
             const btnProp = aranBtnProp.Get(`Bt${i}`);
             if (btnProp instanceof WzProperty) {
-              const enabled = btnProp.Get('enabled');
-              if (enabled instanceof WzCanvas) {
-                const ws = loader.Load(enabled);
-                if (ws) this._aranBtnTex.push(ws.Texture);
-              }
+               const normal = btnProp.Get('normal');
+               const disabled = btnProp.Get('disabled');
+               if (normal instanceof WzCanvas) {
+                 const ws = loader.Load(normal);
+                 if (ws) this._aranBtnTex.push(ws.Texture);
+               }
+               if (disabled instanceof WzCanvas) {
+                 const ws = loader.Load(disabled);
+                 if (ws) this._aranBtnDisabledTex.push(ws.Texture);
+               }
             }
           }
         }
@@ -433,16 +449,22 @@ export class SkillBook extends GamePanel {
       if (dualTabProp instanceof WzProperty) {
         const dualDisabled = dualTabProp.Get('DualTab');
         if (dualDisabled instanceof WzProperty) {
-          const dNode = dualDisabled.Get('disabled');
-          const eNode = dualDisabled.Get('enabled');
-          if (dNode instanceof WzCanvas) {
-            const ws = loader.Load(dNode);
-            if (ws) this._dualTabDisabledTex = ws.Texture;
-          }
-          if (eNode instanceof WzCanvas) {
-            const ws = loader.Load(eNode);
-            if (ws) this._dualTabEnabledTex = ws.Texture;
-          }
+           const dNode = dualDisabled.Get('disabled');
+           const eNode = dualDisabled.Get('enabled');
+           if (dNode instanceof WzProperty && eNode instanceof WzProperty) {
+             for (let i = 0; i < 7; i++) {
+               const d = dNode.Get(String(i));
+               const e = eNode.Get(String(i));
+               if (d instanceof WzCanvas) {
+                 const ws = loader.Load(d);
+                 if (ws) this._dualTabDisabledTex.push(ws.Texture);
+               }
+               if (e instanceof WzCanvas) {
+                 const ws = loader.Load(e);
+                 if (ws) this._dualTabEnabledTex.push(ws.Texture);
+               }
+             }
+           }
         }
       }
     }
@@ -771,22 +793,23 @@ export class SkillBook extends GamePanel {
     for (const sk of this._skills) {
       const jobRoot = Math.floor(sk.id / 10000);
       if (Math.floor(jobRoot / 10) === 43) hasDual = true;
-      if (Math.floor(jobRoot / 100) === 30) hasAran = true;
+      if (jobRoot === 2000 || (jobRoot >= 2100 && jobRoot < 2200)) hasAran = true;
     }
-    if (hasDual) { labels.push('Dual'); tabs.push([]); }
-    if (hasAran) { labels.push('Aran'); tabs.push([]); }
+    if (hasDual) { labels.push(...new Array(7).fill('')); tabs.push(...new Array(7).fill(null).map(() => [])); }
+    if (hasAran) { labels.push(...new Array(4).fill('')); tabs.push(...new Array(4).fill(null).map(() => [])); }
+
+    const dualBase = TAB_PREFIXES.length;
+    const aranBase = dualBase + (hasDual ? 7 : 0);
 
     for (const sk of this._skills) {
       const jobRoot = Math.floor(sk.id / 10000);
       let tabIdx = 0;
       if (Math.floor(jobRoot / 10) === 43) {
-        tabIdx = labels.indexOf('Dual');
-      } else if (Math.floor(jobRoot / 100) === 30) {
-        tabIdx = labels.indexOf('Aran');
+        tabIdx = dualBase + Math.max(0, Math.min(6, jobRoot % 10));
+      } else if (jobRoot === 2000 || (jobRoot >= 2100 && jobRoot < 2200)) {
+        tabIdx = aranBase + Math.max(0, Math.min(3, getJobLevel(jobRoot) - 1));
       } else {
-        for (let i = TAB_PREFIXES.length - 1; i >= 1; i--) {
-          if (jobRoot >= TAB_PREFIXES[i]) { tabIdx = i; break; }
-        }
+        tabIdx = Math.max(0, Math.min(4, explorerSkillDegree(jobRoot)));
       }
       if (tabIdx >= 0 && tabIdx < tabs.length) tabs[tabIdx].push(sk);
     }
