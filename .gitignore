@@ -16,3 +16,12 @@ ida/
 nx-tools/
 *.md
 .mcp.json
+*.py
+*.mjs
+*.bat
+/ida_output
+/tools
+/test
+/test-screenshots
+/docs
+/.mimocode
