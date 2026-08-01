@@ -1,4 +1,0 @@
-CMobTemplate *__thiscall CMob::GetTemplate(CMob *this)
-{
-  return this->m_pTemplate; /*0x639f36*/
-}

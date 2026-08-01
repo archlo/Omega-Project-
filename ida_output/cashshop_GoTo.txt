@@ -1,3 +1,0 @@
-// CCashShop::GoTo @ 0x47e6f0
-
-{"addr":"0x47e6f0","code":"void __thiscall CCashShop::GoTo(CCashShop *this, int nCategory, int nCategorySub, int nNo)\n{\n  CCashShop::OnChangedCategory(this, nCategory); /*0x47e6fa*/\n  CCashShop::OnChangedCategorySub(this, nCategorySub); /*0x47e706*/\n  CCashShop::OnChangedPage(this, nNo / 10); /*0x47e723*/\n  CCSWnd_List::SetCursorToPlate(&this->m_wndList, nNo % 10); /*0x47e736*/\n}","refs":[{"addr":"0x47e560","name":"?OnChangedCategory@CCashShop@@QAEXH@Z"},{"addr":"0x47dbf0","name":"?OnChangedCategorySub@CCashShop@@QAEXH@Z"},{"addr":"0x47d310","name":"?OnChangedPage@CCashShop@@QAEXH@Z"},{"addr":"0x4c65b0","name":"?SetCursorToPlate@CCSWnd_List@@QAEXJ@Z"}]}

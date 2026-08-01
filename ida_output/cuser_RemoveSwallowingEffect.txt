@@ -1,3 +1,0 @@
-// CUser::RemoveSwallowingEffect @ 0x8e1320
-
-{"addr":"0x8e1320","code":"void __thiscall CUser::RemoveSwallowingEffect(CUser *this)\n{\n  IWzGr2DLayer *m_pInterface; // eax\n\n  m_pInterface = this->m_pLayerSwallowing.m_pInterface; /*0x8e1320*/\n  if ( m_pInterface ) /*0x8e1328*/\n  {\n    this->m_pLayerSwallowing.m_pInterface = nullptr; /*0x8e132a*/\n    m_pInterface->Release(m_pInterface); /*0x8e133a*/\n  }\n}"}

@@ -1,4 +1,0 @@
-﻿void __thiscall CMob::GetMultiBodyRect(CMob *this, ZArray<tagRECT> *arcMulti, int bContinuous)
-{
-  CMob::GetArrayBodyRectImpl(this, &this->m_arcMultiBody, &this->m_arcMultiBodyFlip, arcMulti, bContinuous);
-}

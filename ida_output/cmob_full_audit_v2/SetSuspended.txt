@@ -1,4 +1,0 @@
-﻿void __thiscall CMob::SetSuspended(CMob *this, int nSuspend)
-{
-  this->_ZtlSecureTear_m_nSuspended_CS = _ZtlSecureTear<int>(nSuspend, this->_ZtlSecureTear_m_nSuspended);
-}

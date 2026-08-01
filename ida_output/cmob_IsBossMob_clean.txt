@@ -1,4 +1,0 @@
-int __thiscall CMob::IsBossMob(CMob *this)
-{
-  return _ZtlSecureFuse<int>(this->m_pTemplate->_ZtlSecureTear_bBoss, this->m_pTemplate->_ZtlSecureTear_bBoss_CS); /*0x439366*/
-}

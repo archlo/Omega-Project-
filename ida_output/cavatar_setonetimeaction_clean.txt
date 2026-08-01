@@ -1,3 +1,0 @@
-﻿=== 0x46aba0 ===
-{"addr":"0x46aba0","code":"void __thiscall CAvatar::SetOneTimeAction(CAvatar *this, int nAction)\n{\n  CAvatar_vtbl *v3; // edx\n\n  this->m_nOneTimeAction = -1; /*0x46aba8*/\n  this->m_nTamingMobOneTimeAction = -1; /*0x46abae*/\n  CAvatar::ClearActionLayer(this, 1); /*0x46abb4*/\n  v3 = this->__vftable; /*0x46abbd*/\n  this->m_nOneTimeAction = nAction; /*0x46abc3*/\n  v3->PrepareActionLayer(this, 6, 100, 0); /*0x46abd0*/\n}","refs":[{"addr":"0x464d60","name":"?ClearActionLayer@CAvatar@@IAEXJ@Z"}]}
-

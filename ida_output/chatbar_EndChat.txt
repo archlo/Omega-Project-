@@ -1,6 +1,0 @@
-﻿void __thiscall CUIStatusBar::EndChat(CUIStatusBar *this)
-{
-  if ( this->m_nChatWndType == 2 )
-    CUIStatusBar::SetChatType(this, (IWzCanvas *)1);
-  CWndMan::SetFocus(TSingleton<CWndMan>::ms_pInstance, nullptr);
-}

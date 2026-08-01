@@ -1,4 +1,0 @@
-// CUISkill::OnMoveWnd @ 0x84a350
-// Decompiled from v95 IDB
-
-{"addr":"0x84a350","code":"void __thiscall CUISkill::OnMoveWnd(CUISkill *this, int l, int t)\n{\n  CUIMacroSys *p; // edi\n  int (__thiscall *GetAbsTop)(IUIMsgHandler *); // eax\n  IUIMsgHandler *v6; // esi\n  int v7; // eax\n  int v8; // [esp-4h] [ebp-Ch]\n\n  CWnd::OnMoveWnd(this, l, t); /*0x84a360*/\n  p = this->m_pUIMacroSys.p; /*0x84a365*/\n  if ( p ) /*0x84a36d*/\n  {\n    GetAbsTop = this->GetAbsTop; /*0x84a372*/\n    v6 = &this->IUIMsgHandler; /*0x84a375*/\n    v8 = GetAbsTop(v6); /*0x84a37e*/\n    v7 = v6->GetAbsLeft(v6); /*0x84a384*/\n    CWnd::MoveWnd(p, v7 + 174, v8); /*0x84a38e*/\n  }\n}","refs":[{"addr":"0x9aee10","name":"?OnMoveWnd@CWnd@@UAEXJJ@Z"},{"addr":"0x522f40","name":"?MoveWnd@CWnd@@QAEXJJ@Z"}]}

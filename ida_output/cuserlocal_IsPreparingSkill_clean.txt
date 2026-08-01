@@ -1,6 +1,0 @@
-// cuserlocal::IsPreparingSkill
-
-BOOL __thiscall CUserLocal::IsPreparingSkill(CUserLocal *this)
-{
-  return this->m_preparingSkill.nSkillID != 0; /*0x9033bb*/
-}

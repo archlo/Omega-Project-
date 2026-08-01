@@ -1,3 +1,0 @@
-﻿=== 0x903a50 ===
-{"addr":"0x903a50","code":"void __thiscall CAvatar::SetChairHeight(CAvatar *this, int nItemID)\n{\n  if ( nItemID == 3010125 )\n  {\n    this->m_nChairHeight = 1; /*0x903a60*/\n  }\n  else if ( nItemID == 3010117 || nItemID == 3010118 || nItemID == 3010075 )\n  {\n    this->m_nChairHeight = 5; /*0x903a75*/\n  }\n  else\n  {\n    this->m_nChairHeight = nItemID != 3010177 ? 0 : 6;\n  }\n}"}
-

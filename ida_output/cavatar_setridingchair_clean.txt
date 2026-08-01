@@ -1,3 +1,0 @@
-﻿=== 0x46ab80 ===
-{"addr":"0x46ab80","code":"void __thiscall CAvatar::SetRidingChair(CAvatar *this, int nVehicleID)\n{\n  if ( !this->m_bForcingAppearance ) /*0x46ab80*/\n  {\n    this->m_nRidingChairID = nVehicleID; /*0x46ab90*/\n    CAvatar::SetRidingVehicle(this, nVehicleID, nullptr); /*0x46ab96*/\n  }\n}","refs":[{"addr":"0x46a790","name":"?SetRidingVehicle@CAvatar@@QAEXJH@Z"}]}
-

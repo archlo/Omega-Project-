@@ -1,3 +1,0 @@
-// CUser::GetVecCtrl2 @ 0x8df390
-
-{"addr":"0x8df390","code":"_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *__thiscall CUser::GetVecCtrl(\n        CUser *this,\n        _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *result)\n{\n  IWzVector2D *m_pInterface; // eax\n\n  m_pInterface = this->m_pvc.m_pInterface; /*0x8df391*/\n  result->m_pInterface = m_pInterface; /*0x8df3a4*/\n  if ( m_pInterface ) /*0x8df3a8*/\n    m_pInterface->AddRef(m_pInterface); /*0x8df3b0*/\n  return result; /*0x8df3b4*/\n}"}

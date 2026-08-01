@@ -1,3 +1,0 @@
-// CUserLocal::OnNotifyHPDecByField @ 0x90fed0
-
-{"addr":"0x90fed0","code":"void __thiscall CUserLocal::OnNotifyHPDecByField(CUserLocal *this, CInPacket *iPacket)\n{\n  int v3; // eax\n\n  v3 = CInPacket::Decode4(iPacket); /*0x90fedb*/\n  CUserLocal::TryConsumePetHP(this, v3, nullptr, 0); /*0x90fee3*/\n}","refs":[{"addr":"0x409870","name":"?Decode4@CInPacket@@QAEKXZ"},{"addr":"0x90d8a0","name":"?TryConsumePetHP@CUserLocal@@QAEXJHE@Z"}]}

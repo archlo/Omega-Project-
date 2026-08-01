@@ -1,3 +1,0 @@
-// CUser::GetMiniRoomTitle @ 0x9119c0
-
-{"addr":"0x9119c0","code":"ZXString<char> *__thiscall CUser::GetMiniRoomTitle(CUser *this, ZXString<char> *result)\n{\n  result->_m_pStr = nullptr; /*0x9119d7*/\n  ZXString<char>::operator=(result, &this->m_sMiniRoomTitle); /*0x9119dd*/\n  return result; /*0x9119e4*/\n}","refs":[{"addr":"0x42d1c0","name":"??4?$ZXString@D@@QAEAAV0@ABV0@@Z"}]}

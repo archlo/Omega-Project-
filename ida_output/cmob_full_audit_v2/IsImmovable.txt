@@ -1,7 +1,0 @@
-﻿BOOL __thiscall CMob::IsImmovable(CMob *this)
-{
-  return this->m_stat.nStun_
-      || this->m_stat.nFreeze_
-      || this->m_stat.nWeb_
-      || _ZtlSecureFuse<int>(this->_ZtlSecureTear_m_nSuspended, this->_ZtlSecureTear_m_nSuspended_CS) == 4;
-}

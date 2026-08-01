@@ -1,3 +1,0 @@
-// CUserLocal::OnOpenSkillGuide @ 0x90e6a0
-
-{"addr":"0x90e6a0","code":"void __thiscall CUserLocal::OnOpenSkillGuide(CUserLocal *this, CInPacket *iPacket)\n{\n  CWvsContext::UI_Open((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, 3, 1); /*0x90e6aa*/\n  if ( TSingleton<CUISkill>::ms_pInstance ) /*0x90e6b7*/\n    CUISkill::OpenCurSkillGuide(TSingleton<CUISkill>::ms_pInstance); /*0x90e6b9*/\n}","refs":[{"addr":"0x9d83f0","name":"?UI_Open@CWvsContext@@QAEXHH@Z"},{"addr":"0xc64068","name":"?ms_pInstance@?$TSingleton@VCWvsContext@@@@1PAVCWvsContext@@A"},{"addr":"0x90a110","name":"?OpenCurSkillGuide@CUISkill@@QAEXXZ"},{"addr":"0xc6f100","name":"?ms_pInstance@?$TSingleton@VCUISkill@@@@1PAVCUISkill@@A"}]}

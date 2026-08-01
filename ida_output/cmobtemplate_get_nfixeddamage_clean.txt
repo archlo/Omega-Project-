@@ -1,7 +1,0 @@
-// _ZtlSecureGet_nFixedDamage
-// Address: 0x63a560
-
-int __fastcall CMobTemplate::_ZtlSecureGet_nFixedDamage(CMobTemplate *this)
-{
-  return _ZtlSecureFuse<long>(this->_ZtlSecureTear_nFixedDamage, this->_ZtlSecureTear_nFixedDamage_CS); /*0x63a576*/
-}

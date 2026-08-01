@@ -1,3 +1,0 @@
-// CUser::OnLayerZChanged @ 0x8e0110
-
-{"addr":"0x8e0110","code":"void __thiscall CUser::OnLayerZChanged(CUser *this, const CVecCtrl *pvc)\n{\n  IWzVector2D *v3; // eax\n  CDragon *v4; // ecx\n\n  if ( pvc ) /*0x8e0119*/\n    v3 = &pvc->IWzVector2D; /*0x8e011b*/\n  else\n    v3 = nullptr; /*0x8e0120*/\n  if ( v3 == (IWzVector2D *)this->m_nPartyHP ) /*0x8e0128*/\n  {\n    CUser::SetLayerZ((CUser *)((char *)this - 4)); /*0x8e012d*/\n    v4 = *(CDragon **)&this->m_pDragon.gap0; /*0x8e0132*/\n    if ( v4 ) /*0x8e013a*/\n      CDragon::SetLayerZ(v4); /*0x8e013c*/\n  }\n}","refs":[{"addr":"0x8dfc10","name":"?SetLayerZ@CUser@@QAEXXZ"},{"addr":"0x50acc0","name":"?SetLayerZ@CDragon@@QAEXXZ"}]}

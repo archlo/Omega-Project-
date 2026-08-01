@@ -1,7 +1,0 @@
-// cuiuserlist::OnExpeditionChanged
-
-void __thiscall CUIUserList::OnExpeditionChanged(CUIUserList *this)
-{
-  if ( this->m_nCurTab == 2 ) /*0x8b70d7*/
-    TabExpedition::OnExpeditionChanged(this->m_pTabExpedition); /*0x8b70df*/
-}

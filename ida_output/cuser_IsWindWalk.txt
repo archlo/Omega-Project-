@@ -1,3 +1,0 @@
-// CUser::IsWindWalk @ 0x4fffe0
-
-{"addr":"0x4fffe0","code":"BOOL __thiscall CUser::IsWindWalk(CUser *this)\n{\n  const SecondaryStat *v1; // eax\n\n  v1 = this->GetSecondaryStat(this); /*0x4fffe5*/\n  return _ZtlSecureFuse<long>(v1->_ZtlSecureTear_nWindWalk_, v1->_ZtlSecureTear_nWindWalk__CS) != 0; /*0x500002*/\n}","refs":[{"addr":"0x407520","name":"??$_ZtlSecureFuse@J@@YAJQBJI@Z"}]}

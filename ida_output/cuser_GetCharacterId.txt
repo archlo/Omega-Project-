@@ -1,3 +1,0 @@
-// CUser::GetCharacterId @ 0x50abc0
-
-{"addr":"0x50abc0","code":"unsigned int __thiscall CUser::GetCharacterId(CUser *this)\n{\n  return this->m_dwCharacterId; /*0x50abc6*/\n}"}

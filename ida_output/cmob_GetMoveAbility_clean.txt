@@ -1,6 +1,0 @@
-int __thiscall CMob::GetMoveAbility(CMob *this)
-{
-  return _ZtlSecureFuse<long>( /*0x63a6a6*/
-           this->m_pTemplate->_ZtlSecureTear_nMoveAbility,
-           this->m_pTemplate->_ZtlSecureTear_nMoveAbility_CS);
-}

@@ -1,7 +1,0 @@
-// CMobTemplate::Load
-// Address: 0x6611c0
-
-void __cdecl CMobTemplate::Load()
-{
-  ; /*0x6611c0*/
-}

@@ -1,4 +1,0 @@
-// CUISkill::OnChildNotify @ 0x852160
-// Decompiled from v95 IDB
-
-{"addr":"0x852160","code":"void __thiscall CUISkill::OnChildNotify(CUISkill *this, unsigned int nId, unsigned int param1, unsigned int param2)\n{\n  if ( nId == 2001 ) /*0x85216d*/\n  {\n    if ( param1 >= 0x12C && param1 <= 0x130 ) /*0x85217d*/\n    {\n      CUISkill::ResetInfo(this); /*0x85217f*/\n      return; /*0x852184*/\n    }\n  }\n  else if ( nId == 2000 && param1 == 500 ) /*0x852194*/\n  {\n    CUISkill::OnTabChanged(this, param2); /*0x85219b*/\n    return; /*0x8521a0*/\n  }\n  if ( param1 == 100 ) /*0x8521a6*/\n    this->OnButtonClicked(this, nId); /*0x8521ae*/\n}","refs":[{"addr":"0x8514f0","name":"?ResetInfo@CUISkill@@QAEXXZ"},{"addr":"0x84bfa0","name":"?OnTabChanged@CUISkill@@IAEXJ@Z"}]}

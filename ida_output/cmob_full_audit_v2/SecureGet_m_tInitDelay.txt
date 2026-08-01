@@ -1,4 +1,0 @@
-﻿int __fastcall CMob::_ZtlSecureGet_m_tInitDelay(CMob *this)
-{
-  return _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_tInitDelay, this->_ZtlSecureTear_m_tInitDelay_CS);
-}

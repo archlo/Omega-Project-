@@ -1,4 +1,0 @@
-// CUIStat::OnMoveWnd @ 0x861590
-// Decompiled from v95 IDB
-
-{"addr":"0x861590","code":"void __thiscall CUIStat::OnMoveWnd(CUIStat *this, int l, int t)\n{\n  CUIStatDetail *p; // edi\n  int (__thiscall *GetAbsTop)(IUIMsgHandler *); // eax\n  IUIMsgHandler *v6; // esi\n  int v7; // eax\n  int v8; // [esp-4h] [ebp-Ch]\n\n  CWnd::OnMoveWnd(this, l, t); /*0x8615a0*/\n  p = this->m_pUIStatDetail.p; /*0x8615a5*/\n  if ( p ) /*0x8615ad*/\n  {\n    GetAbsTop = this->GetAbsTop; /*0x8615b2*/\n    v6 = &this->IUIMsgHandler; /*0x8615b5*/\n    v8 = GetAbsTop(v6) + 90; /*0x8615c1*/\n    v7 = v6->GetAbsLeft(v6); /*0x8615c7*/\n    CWnd::MoveWnd(p, v7 + 172, v8); /*0x8615d1*/\n  }\n}","refs":[{"addr":"0x9aee10","name":"?OnMoveWnd@CWnd@@UAEXJJ@Z"},{"addr":"0x522f40","name":"?MoveWnd@CWnd@@QAEXJJ@Z"}]}

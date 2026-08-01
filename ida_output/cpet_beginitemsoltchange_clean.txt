@@ -1,5 +1,0 @@
-﻿void __thiscall CPet::BeginItemSoltChange(CPet *this)
-{
-  this->m_bItemSoltChange = 1;
-  this->m_tItemSoltChange = get_update_time();
-}

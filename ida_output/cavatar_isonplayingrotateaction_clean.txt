@@ -1,9 +1,0 @@
-BOOL __thiscall CAvatar::IsOnPlayingRotateAction(CAvatar *this)
-{
-  return CAvatar::GetOneTimeAction(this) == 101
-      || CAvatar::GetOneTimeAction(this) == 82
-      || CAvatar::GetOneTimeAction(this) == 114
-      || CAvatar::GetOneTimeAction(this) == 149
-      || CAvatar::GetOneTimeAction(this) == 151
-      || CAvatar::GetOneTimeAction(this) == 193;
-}

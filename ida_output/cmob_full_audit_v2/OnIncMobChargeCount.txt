@@ -1,5 +1,0 @@
-﻿void __thiscall CMob::OnIncMobChargeCount(CMob *this, CInPacket *iPacket)
-{
-  this->m_nMobChargeCount = CInPacket::Decode4(iPacket);
-  this->m_bAttackReady = CInPacket::Decode4(iPacket);
-}

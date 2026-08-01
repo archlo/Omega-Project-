@@ -1,4 +1,0 @@
-int __thiscall CMob::GetCalcDamageStatIndex(CMob *this)
-{
-  return this->m_nCalcDamageStatIndex; /*0x748d86*/
-}

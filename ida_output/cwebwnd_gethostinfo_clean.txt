@@ -1,1 +1,0 @@
-{"addr":"0x9a4170","code":"HRESULT __stdcall CWebWnd::GetHostInfo(CWebWnd *this, _DOCHOSTUIINFO *pInfo)\n{\n  pInfo->cbSize = 20; /*0x9a4174*/\n  pInfo->dwFlags = 65567; /*0x9a417a*/\n  return 0; /*0x9a4183*/\n}"}

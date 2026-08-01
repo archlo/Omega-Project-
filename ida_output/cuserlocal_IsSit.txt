@@ -1,3 +1,0 @@
-// CUserLocal::IsSit @ 0x8df4f0
-
-{"addr":"0x8df4f0","code":"int __thiscall CUserLocal::IsSit(CUserLocal *this)\n{\n  return _ZtlSecureFuse<int>(this->_ZtlSecureTear_m_bSit, this->_ZtlSecureTear_m_bSit_CS); /*0x8df506*/\n}","refs":[{"addr":"0x438f80","name":"??$_ZtlSecureFuse@H@@YAHQBHI@Z"}]}

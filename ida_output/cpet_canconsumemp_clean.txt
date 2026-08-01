@@ -1,4 +1,0 @@
-﻿int __thiscall CPet::CanConsumeMP(CPet *this)
-{
-  return _ZtlSecureFuse<int>(this->_ZtlSecureTear_m_bConsumeMP, this->_ZtlSecureTear_m_bConsumeMP_CS);
-}

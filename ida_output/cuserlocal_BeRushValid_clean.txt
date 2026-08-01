@@ -1,8 +1,0 @@
-// cuserlocal::BeRushValid
-
-void __thiscall CUserLocal::BeRushValid(CUserLocal *this)
-{
-  this->m_rush.bValid = 1; /*0x905d09*/
-  ZList<CUserLocal::RUSH::RUSHELEM>::RemoveAll(&this->m_rush.lElem); /*0x905d13*/
-  ZArray<tagPOINT>::RemoveAll(&this->m_rush.aMobCurPos); /*0x905d1f*/
-}

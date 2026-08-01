@@ -1,4 +1,0 @@
-BOOL __thiscall CMob::IsNoFlip(CMob *this)
-{
-  return !this->m_stat.nDoom_ && this->m_pTemplate->bNoFlip; /*0x63a6cd*/
-}

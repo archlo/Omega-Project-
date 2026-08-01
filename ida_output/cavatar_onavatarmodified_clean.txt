@@ -1,4 +1,0 @@
-void __thiscall CAvatar::OnAvatarModified(CAvatar *this)
-{
-  ;
-}

@@ -1,3 +1,0 @@
-// CUser::IsOnLadderOrRope @ 0x4bbea0
-
-{"addr":"0x4bbea0","code":"BOOL __thiscall CUser::IsOnLadderOrRope(CUser *this)\n{\n  IWzVector2D *m_pInterface; // eax\n  IWzVector2D *v2; // eax\n\n  m_pInterface = this->m_pvc.m_pInterface; /*0x4bbea0*/\n  if ( m_pInterface ) /*0x4bbea8*/\n    v2 = m_pInterface - 3; /*0x4bbeaa*/\n  else\n    v2 = nullptr; /*0x4bbeaf*/\n  return _ZtlSecureFuse<CLadderOrRope *>((CLadderOrRope *const *)&v2[109], (unsigned int)v2[111].__vftable) != nullptr; /*0x4bbecc*/\n}","refs":[{"addr":"0x4bb930","name":"??$_ZtlSecureFuse@PAVCLadderOrRope@@@@YAPAVCLadderOrRope@@QBQAV0@I@Z"}]}

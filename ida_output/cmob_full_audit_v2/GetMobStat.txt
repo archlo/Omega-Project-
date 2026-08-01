@@ -1,4 +1,0 @@
-﻿MobStat *__thiscall CMob::GetMobStat(CMob *this)
-{
-  return &this->m_stat;
-}

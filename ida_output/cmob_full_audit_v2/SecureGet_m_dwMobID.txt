@@ -1,4 +1,0 @@
-﻿unsigned int __fastcall CMob::_ZtlSecureGet_m_dwMobID(CMob *this)
-{
-  return _ZtlSecureFuse<unsigned long>(this->_ZtlSecureTear_m_dwMobID, this->_ZtlSecureTear_m_dwMobID_CS);
-}

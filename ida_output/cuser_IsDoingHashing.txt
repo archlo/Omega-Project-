@@ -1,3 +1,0 @@
-// CUser::IsDoingHashing @ 0x8df340
-
-{"addr":"0x8df340","code":"BOOL __thiscall CUser::IsDoingHashing(CUser *this)\n{\n  CAvatar *v1; // esi\n\n  v1 = &this->CAvatar; /*0x8df347*/\n  return this->m_dwMorphTemplateID /*0x8df37b*/\n      && CMorphTemplate::IsSuperMan(this->m_dwMorphTemplateID)\n      && CAvatar::GetOneTimeAction(v1) > -1\n      && CAvatar::GetOneTimeAction(v1) == 45;\n}","refs":[{"addr":"0x6650e0","name":"?IsSuperMan@CMorphTemplate@@SAHK@Z"},{"addr":"0x45f3c0","name":"?GetOneTimeAction@CAvatar@@QBEJXZ"}]}

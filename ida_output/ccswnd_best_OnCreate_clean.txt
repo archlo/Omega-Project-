@@ -1,7 +1,0 @@
-// ccswnd::best::OnCreate
-
-void __thiscall CCSWnd_Best::OnCreate(CCSWnd_Best *this, CCashShop *pData)
-{
-  this->m_pCashShop = pData; /*0x4c6824*/
-  CCSWnd_Best::ChangeCategory(this); /*0x4c682a*/
-}

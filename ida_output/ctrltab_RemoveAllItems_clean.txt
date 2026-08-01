@@ -1,8 +1,0 @@
-// ctrltab::RemoveAllItems
-
-void __thiscall CCtrlTab::RemoveAllItems(CCtrlTab *this)
-{
-  this->m_nCurTab = 0; /*0x4ee092*/
-  this->m_nInsertPos = 0; /*0x4ee095*/
-  ZList<CCtrlTab::TABINFO>::RemoveAll(&this->m_lTabInfo); /*0x4ee09b*/
-}

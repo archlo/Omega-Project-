@@ -1,7 +1,0 @@
-﻿int __thiscall CMob::IsLeft(CMob *this)
-{
-  if ( this->m_pTemplate->bNoFlip )
-    return 1;
-  else
-    return _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nMoveAction, this->_ZtlSecureTear_m_nMoveAction_CS) & 1;
-}

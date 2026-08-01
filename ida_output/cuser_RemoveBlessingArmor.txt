@@ -1,3 +1,0 @@
-// CUser::RemoveBlessingArmor @ 0x8e1300
-
-{"addr":"0x8e1300","code":"void __thiscall CUser::RemoveBlessingArmor(CUser *this)\n{\n  IWzGr2DLayer *m_pInterface; // eax\n\n  m_pInterface = this->m_pLayerBlessingArmor.m_pInterface; /*0x8e1300*/\n  if ( m_pInterface ) /*0x8e1308*/\n  {\n    this->m_pLayerBlessingArmor.m_pInterface = nullptr; /*0x8e130a*/\n    m_pInterface->Release(m_pInterface); /*0x8e131a*/\n  }\n}"}

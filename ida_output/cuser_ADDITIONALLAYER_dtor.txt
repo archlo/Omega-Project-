@@ -1,3 +1,0 @@
-// CUser::ADDITIONALLAYER_dtor @ 0x8df510
-
-{"addr":"0x8df510","code":"void __thiscall CUser::ADDITIONALLAYER::~ADDITIONALLAYER(CUser::ADDITIONALLAYER *this)\n{\n  IWzGr2DLayer *m_pInterface; // eax\n  IWzGr2DLayer *v3; // esi\n\n  m_pInterface = this->l2.pLayer.m_pInterface; /*0x8df513*/\n  if ( m_pInterface ) /*0x8df518*/\n    m_pInterface->Release(m_pInterface); /*0x8df520*/\n  v3 = this->l.pLayer.m_pInterface; /*0x8df522*/\n  if ( v3 ) /*0x8df527*/\n    v3->Release(v3); /*0x8df52f*/\n}"}

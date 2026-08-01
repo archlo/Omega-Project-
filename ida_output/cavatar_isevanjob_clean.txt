@@ -1,3 +1,0 @@
-﻿=== 0x4647b0 ===
-{"addr":"0x4647b0","code":"int __thiscall CAvatar::IsEvanJob(CAvatar *this)\n{\n  return 0; /*0x4647b2*/\n}"}
-

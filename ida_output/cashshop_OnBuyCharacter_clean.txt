@@ -1,7 +1,0 @@
-// cashshop::OnBuyCharacter
-
-// attributes: thunk
-void __thiscall CCashShop::OnBuyCharacter(CCashShop *this, int nCommSN)
-{
-  CCashShop::OnBuy(this, nCommSN); /*0x492e90*/
-}

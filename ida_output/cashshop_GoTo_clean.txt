@@ -1,9 +1,0 @@
-// cashshop::GoTo
-
-void __thiscall CCashShop::GoTo(CCashShop *this, int nCategory, int nCategorySub, int nNo)
-{
-  CCashShop::OnChangedCategory(this, nCategory); /*0x47e6fa*/
-  CCashShop::OnChangedCategorySub(this, nCategorySub); /*0x47e706*/
-  CCashShop::OnChangedPage(this, nNo / 10); /*0x47e723*/
-  CCSWnd_List::SetCursorToPlate(&this->m_wndList, nNo % 10); /*0x47e736*/
-}

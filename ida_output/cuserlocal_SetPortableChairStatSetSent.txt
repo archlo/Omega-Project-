@@ -1,3 +1,0 @@
-// CUserLocal::SetPortableChairStatSetSent @ 0x9042a0
-
-{"addr":"0x9042a0","code":"void __thiscall CUserLocal::SetPetsAngry(CUserLocal *this)\n{\n  int i; // esi\n  CPet *p; // ecx\n\n  for ( i = 0; i < 3; ++i ) /*0x9042a4*/\n  {\n    p = this->m_apPet.a[i].p; /*0x9042b6*/\n    if ( !p ) /*0x9042bc*/\n      break; /*0x9042bc*/\n    CPet::SetAngryAction(p); /*0x9042be*/\n  }\n}","refs":[{"addr":"0x6a34c0","name":"?SetAngryAction@CPet@@QAEXXZ"}]}

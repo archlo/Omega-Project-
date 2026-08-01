@@ -1,4 +1,0 @@
-// CUIUserList::SetScrollRange @ 0x8b7a50
-// Decompiled from v95 IDB
-
-{"addr":"0x8b7a50","code":"void __thiscall CUIUserList::SetScrollRange(CUIUserList *this, int nRemain)\n{\n  CCtrlScrollBar *p; // ecx\n\n  p = this->m_pSB.p; /*0x8b7a50*/\n  if ( p ) /*0x8b7a58*/\n  {\n    if ( nRemain > 0 ) /*0x8b7a60*/\n      CCtrlScrollBar::SetScrollRange(p, nRemain / 20 + 2); /*0x8b7a86*/\n    else\n      CCtrlScrollBar::SetScrollRange(p, 0); /*0x8b7a6a*/\n  }\n}","refs":[{"addr":"0x4e9b70","name":"?SetScrollRange@CCtrlScrollBar@@QAEXJ@Z"}]}

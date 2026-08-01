@@ -1,3 +1,0 @@
-// CUserLocal::IsEquippedCorrectWeaponForSkill @ 0x93a0a0
-
-{"addr":"0x93a0a0","code":"int __thiscall CUserLocal::IsEquippedCorrectWeaponForSkill(CUserLocal *this, SKILLENTRY *pSkill)\n{\n  int weapon_type; // edi\n  int v5; // eax\n\n  if ( !pSkill ) /*0x93a0aa*/\n    return 0; /*0x93a0ad*/\n  weapon_type = get_weapon_type(this->m_nWeaponItemID); /*0x93a0c7*/\n  v5 = get_weapon_type(this->m_nSubWeaponItemID); /*0x93a0c9*/\n  return SKILLENTRY::IsCorrectWeaponType(pSkill, weapon_type, v5); /*0x93a0ac*/\n}","refs":[{"addr":"0x46f660","name":"?get_weapon_type@@YAJJ@Z"},{"addr":"0x6ecd40","name":"?IsCorrectWeaponType@SKILLENTRY@@QBEHJJ@Z"}]}

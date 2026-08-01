@@ -1,4 +1,0 @@
-BOOL __thiscall CAvatar::IsDead(CAvatar *this)
-{
-  return (this->m_nMoveAction & 0xFFFFFFFE) == 18;
-}

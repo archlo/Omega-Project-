@@ -1,9 +1,0 @@
-// cuser::IsCyclone
-
-BOOL __thiscall CUser::IsCyclone(CUser *this)
-{
-  const SecondaryStat *v1; // eax
-
-  v1 = this->GetSecondaryStat(this); /*0x903b35*/
-  return _ZtlSecureFuse<long>(v1->_ZtlSecureTear_nCyclone_, v1->_ZtlSecureTear_nCyclone__CS) != 0; /*0x903b52*/
-}

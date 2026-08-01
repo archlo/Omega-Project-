@@ -1,3 +1,0 @@
-// CUser::GetPosPrev @ 0x4bde00
-
-{"addr":"0x4bde00","code":"int *__thiscall CUser::GetPosPrev(CUser *this, int *a2)\n{\n  TSecData<long> **p_m_secdata; // esi\n  int Data; // edi\n  int v4; // ecx\n\n  p_m_secdata = &this->m_ptPos.x.m_secdata; /*0x4bde01*/\n  Data = TSecType<long>::GetData((TSecType<long> *)&this->m_ptPosPrev.y.m_secdata); /*0x4bde12*/\n  v4 = TSecType<long>::GetData((TSecType<long> *)p_m_secdata); /*0x4bde19*/\n  *a2 = Data; /*0x4bde1f*/\n  a2[1] = v4; /*0x4bde22*/\n  return a2; /*0x4bde21*/\n}","refs":[{"addr":"0x42b750","name":"?GetData@?$TSecType@J@@QBEJXZ"}]}

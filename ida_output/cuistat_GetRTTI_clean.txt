@@ -1,6 +1,0 @@
-// cuistat::GetRTTI
-
-const CRTTI *__thiscall CUIStat::GetRTTI(CUIStat *this)
-{
-  return &CUIStat::ms_RTTI_CUIStat; /*0x867985*/
-}

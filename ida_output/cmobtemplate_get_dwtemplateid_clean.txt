@@ -1,7 +1,0 @@
-// _ZtlSecureGet_dwTemplateID
-// Address: 0x63a4e0
-
-unsigned int __fastcall CMobTemplate::_ZtlSecureGet_dwTemplateID(CMobTemplate *this)
-{
-  return _ZtlSecureFuse<unsigned long>(this->_ZtlSecureTear_dwTemplateID, this->_ZtlSecureTear_dwTemplateID_CS); /*0x63a4f0*/
-}

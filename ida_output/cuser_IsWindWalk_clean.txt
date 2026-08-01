@@ -1,9 +1,0 @@
-// cuser::IsWindWalk
-
-BOOL __thiscall CUser::IsWindWalk(CUser *this)
-{
-  const SecondaryStat *v1; // eax
-
-  v1 = this->GetSecondaryStat(this); /*0x4fffe5*/
-  return _ZtlSecureFuse<long>(v1->_ZtlSecureTear_nWindWalk_, v1->_ZtlSecureTear_nWindWalk__CS) != 0; /*0x500002*/
-}

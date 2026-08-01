@@ -1,3 +1,0 @@
-﻿=== 0x45ef60 ===
-{"addr":"0x45ef60","code":"int __thiscall CAvatar::GetMoveAction(CAvatar *this)\n{\n  return this->m_nMoveAction; /*0x45ef66*/\n}"}
-

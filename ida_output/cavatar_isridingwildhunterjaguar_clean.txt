@@ -1,3 +1,0 @@
-﻿=== 0x45f7c0 ===
-{"addr":"0x45f7c0","code":"int __thiscall CAvatar::IsRidingWildHunterJaguar(CAvatar *this)\n{\n  int m_nRidingVehicleID; // ecx\n  const int *v2; // eax\n\n  m_nRidingVehicleID = this->m_nRidingVehicleID; /*0x45f7c0*/\n  v2 = &RIDING_WILDHUNTER_JAGUAR_3[1]; /*0x45f7c6*/\n  while ( *v2 != m_nRidingVehicleID ) /*0x45f7d2*/\n  {\n    if ( (int)++v2 >= (int)&DB_DATE_19000101_3 ) /*0x45f7dc*/\n      return 0; /*0x45f7e0*/\n  }\n  return 1; /*0x45f7e0*/\n}","refs":[{"addr":"0xb47ba8","name":"RIDING_WILDHUNTER_JAGUAR_3"},{"addr":"0xb47bc4","name":"DB_DATE_19000101_3"}]}
-

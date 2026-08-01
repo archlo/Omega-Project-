@@ -1,3 +1,0 @@
-// CUser::GetType @ 0x4bc060
-
-{"addr":"0x4bc060","code":"int __thiscall CUser::GetType(CUser *this)\n{\n  return 0; /*0x4bc062*/\n}"}

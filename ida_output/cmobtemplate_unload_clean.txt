@@ -1,7 +1,0 @@
-// CMobTemplate::Unload
-// Address: 0x659b50
-
-void __cdecl CMobTemplate::Unload()
-{
-  ZMap<long,ZRef<CMobTemplate>,long>::RemoveAll(&CMobTemplate::ms_mMobTemplate); /*0x659b55*/
-}

@@ -1,9 +1,0 @@
-void __thiscall CVecCtrl::Wings(CVecCtrl *this)
-{
-  this->m_bWingsNext = 0; /*0x994403*/
-  if ( CVecCtrl::JustJump(this) ) /*0x99440d*/
-  {
-    this->m_bWingsNow = 1; /*0x99441a*/
-    CVecCtrl::SetMovePathAttribute(this, 13); /*0x994424*/
-  }
-}

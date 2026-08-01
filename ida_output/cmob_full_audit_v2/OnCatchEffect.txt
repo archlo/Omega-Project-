@@ -1,9 +1,0 @@
-﻿void __thiscall CMob::OnCatchEffect(CMob *this, CInPacket *iPacket)
-{
-  int v3; // ebx
-  unsigned __int8 v4; // al
-
-  v3 = CInPacket::Decode1(iPacket);
-  v4 = CInPacket::Decode1(iPacket);
-  CMob::ShowCatchEffect(this, v3, v4 != 0 ? 0x10E : 0);
-}

@@ -1,7 +1,0 @@
-// cuserlocal::OnRevive
-
-void __thiscall CUserLocal::OnRevive(CUserLocal *this)
-{
-  CWvsContext::UI_CloseRevive((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr); /*0x904019*/
-  CUser::OnRevive(this); /*0x904021*/
-}

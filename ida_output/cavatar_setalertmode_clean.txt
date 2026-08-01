@@ -1,3 +1,0 @@
-﻿=== 0x8de080 ===
-{"addr":"0x8de080","code":"void __thiscall CAvatar::SetAlertMode(CAvatar *this)\n{\n  this->m_tAlertRemain = 5000; /*0x8de080*/\n}"}
-

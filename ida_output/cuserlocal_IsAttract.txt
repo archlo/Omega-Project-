@@ -1,3 +1,0 @@
-// CUserLocal::IsAttract @ 0x903c00
-
-{"addr":"0x903c00","code":"BOOL __thiscall CUserLocal::IsAttract(CUserLocal *this)\n{\n  const SecondaryStat *v1; // eax\n\n  v1 = this->GetSecondaryStat(this); /*0x903c05*/\n  return _ZtlSecureFuse<long>(v1->_ZtlSecureTear_nAttract_, v1->_ZtlSecureTear_nAttract__CS) != 0; /*0x903c22*/\n}","refs":[{"addr":"0x407520","name":"??$_ZtlSecureFuse@J@@YAJQBJI@Z"}]}

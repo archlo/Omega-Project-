@@ -1,3 +1,0 @@
-// CUserLocal::OnExJablinApply @ 0x9034e0
-
-{"addr":"0x9034e0","code":"void __thiscall CUserLocal::OnExJablinApply(CUserLocal *this, CInPacket *iPacket)\n{\n  this->m_bNextShootExJablin = 1; /*0x9034e0*/\n}"}

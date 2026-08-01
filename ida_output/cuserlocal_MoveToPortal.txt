@@ -1,3 +1,0 @@
-// CUserLocal::MoveToPortal @ 0x52a1f0
-
-{"addr":"0x52a1f0","code":"void __thiscall CUserLocal::MoveToPortal(CUserLocal *this, const char *sPortalName)\n{\n  CUserLocal::TryRegisterTeleport(this, nullptr, 0, nullptr, sPortalName, 1); /*0x52a1fd*/\n}","refs":[{"addr":"0x913690","name":"?TryRegisterTeleport@CUserLocal@@IAEHPBUSKILLENTRY@@JPBD1H@Z"}]}

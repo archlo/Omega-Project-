@@ -1,3 +1,0 @@
-// CUserLocal::ResetSwallow @ 0x93a0e0
-
-{"addr":"0x93a0e0","code":"void __thiscall CUserLocal::ResetSwallow(CUserLocal *this)\n{\n  this->m_dwSwallowMobID = 0; /*0x93a0e2*/\n  this->m_dwSwallowMobTemplateID = 0; /*0x93a0e8*/\n  this->m_bSwallowed = 0; /*0x93a0ee*/\n  CUser::RemoveSwallowingEffect(this); /*0x93a0f4*/\n}","refs":[{"addr":"0x8e1320","name":"?RemoveSwallowingEffect@CUser@@QAEXXZ"}]}

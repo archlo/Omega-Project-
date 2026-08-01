@@ -1,7 +1,0 @@
-// cashshop::InitOneADay
-
-void __thiscall CCashShop::InitOneADay(CCashShop *this)
-{
-  this->m_bRequestBuyOneADay = 0; /*0x47d432*/
-  this->m_bIsOneADay = 0; /*0x47d438*/
-}

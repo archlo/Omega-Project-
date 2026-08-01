@@ -1,9 +1,0 @@
-// cuser::IsSneak
-
-BOOL __thiscall CUser::IsSneak(CUser *this)
-{
-  const SecondaryStat *v1; // eax
-
-  v1 = this->GetSecondaryStat(this); /*0x500015*/
-  return _ZtlSecureFuse<long>(v1->_ZtlSecureTear_nSneak_, v1->_ZtlSecureTear_nSneak__CS) != 0; /*0x500032*/
-}

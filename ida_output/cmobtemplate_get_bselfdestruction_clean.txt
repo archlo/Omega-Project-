@@ -1,7 +1,0 @@
-// _ZtlSecureGet_bSelfDestruction
-// Address: 0x63a540
-
-int __fastcall CMobTemplate::_ZtlSecureGet_bSelfDestruction(CMobTemplate *this)
-{
-  return _ZtlSecureFuse<int>(this->_ZtlSecureTear_bSelfDestruction, this->_ZtlSecureTear_bSelfDestruction_CS); /*0x63a556*/
-}

@@ -1,9 +1,0 @@
-// cuserlocal::IsWeakened
-
-BOOL __thiscall CUserLocal::IsWeakened(CUserLocal *this)
-{
-  const SecondaryStat *v1; // eax
-
-  v1 = this->GetSecondaryStat(this); /*0x903bd5*/
-  return _ZtlSecureFuse<long>(v1->_ZtlSecureTear_nWeakness_, v1->_ZtlSecureTear_nWeakness__CS) != 0; /*0x903bf2*/
-}

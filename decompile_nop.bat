@@ -1,1 +1,0 @@
-"C:\Program Files\IDA Professional 9.3\idat.exe" -A -S"tools/ida_dump.py --names ida_output/nop_handlers_names.json OnPlayEventSound OnPlayMinigameSound OnTutorMsg OnResignQuestReturn OnBuffzoneEffect OnDamageMeter OnTimeBombAttack OnVengeanceSkillApply OnQuestResult" "ida\Maplestory95.exe.i64"

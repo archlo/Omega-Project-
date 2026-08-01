@@ -1,4 +1,0 @@
-﻿void __thiscall CFuncKeyMappedMan::DefaultFuncKeyMap(CFuncKeyMappedMan *this)
-{
-  qmemcpy(this->m_aFuncKeyMapped, s_aDefaultFKM, sizeof(this->m_aFuncKeyMapped)); /*0x56860f*/
-}

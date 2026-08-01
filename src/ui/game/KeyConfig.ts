@@ -483,11 +483,10 @@ export class KeyConfig extends GamePanel implements DragTarget {
 
   private _drawIconAt(cellX: number, cellY: number, fk: FuncKeyMappedRecord, alpha = 1.0): void {
     const icon = this._iconFor(fk);
-    const anchorX = cellX;
-    const anchorY = cellY + 32;
     if (icon) {
       const s = icon.ToPixi();
-      s.position.set(anchorX, anchorY);
+      // Anchor is OriginY/Height — position so the icon sits inside the cell
+      s.position.set(cellX - icon.Width * s.anchor.x, cellY - icon.Height * s.anchor.y);
       s.alpha = alpha;
       this._content.addChild(s);
     } else {

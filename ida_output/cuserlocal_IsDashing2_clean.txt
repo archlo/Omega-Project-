@@ -1,9 +1,0 @@
-// cuserlocal::IsDashing2
-
-BOOL __thiscall CUserLocal::IsDashing2(CUserLocal *this)
-{
-  const SecondaryStat *v2; // eax
-
-  v2 = this->GetSecondaryStat(this); /*0x9040e8*/
-  return v2->aTemporaryStat[1].p->IsActivated(v2->aTemporaryStat[1].p) && CUser::GetDashingSkill(this) == 4321000; /*0x90410e*/
-}

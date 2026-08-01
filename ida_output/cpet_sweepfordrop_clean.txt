@@ -1,4 +1,0 @@
-﻿int __thiscall CPet::SweepForDrop(CPet *this)
-{
-  return _ZtlSecureFuse<int>(this->_ZtlSecureTear_m_bSweepForDrop, this->_ZtlSecureTear_m_bSweepForDrop_CS);
-}

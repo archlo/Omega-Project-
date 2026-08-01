@@ -1,3 +1,0 @@
-// CUserLocal::GetOnDashSkill @ 0x903450
-
-{"addr":"0x903450","code":"int __thiscall CUserLocal::GetOnDashSkill(CUserLocal *this)\n{\n  return CUser::GetDashingSkill(this) != 4321000 ? 0 : 4321001;\n}","refs":[{"addr":"0x8de380","name":"?GetDashingSkill@CUser@@QBEJXZ"}]}

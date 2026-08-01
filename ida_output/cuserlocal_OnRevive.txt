@@ -1,3 +1,0 @@
-// CUserLocal::OnRevive @ 0x904010
-
-{"addr":"0x904010","code":"void __thiscall CUserLocal::OnRevive(CUserLocal *this)\n{\n  CWvsContext::UI_CloseRevive((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr); /*0x904019*/\n  CUser::OnRevive(this); /*0x904021*/\n}","refs":[{"addr":"0x9cccd0","name":"?UI_CloseRevive@CWvsContext@@QAEXXZ"},{"addr":"0xc64068","name":"?ms_pInstance@?$TSingleton@VCWvsContext@@@@1PAVCWvsContext@@A"},{"addr":"0x8dfe40","name":"?OnRevive@CUser@@UAEXXZ"}]}

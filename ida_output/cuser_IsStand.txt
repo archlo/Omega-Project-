@@ -1,3 +1,0 @@
-// CUser::IsStand @ 0x903b60
-
-{"addr":"0x903b60","code":"BOOL __thiscall CUser::IsStand(CUser *this)\n{\n  IWzVector2D *m_pInterface; // eax\n  IWzVector2D *v2; // ecx\n  CVecCtrl *v3; // ecx\n  BOOL result; // eax\n\n  m_pInterface = this->m_pvc.m_pInterface; /*0x903b60*/\n  if ( m_pInterface ) /*0x903b68*/\n    v2 = m_pInterface - 3; /*0x903b6a*/\n  else\n    v2 = nullptr; /*0x903b6f*/\n  result = false; /*0x903b8e*/\n  if ( v2[104].__vftable )\n  {\n    v3 = m_pInterface ? (CVecCtrl *)&m_pInterface[-3] : nullptr;\n    if ( CVecCtrl::IsStopped(v3) ) /*0x903b85*/\n      return true; /*0x903b78*/\n  }\n  return result; /*0x903b93*/\n}","refs":[{"addr":"0x568d60","name":"?IsStopped@CVecCtrl@@QBEHXZ"}]}

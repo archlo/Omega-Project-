@@ -1,4 +1,0 @@
-BOOL __thiscall CAvatar::IsRidingSkillVehicle(CAvatar *this)
-{
-  return this->m_nRidingVehicleID / 10000 == 193;
-}

@@ -1,8 +1,0 @@
-﻿tagRECT *__thiscall CUIChannelSelect::GetRect(CUIChannelSelect *this, tagRECT *result, int nIdx)
-{
-  result->left = 66 * (nIdx % 5) + 23; /*0x60216f*/
-  result->top = 29 * (nIdx / 5) + 93; /*0x602171*/
-  result->right = 66 * (nIdx % 5) + 84; /*0x60217a*/
-  result->bottom = 29 * (nIdx / 5) + 114; /*0x60217d*/
-  return result; /*0x602180*/
-}

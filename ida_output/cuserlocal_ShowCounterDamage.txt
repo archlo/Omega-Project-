@@ -1,3 +1,0 @@
-// CUserLocal::ShowCounterDamage @ 0x9033c0
-
-{"addr":"0x9033c0","code":"void __thiscall CUserLocal::ShowCounterDamage(CUserLocal *this, int nDamage)\n{\n  this->SetDamaged(this, nDamage, 0, 0, 0, nullptr, 0, 0, 0, 0, 0); /*0x9033dc*/\n}"}

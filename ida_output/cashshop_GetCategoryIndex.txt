@@ -1,3 +1,0 @@
-// CCashShop::GetCategoryIndex @ 0x47e590
-
-{"addr":"0x47e590","code":"void __thiscall CCashShop::GetCategoryIndex(CCashShop *this, int nCategory, int *nStart, int *nCount)\n{\n  unsigned int v4; // edx\n  int i; // esi\n  CS_CATEGORY *a; // eax\n\n  *nStart = -1; /*0x47e5a0*/\n  v4 = 0; /*0x47e5a6*/\n  *nCount = 0; /*0x47e5a8*/\n  for ( i = 0; ; ++i ) /*0x47e5ae*/\n  {\n    a = this->m_aCategory.a; /*0x47e5b0*/\n    if ( !a || v4 >= a[-1].nNotAvailableCount ) /*0x47e5ba*/\n      break; /*0x47e5ba*/\n    if ( a[i].nCategory == nCategory ) /*0x47e5bf*/\n    {\n      if ( *nStart == -1 ) /*0x47e5c4*/\n        *nStart = v4; /*0x47e5c6*/\n      ++*nCount; /*0x47e5c8*/\n    }\n    ++v4; /*0x47e5ca*/\n  }\n}"}

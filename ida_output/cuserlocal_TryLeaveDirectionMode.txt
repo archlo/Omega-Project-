@@ -1,3 +1,0 @@
-// CUserLocal::TryLeaveDirectionMode @ 0x9054c0
-
-{"addr":"0x9054c0","code":"void __thiscall CUserLocal::TryLeaveDirectionMode(CUserLocal *this, int tCur)\n{\n  if ( this->m_bAfterLeaveDirectionMode ) /*0x9054c0*/\n  {\n    if ( tCur - this->m_tAfterLeaveDirectionMode >= 0 ) /*0x9054d3*/\n    {\n      this->m_bAfterLeaveDirectionMode = 0; /*0x9054d5*/\n      CUserLocal::SetDirectionMode(this, 0); /*0x9054e7*/\n    }\n  }\n}","refs":[{"addr":"0x904240","name":"?SetDirectionMode@CUserLocal@@IAEXH@Z"}]}

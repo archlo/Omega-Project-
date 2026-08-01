@@ -1,7 +1,0 @@
-BOOL __thiscall CAvatar::IsRidingEvanDragon(CAvatar *this)
-{
-  int m_nRidingVehicleID; // eax
-
-  m_nRidingVehicleID = this->m_nRidingVehicleID;
-  return m_nRidingVehicleID == 1902040 || m_nRidingVehicleID == 1902041 || m_nRidingVehicleID == 1902042;
-}

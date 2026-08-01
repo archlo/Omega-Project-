@@ -1,4 +1,0 @@
-﻿int __fastcall CMob::_ZtlSecureGet_m_nMP(CMob *this)
-{
-  return _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nMP, this->_ZtlSecureTear_m_nMP_CS);
-}

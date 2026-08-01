@@ -1,7 +1,0 @@
-﻿void __thiscall CMob::ClearActionLayer(CMob *this)
-{
-  int i; // esi
-
-  for ( i = 0; i < 43; ++i )
-    ZList<ZRef<CActionMan::MOBACTIONFRAMEENTRY>>::RemoveAll(&this->m_aAction.a[i]);
-}

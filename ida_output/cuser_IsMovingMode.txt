@@ -1,3 +1,0 @@
-// CUser::IsMovingMode @ 0x4bbff0
-
-{"addr":"0x4bbff0","code":"int __thiscall CUser::IsMovingMode(CUser *this)\n{\n  return 0; /*0x4bbff2*/\n}"}

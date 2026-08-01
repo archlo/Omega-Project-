@@ -1,8 +1,0 @@
-﻿CPet::ADDITIONALLAYER *__thiscall CPet::GetAdditionalLayer(CPet *this, int nType)
-{
-  if ( !nType )
-    return this->m_aAdditionalLayer;
-  if ( nType == 1 )
-    return &this->m_aAdditionalLayer[1];
-  return nullptr;
-}

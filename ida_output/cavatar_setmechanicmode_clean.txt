@@ -1,3 +1,0 @@
-﻿=== 0x464ea0 ===
-{"addr":"0x464ea0","code":"void __thiscall CAvatar::SetMechanicMode(CAvatar *this, int nMechanicMode)\n{\n  this->m_nMechanicMode = nMechanicMode; /*0x464ea7*/\n  if ( CAvatar::GetOneTimeAction(this) <= -1 ) /*0x464eb5*/\n  {\n    CAvatar::ClearActionLayer(this, 0); /*0x464ebb*/\n    this->PrepareActionLayer(this, 6, 100, 0); /*0x464ecd*/\n  }\n}","refs":[{"addr":"0x464d60","name":"?ClearActionLayer@CAvatar@@IAEXJ@Z"},{"addr":"0x45f3c0","name":"?GetOneTimeAction@CAvatar@@QBEJXZ"}]}
-

@@ -1,6 +1,0 @@
-// cuistat::IsMyAddon
-
-BOOL __thiscall CUIStat::IsMyAddon(CUIStat *this, CUIStatDetail *pWnd)
-{
-  return TSingleton<CUIStatDetail>::ms_pInstance && TSingleton<CUIStatDetail>::ms_pInstance == pWnd; /*0x8679b4*/
-}

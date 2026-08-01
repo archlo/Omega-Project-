@@ -1,7 +1,0 @@
-void __thiscall CVecCtrl::Jump(CVecCtrl *this)
-{
-  this->m_bJumpNext = 0; /*0x994433*/
-  this->m_bTryJumpedInFly = 1; /*0x99443d*/
-  if ( CVecCtrl::JustJump(this) ) /*0x994447*/
-    CVecCtrl::SetMovePathAttribute(this, 1); /*0x994454*/
-}

@@ -1,6 +1,0 @@
-﻿BOOL __thiscall CMob::IsPosFixed(CMob *this)
-{
-  return _ZtlSecureFuse<long>(
-           this->m_pTemplate->_ZtlSecureTear_nMoveAbility,
-           this->m_pTemplate->_ZtlSecureTear_nMoveAbility_CS) == 0;
-}

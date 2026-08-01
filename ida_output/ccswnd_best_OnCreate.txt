@@ -1,3 +1,0 @@
-// CCSWnd_Best::OnCreate @ 0x4c6820
-
-{"addr":"0x4c6820","code":"void __thiscall CCSWnd_Best::OnCreate(CCSWnd_Best *this, CCashShop *pData)\n{\n  this->m_pCashShop = pData; /*0x4c6824*/\n  CCSWnd_Best::ChangeCategory(this); /*0x4c682a*/\n}","refs":[{"addr":"0x4c6680","name":"?ChangeCategory@CCSWnd_Best@@QAEXXZ"}]}

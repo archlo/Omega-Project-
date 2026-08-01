@@ -1,3 +1,0 @@
-// CUser::PetAutoSpeaking @ 0x8deb10
-
-{"addr":"0x8deb10","code":"void __thiscall CUser::PetAutoSpeaking(CUser *this, int nEvent)\n{\n  int i; // esi\n  CPet *p; // ecx\n\n  for ( i = 0; i < 3; ++i ) /*0x8deb19*/\n  {\n    p = this->m_apPet.a[i].p; /*0x8deb26*/\n    if ( !p ) /*0x8deb2c*/\n      break; /*0x8deb2c*/\n    CPet::AutoSpeakingByEvent(p, nEvent); /*0x8deb2f*/\n  }\n}","refs":[{"addr":"0x6a18a0","name":"?AutoSpeakingByEvent@CPet@@QAEXJ@Z"}]}

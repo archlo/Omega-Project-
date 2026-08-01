@@ -1,3 +1,0 @@
-// CUser::RemoveFinalCutEffect @ 0x8e12e0
-
-{"addr":"0x8e12e0","code":"void __thiscall CUser::RemoveFinalCutEffect(CUser *this)\n{\n  IWzGr2DLayer *m_pInterface; // eax\n\n  m_pInterface = this->m_pLayerFinalCutEffect.m_pInterface; /*0x8e12e0*/\n  if ( m_pInterface ) /*0x8e12e8*/\n  {\n    this->m_pLayerFinalCutEffect.m_pInterface = nullptr; /*0x8e12ea*/\n    m_pInterface->Release(m_pInterface); /*0x8e12fa*/\n  }\n}"}

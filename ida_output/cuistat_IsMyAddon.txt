@@ -1,4 +1,0 @@
-// CUIStat::IsMyAddon @ 0x8679a0
-// Decompiled from v95 IDB
-
-{"addr":"0x8679a0","code":"BOOL __thiscall CUIStat::IsMyAddon(CUIStat *this, CUIStatDetail *pWnd)\n{\n  return TSingleton<CUIStatDetail>::ms_pInstance && TSingleton<CUIStatDetail>::ms_pInstance == pWnd; /*0x8679b4*/\n}","refs":[{"addr":"0xc6f138","name":"?ms_pInstance@?$TSingleton@VCUIStatDetail@@@@1PAVCUIStatDetail@@A"}]}

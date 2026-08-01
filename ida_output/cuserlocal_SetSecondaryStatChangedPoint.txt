@@ -1,3 +1,0 @@
-// CUserLocal::SetSecondaryStatChangedPoint @ 0x904030
-
-{"addr":"0x904030","code":"void __thiscall CUserLocal::SetSecondaryStatChangedPoint(CUserLocal *this, unsigned __int8 bSN)\n{\n  IWzVector2D *m_pInterface; // eax\n\n  m_pInterface = this->m_pvc.m_pInterface; /*0x904030*/\n  if ( m_pInterface ) /*0x904038*/\n    CMovePath::SetStatChangedPoint((CMovePath *)&m_pInterface[142], bSN); /*0x904043*/\n  else\n    CMovePath::SetStatChangedPoint((CMovePath *)0x244, bSN); /*0x904050*/\n}","refs":[{"addr":"0x667f30","name":"?SetStatChangedPoint@CMovePath@@QAEXE@Z"}]}

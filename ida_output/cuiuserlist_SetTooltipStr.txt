@@ -1,4 +1,0 @@
-// CUIUserList::SetTooltipStr @ 0x8bac80
-// Decompiled from v95 IDB
-
-{"addr":"0x8bac80","code":"void __thiscall CUIUserList::SetTooltipStr(CUIUserList *this, ZXString<char> sMsg)\n{\n  tagPOINT pt; // [esp+8h] [ebp-14h] BYREF\n  int v4; // [esp+18h] [ebp-4h]\n\n  v4 = 0; /*0x8bacb3*/\n  CWndMan::GetCursorPos(TSingleton<CWndMan>::ms_pInstance, &pt, 0); /*0x8bacbb*/\n  CUIToolTip::SetToolTip_String(&this->m_uiToolTip, pt.x + 20, pt.y + 20, sMsg._m_pStr); /*0x8bacdb*/\n  v4 = -1; /*0x8bace4*/\n  if ( sMsg._m_pStr ) /*0x8bacee*/\n    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sMsg._m_pStr - 1); /*0x8bacf4*/\n}","refs":[{"addr":"0x9b1540","name":"?GetCursorPos@CWndMan@@QAEXPAUtagPOINT@@H@Z"},{"addr":"0xc68ac4","name":"?ms_pInstance@?$TSingleton@VCWndMan@@@@1PAVCWndMan@@A"},{"addr":"0x887140","name":"?SetToolTip_String@CUIToolTip@@QAEXJJPBD@Z"},{"addr":"0x403460","name":"?_Release@?$ZXString@D@@KAXPAU_ZXStringData@1@@Z"}]}

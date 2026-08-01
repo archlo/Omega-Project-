@@ -1,7 +1,0 @@
-BOOL __thiscall CMob::IsNotEnemyMob(CMob *this)
-{
-  CMobTemplate *m_pTemplate; // eax
-
-  m_pTemplate = this->m_pTemplate; /*0x639fb0*/
-  return m_pTemplate->bDamagedByMob || m_pTemplate->nEscortType == 1 || this->m_stat.nDazzle_; /*0x639fd3*/
-}

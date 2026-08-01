@@ -1,4 +1,0 @@
-﻿void __thiscall CMob::GetAttackBodyRect(CMob *this, ZArray<tagRECT> *arcAttack, int bContinuous)
-{
-  CMob::GetArrayBodyRectImpl(this, &this->m_arcAttackBody, &this->m_arcAttackBodyFlip, arcAttack, bContinuous);
-}

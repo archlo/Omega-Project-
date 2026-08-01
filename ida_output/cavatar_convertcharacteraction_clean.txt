@@ -1,3 +1,0 @@
-﻿=== 0x460070 ===
-{"addr":"0x460070","code":"int __thiscall CAvatar::ConvertCharacterAction(CAvatar *this, int nAction)\n{\n  if ( nAction >= 2 && nAction <= 3 /*0x4600bd*/\n    || nAction == 48\n    || nAction == 49\n    || nAction == 50\n    || nAction == 51\n    || nAction == 52\n    || nAction == 53\n    || nAction == 54\n    || nAction == 125\n    || (unsigned int)nAction < 2\n    || nAction == 124\n    || nAction == 42\n    || nAction == 56 )\n  {\n    return 48; /*0x4600da*/\n  }\n  if ( CAvatar::IsRidingWildHunterJaguar(this) && nAction == 41 ) /*0x4600cb*/\n    return 57; /*0x4600cd*/\n  return nAction; /*0x4600d0*/\n}","refs":[{"addr":"0x45f7c0","name":"?IsRidingWildHunterJaguar@CAvatar@@QBEHXZ"}]}
-

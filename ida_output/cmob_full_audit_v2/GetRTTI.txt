@@ -1,4 +1,0 @@
-﻿const CRTTI *__thiscall CMob::GetRTTI(CMob *this)
-{
-  return &CMob::ms_RTTI_CMob;
-}

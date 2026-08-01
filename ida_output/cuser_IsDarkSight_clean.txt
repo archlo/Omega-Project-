@@ -1,9 +1,0 @@
-// cuser::IsDarkSight
-
-BOOL __thiscall CUser::IsDarkSight(CUser *this)
-{
-  const SecondaryStat *v1; // eax
-
-  v1 = this->GetSecondaryStat(this); /*0x4fffb5*/
-  return _ZtlSecureFuse<long>(v1->_ZtlSecureTear_nDarkSight_, v1->_ZtlSecureTear_nDarkSight__CS) != 0; /*0x4fffd2*/
-}

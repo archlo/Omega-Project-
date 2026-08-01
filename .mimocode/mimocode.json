@@ -1,9 +1,0 @@
-{
-  "$schema": "https://mimo.xiaomi.com/mimocode/config.json",
-  "mcp": {
-    "ida-pro": {
-      "type": "remote",
-      "url": "http://127.0.0"
-    }
-  }
-}

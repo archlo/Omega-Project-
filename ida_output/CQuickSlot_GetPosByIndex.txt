@@ -1,8 +1,0 @@
-﻿void __thiscall CUIStatusBar::CQuickSlot::GetPosByIndex(CUIStatusBar::CQuickSlot *this, int nIdx, int *x, int *y)
-{
-  if ( nIdx < 8 ) /*0x86cca7*/
-  {
-    *x = s_ptShortKeyPos[nIdx].x; /*0x86ccb4*/
-    *y = s_ptShortKeyPos[nIdx].y; /*0x86ccc1*/
-  }
-}

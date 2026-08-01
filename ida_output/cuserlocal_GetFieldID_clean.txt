@@ -1,6 +1,0 @@
-// cuserlocal::GetFieldID
-
-int __thiscall CUserLocal::GetFieldID(CUserLocal *this)
-{
-  return CWvsContext::GetCurFieldID((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr);
-}

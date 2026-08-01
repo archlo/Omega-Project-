@@ -1,4 +1,0 @@
-BOOL __thiscall CAvatar::IsOnPlayingOneTimeAction(CAvatar *this)
-{
-  return CAvatar::GetOneTimeAction(this) > -1;
-}

@@ -1,8 +1,0 @@
-// cuserlocal::OnOpenSkillGuide
-
-void __thiscall CUserLocal::OnOpenSkillGuide(CUserLocal *this, CInPacket *iPacket)
-{
-  CWvsContext::UI_Open((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, 3, 1); /*0x90e6aa*/
-  if ( TSingleton<CUISkill>::ms_pInstance ) /*0x90e6b7*/
-    CUISkill::OpenCurSkillGuide(TSingleton<CUISkill>::ms_pInstance); /*0x90e6b9*/
-}

@@ -1,4 +1,0 @@
-// CUIStat::OnMouseButton @ 0x8614a0
-// Decompiled from v95 IDB
-
-{"addr":"0x8614a0","code":"void __thiscall CUIStat::OnMouseButton(CUIStat *this, unsigned int msg, unsigned int wParam, int rx, int ry)\n{\n  if ( msg == 513 ) /*0x8614a8*/\n    CUIToolTip::ClearToolTip((CUIToolTip *)&this->m_pBtClose.p); /*0x8614b0*/\n}","refs":[{"addr":"0x880f20","name":"?ClearToolTip@CUIToolTip@@QAEXXZ"}]}

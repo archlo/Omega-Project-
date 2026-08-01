@@ -1,9 +1,0 @@
-// cuserlocal::OnFieldFadeOutForce
-
-void __thiscall CUserLocal::OnFieldFadeOutForce(CUserLocal *this, CInPacket *iPacket)
-{
-  int v2; // eax
-
-  v2 = CInPacket::Decode4(iPacket); /*0x9057f4*/
-  CAnimationDisplayer::RemoveAllFadeInAnimation(TSingleton<CAnimationDisplayer>::ms_pInstance, v2); /*0x905803*/
-}

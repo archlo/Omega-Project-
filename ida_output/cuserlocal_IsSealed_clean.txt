@@ -1,9 +1,0 @@
-// cuserlocal::IsSealed
-
-BOOL __thiscall CUserLocal::IsSealed(CUserLocal *this)
-{
-  const SecondaryStat *v1; // eax
-
-  v1 = this->GetSecondaryStat(this); /*0x903ba5*/
-  return _ZtlSecureFuse<long>(v1->_ZtlSecureTear_nSeal_, v1->_ZtlSecureTear_nSeal__CS) != 0; /*0x903bc2*/
-}

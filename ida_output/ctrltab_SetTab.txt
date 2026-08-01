@@ -1,3 +1,0 @@
-// CCtrlTab::SetTab @ 0x4ede60
-
-{"addr":"0x4ede60","code":"void __thiscall CCtrlTab::SetTab(CCtrlTab *this, int nTab)\n{\n  if ( nTab >= 0 && nTab < (signed int)this->m_lTabInfo._m_uCount ) /*0x4ede6e*/\n  {\n    this->m_nCurTab = nTab; /*0x4ede70*/\n    CCtrlWnd::InvalidateRect(this); /*0x4ede73*/\n    this->m_pParent->OnChildNotify(this->m_pParent, this->m_nCtrlId, 500u, this->m_nCurTab); /*0x4ede8d*/\n  }\n}","refs":[{"addr":"0x4efd70","name":"?InvalidateRect@CCtrlWnd@@QAEXXZ"}]}

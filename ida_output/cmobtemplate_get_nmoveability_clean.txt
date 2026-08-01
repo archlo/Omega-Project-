@@ -1,7 +1,0 @@
-// _ZtlSecureGet_nMoveAbility
-// Address: 0x63a500
-
-int __fastcall CMobTemplate::_ZtlSecureGet_nMoveAbility(CMobTemplate *this)
-{
-  return _ZtlSecureFuse<long>(this->_ZtlSecureTear_nMoveAbility, this->_ZtlSecureTear_nMoveAbility_CS); /*0x63a510*/
-}

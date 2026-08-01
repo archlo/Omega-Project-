@@ -1,6 +1,0 @@
-// cuserlocal::GetOnDashSkill
-
-int __thiscall CUserLocal::GetOnDashSkill(CUserLocal *this)
-{
-  return CUser::GetDashingSkill(this) != 4321000 ? 0 : 4321001;
-}

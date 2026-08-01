@@ -1,7 +1,0 @@
-[
-  {
-    "caller": "CMobPool::OnMobPacket(long,CInPacket &)",
-    "addr": "0x6570b0",
-    "call_site": "0x657180"
-  }
-]

@@ -1,7 +1,0 @@
-int __thiscall CMob::GetRandomHitAction(CMob *this)
-{
-  if ( this->m_pTemplate->nHitCount <= 0 ) /*0x639f80*/
-    return -1; /*0x639f9b*/
-  else
-    return rand() % this->m_pTemplate->nHitCount + 7; /*0x639f97*/
-}

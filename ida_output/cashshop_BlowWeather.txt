@@ -1,3 +1,0 @@
-// CCashShop::BlowWeather @ 0x47d390
-
-{"addr":"0x47d390","code":"void __thiscall CCashShop::BlowWeather(CCashShop *this, int nItemID)\n{\n  CCSWnd_Char::BlowWeather(&this->m_wndChar, nItemID); /*0x47d396*/\n}","refs":[{"addr":"0x4c5d30","name":"?BlowWeather@CCSWnd_Char@@QAEXJ@Z"}]}

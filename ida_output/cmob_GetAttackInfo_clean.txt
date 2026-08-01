@@ -1,7 +1,0 @@
-const MobAttackInfo *__thiscall CMob::GetAttackInfo(CMob *this, int nAction)
-{
-  if ( (unsigned int)(nAction - 13) <= 8 ) /*0x64133a*/
-    return CMobTemplate::GetAttackInfo(this->m_pTemplate, nAction - 13); /*0x64134e*/
-  else
-    return nullptr; /*0x64133c*/
-}

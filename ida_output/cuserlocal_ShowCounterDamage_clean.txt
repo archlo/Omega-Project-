@@ -1,6 +1,0 @@
-// cuserlocal::ShowCounterDamage
-
-void __thiscall CUserLocal::ShowCounterDamage(CUserLocal *this, int nDamage)
-{
-  this->SetDamaged(this, nDamage, 0, 0, 0, nullptr, 0, 0, 0, 0, 0); /*0x9033dc*/
-}

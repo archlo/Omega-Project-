@@ -1,4 +1,0 @@
-﻿BOOL __thiscall CMob::IsOnPlayingOneTimeAction(CMob *this)
-{
-  return _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nOneTimeAction, this->_ZtlSecureTear_m_nOneTimeAction_CS) > -1;
-}

@@ -1,3 +1,0 @@
-// CUserLocal::SetMoveAction @ 0x903ce0
-
-{"addr":"0x903ce0","code":"void __thiscall CUserLocal::SetMoveAction(CUserLocal *this, int nMA, int bReload)\n{\n  IWzGr2DLayer *m_pInterface; // eax\n\n  CUser::SetMoveAction(this, nMA, bReload); /*0x903cef*/\n  m_pInterface = this->m_pLayerOverFace.m_pInterface; /*0x903cf4*/\n  if ( m_pInterface ) /*0x903cfc*/\n    m_pInterface[115].__vftable = (IWzGr2DLayer_vtbl *)this->m_tNextBlink; /*0x903d04*/\n  else\n    MEMORY[0x1D8] = this->m_tNextBlink; /*0x903d16*/\n}","refs":[{"addr":"0x8df540","name":"?SetMoveAction@CUser@@UAEXJH@Z"}]}

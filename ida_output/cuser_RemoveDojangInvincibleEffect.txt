@@ -1,3 +1,0 @@
-// CUser::RemoveDojangInvincibleEffect @ 0x8e1150
-
-{"addr":"0x8e1150","code":"void __thiscall CUser::RemoveDojangInvincibleEffect(CUser *this)\n{\n  IWzGr2DLayer *m_pInterface; // eax\n\n  m_pInterface = this->m_pLayerDojangInvincibleEffect.m_pInterface; /*0x8e1150*/\n  if ( m_pInterface ) /*0x8e1158*/\n  {\n    this->m_pLayerDojangInvincibleEffect.m_pInterface = nullptr; /*0x8e115a*/\n    m_pInterface->Release(m_pInterface); /*0x8e116a*/\n  }\n}"}

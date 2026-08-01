@@ -1,3 +1,0 @@
-// CUser::SetTargetID @ 0x903360
-
-{"addr":"0x903360","code":"void __thiscall CUser::SetTargetID(CUser *this, unsigned int nTargetID)\n{\n  this->m_nTargetID = nTargetID; /*0x903364*/\n}"}

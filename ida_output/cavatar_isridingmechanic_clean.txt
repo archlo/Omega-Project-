@@ -1,4 +1,0 @@
-BOOL __thiscall CAvatar::IsRidingMechanic(CAvatar *this)
-{
-  return this->m_nRidingVehicleID == 1932016;
-}
