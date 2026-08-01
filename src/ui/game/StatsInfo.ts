@@ -792,66 +792,6 @@ export class StatsInfo extends GamePanel {
     }
   }
 
-  // OG: CreateTip — creates job-specific balloon tip layers
-  // First balloon: position (2, 170), direction 2, StringPool 14C6 + 14C7
-  // Job-specific tips: different StringPool IDs per job category
-  createTip(): void {
-    // Clean up existing tips
-    for (const tip of this._tipLayers) {
-      if (tip.parent) tip.parent.removeChild(tip);
-    }
-    this._tipLayers = [];
-
-    const jobNum = this._parseJobNumber();
-    const jobCat = Math.floor(jobNum / 100) % 10;
-
-    // Default tip content (StringPool 14C6 + 14C7)
-    let tipLines = [
-      'AP can be used to raise',
-      'your stats or HP/MP.',
-    ];
-
-    // Job-specific tip content from IDA audit
-    // StringPool IDs: 0x14BA (first line), job-specific second/third lines
-    switch (jobCat) {
-      case 1: // Warrior
-        tipLines = ['Warriors should focus on', 'STR for maximum damage.'];
-        break;
-      case 2: // Mage
-        tipLines = ['Mages should focus on', 'INT for maximum damage.'];
-        break;
-      case 3: // Archer
-        tipLines = ['Archers should focus on', 'DEX for maximum damage.'];
-        break;
-      case 4: // Thief
-        tipLines = ['Thieves should focus on', 'DEX and LUK for damage.'];
-        break;
-      case 5: // Pirate
-        tipLines = ['Pirates should focus on', 'STR for maximum damage.'];
-        break;
-    }
-
-    // Create balloon tip at position (2, 170) — IDA: nX=2, nY=0xAA (170), nDir=2
-    const tip = new Container();
-    const bg = new Graphics();
-    bg.roundRect(0, 0, 160, 40, 6).fill({ color: '#0C0C16', alpha: 220 / 255 });
-    bg.roundRect(0, 0, 160, 40, 6).stroke({ color: '#46465A', width: 1 });
-    tip.addChild(bg);
-
-    const text = new Text({
-      text: tipLines.join('\n'),
-      style: new TextStyle({ fill: '#C8C8C8', fontSize: 9, fontFamily: 'monospace', wordWrap: true, wordWrapWidth: 150 }),
-    });
-    text.x = 5; text.y = 5;
-    tip.addChild(text);
-
-    // Position at (2, 170) per IDA
-    tip.x = 2;
-    tip.y = 170;
-    this._root.addChild(tip);
-    this._tipLayers.push(tip);
-  }
-
   // OG: DestroyTip — removes all tip layers
   destroyTip(): void {
     for (const tip of this._tipLayers) {

@@ -452,13 +452,17 @@ export class StatusBar extends GamePanel {
     const sx = tl.x + gauge.x;
     const sy = tl.y + gauge.y;
 
+    // Always draw the colored fill as a base layer on Graphics.
+    // The gaugeCover overlay sits on top and provides the glass effect;
+    // the colored rect underneath ensures the fill is always visible.
+    g.rect(sx, sy, nLen, 10).fill({ color });
+
+    // Position WZ cap sprites (left edge, stretch center, right edge) on
+    // _gaugeLayer above the Graphics fill for the proper OG visual.
     const lcap = caps[0];
     const mid = caps[1];
     const rcap = caps[2];
-    if (!lcap || !mid || !rcap) {
-      g.rect(sx, sy, nLen, 10).fill({ color });
-      return;
-    }
+    if (!lcap || !mid || !rcap) return;
 
     lcap.visible = true;
     lcap.position.set(sx, sy);
