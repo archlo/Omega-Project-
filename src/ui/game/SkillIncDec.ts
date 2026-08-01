@@ -65,19 +65,19 @@ export class SkillIncPanel extends GamePanel {
     this._textureLoader = loader ?? null;
 
     // OG: CDialog::CreateDlg with step1/backgrnd
-    let hasWzBg = false;
     if (loader && ui) {
       const bg = ui.GetItem('UI/UIWindow2.img/Reset/SP/step1/backgrnd');
       if (bg instanceof WzCanvas) {
         const sprite = loader.Load(bg)?.ToPixi();
-        if (sprite) { this._root.addChild(sprite); hasWzBg = true; }
+        if (sprite) this._root.addChild(sprite);
       }
-    }
-    if (!hasWzBg) {
-      const g = new Graphics();
-      g.rect(0, 0, 174, 281).fill({ color: '#0C0C16', alpha: 235 / 255 });
-      g.rect(0, 0, 174, 281).stroke({ color: '#46465A', width: 1 });
-      this._root.addChild(g);
+      for (const layer of ['backgrnd2', 'backgrnd3']) {
+        const node = ui.GetItem(`UI/UIWindow2.img/Reset/SP/step1/${layer}`);
+        if (node instanceof WzCanvas) {
+          const sprite = loader.Load(node)?.ToPixi();
+          if (sprite) this._root.addChild(sprite);
+        }
+      }
     }
 
     // OG: Load skill0, skill1, line canvases from Reset/SP/
@@ -155,7 +155,7 @@ export class SkillIncPanel extends GamePanel {
       const sk = abs < this._skills.length ? this._skills[abs] : null;
       const row = this._rows[i];
       if (sk) {
-        row.name.text = sk.name || `[${sk.id}]`;
+         row.name.text = sk.name;
         row.level.text = `${sk.level}`;
         row.level.style = _levelStyle;
         row.level.visible = true;
@@ -193,7 +193,7 @@ export class SkillIncPanel extends GamePanel {
         return true;
       }
     }
-    return lx >= 0 && lx < 174 && ly >= 0 && ly < 281;
+     return lx >= 0 && lx < 170 && ly >= 0 && ly < 262;
   }
 
   onKeyPress(key: string): boolean {
@@ -223,19 +223,19 @@ export class SkillDecPanel extends GamePanel {
     this._textureLoader = loader ?? null;
 
     // OG: CDialog::CreateDlg with step0/backgrnd
-    let hasWzBg = false;
     if (loader && ui) {
       const bg = ui.GetItem('UI/UIWindow2.img/Reset/SP/step0/backgrnd');
       if (bg instanceof WzCanvas) {
         const sprite = loader.Load(bg)?.ToPixi();
-        if (sprite) { this._root.addChild(sprite); hasWzBg = true; }
+        if (sprite) this._root.addChild(sprite);
       }
-    }
-    if (!hasWzBg) {
-      const g = new Graphics();
-      g.rect(0, 0, 174, 281).fill({ color: '#0C0C16', alpha: 235 / 255 });
-      g.rect(0, 0, 174, 281).stroke({ color: '#46465A', width: 1 });
-      this._root.addChild(g);
+      for (const layer of ['backgrnd2', 'backgrnd3']) {
+        const node = ui.GetItem(`UI/UIWindow2.img/Reset/SP/step0/${layer}`);
+        if (node instanceof WzCanvas) {
+          const sprite = loader.Load(node)?.ToPixi();
+          if (sprite) this._root.addChild(sprite);
+        }
+      }
     }
 
     if (loader && ui) {
@@ -312,7 +312,7 @@ export class SkillDecPanel extends GamePanel {
       const sk = abs < this._skills.length ? this._skills[abs] : null;
       const row = this._rows[i];
       if (sk) {
-        row.name.text = sk.name || `[${sk.id}]`;
+         row.name.text = sk.name;
         row.level.text = `${sk.level}`;
         row.level.style = sk.level > 0 ? _levelStyle : _levelStyle;
         row.level.visible = true;
@@ -350,7 +350,7 @@ export class SkillDecPanel extends GamePanel {
         return true;
       }
     }
-    return lx >= 0 && lx < 174 && ly >= 0 && ly < 281;
+     return lx >= 0 && lx < 170 && ly >= 0 && ly < 283;
   }
 
   onKeyPress(key: string): boolean {
@@ -386,19 +386,19 @@ export class SkillChangeConfirm extends GamePanel {
     this._ui = ui ?? null;
 
     // OG: CDialog::CreateDlg with step2/backgrnd
-    let hasWzBg = false;
     if (loader && ui) {
       const bg = ui.GetItem('UI/UIWindow2.img/Reset/SP/step2/backgrnd');
       if (bg instanceof WzCanvas) {
         const sprite = loader.Load(bg)?.ToPixi();
-        if (sprite) { this._root.addChild(sprite); hasWzBg = true; }
+        if (sprite) this._root.addChild(sprite);
       }
-    }
-    if (!hasWzBg) {
-      const g = new Graphics();
-      g.rect(0, 0, 174, 281).fill({ color: '#0C0C16', alpha: 235 / 255 });
-      g.rect(0, 0, 174, 281).stroke({ color: '#46465A', width: 1 });
-      this._root.addChild(g);
+      for (const layer of ['backgrnd2', 'backgrnd3']) {
+        const node = ui.GetItem(`UI/UIWindow2.img/Reset/SP/step2/${layer}`);
+        if (node instanceof WzCanvas) {
+          const sprite = loader.Load(node)?.ToPixi();
+          if (sprite) this._root.addChild(sprite);
+        }
+      }
     }
 
     if (loader && ui) {
@@ -468,23 +468,25 @@ export class SkillChangeConfirm extends GamePanel {
 
     // OG: OK button (BtOK) and Cancel button (BtCancle) from WZ
     this._btOk = new Container();
-    const okBg = new Graphics();
-    okBg.roundRect(0, 0, 60, 22, 3).fill({ color: 0x2A4A2A });
-    okBg.roundRect(0, 0, 60, 22, 3).stroke({ color: 0x50A050, width: 1 });
-    const okText = new Text({ text: 'OK', style: new TextStyle({ fill: '#64DC64', fontSize: 10, fontFamily: 'monospace' }) });
-    okText.x = 18; okText.y = 3;
-    this._btOk.addChild(okBg, okText);
-    this._btOk.position.set(174 / 2 - 70, 281 - 36);
+    if (loader && ui) {
+      const node = ui.GetItem('UI/UIWindow2.img/Reset/SP/step2/BtOK/normal');
+      if (node instanceof WzCanvas) {
+        const sprite = loader.Load(node)?.ToPixi();
+        if (sprite) this._btOk.addChild(sprite);
+      }
+    }
+    this._btOk.position.set(37, 181);
     this._root.addChild(this._btOk);
 
     this._btCancel = new Container();
-    const cancelBg = new Graphics();
-    cancelBg.roundRect(0, 0, 60, 22, 3).fill({ color: 0x4A2A2A });
-    cancelBg.roundRect(0, 0, 60, 22, 3).stroke({ color: 0xA05050, width: 1 });
-    const cancelText = new Text({ text: 'Cancel', style: new TextStyle({ fill: '#DC6464', fontSize: 10, fontFamily: 'monospace' }) });
-    cancelText.x = 8; cancelText.y = 3;
-    this._btCancel.addChild(cancelBg, cancelText);
-    this._btCancel.position.set(174 / 2 + 10, 281 - 36);
+    if (loader && ui) {
+      const node = ui.GetItem('UI/UIWindow2.img/Reset/SP/step2/BtCancle/normal');
+      if (node instanceof WzCanvas) {
+        const sprite = loader.Load(node)?.ToPixi();
+        if (sprite) this._btCancel.addChild(sprite);
+      }
+    }
+    this._btCancel.position.set(87, 181);
     this._root.addChild(this._btCancel);
   }
 
@@ -512,7 +514,7 @@ export class SkillChangeConfirm extends GamePanel {
     }
 
     // Inc row
-    this._incRow.name.text = incSkill.name || `[${incSkill.id}]`;
+    this._incRow.name.text = incSkill.name;
     this._incRow.level.text = `${incSkill.level + 1}`;
     this._incRow.level.style = _redLevelStyle;
     this._incRow.spLabel.text = `SP +1`;
@@ -523,7 +525,7 @@ export class SkillChangeConfirm extends GamePanel {
     }
 
     // Dec row
-    this._decRow.name.text = decSkill.name || `[${decSkill.id}]`;
+    this._decRow.name.text = decSkill.name;
     this._decRow.level.text = `${decSkill.level - 1}`;
     this._decRow.level.style = _blueLevelStyle;
     this._decRow.spLabel.text = `SP -1`;
@@ -549,7 +551,7 @@ export class SkillChangeConfirm extends GamePanel {
     if (lx >= this._btCancel.x && lx < this._btCancel.x + 60 && ly >= this._btCancel.y && ly < this._btCancel.y + 22) {
       this.isVisible = false; this.onCancel?.(); return true;
     }
-    return lx >= 0 && lx < 174 && ly >= 0 && ly < 281;
+    return lx >= 0 && lx < 158 && ly >= 0 && ly < 212;
   }
 
   onKeyPress(key: string): boolean {

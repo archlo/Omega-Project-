@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, Text, TextStyle, Texture } from 'pixi.js';
+import { Container, Sprite, Text, TextStyle, Texture } from 'pixi.js';
 import { GamePanel } from './GamePanel.js';
 import type { SkillInfoService } from '../../character/SkillInfoService.js';
 import type { WzTextureLoader } from '../../render/WzTextureLoader.js';
@@ -66,7 +66,7 @@ const _bookNameStyle = new TextStyle({ fill: '#DCC896', fontSize: 11, fontFamily
 // OG: Tab labels from StringPool — loaded per job category
 // Tab 0=Beginner, 1=Warrior, 2=Magician, 3=Bowman, 4=Thief, 5=Pirate, 6=Aran, 7=DualBlade
 const TAB_LABELS = ['Beginner', 'Warrior', 'Magician', 'Bowman', 'Thief', 'Pirate'];
-const TAB_PREFIXES = [0, 10, 20, 30, 40, 50, 60];
+const TAB_PREFIXES = [0, 100, 200, 300, 400, 500];
 
 // OG: get_skill_root_from_job — builds skill root list from job
 // Returns array of skill root IDs for the character's job
@@ -99,10 +99,13 @@ function getJobName(job: number): string | null {
 
 // OG: Map skill root ID to tab index
 function skillRootToTabIndex(root: number): number {
-  // Root 0 = beginner, 1000 = warrior, 2000 = magician, etc.
-  const tabRoot = Math.floor(root / 1000);
-  const idx = TAB_PREFIXES.indexOf(tabRoot);
-  return idx >= 0 ? idx : 0;
+  // Skill roots are 100/200/... in v95; root 0 is the beginner tab.
+  if (root <= 0) return 0;
+  const tabRoot = Math.floor(root / 100);
+  for (let i = TAB_PREFIXES.length - 1; i >= 1; i--) {
+    if (tabRoot >= TAB_PREFIXES[i]) return i;
+  }
+  return 0;
 }
 
 // ─── OG Helper functions (from IDA) ──────────────────────────────────────
@@ -236,8 +239,8 @@ export class SkillBook extends GamePanel {
   // OG: m_bDualRogueSkillWarning — shows warning for dual-blade job change
   private _dualRogueSkillWarning = false;
 
-  private _bg: Graphics;
   private _titleText: Text;
+  private _titleSecond: Text;
   private _spText: Text;
   private _tabSprites: Sprite[] = []; // OG: WZ canvas sprites for tab backgrounds
   private _tabLabels: Text[] = [];
@@ -260,6 +263,8 @@ export class SkillBook extends GamePanel {
   private _recommendBgTex: Texture | null = null; // m_pCanvasRecommendSkill — recommend/0
   private _rowRecommendBgs: Sprite[] = []; // one recommend bg per row
   private _lineBgTex: Texture | null = null; // m_pCanvasLine — line separator
+  private _background2: Sprite | null = null;
+  private _background3: Sprite | null = null;
   private _rowLineBgs: Sprite[] = []; // one line per row (rows 0-2 only)
   private _bookIcon: Sprite | null = null; // pBookIcon — book icon at (15, 55)
   private _hoverIndex = -1;
@@ -276,6 +281,7 @@ export class SkillBook extends GamePanel {
   private _coolTimeTex: Texture[] = [];
   // OG: CoolTime sprite (drawn at skill icon position)
   private _coolTimeSprite: Sprite | null = null;
+  private _rowCoolTimeSprites: Sprite[] = [];
   // OG: Aran special tab buttons — Tab/AranButton/Bt1-Bt4
   private _aranBtnTex: Texture[] = [];
   // OG: DualBlade tab textures — Tab/DualTab/disabled and Tab/DualTab/enabled
@@ -311,7 +317,6 @@ export class SkillBook extends GamePanel {
     }
 
     // OG: CUIWnd::OnCreate loads backgrnd from UIWindow2.img/Skill/main
-    let hasWzBg = false;
     if (loader && ui) {
       const skillProp = ui.GetItem('UIWindow2.img/Skill/main');
       const prop = skillProp instanceof WzProperty ? skillProp : null;
@@ -319,7 +324,17 @@ export class SkillBook extends GamePanel {
       const bgNode = prop?.Get('backgrnd');
       if (bgNode instanceof WzCanvas) {
         const sprite = loader.Load(bgNode)?.ToPixi();
-        if (sprite) { this._root.addChild(sprite); hasWzBg = true; }
+        if (sprite) this._root.addChild(sprite);
+      }
+      const bg2Node = prop?.Get('backgrnd2');
+      if (bg2Node instanceof WzCanvas) {
+        this._background2 = loader.Load(bg2Node)?.ToPixi() ?? null;
+        if (this._background2) this._root.addChild(this._background2);
+      }
+      const bg3Node = prop?.Get('backgrnd3');
+      if (bg3Node instanceof WzCanvas) {
+        this._background3 = loader.Load(bg3Node)?.ToPixi() ?? null;
+        if (this._background3) this._root.addChild(this._background3);
       }
 
       // OG: skill0 canvas — normal skill slot background (m_pCanvasSkill[0])
@@ -460,13 +475,12 @@ export class SkillBook extends GamePanel {
     this._coolTimeSprite.anchor.set(0.5, 0.5); // OG: origin (16,16) centered
     this._root.addChild(this._coolTimeSprite);
 
-    this._bg = new Graphics();
-    if (!hasWzBg) this._rebuildBg();
-    this._root.addChild(this._bg);
-
     this._titleText = new Text({ text: 'Skills', style: _titleStyle });
     this._titleText.x = 66; this._titleText.y = 5;
     this._root.addChild(this._titleText);
+    this._titleSecond = new Text({ text: '', style: _titleStyle });
+    this._titleSecond.visible = false;
+    this._root.addChild(this._titleSecond);
 
     this._spText = new Text({ text: 'SP: 0', style: new TextStyle({ fill: '#A0A0A0', fontSize: 10, fontFamily: 'monospace' }) });
     this._spText.x = PANEL_W - 50; this._spText.y = 5;
@@ -493,6 +507,11 @@ export class SkillBook extends GamePanel {
       icon.x = ICON_LEFT; icon.y = ROW_START_Y + i * ROW_H - 31;
       this._rowIcons.push(icon);
       this._root.addChild(icon);
+      const cooldown = new Sprite(Texture.EMPTY);
+      cooldown.anchor.set(0.5, 0.5);
+      cooldown.visible = false;
+      this._rowCoolTimeSprites.push(cooldown);
+      this._root.addChild(cooldown);
 
       const tn = new Text({ text: '', style: _valueStyle });
       this._rowNames.push(tn);
@@ -517,24 +536,15 @@ export class SkillBook extends GamePanel {
       if (loader && ui) {
         const btSpUp = ui.GetItem('UIWindow2.img/Skill/main/BtSpUp');
         if (btSpUp instanceof WzProperty) {
-          const enabledNode = btSpUp.Get('enabled');
-          if (enabledNode instanceof WzCanvas) {
-            const s = loader.Load(enabledNode)?.ToPixi();
+           const normalNode = btSpUp.Get('normal');
+           if (normalNode instanceof WzCanvas) {
+             const s = loader.Load(normalNode)?.ToPixi();
             if (s) btn.addChild(s);
           }
         }
       }
-      // Fallback graphics if WZ not available
-      if (btn.children.length === 0) {
-        const bg = new Graphics();
-        bg.rect(0, 0, 16, 14).fill({ color: '#1E3C1E' });
-        bg.rect(0, 0, 16, 14).stroke({ color: '#50A050', width: 1 });
-        const pt = new Text({ text: '+', style: new TextStyle({ fill: '#64DC64', fontSize: 10, fontFamily: 'monospace' }) });
-        pt.x = 3; pt.y = 0;
-        btn.addChild(bg, pt);
-      }
       btn.x = SP_BTN_X;
-      btn.y = SP_BTN_Y_START + i * SP_BTN_STEP + 6;
+       btn.y = SP_BTN_Y_START + i * SP_BTN_STEP;
       this._rowSpBtns.push(btn);
       this._root.addChild(btn);
     }
@@ -547,24 +557,15 @@ export class SkillBook extends GamePanel {
 
     // OG: Macro button — BtMacro id 0x7E7, loaded from Skill/main/BtMacro
     this._macroBtn = new Container();
-    let macroLoaded = false;
     if (loader && ui) {
       const btMacro = ui.GetItem('UIWindow2.img/Skill/main/BtMacro');
       if (btMacro instanceof WzProperty) {
-        const enabledNode = btMacro.Get('enabled');
-        if (enabledNode instanceof WzCanvas) {
-          const s = loader.Load(enabledNode)?.ToPixi();
-          if (s) { this._macroBtn.addChild(s); macroLoaded = true; }
+         const normalNode = btMacro.Get('normal');
+         if (normalNode instanceof WzCanvas) {
+           const s = loader.Load(normalNode)?.ToPixi();
+           if (s) this._macroBtn.addChild(s);
         }
       }
-    }
-    if (!macroLoaded) {
-      const macroBg = new Graphics();
-      macroBg.rect(0, 0, 58, 18).fill({ color: '#1A1A2E' });
-      macroBg.rect(0, 0, 58, 18).stroke({ color: '#5050A0', width: 1 });
-      const macroTxt = new Text({ text: 'Macro', style: new TextStyle({ fill: '#8888CC', fontSize: 9, fontFamily: 'monospace' }) });
-      macroTxt.x = 8; macroTxt.y = 3;
-      this._macroBtn.addChild(macroBg, macroTxt);
     }
     this._macroBtn.x = 4;
     this._macroBtn.y = PANEL_H - 26;
@@ -574,6 +575,12 @@ export class SkillBook extends GamePanel {
     this.skillIncPanel = new SkillIncPanel(loader, ui);
     this.skillDecPanel = new SkillDecPanel(loader, ui);
     this.skillChangeConfirm = new SkillChangeConfirm(loader, ui);
+    this._root.addChild(
+      this.skillIncPanel.container,
+      this.skillDecPanel.container,
+      this.skillChangeConfirm.container,
+    );
+    this.createCloseButton(loader, ui, 1, PANEL_W);
 
     // OG: Create tooltip for skill hover display
     if (font && icons && loader && ui) {
@@ -783,6 +790,17 @@ export class SkillBook extends GamePanel {
       }
       if (tabIdx >= 0 && tabIdx < tabs.length) tabs[tabIdx].push(sk);
     }
+    let lastRegularTab = 0;
+    for (let i = 1; i < TAB_PREFIXES.length; i++) {
+      if (tabs[i].length > 0) lastRegularTab = i;
+    }
+    const regularCount = Math.max(1, lastRegularTab + 1);
+    const extraTabs = tabs.slice(TAB_PREFIXES.length);
+    const extraLabels = labels.slice(TAB_PREFIXES.length);
+    tabs.length = regularCount;
+    labels.length = regularCount;
+    tabs.push(...extraTabs);
+    labels.push(...extraLabels);
     this._tabs = tabs;
     this._tabLabelStrings = labels;
     // OG: SetScrollBar — range = skillCount - 3 (not VISIBLE_ROWS)
@@ -893,6 +911,8 @@ export class SkillBook extends GamePanel {
       }
     }
     this._titleText.text = bookName;
+    this._titleSecond.text = '';
+    this._titleSecond.visible = false;
     // OG Draw: measure text width for centering decision (v29 >= 110 check)
     const bookNameWidth = this._titleText.width;
     if (bookNameWidth < 110) {
@@ -907,7 +927,10 @@ export class SkillBook extends GamePanel {
         const line1Width = this._titleText.width;
         this._titleText.x = 104 - line1Width / 2;
         this._titleText.y = 55;
-        // Second line would need a separate Text object — for now, keep single line
+        this._titleSecond.text = bookName.substring(splitIdx + 1);
+        this._titleSecond.x = 104 - this._titleSecond.width / 2;
+        this._titleSecond.y = 69;
+        this._titleSecond.visible = true;
       } else {
         this._titleText.x = 50;
         this._titleText.y = 55;
@@ -924,7 +947,8 @@ export class SkillBook extends GamePanel {
       if (sk) {
         // OG Draw: Slot background at (10, nTop-19) via m_pCanvasSkill[state]
         // state 0=normal, 1=enabled (hovered row when skill can level up)
-        const isHoveredRow = isHovered && tabSp > 0 && sk.level < sk.maxLevel && !sk.passive && this.canSkillUp(sk.id);
+        const canAllocate = tabSp > 0 && sk.level < sk.maxLevel && !sk.passive && this.canSkillUp(sk.id);
+        const isHoveredRow = isHovered && canAllocate;
         const slotBg = this._rowSlotBgs[i];
         if (isHoveredRow && this._skillSlotEnabledTex) {
           slotBg.texture = this._skillSlotEnabledTex;
@@ -937,8 +961,11 @@ export class SkillBook extends GamePanel {
         // OG Draw: Skill icon at (12, nTop-17) via p->apCanvas[state+hover]
         this._rowIcons[i].texture = Texture.EMPTY;
         const info = this.skillService?.Get(sk.id);
-        if (info?.Icon) {
-          const ws = this.textureLoader?.Load(info.Icon);
+        const iconCanvas = canAllocate
+          ? (isHovered ? (info?.Icon2 ?? info?.Icon1 ?? info?.Icon0) : (info?.Icon1 ?? info?.Icon0 ?? info?.Icon))
+          : (info?.Icon0 ?? info?.Icon);
+        if (iconCanvas) {
+          const ws = this.textureLoader?.Load(iconCanvas);
           if (ws) this._rowIcons[i].texture = ws.Texture;
         }
         this._rowIcons[i].x = 12;
@@ -955,7 +982,7 @@ export class SkillBook extends GamePanel {
         }
 
         // OG Draw: Skill name at (50, nTop-18) via m_pFont — truncated at 95px width
-        const rawName = sk.name || `[${sk.id}]`;
+        const rawName = sk.name;
         this._rowNames[i].text = rawName;
         // OG: format_string truncates at max pixel width (95px for skill names)
         if (this._rowNames[i].width > 95) {
@@ -969,11 +996,7 @@ export class SkillBook extends GamePanel {
         this._rowNames[i].y = nTop - 18;
 
         // OG Draw: Level at (50, nTop) via m_pFont or m_pFontBonus if bonus>0
-        if (sk.passive) {
-          this._rowLevels[i].text = `(P) ${sk.level}/${sk.maxLevel}`;
-        } else {
-          this._rowLevels[i].text = `${sk.level}/${sk.maxLevel}`;
-        }
+        this._rowLevels[i].text = `${sk.level}/${sk.maxLevel}`;
         this._rowLevels[i].x = 50;
         this._rowLevels[i].y = nTop;
         this._rowLevels[i].style = new TextStyle({
@@ -988,18 +1011,19 @@ export class SkillBook extends GamePanel {
           this._rowCds[i].y = nTop;
           // OG: Cooldown overlay — CoolTime frame at skill icon position (12, nTop-17)
           if (this._coolTimeTex.length > 0 && this._coolTimeSprite) {
-            this._coolTimeSprite.texture = this._coolTimeTex[cd.coolFrame % this._coolTimeTex.length];
-            this._coolTimeSprite.position.set(12, nTop - 17);
-            this._coolTimeSprite.visible = true;
+            const cooldown = this._rowCoolTimeSprites[i];
+            cooldown.texture = this._coolTimeTex[cd.coolFrame % this._coolTimeTex.length];
+            cooldown.position.set(28, nTop - 1);
+            cooldown.visible = true;
           }
         } else {
           this._rowCds[i].text = '';
-          if (this._coolTimeSprite) this._coolTimeSprite.visible = false;
+          this._rowCoolTimeSprites[i].visible = false;
         }
 
         // OG Draw: Bonus text at (65, nTop) via m_pFontBonus when SkillLevel - PureSkillLevel > 0
         // PureSkillLevel = level without equipment bonus; difference = passive skill bonus
-        const bonus = Math.max(0, sk.level - Math.floor(sk.level * 0.8)); // simplified bonus calc
+        const bonus = 0;
         if (bonus > 0) {
           this._rowBonuses[i].text = `+${bonus}`;
           this._rowBonuses[i].x = 65;
@@ -1028,6 +1052,7 @@ export class SkillBook extends GamePanel {
         this._rowNames[i].text = '';
         this._rowLevels[i].text = '';
         this._rowCds[i].text = '';
+        this._rowCoolTimeSprites[i].visible = false;
         this._rowBonuses[i].text = '';
         this._rowBonuses[i].visible = false;
         this._rowSpBtns[i].visible = false;
@@ -1053,19 +1078,15 @@ export class SkillBook extends GamePanel {
 
       // OG: Use WZ tab texture sprite if available
       // These are loaded from Tab/disabled/i and Tab/enabled/i
-      const tabTex = isActive
-        ? (this._tabEnabledTex[i] ?? this._tabEnabledTex[0] ?? null)
-        : (this._tabDisabledTex[i] ?? this._tabDisabledTex[0] ?? null);
+       const tabTex = isActive
+         ? (this._tabEnabledTex[i] ?? this._tabEnabledTex[0] ?? null)
+         : (this._tabDisabledTex[i] ?? this._tabDisabledTex[0] ?? null);
 
       if (tabTex) {
         this._tabSprites[i].texture = tabTex;
         this._tabSprites[i].position.set(tx, TAB_Y);
         this._tabSprites[i].width = tabW;
         this._tabSprites[i].height = TAB_H;
-      } else {
-        // Fallback: colored rectangle
-        this._tabSprites[i].texture = Texture.EMPTY;
-        this._tabSprites[i].position.set(tx, TAB_Y);
       }
 
       // OG: Tab label text — centered in tab
@@ -1342,9 +1363,4 @@ export class SkillBook extends GamePanel {
     }
   }
 
-  private _rebuildBg(): void {
-    this._bg.clear();
-    this._bg.rect(0, 0, PANEL_W, PANEL_H).fill({ color: '#0C0C16', alpha: 235 / 255 });
-    this._bg.rect(0, 0, PANEL_W, PANEL_H).stroke({ color: '#46465A', width: 1 });
-  }
 }

@@ -8,8 +8,8 @@ import { WzCanvas } from '../../wz/WzCanvas.js';
 import { BuiltInFont } from '../BuiltInFont.js';
 import { Button } from '../Button.js';
 
-const PanelW = 320;
-const PanelH = 260;
+const PanelW = 195;
+const PanelH = 281;
 const _titleStyle = new TextStyle({ fill: '#FFE4B5', fontSize: 11, fontFamily: 'monospace' });
 const _labelStyle = new TextStyle({ fill: '#AAA', fontSize: 9, fontFamily: 'monospace' });
 
@@ -35,16 +35,16 @@ export class SkillMacro extends GamePanel {
     this.isVisible = false;
     this.container.position.set(240, 100);
 
-    let macro = ui?.GetItem('UIWindow2.img/Macro');
-    if (!(macro instanceof WzProperty)) macro = ui?.GetItem('IWindow2.img/Macro');
+    let macro = ui?.GetItem('UIWindow2.img/Skill/macro');
     const macroProp = macro instanceof WzProperty ? macro : null;
-    this._background = macroProp?.Get('backgrnd') instanceof WzCanvas ? loader.Load(macroProp!.Get('backgrnd') as WzCanvas)
-      : (ui?.GetItem('IWindow2.img/Macro/step1/backgrnd') instanceof WzCanvas ? loader.Load(ui!.GetItem('IWindow2.img/Macro/step1/backgrnd') as WzCanvas) : null);
+    this._background = macroProp?.Get('backgrnd') instanceof WzCanvas
+      ? loader.Load(macroProp.Get('backgrnd') as WzCanvas)
+      : null;
     if (this._background) this.container.addChild(this._background.ToPixi());
-    this._btOk = this._makeButton(loader, macroProp, 'btOK', () => this._doSave());
-    this._btCancel = this._makeButton(loader, macroProp, 'btCancle', () => { this.isVisible = false; });
-    if (this._btOk) this._btOk.container.position.set(PanelW / 2 - 70, PanelH - 36);
-    if (this._btCancel) this._btCancel.container.position.set(PanelW / 2 + 10, PanelH - 36);
+    this._btOk = this._makeButton(loader, macroProp, 'BtOK', () => this._doSave());
+    this._btCancel = this._makeButton(loader, macroProp, 'BtCancel', () => { this.isVisible = false; });
+    if (this._btOk) this._btOk.container.position.set(145, 255);
+    if (this._btCancel) this._btCancel.container.position.set(97, 255);
 
     const title = new Text({ text: 'Skill Macro', style: _titleStyle });
     title.x = 8; title.y = 5;
