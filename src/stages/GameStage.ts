@@ -5599,6 +5599,16 @@ export class GameStage extends Stage {
           const name = this.game.nameService.ItemName(item.itemId) ?? `[${item.itemId}]`;
           this._equip.setEquippedByBodyPart(bodyPart, item.itemId, name, item.equip?.grade ?? 0, item.equip ?? undefined);
           if (item.equip) this._equipStats.set(bodyPart, item.equip);
+
+          // OG: When weapon is equipped during initial load, update PlayerController's weapon stand/walk type
+          if (bodyPart === 11 && this._physics) {
+            const actMan = ActionMan.GetInstance();
+            const imgEntry = actMan.GetCharacterImgEntry(item.itemId, null);
+            if (imgEntry) {
+              this._physics.WeaponStand = imgEntry.nStand || 1;
+              this._physics.WeaponWalk = imgEntry.nWalk || 1;
+            }
+          }
         }
       }
       this._pendingEquipped = null;
@@ -5671,6 +5681,17 @@ export class GameStage extends Stage {
     }
     look.hairEquip.set(bodyPart, itemId);
     this._itemEffects?.SetCharacter(this._localCharId, look);
+
+    // OG: When weapon changes, update PlayerController's weapon stand/walk type
+    // This determines which animation group (stand1/stand2, walk1/walk2) to use
+    if (bodyPart === 11 && this._physics) {
+      const actMan = ActionMan.GetInstance();
+      const imgEntry = actMan.GetCharacterImgEntry(itemId, null);
+      if (imgEntry) {
+        this._physics.WeaponStand = imgEntry.nStand || 1;
+        this._physics.WeaponWalk = imgEntry.nWalk || 1;
+      }
+    }
   }
 
   private _clearEquippedAvatarItem(invType: number, pos: number): void {

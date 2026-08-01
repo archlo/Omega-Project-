@@ -2818,9 +2818,9 @@ export class CashShopStage extends Stage {
     for (let i = 0; i < 3; i++) {
       this._previewBgs[i] = tryLoad(`Base/Preview/${i}`);
     }
-    // PreviewOnOff toggle button
-    this._previewOn = tryLoad('Base/PreviewOnOff/On');
-    this._previewOff = tryLoad('Base/PreviewOnOff/Off');
+    // PreviewOnOff toggle button — NX wraps canvas inside sub-node
+    this._previewOn = tryLoad('Base/PreviewOnOff/On/0');
+    this._previewOff = tryLoad('Base/PreviewOnOff/Off/0');
 
     // Tab sprites: CSTab/Tab/1 through CSTab/Tab/9
     // OG: tab canvas mapping: 8→1, 9→9, else nTab+1
@@ -2862,18 +2862,11 @@ export class CashShopStage extends Stage {
     this._discountLine = tryLoad('CSDiscount/Line');
     this._discountTotal = tryLoad('CSDiscount/total');
 
-    // PicturePlate states (normal, mouseOver, pressed, disabled)
-    // OG: PicturePlate/state/0..3
-    this._plateStateNormal = tryLoad('CSList/state/0');
-    this._plateStateHover = tryLoad('CSList/state/1');
-    this._plateStatePressed = tryLoad('CSList/state/2');
-    this._plateStateDisabled = tryLoad('CSList/state/3');
-
-    // Panel backgrounds
-    this._bgLocker = tryLoad('CSLocker/Base');
-    this._bgInventory = tryLoad('CSInventory/Base');
-    this._bgStatus = tryLoad('CSStatus/Base');
-    this._bgBest = tryLoad('CSBest/Base');
+    // Panel backgrounds — fallback to main bg when WZ panels don't exist
+    this._bgLocker = tryLoad('CSLocker/Base') ?? this._bg;
+    this._bgInventory = tryLoad('CSInventory/Base') ?? this._bg;
+    this._bgStatus = tryLoad('CSStatus/Base') ?? this._bg;
+    this._bgBest = tryLoad('CSBest/Base') ?? this._bg;
     this._bgGift = tryLoad('CSGift/backgrnd');
   }
 }

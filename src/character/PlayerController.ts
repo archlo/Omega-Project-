@@ -124,6 +124,13 @@ export class PlayerController {
   Frame = 0;
   FacingLeft = false;
   ClimbMoving = false;
+
+  // OG: Weapon stand/walk type — determines which animation group to use
+  // nStand=1 -> stand1/walk1, nStand=2 -> stand2/walk2
+  // Set by GameStage when weapon changes
+  WeaponStand = 1;
+  WeaponWalk = 1;
+
   // OG: CUserLocal::IsSit (decompile, `m_bSit`) — TODO_AUDIT.md
   // Seventy-sixth pass's chair/sitting finding. While sitting, movement
   // input is ignored (matching the OG behavior that initiates a sit only
@@ -141,7 +148,7 @@ export class PlayerController {
 
   StandUp(): void {
     this._isSitting = false;
-    this.Stance = Stance.Stand1;
+    this.Stance = this.WeaponStand === 2 ? Stance.Stand2 : Stance.Stand1;
   }
 
   onTakeFallDamage: ((damage: number) => void) | null = null;
@@ -470,8 +477,8 @@ export class PlayerController {
 
     this.Stance = !this._grounded ? Stance.Jump
       : input.Down && dir === 0 ? Stance.Prone
-      : dir !== 0 ? Stance.Walk1
-      : Stance.Stand1;
+      : dir !== 0 ? (this.WeaponWalk === 2 ? Stance.Walk2 : Stance.Walk1)
+      : (this.WeaponStand === 2 ? Stance.Stand2 : Stance.Stand1);
 
     this._tickAnimAndFlush(dt);
   }
@@ -700,11 +707,11 @@ export class PlayerController {
     this._flushTimer = 0;
     this._lastSyncPos = { x: this.Position.x, y: this.Position.y };
     this._lastSyncVel = { x: this._velocity.x, y: this._velocity.y };
-    this._lastSyncStance = Stance.Stand1;
+    this._lastSyncStance = this.WeaponStand === 2 ? Stance.Stand2 : Stance.Stand1;
     this._pending.push({
       attr: 0, x: this.Position.x, y: this.Position.y,
       vx: 0, vy: 0, fh: this._currentFoothold,
-      moveAction: StanceMoveAction(Stance.Stand1, this.FacingLeft), elapse: 1,
+      moveAction: StanceMoveAction(this.WeaponStand === 2 ? Stance.Stand2 : Stance.Stand1, this.FacingLeft), elapse: 1,
       fhFallStart: 0, xOffset: 0, yOffset: 0, stat: 0,
     });
   }
@@ -788,7 +795,7 @@ export class PlayerController {
         this._grounded = true;
         this.Position = { x: lr.X, y: fh.YAt(lr.X)! };
         this._velocity = { x: 0, y: 0 };
-        this.Stance = Stance.Stand1;
+        this.Stance = this.WeaponStand === 2 ? Stance.Stand2 : Stance.Stand1;
       } else {
         // No foothold found — stay on ladder
         this.Stance = lr.IsLadder ? Stance.Ladder : Stance.Rope;
