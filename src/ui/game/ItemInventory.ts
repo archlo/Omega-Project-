@@ -19,7 +19,7 @@ import { ScrollBar } from './ScrollBar.js';
 
 const COLS = 4;
 // OG CUIItem::GetItemSlotRect (0x7cbe90): col += 4 * (row / 6)
-// 2 blocks of 4 cols → max col = 8. All 48 slots fit in FULL_PANEL_W=594.
+// 2 blocks of 4 cols → max col = 8. All 48 visible slots fit in the v95 frame.
 const FULL_COLS = 8;
 const OG_EXTENDED_SLOTS = 96;
 const ROWS = 6;
@@ -36,7 +36,7 @@ const GRID_Y = 51;
 const THROWING_STAR_PREFIX = 207;
 const BULLET_PREFIX = 233;
 const TAB_X = 8;
-const TAB_Y = 25;
+const TAB_Y = 9;
 const TAB_GAP = 1;
 const CLOSE_X_COLLAPSED = 150;
 const CLOSE_X_EXPANDED = FULL_PANEL_W - 20; // right edge of extended panel

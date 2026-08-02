@@ -6,6 +6,7 @@ import { WzCanvas } from '../../wz/WzCanvas.js';
 import { WzProperty } from '../../wz/WzProperty.js';
 import { WzSprite } from '../../render/WzSprite.js';
 import { ComboBox, ComboBoxItem } from '../ComboBox.js';
+import { Button } from '../Button.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // OG v95 CUIStatusBar Chat — Exact coordinates from IDA decompilation
@@ -62,19 +63,19 @@ const SCROLLBAR_MIN_H = 52;  // OG: hide thumb below this
 // --- Filter flags (OG OnButtonClicked 0x880540) ---
 // Index 0=All(0), 1=Buddy(0x08), 2=Guild(0x04), 3=Alliance(0x10), 4=Expedition(0x20), 5=System(0x4000000)
 export const FILTER_ALL = 0;
-export const FILTER_BUDDY = 0x04;   // (1 << lType=2) for buddy
-export const FILTER_GUILD = 0x08;   // (1 << lType=3) for guild
+export const FILTER_BUDDY = 0x08;   // OG friend/buddy filter
+export const FILTER_GUILD = 0x04;   // OG guild filter
 export const FILTER_ALLIANCE = 0x10;
-export const FILTER_EXPEDITION = 0x20;
-export const FILTER_SYSTEM = 0x4000000;
+export const FILTER_EXPEDITION = 0x4000000;
+export const FILTER_SYSTEM = 0x20;
 export const FILTER_PARTY = 0;       // Party not a separate filter in OG
 export const FILTER_FRIEND = FILTER_BUDDY; // Alias — OG uses "Buddy" not "Friend"
-const FILTER_FLAGS = [FILTER_ALL, FILTER_BUDDY, FILTER_GUILD, FILTER_ALLIANCE, FILTER_EXPEDITION, FILTER_SYSTEM];
+const FILTER_FLAGS = [FILTER_ALL, FILTER_BUDDY, FILTER_PARTY, FILTER_GUILD, FILTER_ALLIANCE, FILTER_EXPEDITION];
 // OG button IDs for filter buttons
 const FILTER_BUTTON_IDS = [0x3F6, 0x3F7, 0x3F8, 0x3F9, 0x3FA, 0x3FB];
 
 // --- Tab bar (OG filter button labels from IDA _ResetChatBarPos) ---
-const TAB_NAMES = ['All', 'Buddy', 'Guild', 'Alliance', 'Expedition', 'System'];
+const TAB_NAMES = ['All', 'Friend', 'Party', 'Guild', 'Alliance', 'Expedition'];
 const TAB_H = 18;
 const TAB_SPACING = 46;  // OG: filter button spacing in _ResetChatBarPos
 
@@ -223,6 +224,10 @@ export class ChatBar extends GamePanel {
   private _layerCover: Sprite | null = null;   // chatCover
   private _layerChatBar: Sprite | null = null; // tapBar (577×4 separator)
   private _layerTapBarOver: Sprite | null = null; // tapBarOver (hover state)
+  private _chatOpenButton: Button | null = null;
+  private _chatCloseButton: Button | null = null;
+  private _scrollUpButton: Button | null = null;
+  private _scrollDownButton: Button | null = null;
 
   // Display elements (Graphics fallbacks, hidden when WZ available)
   private _bg: Graphics;
@@ -402,6 +407,7 @@ export class ChatBar extends GamePanel {
     this._setFilterButton();
     this._syncLines();
     this._drawScrollbar();
+    this._updateWzVisibility();
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -412,9 +418,16 @@ export class ChatBar extends GamePanel {
     // bCreate=1 (small/expanded): chatEnter=true, chatCover=true, chatSpace=false, chatSpace2=false
     const bCreate = this._chatType !== CHAT_TYPE_MINIMAL;
     if (this._layerSpace) this._layerSpace.visible = !bCreate;
-    if (this._layerSpace2) this._layerSpace2.visible = !bCreate;
+    // OG draws chatSpace2 as the persistent foreground/input layer; it is
+    // present in both closed and open states.
+    if (this._layerSpace2) this._layerSpace2.visible = true;
     if (this._layerEnter) this._layerEnter.visible = bCreate;
     if (this._layerCover) this._layerCover.visible = bCreate;
+    if (this._chatOpenButton) this._chatOpenButton.container.visible = this._chatType === CHAT_TYPE_MINIMAL;
+    if (this._chatCloseButton) this._chatCloseButton.container.visible = this._chatType !== CHAT_TYPE_MINIMAL;
+    const showScrollControls = this._chatType === CHAT_TYPE_EXPANDED && this._scrollGfx.visible;
+    if (this._scrollUpButton) this._scrollUpButton.container.visible = showScrollControls;
+    if (this._scrollDownButton) this._scrollDownButton.container.visible = showScrollControls;
 
     // Hide Graphics fallbacks when WZ layers available
     this._bg.visible = !this._layerSpace && !this._layerSpace2;
@@ -455,6 +468,10 @@ export class ChatBar extends GamePanel {
     if (this._layerChatBar) {
       this._layerChatBar.position.set(0, this._chatWndY - 2);
     }
+    if (this._layerSpace) this._layerSpace.position.set(DISPLAY_X, this._chatWndY);
+    if (this._layerSpace2) this._layerSpace2.position.set(DISPLAY_X, this._chatWndY);
+    if (this._layerEnter) this._layerEnter.position.set(DISPLAY_X, this._chatWndY);
+    if (this._layerCover) this._layerCover.position.set(DISPLAY_X + DISPLAY_W_515 - 82, this._chatWndY);
 
     // Filter buttons position (OG: _ResetChatBarPos — x starts at 1, y = m_ptChatWnd.y - 19, spacing 46px)
     this._setFilterButton();
@@ -512,6 +529,13 @@ export class ChatBar extends GamePanel {
       this._tabLabels[i].visible = show;
       this._tabLabels[i].x = btnX + 4;
       this._tabLabels[i].y = btnY + 2;
+      const wzTab = this._tabBarSprites[i];
+      if (wzTab) {
+        wzTab.visible = show;
+        wzTab.position.set(btnX, btnY);
+        this._tabGraphics[i].visible = false;
+        this._tabLabels[i].visible = false;
+      }
 
       // OG: _SetFilterButton — show checked state via background color
       if (show) {
@@ -532,7 +556,7 @@ export class ChatBar extends GamePanel {
   // ═══════════════════════════════════════════════════════════════════════════
   // OG: ChatLogAdd (0x87AEC0) — add message with word-wrap
   // ═══════════════════════════════════════════════════════════════════════════
-  addLine(text: string, lTypeOrLinks: number | { itemId: number; start: number; end: number }[] = 0, channelID = -1, whisperIcon = false): void {
+  addLine(text: string, lTypeOrLinks: number | { itemId: number; start: number; end: number }[] = 0, channelID = -1, whisperIcon = false, itemLinks: { itemId: number; start: number; end: number }[] = []): void {
     // Backward-compatible: if second arg is an array, treat as old links param
     const lType = typeof lTypeOrLinks === 'number' ? lTypeOrLinks : 0;
     // OG: word-wrap at 547-nScrWidth pixels, first-line whisper indent -38
@@ -547,22 +571,34 @@ export class ChatBar extends GamePanel {
     const _tmpText = new Text({ text: '', style: font });
     const words = text.split(/(\s+)/);
     let currentLine = '';
+    let currentStart = 0;
     let isFirstLine = true;
-    let lineNum = 0;
+    let sourceOffset = 0;
+    const linksFor = (start: number, end: number, prefixLength: number): { start: number; end: number; itemId: number }[] => itemLinks
+      .filter(link => link.end > start && link.start < end)
+      .map(link => ({
+        itemId: link.itemId,
+        start: prefixLength + Math.max(0, link.start - start),
+        end: prefixLength + Math.min(end - start, link.end - start),
+      }));
 
     for (const word of words) {
+      const wordStart = sourceOffset;
+      sourceOffset += word.length;
       const testLine = currentLine + word;
       // OG: use font metrics for accurate width measurement
       _tmpText.text = testLine;
       const testWidth = _tmpText.width;
       if (testWidth > maxWidth && currentLine.length > 0) {
-        lineNum++;
         this._chatLog.push({
           text: currentLine, lType, nBack: 0, nChannelID: channelID,
-          bWhisperIcon: whisperIcon, isFirstLine, itemID: 0
+          bWhisperIcon: whisperIcon, isFirstLine, itemID: 0,
+          itemLinks: linksFor(currentStart, wordStart, 0),
         });
         // OG: continuation lines get 5-space indent if not in type 7-12 range
-        currentLine = (lType < 7 || lType > 12) ? CONTINUATION_INDENT + word : word;
+        const prefix = (lType < 7 || lType > 12) ? CONTINUATION_INDENT : '';
+        currentLine = prefix + word;
+        currentStart = wordStart;
         isFirstLine = false;
       } else {
         currentLine = testLine;
@@ -572,7 +608,8 @@ export class ChatBar extends GamePanel {
     if (currentLine.length > 0) {
       this._chatLog.push({
         text: currentLine, lType, nBack: 0, nChannelID: channelID,
-        bWhisperIcon: whisperIcon, isFirstLine, itemID: 0
+        bWhisperIcon: whisperIcon, isFirstLine, itemID: 0,
+        itemLinks: linksFor(currentStart, sourceOffset, currentLine.startsWith(CONTINUATION_INDENT) ? CONTINUATION_INDENT.length : 0),
       });
     }
 
@@ -615,12 +652,7 @@ export class ChatBar extends GamePanel {
         resultOffset += 0; // no change in length
       }
     }
-    this.addLine(processed, lType);
-    // Attach link metadata to the last chatLog entry
-    if (links.length > 0 && this._chatLog.length > 0) {
-      const entry = this._chatLog[this._chatLog.length - 1];
-      entry.itemLinks = links;
-    }
+    this.addLine(processed, lType, -1, false, links);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -795,11 +827,11 @@ export class ChatBar extends GamePanel {
     // OG: sets m_bChecked on each CCtrlOriginButton and invalidates
     const flags = [
       this._dwChatFilterFlag === 0,                      // All: checked when no filter
-      (this._dwChatFilterFlag & FILTER_BUDDY) !== 0,     // Buddy
+      (this._dwChatFilterFlag & FILTER_BUDDY) !== 0,     // Friend
+      this._dwChatFilterFlag === 0,                      // Party shares the all filter in v95
       (this._dwChatFilterFlag & FILTER_GUILD) !== 0,     // Guild
       (this._dwChatFilterFlag & FILTER_ALLIANCE) !== 0,  // Alliance
       (this._dwChatFilterFlag & FILTER_EXPEDITION) !== 0, // Expedition
-      (this._dwChatFilterFlag & FILTER_SYSTEM) !== 0,    // System
     ];
     this._filterChecked = flags;
     // Redraw filter button visuals
@@ -813,9 +845,11 @@ export class ChatBar extends GamePanel {
   // ═══════════════════════════════════════════════════════════════════════════
   setChatTarget(target: number): void {
     this._nChatTarget = target;
+    const cycleIndex = TAB_CYCLE.indexOf(target);
+    if (cycleIndex >= 0) this._tabCycleIndex = cycleIndex;
     // OG: updates combo box selection
     const internalName = CHAT_TARGET_INTERNAL[target] ?? 'all';
-    this._combo.setLabel(CHAT_TARGETS[target] ?? 'All');
+    this._combo.setLabel(target === 7 ? 'Whisper' : (CHAT_TARGETS[target] ?? 'All'));
     this.onChatTargetChange?.(internalName);
   }
 
@@ -1192,9 +1226,11 @@ export class ChatBar extends GamePanel {
       && ly >= displayY + tabOffset
       && ly < displayY + this._chatHeight;
     const inInput = lx >= EDIT_X && lx < EDIT_X + EDIT_W && ly >= EDIT_Y && ly < EDIT_Y + EDIT_H;
+    const scrollbarX = DISPLAY_X + 565 - this._nScrWidth;
+    const scrollbarTop = 516 - this._chatHeight;
     const inScrollbar = this._scrollGfx.visible
-      && lx >= DISPLAY_X + displayW - SCROLLBAR_W && lx < DISPLAY_X + displayW
-      && ly >= displayY + TAB_H && ly < displayY + this._chatHeight;
+      && lx >= scrollbarX && lx < scrollbarX + SCROLLBAR_W
+      && ly >= scrollbarTop && ly < scrollbarTop + this._chatHeight - 2;
 
     // Delegate combo box hit testing to ComboBox component
     const comboLx = lx - COMBO_X;
@@ -1413,14 +1449,28 @@ export class ChatBar extends GamePanel {
     // Chat layers (OG OnCreate lines 1814-1893) — all direct children of mainBar
     this._layerSpace = loadCanvas(bar, 'chatSpace', DISPLAY_X, this._chatWndY);
     this._layerSpace2 = loadCanvas(bar, 'chatSpace2', DISPLAY_X, this._chatWndY);
-    this._layerEnter = loadCanvas(bar, 'chatEnter', EDIT_X, EDIT_Y, false);
-    this._layerCover = loadCanvas(bar, 'chatCover', DISPLAY_X + DISPLAY_W_515 - 82, EDIT_Y, false);
+    this._layerEnter = loadCanvas(bar, 'chatEnter', DISPLAY_X, this._chatWndY, false);
+    this._layerCover = loadCanvas(bar, 'chatCover', DISPLAY_X + DISPLAY_W_515 - 82, this._chatWndY, false);
 
     // Combo box WZ sprite (OG: StatusBar2.img/mainBar/chatTarget/base)
     const ctBase = bar.Get('chatTarget') as WzProperty | null;
     if (ctBase) {
       this._combo.loadWzAsset(loader, ctBase, 'base');
     }
+
+    const addControl = (name: string, onClick: () => void): Button | null => {
+      const node = bar.Get(name);
+      if (!(node instanceof WzProperty)) return null;
+      const button = Button.fromWz(loader, node);
+      button.onClick = onClick;
+      button.container.position.set(512, 599);
+      this._root.addChild(button.container);
+      return button;
+    };
+    this._chatOpenButton = addControl('chatOpen', () => this.setChatType(CHAT_TYPE_EXPANDED));
+    this._chatCloseButton = addControl('chatClose', () => this.setChatType(CHAT_TYPE_MINIMAL));
+    this._scrollUpButton = addControl('scrollUp', () => this.scrollBy(-1));
+    this._scrollDownButton = addControl('scrollDown', () => this.scrollBy(1));
 
     // Tab bar filter buttons (OG: StatusBar2.img/chat/Tap/*)
     const chatRoot = ui.GetItem('StatusBar2.img/chat') as WzProperty | null;
@@ -1563,6 +1613,8 @@ export class ChatBar extends GamePanel {
 
     this._applyLayout();
     this._updateWzVisibility();
+    this._chatOpenButton && (this._chatOpenButton.container.visible = this._chatType === CHAT_TYPE_MINIMAL);
+    this._chatCloseButton && (this._chatCloseButton.container.visible = this._chatType !== CHAT_TYPE_MINIMAL);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1614,8 +1666,8 @@ export class ChatBar extends GamePanel {
     const ly = y - this._root.y;
 
     if (this._isDraggingScroll) {
-      const trackTop = 516 - this._chatHeight + TAB_H;
-      const trackH = this._chatHeight - 2 - TAB_H;
+      const trackTop = 516 - this._chatHeight;
+      const trackH = this._chatHeight - 2;
       const totalLines = this._getFilteredChatLogCount();
       const thumbH = Math.max(12, Math.floor(trackH * this._maxLines / Math.max(1, totalLines)));
       const span = trackH - thumbH;

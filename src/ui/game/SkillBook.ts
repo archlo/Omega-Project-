@@ -255,6 +255,7 @@ export class SkillBook extends GamePanel {
   private _tabSprites: Sprite[] = []; // OG: WZ canvas sprites for tab backgrounds
   private _tabLabels: Text[] = [];
   private _tabLabelStrings: string[] = [...TAB_LABELS];
+  private _tabKinds: ('regular' | 'dual' | 'aran')[] = [];
   private _rowIcons: Sprite[] = [];
   private _rowNames: Text[] = [];
   private _rowLevels: Text[] = [];
@@ -826,6 +827,11 @@ export class SkillBook extends GamePanel {
     labels.push(...extraLabels);
     this._tabs = tabs;
     this._tabLabelStrings = labels;
+    this._tabKinds = [
+      ...new Array(regularCount).fill('regular'),
+      ...(hasDual ? new Array(7).fill('dual') : []),
+      ...(hasAran ? new Array(4).fill('aran') : []),
+    ];
     // OG: SetScrollBar — range = skillCount - 3 (not VISIBLE_ROWS)
     const tab = this._tabs[this._activeTab] || [];
     this._scrollBar.setRange(Math.max(0, tab.length - 3));
@@ -1086,7 +1092,7 @@ export class SkillBook extends GamePanel {
     // OG Draw: DrawTab — tab backgrounds from WZ (Tab/disabled/0-4, Tab/enabled/0-4)
     // OG uses CCtrlTab which renders each tab with WZ canvas textures
     // Tab width = (TAB_W - nTabSpace*(numTabs-1)) / numTabs, nTabSpace=1
-    const numTabs = this._tabLabels.length;
+    const numTabs = this._tabs.length;
     const tabSpacing = 1; // OG: nTabSpace = 1
     const tabW = numTabs > 0 ? Math.floor((TAB_W - tabSpacing * (numTabs - 1)) / numTabs) : TAB_W;
 
@@ -1099,11 +1105,17 @@ export class SkillBook extends GamePanel {
       this._tabLabels[i].visible = i < numTabs;
       if (i >= numTabs) continue;
 
-      // OG: Use WZ tab texture sprite if available
-      // These are loaded from Tab/disabled/i and Tab/enabled/i
-       const tabTex = isActive
-         ? (this._tabEnabledTex[i] ?? this._tabEnabledTex[0] ?? null)
-         : (this._tabDisabledTex[i] ?? this._tabDisabledTex[0] ?? null);
+       const kind = this._tabKinds[i] ?? 'regular';
+       const regularCount = this._tabKinds.filter(value => value === 'regular').length;
+       const dualCount = this._tabKinds.filter(value => value === 'dual').length;
+       const specialIndex = kind === 'dual' ? i - regularCount : i - regularCount - dualCount;
+       const tabTex = kind === 'dual'
+         ? (isActive ? this._dualTabEnabledTex[specialIndex] : this._dualTabDisabledTex[specialIndex])
+         : kind === 'aran'
+           ? (isActive ? this._aranBtnTex[specialIndex] : this._aranBtnDisabledTex[specialIndex])
+           : (isActive
+             ? (this._tabEnabledTex[i] ?? this._tabEnabledTex[0] ?? null)
+             : (this._tabDisabledTex[i] ?? this._tabDisabledTex[0] ?? null));
 
       if (tabTex) {
         this._tabSprites[i].texture = tabTex;
@@ -1113,7 +1125,8 @@ export class SkillBook extends GamePanel {
       }
 
       // OG: Tab label text — centered in tab
-      this._tabLabels[i].text = this._tabLabelStrings[i] ?? '';
+       this._tabLabels[i].visible = !tabTex;
+       this._tabLabels[i].text = this._tabLabelStrings[i] ?? '';
       this._tabLabels[i].anchor.set(0.5, 0);
       this._tabLabels[i].x = tx + tabW / 2;
       this._tabLabels[i].y = TAB_Y + 4;
@@ -1192,10 +1205,10 @@ export class SkillBook extends GamePanel {
     }
 
     // OG: Tab click — nId=2000, param1=100 (TCN_SELCHANGE)
-    for (let i = 0; i < this._tabLabels.length; i++) {
+    for (let i = 0; i < this._tabs.length; i++) {
       const tabSpacing = 1;
-      const tabW = this._tabLabels.length > 0
-        ? Math.floor((TAB_W - tabSpacing * (this._tabLabels.length - 1)) / this._tabLabels.length)
+      const tabW = this._tabs.length > 0
+        ? Math.floor((TAB_W - tabSpacing * (this._tabs.length - 1)) / this._tabs.length)
         : TAB_W;
       const tx = TAB_X + i * (tabW + tabSpacing);
       if (lx >= tx && lx < tx + tabW && ly >= TAB_Y && ly < TAB_Y + TAB_H) {

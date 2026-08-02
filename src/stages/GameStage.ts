@@ -2136,6 +2136,10 @@ export class GameStage extends Stage {
       const name = this.game.nameService.ItemName(itemId) ?? String(itemId);
       this._notice?.show('Item Link', `${name} (${itemId})`);
     };
+    this._chatBar.onItemInfo = (itemId) => {
+      const name = this.game.nameService.ItemName(itemId) ?? String(itemId);
+      this._notice?.show('Item Info', `${name} (${itemId})`);
+    };
     this._chatBar.onEmotion = (emotion) => {
       this.game.session.send(GameSender.UserEmotion(emotion));
     };
@@ -5168,11 +5172,7 @@ export class GameStage extends Stage {
       // same onAllianceLoad data already decoded and stored.
       if (msg.length > 0) {
         const memberIds = [...this._partyCharIds.keys()];
-        if (memberIds.length > 0) {
-          this.game.session.send(GameSender.GroupChat(ChatGroupType.Party, memberIds, msg));
-        } else {
-          this.game.session.send(GameSender.UserChat(line));
-        }
+        this.game.session.send(GameSender.GroupChat(ChatGroupType.Party, memberIds, msg));
       }
       return;
     }
@@ -5180,11 +5180,7 @@ export class GameStage extends Stage {
       const msg = lower.startsWith('/b ') ? rest('/b ') : rest('/buddy ');
       if (msg.length > 0) {
         const memberIds = [...this._userList.onlineFriendIds.keys()];
-        if (memberIds.length > 0) {
-          this.game.session.send(GameSender.GroupChat(ChatGroupType.Friend, memberIds, msg));
-        } else {
-          this.game.session.send(GameSender.UserChat(line));
-        }
+        this.game.session.send(GameSender.GroupChat(ChatGroupType.Friend, memberIds, msg));
       }
       return;
     }
@@ -5192,11 +5188,7 @@ export class GameStage extends Stage {
       const msg = lower.startsWith('/g ') ? rest('/g ') : rest('/guild ');
       if (msg.length > 0) {
         const memberIds = [...this._userList.guildMemberIds.keys()];
-        if (memberIds.length > 0) {
-          this.game.session.send(GameSender.GroupChat(ChatGroupType.Guild, memberIds, msg));
-        } else {
-          this.game.session.send(GameSender.UserChat(line));
-        }
+        this.game.session.send(GameSender.GroupChat(ChatGroupType.Guild, memberIds, msg));
       }
       return;
     }
@@ -5204,11 +5196,7 @@ export class GameStage extends Stage {
       const msg = lower.startsWith('/a ') ? rest('/a ') : rest('/alliance ');
       if (msg.length > 0) {
         const memberIds = [...this._userList.allianceMemberIds.keys()];
-        if (memberIds.length > 0) {
-          this.game.session.send(GameSender.GroupChat(ChatGroupType.Alliance, memberIds, msg));
-        } else {
-          this.game.session.send(GameSender.UserChat(line));
-        }
+        this.game.session.send(GameSender.GroupChat(ChatGroupType.Alliance, memberIds, msg));
       }
       return;
     }
