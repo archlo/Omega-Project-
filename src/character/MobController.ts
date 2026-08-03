@@ -4,8 +4,9 @@ import { Foothold, isBlockedArea, segmentsIntersect } from '../map/Foothold.js';
 import type { MobLook } from './MobLook.js';
 import { MobActionType } from './MobActionType.js';
 import type { MobInfo } from './MobInfo.js';
+import type { LadderRope } from '../map/LadderRope.js';
 
-const enum State { Idle, Walking, Chasing, Attacking }
+const enum State { Idle, Walking, Chasing, Attacking, Climbing }
 
 export class MobController {
   private static readonly BaseWalkSpeed    = 60;
@@ -57,6 +58,8 @@ export class MobController {
   private _flyTarget = { x: 0, y: 0 };
   private _flyTargetTimer = 0;
   private _bodyAttackCooldown = 0;
+  private _climb: LadderRope | null = null;
+  private _escortDestination: { x: number; y: number } | null = null;
 
   private readonly _pending: MoveElement[] = [];
   private _lastSyncPos = { x: 0, y: 0 };
@@ -101,18 +104,24 @@ export class MobController {
     this._enterIdle();
   }
 
-  get ShouldTick(): boolean { return !this._info.IsStay; }
+  get ShouldTick(): boolean { return !this._info.IsStay && this._info.EscortType === 0; }
 
   get CurrentAction(): MobActionType {
     switch (this._state) {
       case State.Attacking: return MobActionType.Attack1 + Math.min(this._selectedAttack, 8);
       case State.Chasing:   return MobActionType.Chase;
+      case State.Climbing:  return MobActionType.Rope;
       case State.Walking:   return this._info.IsFly ? MobActionType.Fly : MobActionType.Move;
       default:              return this._info.IsFly ? MobActionType.Fly : MobActionType.Stand;
     }
   }
 
   get IsChasing(): boolean { return this._state === State.Chasing || this._state === State.Attacking; }
+
+  /** The last destination supplied by a server movement path for an escort mob. */
+  get EscortDestination(): { x: number; y: number } | null {
+    return this._escortDestination ? { ...this._escortDestination } : null;
+  }
 
   get Info(): MobInfo { return this._info; }
 
@@ -134,7 +143,7 @@ export class MobController {
   private _firstUpdate = true;
   Update(dt: number, playerPos: { x: number; y: number }): void {
     if (this._firstUpdate) this._firstUpdate = false;
-    if (this._info.IsStay) return;
+    if (this._info.IsStay || this._info.EscortType !== 0) return;
 
     if (this._serverPathTimer > 0) {
       this._serverPathTimer = Math.max(0, this._serverPathTimer - dt);
@@ -187,7 +196,10 @@ export class MobController {
       return;
     }
 
-    const aggressive = this._aggroTimer > 0;
+    // Escort mobs are moved by the field escort controller, not by hostile AI.
+    // Keep the path endpoint for diagnostics/future escort packet wiring, but do
+    // not invent a destination when the server has not supplied one.
+    const aggressive = this._info.EscortType === 0 && this._aggroTimer > 0;
     const dx          = playerPos.x - this._mob.Position.x;
     const dy          = playerPos.y - this._mob.Position.y;
     const selectedAttack = this._pickAttack(dx, dy);
@@ -204,7 +216,11 @@ export class MobController {
         this._selectedAttack  = selectedAttack;
         this._velocity = { x: 0, y: 0 };
       } else {
-        this._state = State.Chasing;
+        if (this._tryStartClimb(playerPos)) {
+          this._state = State.Climbing;
+        } else {
+          this._state = State.Chasing;
+        }
       }
 
       // OG: body attack — collision damage when mob is close to player
@@ -226,9 +242,10 @@ export class MobController {
       }
     }
 
-    const moving = this._state === State.Walking || this._state === State.Chasing;
+    const moving = this._state === State.Walking || this._state === State.Chasing || this._state === State.Climbing;
     if (moving) {
-      if (this._info.IsFly) this._stepFly(dt, playerPos);
+      if (this._state === State.Climbing) this._stepClimb(dt, playerPos);
+      else if (this._info.IsFly) this._stepFly(dt, playerPos);
       else                  this._stepWalk(dt);
     } else {
       this._seatOnFoothold();
@@ -237,7 +254,8 @@ export class MobController {
 
     if (!this._info.NoFlip) this._mob.SetFacing(this._facingLeft);
     this._mob.SetState(
-      this._state === State.Walking || this._state === State.Chasing ? 1 /* Move */
+      this._state === State.Climbing ? (this._climb?.IsLadder ? 6 /* Ladder */ : 7 /* Rope */)
+        : this._state === State.Walking || this._state === State.Chasing ? 1 /* Move */
         : this._state === State.Attacking ? 2 /* Attack */
         : 0 /* Stand */
     );
@@ -283,6 +301,9 @@ export class MobController {
     if (path.elements.length > 0) {
       const lastEl = path.elements[path.elements.length - 1];
       if (lastEl.fh) this._currentFh = lastEl.fh;
+      if (this._info.EscortType !== 0) {
+        this._escortDestination = { x: lastEl.x, y: lastEl.y };
+      }
     }
   }
 
@@ -315,12 +336,14 @@ export class MobController {
   }
 
   private _enterIdle(): void {
+    this._climb = null;
     this._state      = State.Idle;
     this._stateTimer = MobController._lerp(MobController.IdlePauseMin, MobController.IdlePauseMax, Math.random());
     this._velocity   = { x: 0, y: 0 };
   }
 
   private _enterWalk(): void {
+    this._climb = null;
     this._state       = State.Walking;
     this._stateTimer  = MobController._lerp(MobController.WalkBurstMin, MobController.WalkBurstMax, Math.random());
     this._facingLeft  = Math.random() < 0.5;
@@ -328,6 +351,48 @@ export class MobController {
       this._pickFlyTarget();
     } else {
       this._velocity = { x: (this._facingLeft ? -1 : 1) * this._walkSpeed, y: 0 };
+    }
+  }
+
+  private _tryStartClimb(playerPos: { x: number; y: number }): boolean {
+    // WZ moveAbility 6 is the only MobInfo mode that resolves ground, jump,
+    // and ladder/rope movement. Other modes must remain foothold-driven.
+    if (this._info.MoveAbility !== 6 || Math.abs(playerPos.y - this._mob.Position.y) < 12) return false;
+    const ladder = this._field.GetLadderOrRope(
+      this._mob.Position.x,
+      Math.min(this._mob.Position.y, playerPos.y),
+      this._mob.Position.x,
+      Math.max(this._mob.Position.y, playerPos.y),
+    );
+    if (!ladder || this._mob.Position.x < ladder.X - 10 || this._mob.Position.x > ladder.X + 10) return false;
+    this._climb = ladder;
+    this._velocity = { x: 0, y: 0 };
+    return true;
+  }
+
+  private _stepClimb(dt: number, playerPos: { x: number; y: number }): void {
+    const ladder = this._climb;
+    if (!ladder) {
+      this._state = State.Chasing;
+      return;
+    }
+    const targetY = Math.max(ladder.Top, Math.min(ladder.Bottom, playerPos.y));
+    const step = this._walkSpeed * dt;
+    const delta = targetY - this._mob.Position.y;
+    const y = Math.abs(delta) <= step ? targetY : this._mob.Position.y + Math.sign(delta) * step;
+    this._mob.Position = { x: ladder.X, y };
+    this._velocity = { x: 0, y: delta === 0 ? 0 : Math.sign(delta) * this._walkSpeed };
+
+    // Once the target is reached, leave the ladder only when a real foothold
+    // exists at that point. Otherwise retain the climb state.
+    if (Math.abs(delta) <= step) {
+      const fh = this._getFootholdBelow(ladder.X, y - 1);
+      if (fh && Math.abs((fh.YAt(ladder.X) ?? y) - y) <= 4) {
+        this._currentFh = fh.Id;
+        this._climb = null;
+        this._state = State.Chasing;
+        this._seatOnFoothold();
+      }
     }
   }
 

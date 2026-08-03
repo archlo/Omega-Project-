@@ -1,12 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { MobController } from '../../src/character/MobController.js';
 import { Foothold } from '../../src/map/Foothold.js';
+import { LadderRope } from '../../src/map/LadderRope.js';
 import { MapInfo } from '../../src/map/MapInfo.js';
 import { MobInfo } from '../../src/character/MobInfo.js';
 import { MobAttack } from '../../src/character/MobAttack.js';
 import type { MobLook } from '../../src/character/MobLook.js';
 
-function makeField(footholds: Record<number, Foothold> = {}) {
+function makeField(footholds: Record<number, Foothold> = {}, ladders: LadderRope[] = []) {
   return {
     _info: new MapInfo(),
     _footholds: footholds,
@@ -26,6 +27,13 @@ function makeField(footholds: Record<number, Foothold> = {}) {
         }
       }
       return best;
+    },
+    GetLadderOrRope(x1: number, y1: number, x2 = x1, y2 = y1) {
+      const minX = Math.min(x1, x2) - 10;
+      const maxX = Math.max(x1, x2) + 10;
+      const minY = Math.min(y1, y2);
+      const maxY = Math.max(y1, y2);
+      return ladders.find((lr) => lr.X >= minX && lr.X <= maxX && lr.Bottom >= minY && lr.Top <= maxY) ?? null;
     },
   } as any;
 }
@@ -472,6 +480,58 @@ describe('MobController', () => {
       ctl.Update(0.2, { x: 500, y: 200 });
       ctl.Update(0.01, { x: 500, y: 200 });
       expect(mob.Position.x).toBeGreaterThan(50);
+    });
+
+    it('retains the server endpoint for escort mobs without simulating it locally', () => {
+      const mob = makeMobLook({ x: 10, y: 200 });
+      const info = new MobInfo();
+      info.EscortType = 1;
+      const ctl = new MobController(mob, makeField(), info);
+
+      ctl.OnServerMove({
+        originX: 10, originY: 200,
+        elements: [{ attr: 0, x: 80, y: 150, vx: 0, vy: 0, fh: 0, moveAction: 1, elapse: 500 }],
+      }, 1, false);
+
+      expect(ctl.ShouldTick).toBe(false);
+      expect(ctl.EscortDestination).toEqual({ x: 80, y: 150 });
+      ctl.Update(1, { x: 10, y: 200 });
+      expect(mob.Position).toEqual({ x: 10, y: 200 });
+    });
+  });
+
+  describe('ladder movement', () => {
+    it('climbs a ladder only for hybrid move ability 6', () => {
+      const lower = new Foothold(); lower.InitVectors();
+      lower.Id = 1; lower.X1 = 0; lower.Y1 = 200; lower.X2 = 200; lower.Y2 = 200;
+      const upper = new Foothold(); upper.InitVectors();
+      upper.Id = 2; upper.X1 = 0; upper.Y1 = 100; upper.X2 = 200; upper.Y2 = 100;
+      const ladder = new LadderRope(1, true, false, 100, 100, 200, 0);
+      const mob = makeMobLook({ x: 100, y: 200 });
+      const info = new MobInfo();
+      info.MoveAbility = 6;
+      const ctl = new MobController(mob, makeField({ 1: lower, 2: upper }, [ladder]), info);
+
+      ctl.Update(0.1, { x: 100, y: 100 });
+
+      expect(mob.Position.x).toBe(100);
+      expect(mob.Position.y).toBeLessThan(200);
+      expect(mob.SetState).toHaveBeenCalledWith(6);
+    });
+
+    it('does not climb for ordinary walking mobs', () => {
+      const fh = new Foothold(); fh.InitVectors();
+      fh.Id = 1; fh.X1 = 0; fh.Y1 = 200; fh.X2 = 200; fh.Y2 = 200;
+      const ladder = new LadderRope(1, true, false, 100, 100, 200, 0);
+      const mob = makeMobLook({ x: 100, y: 200 });
+      const info = new MobInfo();
+      info.FirstAttack = true;
+      const ctl = new MobController(mob, makeField({ 1: fh }, [ladder]), info);
+
+      ctl.Update(0.1, { x: 100, y: 100 });
+
+      expect(mob.Position.y).toBe(200);
+      expect(mob.SetState).not.toHaveBeenCalledWith(6);
     });
   });
 });

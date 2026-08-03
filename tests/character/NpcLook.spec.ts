@@ -8,6 +8,27 @@ function prop(items: Record<string, unknown>): WzProperty {
 }
 
 describe('NpcLook', () => {
+  it('transitions packed movement actions at path element boundaries', () => {
+    const npc = new NpcLook(1);
+    const animations = new Map<string, any[]>([
+      ['stand', [{}]], ['move', [{}]], ['wave', [{}]],
+    ]);
+    (npc as any)._anims = animations;
+    (npc as any)._actionNames = ['wave'];
+
+    npc.ReplayMove({
+      originX: 0, originY: 0, originVx: 0, originVy: 0,
+      elements: [
+        { attr: 0, x: 10, y: 0, vx: 0, vy: 0, fh: 0, moveAction: 2, elapse: 100 },
+        { attr: 20, x: 10, y: 0, vx: 0, vy: 0, fh: 0, moveAction: 4, elapse: 0 },
+      ],
+    } as any);
+
+    expect((npc as any)._state).toBe('move');
+    npc.Update(0.1);
+    expect((npc as any)._state).toBe('wave');
+  });
+
   it('resolves OG speak labels through String/Npc text', () => {
     const npcRoot = prop({
       speak: prop({ group: prop({ text: 'n0' }) }),

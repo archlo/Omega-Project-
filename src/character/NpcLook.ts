@@ -150,10 +150,11 @@ export class NpcLook {
       if (func) this.FuncName = func;
     }
     this._loaded = this._anims.size > 0;
-    // OG: build action name list from animation keys (excluding 'info', 'speak')
+    // The packed NPC action indexes reserve 0/1 for stand/move. The remaining
+    // indexes address the template's additional animation entries.
     this._actionNames = [];
     for (const key of this._anims.keys()) {
-      if (key !== 'info' && key !== 'speak') this._actionNames.push(key);
+      if (key !== 'info' && key !== 'speak' && key !== 'stand' && key !== 'move') this._actionNames.push(key);
     }
   }
 
@@ -181,7 +182,7 @@ export class NpcLook {
     // Guard: OG checks m_bEnabled before processing
     if (!this._bEnabled) return;
 
-    if (this._replay.Update(dt, this.Position)) this.SetState('move');
+    this._replay.Update(dt, this.Position);
 
     // OG: both timers decrement by 30 per tick (fixed 30ms tick).
     // dt is in seconds — convert to ms for timer math.
@@ -244,16 +245,14 @@ export class NpcLook {
   }
 
   ReplayMove(path: DecodedMovePath): void {
-    this._replay.SetPath(path, this.Position);
+    this._replay.SetPath(path, this.Position, moveAction => this.SetMoveAction(moveAction, false));
     // CMovePath elements carry the action state used by the original
     // CVecCtrlNpc replay. Apply the first state immediately; subsequent
     // positions remain packet-driven through RemoteMoveReplay.
     const first = path.elements[0];
     if (first) {
       if (first.fh !== 0) this.FootholdId = first.fh;
-      this.SetMoveAction(first.moveAction, false);
     }
-    this.SetState('move');
   }
 
   SetFootholds(footholds: readonly Foothold[]): void { this._replay.SetFootholds(footholds); }
@@ -471,12 +470,23 @@ export class NpcLook {
     if (bReload || nMA !== this._nMoveAction) {
       this._nMoveAction = nMA;
       this._facingLeft = (nMA & 1) !== 0;
+      const rawAction = nMA >> 1;
+      if (rawAction === 0) this.SetState('stand');
+      else if (rawAction === 1) this.SetState('move');
+      else {
+        // NPC action indexes >= 2 are template-defined. Do not invent a WZ
+        // name for an index that is absent from this template.
+        const actionName = this._getActionName(rawAction);
+        if (actionName) this.SetState(actionName);
+      }
       // OG: only call PrepareActionLayer if no one-time action is playing
       if (this._nOneTimeAction <= -1) {
         this.PrepareActionLayer();
       }
     }
   }
+
+  get CurrentAction(): number { return this._nMoveAction; }
 
   /** OG CNpc::ViewOrHide (0x66fe00) — shows/hides NPC, DC mark, quest info, name tag */
   ViewOrHide(bView: boolean, bViewNameTag: boolean): void {
@@ -505,10 +515,6 @@ export class NpcLook {
     // OG: frame delay reset — first frame shows for its WZ delay
     const frames = this._anims.get(this._state);
     this._tFrameDelay = frames?.[0]?.delayMs || 150;
-    // Reset to stand if available
-    if (this._anims.has('stand')) {
-      this._state = 'stand';
-    }
     this._rebuildDisplay();
   }
 

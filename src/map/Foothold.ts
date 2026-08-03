@@ -13,6 +13,8 @@ export class Foothold {
   RealY1 = 0;
   RealX2 = 0;
   RealY2 = 0;
+  MovementOffsetX = 0;
+  MovementOffsetY = 0;
   Prev = 0;
   Next = 0;
   CantThrough = false;
@@ -35,6 +37,8 @@ export class Foothold {
     this.RealY1 = this.Y1;
     this.RealX2 = this.X2;
     this.RealY2 = this.Y2;
+    this.MovementOffsetX = 0;
+    this.MovementOffsetY = 0;
     this._recomputeVectors();
   }
 
@@ -45,6 +49,13 @@ export class Foothold {
     this.Y1 = y1;
     this.Y2 = y2;
     this._recomputeVectors();
+  }
+
+  MoveBy(dx: number, dy: number): void {
+    if (dx === 0 && dy === 0) return;
+    this.MovementOffsetX += dx;
+    this.MovementOffsetY += dy;
+    this.SetPosition(this.X1 + dx, this.X2 + dx, this.Y1 + dy, this.Y2 + dy);
   }
 
   private _recomputeVectors(): void {

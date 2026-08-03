@@ -95,6 +95,16 @@ describe('Foothold', () => {
     expect(fh.Length).toBe(100);
   });
 
+  it('MoveBy preserves static endpoints and exposes accumulated offset', () => {
+    const fh = new Foothold();
+    fh.X1 = 0; fh.Y1 = 0; fh.X2 = 100; fh.Y2 = 0;
+    fh.InitVectors();
+    fh.MoveBy(12, -7);
+    expect([fh.X1, fh.Y1, fh.X2, fh.Y2]).toEqual([12, -7, 112, -7]);
+    expect([fh.RealX1, fh.RealY1, fh.RealX2, fh.RealY2]).toEqual([0, 0, 100, 0]);
+    expect([fh.MovementOffsetX, fh.MovementOffsetY]).toEqual([12, -7]);
+  });
+
   describe('DistanceSquaredTo', () => {
     it('returns 0 at exact midpoint', () => {
       const fh = new Foothold();

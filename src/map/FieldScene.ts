@@ -846,7 +846,7 @@ export class FieldScene {
           for (const sn of e.footholdSns) {
             const fh = this._footholds[sn];
             if (fh) {
-              fh.SetPosition(fh.X1 + dx, fh.X2 + dx, fh.Y1 + dy, fh.Y2 + dy);
+              fh.MoveBy(dx, dy);
               this._footholdIndex.update(fh);
             }
           }

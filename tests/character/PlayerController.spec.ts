@@ -324,6 +324,31 @@ describe('PlayerController', () => {
       }
       expect(pc.Position.x).toBeGreaterThan(0);
     });
+
+    it('applies the shoe swim speed multiplier to swimming movement', () => {
+      const normal = new PlayerController(airborneField({ swim: true }));
+      normal.Spawn({ x: 0, y: -1000 });
+      const fast = new PlayerController(airborneField({ swim: true }));
+      fast.SetShoePhysics({ swimSpeedMultiplier: 2 });
+      fast.Spawn({ x: 0, y: -1000 });
+      for (let i = 0; i < 60; i++) {
+        const input = { Left: false, Right: true, Up: false, Down: false, JumpPressed: false };
+        normal.Update(input, 1 / 60);
+        fast.Update(input, 1 / 60);
+      }
+      expect(fast.Position.x).toBeGreaterThan(normal.Position.x);
+    });
+  });
+
+  describe('moving footholds', () => {
+    it('carries a grounded player by the foothold translation', () => {
+      const field = makeField();
+      const pc = new PlayerController(field);
+      pc.Spawn({ x: 40, y: 200 });
+      field._footholds[1].MoveBy(25, -10);
+      pc.Update({ Left: false, Right: false, Up: false, Down: false, JumpPressed: false }, 0);
+      expect(pc.Position).toEqual({ x: 65, y: 190 });
+    });
   });
 
   describe('ApplyKnockback', () => {

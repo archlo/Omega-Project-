@@ -5,6 +5,9 @@ export class VecCtrlUser extends VecCtrl {
   // v95 CVecCtrlUser uses walkSpeed * inputY * 3 per 30 Hz tick.
   LadderSpeed = 125 * 3 * 30;
   IsClimbing = false;
+  IsSwimming = false;
+  SwimSpeedMultiplier = 1;
+  private _fhOffset = { id: 0, x: 0, y: 0 };
 
   private static readonly WalkSpeed = 125;
   private static readonly WalkForce = 140000;
@@ -29,6 +32,21 @@ export class VecCtrlUser extends VecCtrl {
   IsUp = false;
   IsDown = false;
 
+  SetSwimming(value: boolean, speedMultiplier = 1): void {
+    this.IsSwimming = value;
+    this.SwimSpeedMultiplier = speedMultiplier > 0 ? speedMultiplier : 1;
+  }
+
+  override WorkUpdatePassive(dt: number, elapsedMs: number, resolveFh?: (id: number) => Foothold | null): boolean {
+    const complete = super.WorkUpdatePassive(dt, elapsedMs, resolveFh);
+    const fh = this.Fh ?? resolveFh?.(this.FhId) ?? null;
+    if (fh?.State === 2 && (this.MovePath.LastOffset.x !== 0 || this.MovePath.LastOffset.y !== 0)) {
+      this.Pos.x -= this.MovePath.LastOffset.x;
+      this.Pos.y -= this.MovePath.LastOffset.y;
+    }
+    return complete;
+  }
+
   WorkUpdateActive(dt: number, fhList: any[]): void {
     if (this.IsOnLadder || this.IsOnRope) {
       this.WorkUpdateActiveLadderOrRope(dt);
@@ -43,7 +61,13 @@ export class VecCtrlUser extends VecCtrl {
       this.IsFloating = true;
     }
 
-    if (this.IsFloating) {
+    if (this.IsFloating && this.IsSwimming) {
+      const vMax = 140 * this.SwimSpeedMultiplier;
+      const force = 120000;
+      const inputY = this.InputY || (this.IsUp ? -1 : this.IsDown ? 1 : 0);
+      this.Vx = VecCtrlUser._swimAxis(this.Vx, this.InputX, force, vMax, dtS);
+      this.Vy = VecCtrlUser._swimVertical(this.Vy, inputY, force, vMax, dtS);
+    } else if (this.IsFloating) {
       const v = VecCtrl.CalcFloat(this.Vx, this.Vy, VecCtrlUser.Gravity, VecCtrlUser.MaxFallSpeed, 10000, dt);
       this.Vx = v.vx;
       this.Vy = v.vy;
@@ -67,6 +91,13 @@ export class VecCtrlUser extends VecCtrl {
   private _walkRelative(dt: number, fhList: Foothold[]): void {
     if (!this.Fh) return;
     const fh = this.Fh;
+    if (this._fhOffset.id !== fh.Id) {
+      this._fhOffset = { id: fh.Id, x: fh.MovementOffsetX, y: fh.MovementOffsetY };
+    } else {
+      this.Pos.x += fh.MovementOffsetX - this._fhOffset.x;
+      this.Pos.y += fh.MovementOffsetY - this._fhOffset.y;
+      this._fhOffset = { id: fh.Id, x: fh.MovementOffsetX, y: fh.MovementOffsetY };
+    }
     const rel = RelPos.From(this.Pos, this.Vx, this.Vy, fh);
     const slope = Math.abs(fh.Uvy);
     const downhill = fh.Uvy >= 0 ? 1 : -1;
@@ -110,5 +141,24 @@ export class VecCtrlUser extends VecCtrl {
 
   private IsOnFoothold(): boolean {
     return this.Fh !== null;
+  }
+
+  private static _swimAxis(v: number, input: number, force: number, max: number, dt: number): number {
+    v = VecCtrlUser._dec(v, 100000, max, dt);
+    return input !== 0 ? Math.max(-max, Math.min(max, v + input * force * dt)) : VecCtrlUser._dec(v, 100000, 0, dt);
+  }
+
+  private static _swimVertical(v: number, input: number, force: number, max: number, dt: number): number {
+    v = VecCtrlUser._dec(v, 100000, max, dt);
+    const g = force / max;
+    if (input === 0) return Math.min(max, v + g * dt);
+    const floor = input < 0 ? max * 0.3 : max * 1.5;
+    return input < 0 ? Math.max(floor, v - g * dt) : Math.min(floor, v + g * 0.5 * dt);
+  }
+
+  private static _dec(v: number, force: number, max: number, dt: number): number {
+    if (v > max) return Math.max(max, v - force * dt);
+    if (v < -max) return Math.min(-max, v + force * dt);
+    return v;
   }
 }

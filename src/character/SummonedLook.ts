@@ -79,25 +79,32 @@ export class SummonedLook {
     this.FacingLeft = (moveAction & 1) !== 0;
     const rawAction = (() => {
       switch (moveAction >> 1) {
+        case 0: return 0;
         case 1: return 1;
         case 6: return 2;
         case 21: return 6;
-        default: return 0;
+        default: return moveAction >> 1;
       }
     })();
     // The WZ action table is skill-specific; only the three movement actions
     // have stable names in this renderer. Keep special raw actions numeric
     // rather than guessing a visual action name.
-    const action = rawAction === 0 ? 'stand' : rawAction === 1 ? 'move' : rawAction === 2 ? 'fly' : '';
+    const action = rawAction === 0 ? 'stand'
+      : rawAction === 1 ? 'move'
+      : rawAction === 2 ? 'fly'
+      : rawAction === 3 ? 'hit'
+      : rawAction === 4 ? 'die'
+      : '';
     if (action) this.SetAction(action);
   }
 
+  get CurrentAction(): string { return this._curAction; }
+
   ReplayMove(path: DecodedMovePath): void {
-    this._replay.SetPath(path, this.Position);
+    this._replay.SetPath(path, this.Position, moveAction => this.SetMoveAction(moveAction));
     const first = path.elements[0];
     if (first) {
       if (first.fh !== 0) this.FootholdId = first.fh;
-      this.SetMoveAction(first.moveAction);
     }
   }
 

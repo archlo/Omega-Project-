@@ -101,6 +101,10 @@ export class PlayerController {
   private _currentFoothold = 0;
   private _landingNext = 0;
   private _fallZMass = 0;
+  private _fallStartFoothold = 0;
+  private _fallOffset = { x: 0, y: 0 };
+  private _trackedFhId = 0;
+  private _trackedFhOffset = { x: 0, y: 0 };
   // v95 RelPos::pos and RelPos::v: distance and velocity along the active
   // foothold, rather than world-X coordinates.
   private _footholdPos = 0;
@@ -124,7 +128,10 @@ export class PlayerController {
   private _freeFallElapsedMs = 0;
   private _walkSpeed = PlayerController.BaseWalkSpeed;
   private _jumpSpeed = PlayerController.BaseJumpSpeed;
-  private _shoe: ShoePhysics = { mass: 1, walkAcc: 1, walkDrag: 1, walkSpeed: 1, walkSlant: PlayerController.WalkSlant };
+  private _shoe: ShoePhysics = {
+    mass: 1, walkAcc: 1, walkDrag: 1, walkSpeed: 1,
+    walkSlant: PlayerController.WalkSlant, swimSpeedMultiplier: 1,
+  };
 
   private get _physics() {
     return (this._field as FieldScene & { Physics?: typeof DEFAULT_PHYSICS }).Physics ?? DEFAULT_PHYSICS;
@@ -293,6 +300,8 @@ export class PlayerController {
       walkDrag: values.walkDrag !== undefined && values.walkDrag >= 0 ? values.walkDrag : this._shoe.walkDrag,
       walkSpeed: values.walkSpeed !== undefined && values.walkSpeed > 0 ? values.walkSpeed : this._shoe.walkSpeed,
       walkSlant: values.walkSlant !== undefined && values.walkSlant >= 0 ? values.walkSlant : this._shoe.walkSlant,
+      swimSpeedMultiplier: values.swimSpeedMultiplier !== undefined && values.swimSpeedMultiplier > 0
+        ? values.swimSpeedMultiplier : this._shoe.swimSpeedMultiplier,
     };
   }
 
@@ -322,6 +331,11 @@ export class PlayerController {
     this._lastSyncPos = { x: this.Position.x, y: this.Position.y };
     this._lastSyncVel = { x: this._velocity.x, y: this._velocity.y };
     this._lastSyncStance = this.Stance;
+    this._fallStartFoothold = 0;
+    this._fallOffset = { x: 0, y: 0 };
+    this._trackedFhId = this._grounded ? this._currentFoothold : 0;
+    const tracked = this._grounded ? this._field.GetFoothold(this._currentFoothold) : null;
+    this._trackedFhOffset = tracked ? { x: tracked.MovementOffsetX, y: tracked.MovementOffsetY } : { x: 0, y: 0 };
   }
 
   ApplyKnockback(vx: number, vy: number, staggerSec = 0.4): void {
@@ -338,6 +352,7 @@ export class PlayerController {
 
   Update(input: PlayerInput, dt: number): void {
     if (this._isSitting) return;
+    this._applyMovingFootholdOffset();
     this._wasGrounded = this._grounded;
     this._staggerTimer = Math.max(0, this._staggerTimer - dt);
 
@@ -649,6 +664,8 @@ export class PlayerController {
         if (nextId === 0) {
           this.Position = { x: edgeX, y: edgeY };
           this._grounded = false;
+          this._fallStartFoothold = fh.Id;
+          this._fallOffset = { x: fh.MovementOffsetX, y: fh.MovementOffsetY };
           this._velocity.x *= fh.Uvx;
           this._fallZMass = fh.ZMass;
           this._notifyAttached();
@@ -659,6 +676,8 @@ export class PlayerController {
         if (nextFh === null) {
           this.Position = { x: edgeX, y: edgeY };
           this._grounded = false;
+          this._fallStartFoothold = fh.Id;
+          this._fallOffset = { x: fh.MovementOffsetX, y: fh.MovementOffsetY };
           this._velocity.x *= fh.Uvx;
           this._fallZMass = fh.ZMass;
           this._notifyAttached();
@@ -719,10 +738,10 @@ export class PlayerController {
       // control at all and Fly used a flat instant-velocity clamp instead
       // of this force/mass model.
       const force = this._field.Info.Fly ? this._physics.flyForce : this._physics.swimForce;
-      const vMax = this._field.Info.Fly ? this._physics.flySpeed : this._physics.swimSpeed;
-      // OG: swimSpeedDec — additional speed reduction when swimming
-      const swimDec = this._field.Info.Swim ? 0.7 : 1.0;
-      const drag = this._physics.floatDrag1 * swimDec;
+      const vMax = this._field.Info.Fly
+        ? this._physics.flySpeed
+        : this._physics.swimSpeed * this._shoe.swimSpeedMultiplier;
+      const drag = this._physics.floatDrag1 * this._field.Info.FieldDrag;
       const inputY = (input.Up ? -1 : 0) + (input.Down ? 1 : 0);
       const inputX = (input.Left ? -1 : 0) + (input.Right ? 1 : 0);
 
@@ -732,7 +751,7 @@ export class PlayerController {
         : PlayerController.decSpeed(vx, drag, this._shoe.mass, 0, dt);
 
       vy = PlayerController.decSpeed(this._velocity.y, drag, this._shoe.mass, vMax, dt);
-      const g = force / vMax;
+      const g = force / vMax * this._shoe.mass;
       if (inputY === 0) {
         vy = PlayerController.accSpeed(vy, g, this._shoe.mass, vMax, dt);
       } else if (inputY > 0) {
@@ -977,10 +996,12 @@ export class PlayerController {
   private _appendNormal(): void {
     const elapsedMs = Math.max(1, Math.min(1000, this._flushTimer * 1000));
     this._pending.push({
-      attr: 0, x: this.Position.x, y: this.Position.y,
+      attr: this._movePathAttribute, x: this.Position.x, y: this.Position.y,
       vx: this._velocity.x, vy: this._velocity.y, fh: this._currentFoothold,
       moveAction: StanceMoveAction(this.Stance, this.FacingLeft), elapse: elapsedMs,
-      fhFallStart: 0, xOffset: 0, yOffset: 0, stat: 0,
+      fhFallStart: this._movePathAttribute === 12 ? this._fallStartFoothold : 0,
+      xOffset: this._movePathAttribute === 12 ? this._fallOffset.x : 0,
+      yOffset: this._movePathAttribute === 12 ? this._fallOffset.y : 0, stat: 0,
     });
     this._flushTimer = 0;
     this._lastSyncPos = { x: this.Position.x, y: this.Position.y };
@@ -1259,6 +1280,21 @@ export class PlayerController {
     return false;
   }
 
+  private _applyMovingFootholdOffset(): void {
+    if (!this._grounded) return;
+    const fh = this._field.GetFoothold(this._currentFoothold);
+    if (!fh) return;
+    if (this._trackedFhId !== fh.Id) {
+      this._trackedFhId = fh.Id;
+      this._trackedFhOffset = { x: fh.MovementOffsetX, y: fh.MovementOffsetY };
+      return;
+    }
+    const dx = fh.MovementOffsetX - this._trackedFhOffset.x;
+    const dy = fh.MovementOffsetY - this._trackedFhOffset.y;
+    if (dx !== 0 || dy !== 0) this.Position = { x: this.Position.x + dx, y: this.Position.y + dy };
+    this._trackedFhOffset = { x: fh.MovementOffsetX, y: fh.MovementOffsetY };
+  }
+
   TryFlushMovePath(): Uint8Array | null {
     if (this._pending.length === 0) return null;
 
@@ -1286,4 +1322,5 @@ interface ShoePhysics {
   walkDrag: number;
   walkSpeed: number;
   walkSlant: number;
+  swimSpeedMultiplier: number;
 }
