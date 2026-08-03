@@ -36,7 +36,7 @@ const GRID_Y = 51;
 const THROWING_STAR_PREFIX = 207;
 const BULLET_PREFIX = 233;
 const TAB_X = 8;
-const TAB_Y = 9;
+const TAB_Y = 24;
 const TAB_GAP = 1;
 const CLOSE_X_COLLAPSED = 150;
 const CLOSE_X_EXPANDED = FULL_PANEL_W - 20; // right edge of extended panel
@@ -231,8 +231,9 @@ export class ItemInventory extends GamePanel implements DragTarget {
         const ref = this._wzTabEnabled[i] ?? this._wzTabDisabled[i];
         if (ref) this._tabWidths[i] = ref.width;
       }
+      // OG: CUIItem::Toggle → Destroy → CreateUIWndPosSaved recreates only the
+      // button for the current mode. Collapsed mode = BtFull only.
       this._btFull = this._makeButton(opts.loader, itemRoot, 'BtFull', () => this._setExtended(true));
-      this._btSmall = this._makeButton(opts.loader, itemRoot, 'BtSmall', () => this._setExtended(false));
       this._btCashshop = this._makeButton(opts.loader, itemRoot, 'BtCashshop', () => this.onCashShop?.(TAB_TO_INVTYPE[this._activeTab]));
       this._btCoin = this._makeButton(opts.loader, itemRoot, 'BtCoin', () => this.onDropMoney?.());
       this._newTabOther = opts.loader.LoadAnimation(itemRoot.GetItem('New/Tab0'));
@@ -290,8 +291,10 @@ export class ItemInventory extends GamePanel implements DragTarget {
     }
     this._root.addChild(this._effectLayer);
 
-    // OG: CUIItem::Draw renders meso count at y=268, right-aligned with FONT_NO_BLACK_SMALL.
-    const mesoStyle = new TextStyle({ fill: '#000', fontSize: 11, fontFamily: 'monospace' });
+    // OG: CUIItem::Draw renders meso count at y=268, right-aligned with
+    // FONT_NO_BLACK_SMALL (light glyphs, no black outline). Black text is
+    // invisible against the panel's dark bottom strip.
+    const mesoStyle = new TextStyle({ fill: '#FFF', fontSize: 11, fontFamily: 'monospace' });
     this._mesoText = new Text({ text: '', style: mesoStyle });
     this._mesoText.y = 268;
     this._root.addChild(this._mesoText);
@@ -407,12 +410,11 @@ export class ItemInventory extends GamePanel implements DragTarget {
     }
     this._root.addChild(this._effectLayer);
 
-    const mesoStyle = new TextStyle({ fill: '#000', fontSize: 11, fontFamily: 'monospace' });
+    const mesoStyle = new TextStyle({ fill: '#FFF', fontSize: 11, fontFamily: 'monospace' });
     this._mesoText = new Text({ text: '', style: mesoStyle });
     this._mesoText.y = 268;
     this._root.addChild(this._mesoText);
-
-    const gridCols = this._extended ? FULL_COLS : COLS;
+    const gridCols = FULL_COLS;
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < gridCols; c++) {
         const g = new Container();
@@ -429,9 +431,15 @@ export class ItemInventory extends GamePanel implements DragTarget {
       }
     }
 
-    // Buttons (same as constructor — _makeButton uses _root)
-    this._btFull = this._loader && this._itemWzRoot ? this._makeButton(this._loader, this._itemWzRoot, 'BtFull', () => this._setExtended(true)) : this._btFull;
-    this._btSmall = this._loader && this._itemWzRoot ? this._makeButton(this._loader, this._itemWzRoot, 'BtSmall', () => this._setExtended(false)) : this._btSmall;
+    // Buttons (same as constructor — _makeButton uses _root). OG creates only
+    // the button for the current mode so the hidden sibling can't steal clicks.
+    if (extended) {
+      this._btFull = null;
+      this._btSmall = this._loader && this._itemWzRoot ? this._makeButton(this._loader, this._itemWzRoot, 'BtSmall', () => this._setExtended(false)) : this._btSmall;
+    } else {
+      this._btSmall = null;
+      this._btFull = this._loader && this._itemWzRoot ? this._makeButton(this._loader, this._itemWzRoot, 'BtFull', () => this._setExtended(true)) : this._btFull;
+    }
     this._btCashshop = this._loader && this._itemWzRoot ? this._makeButton(this._loader, this._itemWzRoot, 'BtCashshop', () => this.onCashShop?.(TAB_TO_INVTYPE[this._activeTab])) : this._btCashshop;
     this._btCoin = this._loader && this._itemWzRoot ? this._makeButton(this._loader, this._itemWzRoot, 'BtCoin', () => this.onDropMoney?.()) : this._btCoin;
     this._rebuildArrangeButton();
@@ -443,6 +451,9 @@ export class ItemInventory extends GamePanel implements DragTarget {
       this._rebuildGrid();
     }, { loader: this._loader!, uiWz: this._uiWz });
     this._root.addChild(this._scrollBar.container);
+
+    // OG: CUIWnd::CreateUIWndPosSaved recreates the close button after Destroy.
+    this.createCloseButton(this._loader, this._uiWz, 1, this._panelW);
 
     this.setMeso(this._mesoAmount);
     this._rebuild();

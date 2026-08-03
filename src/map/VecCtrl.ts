@@ -15,28 +15,73 @@ export class MovePath {
   OriginVx = 0;
   OriginVy = 0;
   Elements: MoveElement[] = [];
+  LastAttrMask = 0;
+  LastStat = 0;
+  LastFhFallStart = 0;
+  LastOffset = { x: 0, y: 0 };
+  CurrentAttr = -1;
+  CurrentElementIndex = -1;
+
+  private _elementIndex = 0;
+  private _elementElapsed = 0;
+  private _elapsedMs = 0;
+  private _elementsRef: MoveElement[] | null = null;
 
   Clear(): void {
     this.Elements = [];
+    this._resetProgress();
   }
 
-  CalcPassivePos(x: number, y: number, vx: number, vy: number, fh: number, elapsedMs: number): { x: number; y: number; vx: number; vy: number; fh: number } {
-    let cx = x, cy = y, cvx = vx, cvy = vy, cfh = fh;
-    let remaining = elapsedMs;
-    for (const e of this.Elements) {
+  CalcPassivePos(
+    x: number, y: number, vx: number, vy: number, fh: number, elapsedMs: number,
+    resolveFh?: (id: number) => Foothold | null,
+  ): { x: number; y: number; vx: number; vy: number; fh: number } {
+    if (this._elementsRef !== this.Elements) this._resetProgress();
+    let cx = this._elementIndex === 0 ? (this.Elements.length > 0 ? this.OriginX : x) : x;
+    let cy = this._elementIndex === 0 ? (this.Elements.length > 0 ? this.OriginY : y) : y;
+    let cvx = this._elementIndex === 0 ? (this.Elements.length > 0 ? this.OriginVx : vx) : vx;
+    let cvy = this._elementIndex === 0 ? (this.Elements.length > 0 ? this.OriginVy : vy) : vy;
+    let cfh = fh;
+    let remaining = Math.max(0, elapsedMs - this._elapsedMs);
+    this.LastAttrMask = 0;
+    while (this._elementIndex < this.Elements.length) {
+      const e = this.Elements[this._elementIndex];
+      const duration = Math.max(e.elapse, 1);
+      this.CurrentElementIndex = this._elementIndex;
+      this.CurrentAttr = e.attr;
+      this.LastAttrMask |= 1 << (e.attr & 31);
+      this.LastStat = e.stat;
+      this.LastFhFallStart = e.fhFallStart;
+      this.LastOffset = { x: e.xOffset, y: e.yOffset };
+
+      // Stat/action elements have no time on the wire. Consume them even when
+      // the caller advances by 0 ms, preserving their metadata for this tick.
+      if (e.attr === MovePathAttr.StatChange || e.elapse <= 0) {
+        if (e.attr === MovePathAttr.Teleport || e.attr === MovePathAttr.Teleport2 || e.attr === MovePathAttr.Normal3) {
+          cx = e.x; cy = e.y; cfh = e.fh; cvx = e.vx; cvy = e.vy;
+        }
+        this._elementIndex++;
+        this._elementElapsed = 0;
+        continue;
+      }
+
       if (remaining <= 0) break;
+      const step = Math.min(remaining, duration - this._elementElapsed);
+      const segmentDuration = duration - this._elementElapsed;
+      const segmentT = step / segmentDuration;
       switch (e.attr) {
         case MovePathAttr.Normal:
         case MovePathAttr.Normal2:
+        case MovePathAttr.NormalAlert:
         case MovePathAttr.Normal4:
         case MovePathAttr.Normal5:
         case MovePathAttr.Normal6:
-          cx = e.x; cy = e.y; cvx = e.vx; cvy = e.vy; cfh = e.fh;
-          break;
         case MovePathAttr.NormalWithFhFall:
-          cx = e.x; cy = e.y; cvx = e.vx; cvy = e.vy; cfh = e.fh;
+          [cx, cvx] = hermiteSegment(cx, cvx, e.x + e.xOffset, e.vx, 0, segmentT, segmentDuration);
+          [cy, cvy] = hermiteSegment(cy, cvy, e.y + e.yOffset, e.vy, 0, segmentT, segmentDuration);
           break;
         case MovePathAttr.Jump:
+        case MovePathAttr.JumpAlert:
         case MovePathAttr.Jump2:
         case MovePathAttr.Jump3:
         case MovePathAttr.Jump4:
@@ -44,23 +89,93 @@ export class MovePath {
         case MovePathAttr.Jump6:
         case MovePathAttr.Jump7:
         case MovePathAttr.Jump8:
-          cvx = e.vx; cvy = e.vy;
+          cvx = e.vx;
+          cvy = e.vy;
+          const seconds = step / 1000;
+          cx += cvx * seconds;
+          cy += cvy * seconds;
           break;
         case MovePathAttr.Teleport:
+        case MovePathAttr.TeleportAlert:
         case MovePathAttr.Teleport2:
-        case MovePathAttr.Normal3:
-          cx = e.x; cy = e.y; cfh = e.fh;
+        case MovePathAttr.TeleportAlert2:
+          // A teleport is a boundary transition, never an interpolation.
+          if (this._elementElapsed + step >= duration) {
+            cx = e.x; cy = e.y; cfh = e.fh; cvx = e.vx; cvy = e.vy;
+          }
           break;
-        case MovePathAttr.StatChange:
+        case MovePathAttr.StartFallDown:
+          cvx = e.vx;
+          cvy = e.vy;
+          cx += cvx * (step / 1000);
+          cy += cvy * (step / 1000);
           break;
         case MovePathAttr.FlyingBlock:
-          cx = e.x; cy = e.y; cvx = e.vx; cvy = e.vy;
+          // Flying blocks carry an authoritative destination and velocity.
+          [cx, cvx] = hermiteSegment(cx, cvx, e.x, e.vx, 0, segmentT, segmentDuration);
+          [cy, cvy] = hermiteSegment(cy, cvy, e.y, e.vy, 0, segmentT, segmentDuration);
           break;
       }
-      remaining -= Math.max(e.elapse, 1);
+      if (isGroundPathAttr(e.attr)) {
+        const footholdY = resolveFh?.(e.fh || cfh)?.YAt(cx);
+        if (footholdY !== null && footholdY !== undefined) cy = footholdY;
+      }
+      remaining -= step;
+      this._elementElapsed += step;
+      if (this._elementElapsed >= duration) {
+        this._elementIndex++;
+        this._elementElapsed = 0;
+        if (e.attr === MovePathAttr.Normal || e.attr === MovePathAttr.Normal2 || e.attr === MovePathAttr.NormalAlert
+          || e.attr === MovePathAttr.Normal3 || e.attr === MovePathAttr.Normal4 || e.attr === MovePathAttr.Normal5
+          || e.attr === MovePathAttr.Normal6 || e.attr === MovePathAttr.NormalWithFhFall) {
+          cx = e.x + e.xOffset; cy = e.y + e.yOffset; cfh = e.fh; cvx = e.vx; cvy = e.vy;
+          const footholdY = resolveFh?.(cfh)?.YAt(cx);
+          if (footholdY !== null && footholdY !== undefined) cy = footholdY;
+        }
+      }
     }
+    this._elapsedMs = Math.max(this._elapsedMs, elapsedMs);
     return { x: cx, y: cy, vx: cvx, vy: cvy, fh: cfh };
   }
+
+  get IsComplete(): boolean { return this._elementIndex >= this.Elements.length; }
+
+  ResetProgress(): void { this._resetProgress(); }
+
+  private _resetProgress(): void {
+    this._elementsRef = this.Elements;
+    this._elementIndex = 0;
+    this._elementElapsed = 0;
+    this._elapsedMs = 0;
+    this.CurrentAttr = -1;
+    this.CurrentElementIndex = -1;
+  }
+}
+
+function hermite(p0: number, v0: number, p1: number, v1: number, t: number, durationMs: number): [number, number] {
+  const t2 = t * t;
+  const t3 = t2 * t;
+  const d = durationMs / 1000;
+  const h00 = 2 * t3 - 3 * t2 + 1;
+  const h10 = t3 - 2 * t2 + t;
+  const h01 = -2 * t3 + 3 * t2;
+  const h11 = t3 - t2;
+  const position = h00 * p0 + h10 * v0 * d + h01 * p1 + h11 * v1 * d;
+  const velocity = ((6 * t2 - 6 * t) * p0 + (3 * t2 - 4 * t + 1) * v0 * d
+    + (-6 * t2 + 6 * t) * p1 + (3 * t2 - 2 * t) * v1 * d) / Math.max(d, 0.001);
+  return [position, velocity];
+}
+
+function hermiteSegment(p0: number, v0: number, p1: number, v1: number, t0: number, t1: number, durationMs: number): [number, number] {
+  const end = hermite(p0, v0, p1, v1, t1, durationMs);
+  return [end[0], end[1]];
+}
+
+function isGroundPathAttr(attr: number): boolean {
+  return attr === MovePathAttr.Normal || attr === MovePathAttr.Normal2
+    || attr === MovePathAttr.Normal3 || attr === MovePathAttr.NormalAlert
+    || attr === MovePathAttr.Normal4 || attr === MovePathAttr.Normal5
+    || attr === MovePathAttr.Normal6 || attr === MovePathAttr.NormalWithFhFall;
 }
 
 export class VecCtrl {
@@ -107,6 +222,7 @@ export class VecCtrl {
     this.MovePath.OriginVx = originVx;
     this.MovePath.OriginVy = originVy;
     this.MovePath.Elements = elements;
+    this.MovePath.ResetProgress();
   }
 
   BeginUpdateActive(): void {}
@@ -122,9 +238,9 @@ export class VecCtrl {
     this._resolveCollision(dt, fhList);
   }
 
-  WorkUpdatePassive(dt: number, elapsedMs: number): boolean {
+  WorkUpdatePassive(dt: number, elapsedMs: number, resolveFh?: (id: number) => Foothold | null): boolean {
     const result = this.MovePath.CalcPassivePos(
-      this.Pos.x, this.Pos.y, this.Vx, this.Vy, this.FhId, elapsedMs,
+      this.Pos.x, this.Pos.y, this.Vx, this.Vy, this.FhId, elapsedMs, resolveFh,
     );
     this.Pos.prevX = this.Pos.x;
     this.Pos.prevY = this.Pos.y;
@@ -133,13 +249,13 @@ export class VecCtrl {
     this.Vx = result.vx;
     this.Vy = result.vy;
     this.FhId = result.fh;
-    if (this.MovePath.Elements.length > 0) {
-      const last = this.MovePath.Elements[this.MovePath.Elements.length - 1];
-      this._lastAttr = last.attr;
-      const stance = last.moveAction;
+    if (this.MovePath.CurrentAttr >= 0) {
+      this._lastAttr = this.MovePath.CurrentAttr;
+      const current = this.MovePath.Elements[this.MovePath.CurrentElementIndex];
+      const stance = current?.moveAction ?? -1;
       if (stance >= 0) this.MoveAction = stance;
     }
-    return false;
+    return this.MovePath.IsComplete;
   }
 
   UpdateActive(dt: number, fhList: Foothold[]): void {
@@ -149,8 +265,8 @@ export class VecCtrl {
     this.EndUpdateActive();
   }
 
-  UpdatePassive(dt: number, elapsedMs: number): boolean {
-    return this.WorkUpdatePassive(dt, elapsedMs);
+  UpdatePassive(dt: number, elapsedMs: number, resolveFh?: (id: number) => Foothold | null): boolean {
+    return this.WorkUpdatePassive(dt, elapsedMs, resolveFh);
   }
 
   protected _calcWalk(dt: number, _fhList: Foothold[]): void {}

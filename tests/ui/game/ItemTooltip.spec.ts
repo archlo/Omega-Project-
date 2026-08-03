@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { Sprite, Texture } from 'pixi.js';
 import { ItemTooltip } from '../../../src/ui/game/ItemTooltip.js';
 import { BuiltInFont } from '../../../src/ui/BuiltInFont.js';
 import { TooltipAssets } from '../../../src/ui/game/TooltipAssets.js';
@@ -214,6 +215,69 @@ describe('ItemTooltip', () => {
           tip.Draw(1300000, 'Protected Sword', 0, 1, 100, 100, 1024, 768);
         } catch { /* known color format bug */ }
       }).not.toThrow();
+    });
+
+    // ── OG 1:1 layout positions (verified from IDA: SetToolTip_Equip) ──────
+
+    it('draws item name dot at (10, y+5) and name text at (18, y)', () => {
+      const tip = makeTooltip({ attr: equipAttr() });
+      tip.Draw(1300000, 'NameTest', 0, 1, 100, 100, 1024, 768);
+      // _root children: [0]=_g, [1]=_iconSprite, [2..]=texts. Text 0 = name.
+      const nameText = tip.root.children[2] as any;
+      expect(nameText.text).toBe('NameTest');
+      expect(nameText.x).toBe(18);
+      expect(nameText.y).toBe(10);
+    });
+
+    it('positions icon sprite at (IconX+2, yBlock+66) with 64x64 size', () => {
+      const icon = { Texture: Texture.EMPTY, Width: 32, Height: 32 } as any;
+      const tip = makeTooltip({ attr: equipAttr(), icon });
+      tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
+      // _iconSprite is child index 1; yBlock = (10+15+3)+5 = 33
+      const iconSprite = tip.root.children[1] as any;
+      expect(iconSprite.x).toBe(12);
+      expect(iconSprite.y).toBe(99);
+      expect(iconSprite.width).toBe(64);
+      expect(iconSprite.visible).toBe(true);
+    });
+
+    it('stacks requirement rows at fixed 12px OG offsets via reqIndex', () => {
+      // OG: DrawTextEquip_Req label at (94, iconTop+16+12n) for row n. reqIndex
+      // must advance per requirement slot even when a value is skipped, so a
+      // skipped STR (index 1) still pushes DEX to index 2.
+      const assets = makeAssets();
+      const tip = makeTooltip({ attr: equipAttr({ ReqLevel: 30, ReqDex: 50 }), assets });
+      tip.SetPlayer(50, 100, 80, 40, 60, 0);
+      tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
+      // DrawNumber is called for req values with x = ReqValueRight-20 = 124
+      const reqCalls = (assets.DrawNumber as any).mock.calls.filter((c: any[]) => c[2] === 124);
+      const levelRow = reqCalls.find((c: any[]) => c[0] === 30);
+      const dexRow = reqCalls.find((c: any[]) => c[0] === 50);
+      expect(levelRow[3]).toBe(49); // iconTop 33 + 16 + 0*12
+      expect(dexRow[3]).toBe(73);   // iconTop 33 + 16 + 2*12 (STR skipped)
+    });
+
+    it('draws durability number at x = 2*(3*digits+81), y = iconTop+96', () => {
+      const assets = makeAssets();
+      const tip = makeTooltip({ attr: equipAttr({ Durability: 100 }), assets });
+      tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
+      // durability DrawNumber: dur=100, digits=3 → x = 2*(9+81) = 180; y = 33+96 = 129
+      const durCall = (assets.DrawNumber as any).mock.calls.find((c: any[]) => c[0] === 100);
+      expect(durCall).toBeTruthy();
+      expect(durCall[2]).toBe(180);
+      expect(durCall[3]).toBe(129);
+    });
+
+    it('draws job strip at iconTop+125 (= jobY)', () => {
+      const assets = makeAssets();
+      assets.JobLabel.mockReturnValue({ NewSprite: () => new Sprite() });
+      const tip = makeTooltip({ attr: equipAttr({ ReqJob: 0x02 }), assets });
+      tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
+      const jobCalls = (assets.JobLabel as any).mock.calls;
+      expect(jobCalls.length).toBeGreaterThan(0);
+      // JobLabel sprites are blitted at y = jobY = 33 + 141 - 16 = 158
+      const blitted = tip.root.children.find((c: any) => c.x === 10 && c.y === 158);
+      expect(blitted).toBeTruthy();
     });
   });
 

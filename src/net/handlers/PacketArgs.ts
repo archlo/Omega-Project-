@@ -101,7 +101,17 @@ export interface OtherCharEnterArgs {
   chHair?: number; chHairColor?: number; chFace?: number;
   sex?: number;
 }
-export interface OtherCharMoveArgs { charId: number; x: number; y: number; stance?: Stance; facingLeft?: boolean; }
+export interface OtherCharMoveArgs {
+  charId: number; x: number; y: number; stance?: Stance; facingLeft?: boolean;
+  movePath?: import('../packet/MovePathDecoder.js').DecodedMovePath;
+}
+export interface UserPassiveMoveArgs {
+  charId: number;
+  movePath?: import('../packet/MovePathDecoder.js').DecodedMovePath;
+  /** CMovePath::m_aKeyPadState, one 4-bit state per keypad entry. */
+  keypad?: number[];
+  bounds?: { left: number; top: number; right: number; bottom: number };
+}
 
 export interface AttackTargetInfo { mobId: number; hitAction: number; damage: number[]; }
 

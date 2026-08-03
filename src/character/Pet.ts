@@ -5,6 +5,7 @@ import { ActionMan, type ActionFrame } from './ActionMan.js';
 import type { WzPackage } from '../wz/WzPackage.js';
 import type { DecodedMovePath } from '../net/packet/MovePathDecoder.js';
 import { RemoteMoveReplay } from './RemoteMoveReplay.js';
+import type { Foothold } from '../map/Foothold.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Move action mapping (OG: CPet::MoveAction2RawAction 0x6a0ff0)
@@ -1067,6 +1068,8 @@ export class Pet {
     this._replay.SetPath(path, this.Position);
     this.look.SetState('walk');
   }
+
+  SetFootholds(footholds: readonly Foothold[]): void { this._replay.SetFootholds(footholds); }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Snap near owner (fallback when no move path)

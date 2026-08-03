@@ -1,5 +1,6 @@
 import type { WzPackage } from '../wz/WzPackage.js';
-import type { WzProperty } from '../wz/WzProperty.js';
+import { WzProperty } from '../wz/WzProperty.js';
+import { WzImage } from '../wz/WzImage.js';
 
 /**
  * CItemInfo — typed TypeScript port of the OG CItemInfo singleton (196 methods).
@@ -32,6 +33,8 @@ export class ItemInfoService {
   constructor(
     private _characterWz: WzPackage | null,
     private _itemWz: WzPackage | null,
+    private _tamingMobWz: WzPackage | null = null,
+    private _morphWz: WzPackage | null = null,
   ) {}
 
   // ─── Item Info Resolution ────────────────────────────────────────────
@@ -190,6 +193,11 @@ export class ItemInfoService {
       incMHPr: N(info, 'incMHPr'),
       incMMPr: N(info, 'incMMPr'),
       attackSpeed: N(info, 'attackSpeed'),
+      dFs: N(info, 'dFs'),
+      nSwim: N(info, 'nSwim'),
+      niSpeed: N(info, 'niSpeed'),
+      niJump: N(info, 'niJump'),
+      tamingMob: N(info, 'tamingMob'),
       tuc: N(info, 'tuc'),
       price: N(info, 'price'),
       cash: N(info, 'cash') !== 0,
@@ -816,6 +824,82 @@ export class ItemInfoService {
     return typeof flag === 'number' ? flag : 0;
   }
 
+  /**
+   * OG: CUserLocal::SetShoeAttr. Returns the movement values supplied by the
+   * equipped shoes, mount template, or morph template. The physics consumer
+   * remains PlayerController; this service only owns WZ/model resolution.
+   */
+  GetMovementProfile(
+    shoeItemId: number,
+    vehicleItemId: number,
+    vehicleEquipIds: number[],
+    morphId: number,
+  ): MovementProfile {
+    if (morphId > 0) {
+      const morph = this._getTemplate(this._morphWz, morphId);
+      if (morph) {
+        const nSpeed = N(morph, 'nSpeed');
+        const nJump = N(morph, 'nJump');
+        return movementProfile(
+          nSpeed > 0 ? clamp(nSpeed, 70, 140) : 100,
+          nJump > 0 ? clamp(nJump, 80, 123) : 100,
+          N(morph, 'dFs'),
+          N(morph, 'nSwim'),
+          'morph',
+        );
+      }
+    }
+
+    if (vehicleItemId > 0) {
+      const vehicle = this.GetVehicleMovement(vehicleItemId, vehicleEquipIds);
+      if (vehicle) return vehicle;
+    }
+
+    const shoe = this.GetEquipItem(shoeItemId);
+    return movementProfile(100, 100, shoe?.dFs ?? 0, shoe?.nSwim ?? 0, 'shoe');
+  }
+
+  GetVehicleMovement(vehicleItemId: number, equipItemIds: number[] = []): MovementProfile | null {
+    const vehicle = this.GetEquipItem(vehicleItemId);
+    if (!vehicle) return null;
+    const templateId = vehicle.tamingMob || vehicleItemId;
+    const template = this._getTemplate(this._tamingMobWz, templateId);
+    if (!template) return null;
+
+    let speed = N(template, 'nSpeed');
+    let jump = N(template, 'nJump');
+    for (const itemId of equipItemIds) {
+      const equip = this.GetEquipItem(itemId);
+      if (!equip) continue;
+      speed += equip.niSpeed;
+      jump += equip.niJump;
+    }
+    return movementProfile(
+      clamp(speed, 70, 140),
+      clamp(jump, 80, 123),
+      N(template, 'dFs'),
+      N(template, 'nSwim'),
+      'vehicle',
+    );
+  }
+
+  private _getTemplate(wz: WzPackage | null, id: number): WzProperty | null {
+    if (!wz || id <= 0) return null;
+    const id7 = id.toString().padStart(7, '0');
+    const candidates = [
+      `${id7}.img/info`,
+      `${id7}.img`,
+      `TamingMob.img/${id}/info`,
+      `TamingMob.img/${id}`,
+    ];
+    for (const path of candidates) {
+      const node = wz.GetItem(path);
+      if (node instanceof WzProperty) return node;
+      if (node instanceof WzImage) return node.Root;
+    }
+    return null;
+  }
+
   // ─── Static Helpers ──────────────────────────────────────────────────
 
   /** Map item ID to Character.wz category folder. */
@@ -840,6 +924,38 @@ export interface EquipItemData {
   setItemID: number;
   durability: number;
   maxLevel: number;
+  dFs: number;
+  nSwim: number;
+  niSpeed: number;
+  niJump: number;
+  tamingMob: number;
+}
+
+export interface MovementProfile {
+  speed: number;
+  jump: number;
+  walkAcc: number;
+  walkDrag: number;
+  swimSpeedMultiplier: number;
+  source: 'shoe' | 'vehicle' | 'morph';
+}
+
+export function movementProfile(
+  speed: number,
+  jump: number,
+  dFs: number,
+  nSwim: number,
+  source: MovementProfile['source'],
+): MovementProfile {
+  const friction = dFs > 0 ? dFs : 1;
+  return {
+    speed,
+    jump,
+    walkAcc: friction,
+    walkDrag: friction,
+    swimSpeedMultiplier: nSwim > 0 ? nSwim / 100 : 1,
+    source,
+  };
 }
 
 export interface BundleItemData {
@@ -926,6 +1042,10 @@ function NF(p: WzProperty, key: string): number {
 function S(p: WzProperty, key: string): string {
   const v = p.Get(key);
   return typeof v === 'string' ? v : '';
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
 }
 
 function itemFolder(cat: number): string | null {

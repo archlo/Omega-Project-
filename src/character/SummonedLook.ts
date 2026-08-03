@@ -5,6 +5,9 @@ import { WzProperty } from '../wz/WzProperty.js';
 import type { WzPackage } from '../wz/WzPackage.js';
 import { WzImage } from '../wz/WzImage.js';
 import { WzSprite } from '../render/WzSprite.js';
+import type { DecodedMovePath } from '../net/packet/MovePathDecoder.js';
+import type { Foothold } from '../map/Foothold.js';
+import { RemoteMoveReplay } from './RemoteMoveReplay.js';
 
 export class SummonedLook {
   private _anims = new Map<string, { sprite: WzSprite; delayMs: number }[]>();
@@ -12,6 +15,7 @@ export class SummonedLook {
   private _frame = 0;
   private _frameTimer = 0;
   private _loaded = false;
+  private readonly _replay = new RemoteMoveReplay();
 
   readonly container = new Container();
   Position = { x: 0, y: 0 };
@@ -66,7 +70,15 @@ export class SummonedLook {
     this._frameTimer = 0;
   }
 
+  ReplayMove(path: DecodedMovePath): void {
+    this._replay.SetPath(path, this.Position);
+    this.SetAction('move');
+  }
+
+  SetFootholds(footholds: readonly Foothold[]): void { this._replay.SetFootholds(footholds); }
+
   Update(dt: number): void {
+    this._replay.Update(dt, this.Position);
     const frames = this._anims.get(this._curAction);
     if (!frames || frames.length === 0) return;
     let delayMs = frames[this._frame].delayMs;

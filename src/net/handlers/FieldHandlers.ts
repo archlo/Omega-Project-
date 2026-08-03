@@ -21,7 +21,7 @@ import {
 } from '../protocol/Enums.js';
 import {
   SetFieldArgs, StatChangedArgs, MobEnterArgs, MobMoveArgs, MobDamagedArgs,
-  NpcEnterArgs, OtherCharEnterArgs, OtherCharMoveArgs, UserAttackArgs, AttackTargetInfo,
+  NpcEnterArgs, OtherCharEnterArgs, OtherCharMoveArgs, UserPassiveMoveArgs, UserAttackArgs, AttackTargetInfo,
   DropEnterArgs, DropLeaveArgs, InventoryOpArg, UserChatArgs,
   ScriptMessageArgs, FuncKeyEntry, FootHoldInfoArgs, FootHoldStateEntry, TempStatEntry,
   UserEmotionArgs, UserEffectArgs, MobCtrlAckArgs, LootMessageArgs, QuestRecordArgs,
@@ -443,8 +443,9 @@ export class FieldHandlers {
   onDamageMeter: ((duration: number) => void) | null = null;
   // OG: CUserLocal::OnTimeBombAttack (0x9323f0) — decode5(skillId,nUnknown,nInvincible,nImpactDeg,nDamage)
   onTimeBombAttack: ((args: { skillId: number; nUnknown: number; nInvincible: number; nUserImpactDeg: number; nDamage: number }) => void) | null = null;
-  // OG: CUser::OnPassiveMove (0x8dea10) — decode charId, then CMovePath::OnMovePacket for driven chars
-  onUserPassiveMove: ((charId: number) => void) | null = null;
+  // OG: CUserLocal::OnPacket -> CUser::OnPassiveMove -> CMovePath::OnMovePacket(..., 1).
+  // The packet is local-only: it has no character-id prefix.
+  onUserPassiveMove: ((args: UserPassiveMoveArgs) => void) | null = null;
   // OG: CUserLocal::OnFollowCharacterFailed (0x910e92) — decode4(failedCharId) + decode4(reason)
   onFollowCharacterFailed: ((failedCharId: number, reason: number) => void) | null = null;
   // OG: CUserLocal::OnVengeanceSkillApply (0x909b10) — decode4(skillId), if 3120010 → DoActiveSkill_MeleeAttack
@@ -1018,10 +1019,29 @@ export class FieldHandlers {
       const nDamage = p.readInt();
       this.onTimeBombAttack?.({ skillId, nUnknown, nInvincible, nUserImpactDeg, nDamage });
     });
-    // OG: CUser::OnPassiveMove (0x8dea10) — decode charId, then CMovePath::OnMovePacket for driven chars
+    // OG: CUser::OnPassiveMove (0x8dea10) passes the packet directly to
+    // CMovePath::OnMovePacket(..., bPassive=1). The passive tail is:
+    // keypadCount(1), ceil(keypadCount / 2) packed nibbles, bounds(4 x short).
     router.register(OutHeader.UserPassiveMove, (p) => {
-      const charId = p.readInt();
-      this.onUserPassiveMove?.(charId);
+      try {
+        const movePath = DecodeMovePath(p);
+        const keypadCount = p.readByte();
+        const keypad: number[] = [];
+        for (let i = 0; i < keypadCount; i += 2) {
+          const packed = p.readByte();
+          keypad.push(packed & 0xF);
+          if (i + 1 < keypadCount) keypad.push((packed >>> 4) & 0xF);
+        }
+        const args: UserPassiveMoveArgs = {
+          charId: 0,
+          movePath,
+          keypad,
+          bounds: { left: p.readShort(), top: p.readShort(), right: p.readShort(), bottom: p.readShort() },
+        };
+        this.onUserPassiveMove?.(args);
+      } catch {
+        this.onUserPassiveMove?.({ charId: 0 });
+      }
     });
     // OG: CUserLocal::OnFollowCharacterFailed (0x910e92) — decode4(failedCharId) + decode4(reason)
     router.register(OutHeader.FollowCharacterFailed, (p) => {
@@ -1915,9 +1935,9 @@ export class FieldHandlers {
       const y = last?.y ?? path.originY;
       if (last) {
         const { stance, facingLeft } = MoveActionToStance(last.moveAction);
-        this.onUserMove?.({ charId, x, y, stance, facingLeft });
+        this.onUserMove?.({ charId, x, y, stance, facingLeft, movePath: path });
       } else {
-        this.onUserMove?.({ charId, x, y });
+        this.onUserMove?.({ charId, x, y, movePath: path });
       }
     } catch { /* skip */ }
   }

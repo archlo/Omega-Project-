@@ -407,6 +407,40 @@ describe('MobController', () => {
       const distUp = Math.abs(mobUp.Position.x - 50);
       expect(distDown).toBeGreaterThan(distUp);
     });
+
+    it('applies foothold force in the direction of travel', () => {
+      const normal = new Foothold(); normal.InitVectors();
+      normal.Id = 1; normal.X1 = 0; normal.Y1 = 200; normal.X2 = 1000; normal.Y2 = 200;
+      const conveyor = new Foothold(); conveyor.InitVectors();
+      conveyor.Id = 2; conveyor.X1 = 0; conveyor.Y1 = 200; conveyor.X2 = 1000; conveyor.Y2 = 200;
+      conveyor.Force = 2;
+
+      const info = new MobInfo();
+      info.FirstAttack = true;
+      const normalMob = makeMobLook({ x: 100, y: 200 });
+      const conveyorMob = makeMobLook({ x: 100, y: 200 });
+      new MobController(normalMob, makeField({ 1: normal }), info).Update(0.1, { x: 500, y: 200 });
+      new MobController(conveyorMob, makeField({ 2: conveyor }), info).Update(0.1, { x: 500, y: 200 });
+
+      expect(conveyorMob.Position.x).toBeGreaterThan(normalMob.Position.x);
+    });
+
+    it('keeps a mob at the same relative point on a moving foothold', () => {
+      const fh = new Foothold(); fh.InitVectors();
+      fh.Id = 1; fh.X1 = 0; fh.Y1 = 200; fh.X2 = 200; fh.Y2 = 200;
+      const mob = makeMobLook({ x: 100, y: 200 });
+      const info = new MobInfo();
+      info.FirstAttack = true;
+      const field = makeField({ 1: fh });
+      const ctl = new MobController(mob, field, info);
+
+      ctl.Update(0.01, { x: 500, y: 200 });
+      fh.SetPosition(10, 210, 210, 210);
+      ctl.Update(0.01, { x: 500, y: 200 });
+
+      expect(mob.Position.x).toBeCloseTo(110, 0);
+      expect(mob.Position.y).toBeCloseTo(210, 0);
+    });
   });
 
   describe('OnServerMove', () => {
@@ -432,6 +466,12 @@ describe('MobController', () => {
       expect(mob.Position.y).toBe(200);
       // Foothold from path is adopted for subsequent client-side stepping
       expect(ctl.IsAggressive).toBe(false);
+
+      ctl.Update(0.4, { x: 500, y: 200 });
+      expect(mob.Position.x).toBe(50);
+      ctl.Update(0.2, { x: 500, y: 200 });
+      ctl.Update(0.01, { x: 500, y: 200 });
+      expect(mob.Position.x).toBeGreaterThan(50);
     });
   });
 });

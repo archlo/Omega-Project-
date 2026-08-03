@@ -21,6 +21,9 @@ export class MapInfo {
   NeedQuest = 0;
   LevelLimit = 0;
   Version = 0;
+  // CAttrField physics multipliers used by CVecCtrl::CalcWalk/CalcFloat.
+  FieldWalk = 1;
+  FieldDrag = 1;
   OnFirstUserEnter = '';
   OnUserEnter = '';
   // OG: CField::GetFieldProp/FieldFactory's switch on this exact WZ key

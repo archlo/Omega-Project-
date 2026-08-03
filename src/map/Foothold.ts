@@ -7,6 +7,12 @@ export class Foothold {
   Y1 = 0;
   X2 = 0;
   Y2 = 0;
+  // CStaticFoothold keeps the original WZ endpoints separately from the
+  // mutable endpoints used by moving footholds.
+  RealX1 = 0;
+  RealY1 = 0;
+  RealX2 = 0;
+  RealY2 = 0;
   Prev = 0;
   Next = 0;
   CantThrough = false;
@@ -25,6 +31,23 @@ export class Foothold {
 
   /** Initialize computed fields after endpoints are set */
   InitVectors(): void {
+    this.RealX1 = this.X1;
+    this.RealY1 = this.Y1;
+    this.RealX2 = this.X2;
+    this.RealY2 = this.Y2;
+    this._recomputeVectors();
+  }
+
+  /** CStaticFoothold::SetPosition: updates live endpoints and cached geometry. */
+  SetPosition(x1: number, x2: number, y1: number, y2: number): void {
+    this.X1 = x1;
+    this.X2 = x2;
+    this.Y1 = y1;
+    this.Y2 = y2;
+    this._recomputeVectors();
+  }
+
+  private _recomputeVectors(): void {
     const dx = this.X2 - this.X1;
     const dy = this.Y2 - this.Y1;
     this._len = Math.sqrt(dx * dx + dy * dy);
@@ -98,32 +121,26 @@ export class Foothold {
    *  @param posCur - current position along foothold
    *  @param len - remaining distance to travel
    *  Returns the foothold after traveling len distance in direction d */
-  GetForwardLink(d: number, posCur: number, len: number): Foothold | null {
-    let remaining = len;
-    let pos = posCur;
+  GetForwardLink(
+    d: number,
+    posCur: number,
+    len: number,
+    resolve?: (id: number) => Foothold | null,
+  ): Foothold | null {
+    if (d === 0 || len <= 0) return this;
+    let current: Foothold = this;
+    let distance = len - (d < 0 ? posCur : current.Length - posCur);
 
-    if (d < 0) {
-      pos = posCur;
-    } else if (d <= 0) {
-      return this;
-    } else {
-      pos = this.GetLength() - posCur;
-    }
-
-    remaining -= pos;
-    if (remaining <= 0) return this;
-
-    let current: Foothold | null = this;
-    while (current) {
-      const next = d >= 0 ? current.Next : current.Prev;
+    while (distance > 0) {
+      const nextId = d < 0 ? current.Prev : current.Next;
+      if (!nextId || !resolve) return null;
+      const next = resolve(nextId);
       if (!next) return null;
-      // Find the next foothold in the field
-      // This is a simplified version - full implementation would need FieldScene reference
-      remaining -= current.GetLength();
-      if (remaining <= 0) return current;
-      current = null; // Would need field reference to continue
+      const nextDistance = Math.min(next.Length, Math.max(0, distance));
+      distance -= nextDistance;
+      current = next;
     }
-    return this;
+    return current;
   }
 
   /** OG: CStaticFoothold::GetLength — returns foothold length */

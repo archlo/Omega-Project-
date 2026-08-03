@@ -12,6 +12,7 @@ import { MapInfo } from './MapInfo.js';
 import { Foothold } from './Foothold.js';
 import { Portal } from './Portal.js';
 import { LadderRope } from './LadderRope.js';
+import { FootholdIndex } from './FootholdIndex.js';
 import type { GameCamera } from './GameCamera.js';
 import { ObjInfo } from './ObjInfo.js';
 import { MiniMapData } from './MiniMapData.js';
@@ -22,6 +23,32 @@ import type { OtherCharLook } from '../character/OtherCharLook.js';
 import type { FootHoldStateEntry } from '../net/handlers/PacketArgs.js';
 
 const LayerCount = 8;
+
+export interface PhysicsConstants {
+  walkSpeed: number;
+  walkForce: number;
+  walkDrag: number;
+  jumpSpeed: number;
+  gravityAcc: number;
+  fallSpeed: number;
+  flyForce: number;
+  flySpeed: number;
+  swimForce: number;
+  swimSpeed: number;
+  floatDrag1: number;
+  floatDrag2: number;
+  floatCoefficient: number;
+  slipForce: number;
+  slipSpeed: number;
+}
+
+export const DEFAULT_PHYSICS: PhysicsConstants = {
+  walkSpeed: 125, walkForce: 140000, walkDrag: 80000,
+  jumpSpeed: 555, gravityAcc: 2000, fallSpeed: 670,
+  flyForce: 120000, flySpeed: 200, swimForce: 120000, swimSpeed: 140,
+  floatDrag1: 100000, floatDrag2: 10000, floatCoefficient: 0.01,
+  slipForce: 5000, slipSpeed: 100,
+};
 
 interface ObjDraw {
   info: ObjInfo;
@@ -53,7 +80,9 @@ export class FieldScene {
 
   private _mapScene: MapScene | null = null;
   private _info = new MapInfo();
+  private _physics: PhysicsConstants = { ...DEFAULT_PHYSICS };
   private _footholds: Record<number, Foothold> = {};
+  private _footholdIndex = new FootholdIndex();
   private _portals: Record<number, Portal> = {};
   private _ladderRopes: LadderRope[] = [];
   // OG: CField::m_aSeat — TODO_AUDIT.md Seventy-sixth pass's chair/sitting
@@ -110,6 +139,7 @@ export class FieldScene {
 
   get Bounds() { return this._bounds; }
   get Info(): MapInfo { return this._info; }
+  get Physics(): PhysicsConstants { return this._physics; }
   get Footholds(): Record<number, Foothold> { return this._footholds; }
   get Portals(): Record<number, Portal> { return this._portals; }
   get LadderRopes(): LadderRope[] { return this._ladderRopes; }
@@ -138,6 +168,8 @@ export class FieldScene {
       return;
     }
     const root = item.Root;
+
+    this._loadPhysics();
 
     this._mapScene = new MapScene(this._mapWz, this._loader);
     this._mapScene.ParallaxEnabled = true;
@@ -189,6 +221,8 @@ export class FieldScene {
     mi.NeedQuest = this._readInt(info, 'needQuest');
     mi.LevelLimit = this._readInt(info, 'levelLimit') || this._readInt(info, 'lvLimit');
     mi.Version = this._readInt(info, 'version');
+    mi.FieldWalk = this._readNumber(info, 'walk') || 1;
+    mi.FieldDrag = this._readNumber(info, 'drag') || 1;
     mi.OnFirstUserEnter = (info.Get('onFirstUserEnter') as string) ?? '';
     mi.OnUserEnter = (info.Get('onUserEnter') as string) ?? '';
     mi.FieldType = this._readInt(info, 'fieldType');
@@ -339,6 +373,7 @@ export class FieldScene {
     const fhRoot = root.Get('foothold');
     if (!(fhRoot instanceof WzProperty)) return;
     this._footholds = {};
+    this._footholdIndex.clear();
     for (const [layerKey, layerNode] of Object.entries(fhRoot.Items)) {
       if (!(layerNode instanceof WzProperty)) continue;
       const layerIdx = parseInt(layerKey) || 0;
@@ -367,7 +402,8 @@ export class FieldScene {
           fh.CantThrough = this._readInt(entryNode, 'cantThrough') !== 0;
           fh.ForbidFallDown = this._readInt(entryNode, 'forbidFallDown') !== 0;
           fh.InitVectors(); // Compute m_uvx, m_uvy, m_len from endpoints
-          this._footholds[id] = fh;
+           this._footholds[id] = fh;
+           this._footholdIndex.insert(fh);
         }
       }
     }
@@ -809,7 +845,10 @@ export class FieldScene {
         if (dx !== 0 || dy !== 0) {
           for (const sn of e.footholdSns) {
             const fh = this._footholds[sn];
-            if (fh) { fh.X1 += dx; fh.Y1 += dy; fh.X2 += dx; fh.Y2 += dy; }
+            if (fh) {
+              fh.SetPosition(fh.X1 + dx, fh.X2 + dx, fh.Y1 + dy, fh.Y2 + dy);
+              this._footholdIndex.update(fh);
+            }
           }
         }
         prev.x = e.moving.curX;
@@ -833,8 +872,10 @@ export class FieldScene {
     // footholds only (m_x1 < m_x2), interpolated gy >= y, min gy wins.
     let best: Foothold | null = null;
     let bestY = Infinity;
-    for (const fh of Object.values(this._footholds)) {
-      if (fh.X1 >= fh.X2 || fh.State === 0) continue;
+    const belowBottom = this._bounds?.bottom ?? y + 100000;
+    const candidates = this._footholdIndex.search(x, y, x, belowBottom);
+    for (const fh of candidates.length > 0 ? candidates : Object.values(this._footholds)) {
+      if (fh.X1 >= fh.X2) continue;
       const gy = fh.YAt(x);
       if (gy === null) continue;
       if (gy >= y && gy < bestY) { bestY = gy; best = fh; }
@@ -849,8 +890,9 @@ export class FieldScene {
     if (yTop > yBottom) return null;
     let best: Foothold | null = null;
     let bestY = yTop;
-    for (const fh of Object.values(this._footholds)) {
-      if (fh.X1 >= fh.X2 || fh.State === 0) continue;
+    const candidates = this._footholdIndex.search(x, yTop, x, yBottom);
+    for (const fh of candidates.length > 0 ? candidates : Object.values(this._footholds)) {
+      if (fh.X1 >= fh.X2) continue;
       const gy = fh.YAt(x);
       if (gy === null) continue;
       if (gy > yTop && gy <= yBottom && gy > bestY) { bestY = gy; best = fh; }
@@ -863,8 +905,9 @@ export class FieldScene {
     // spans (m_x1 + 8 > m_x2), distance to foothold midpoint wins.
     let best: Foothold | null = null;
     let bestDist = Infinity;
-    for (const fh of Object.values(this._footholds)) {
-      if (fh.State === 0 || fh.X1 + 8 > fh.X2) continue;
+    const candidates = this._footholdIndex.search(-Infinity, -Infinity, Infinity, Infinity);
+    for (const fh of candidates.length > 0 ? candidates : Object.values(this._footholds)) {
+      if (fh.X1 + 8 > fh.X2) continue;
       const cx = Math.trunc((fh.X1 + fh.X2) / 2);
       const cy = Math.trunc((fh.Y1 + fh.Y2) / 2);
       const dx = cx - x, dy = cy - y;
@@ -883,8 +926,8 @@ export class FieldScene {
     const minY = Math.min(ym1, ym2);
     const maxY = Math.max(ym1, ym2);
     const result: Foothold[] = [];
-    for (const fh of Object.values(this._footholds)) {
-      if (fh.State === 0) continue;
+    const candidates = this._footholdIndex.search(xm1, ym1, xm2, ym2);
+    for (const fh of candidates.length > 0 ? candidates : Object.values(this._footholds)) {
       // Bounding-box rejection
       const fhMinX = Math.min(fh.X1, fh.X2);
       const fhMaxX = Math.max(fh.X1, fh.X2);
@@ -896,13 +939,49 @@ export class FieldScene {
     return result;
   }
 
-  GetLadderOrRope(x: number, y: number): LadderRope | null {
-    // OG: CField::GetLadderOrRope — checks X distance and Y range
-    // The OG uses a wider range for easier grabbing
+  GetLadderOrRope(x1: number, y1: number, x2 = x1, y2 = y1): LadderRope | null {
+    // OG: CWvsPhysicalSpace2D::GetLadderOrRope — the caller supplies a
+    // rectangle; the space query expands only X by 10 and tests Y overlap.
+    const minX = Math.min(x1, x2) - 10;
+    const maxX = Math.max(x1, x2) + 10;
+    const minY = Math.min(y1, y2);
+    const maxY = Math.max(y1, y2);
     for (const lr of this._ladderRopes) {
-      if (Math.abs(x - lr.X) <= 15 && y >= lr.Top - 20 && y <= lr.Bottom + 20) return lr;
+      if (lr.X >= minX && lr.X <= maxX && lr.Bottom >= minY && lr.Top <= maxY) return lr;
     }
     return null;
+  }
+
+  private _loadPhysics(): void {
+    const item = this._mapWz?.GetItem('Physics.img');
+    const root = item instanceof WzImage ? item.Root : null;
+    if (!root) return;
+    const read = (key: keyof PhysicsConstants): void => {
+      const value = root.Get(key);
+      if (typeof value === 'number' && Number.isFinite(value)) this._physics[key] = value;
+    };
+    for (const key of Object.keys(this._physics) as (keyof PhysicsConstants)[]) read(key);
+  }
+
+  /** CWvsPhysicalSpace2D::CanWalkThrough: validates a linked walkable chain. */
+  CanWalkThrough(from: Foothold | null, to: Foothold | null): boolean {
+    if (!from || !to || from.Uvx <= 0 || to.Uvx <= 0) return false;
+    if (from === to) return true;
+    if (from.X2 > to.X1) {
+      if (to.X2 > from.X1) return false;
+      let current: Foothold | null = from;
+      while (current && !current.IsVertical()) {
+        if (current === to) return true;
+        current = this._footholds[current.Prev] ?? null;
+      }
+    } else {
+      let current: Foothold | null = from;
+      while (current && current.Uvx > 0) {
+        if (current === to) return true;
+        current = this._footholds[current.Next] ?? null;
+      }
+    }
+    return false;
   }
 
   LayerOfFoothold(id: number, fallback = 7): number {
@@ -920,7 +999,8 @@ export class FieldScene {
     const movingRight = toX > fromX;
     const lo = Math.min(fromX, toX), hi = Math.max(fromX, toX);
     let best: number | null = null;
-    for (const fh of Object.values(this._footholds)) {
+    const candidates = this._footholdIndex.search(lo, yTop, hi, yBottom);
+    for (const fh of candidates.length > 0 ? candidates : Object.values(this._footholds)) {
       if (fh.X1 >= fh.X2 || fh.ZMass !== zmass) continue;
       const wx = fh.X1;
       if (wx < lo || wx > hi) continue;
@@ -981,6 +1061,17 @@ export class FieldScene {
     if (typeof v === 'number') return v;
     if (typeof v === 'bigint') return Number(v);
     if (typeof v === 'string') { const n = parseInt(v); return isNaN(n) ? 0 : n; }
+    return 0;
+  }
+
+  private _readNumber(p: WzProperty, key: string): number {
+    const v = p.Get(key);
+    if (typeof v === 'number') return v;
+    if (typeof v === 'bigint') return Number(v);
+    if (typeof v === 'string') {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    }
     return 0;
   }
 

@@ -4,6 +4,7 @@ import { WzTextureLoader } from '../render/WzTextureLoader.js';
 import { TamingMobLook } from './TamingMobLook.js';
 import type { DecodedMovePath } from '../net/packet/MovePathDecoder.js';
 import { RemoteMoveReplay } from './RemoteMoveReplay.js';
+import type { Foothold } from '../map/Foothold.js';
 
 export class DragonLook {
   readonly container = new Container();
@@ -41,6 +42,8 @@ export class DragonLook {
     this._replay.SetPath(path, this.Position);
     this._sprite?.SetAction('move');
   }
+
+  SetFootholds(footholds: readonly Foothold[]): void { this._replay.SetFootholds(footholds); }
 
   Update(dt: number): void {
     if (this._replay.Update(dt, this.Position)) this._sprite?.SetAction('move');

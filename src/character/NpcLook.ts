@@ -5,6 +5,9 @@ import { WzCanvas } from '../wz/WzCanvas.js';
 import { WzProperty } from '../wz/WzProperty.js';
 import type { WzPackage } from '../wz/WzPackage.js';
 import { WzImage } from '../wz/WzImage.js';
+import type { DecodedMovePath } from '../net/packet/MovePathDecoder.js';
+import type { Foothold } from '../map/Foothold.js';
+import { RemoteMoveReplay } from './RemoteMoveReplay.js';
 
 // Generic idle-chat greetings for NPCs with no WZ speak entries.
 // Sourced from OG StringPool (IDs 0x1A2F–0x1A36).
@@ -28,6 +31,7 @@ export class NpcLook {
   private _loaded = false;
   get Loaded(): boolean { return this._loaded; }
   private _speak: string[] = [];
+  private readonly _replay = new RemoteMoveReplay();
 
   readonly container = new Container();
   Position = { x: 0, y: 0 };
@@ -175,6 +179,8 @@ export class NpcLook {
     // Guard: OG checks m_bEnabled before processing
     if (!this._bEnabled) return;
 
+    if (this._replay.Update(dt, this.Position)) this.SetState('move');
+
     // OG: both timers decrement by 30 per tick (fixed 30ms tick).
     // dt is in seconds — convert to ms for timer math.
     const dtMs = dt * 1000;
@@ -234,6 +240,13 @@ export class NpcLook {
       this._rebuildDisplay();
     }
   }
+
+  ReplayMove(path: DecodedMovePath): void {
+    this._replay.SetPath(path, this.Position);
+    this.SetState('move');
+  }
+
+  SetFootholds(footholds: readonly Foothold[]): void { this._replay.SetFootholds(footholds); }
 
   SetState(state: string): void {
     if (this._anims.has(state) && state !== this._state) {

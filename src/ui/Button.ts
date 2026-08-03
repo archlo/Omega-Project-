@@ -117,6 +117,9 @@ export class Button {
 
   handleMouseButton(x: number, y: number, down: boolean): boolean {
     if (!this.enabled) return false;
+    // An invisible button must not intercept clicks (OG: only the current-mode
+    // button exists; TS panels sometimes keep a hidden sibling at the same spot).
+    if (!this.container.visible) return false;
     const b = this.bounds;
     const inside = x >= b.x && x < b.x + b.width && y >= b.y && y < b.y + b.height;
     this.setHover(inside);

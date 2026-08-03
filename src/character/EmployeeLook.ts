@@ -1,8 +1,12 @@
 import { Container, Graphics, Text } from 'pixi.js';
+import type { DecodedMovePath } from '../net/packet/MovePathDecoder.js';
+import type { Foothold } from '../map/Foothold.js';
+import { RemoteMoveReplay } from './RemoteMoveReplay.js';
 
 export class EmployeeLook {
   readonly container = new Container();
   Position = { x: 0, y: 0 };
+  private readonly _replay = new RemoteMoveReplay();
 
   constructor(
     public readonly ObjId: number,
@@ -12,7 +16,12 @@ export class EmployeeLook {
     this._build();
   }
 
-  Update(_dt: number): void {
+  ReplayMove(path: DecodedMovePath): void { this._replay.SetPath(path, this.Position); }
+
+  SetFootholds(footholds: readonly Foothold[]): void { this._replay.SetFootholds(footholds); }
+
+  Update(dt: number): void {
+    this._replay.Update(dt, this.Position);
   }
 
   private _build(): void {

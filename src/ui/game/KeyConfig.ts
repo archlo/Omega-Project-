@@ -8,7 +8,9 @@ import { WzProperty } from '../../wz/WzProperty.js';
 import { WzCanvas } from '../../wz/WzCanvas.js';
 import { WzSprite } from '../../render/WzSprite.js';
 import { FuncKeyMapped, FuncKeyType, FuncKeyMappedNone } from '../../domain/FuncKeyMapped.js';
-import { CellSize, PaletteCount, ScRShift, ScLShift, ScRCtrl, ScLCtrl, ScRAlt, ScLAlt, getBindableScancodes, tryGetCell, paletteCell, hitTestKey, hitTestPalette, paletteBinding, paletteSlotOf, initLayout } from './KeyConfigLayout.js';
+import { CellSize, PaletteCount, ScRShift, ScLShift, ScRCtrl, ScLCtrl, ScRAlt, ScLAlt, 
+getBindableScancodes, tryGetCell, keyLabelOffset, paletteCell, hitTestKey, hitTestPalette, paletteBinding, paletteSlotOf, initLayout } 
+from './KeyConfigLayout.js';
 import type { DragTarget } from '../DragController.js';
 
 export enum KeyAction {
@@ -78,7 +80,6 @@ export class KeyConfig extends GamePanel implements DragTarget {
   private readonly _bg3: Sprite | null;
   private readonly _iconCache = new Map<number, WzSprite | null>();
   private readonly _keyCells = new Map<number, WzSprite | null>();
-  private readonly _keyLabels = new Map<number, WzSprite | null>();
   private readonly _font: BuiltInFont | null;
 
   private readonly _btClose: Button | null;
@@ -434,10 +435,14 @@ export class KeyConfig extends GamePanel implements DragTarget {
     for (const sc of getBindableScancodes()) {
       const cell = tryGetCell(sc);
       if (!cell) continue;
+      // WZ key/<sc> are the engraved key-cap labels; the caps themselves are
+      // baked into the backgrnd image. OG DrawKeys @0x7da030 stamps the label
+      // at a fixed nudge from the cell origin.
       const wz = this._loadKeyCell(sc);
       if (wz) {
+        const off = keyLabelOffset(sc);
         const s = wz.ToPixi();
-        s.position.set(cell.x, cell.y);
+        s.position.set(cell.x + off.dx, cell.y + off.dy);
         this._content.addChild(s);
       } else {
         this._gfx.rect(cell.x, cell.y, CellSize, CellSize).fill({ color: 0x2a2d3a });
@@ -447,12 +452,17 @@ export class KeyConfig extends GamePanel implements DragTarget {
       if (sc === this._selectedKeySc) {
         this._gfx.rect(cell.x - 1, cell.y - 1, CellSize + 2, CellSize + 2).stroke({ color: 0xffd700, width: 2 });
       }
-      // OG: Draw key name label (e.g., "A", "1", "F1") from WZ
-      const label = this._loadKeyLabel(sc);
-      if (label) {
-        const ls = label.ToPixi();
-        ls.position.set(cell.x, cell.y);
-        this._content.addChild(ls);
+      // OG DrawKeys: the left modifier label is also stamped onto the right
+      // modifier cap (no WZ sprites exist for RShift/RCtrl/RAlt).
+      const rightSc = sc === ScLShift ? ScRShift : sc === ScLCtrl ? ScRCtrl : sc === ScLAlt ? ScRAlt : -1;
+      if (rightSc >= 0) {
+        const rc = tryGetCell(rightSc);
+        if (rc && wz) {
+          const off = keyLabelOffset(rightSc);
+          const rs = wz.ToPixi();
+          rs.position.set(rc.x + off.dx, rc.y + off.dy);
+          this._content.addChild(rs);
+        }
       }
     }
     for (let slot = 0; slot < PaletteCount; slot++) {
@@ -536,16 +546,6 @@ export class KeyConfig extends GamePanel implements DragTarget {
     const node = keyRoot?.Get(String(sc));
     const sprite = node instanceof WzCanvas ? this._loader.Load(node) : null;
     this._keyCells.set(sc, sprite);
-    return sprite;
-  }
-
-  // OG: Key name labels — loaded from KeyConfig/<scancode> (WZ canvases showing "A", "1", etc.)
-  private _loadKeyLabel(sc: number): WzSprite | null {
-    if (this._keyLabels.has(sc)) return this._keyLabels.get(sc)!;
-    let v = this._kc2?.Get(String(sc));
-    if (!(v instanceof WzCanvas)) v = this._kc?.Get(String(sc));
-    const sprite = v instanceof WzCanvas ? this._loader.Load(v) : null;
-    this._keyLabels.set(sc, sprite);
     return sprite;
   }
 

@@ -16,10 +16,10 @@ const LineY = [28, 66, 99, 132, 165, 198];
 
 const Rows: { sc: number; adv: number }[][] = [
   [{ sc: -1, adv: 68 }, { sc: 59, adv: 34 }, { sc: 60, adv: 34 }, { sc: 61, adv: 34 }, { sc: 62, adv: 42 }, { sc: 63, adv: 34 }, { sc: 64, adv: 34 }, { sc: 65, adv: 34 }, { sc: 66, adv: 42 }, { sc: 67, adv: 34 }, { sc: 68, adv: 34 }, { sc: 87, adv: 34 }, { sc: 88, adv: 42 }, { sc: -1, adv: 34 }, { sc: -1, adv: 34 }, { sc: -1, adv: 0 }],
-  [{ sc: 41, adv: 34 }, { sc: 2, adv: 34 }, { sc: 3, adv: 34 }, { sc: 4, adv: 34 }, { sc: 5, adv: 34 }, { sc: 6, adv: 34 }, { sc: 7, adv: 34 }, { sc: 8, adv: 34 }, { sc: 9, adv: 34 }, { sc: 10, adv: 34 }, { sc: 11, adv: 34 }, { sc: 12, adv: 34 }, { sc: 13, adv: 34 }, { sc: 14, adv: 58 }, { sc: 82, adv: 34 }, { sc: 71, adv: 34 }, { sc: 73, adv: 0 }],
+  [{ sc: 41, adv: 34 }, { sc: 2, adv: 34 }, { sc: 3, adv: 34 }, { sc: 4, adv: 34 }, { sc: 5, adv: 34 }, { sc: 6, adv: 34 }, { sc: 7, adv: 34 }, { sc: 8, adv: 34 }, { sc: 9, adv: 34 }, { sc: 10, adv: 34 }, { sc: 11, adv: 34 }, { sc: 12, adv: 34 }, { sc: 13, adv: 34 }, { sc: -1, adv: 58 }, { sc: 82, adv: 34 }, { sc: 71, adv: 34 }, { sc: 73, adv: 0 }],
   [{ sc: -1, adv: 50 }, { sc: 16, adv: 34 }, { sc: 17, adv: 34 }, { sc: 18, adv: 34 }, { sc: 19, adv: 34 }, { sc: 20, adv: 34 }, { sc: 21, adv: 34 }, { sc: 22, adv: 34 }, { sc: 23, adv: 34 }, { sc: 24, adv: 34 }, { sc: 25, adv: 34 }, { sc: 26, adv: 34 }, { sc: 27, adv: 34 }, { sc: 43, adv: 42 }, { sc: 83, adv: 34 }, { sc: 79, adv: 34 }, { sc: 81, adv: 0 }],
-  [{ sc: 58, adv: 67 }, { sc: 30, adv: 34 }, { sc: 31, adv: 34 }, { sc: 32, adv: 34 }, { sc: 33, adv: 34 }, { sc: 34, adv: 34 }, { sc: 35, adv: 34 }, { sc: 36, adv: 34 }, { sc: 37, adv: 34 }, { sc: 38, adv: 34 }, { sc: 39, adv: 34 }, { sc: 40, adv: 34 }, { sc: 28, adv: 0 }],
-  [{ sc: 42, adv: 84 }, { sc: 44, adv: 34 }, { sc: 45, adv: 34 }, { sc: 46, adv: 34 }, { sc: 47, adv: 34 }, { sc: 48, adv: 34 }, { sc: 49, adv: 34 }, { sc: 50, adv: 34 }, { sc: 51, adv: 34 }, { sc: 52, adv: 34 }, { sc: 53, adv: 34 }, { sc: 54, adv: 0 }],
+  [{ sc: -1, adv: 67 }, { sc: 30, adv: 34 }, { sc: 31, adv: 34 }, { sc: 32, adv: 34 }, { sc: 33, adv: 34 }, { sc: 34, adv: 34 }, { sc: 35, adv: 34 }, { sc: 36, adv: 34 }, { sc: 37, adv: 34 }, { sc: 38, adv: 34 }, { sc: 39, adv: 34 }, { sc: 40, adv: 34 }, { sc: -1, adv: 0 }],
+  [{ sc: 42, adv: 84 }, { sc: 44, adv: 34 }, { sc: 45, adv: 34 }, { sc: 46, adv: 34 }, { sc: 47, adv: 34 }, { sc: 48, adv: 34 }, { sc: 49, adv: 34 }, { sc: 50, adv: 34 }, { sc: 51, adv: 34 }, { sc: 52, adv: 34 }, { sc: -1, adv: 34 }, { sc: 54, adv: 0 }],
   [{ sc: 29, adv: 49 }, { sc: -1, adv: 50 }, { sc: 56, adv: 53 }, { sc: 57, adv: 170 }, { sc: 90, adv: 56 }, { sc: -1, adv: 56 }, { sc: 89, adv: 0 }],
 ];
 
@@ -67,6 +67,15 @@ export function getBindableScancodes(): number[] {
 
 export function tryGetCell(scancode: number): { x: number; y: number } | undefined {
   return Cells.get(scancode);
+}
+
+// OG CUIKeyConfig::DrawKeys @0x7da030: label canvases are stamped onto the
+// key-cap at a fixed nudge from the cell origin — +4/+4 normally, LShift
+// +2/+4, Space +0/+4. Right modifiers reuse the left modifier's label.
+export function keyLabelOffset(scancode: number): { dx: number; dy: number } {
+  if (scancode === ScLShift || scancode === ScRShift) return { dx: 2, dy: 4 };
+  if (scancode === 57) return { dx: 0, dy: 4 };
+  return { dx: 4, dy: 4 };
 }
 
 export function paletteCell(slot: number): { x: number; y: number } {

@@ -6,6 +6,7 @@ import { WzProperty } from '../wz/WzProperty.js';
 import { GameCamera } from '../map/GameCamera.js';
 import { FieldScene } from '../map/FieldScene.js';
 import { CharLook } from '../character/CharLook.js';
+import * as Avatar from '../character/Avatar.js';
 import { NextLevelExpTable } from '../character/NextLevelExpTable.js';
 import { NpcLook } from '../character/NpcLook.js';
 import { OtherCharLook } from '../character/OtherCharLook.js';
@@ -1080,7 +1081,7 @@ export class GameStage extends Stage {
   private _initMenu(uiWz: WzPackage): void {
     const font = new BuiltInFont();
     this._itemIcons = new ItemIconLoader(this._loader, this._characterWz, this._itemWz);
-    this._itemInfo = new ItemInfoService(this._characterWz, this._itemWz);
+    this._itemInfo = new ItemInfoService(this._characterWz, this._itemWz, this._tamingMobWz, this._morphWz);
     console.log(`[GameStage] ItemIconLoader created: charWz=${!!this._characterWz}, itemWz=${!!this._itemWz}`);
     this._itemOptionLoader = new ItemOptionLoader(this._itemWz);
     this._shopMarker = new ShopMarker(this._itemIcons);
@@ -2148,6 +2149,9 @@ export class GameStage extends Stage {
     this._skill.onSkillUp = (_skillId) => { /* OG: UI refresh only; packet sent via onSendSkillUp */ };
     this._skill.onSkillUse = (skillId, slv) => {
       this.game.session.send(GameSender.UseSkill(skillId, slv, Date.now()));
+      // CUserLocal::ApplyMechanicMode/IsAbleToClimbLadderOrRope treats the
+      // mechanic repeat skill as a distinct ladder restriction.
+      this._physics?.SetRepeatSkill(skillId === 35121005 ? skillId : 0);
       // OG's real per-skill action selection (SKILLENTRY::IsActionAppointed/
       // GetRandomAppointedAction in SendSkillUseRequest, decompile 0x93e930)
       // picks between several alternate "appointed actions" depending on
@@ -2316,6 +2320,11 @@ export class GameStage extends Stage {
         };
       this._physics.Update(input, dt);
       this._player?.UpdateFromPhysics(dt, this._physics.Stance, this._physics.FacingLeft);
+      // CAvatar::GetOneTimeAction is the ladder gate's action source. CharLook
+      // owns the animation timer; mirror its active/inactive state into the
+      // physics controller after advancing the avatar.
+      this._physics.SetOneTimeAction(this._player?.IsPlayingOneTimeAction ? 0 : -1);
+      this._syncLadderEligibility();
       if (this._player) this._player.Position = this._physics.Position;
       this._camera.Target = this._physics.Position;
 
@@ -2470,7 +2479,7 @@ export class GameStage extends Stage {
       for (const [mobId, ctl] of this._mobCtl) {
         const mob = this._mobs.get(mobId);
         const playerPos = this._physics?.Position ?? { x: 0, y: 0 };
-        ctl.Update(dt, playerPos);
+        if (!mob?.IsServerMoveActive) ctl.Update(dt, playerPos);
         const flush = ctl.TryFlush();
         if (flush) {
           this.game.session.send(GameSender.MobMove(mobId, flush.sn, 0, ctl.FacingLeft, flush.blob));
@@ -3166,9 +3175,15 @@ export class GameStage extends Stage {
     fh.onUserMove = (args) => {
       const other = this._otherChars.get(args.charId);
       if (!other) return;
-      other.Position = { x: args.x, y: args.y };
+      if (args.movePath) other.SetMovePath(args.movePath);
+      else other.Position = { x: args.x, y: args.y };
       if (args.facingLeft !== undefined) other.SetFacing(args.facingLeft);
       if (args.stance !== undefined) other.SetStance(args.stance);
+    };
+    fh.onUserPassiveMove = (args) => {
+      const other = this._otherChars.get(args.charId);
+      if (!other || !args.movePath) return;
+      other.SetMovePath(args.movePath);
     };
     fh.onUserAttack = (args) => this._onUserAttack(args);
     fh.onOpenSkillGuide = () => {
@@ -3706,6 +3721,9 @@ export class GameStage extends Stage {
       // OG: flag=1 means riding active, flag=0 means not riding
       if (charId === this._localCharId) {
         this._isRidingTamingMob = flag !== 0;
+        this._physics?.SetLadderRestrictions({ vehicleActive: this._isRidingTamingMob });
+        this._syncLadderEligibility();
+        this._syncStatDetailInputs();
       }
       // OG: CUIUserInfo::SetTamingMobInfo — feed taming mob data to char info panel
       if (this._charInfo) {
@@ -6403,8 +6421,30 @@ export class GameStage extends Stage {
     inp.hyperBodyHpMul = sec.getHyperBodyHpMultiplier();
     inp.hyperBodyMpMul = sec.getHyperBodyMpMultiplier();
     this._stats?.SetDerivedStats(watk, Math.max(pddBonus, mddBonus), inp.speed, inp.jump);
-    // Wire equip speed/jump into actual player movement (Pct offset from base 100)
-    this._physics?.SetStats(inp.speed - 100, inp.jump - 100);
+    // OG CUserLocal::SetShoeAttr: mount/morph templates override the normal
+    // stat speed and jump, while shoe dFs controls acceleration/friction.
+    const look = this._player?.AvatarLook;
+    const shoeItemId = look?.hairEquip.get(7) ?? 0;
+    const vehicleItemId = this._isRidingTamingMob
+      ? (look?.hairEquip.get(20) ?? look?.hairEquip.get(19) ?? 0)
+      : 0;
+    const vehicleEquipIds = this._isRidingTamingMob
+      ? [look?.hairEquip.get(19) ?? 0, look?.hairEquip.get(20) ?? 0].filter((id) => id > 0)
+      : [];
+    const morphId = this.game.fieldHandlers.secondaryStat.buff.morph;
+    const movement = this._itemInfo?.GetMovementProfile(
+      shoeItemId, vehicleItemId, vehicleEquipIds, morphId,
+    );
+    const movementSpeed = movement?.source === 'shoe' ? inp.speed : (movement?.speed ?? inp.speed);
+    const movementJump = movement?.source === 'shoe' ? inp.jump : (movement?.jump ?? inp.jump);
+    this._physics?.SetStats(movementSpeed - 100, movementJump - 100);
+    this._physics?.SetShoePhysics({
+      walkAcc: movement?.walkAcc ?? 1,
+      walkDrag: movement?.walkDrag ?? 1,
+      // nSwim is retained in the item movement model. PlayerController's
+      // existing public shoe API has no swim multiplier input.
+    });
+    this._physics?.SetLadderRestrictions({ vehicleActive: this._isRidingTamingMob });
   }
 
   /** Update buff visual effects based on current SecondaryStat state. */
@@ -6417,6 +6457,19 @@ export class GameStage extends Stage {
     this._buffVisual.SetHyperBody(sec.isHyperBodyActive(), this._player);
     this._buffVisual.SetShadowPartner(sec.isShadowPartnerActive());
     this._buffVisual.SetBooster(sec.isBoosterActive());
+  }
+
+  /** Mirror the local avatar/stat sources consumed by CVecCtrlUser's ladder gate. */
+  private _syncLadderEligibility(): void {
+    if (!this._physics) return;
+    const buff = this.game.fieldHandlers.secondaryStat.buff;
+    const avatar = Avatar.getAvatarState();
+    this._physics.SetLadderRestrictions({
+      ...(avatar ? { oneTimeAction: Avatar.GetOneTimeAction(), mechanicMode: avatar.mechanicMode } : {}),
+      userFlying: buff.flying !== 0,
+      morphTemplateId: avatar?.morphTemplateId || buff.morph,
+      ridingVehicle: avatar?.ridingVehicle || buff.rideVehicle || (this._isRidingTamingMob ? 1 : 0),
+    });
   }
 
   private _onStatChanged(args: StatChangedArgs): void {
@@ -6569,16 +6622,19 @@ export class GameStage extends Stage {
     }
     this._comboDisplay.setCombo(this._comboCounter);
     this._syncStatDetailInputs();
+    this._syncLadderEligibility();
     // Update buff visuals based on current SecondaryStat state
     this._updateBuffVisuals();
   }
 
   private _onTemporaryStatReset(_mask: number): void {
+    this._physics?.SetRepeatSkill(0);
     this._buffList.clearBuffs();
     this._fearEffect.hide();
     this._comboCounter = 0;
     this._comboDisplay.hide();
     this._syncStatDetailInputs();
+    this._syncLadderEligibility();
     // Clear all buff visuals
     this._updateBuffVisuals();
   }

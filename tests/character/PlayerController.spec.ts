@@ -352,6 +352,122 @@ describe('PlayerController', () => {
     });
   });
 
+  describe('ladder eligibility', () => {
+    it('mirrors the v95 avatar and repeat-skill restrictions', () => {
+      const pc = new PlayerController(makeField());
+      expect(pc.CanClimbLadderOrRope()).toBe(true);
+
+      pc.SetOneTimeAction(100);
+      expect(pc.CanClimbLadderOrRope()).toBe(false);
+      pc.SetOneTimeAction(207);
+      expect(pc.CanClimbLadderOrRope()).toBe(true);
+      pc.SetPreparingSkill(1);
+      expect(pc.CanClimbLadderOrRope()).toBe(false);
+      pc.SetPreparingSkill(0);
+
+      pc.SetMechanicMode(1);
+      expect(pc.CanClimbLadderOrRope()).toBe(false);
+      pc.SetMechanicMode(0);
+      pc.SetMorphed(2210000);
+      expect(pc.CanClimbLadderOrRope()).toBe(false);
+      pc.SetMorphed(0);
+      pc.SetRidingVehicle(1932016);
+      expect(pc.CanClimbLadderOrRope()).toBe(false);
+      pc.SetRidingVehicle(0);
+      pc.SetRepeatSkill(35121005);
+      expect(pc.CanClimbLadderOrRope()).toBe(false);
+    });
+
+    it('rejects user flying independently of field flying', () => {
+      const pc = new PlayerController(makeField());
+      pc.SetUserFlying(true);
+      expect(pc.CanClimbLadderOrRope()).toBe(false);
+      pc.SetUserFlying(false);
+      expect(pc.CanClimbLadderOrRope()).toBe(true);
+    });
+  });
+
+  describe('foothold collision parity', () => {
+    it('ignores disabled crossing footholds', () => {
+      const field = makeField();
+      const disabled = new Foothold();
+      disabled.Id = 2; disabled.X1 = -100; disabled.Y1 = 100; disabled.X2 = 100; disabled.Y2 = 100;
+      disabled.State = 0;
+      disabled.InitVectors();
+      const enabled = new Foothold();
+      enabled.Id = 3; enabled.X1 = -100; enabled.Y1 = 200; enabled.X2 = 100; enabled.Y2 = 200;
+      enabled.InitVectors();
+      field._footholds = { 2: disabled, 3: enabled };
+
+      const pc = new PlayerController(field);
+      pc.Spawn({ x: 0, y: 0 });
+      pc.ApplyKnockback(0, 100, 0);
+      const collision = pc.CollisionDetectFloat(0, 250);
+
+      expect(collision.fh?.Id).toBe(3);
+      expect(collision.landed).toBe(true);
+      expect(collision.y).toBe(200);
+    });
+
+    it('uses the reserved foothold when the sweep does not intersect it', () => {
+      const field = makeField();
+      const reserved = new Foothold();
+      reserved.Id = 2; reserved.X1 = 0; reserved.Y1 = 100; reserved.X2 = 100; reserved.Y2 = 100;
+      reserved.InitVectors();
+      field._footholds = { 2: reserved };
+      field.GetCrossCandidate = () => [reserved];
+
+      const pc = new PlayerController(field);
+      pc.Spawn({ x: 50, y: 0 });
+      pc.ApplyKnockback(0, 100, 0);
+      pc.SetReservedLandingFoothold(2);
+      const collision = pc.CollisionDetectFloat(50, 50);
+
+      expect(collision.fh?.Id).toBe(2);
+      expect(collision.landed).toBe(true);
+      expect(collision.x).toBe(50);
+      expect(collision.y).toBe(100);
+    });
+
+    it('projects velocity onto a blocking wall tangent', () => {
+      const field = makeField();
+      const wall = new Foothold();
+      wall.Id = 2; wall.X1 = 50; wall.Y1 = 150; wall.X2 = 50; wall.Y2 = 0;
+      wall.InitVectors();
+      field._footholds = { 2: wall };
+
+      const pc = new PlayerController(field);
+      pc.Spawn({ x: 0, y: 50 });
+      pc.ApplyKnockback(100, 100, 0);
+      const collision = pc.CollisionDetectFloat(100, 150);
+
+      expect(collision.blocked).toBe(true);
+      expect(Math.abs(collision.tangentVx ?? 0)).toBe(0);
+      expect(Math.abs(collision.tangentVy ?? 0)).toBe(100);
+    });
+
+    it('keeps a left-facing linked edge grounded instead of falling', () => {
+      const field = makeField();
+      const current = new Foothold();
+      current.Id = 2; current.X1 = 0; current.Y1 = 100; current.X2 = 100; current.Y2 = 100;
+      current.Next = 3;
+      current.InitVectors();
+      const reverse = new Foothold();
+      reverse.Id = 3; reverse.X1 = 100; reverse.Y1 = 100; reverse.X2 = 0; reverse.Y2 = 100;
+      reverse.Prev = 2;
+      reverse.InitVectors();
+      field._footholds = { 2: current, 3: reverse };
+
+      const pc = new PlayerController(field);
+      pc.Spawn({ x: 50, y: 100 });
+      pc.Update({ Left: false, Right: true, Up: false, Down: false, JumpPressed: false }, 1);
+
+      expect(pc.Grounded).toBe(true);
+      expect(pc.CurrentFoothold).toBe(2);
+      expect(pc.Position.x).toBe(100);
+    });
+  });
+
   describe('StopWalking', () => {
     it('zeroes horizontal velocity when grounded', () => {
       const pc = new PlayerController(makeField());

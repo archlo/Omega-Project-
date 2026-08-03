@@ -6,6 +6,8 @@ import { CharLook } from './CharLook.js';
 import { Stance } from './Stance.js';
 import type { TempStatBuff } from '../net/handlers/PacketArgs.js';
 import { SkillEffectOverlay } from './SkillEffectOverlay.js';
+import { MovePath } from '../map/VecCtrl.js';
+import type { DecodedMovePath } from '../net/packet/MovePathDecoder.js';
 import * as Avatar from './Avatar.js';
 
 /** OG CUser::DrawGauge — 52×10 HP gauge bar rendered above the character.
@@ -33,6 +35,9 @@ export class OtherCharLook {
   private _charWz: WzPackage | null = null;
   private _itemWz: WzPackage | null = null;
   private _baseWz: WzPackage | null = null;
+  private _movePath = new MovePath();
+  private _movePathElapsed = 0;
+  private _movePathActive = false;
   private _hitFlash = 0;
   private _adBoardText = '';
   private _adBoardTimer = 0;
@@ -275,6 +280,16 @@ export class OtherCharLook {
     this._stance = stance;
   }
 
+  SetMovePath(path: DecodedMovePath): void {
+    this._movePath.OriginX = path.originX;
+    this._movePath.OriginY = path.originY;
+    this._movePath.OriginVx = path.originVx;
+    this._movePath.OriginVy = path.originVy;
+    this._movePath.Elements = path.elements;
+    this._movePathElapsed = 0;
+    this._movePathActive = path.elements.length > 0;
+  }
+
   /** World-space hit test against the fixed 30x78 body box (matches placeholder/avatar footprint). */
   HitTest(worldX: number, worldY: number): boolean {
     const dx = worldX - this.Position.x;
@@ -283,6 +298,16 @@ export class OtherCharLook {
   }
 
   Update(dt: number): void {
+    if (this._movePathActive) {
+      this._movePathElapsed += dt * 1000;
+      const next = this._movePath.CalcPassivePos(
+        this.Position.x, this.Position.y, 0, 0, 0, this._movePathElapsed,
+      );
+      this.Position = { x: next.x, y: next.y };
+      if (this._movePathElapsed >= this._movePath.Elements.reduce((sum, e) => sum + Math.max(e.elapse, 1), 0)) {
+        this._movePathActive = false;
+      }
+    }
     if (this._hitFlash > 0) this._hitFlash = Math.max(0, this._hitFlash - dt);
     if (this._adBoardTimer > 0) {
       this._adBoardTimer = Math.max(0, this._adBoardTimer - dt);

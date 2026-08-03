@@ -519,22 +519,35 @@ export class ActionMan {
       return cached;
     }
 
-    if (!pImg) return null;
+    if (!pImg) {
+      // OG: GetCharacterImgEntry resolves the img itself via get_equip_data_path (0x5A6060).
+      if (!this._characterWz) return null;
+      const path = this._getEquipDataPath(nUOLKey);
+      if (path) {
+        const img = this._characterWz.GetItem(path);
+        if (img instanceof WzImage) pImg = img.Root;
+      }
+      if (!pImg) return null;
+    }
 
     const infoNode = pImg.Get('info') instanceof WzProperty ? pImg.Get('info') as WzProperty : null;
+
+    // OG: weapon-specific info fields (afterimage/walk/stand/attack/attackSpeed)
+    // are only read when GetWeaponType(nUOLKey) != 0.
+    const isWeapon = this._getWeaponType(nUOLKey) !== 0;
 
     const entry: CharacterImgEntry = {
       pImg,
       sISlot: this._readStr(infoNode, 'islot'),
       sVSlot: this._readStr(infoNode, 'vslot'),
-      sWeaponAfterimage: this._readStr(infoNode, 'afterimage'),
+      sWeaponAfterimage: isWeapon ? this._readStr(infoNode, 'afterImage') : '',
       sSfx: this._readStr(infoNode, 'sfx'),
       bWeekly: this._readInt(infoNode, 'weekly', 0) !== 0,
       nWeapon: this._getWeaponType(nUOLKey),
-      nWalk: this._readInt(infoNode, 'walk', 0),
-      nStand: this._readInt(infoNode, 'stand', 0),
-      nAttack: this._readInt(infoNode, 'attack', 0),
-      nAttackSpeed: this._readInt(infoNode, 'speed', 0),
+      nWalk: isWeapon ? this._readInt(infoNode, 'walk', 0) : 0,
+      nStand: isWeapon ? this._readInt(infoNode, 'stand', 0) : 0,
+      nAttack: isWeapon ? this._readInt(infoNode, 'attack', 0) : 0,
+      nAttackSpeed: isWeapon ? this._readInt(infoNode, 'attackSpeed', 0) : 0,
       tLastAccessed: Date.now(),
     };
 
@@ -1608,6 +1621,38 @@ export class ActionMan {
     // Pet templates use: walk1(0), stand1(1), alert(2), sit(3), fly(4),
     // ride1(5), ride2(6), ride3(7), hang(8)
     return PetActionNames[action] ?? `action${action}`;
+  }
+
+  /**
+   * Character.nx image path for an equip/body id.
+   * OG: get_equip_data_path (0x5A6060) — StringPool IDs 0x93E..0x18FA.
+   */
+  private _getEquipDataPath(itemId: number): string | null {
+    const cat = Math.floor(itemId / 10000);
+    const id8 = itemId.toString().padStart(8, '0');
+    switch (true) {
+      case cat === 0 || cat === 1: return `${id8}.img`; // body template (Character.nx root)
+      case cat === 100: return `Cap/${id8}.img`;
+      case cat >= 101 && cat <= 103: return `Accessory/${id8}.img`;
+      case cat === 104: return `Coat/${id8}.img`;
+      case cat === 105: return `Longcoat/${id8}.img`;
+      case cat === 106: return `Pants/${id8}.img`;
+      case cat === 107: return `Shoes/${id8}.img`;
+      case cat === 108: return `Glove/${id8}.img`;
+      case cat === 109 || cat === 119: return `Shield/${id8}.img`;
+      case cat === 110: return `Cape/${id8}.img`;
+      case cat === 111: return `Ring/${id8}.img`;
+      case cat >= 112 && cat <= 115: return `Accessory/${id8}.img`;
+      case cat >= 116 && cat <= 118: return null;
+      case cat >= 130 && cat <= 160: return `Weapon/${id8}.img`;
+      case cat >= 161 && cat <= 165: return `Mechanic/${id8}.img`;
+      case cat >= 166 && cat <= 179: return `Weapon/${id8}.img`;
+      case cat >= 180 && cat <= 183: return `PetEquip/${id8}.img`;
+      case cat >= 190 && cat <= 193: return `TamingMob/${id8}.img`;
+      case cat >= 194 && cat <= 197: return `Dragon/${id8}.img`;
+      case cat === 198: return `TamingMob/${id8}.img`;
+      default: return null;
+    }
   }
 
   private _getWeaponType(itemId: number): number {

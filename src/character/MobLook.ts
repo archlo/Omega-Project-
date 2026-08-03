@@ -187,6 +187,10 @@ export class MobLook {
   _movePathElements: { x: number; y: number; elapse?: number; moveAction?: number; foothold?: number }[] = [];
   private _movePathIndex = 0;
   private _movePathTimer = 0;
+
+  get IsServerMoveActive(): boolean {
+    return this._movePathElements.length > 0;
+  }
   private _lastPoisonDamage = 0x7FFFFFFF;
   private _lastVenomDamage = 0x7FFFFFFF;
   private _lastAmbushDamage = 0x7FFFFFFF;

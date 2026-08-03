@@ -1,6 +1,6 @@
 import { EncodeMovePath, type MoveElement } from '../net/packet/MovePathEncoder.js';
 import type { FieldScene } from '../map/FieldScene.js';
-import { Foothold, isBlockedArea } from '../map/Foothold.js';
+import { Foothold, isBlockedArea, segmentsIntersect } from '../map/Foothold.js';
 import type { MobLook } from './MobLook.js';
 import { MobActionType } from './MobActionType.js';
 import type { MobInfo } from './MobInfo.js';
@@ -49,6 +49,9 @@ export class MobController {
   private _selectedAttack = 0;
   private _velocity = { x: 0, y: 0 };
   private _currentFh = 0;
+  private _lastFhX1 = 0;
+  private _lastFhY1 = 0;
+  private _lastFhId = 0;
   private _flyTarget = { x: 0, y: 0 };
   private _flyTargetTimer = 0;
   private _bodyAttackCooldown = 0;
@@ -58,6 +61,7 @@ export class MobController {
   private _lastSyncVel = { x: 0, y: 0 };
   private _flushTimer = 0;
   private _mobCtrlSn = 0;
+  private _serverPathTimer = 0;
 
   private _getFh(id: number): Foothold | null {
     return this._field.Footholds[id] ?? null;
@@ -67,18 +71,7 @@ export class MobController {
   private _fhRightEdge(fh: Foothold): number { return Math.max(fh.X1, fh.X2); }
 
   private _getFootholdBelow(x: number, y: number): Foothold | null {
-    let best: Foothold | null = null;
-    let bestY = -Infinity;
-    for (const fh of Object.values(this._field.Footholds)) {
-      if (x >= this._fhLeftEdge(fh) && x <= this._fhRightEdge(fh)) {
-        const fhY = fh.YAt(x);
-        if (fhY !== null && fhY >= y && (best === null || fhY < bestY)) {
-          best = fh;
-          bestY = fhY;
-        }
-      }
-    }
-    return best;
+    return this._field.GetFootholdBelow(x, y);
   }
 
   private _getBounds(): { Left: number; Top: number; Right: number; Bottom: number; Width: number; Height: number } {
@@ -95,7 +88,9 @@ export class MobController {
     this._info  = info;
 
     const below = this._getFootholdBelow(this._mob.Position.x, this._mob.Position.y - 2);
-    this._currentFh = below?.Id ?? 0;
+    const belowY = below?.YAt(this._mob.Position.x);
+    this._currentFh = below && belowY !== null && belowY !== undefined
+      && Math.abs(belowY - this._mob.Position.y) <= 4 ? below.Id : 0;
 
     if (this._info.FirstAttack) this._aggroTimer = Infinity;
 
@@ -136,11 +131,17 @@ export class MobController {
 
   private _firstUpdate = true;
   Update(dt: number, playerPos: { x: number; y: number }): void {
-    if (this._firstUpdate) {
-      this._firstUpdate = false;
-      console.log(`[MobCtrl.Update] mobId=${this._mob.MobId} IsStay=${this._info.IsStay} MoveAbility=${this._info.MoveAbility} pos=${this._mob.Position.x},${this._mob.Position.y} fh=${this._currentFh}`);
-    }
+    if (this._firstUpdate) this._firstUpdate = false;
     if (this._info.IsStay) return;
+
+    if (this._serverPathTimer > 0) {
+      this._serverPathTimer = Math.max(0, this._serverPathTimer - dt);
+      if (this._serverPathTimer > 0) return;
+      this._state = State.Walking;
+      this._facingLeft = false;
+      this._stateTimer = MobController.WalkBurstMin;
+      this._velocity = { x: this._walkSpeed, y: 0 };
+    }
 
     if (this._aggroTimer > 0 && this._aggroTimer !== Infinity) {
       this._aggroTimer = Math.max(0, this._aggroTimer - dt);
@@ -266,6 +267,10 @@ export class MobController {
     this._state = State.Idle;
     this._stateTimer = 0;
     this._velocity = { x: 0, y: 0 };
+    const pathSeconds = path.elements.reduce((sum, el) => sum + Math.max(1, el.elapse) / 1000, 0);
+    this._serverPathTimer = Math.max(0.6, pathSeconds + 0.05);
+    this._pending.length = 0;
+    this._flushTimer = 0;
 
     // Update facing from server data
     this._facingLeft = facingLeft;
@@ -330,6 +335,7 @@ export class MobController {
     // OG: slope-aware speed calculation
     const fh = this._currentFh !== 0 ? this._getFh(this._currentFh) : null;
     let effectiveSpeed = this._walkSpeed;
+    let forceMultiplier = 1;
     if (fh && !fh.IsWall) {
       // OG: sin1 = abs(foothold.uvy), slopeFactor depends on direction
       // uvy >= 0 means downhill (Y increases), uvy < 0 means uphill (Y decreases)
@@ -339,9 +345,25 @@ export class MobController {
       //     if uvy < 0 (uphill), factor = 1 - sin² (slower)
       const slopeFactor = fh.Uvy >= 0 ? (1 + slopeSquared) : (1 - slopeSquared);
       effectiveSpeed *= Math.max(0.5, slopeFactor); // Clamp to prevent negative/zero speed
+
+      // CAttrFoothold::force is a conveyor/ice multiplier. A force aligned with
+      // input accelerates and raises the cap; opposing force does the reverse.
+      if (fh.Force !== 0) {
+        const force = Math.abs(fh.Force);
+        forceMultiplier = dir * fh.Force > 0 ? 2 * force : 0.2 / force;
+        effectiveSpeed *= forceMultiplier;
+      }
     }
 
-    this._velocity = { x: dir * effectiveSpeed, y: 0 };
+    const oldVx = this._velocity.x;
+    const drag = fh && fh.Drag > 0 ? fh.Drag : 1;
+    const acceleration = this._walkSpeed * 8 * drag * forceMultiplier;
+    const targetVx = dir * effectiveSpeed;
+    const maxDelta = acceleration * dt;
+    const vx = Math.abs(targetVx - oldVx) <= maxDelta
+      ? targetVx
+      : oldVx + Math.sign(targetVx - oldVx) * maxDelta;
+    this._velocity = { x: vx, y: 0 };
     const prevX = this._mob.Position.x;
     const prevY = this._mob.Position.y;
     let nextX = prevX + this._velocity.x * dt;
@@ -360,7 +382,10 @@ export class MobController {
         if (prevFh && !prevFh.IsWall) {
           // OG CollisionDetectWalk: check if linked foothold faces same direction
           // prevFh.Uvx <= 0 means the linked foothold faces opposite direction
-          if (prevFh.Uvx <= 0) {
+          const canWalk = typeof (this._field as any).CanWalkThrough === 'function'
+            ? this._field.CanWalkThrough(fh, prevFh)
+            : prevFh.Uvx > 0;
+          if (!canWalk) {
             // Linked foothold faces opposite direction — stop at edge
             nextX = leftEdge + MobController.EdgeMargin;
             this._velocity = { x: 0, y: 0 };
@@ -387,7 +412,10 @@ export class MobController {
         if (nextFh && !nextFh.IsWall) {
           // OG CollisionDetectWalk: check if linked foothold faces same direction
           // nextFh.Uvx <= 0 means the linked foothold faces opposite direction
-          if (nextFh.Uvx <= 0) {
+          const canWalk = typeof (this._field as any).CanWalkThrough === 'function'
+            ? this._field.CanWalkThrough(fh, nextFh)
+            : nextFh.Uvx > 0;
+          if (!canWalk) {
             // Linked foothold faces opposite direction — stop at edge
             nextX = rightEdge - MobController.EdgeMargin;
             this._velocity = { x: 0, y: 0 };
@@ -413,14 +441,13 @@ export class MobController {
       // OG: Apply slope to Y position
       this._mob.Position = { x: nextX, y: newY };
     } else {
-      const below = this._getFootholdBelow(nextX, this._mob.Position.y);
-      if (below) {
-        const gy = below.YAt(nextX);
-        if (gy !== null && gy >= this._mob.Position.y) {
-          this._currentFh = below.Id;
-          this._mob.Position = { x: nextX, y: gy };
-          return;
-        }
+      const fallY = this._mob.Position.y + this._velocity.y * dt;
+      const landing = this._findLandingFoothold(prevX, prevY, nextX, fallY);
+      if (landing) {
+        this._currentFh = landing.fh.Id;
+        this._mob.Position = { x: landing.x, y: landing.y };
+        this._velocity.y = 0;
+        return;
       }
       this._velocity.y += MobController._fallGravity * dt;
       const maxFall = MobController._maxMobFall;
@@ -470,6 +497,14 @@ export class MobController {
   private _seatOnFoothold(): void {
     if (this._info.IsFly || this._currentFh === 0) return;
     const fh = this._getFh(this._currentFh);
+    if (fh && this._lastFhId === fh.Id) {
+      const oldDx = this._lastFhX2 - this._lastFhX1;
+      const oldT = oldDx !== 0 ? (this._mob.Position.x - this._lastFhX1) / oldDx : 0;
+      const t = Math.max(0, Math.min(1, oldT));
+      const newX = fh.X1 + (fh.X2 - fh.X1) * t;
+      const newY = fh.Y1 + (fh.Y2 - fh.Y1) * t;
+      this._mob.Position = { x: newX, y: newY };
+    }
     const y = fh?.YAt(this._mob.Position.x);
     if (y !== null && y !== undefined) {
       if (y <= this._mob.Position.y + 4) {
@@ -477,6 +512,38 @@ export class MobController {
         this._velocity.y = 0;
       }
     }
+    if (fh) {
+      this._lastFhX1 = fh.X1;
+      this._lastFhY1 = fh.Y1;
+      this._lastFhX2 = fh.X2;
+      this._lastFhY2 = fh.Y2;
+      this._lastFhId = fh.Id;
+    }
+  }
+
+  private _lastFhX2 = 0;
+  private _lastFhY2 = 0;
+
+  private _findLandingFoothold(x1: number, y1: number, x2: number, y2: number): { fh: Foothold; x: number; y: number } | null {
+    if (y2 < y1) return null;
+    let landing: { fh: Foothold; x: number; y: number } | null = null;
+    let bestT = Infinity;
+    for (const fh of Object.values(this._field.Footholds)) {
+      if (fh.State === 0 || fh.IsWall) continue;
+      if (!segmentsIntersect(x1, y1, x2, y2, fh.X1, fh.Y1, fh.X2, fh.Y2)) continue;
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const ex = fh.X2 - fh.X1;
+      const ey = fh.Y2 - fh.Y1;
+      const denominator = dx * ey - dy * ex;
+      if (denominator === 0) continue;
+      const t = ((fh.X1 - x1) * ey - (fh.Y1 - y1) * ex) / denominator;
+      if (t >= 0 && t <= 1 && t < bestT) {
+        bestT = t;
+        landing = { fh, x: x1 + dx * t, y: y1 + dy * t };
+      }
+    }
+    return landing;
   }
 
   private _pickFlyTarget(): void {

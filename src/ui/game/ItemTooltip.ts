@@ -172,10 +172,12 @@ export class ItemTooltip {
     const descLines = !desc ? [] : this._wrapText(desc, w - 14);
 
     // OG: Layout calculation from SetToolTip_Equip
-    const yName = 6;
+    // DrawTextItemName draws the dot canvas at (10, y+5) and name text at (18, y)
+    const yName = 10;
     const yDot1 = yName + lh + 3;
     const yBlock = yDot1 + 5;
-    const yBlockBottom = yBlock + JobStripDY + 13;
+    const jobY = yBlock + JobStripDY - 16; // DrawItemReqJob blits at y+141, icon top = y+16
+    const yBlockBottom = jobY + 13;
     const yDot2 = yBlockBottom + 6;
     const yInfo = yDot2 + 6;
     const yDot3 = yInfo + info.length * (lh - 2) + 6;
@@ -220,9 +222,10 @@ export class ItemTooltip {
     this._root.x = gx;
     this._root.y = gy;
 
-    // OG: Item name
+    // OG: Item name — DrawTextItemName: dot canvas at (10, y+5), text at (18, y)
     const nameColor = ItemTooltip._gradeColor(grade);
-    this._txt(0, 4, yName, name, nameColor, 11);
+    this._txt(0, 18, yName, name, nameColor, 11);
+    this._dot(10, yName + 5);
 
     let ti = 1;
 
@@ -244,18 +247,19 @@ export class ItemTooltip {
     // OG: Dot line below name
     for (let d = 4; d < w - 4; d += 6) this._dot(d, yName + lh + 4);
 
-    // OG: Item icon (68x68)
+    // OG: Item icon (68x68) — DrawItemIcon: 68x68 rect fill 0xA0FFFFFF at (10, y), then icon at (12, y+66)
     const icon = this._icons.LoadIcon(itemId);
+    // OG: DrawItemIcon backdrop — 68x68 rect fill 0xA0FFFFFF (semi-transparent white)
+    this._g.rect(IconX, yBlock, IconSize, IconSize).fill({ color: 0xFFFFFF, alpha: 0xa0 / 255 });
     if (icon?.Texture) {
       this._iconSprite.texture = icon.Texture;
-      this._iconSprite.x = IconX;
-      this._iconSprite.y = yBlock;
-      this._iconSprite.width = IconSize;
-      this._iconSprite.height = IconSize;
+      this._iconSprite.x = IconX + 2;
+      this._iconSprite.y = yBlock + 66;
+      this._iconSprite.width = IconSize - 4;
+      this._iconSprite.height = IconSize - 4;
       this._iconSprite.visible = true;
     } else {
       this._iconSprite.visible = false;
-      this._g.rect(IconX, yBlock, IconSize, IconSize).fill({ color: 0x1A2A3A });
     }
 
     // OG: Requirement rows (Level/STR/DEX/INT/LUK/POP)
@@ -267,9 +271,12 @@ export class ItemTooltip {
       ['LUK:', attr?.ReqLuk ?? 0, this._pLuk >= (attr?.ReqLuk ?? 0)],
       ['POP:', attr?.ReqFame ?? 0, false],
     ];
+    let reqIndex = 0;
     for (const [label, val, met] of reqs) {
+      // OG: DrawTextEquip_Req — label at (94, y+32+12n), icon top = y+16 → iconTop+16+12n
+      const rowY = yBlock + ReqRowBaseDY - 16 + reqIndex * ReqRowStep;
+      reqIndex++;
       if (val <= 0) continue;
-      const rowY = yBlock + (ti - 1) * ReqRowStep;
 
       // OG: Can/Cannot label sprite
       const labelSprite = this._assets.Req(label.replace(':', '').toLowerCase(), met);
@@ -289,11 +296,10 @@ export class ItemTooltip {
     }
 
     // OG: Inner outline before job strip
-    this._g.rect(2, yBlockBottom - 8, w - 4, 1).fill({ color: InnerOutlineC, alpha: InnerOutlineA });
+    this._g.rect(2, jobY - 8, w - 4, 1).fill({ color: InnerOutlineC, alpha: InnerOutlineA });
 
-    // OG: Job requirement strip
+    // OG: Job requirement strip — DrawItemReqJob blits at y+141, icon top = y+16 → iconTop+125
     if (attr?.ReqJob) {
-      const jobY = yBlock + JobStripDY;
       const jobNames = ['beginner', 'warrior', 'magician', 'bowman', 'thief', 'pirate'];
       const jobXPositions = [10, 52, 92, 132, 171, 197];
       for (let i = 0; i < 6; i++) {
@@ -307,14 +313,14 @@ export class ItemTooltip {
       ti++;
     }
 
-    // OG: Growth item rendering (if applicable)
+    // OG: Growth item rendering — GrowthItem[0] at p_m_RefCount+72 (= iconTop+72), GrowthItem[1] at +84
     if (attr && this._isGrowthItem(itemId)) {
-      this._drawGrowthItem(yBlock + JobStripDY + 20, attr);
+      this._drawGrowthItem(yBlock + 72, attr);
     }
 
-    // OG: Durability bar (if applicable)
+    // OG: Durability bar — at p_m_RefCount+96 (= iconTop+96)
     if (attr && attr.Durability !== undefined && attr.Durability > 0) {
-      this._drawDurabilityBar(yBlock + JobStripDY + 40, attr);
+      this._drawDurabilityBar(yBlock + 96, attr);
     }
 
     // OG: Info lines (stat bonuses)
@@ -642,8 +648,9 @@ export class ItemTooltip {
       }
     }
 
-    // Durability number
-    this._assets.DrawNumber(dur, !isLow, 161, y, this._root, 1);
+    // OG: Durability number — Copy at x = 2*(3*digits+81), y = iconTop+96
+    const durStr = `${dur}`;
+    this._assets.DrawNumber(dur, !isLow, 2 * (3 * durStr.length + 81), y, this._root, 1);
 
     // Durability suffix
     const suffix = this._assets.Get(isLow ? 'Cannot/max' : 'Can/max');
@@ -1109,8 +1116,8 @@ export class ItemTooltip {
       for (const text of limitTexts) {
         if (text) {
           this._txt(ti, 10, limitY, text, ToolTip.getFontColor(11), 9);
-          ti++;
-        }
+      ti++;
+    }
         limitY += 14;
       }
     }

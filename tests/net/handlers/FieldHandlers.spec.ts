@@ -419,6 +419,34 @@ describe('FieldHandlers', () => {
     expect(args[0].y).toBe(250);
   });
 
+  it('UserPassiveMove decodes the local passive path and packed keypad/bounds tail', () => {
+    const args: Args[] = [];
+    handlers.onUserPassiveMove = (a) => args.push(a as any);
+    const p = OutPacket.Raw();
+    // CMovePath::Decode origin: x, y, vx, vy are four signed shorts.
+    p.writeShort(-120); p.writeShort(340); p.writeShort(-7); p.writeShort(8);
+    p.writeByte(1); // element count
+    p.writeByte(0); // Normal
+    p.writeShort(-100); p.writeShort(350); p.writeShort(2); p.writeShort(3); p.writeShort(-4);
+    p.writeShort(11); p.writeShort(12); // xOffset, yOffset
+    p.writeByte(0); p.writeShort(0); // moveAction, elapse
+    p.writeByte(5); // keypad entry count
+    p.writeByte(0x21); // entries 1, 2
+    p.writeByte(0x43); // entries 3, 4
+    p.writeByte(0x05); // entry 5
+    p.writeShort(-300); p.writeShort(-200); p.writeShort(500); p.writeShort(600);
+
+    dispatchPayload(router, OutHeader.UserPassiveMove, p.toArray());
+    expect(args).toHaveLength(1);
+    expect(args[0].charId).toBe(0);
+    expect(args[0].movePath.originX).toBe(-120);
+    expect(args[0].movePath.originY).toBe(340);
+    expect(args[0].movePath.originVx).toBe(-7);
+    expect(args[0].movePath.elements[0].fh).toBe(-4);
+    expect(args[0].keypad).toEqual([1, 2, 3, 4, 5]);
+    expect(args[0].bounds).toEqual({ left: -300, top: -200, right: 500, bottom: 600 });
+  });
+
   it('DropEnterField fires callback', () => {
     const args: Args[] = [];
     handlers.onDropEnter = (a) => args.push(a as any);
