@@ -286,7 +286,7 @@ export class FieldHandlers {
   onSummonedHit: ((args: SummonedHitArgs) => void) | null = null;
   onMobCrcKeyChanged: ((args: MobCrcKeyChangedArgs) => void) | null = null;
   onNpcChangeController: ((args: NpcChangeControllerArgs) => void) | null = null;
-  onNpcMove: ((args: { npcId: number; actionIdx: number; chatIdx: number }) => void) | null = null;
+  onNpcMove: ((args: { npcId: number; actionIdx: number; chatIdx: number; movePath?: import('../packet/MovePathDecoder.js').DecodedMovePath }) => void) | null = null;
   onNpcUpdateLimitedInfo: ((args: { npcId: number; enabled: boolean }) => void) | null = null;
   onNpcSetSpecialAction: ((args: { npcId: number; actionName: string }) => void) | null = null;
   onPetConsumeItemInit: ((args: PetConsumeItemInitArgs) => void) | null = null;
@@ -1369,7 +1369,11 @@ export class FieldHandlers {
       const npcId = p.readInt();
       const actionIdx = p.readSByte();
       const chatIdx = p.readSByte();
-      this.onNpcMove?.({ npcId, actionIdx, chatIdx });
+      let movePath: import('../packet/MovePathDecoder.js').DecodedMovePath | undefined;
+      if (p.remaining > 0) {
+        try { movePath = DecodeMovePath(p); } catch { movePath = undefined; }
+      }
+      this.onNpcMove?.({ npcId, actionIdx, chatIdx, movePath });
     });
     router.register(OutHeader.NpcUpdateLimitedInfo, (p, s) => {
       const npcId = p.readInt();

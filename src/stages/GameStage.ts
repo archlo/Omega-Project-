@@ -2678,9 +2678,10 @@ export class GameStage extends Stage {
     // The action index maps to the NPC template's action list (aAct),
     // NOT directly to WZ animation names. The template actions contain
     // references to WZ animation paths that are loaded by CActionMan.
-    fh.onNpcMove = ({ npcId, actionIdx, chatIdx }) => {
+    fh.onNpcMove = ({ npcId, actionIdx, chatIdx, movePath }) => {
       const npc = this._npcs.find(n => n.ObjId === npcId);
       if (!npc) return;
+      if (movePath) npc.ReplayMove(movePath);
       // OG CNpc::OnMove (0x678060) — actionIdx: -1=chat only, >=0=action
       if (actionIdx === -1) {
         // Chat-only: resolve chat from speak list and show balloon
@@ -5062,6 +5063,7 @@ export class GameStage extends Stage {
     const s = new SummonedLook(args.objId, args.charId, args.skillId);
     s.Position = { x: args.x, y: args.y };
     s.Load(this._loader, this._skillWz);
+    s.SetFootholds(Object.values(this._field?.Footholds ?? {}));
     this._summons.set(args.objId, s);
   }
 
@@ -5914,6 +5916,7 @@ export class GameStage extends Stage {
     // OG: SetMoveAction stores the full moveAction and sets up action layer
     npc.SetMoveAction(args.moveAction, false);
     npc.SetActive(args.bEnabled);
+    npc.SetFootholds(Object.values(this._field?.Footholds ?? {}));
     // OG: DoActionOrChat → GenerateMovePath — sends NpcMoveRequest to server
     npc.onDoActionOrChat = (objectId, action, chatIdx) => {
       this.game.session.send(GameSender.NpcMoveRequest(objectId, action, chatIdx));
