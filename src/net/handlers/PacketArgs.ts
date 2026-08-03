@@ -90,6 +90,13 @@ export interface MobMoveArgs {
 export interface MobDamagedArgs { mobId: number; damage: number; hp: number; maxHp: number; }
 
 export interface NpcEnterArgs { objId: number; templateId: number; x: number; y: number; moveAction: number; footholdId: number; rgHorzLow: number; rgHorzHigh: number; bEnabled: boolean; }
+export interface NpcMoveArgs {
+  npcId: number;
+  actionIdx: number;
+  chatIdx: number;
+  /** Present only for a moving NPC template (CNpcTemplate::bMove). */
+  movePath?: import('../packet/MovePathDecoder.js').DecodedMovePath;
+}
 export interface OtherCharEnterArgs {
   charId: number; level: number; name: string; look?: AvatarLook; x: number; y: number;
   guildName?: string;
@@ -618,8 +625,8 @@ export interface SummonedLeaveArgs {
 
 export interface SummonedMoveArgs {
   objId: number;
-  x: number;
-  y: number;
+  /** CSummoned::OnMove consumes a complete CMovePath after objId. */
+  movePath: import('../packet/MovePathDecoder.js').DecodedMovePath;
 }
 
 export interface TownPortalEnterArgs {

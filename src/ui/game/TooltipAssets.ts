@@ -19,7 +19,13 @@ export class TooltipAssets {
 
   constructor(loader: WzTextureLoader, uiWz: WzPackage | null) {
     this._loader = loader;
-    const v = uiWz?.GetItem('UIWindow2.img/ToolTip/Equip');
+    // OG: CUIToolTip ctor loads the equip chrome from UIWindow.img/ToolTip/Equip
+    // (verified in the v95 IDB + real UI.nx). Keep UIWindow2.img as a fallback
+    // for clients that only ship the duplicate tree.
+    let v = uiWz?.GetItem('UIWindow.img/ToolTip/Equip');
+    if (!(v instanceof WzProperty)) {
+      v = uiWz?.GetItem('UIWindow2.img/ToolTip/Equip');
+    }
     this._root = v instanceof WzProperty ? v : null;
   }
 
@@ -64,6 +70,28 @@ export class TooltipAssets {
     return this.Get(`${ns}/${d}`);
   }
 
+  // OG: m_pNumberGrowthEnable/m_pNumberGrowthDisable — the GrowthEnabled/
+  // GrowthDisabled property nodes carry their own digit canvases 0..9.
+  GrowthDigit(d: number, enabled: boolean): WzSprite | null {
+    const ns = enabled ? 'GrowthEnabled' : 'GrowthDisabled';
+    if (d < 0 || d > 9) return null;
+    return this.Get(`${ns}/${d}`);
+  }
+
+  // OG: m_pCanvasEquip_GrowthItem[0..3][enabled] = itemLEV/itemEXP/max/percent
+  // labels under GrowthEnabled|GrowthDisabled.
+  GrowthLabel(index: number, enabled: boolean): WzSprite | null {
+    const name = index === 0 ? 'itemLEV' : 'itemEXP';
+    return this.Get(`${enabled ? 'GrowthEnabled' : 'GrowthDisabled'}/${name}`);
+  }
+  GrowthMax(enabled: boolean): WzSprite | null { return this.Get(`${enabled ? 'GrowthEnabled' : 'GrowthDisabled'}/max`); }
+  GrowthPercent(enabled: boolean): WzSprite | null { return this.Get(`${enabled ? 'GrowthEnabled' : 'GrowthDisabled'}/percent`); }
+  GrowthNone(enabled: boolean): WzSprite | null { return this.Get(`${enabled ? 'GrowthEnabled' : 'GrowthDisabled'}/none`); }
+
+  // OG: m_pCanvasEquip_Durability[0][under] bar + [1][under] '%' suffix.
+  DurabilityBar(met: boolean): WzSprite | null { return this.Get(`${met ? 'Can' : 'Cannot'}/durability`); }
+  Percent(met: boolean): WzSprite | null { return this.Get(`${met ? 'Can' : 'Cannot'}/percent`); }
+
   Dot(index: number): WzSprite | null { return this.Get(`Dot/${index}`); }
   Property(index: number): WzSprite | null { return this.Get(`Property/${index}`); }
   Speed(index: number): WzSprite | null { return this.Get(`Speed/${index}`); }
@@ -87,13 +115,20 @@ export class TooltipAssets {
   }
 
   DrawNumber(value: number, met: boolean, x: number, y: number, parent: Container, spacing = 0): number {
+    return this.DrawNumberWith(value, (d) => this.Digit(d, met), x, y, parent, spacing);
+  }
+
+  // Like DrawNumber but resolves each digit through a caller-supplied getter —
+  // used for growth digits (m_pNumberGrowthEnable/GrowthDisable digit sets).
+  DrawNumberWith(value: number, digitOf: (d: number) => WzSprite | null,
+    x: number, y: number, parent: Container, spacing = 0): number {
     const digits = String(value);
     let curX = x;
     let first = true;
     for (const ch of digits) {
       if (!first) curX += spacing;
       const d = parseInt(ch, 10);
-      const s = this.Digit(d, met);
+      const s = digitOf(d);
       if (s) {
         this.BlitAt(s, curX, y, parent);
         curX += s.Width;

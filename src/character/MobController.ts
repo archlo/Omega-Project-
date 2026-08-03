@@ -15,7 +15,9 @@ export class MobController {
   private static readonly IdlePauseMax     = 4.0;
   private static readonly WalkBurstMin     = 1.0;
   private static readonly WalkBurstMax     = 3.0;
-  private static readonly EdgeMargin       = 16;
+  // CVecCtrl transitions when RelPos reaches 0 or foothold.length; there is
+  // no artificial stand-off from the endpoint.
+  private static readonly EdgeMargin       = 0;
   private static readonly AttackRangeX     = 50;
   private static readonly AttackRangeY     = 60;
   private static readonly AttackCooldown   = 0.7;

@@ -9,6 +9,38 @@ export interface VecPos {
   prevY: number;
 }
 
+/** Position and velocity in CVecCtrl's foothold-relative coordinate space. */
+export class RelPos {
+  pos = 0;
+  v = 0;
+
+  SetFromAbsPos(pos: VecPos, fh: Foothold): void {
+    const dx = pos.x - fh.X1;
+    const dy = pos.y - fh.Y1;
+    this.pos = dx * fh.Uvx + dy * fh.Uvy;
+    this.v = 0;
+    this.pos = Math.max(0, Math.min(fh.Length, this.pos));
+  }
+
+  SetFromAbsVelocity(vx: number, vy: number, fh: Foothold): void {
+    this.v = vx * fh.Uvx + vy * fh.Uvy;
+  }
+
+  SetFromRelPos(pos: VecPos, fh: Foothold): void {
+    pos.prevX = pos.x;
+    pos.prevY = pos.y;
+    pos.x = fh.X1 + this.pos * fh.Uvx;
+    pos.y = fh.Y1 + this.pos * fh.Uvy;
+  }
+
+  static From(pos: VecPos, vx: number, vy: number, fh: Foothold): RelPos {
+    const result = new RelPos();
+    result.SetFromAbsPos(pos, fh);
+    result.SetFromAbsVelocity(vx, vy, fh);
+    return result;
+  }
+}
+
 export class MovePath {
   OriginX = 0;
   OriginY = 0;
@@ -194,6 +226,9 @@ export class VecCtrl {
   IsJumping = false;
   IsOnLadder = false;
   IsOnRope = false;
+  InputX = 0;
+  InputY = 0;
+  LadderOrRope: { x: number; y1: number; y2: number; upperFoothold?: boolean } | null = null;
 
   protected _lastAttr = 0;
 
@@ -207,6 +242,22 @@ export class VecCtrl {
   SetV(vx: number, vy: number): void {
     this.Vx = vx;
     this.Vy = vy;
+  }
+
+  SetInput(inputX: number, inputY: number): void {
+    this.InputX = Math.max(-1, Math.min(1, Math.trunc(inputX)));
+    this.InputY = Math.max(-1, Math.min(1, Math.trunc(inputY)));
+  }
+
+  SetLadderOrRope(value: { x: number; y1: number; y2: number; upperFoothold?: boolean } | null): void {
+    this.LadderOrRope = value;
+    this.IsOnLadder = value !== null && !value.upperFoothold;
+    this.IsOnRope = value !== null && !!value.upperFoothold;
+    if (value) {
+      this.Pos.x = value.x;
+      this.Vx = 0;
+      this.Vy = 0;
+    }
   }
 
   SetFh(fhId: number, fh: Foothold | null, fhLeft: Foothold | null, fhRight: Foothold | null): void {
@@ -281,11 +332,13 @@ export class VecCtrl {
    */
   static CalcWalk(vx: number, vy: number, speed: number, force: number, drag: number, dt: number): { vx: number; vy: number } {
     const dtS = dt / 1000;
-    const sign = vx >= 0 ? 1 : -1;
-    if (vx !== 0 && Math.abs(vx) > speed) {
+    if (force !== 0) vx += force * dtS;
+    else if (vx !== 0) {
+      const sign = Math.sign(vx);
       vx -= sign * drag * dtS;
       if (sign * vx < 0) vx = 0;
     }
+    if (speed >= 0) vx = Math.max(-speed, Math.min(speed, vx));
     return { vx, vy };
   }
 
@@ -298,7 +351,7 @@ export class VecCtrl {
     vy += gravity * dtS;
     if (vy > maxFallSpeed) vy = maxFallSpeed;
     if (vy < -maxFallSpeed) vy = -maxFallSpeed;
-    if (vx !== 0) {
+    if (vx !== 0 && drag > 0) {
       const sign = vx >= 0 ? 1 : -1;
       vx -= sign * drag * dtS;
       if (sign * vx < 0) vx = 0;

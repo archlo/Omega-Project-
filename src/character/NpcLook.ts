@@ -39,6 +39,8 @@ export class NpcLook {
   FuncName = '';
   ShowNameTag = true;
   ObjId = 0;
+  /** Last foothold serial supplied by the field packet. */
+  FootholdId = 0;
   /** OG CNpcTemplate data — category, shop ID, quest conditions */
   _info: { Category?: number; ShopId?: number } | null = null;
   // OG: NPC name tag is BELOW the NPC (positive Y), not above like characters
@@ -243,6 +245,14 @@ export class NpcLook {
 
   ReplayMove(path: DecodedMovePath): void {
     this._replay.SetPath(path, this.Position);
+    // CMovePath elements carry the action state used by the original
+    // CVecCtrlNpc replay. Apply the first state immediately; subsequent
+    // positions remain packet-driven through RemoteMoveReplay.
+    const first = path.elements[0];
+    if (first) {
+      if (first.fh !== 0) this.FootholdId = first.fh;
+      this.SetMoveAction(first.moveAction, false);
+    }
     this.SetState('move');
   }
 

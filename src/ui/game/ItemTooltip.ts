@@ -176,7 +176,9 @@ export class ItemTooltip {
     const yName = 10;
     const yDot1 = yName + lh + 3;
     const yBlock = yDot1 + 5;
-    const jobY = yBlock + JobStripDY - 16; // DrawItemReqJob blits at y+141, icon top = y+16
+    // OG: DrawItemReqJob blits the job strip at raw y+141; icon top = y+32,
+    // so jobY = iconTop + 109.
+    const jobY = yBlock + JobStripDY - 32;
     const yBlockBottom = jobY + 13;
     const yDot2 = yBlockBottom + 6;
     const yInfo = yDot2 + 6;
@@ -273,8 +275,8 @@ export class ItemTooltip {
     ];
     let reqIndex = 0;
     for (const [label, val, met] of reqs) {
-      // OG: DrawTextEquip_Req — label at (94, y+32+12n), icon top = y+16 → iconTop+16+12n
-      const rowY = yBlock + ReqRowBaseDY - 16 + reqIndex * ReqRowStep;
+      // OG: DrawTextEquip_Req — label at (94, y+32+12*nNo) = iconTop + 12*nNo
+      const rowY = yBlock + reqIndex * ReqRowStep;
       reqIndex++;
       if (val <= 0) continue;
 
@@ -298,7 +300,7 @@ export class ItemTooltip {
     // OG: Inner outline before job strip
     this._g.rect(2, jobY - 8, w - 4, 1).fill({ color: InnerOutlineC, alpha: InnerOutlineA });
 
-    // OG: Job requirement strip — DrawItemReqJob blits at y+141, icon top = y+16 → iconTop+125
+    // OG: Job requirement strip — DrawItemReqJob blits at y+141 → iconTop+109
     if (attr?.ReqJob) {
       const jobNames = ['beginner', 'warrior', 'magician', 'bowman', 'thief', 'pirate'];
       const jobXPositions = [10, 52, 92, 132, 171, 197];
@@ -313,13 +315,16 @@ export class ItemTooltip {
       ti++;
     }
 
-    // OG: Growth item rendering — GrowthItem[0] at p_m_RefCount+72 (= iconTop+72), GrowthItem[1] at +84
-    if (attr && this._isGrowthItem(itemId)) {
-      this._drawGrowthItem(yBlock + 72, attr);
+    // OG: Growth rows — labels (itemLEV/itemEXP) drawn for every equip, plus
+    // max/level-percent (growth items) or "none" glyphs. Row base = iconTop+72.
+    if (attr) {
+      this._drawGrowthItem(yBlock + 72, attr, this._isGrowthItem(itemId));
     }
 
-    // OG: Durability bar — at p_m_RefCount+96 (= iconTop+96)
-    if (attr && attr.Durability !== undefined && attr.Durability > 0) {
+    // OG: Durability bar — Can|Cannot/durability at (94, iconTop+96), number
+    // (percent 100*cur/max) left-aligned at x=161, '%' suffix at 2*(3*digits+81).
+    // OG guard: max durability > 0 (v7->nDurability), not the current value.
+    if (attr && (attr.DurabilityMax ?? 0) > 0) {
       this._drawDurabilityBar(yBlock + 96, attr);
     }
 
@@ -573,95 +578,77 @@ export class ItemTooltip {
     return cat === 135;
   }
 
-  // OG: Draw growth item indicators with EXP bar fill
-  // Uses get_next_item_level_exp from CharacterData and canvas Copy for bar rendering
-  private _drawGrowthItem(y: number, attr: ItemAttr): void {
-    // Growth item top/bottom icons
-    const growthEnabled = this._assets.Get('Can/growth');
-    if (growthEnabled) {
-      this._blitAt(growthEnabled, 94, y);
+  // OG: DrawToolTip_Equip growth rows (rows base y = iconTop+72).
+  // itemLEV label at (94, y), itemEXP at (94, y+12) — always drawn with the
+  // GrowthEnabled (growth item) or GrowthDisabled variant. Right side:
+  //   growth + level<max → level digits (148,y), EXP% digits (148,y+12), '%' (161,y+12)
+  //   growth + level==max → "max" glyph at (148,y) and (148,y+12)
+  //   not growth          → GrowthDisabled "none" glyph, bottom-right anchored at (148,y)
+  private _drawGrowthItem(y: number, attr: ItemAttr, isGrowth: boolean): void {
+    // OG: percent = clamp(int(100*curEXP/nextEXP), 0, 99); the port reads it
+    // off attr as expPct when present (0 otherwise).
+    const pct = Math.max(0, Math.min(99, Math.floor((attr as any).expPct ?? 0)));
+    const level = attr.Level ?? 0;
+    const atMax = attr.MaxLevel !== undefined && attr.MaxLevel > 0 && level >= attr.MaxLevel;
+
+    const levLabel = this._assets.GrowthLabel(0, isGrowth);
+    if (levLabel) this._blitAt(levLabel, 94, y);
+    const expLabel = this._assets.GrowthLabel(1, isGrowth);
+    if (expLabel) this._blitAt(expLabel, 94, y + 12);
+
+    if (!isGrowth) {
+      // OG: GrowthDisabled "none" canvas anchored bottom-right at (148, y+12n).
+      const none = this._assets.GrowthNone(false);
+      if (none) {
+        this._blitAt(none, 148 - none.Width, y - none.Height);
+        this._blitAt(none, 148 - none.Width, y + 12 - none.Height);
+      }
+      return;
     }
 
-    // Growth level digits
-    if (attr.Level !== undefined) {
-      this._assets.DrawNumber(attr.Level, true, 148, y, this._root, 1);
+    if (atMax) {
+      const maxGlyph = this._assets.GrowthMax(true);
+      if (maxGlyph) {
+        this._blitAt(maxGlyph, 148, y);
+        this._blitAt(maxGlyph, 148, y + 12);
+      }
+      return;
     }
 
-    // OG: Growth EXP bar — percentage-based fill using canvas copy
-    // The bar background is loaded from WZ, filled proportionally to currentExp/maxExp
-    const expBarBg = this._assets.Get('Growth/expBarBg');
-    if (expBarBg) {
-      this._blitAt(expBarBg, 94, y + 12);
-      // Fill percentage bar (simplified — OG uses canvas Copy with clipping)
-      const expBarFill = this._assets.Get('Growth/expBarFill');
-      if (expBarFill) {
-        const fillRatio = Math.min(1, (attr as any).expPct ?? 0);
-        const fullW = expBarFill.Width ?? 40;
-        const fillW = Math.floor(fullW * fillRatio);
-        if (fillW > 0) {
-          const sprite = (expBarFill as any).NewSprite?.() ?? (expBarFill as any).ToPixi?.();
-          if (sprite) {
-            sprite.x = 94;
-            sprite.y = y + 12;
-            // OG: canvas Copy with clipping to show only fillW pixels
-            (sprite as any).width = fillW;
-            this._root.addChild(sprite);
-            this._blitSprites.push(sprite);
-          }
-        }
-      }
-    } else {
-      // Fallback: text-based EXP display
-      const growthDisabled = this._assets.Get('Cannot/growth');
-      if (growthDisabled) {
-        this._blitAt(growthDisabled, 148, y + 12);
-      }
-    }
+    // Level + EXP% digits via m_pNumberGrowthEnable (GrowthEnabled digit set).
+    this._assets.DrawNumberWith(level, (d) => this._assets.GrowthDigit(d, true), 148, y, this._root, 1);
+    this._assets.DrawNumberWith(pct, (d) => this._assets.GrowthDigit(d, true), 148, y + 12, this._root, 1);
+    const pctGlyph = this._assets.GrowthPercent(true);
+    if (pctGlyph) this._blitAt(pctGlyph, 161, y + 12);
   }
 
-  // OG: Draw durability bar with percentage fill calculation
+  // OG: DrawToolTip_Equip durability row (row base y = iconTop+96).
+  // bar Can|Cannot/durability at (94, y); percent number (m_pNumberCan/
+  // m_pNumberCannot) left-aligned at x=161; '%' suffix canvas at 2*(3*digits+81).
   private _drawDurabilityBar(y: number, attr: ItemAttr): void {
-    const dur = attr.Durability ?? 0;
-    const isLow = dur <= 10;
+    // OG: v67 = 100 * current / max (integer). DrawToolTip_Equip draws the
+    // PERCENT number, not raw durability; low = pct <= 10.
+    const max = attr.DurabilityMax ?? 100;
+    const cur = attr.Durability ?? max;
+    const pct = Math.max(0, Math.min(100, Math.floor((100 * cur) / max)));
+    const isLow = pct <= 10;
 
-    // Durability bar background
-    const barSprite = this._assets.Get(isLow ? 'Cannot/durability' : 'Can/durability');
+    const barSprite = this._assets.DurabilityBar(!isLow);
     if (barSprite) {
       this._blitAt(barSprite, 94, y);
     }
 
-    // OG: Durability percentage fill — bar fill proportional to dur/100
-    const durFillBg = this._assets.Get('Can/durabilityFill');
-    if (durFillBg) {
-      const fillRatio = Math.min(1, dur / 100);
-      const fullW = (durFillBg as any).Width ?? 50;
-      const fillW = Math.floor(fullW * fillRatio);
-      if (fillW > 0) {
-        const sprite = (durFillBg as any).NewSprite?.() ?? (durFillBg as any).ToPixi?.();
-        if (sprite) {
-          sprite.x = 94;
-          sprite.y = y;
-          (sprite as any).width = fillW;
-          this._root.addChild(sprite);
-          this._blitSprites.push(sprite);
-        }
-      }
-    }
+    this._assets.DrawNumber(pct, !isLow, 161, y, this._root, 1);
 
-    // OG: Durability number — Copy at x = 2*(3*digits+81), y = iconTop+96
-    const durStr = `${dur}`;
-    this._assets.DrawNumber(dur, !isLow, 2 * (3 * durStr.length + 81), y, this._root, 1);
-
-    // Durability suffix
-    const suffix = this._assets.Get(isLow ? 'Cannot/max' : 'Can/max');
+    const suffix = this._assets.Percent(!isLow);
     if (suffix) {
-      this._blitAt(suffix, 161 + dur * 2 + 8, y);
+      this._blitAt(suffix, 2 * (3 * String(pct).length + 81), y);
     }
   }
 
   // OG: Build stat bonus info lines — uses actual equip stats when available
   private _buildInfoLines(_itemId: number, attr: ItemAttr | null, equippedSetCount = 0,
-    equipStats?: { incStr: number; incDex: number; incInt: number; incLuk: number; incPad: number; incMad: number; incPdd: number; incMdd: number; incMhp: number; incMmp: number; incAcc: number; incEva: number; incSpeed: number; incJump: number; ruc: number; cuc: number; option1: number; option2: number; option3: number }): InfoLine[] {
+    equipStats?: { incStr: number; incDex: number; incInt: number; incLuk: number; incPad: number; incMad: number; incPdd: number; incMdd: number; incMhp: number; incMmp: number; incAcc: number; incEva: number; incSpeed: number; incJump: number; ruc: number; cuc: number; option1: number; option2: number; option3: number; incMhpPr?: number; incMmpPr?: number }): InfoLine[] {
     const lines: InfoLine[] = [];
     if (attr === null) return lines;
     const push = (text: string) => lines.push({ kind: InfoKind.Text, sprite: null, text });
@@ -691,45 +678,48 @@ export class ItemTooltip {
       push(`Attack Speed: ${speedName}`);
     }
 
-    // OG: Set item bonus
+    // OG: Durability label (AddInfo, StringPool 0x1A0D) when WZ base durability > 0
+    if ((attr.DurabilityMax ?? 0) > 0) push('Durability:');
+
+    // OG: Stat rows follow SetToolTip_Equip_Basic order and PrintValue formatting.
+    // Instance stats win over WZ base; percent rows read from WZ base (pe2) in OG.
+    // type 0 = "+N" (skip non-positive), type 1 = plain "N", type 2 = "N%".
+    const s = equipStats;
+    const base = (v: number | undefined): number => v ?? 0;
+    const addStat = (label: string, v: number, type: 0 | 1 | 2): void => {
+      if (v <= 0) return;
+      const value = type === 0 ? `+${v}` : type === 2 ? `${v}%` : `${v}`;
+      push(`${label} ${value}`);
+    };
+
+    // OG: STR -> LUK (type 0), MaxHP/MaxMP (type 0), MaxHPr/MaxMPr (type 2)
+    addStat('STR:', base(s?.incStr ?? attr.IncStr), 0);
+    addStat('DEX:', base(s?.incDex ?? attr.IncDex), 0);
+    addStat('INT:', base(s?.incInt ?? attr.IncInt), 0);
+    addStat('LUK:', base(s?.incLuk ?? attr.IncLuk), 0);
+    addStat('MHP:', base(s?.incMhp ?? attr.IncMhp), 0);
+    addStat('MMP:', base(s?.incMmp ?? attr.IncMmp), 0);
+    addStat('MHP:', base(s?.incMhpPr ?? attr.IncMHPr), 2);
+    addStat('MMP:', base(s?.incMmpPr ?? attr.IncMMPr), 2);
+    // OG: PAD -> MDD (type 1, plain -- no '+')
+    addStat('PAD:', base(s?.incPad ?? attr.IncPad), 1);
+    addStat('MAD:', base(s?.incMad ?? attr.IncMad), 1);
+    addStat('PDD:', base(s?.incPdd ?? attr.IncPdd), 1);
+    addStat('MDD:', base(s?.incMdd ?? attr.IncMdd), 1);
+    // OG: ACC/EVA/Craft/Speed/Jump (type 0)
+    addStat('ACC:', base(s?.incAcc ?? attr.IncAcc), 0);
+    addStat('EVA:', base(s?.incEva ?? attr.IncEva), 0);
+    addStat('Speed:', base(s?.incSpeed ?? attr.IncSpeed), 0);
+    addStat('Jump:', base(s?.incJump ?? attr.IncJump), 0);
+
+    // OG: SetToolTip_SetItem appends its rows after SetToolTip_Equip_Basic
     if (attr.SetItemId > 0) push(`Set Item: ${equippedSetCount} piece${equippedSetCount === 1 ? '' : 's'} equipped`);
 
-    // OG: Use actual equip stats if available, fall back to WZ base stats
-    const s = equipStats;
-    if (s) {
-      // Actual equipped item stats (includes scrolls, potentials, hammers)
-      if (s.incStr) push(`STR: +${s.incStr}`);
-      if (s.incDex) push(`DEX: +${s.incDex}`);
-      if (s.incInt) push(`INT: +${s.incInt}`);
-      if (s.incLuk) push(`LUK: +${s.incLuk}`);
-      if (s.incMhp) push(`MHP: +${s.incMhp}`);
-      if (s.incMmp) push(`MMP: +${s.incMmp}`);
-      if (s.incPad) push(`PAD: +${s.incPad}`);
-      if (s.incMad) push(`MAD: +${s.incMad}`);
-      if (s.incPdd) push(`PDD: +${s.incPdd}`);
-      if (s.incMdd) push(`MDD: +${s.incMdd}`);
-      if (s.incAcc) push(`ACC: +${s.incAcc}`);
-      if (s.incEva) push(`EVA: +${s.incEva}`);
-      if (s.incSpeed) push(`Speed: +${s.incSpeed}`);
-      if (s.incJump) push(`Jump: +${s.incJump}`);
-      if (s.ruc) push(`Upgrades: ${s.ruc}`);
-      if (s.cuc) push(`Hammers: ${s.cuc}`);
-    } else {
-      // WZ base stats (no scrolls/potentials)
-      if (attr.IncStr) push(`STR: +${attr.IncStr}`);
-      if (attr.IncDex) push(`DEX: +${attr.IncDex}`);
-      if (attr.IncInt) push(`INT: +${attr.IncInt}`);
-      if (attr.IncLuk) push(`LUK: +${attr.IncLuk}`);
-      if (attr.IncMhp) push(`MHP: +${attr.IncMhp}`);
-      if (attr.IncMmp) push(`MMP: +${attr.IncMmp}`);
-      if (attr.IncPad) push(`PAD: +${attr.IncPad}`);
-      if (attr.IncMad) push(`MAD: +${attr.IncMad}`);
-      if (attr.IncPdd) push(`PDD: +${attr.IncPdd}`);
-      if (attr.IncMdd) push(`MDD: +${attr.IncMdd}`);
-      if (attr.IncSpeed) push(`Speed: +${attr.IncSpeed}`);
-      if (attr.IncJump) push(`Jump: +${attr.IncJump}`);
-      if (attr.Upgrades) push(`Upgrades: ${attr.Upgrades}`);
-    }
+    // OG: RUC (StringPool 0x2AD) is the last Equip_Basic row; scroll hammers are a client extra
+    const ruc = base(s?.ruc ?? attr.Upgrades);
+    if (ruc > 0) push(`Upgrades: ${ruc}`);
+    if (s?.cuc) push(`Hammers: ${s.cuc}`);
+
     return lines;
   }
 

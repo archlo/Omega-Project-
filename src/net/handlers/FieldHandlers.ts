@@ -21,7 +21,7 @@ import {
 } from '../protocol/Enums.js';
 import {
   SetFieldArgs, StatChangedArgs, MobEnterArgs, MobMoveArgs, MobDamagedArgs,
-  NpcEnterArgs, OtherCharEnterArgs, OtherCharMoveArgs, UserPassiveMoveArgs, UserAttackArgs, AttackTargetInfo,
+  NpcEnterArgs, NpcMoveArgs, OtherCharEnterArgs, OtherCharMoveArgs, UserPassiveMoveArgs, UserAttackArgs, AttackTargetInfo,
   DropEnterArgs, DropLeaveArgs, InventoryOpArg, UserChatArgs,
   ScriptMessageArgs, FuncKeyEntry, FootHoldInfoArgs, FootHoldStateEntry, TempStatEntry,
   UserEmotionArgs, UserEffectArgs, MobCtrlAckArgs, LootMessageArgs, QuestRecordArgs,
@@ -286,7 +286,7 @@ export class FieldHandlers {
   onSummonedHit: ((args: SummonedHitArgs) => void) | null = null;
   onMobCrcKeyChanged: ((args: MobCrcKeyChangedArgs) => void) | null = null;
   onNpcChangeController: ((args: NpcChangeControllerArgs) => void) | null = null;
-  onNpcMove: ((args: { npcId: number; actionIdx: number; chatIdx: number; movePath?: import('../packet/MovePathDecoder.js').DecodedMovePath }) => void) | null = null;
+  onNpcMove: ((args: NpcMoveArgs) => void) | null = null;
   onNpcUpdateLimitedInfo: ((args: { npcId: number; enabled: boolean }) => void) | null = null;
   onNpcSetSpecialAction: ((args: { npcId: number; actionName: string }) => void) | null = null;
   onPetConsumeItemInit: ((args: PetConsumeItemInitArgs) => void) | null = null;
@@ -1362,10 +1362,9 @@ export class FieldHandlers {
     // npcId before routing to CNpc::OnMove/OnUpdateLimitedInfo/
     // OnSetSpecialAction (decompile/678060.c, 676340.c, 6750f0.c).
     router.register(OutHeader.NpcMove, (p, s) => {
-      // CNpc::OnMove also conditionally decodes a full CMovePath blob
-      // after these two bytes (only when the NPC template has bMove set,
-      // which this client doesn't expose) — deliberately left unread,
-      // matching the per-message try/catch convention used elsewhere.
+      // CNpcPool::OnNpcPacket consumes npcId before CNpc::OnMove. CNpc::OnMove
+      // reads action/chat and only then calls CMovePath::OnMovePacket when the
+      // template's bMove flag is set. There is no presence byte in v95.
       const npcId = p.readInt();
       const actionIdx = p.readSByte();
       const chatIdx = p.readSByte();
@@ -3964,9 +3963,11 @@ export class FieldHandlers {
   private handleSummonedMove(p: InPacket): void {
     try {
       const objId = p.readInt();
-      const x = p.readShort();
-      const y = p.readShort();
-      this.onSummonedMove?.({ objId, x, y });
+      // CSummonedPool::OnPacket consumes the character id, then
+      // CUser::OnSummonedMove consumes objId and delegates the remainder to
+      // CSummoned::OnMove, which is an unconditional CMovePath decode.
+      const movePath = DecodeMovePath(p);
+      this.onSummonedMove?.({ objId, movePath });
     } catch { /* skip */ }
   }
 

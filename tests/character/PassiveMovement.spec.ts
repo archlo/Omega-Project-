@@ -36,8 +36,10 @@ describe('passive foothold movement', () => {
     ctrl.SetFh(fh.Id, fh, null, null);
 
     ctrl.UpdateActive(100, [fh]);
-    expect(ctrl.Pos.x).toBe(60);
-    expect(ctrl.Pos.y).toBeCloseTo(160);
+    // CVecCtrl stores velocity along the foothold, so world X advances by
+    // 100 * unitX * 0.1 on this 45-degree slope.
+    expect(ctrl.Pos.x).toBeCloseTo(55);
+    expect(ctrl.Pos.y).toBeCloseTo(155);
 
     ctrl.SetV(10000, 0);
     ctrl.UpdateActive(100, [fh]);
@@ -59,12 +61,48 @@ describe('passive foothold movement', () => {
     const ctrl = new VecCtrlUser();
     ctrl.SetPos(95, 195);
     ctrl.SetV(100, 0);
+    ctrl.SetInput(1, 0);
     ctrl.SetFh(first.Id, first, null, second);
     ctrl.UpdateActive(100, [first, second]);
 
     expect(ctrl.FhId).toBe(2);
-    expect(ctrl.Pos.x).toBe(104);
+    expect(ctrl.Pos.x).toBe(100);
     expect(ctrl.Pos.y).toBe(200);
+  });
+
+  it('uses foothold-relative velocity and exact endpoint transitions', () => {
+    const first = foothold();
+    const second = new Foothold();
+    second.Id = 2;
+    second.X1 = 100; second.Y1 = 200;
+    second.X2 = 200; second.Y2 = 200;
+    first.Next = second.Id;
+    second.Prev = first.Id;
+    first.InitVectors();
+    second.InitVectors();
+
+    const ctrl = new VecCtrlUser();
+    ctrl.SetInput(1, 0);
+    ctrl.SetPos(99, 199);
+    ctrl.SetV(125, 0);
+    ctrl.SetFh(first.Id, first, null, second);
+    ctrl.UpdateActive(30, [first, second]);
+
+    expect(ctrl.FhId).toBe(2);
+    expect(ctrl.Pos.x).toBeGreaterThanOrEqual(100);
+    expect(ctrl.Pos.y).toBe(200);
+  });
+
+  it('moves on a ladder at walk speed times three and clamps to its ends', () => {
+    const ctrl = new VecCtrlUser();
+    ctrl.SetLadderOrRope({ x: 50, y1: 100, y2: 200 });
+    ctrl.SetInput(0, 1);
+    ctrl.SetPos(0, 190);
+    ctrl.UpdateActive(30, []);
+
+    expect(ctrl.Pos.x).toBe(50);
+    expect(ctrl.Pos.y).toBe(200);
+    expect(ctrl.Vy).toBe(375);
   });
 
   it('replays normal path elements with foothold projection', () => {

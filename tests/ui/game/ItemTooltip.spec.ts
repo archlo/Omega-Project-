@@ -30,6 +30,14 @@ function makeAssets(overrides: Partial<Record<string, any>> = {}) {
     Req: vi.fn().mockReturnValue(overrides.Req ?? null),
     JobLabel: vi.fn().mockReturnValue(overrides.JobLabel ?? null),
     DrawNumber: vi.fn().mockReturnValue(30),
+    DrawNumberWith: vi.fn().mockReturnValue(30),
+    GrowthDigit: vi.fn().mockReturnValue(null),
+    GrowthLabel: vi.fn().mockReturnValue(overrides.GrowthLabel ?? null),
+    GrowthMax: vi.fn().mockReturnValue(overrides.GrowthMax ?? null),
+    GrowthPercent: vi.fn().mockReturnValue(overrides.GrowthPercent ?? null),
+    GrowthNone: vi.fn().mockReturnValue(overrides.GrowthNone ?? null),
+    DurabilityBar: vi.fn().mockReturnValue(overrides.DurabilityBar ?? null),
+    Percent: vi.fn().mockReturnValue(overrides.Percent ?? null),
     BlitAt: vi.fn(),
     Dot: vi.fn().mockReturnValue(null),
   } as any;
@@ -242,9 +250,9 @@ describe('ItemTooltip', () => {
     });
 
     it('stacks requirement rows at fixed 12px OG offsets via reqIndex', () => {
-      // OG: DrawTextEquip_Req label at (94, iconTop+16+12n) for row n. reqIndex
+      // OG: DrawTextEquip_Req label at (94, iconTop+12n) for row n. reqIndex
       // must advance per requirement slot even when a value is skipped, so a
-      // skipped STR (index 1) still pushes DEX to index 2.
+      // skipped STR (index 1) still pushes DEX to index 2. iconTop = yBlock = 33.
       const assets = makeAssets();
       const tip = makeTooltip({ attr: equipAttr({ ReqLevel: 30, ReqDex: 50 }), assets });
       tip.SetPlayer(50, 100, 80, 40, 60, 0);
@@ -253,31 +261,102 @@ describe('ItemTooltip', () => {
       const reqCalls = (assets.DrawNumber as any).mock.calls.filter((c: any[]) => c[2] === 124);
       const levelRow = reqCalls.find((c: any[]) => c[0] === 30);
       const dexRow = reqCalls.find((c: any[]) => c[0] === 50);
-      expect(levelRow[3]).toBe(49); // iconTop 33 + 16 + 0*12
-      expect(dexRow[3]).toBe(73);   // iconTop 33 + 16 + 2*12 (STR skipped)
+      expect(levelRow[3]).toBe(33); // iconTop 33 + 0*12
+      expect(dexRow[3]).toBe(57);   // iconTop 33 + 2*12 (STR skipped)
     });
 
-    it('draws durability number at x = 2*(3*digits+81), y = iconTop+96', () => {
+    it('draws durability PERCENT (100*cur/max), not raw, at x=161, y = iconTop+96', () => {
       const assets = makeAssets();
-      const tip = makeTooltip({ attr: equipAttr({ Durability: 100 }), assets });
+      const tip = makeTooltip({ attr: equipAttr({ Durability: 50, DurabilityMax: 100 }), assets });
       tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
-      // durability DrawNumber: dur=100, digits=3 → x = 2*(9+81) = 180; y = 33+96 = 129
-      const durCall = (assets.DrawNumber as any).mock.calls.find((c: any[]) => c[0] === 100);
+      // durability DrawNumber: value = floor(100*50/100) = 50 (not raw 50 → same,
+      // so also cover a non-100 max below); x=161 (left-aligned), y = 33+96 = 129
+      const durCall = (assets.DrawNumber as any).mock.calls.find((c: any[]) => c[0] === 50);
       expect(durCall).toBeTruthy();
-      expect(durCall[2]).toBe(180);
+      expect(durCall[2]).toBe(161);
       expect(durCall[3]).toBe(129);
+      // 125/200 → floor(62.5) = 62 — proves pct math, not raw durability
+      const tip2 = makeTooltip({ attr: equipAttr({ Durability: 125, DurabilityMax: 200 }), assets });
+      tip2.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
+      const pctCall = (assets.DrawNumber as any).mock.calls.find((c: any[]) => c[0] === 62);
+      expect(pctCall).toBeTruthy();
+      expect((assets.DrawNumber as any).mock.calls.some((c: any[]) => c[0] === 125)).toBe(false);
     });
 
-    it('draws job strip at iconTop+125 (= jobY)', () => {
+    it('draws durability % suffix at x = 2*(3*digits+81), y = iconTop+96', () => {
+      const assets = makeAssets();
+      assets.Percent.mockReturnValue({ NewSprite: () => new Sprite(), Width: 5, Height: 7 });
+      const tip = makeTooltip({ attr: equipAttr({ Durability: 50, DurabilityMax: 100 }), assets });
+      tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
+      // pct=50 → 2 digits → x = 2*(6+81) = 174; y = 33+96 = 129
+      const blitted = tip.root.children.find((c: any) => c.x === 174 && c.y === 129);
+      expect(blitted).toBeTruthy();
+    });
+
+    it('flags low durability (pct <= 10) with the Cannot bar/met=false', () => {
+      const assets = makeAssets();
+      const tip = makeTooltip({ attr: equipAttr({ Durability: 5, DurabilityMax: 100 }), assets });
+      tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
+      // pct = 5 → isLow → DurabilityBar(false), DrawNumber(5, met=false,...)
+      expect(assets.DurabilityBar).toHaveBeenCalledWith(false);
+      const durCall = (assets.DrawNumber as any).mock.calls.find((c: any[]) => c[0] === 5);
+      expect(durCall).toBeTruthy();
+      expect(durCall[1]).toBe(false);
+    });
+
+    it('omits durability row when item has no max durability', () => {
+      const assets = makeAssets();
+      const tip = makeTooltip({ attr: equipAttr(), assets });
+      tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
+      expect((assets.DrawNumber as any).mock.calls.some((c: any[]) => c[2] === 161 && c[3] === 129)).toBe(false);
+      expect(assets.DurabilityBar).not.toHaveBeenCalled();
+    });
+
+    it('draws job strip at iconTop+109 (= jobY)', () => {
       const assets = makeAssets();
       assets.JobLabel.mockReturnValue({ NewSprite: () => new Sprite() });
       const tip = makeTooltip({ attr: equipAttr({ ReqJob: 0x02 }), assets });
       tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
       const jobCalls = (assets.JobLabel as any).mock.calls;
       expect(jobCalls.length).toBeGreaterThan(0);
-      // JobLabel sprites are blitted at y = jobY = 33 + 141 - 16 = 158
-      const blitted = tip.root.children.find((c: any) => c.x === 10 && c.y === 158);
+      // JobLabel sprites are blitted at y = jobY = 33 + 141 - 32 = 142
+      const blitted = tip.root.children.find((c: any) => c.x === 10 && c.y === 142);
       expect(blitted).toBeTruthy();
+    });
+
+    it('uses GrowthEnabled labels and growth digits for growth items', () => {
+      const assets = makeAssets();
+      const tip = makeTooltip({ attr: equipAttr({ Level: 3, MaxLevel: 10 }), assets });
+      tip.Draw(1350000, 'Growth Sword', 0, 1, 100, 100, 1024, 768);
+      // label index 0 (itemLEV) at (94, iconTop+72), index 1 (itemEXP) at (94, +84)
+      expect((assets.GrowthLabel as any).mock.calls[0][0]).toBe(0);
+      expect((assets.GrowthLabel as any).mock.calls[0][1]).toBe(true);
+      expect((assets.GrowthLabel as any).mock.calls[1][0]).toBe(1);
+      // level digits at x=148, y=iconTop+72=105; EXP% digits at y=iconTop+84=117
+      const growthCalls = (assets.DrawNumberWith as any).mock.calls.filter((c: any[]) => c[2] === 148);
+      expect(growthCalls[0][0]).toBe(3);
+      expect(growthCalls[0][3]).toBe(105);
+      expect(growthCalls[1][3]).toBe(117);
+    });
+
+    it('draws "max" glyphs for max-level growth items at (148, iconTop+72/+84)', () => {
+      const assets = makeAssets();
+      assets.GrowthMax.mockReturnValue({ NewSprite: () => new Sprite(), Width: 17, Height: 7 });
+      const tip = makeTooltip({ attr: equipAttr({ Level: 10, MaxLevel: 10 }), assets });
+      tip.Draw(1350000, 'Growth Sword', 0, 1, 100, 100, 1024, 768);
+      expect((assets.GrowthMax as any).mock.calls.length).toBeGreaterThan(0);
+      const blit1 = tip.root.children.find((c: any) => c.x === 148 && c.y === 105);
+      const blit2 = tip.root.children.find((c: any) => c.x === 148 && c.y === 117);
+      expect(blit1).toBeTruthy();
+      expect(blit2).toBeTruthy();
+    });
+
+    it('uses GrowthDisabled labels for non-growth equips', () => {
+      const assets = makeAssets();
+      const tip = makeTooltip({ attr: equipAttr(), assets });
+      tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
+      expect((assets.GrowthLabel as any).mock.calls.length).toBeGreaterThan(0);
+      expect((assets.GrowthLabel as any).mock.calls[0][1]).toBe(false);
     });
   });
 
@@ -968,9 +1047,45 @@ describe('ItemTooltip', () => {
       const lines = (tip as any)._buildInfoLines(1300000, attr, 0);
       expect(lines.some((l: any) => l.text === 'STR: +10')).toBe(true);
       expect(lines.some((l: any) => l.text === 'DEX: +5')).toBe(true);
-      expect(lines.some((l: any) => l.text === 'PAD: +15')).toBe(true);
+      expect(lines.some((l: any) => l.text === 'PAD: 15')).toBe(true);
       expect(lines.some((l: any) => l.text === 'MHP: +100')).toBe(true);
       expect(lines.some((l: any) => l.text === 'Upgrades: 7')).toBe(true);
+    });
+
+    it('emits stat rows in OG SetToolTip_Equip_Basic order with OG formatting', () => {
+      const tip = makeTooltip();
+      const attr: ItemAttr = {
+        IsEquip: true, Category: 130,
+        ReqLevel: 0, ReqStr: 0, ReqDex: 0, ReqInt: 0, ReqLuk: 0, ReqFame: 0, ReqJob: 0,
+        IncStr: 10, IncDex: 5, IncInt: 0, IncLuk: 3,
+        IncPad: 15, IncMad: 0, IncPdd: 8, IncMdd: 0, IncMhp: 100, IncMmp: 50, IncAcc: 0, IncEva: 0, IncSpeed: 2, IncJump: 3,
+        IncMHPr: 10, IncMMPr: 5,
+        AttackSpeed: 4, Upgrades: 7, Price: 0,
+        Cash: false, Only: false, SetItemId: 5,
+        DurabilityMax: 100,
+      };
+      const lines = (tip as any)._buildInfoLines(1300000, attr, 2);
+      const texts = lines.map((l: any) => l.text);
+      // OG order: category, attack speed, durability, STR..Jump (INT/MAD/MDD/ACC/EVA skipped as 0),
+      // then set-item rows (SetToolTip_SetItem appended after Equip_Basic), then RUC last.
+      expect(texts).toEqual([
+        'Sword',
+        'Attack Speed: 4-Hit',
+        'Durability:',
+        'STR: +10',
+        'DEX: +5',
+        'LUK: +3',
+        'MHP: +100',
+        'MMP: +50',
+        'MHP: 10%',
+        'MMP: 5%',
+        'PAD: 15',
+        'PDD: 8',
+        'Speed: +2',
+        'Jump: +3',
+        'Set Item: 2 pieces equipped',
+        'Upgrades: 7',
+      ]);
     });
 
     it('prefers equipStats over WZ base stats', () => {

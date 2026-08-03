@@ -149,6 +149,13 @@ export class ItemIconLoader {
           Cash: I(info, 'cash') !== 0,
           Only: I(info, 'only') !== 0,
           SetItemId: I(info, 'setItemID'),
+          // OG: CItemInfo::GetMaxLevel (0x5C09B0) — highest info/level/<n> node.
+          // Growth items (135xxx) carry per-level data; used by the tooltip to
+          // pick the "max" glyph vs level/percent digits.
+          MaxLevel: ItemIconLoader._maxLevel(info),
+          // OG: DrawToolTip_Equip durability = 100*cur/max. info/durability is
+          // the max; per-instance current durability comes from the item slot.
+          DurabilityMax: I(info, 'durability'),
         };
       }
     } catch {
@@ -156,6 +163,19 @@ export class ItemIconLoader {
     }
     this._attrCache.set(itemId, attr);
     return attr;
+  }
+
+  // Count of info/level/<n> children == the growth item's max level (0 = not growth).
+  private static _maxLevel(info: WzProperty): number {
+    const levelNode = info.Get('level');
+    if (!levelNode || typeof levelNode !== 'object') return 0;
+    const obj = levelNode as Record<string, unknown>;
+    let max = 0;
+    for (let i = 1; ; i++) {
+      if (!(String(i) in obj)) break;
+      max = i;
+    }
+    return max;
   }
 
   private _infoNode(itemId: number): WzProperty | null {
@@ -274,7 +294,9 @@ export interface ItemAttr {
   SetItemId: number;
   // OG: Equip-specific fields from SetToolTip_Equip_Basic / DrawToolTip_Equip
   ProtectionType?: number;  // 0-3, border color selection
-  Durability?: number;      // 0-100, durability bar
+  Durability?: number;      // current durability (item instance); omitted → full
+  DurabilityMax?: number;   // WZ info/durability — max, so pct = 100*cur/max
   Level?: number;           // growth item level
+  MaxLevel?: number;        // growth item max level (info/level/<n> count)
   StarForce?: number;       // star force enhancement count
 }

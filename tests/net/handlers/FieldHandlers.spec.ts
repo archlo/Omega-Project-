@@ -250,6 +250,40 @@ describe('FieldHandlers', () => {
     expect(args[0].y).toBe(200);
   });
 
+  it('NpcMove decodes the optional path only after action and chat', () => {
+    const args: any[] = [];
+    handlers.onNpcMove = (a) => args.push(a);
+    const p = OutPacket.Raw();
+    p.writeInt(9001000);
+    p.writeByte(2); // one-time action
+    p.writeByte(-1); // no chat
+    p.writeShort(100); p.writeShort(200); // path origin
+    p.writeShort(3); p.writeShort(4); // origin velocity
+    p.writeByte(0); // no elements
+    dispatchPayload(router, OutHeader.NpcMove, p.toArray());
+    expect(args).toEqual([{
+      npcId: 9001000,
+      actionIdx: 2,
+      chatIdx: -1,
+      movePath: { originX: 100, originY: 200, originVx: 3, originVy: 4, elements: [] },
+    }]);
+  });
+
+  it('SummonedMove decodes objId followed directly by a CMovePath', () => {
+    const args: any[] = [];
+    handlers.onSummonedMove = (a) => args.push(a);
+    const p = OutPacket.Raw();
+    p.writeInt(77);
+    p.writeShort(321); p.writeShort(654);
+    p.writeShort(0); p.writeShort(0);
+    p.writeByte(0);
+    dispatchPayload(router, OutHeader.SummonedMove, p.toArray());
+    expect(args).toEqual([{
+      objId: 77,
+      movePath: { originX: 321, originY: 654, originVx: 0, originVy: 0, elements: [] },
+    }]);
+  });
+
   it('MobLeaveField fires callback', () => {
     const ids: number[] = [];
     handlers.onMobLeave = (id) => ids.push(id);

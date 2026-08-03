@@ -5062,6 +5062,8 @@ export class GameStage extends Stage {
   private _onSummonedEnter(args: SummonedEnterArgs): void {
     const s = new SummonedLook(args.objId, args.charId, args.skillId);
     s.Position = { x: args.x, y: args.y };
+    s.FootholdId = args.curFoothold;
+    s.SetMoveAction(args.moveAction);
     s.Load(this._loader, this._skillWz);
     s.SetFootholds(Object.values(this._field?.Footholds ?? {}));
     this._summons.set(args.objId, s);
@@ -5076,7 +5078,7 @@ export class GameStage extends Stage {
   private _onSummonedMove(args: SummonedMoveArgs): void {
     const s = this._summons.get(args.objId);
     if (!s) return;
-    s.Position = { x: args.x, y: args.y };
+    s.ReplayMove(args.movePath);
   }
 
   private _onTownPortalEnter(args: TownPortalEnterArgs): void {
@@ -5902,14 +5904,7 @@ export class GameStage extends Stage {
     npc.ObjId = args.objId;
     // OG: position comes directly from the packet — the server sends the correct position
     npc.Position = { x: args.x, y: args.y };
-    // OG: snap to the foothold from the packet (not a heuristic search)
-    if (this._field && args.footholdId > 0) {
-      const fh = this._field.GetFoothold(args.footholdId);
-      if (fh) {
-        const gy = fh.YAt(args.x);
-        if (gy != null) npc.Position.y = gy;
-      }
-    }
+    npc.FootholdId = args.footholdId;
     // OG: moveAction encodes direction — bit 0: 0=right, 1=left
     const facingLeft = (args.moveAction & 1) !== 0;
     npc.FaceLeft(facingLeft);
