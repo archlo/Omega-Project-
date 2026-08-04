@@ -119,6 +119,7 @@ export class KeyConfig extends GamePanel implements DragTarget {
 
   private readonly _gfx: Graphics;
   private readonly _content: Container;
+  private readonly _clip: Graphics;
 
   onBindingsChanged: (() => void) | null = null;
   onSaveToServer: ((changed: { index: number; fk: FuncKeyMappedRecord }[]) => void) | null = null;
@@ -175,7 +176,11 @@ export class KeyConfig extends GamePanel implements DragTarget {
 
     this._gfx = new Graphics();
     this._content = new Container();
-    this._root.addChild(this._content, this._gfx);
+    this._clip = new Graphics();
+    this._clip.rect(0, 0, this._panelW, this._panelH).fill({ color: 0xFFFFFF });
+    this._content.mask = this._clip;
+    this._gfx.mask = this._clip;
+    this._root.addChild(this._clip, this._content, this._gfx);
 
     this._loadDefaultMap();
   }
@@ -392,8 +397,6 @@ export class KeyConfig extends GamePanel implements DragTarget {
     this._drawPalette();
 
     for (const b of this._allButtons) {
-      b.container.x = 0;
-      b.container.y = 0;
       this._content.addChild(b.container);
     }
 
@@ -495,8 +498,8 @@ export class KeyConfig extends GamePanel implements DragTarget {
     const icon = this._iconFor(fk);
     if (icon) {
       const s = icon.ToPixi();
-      // Anchor is OriginY/Height — position so the icon sits inside the cell
-      s.position.set(cellX - icon.Width * s.anchor.x, cellY - icon.Height * s.anchor.y);
+      // OG DrawItemIcon/DrawSkillIcon receives the cell baseline at y + 32.
+      s.position.set(cellX - icon.Width * s.anchor.x, cellY + CellSize - icon.Height * s.anchor.y);
       s.alpha = alpha;
       this._content.addChild(s);
     } else {
@@ -682,18 +685,17 @@ export class KeyConfig extends GamePanel implements DragTarget {
   }
 
   private _layoutButtons(): void {
-    const px = this._root.x;
-    const py = this._root.y;
     const place = (b: Button | null, bx: number, by: number) => {
-      if (b) b.container.position.set(px + bx, py + by);
+      if (b) b.container.position.set(bx, by);
     };
     place(this._btClose, this._panelW - 18, 6);
     place(this._btHelp, this._panelW - 34, 6);
-    place(this._btQuickSlot, 14, 240);
-    place(this._btDefault, 120, 240);
-    place(this._btDelete, 186, 240);
-    place(this._btOk, this._panelW - 112, 240);
-    place(this._btCancel, this._panelW - 60, 240);
+    // These are WZ-origin positions, not visual top-left coordinates.
+    place(this._btQuickSlot, 147, 239);
+    place(this._btDefault, 10, 239);
+    place(this._btDelete, 73, 239);
+    place(this._btOk, 526, 239);
+    place(this._btCancel, 572, 239);
   }
 
   private _finishDrag(lx: number, ly: number): void {

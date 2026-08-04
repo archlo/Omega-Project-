@@ -288,11 +288,11 @@ export class ChatBalloonLayer {
       v.c.x = winX + bl;
       v.c.y = winY + bt;
       v.c.width = innerW;
-      v.c.height = innerH;
+      v.c.height = Math.max(1, winH - bt - bb);
       v.c.visible = true;
     } else {
       // Keep a fallback for clients whose ChatBalloon asset is incomplete.
-      v.bg.rect(winX + bl, winY + bt, innerW, innerH).fill({ color: 0x1A1C28, alpha: 0.9 });
+      v.bg.rect(winX + bl, winY + bt, innerW, Math.max(1, winH - bt - bb)).fill({ color: 0x1A1C28, alpha: 0.9 });
     }
 
     if (v.arrow) {
