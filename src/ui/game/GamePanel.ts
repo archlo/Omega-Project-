@@ -6,6 +6,8 @@ import { WzProperty } from '../../wz/WzProperty.js';
 import { WzCanvas } from '../../wz/WzCanvas.js';
 
 export class GamePanel {
+  private static _closeAssets: { loader: WzTextureLoader; uiWz: WzPackage } | null = null;
+  private static readonly _instances = new Set<GamePanel>();
   protected _root = new Container({ visible: false });
 
   private _isVisible = false;
@@ -23,6 +25,19 @@ export class GamePanel {
   private _wndCloseBtn: Button | null = null;
   private _wndCloseX = 0;
   private _wndCloseY = 0;
+  private _wndCloseType = 0;
+  private _wndPanelW = 184;
+
+  constructor() {
+    GamePanel._instances.add(this);
+  }
+
+  /** Called once UI.wz is ready so panels created before async WZ loading can
+   * replace their temporary close button with the authentic BtClose sprite. */
+  static configureCloseButtonAssets(loader: WzTextureLoader, uiWz: WzPackage): void {
+    GamePanel._closeAssets = { loader, uiWz };
+    for (const panel of GamePanel._instances) panel._upgradeCloseButton();
+  }
 
   beginDrag(lx: number, ly: number, down: boolean): boolean {
     if (!this.draggable) return false;
@@ -62,23 +77,29 @@ export class GamePanel {
     if (btCloseType === 0) return; // No close button
 
     const pw = panelW ?? 184;
+    this._wndCloseType = btCloseType;
+    this._wndPanelW = pw;
 
     // OG: close button position — top-right corner
     this._wndCloseX = pw - 18;
     this._wndCloseY = 6;
 
-    // Try loading WZ close button
+    // Try loading WZ close button. If this panel was constructed before the
+    // async UI package loaded, use the shared asset provider instead.
+    const assets = loader && uiWz
+      ? { loader, uiWz }
+      : GamePanel._closeAssets;
     let loaded = false;
-    if (loader && uiWz) {
+    if (assets) {
       // OG: BtCloseType 5 → "UI/Basic.img/BtClose3"
       // BtCloseType 4 → panel-specific close from Skill/main/BtClose etc.
       // BtCloseType 1-3 → StringPool-based close buttons
       const closePath = btCloseType === 5
         ? 'UI/Basic.img/BtClose3'
         : 'UI/Basic.img/BtClose';
-      const node = uiWz.GetItem(closePath);
+      const node = assets.uiWz.GetItem(closePath);
       if (node instanceof WzProperty) {
-        const btn = Button.fromWz(loader, node);
+        const btn = Button.fromWz(assets.loader, node);
         btn.onClick = () => { this.isVisible = false; };
         btn.container.position.set(this._wndCloseX, this._wndCloseY);
         this._root.addChild(btn.container);
@@ -103,6 +124,25 @@ export class GamePanel {
     }
   }
 
+  private _upgradeCloseButton(): void {
+    if (this._wndCloseType === 0 || !GamePanel._closeAssets || !this._wndCloseBtn) return;
+    const assets = GamePanel._closeAssets;
+    const closePath = this._wndCloseType === 5 ? 'UI/Basic.img/BtClose3' : 'UI/Basic.img/BtClose';
+    const node = assets.uiWz.GetItem(closePath);
+    if (!(node instanceof WzProperty)) return;
+
+    const old = this._wndCloseBtn;
+    const visible = old.container.visible;
+    const btn = Button.fromWz(assets.loader, node);
+    btn.onClick = () => { this.isVisible = false; };
+    btn.container.position.set(this._wndCloseX, this._wndCloseY);
+    btn.container.visible = visible;
+    old.container.removeFromParent();
+    old.container.destroy({ children: true });
+    this._root.addChild(btn.container);
+    this._wndCloseBtn = btn;
+  }
+
   /** OG: CUIWnd::OnButtonClicked(1000) — close button handler */
   onWndButtonClicked(nId: number): void {
     if (nId === 1000) {
@@ -111,6 +151,9 @@ export class GamePanel {
   }
 
   update(_dt: number): void {}
+  onMouseWheel(x: number, y: number, delta: number): void {
+    this._dispatchScrollbarWheel(this._root, x - this._root.x, y - this._root.y, delta);
+  }
   handleMouseButton(_x: number, _y: number, _down: boolean): boolean { return false; }
   onKeyPress(_key: string): boolean { return false; }
 
@@ -125,5 +168,14 @@ export class GamePanel {
     for (const child of c.children) {
       if (child instanceof Container) this._resetButtonsRecursive(child);
     }
+  }
+
+  private _dispatchScrollbarWheel(c: Container, x: number, y: number, delta: number): boolean {
+    const scrollbar = (c as any).__scrollBarInstance as { handleMouseWheel?: (x: number, y: number, delta: number) => boolean } | undefined;
+    if (scrollbar?.handleMouseWheel?.(x - c.x, y - c.y, delta)) return true;
+    for (const child of c.children) {
+      if (child instanceof Container && this._dispatchScrollbarWheel(child, x, y, delta)) return true;
+    }
+    return false;
   }
 }

@@ -54,6 +54,7 @@ export interface SetFieldArgs {
   /** Migrate-only: character skin (1 byte). Distinct from stat.skin. */
   skin?: number;
   stat?: CharacterStat; look?: AvatarLook;
+  linkedCharacter?: string;
   /** OG: CharacterData.money — decoded from SetField migrate path (DBChar.MONEY flag). */
   money?: number;
   /** OG: CharacterData.equipped — decoded equip slots from SetField migrate path. */

@@ -11,6 +11,8 @@ export class SkillInfo {
   MpCon: number[] = [];
   Cooltime: number[] = [];
   BuffTime: number[] = [];
+  /** Per-level tooltip/help text from level/<n>.desc/info/help when present. */
+  LevelDescriptions: string[] = [];
 
   // --- Metadata (from LoadSkill) ---
   Name = '';
@@ -70,6 +72,10 @@ export class SkillInfo {
   MpConAt(level: number): number    { return SkillInfo._at(this.MpCon, level); }
   CooltimeAt(level: number): number { return SkillInfo._at(this.Cooltime, level); }
   BuffTimeAt(level: number): number { return SkillInfo._at(this.BuffTime, level); }
+  LevelDescriptionAt(level: number): string {
+    return level >= 1 && level <= this.LevelDescriptions.length
+      ? this.LevelDescriptions[level - 1] ?? '' : '';
+  }
 
   private static _at(a: number[], level: number): number {
     return level >= 1 && level <= a.length ? a[level - 1] : 0;
@@ -501,16 +507,22 @@ export class SkillInfoService {
       const mp: number[] = [];
       const cd: number[] = [];
       const bt: number[] = [];
+      const help: string[] = [];
       for (let lv = 1; lv <= n; lv++) {
         const lp = levels.Get(lv.toString());
         if (!(lp instanceof WzProperty)) continue;
         mp.push(SkillInfoService._readInt(lp.Get('mpCon')));
         cd.push(SkillInfoService._readInt(lp.Get('cooltime')));
         bt.push(SkillInfoService._readInt(lp.Get('time')));
+        const levelHelp = ['desc', 'info', 'help', 'h']
+          .map((key) => SkillInfoService._readStr(lp.Get(key)))
+          .find((value) => value.length > 0) ?? '';
+        help.push(levelHelp);
       }
       info.MpCon = mp;
       info.Cooltime = cd;
       info.BuffTime = bt;
+      info.LevelDescriptions = help;
     }
 
     // --- SkillLVData flag ---

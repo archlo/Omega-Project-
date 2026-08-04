@@ -117,6 +117,7 @@ import { ContextMenu, type ContextMenuEntry } from '../ui/ContextMenu.js';
 import { FuncKeyType, FuncKeyMappedNone } from '../domain/FuncKeyMapped.js';
 import { StatDetailInfo } from '../ui/game/StatDetailInfo.js';
 import { GamePanel } from '../ui/game/GamePanel.js';
+import { ScrollBar } from '../ui/game/ScrollBar.js';
 import { DragController, DragTarget } from '../ui/DragController.js';
 import { BuiltInFont } from '../ui/BuiltInFont.js';
 import { Notice } from '../ui/game/Notice.js';
@@ -388,6 +389,7 @@ export class GameStage extends Stage {
   /** Pending equipped items from SetField — applied after _initMenu creates the equip panel. */
   private _pendingEquipped: { slot: number; item: any }[] | null = null;
   private _pendingEquippedCash: { slot: number; item: any }[] | null = null;
+  private _pendingLinkedCharacter = '';
   protected _skillService: SkillInfoService | null = null;
   protected _skillRecords: { skillId: number; level: number; masterLevel: number }[] = [];
   // OG: CUser::AFTERIMAGEINFO — attack trail visual effect.
@@ -1089,6 +1091,8 @@ export class GameStage extends Stage {
   }
 
   private _initMenu(uiWz: WzPackage): void {
+    GamePanel.configureCloseButtonAssets(this._loader, uiWz);
+    ScrollBar.configureDefaultAssets(this._loader, uiWz);
     const font = new BuiltInFont();
     this._itemIcons = new ItemIconLoader(this._loader, this._characterWz, this._itemWz);
      this._itemInfo = new ItemInfoService(this._characterWz, this._itemWz, this._tamingMobWz, this._morphWz, this._etcWz, this._skillWz);
@@ -1129,7 +1133,8 @@ export class GameStage extends Stage {
         }
         return entry.aLevelData[0] as unknown as Record<string, number>;
        }, this._itemInfo, this._stringPool);
-    this._skillGuide = new SkillGuide(this._loader, uiWz);
+     this._skill.setSpecialTooltipContext(this._pendingLinkedCharacter, []);
+     this._skillGuide = new SkillGuide(this._loader, uiWz);
     this._panels.push(this._skillGuide);
     this._keyConfig = new KeyConfig(this._loader, uiWz, font);
     this._questDetail = new QuestDetail(this._loader, uiWz, this._npcWz, font);
@@ -2568,6 +2573,7 @@ export class GameStage extends Stage {
     }
 
     this._dmgNumbers?.Update(dt);
+    ScrollBar.updateAll(dt);
     this._chatBalloon?.Update(dt);
     this._skillEffects?.Update(dt);
     this._itemEffects?.Update(dt);
@@ -3936,6 +3942,8 @@ export class GameStage extends Stage {
     };
     fh.onWildHunterInfo = ({ packedByte, capturedMobIds }) => {
       this._wildHunterInfo?.SetInfo(packedByte, capturedMobIds);
+      this._skill.wildHunterMobNames = capturedMobIds.map((id) =>
+        this.game.nameService?.MobName(id) ?? `Mob ${id}`);
       this._statusMessenger.showLoot(`[Wild Hunter] packed ${packedByte} captured ${capturedMobIds.length} mobs`);
     };
     fh.onAskWhetherUsePamsSong = () => {
@@ -4553,6 +4561,8 @@ export class GameStage extends Stage {
     this._fearEffect.hide();
     this._fieldKey = args.fieldKey;
     this._localCharId = args.characterId ?? 0;
+    this._pendingLinkedCharacter = args.linkedCharacter ?? '';
+    this._skill?.setSpecialTooltipContext(this._pendingLinkedCharacter, this._skill.wildHunterMobNames);
     this._isFieldTransferring = false;
     this._comboKeys.clear();
     this._killCountHud.hide();

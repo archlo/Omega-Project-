@@ -21,10 +21,11 @@ import { WzTextureLoader } from '../../render/WzTextureLoader.js';
 // The `uol` param selects which variant to use (default 'Basic.img/VScr').
 
 const BTN_SIZE = 12;
-const THUMB_MIN = 12;
-const ROWS_PER_PAGE = 6;
+const THUMB_SIZE = 12;
 
 export class ScrollBar {
+  private static _defaultAssets: { loader: WzTextureLoader; uiWz: WzPackage } | null = null;
+  private static readonly _instances = new Set<ScrollBar>();
   readonly container = new Container();
   private _track: Graphics;
   private _thumb: Graphics;
@@ -36,6 +37,9 @@ export class ScrollBar {
   private _dragStartY = 0;
   private _dragStartPos = 0;
   private _dragging = false;
+  private _repeat: 'prev' | 'next' | 'pagePrev' | 'pageNext' | null = null;
+  private _repeatElapsed = 0;
+  private _repeatDelay = 0;
   private _upHover = false;
   private _downHover = false;
   private _thumbHover = false;
@@ -49,8 +53,12 @@ export class ScrollBar {
   private _downHoverSprite: Sprite | null = null;
   private _thumbNormal: Sprite | null = null;
   private _thumbHoverSprite: Sprite | null = null;
+  private _trackDisabled: Sprite | null = null;
+  private _upDisabled: Sprite | null = null;
+  private _downDisabled: Sprite | null = null;
   private _hasWzAssets = false;
   private _loader: WzTextureLoader | null = null;
+  private _uol: string;
 
   constructor(x: number, y: number, height: number, onChange?: (pos: number) => void, wzAssets?: {
     loader: WzTextureLoader;
@@ -59,11 +67,14 @@ export class ScrollBar {
   }) {
     this._onChange = onChange ?? null;
     this._height = height;
+    this._uol = wzAssets?.uol ?? 'Basic.img/VScr';
+    ScrollBar._instances.add(this);
     this._track = new Graphics();
     this._thumb = new Graphics();
     this._upBtn = new Graphics();
     this._downBtn = new Graphics();
     this.container.position.set(x, y);
+    (this.container as any).__scrollBarInstance = this;
     this.container.addChild(this._track);
     this.container.addChild(this._upBtn);
     this.container.addChild(this._downBtn);
@@ -72,10 +83,28 @@ export class ScrollBar {
     // Try to load WZ assets
     if (wzAssets) {
       this._loader = wzAssets.loader;
-      this._loadWzAssets(wzAssets.uiWz, wzAssets.uol ?? 'Basic.img/VScr');
+      this._loadWzAssets(wzAssets.uiWz, this._uol);
+    } else if (ScrollBar._defaultAssets) {
+      this._loader = ScrollBar._defaultAssets.loader;
+      this._loadWzAssets(ScrollBar._defaultAssets.uiWz, this._uol);
     }
 
     this._redraw();
+  }
+
+  static configureDefaultAssets(loader: WzTextureLoader, uiWz: WzPackage): void {
+    ScrollBar._defaultAssets = { loader, uiWz };
+    for (const scrollbar of ScrollBar._instances) {
+      if (!scrollbar._hasWzAssets) {
+        scrollbar._loader = loader;
+        scrollbar._loadWzAssets(uiWz, scrollbar._uol);
+        scrollbar._redraw();
+      }
+    }
+  }
+
+  static updateAll(dt: number): void {
+    for (const scrollbar of ScrollBar._instances) scrollbar.update(dt);
   }
 
   private _loadWzAssets(uiWz: WzPackage | null, uol: string): void {
@@ -112,6 +141,9 @@ export class ScrollBar {
     this._downHoverSprite = loadCanvas(enabled, 'next1');
     this._thumbNormal = loadCanvas(enabled, 'thumb0');
     this._thumbHoverSprite = loadCanvas(enabled, 'thumb1');
+    this._trackDisabled = disabled ? loadCanvas(disabled, 'base') : null;
+    this._upDisabled = disabled ? loadCanvas(disabled, 'prev') : null;
+    this._downDisabled = disabled ? loadCanvas(disabled, 'next') : null;
 
     this._hasWzAssets = !!(this._trackSprite || this._upNormal || this._thumbNormal);
 
@@ -123,9 +155,15 @@ export class ScrollBar {
       this.container.removeChild(this._thumb);
 
       if (this._trackSprite) this.container.addChildAt(this._trackSprite, 0);
+      if (this._trackDisabled) this.container.addChildAt(this._trackDisabled, 0);
       if (this._upNormal) this.container.addChild(this._upNormal);
+      if (this._upHoverSprite) this.container.addChild(this._upHoverSprite);
+      if (this._upDisabled) this.container.addChild(this._upDisabled);
       if (this._downNormal) this.container.addChild(this._downNormal);
+      if (this._downHoverSprite) this.container.addChild(this._downHoverSprite);
+      if (this._downDisabled) this.container.addChild(this._downDisabled);
       if (this._thumbNormal) this.container.addChild(this._thumbNormal);
+      if (this._thumbHoverSprite) this.container.addChild(this._thumbHoverSprite);
     }
   }
 
@@ -150,15 +188,15 @@ export class ScrollBar {
   }
 
   private get _thumbSize(): number {
-    if (this._range <= 0) return this._thumbTrackHeight;
-    const ideal = this._thumbTrackHeight / (this._range + 1);
-    return Math.max(THUMB_MIN, Math.min(ideal, this._thumbTrackHeight));
+    return Math.min(THUMB_SIZE, this._thumbTrackHeight);
   }
 
   private _thumbY(): number {
     if (this._range <= 0) return BTN_SIZE;
-    const available = this._thumbTrackHeight - this._thumbSize;
-    return BTN_SIZE + (this._range > 0 ? (this._pos / this._range) * available : 0);
+    // CCtrlScrollBar::ScrHitTest: grid + curPos * (length - 3*grid) /
+    // (scrollRange - 1). The thumb itself occupies exactly one grid.
+    const travel = Math.max(0, this._height - 3 * BTN_SIZE);
+    return BTN_SIZE + (this._pos / this._range) * travel;
   }
 
   private _redraw(): void {
@@ -170,30 +208,52 @@ export class ScrollBar {
   }
 
   private _redrawWz(): void {
-    // Position WZ sprites
-    if (this._trackSprite) {
-      this._trackSprite.position.set(0, BTN_SIZE);
-      // Tile the track vertically
-      this._trackSprite.scale.y = this._thumbTrackHeight / this._trackSprite.texture.height;
+    const enabled = this._range > 0;
+    const track = enabled ? this._trackSprite : (this._trackDisabled ?? this._trackSprite);
+    const upNormal = enabled ? this._upNormal : (this._upDisabled ?? this._upNormal);
+    const downNormal = enabled ? this._downNormal : (this._downDisabled ?? this._downNormal);
+
+    // Hide every state before selecting the current one. Pixi sprites remain
+    // children after a state change, so leaving the old state visible causes
+    // doubled arrows/thumbs in the current implementation.
+    for (const sprite of [
+      this._trackSprite, this._trackDisabled, this._upNormal, this._upHoverSprite,
+      this._upDisabled, this._downNormal, this._downHoverSprite, this._downDisabled,
+      this._thumbNormal, this._thumbHoverSprite,
+    ]) {
+      if (sprite) sprite.visible = false;
+    }
+
+    if (track) {
+      track.visible = true;
+      track.position.set(0, BTN_SIZE);
+      track.scale.y = this._thumbTrackHeight / Math.max(1, track.texture.height);
     }
 
     // Up button
-    const upSprite = this._upHover ? (this._upHoverSprite ?? this._upNormal) : this._upNormal;
-    if (upSprite) upSprite.position.set(0, 0);
+    const upSprite = enabled && this._upHover
+      ? (this._upHoverSprite ?? upNormal)
+      : upNormal;
+    if (upSprite) {
+      upSprite.visible = true;
+      upSprite.position.set(0, 0);
+    }
 
     // Down button
-    const downSprite = this._downHover ? (this._downHoverSprite ?? this._downNormal) : this._downNormal;
-    if (downSprite) downSprite.position.set(0, this._height - BTN_SIZE);
+    const downSprite = enabled && this._downHover
+      ? (this._downHoverSprite ?? downNormal)
+      : downNormal;
+    if (downSprite) {
+      downSprite.visible = true;
+      downSprite.position.set(0, this._height - BTN_SIZE);
+    }
 
     // Thumb
     const thumbSprite = this._thumbHover ? (this._thumbHoverSprite ?? this._thumbNormal) : this._thumbNormal;
-    if (thumbSprite) {
+    if (enabled && thumbSprite) {
+      thumbSprite.visible = true;
       const ty = this._thumbY();
       thumbSprite.position.set(0, ty);
-      // Scale thumb height to match calculated size
-      if (thumbSprite.texture.height > 0) {
-        thumbSprite.scale.y = this._thumbSize / thumbSprite.texture.height;
-      }
     }
   }
 
@@ -252,8 +312,10 @@ export class ScrollBar {
     if (!down) {
       if (this._dragging) {
         this._dragging = false;
+        this._repeat = null;
         return true;
       }
+      this._repeat = null;
       return false;
     }
 
@@ -262,29 +324,65 @@ export class ScrollBar {
     // Up button
     if (y < BTN_SIZE) {
       this.pos = this._pos - 1;
+      this._beginRepeat('prev');
       this._redraw();
       return true;
     }
     // Down button
     if (y >= this._height - BTN_SIZE) {
       this.pos = this._pos + 1;
+      this._beginRepeat('next');
       this._redraw();
       return true;
     }
     // Track click
     const ty = this._thumbY();
     if (y < ty) {
-      this.pos = Math.max(0, this._pos - ROWS_PER_PAGE);
+      this.pos = Math.max(0, this._pos - this._pageStep());
+      this._beginRepeat('pagePrev');
       return true;
     } else if (y > ty + this._thumbSize) {
-      this.pos = Math.min(this._range, this._pos + ROWS_PER_PAGE);
+      this.pos = Math.min(this._range, this._pos + this._pageStep());
+      this._beginRepeat('pageNext');
       return true;
     }
     // Start drag
     this._dragging = true;
+    this._repeat = null;
     this._dragStartY = y;
     this._dragStartPos = this._pos;
     return true;
+  }
+
+  handleMouseWheel(x: number, y: number, delta: number): boolean {
+    if (x < 0 || x >= BTN_SIZE || y < 0 || y >= this._height || this._range <= 0 || delta === 0) return false;
+    this.pos += delta > 0 ? 1 : -1;
+    return true;
+  }
+
+  update(dt: number): void {
+    if (!this._repeat || this._range <= 0) return;
+    this._repeatElapsed += dt * 1000;
+    if (this._repeatElapsed < this._repeatDelay) return;
+    this._repeatDelay = 50;
+    switch (this._repeat) {
+      case 'prev': this.pos -= 1; break;
+      case 'next': this.pos += 1; break;
+      case 'pagePrev': this.pos -= this._pageStep(); break;
+      case 'pageNext': this.pos += this._pageStep(); break;
+    }
+    this._repeatElapsed = 0;
+  }
+
+  private _beginRepeat(kind: 'prev' | 'next' | 'pagePrev' | 'pageNext'): void {
+    this._repeat = kind;
+    this._repeatElapsed = 0;
+    this._repeatDelay = 400;
+  }
+
+  private _pageStep(): number {
+    // CCtrlScrollBar::DoPrevNextBar uses max(range / 16, 16).
+    return Math.max(16, Math.floor(this._range / 16));
   }
 
   handleMouseLeave(): void {

@@ -1621,6 +1621,7 @@ export class FieldHandlers {
       // fired (black screen, never entered the field). Let Decode read dwFlag.
       const characterData = CharacterDataDecoder.Decode(p);
       args.dwFlag = characterData.flag;
+      args.linkedCharacter = characterData.linkedCharacter;
       if (characterData.characterStat) {
         args.stat = characterData.characterStat;
         args.gender = characterData.characterStat.gender;

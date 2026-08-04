@@ -241,6 +241,8 @@ export class SkillBook extends GamePanel {
   characterJob = 0;
   characterSubJob = 0;
   characterHp = 0; // OG: HP check in OnSkillLevelUpButton
+  linkedCharacter = '';
+  wildHunterMobNames: string[] = [];
   isAdmin = false; // OG: admin/tester/manager bypass
   private _lastSkillUpTime = 0; // OG: 500ms cooldown between skill up requests
   // OG: ExtendSP — dual-blade extended SP tracking
@@ -277,6 +279,11 @@ export class SkillBook extends GamePanel {
     this._noviceSp = next[0] ?? 0;
     this._scrollOffset = 0;
     this.update(0);
+  }
+
+  setSpecialTooltipContext(linkedCharacter: string | undefined, wildHunterMobNames: string[]): void {
+    this.linkedCharacter = linkedCharacter ?? '';
+    this.wildHunterMobNames = [...wildHunterMobNames];
   }
 
   private _titleText: Text;
@@ -711,23 +718,55 @@ export class SkillBook extends GamePanel {
 
   // OG: GetMySkillDegreeSPDualJob — sum of skill levels in dual-job degree
   private _getMySkillDegreeSPDualJob(degree: number): number {
+    const jobs = this._dualJobCodes(degree);
     let sum = 0;
     for (const sk of this._skills) {
       const job = Math.floor(sk.id / 10000);
-      if (isDualJob(job) && job % 10 === degree) sum += sk.level;
+      if (jobs.includes(job)) sum += sk.level;
     }
     return sum;
   }
 
   // OG: GetMaxSkillDegreeSPDualJob — SP cap for dual-job degree (returns [cap1,cap2,cap3])
+  private _dualJobCodes(degree: number): number[] {
+    if (degree <= 0) return [400, 430];
+    if (degree === 1) return [431];
+    if (degree <= 3) return [432, 433];
+    if (degree === 4) return [434];
+    return [];
+  }
+
+  private _dualJobChangeLevel(step: number): number {
+    switch (step) {
+      case 400: return 10;
+      case 430: return 20;
+      case 431: return 30;
+      case 432: return 55;
+      case 433: return 70;
+      case 434: return 120;
+      default: return 200;
+    }
+  }
+
+  // OG returns max SP, job SP, and special/master-level SP.
   private _getMaxSkillDegreeSPDualJob(degree: number): [number, number, number] {
-    // Simplified: 3 tiers with level-based caps
-    const lvl = this.characterLevel;
-    return [
-      Math.max(0, lvl - 10),  // tier 1
-      Math.max(0, lvl - 30),  // tier 2
-      Math.max(0, lvl - 70),  // tier 3
-    ];
+    let low = 0;
+    let high = 0;
+    let jobSp = 0;
+    if (degree <= 0) { low = 400; high = 430; jobSp = 1; }
+    else if (degree === 1) { low = 431; high = 431; jobSp = 1; }
+    else if (degree <= 3) {
+      low = 432; high = 433;
+      jobSp = this.characterLevel >= 70 ? 1 : 0;
+    } else if (degree === 4) { low = 434; high = 434; jobSp = 3; }
+    const maxSp = high > 0
+      ? 3 * (this._dualJobChangeLevel(high + 1) - this._dualJobChangeLevel(low))
+      : 0;
+    const specialSp = this._skills
+      .filter((sk) => this._dualJobCodes(degree).includes(Math.floor(sk.id / 10000)))
+      .filter((sk) => sk.masterLevel > sk.maxLevel && sk.level > sk.maxLevel)
+      .length;
+    return [maxSp, jobSp, specialSp];
   }
 
   // OG: Find skill by ID across all tabs
@@ -781,9 +820,24 @@ export class SkillBook extends GamePanel {
       if ((this._findSkill(requiredId)?.level ?? 0) < requiredLevel) return false;
     }
 
-    const mySP = this._getMySkillDegreeSPDualJob(degree);
-    const [cap1, cap2, cap3] = this._getMaxSkillDegreeSPDualJob(degree);
-    return mySP < cap1 + cap2 + cap3;
+    let priorSpent = 0;
+    let priorCap = 0;
+    for (let prior = 0; prior < degree; prior++) {
+      const [maxSp, jobSp] = this._getMaxSkillDegreeSPDualJob(prior);
+      priorSpent += this._getMySkillDegreeSPDualJob(prior);
+      priorCap += maxSp + jobSp;
+    }
+    if (priorSpent < priorCap) return false;
+
+    const current = this._getMySkillDegreeSPDualJob(degree);
+    const [maxSp, jobSp, specialSp] = this._getMaxSkillDegreeSPDualJob(degree);
+    if (current >= maxSp + jobSp + specialSp) return false;
+    if (degree === 1) return current < specialSp + 3 * this.characterLevel - 90 + jobSp;
+    if (degree === 2 || degree === 3) {
+      return current < specialSp + 3 * (this.characterLevel - 55) + jobSp;
+    }
+    if (degree === 4) return current < specialSp + 3 * (this.characterLevel - 120) + jobSp;
+    return true;
   }
 
   // OG: CUISkill::GetTabSP — returns effective SP for the current tab
@@ -1473,17 +1527,34 @@ export class SkillBook extends GamePanel {
         const info = this.skillService?.Get(skill.id);
         // TODO: SkillInfoService does not currently expose the OG swallow,
         // Wild Hunter, linked-character, expiry, or damage-meter context.
+        const reqSkills = info ? Array.from(info.RequiredSkills.entries()).map(([requiredId, level]) => {
+          const requiredInfo = this.skillService?.Get(requiredId);
+          return {
+            name: requiredInfo?.Name || this.nameOf(requiredId) || `Skill ${requiredId}`,
+            level,
+            skillId: requiredId,
+            icon: requiredInfo
+              ? this.textureLoader?.Load(requiredInfo.Icon1 ?? requiredInfo.Icon0 ?? requiredInfo.Icon ?? null) ?? undefined
+              : undefined,
+          };
+        }) : [];
+        const linkedSkill = skill.id === 12 || skill.id === 10000012 || skill.id === 20000012
+          || skill.id === 20010012 || skill.id === 30000012;
+        const wildHunterSkill = skill.id === 30001061 || skill.id === 30001062;
         this._tooltip.DrawSkillTooltip(
            skill.id, skill.name, info?.Description || this.nameOf(skill.id),
-           skill.level, skill.masterLevel > 0 ? skill.masterLevel : skill.maxLevel,
-          '', '', [], // help text, next help text, required skills
+            skill.level, skill.masterLevel > 0 ? skill.masterLevel : skill.maxLevel,
+           info?.LevelDescriptionAt(skill.level) ?? '',
+           info?.LevelDescriptionAt(skill.level + 1) ?? '', reqSkills,
            this._mouseX, this._mouseY + 20, this._viewW, this._viewH,
            true,
            info ? {
              // SkillInfoService currently provides these fields directly.
-             masterLevel: info.DefaultMasterLev > 0 ? info.DefaultMasterLev : undefined,
-             icon: this._rowIcons[this._hoverIndex] ?? undefined,
-           } : undefined,
+              masterLevel: info.DefaultMasterLev > 0 ? info.DefaultMasterLev : undefined,
+              icon: this._rowIcons[this._hoverIndex] ?? undefined,
+              linkedCharName: linkedSkill && this.linkedCharacter ? this.linkedCharacter : undefined,
+              wildHunterValues: wildHunterSkill ? this.wildHunterMobNames : undefined,
+            } : undefined,
          );
       }
     } else if (this._tooltip) {
