@@ -749,6 +749,36 @@ describe('ToolTip', () => {
       const h = tip.drawItemTitle(10, 'Epic Item');
       expect(h).toBe(14);
     });
+
+    it('equip branch draws name then desc, pair-centered', () => {
+      const tip = makeToolTip();
+      tip.setBasicInfo(1, 200, 100, 0);
+      tip.makeLayer(0, 0, false);
+      tip.drawItemTitle(10, 'Sword', true, '(Equip)');
+      const texts = tip.container.children.filter((c: any) => typeof c.text === 'string');
+      // 'Sword' = 5*7 = 35, '(Equip)' = 7*7 = 49, offset = (200 - 35 - 49)/2 = 58
+      expect(texts.length).toBe(2);
+      expect(texts[0].text).toBe('Sword');
+      expect(texts[0].x).toBe(58);
+      expect(texts[0].y).toBe(10);
+      expect(texts[1].text).toBe('(Equip)');
+      expect(texts[1].x).toBe(58 + 35);
+      expect(texts[1].y).toBe(10);
+    });
+
+    it('non-equip branch draws desc first then name', () => {
+      const tip = makeToolTip();
+      tip.setBasicInfo(1, 200, 100, 0);
+      tip.makeLayer(0, 0, false);
+      tip.drawItemTitle(10, 'Potion', false, '(Use)');
+      const texts = tip.container.children.filter((c: any) => typeof c.text === 'string');
+      // desc '(Use)' = 5*7 = 35 first at offset, name 'Potion' = 6*7 = 42 after
+      expect(texts.length).toBe(2);
+      expect(texts[0].text).toBe('(Use)');
+      expect(texts[0].x).toBe((200 - 42 - 35) / 2);
+      expect(texts[1].text).toBe('Potion');
+      expect(texts[1].x).toBe((200 - 42 - 35) / 2 + 35);
+    });
   });
 
   // ── FONT_TYPES constant ────────────────────────────────────────────────────

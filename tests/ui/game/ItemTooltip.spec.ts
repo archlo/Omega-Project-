@@ -227,13 +227,15 @@ describe('ItemTooltip', () => {
 
     // ── OG 1:1 layout positions (verified from IDA: SetToolTip_Equip) ──────
 
-    it('draws item name dot at (10, y+5) and name text at (18, y)', () => {
+    it('draws item name dot at (10, y+5) and name text centered at y', () => {
       const tip = makeTooltip({ attr: equipAttr() });
       tip.Draw(1300000, 'NameTest', 0, 1, 100, 100, 1024, 768);
       // _root children: [0]=_g, [1]=_iconSprite, [2..]=texts. Text 0 = name.
       const nameText = tip.root.children[2] as any;
       expect(nameText.text).toBe('NameTest');
-      expect(nameText.x).toBe(18);
+      // OG DrawItemTitle @0x88ccb0: name centered at (w - titleW)/2.
+      // 'NameTest' = 8 chars * 7px = 56, w = 236.
+      expect(nameText.x).toBe((236 - 8 * 7) / 2);
       expect(nameText.y).toBe(10);
     });
 
@@ -257,12 +259,50 @@ describe('ItemTooltip', () => {
       const tip = makeTooltip({ attr: equipAttr({ ReqLevel: 30, ReqDex: 50 }), assets });
       tip.SetPlayer(50, 100, 80, 40, 60, 0);
       tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
-      // DrawNumber is called for req values with x = ReqValueRight-20 = 124
-      const reqCalls = (assets.DrawNumber as any).mock.calls.filter((c: any[]) => c[2] === 124);
+      // DrawNumber is called for req values with x = ReqValueRight = 144
+      // (OG: &x[12].__vftable + 2 = 94 + 12*4 + 2). All 6 rows always draw,
+      // so zero-req rows also emit a DrawNumber(0, ...) at the same x.
+      const reqCalls = (assets.DrawNumber as any).mock.calls.filter((c: any[]) => c[2] === 144);
       const levelRow = reqCalls.find((c: any[]) => c[0] === 30);
       const dexRow = reqCalls.find((c: any[]) => c[0] === 50);
       expect(levelRow[3]).toBe(33); // iconTop 33 + 0*12
-      expect(dexRow[3]).toBe(57);   // iconTop 33 + 2*12 (STR skipped)
+      expect(dexRow[3]).toBe(57);   // iconTop 33 + 2*12 (STR index 1 still occupies its slot)
+    });
+
+    it('draws Can-style 0 digits for zero non-POP requirements', () => {
+      const assets = makeAssets();
+      const tip = makeTooltip({ attr: equipAttr(), assets });
+      tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
+      // Level/STR/DEX/INT/LUK all req 0 → DrawNumber(0, met=true, x=144)
+      const zeroRows = (assets.DrawNumber as any).mock.calls.filter(
+        (c: any[]) => c[0] === 0 && c[2] === 144);
+      expect(zeroRows.length).toBe(5);
+      expect(zeroRows.every((c: any[]) => c[1] === true)).toBe(true);
+    });
+
+    it('draws the POP "none" glyph (Can/none) when fame req is 0', () => {
+      const assets = makeAssets();
+      const noneSprite = { NewSprite: () => new Sprite(), Width: 14, Height: 7, OriginX: 0, OriginY: 0 };
+      assets.Get.mockReturnValue(noneSprite);
+      const tip = makeTooltip({ attr: equipAttr(), assets });
+      tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
+      expect(assets.Get).toHaveBeenCalledWith('Can/none');
+      // POP row = index 5 → y = 33 + 5*12 = 93; bottom-right anchored at
+      // (144-14, 93-7) = (130, 86). Not via DrawNumber (bNone).
+      const blitted = tip.root.children.find((c: any) => c.x === 130 && c.y === 86);
+      expect(blitted).toBeTruthy();
+      expect((assets.DrawNumber as any).mock.calls.some((c: any[]) => c[0] === 0 && c[2] === 144 && c[3] === 93)).toBe(false);
+    });
+
+    it('draws fame requirement digits when POP req > 0', () => {
+      const assets = makeAssets();
+      const tip = makeTooltip({ attr: equipAttr({ ReqFame: 20 }), assets });
+      tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
+      const popCall = (assets.DrawNumber as any).mock.calls.find(
+        (c: any[]) => c[0] === 20 && c[2] === 144);
+      expect(popCall).toBeTruthy();
+      expect(popCall[3]).toBe(93); // iconTop 33 + 5*12
+      expect(assets.Get).not.toHaveBeenCalledWith('Can/none');
     });
 
     it('draws durability PERCENT (100*cur/max), not raw, at x=161, y = iconTop+96', () => {

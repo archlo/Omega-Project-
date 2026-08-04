@@ -224,16 +224,22 @@ export class ItemTooltip {
     this._root.x = gx;
     this._root.y = gy;
 
-    // OG: Item name — DrawTextItemName: dot canvas at (10, y+5), text at (18, y)
+    // OG: Item name — DrawItemTitle @0x88ccb0 (equip branch): the name is drawn
+    // centered at (w - titleW - descW)/2 with the desc (StringPool 0xC35,
+    // text unverified → empty) right after it, both at yName.
+    // DrawTextItemName separately draws the dot at (10, yName+5) and the
+    // trade-option desc at (18, yName).
     const nameColor = ItemTooltip._gradeColor(grade);
-    this._txt(0, 18, yName, name, nameColor, 11);
+    const nameW = this._font.measure(name).x;
+    const nameX = Math.max(4, (w - nameW) / 2);
+    this._txt(0, nameX, yName, name, nameColor, 11);
     this._dot(10, yName + 5);
 
     let ti = 1;
 
     // OG: Cash item label (StringPool 5897) — shown after name when item is cash
     if (attr?.Cash) {
-      this._txt(ti, 4 + this._font.measure(name).x + 6, yName, 'Cash', ToolTip.getFontColor(5), 9);
+      this._txt(ti, nameX + nameW + 6, yName, 'Cash', ToolTip.getFontColor(5), 9);
       ti++;
     }
 
@@ -264,23 +270,26 @@ export class ItemTooltip {
       this._iconSprite.visible = false;
     }
 
-    // OG: Requirement rows (Level/STR/DEX/INT/LUK/POP)
-    const reqs: [string, number, boolean][] = [
-      ['Level:', attr?.ReqLevel ?? 0, this._pLevel >= (attr?.ReqLevel ?? 0)],
-      ['STR:', attr?.ReqStr ?? 0, this._pStr >= (attr?.ReqStr ?? 0)],
-      ['DEX:', attr?.ReqDex ?? 0, this._pDex >= (attr?.ReqDex ?? 0)],
-      ['INT:', attr?.ReqInt ?? 0, this._pInt >= (attr?.ReqInt ?? 0)],
-      ['LUK:', attr?.ReqLuk ?? 0, this._pLuk >= (attr?.ReqLuk ?? 0)],
-      ['POP:', attr?.ReqFame ?? 0, false],
+    // OG: Requirement rows (Level/STR/DEX/INT/LUK/POP) — DrawTextEquip_Req:
+    // all 6 rows always draw. Label at (94, iconTop+12*nNo); then either the
+    // requirement digits (left edge 94+12*4+2 = 144, spacing 1) or, for the
+    // POP row only when POP req == 0, the "none" glyph (StringPool 0x1AC4)
+    // drawn from m_pNumberCan bottom-right anchored at (144-cx, rowY-cy).
+    // Non-POP rows with a 0 requirement still draw a Can-style '0' digit.
+    const reqs: [string, number, boolean, boolean][] = [
+      ['Level:', attr?.ReqLevel ?? 0, this._pLevel >= (attr?.ReqLevel ?? 0), false],
+      ['STR:', attr?.ReqStr ?? 0, this._pStr >= (attr?.ReqStr ?? 0), false],
+      ['DEX:', attr?.ReqDex ?? 0, this._pDex >= (attr?.ReqDex ?? 0), false],
+      ['INT:', attr?.ReqInt ?? 0, this._pInt >= (attr?.ReqInt ?? 0), false],
+      ['LUK:', attr?.ReqLuk ?? 0, this._pLuk >= (attr?.ReqLuk ?? 0), false],
+      ['POP:', attr?.ReqFame ?? 0, false, true],
     ];
     let reqIndex = 0;
-    for (const [label, val, met] of reqs) {
-      // OG: DrawTextEquip_Req — label at (94, y+32+12*nNo) = iconTop + 12*nNo
+    for (const [label, val, met, isPop] of reqs) {
       const rowY = yBlock + reqIndex * ReqRowStep;
       reqIndex++;
-      if (val <= 0) continue;
 
-      // OG: Can/Cannot label sprite
+      // OG: Can/Cannot label sprite (met = requirement satisfied)
       const labelSprite = this._assets.Req(label.replace(':', '').toLowerCase(), met);
       if (labelSprite) {
         this._blitAt(labelSprite, ReqLabelX, rowY);
@@ -288,11 +297,25 @@ export class ItemTooltip {
         this._txt(ti, ReqLabelX, rowY, label, met ? 0x909090 : 0xFF6060, 9);
       }
 
-      // OG: Digit sprites
-      const digitW = this._assets.DrawNumber(val, met, ReqValueRight - 20, rowY, this._root, 1);
-      if (digitW === 0) {
-        const valStr = `${val}`;
-        this._txt(ti + 6, ReqValueRight - this._font.measure(valStr).x, rowY, valStr, met ? StatColor : 0xFF6060, 9);
+      if (val <= 0) {
+        // OG: bNone — only the POP row renders the "none" glyph (m_pNumberCan);
+        // the other rows still draw a Can-style '0' digit.
+        if (isPop) {
+          const none = this._assets.Get('Can/none');
+          if (none) {
+            this._blitAt(none, ReqValueRight - none.Width + none.OriginX,
+              rowY - none.Height + none.OriginY);
+          }
+        } else {
+          this._assets.DrawNumber(0, true, ReqValueRight, rowY, this._root, 1);
+        }
+      } else {
+        // OG: draw_number_by_image at x = 94+50 = 144, spacing 1
+        const digitW = this._assets.DrawNumber(val, met, ReqValueRight, rowY, this._root, 1);
+        if (digitW === 0) {
+          const valStr = `${val}`;
+          this._txt(ti + 6, ReqValueRight, rowY, valStr, met ? StatColor : 0xFF6060, 9);
+        }
       }
       ti++;
     }

@@ -518,19 +518,47 @@ export class ToolTip {
     return lineCount * 14;
   }
 
-  // OG: DrawItemTitle @ 0x88ccb0 — draw title with star/icon
-  drawItemTitle(y: number, title: string): number {
-    if (!title) return 0;
+  // OG: DrawItemTitle @ 0x88ccb0 — two-part centered title (name + desc)
+  // Equip branch: name (GetFontByType(3)) drawn first at (w - titleW - descW)/2,
+  // desc (StringPool 0xC35, GetFontByType(1)) right after it.
+  // Non-equip branch: desc (StringPool 0xC36, GetFontByType(10)) first, name
+  // (GetFontByType(14)) after it. Both branches center the pair as a whole.
+  drawItemTitle(y: number, sText: string, bEquip = true, desc = '',
+    titleColor?: number, descColor?: number): number {
+    if (!sText) return 0;
 
-    const font = this.getFontByType(FONT_TYPES.HL_WHITE);
-    const titleWidth = this._measureText(title, font);
+    const titleFont = this.getFontByType(bEquip ? FONT_TYPES.HL_WHITE : FONT_TYPES.GEN_RED);
+    const descFont = this.getFontByType(bEquip ? FONT_TYPES.GEN_WHITE : FONT_TYPES.H_WHITE);
+    const titleW = this._measureText(sText, titleFont);
+    const descW = desc ? this._measureText(desc, descFont) : 0;
+    const offset = (this._width - titleW - descW) / 2;
 
-    // Draw title text centered
-    const t = new Text({ text: title, style: font });
-    t.x = (this._width - titleWidth) / 2;
-    t.y = y;
-    this._container.addChild(t);
-    this._texts.push(t);
+    // Equip: name first, desc after. Non-equip: desc first, name after.
+    const firstText = bEquip ? sText : desc;
+    const firstFont = bEquip ? titleFont : descFont;
+    const firstColor = bEquip
+      ? titleColor ?? FONT_COLORS[FONT_TYPES.HL_WHITE]
+      : descColor ?? FONT_COLORS[FONT_TYPES.GEN_GRAY2];
+    const secondText = bEquip ? desc : sText;
+    const secondFont = bEquip ? descFont : titleFont;
+    const secondColor = bEquip
+      ? descColor ?? FONT_COLORS[FONT_TYPES.GEN_GRAY2]
+      : titleColor ?? FONT_COLORS[FONT_TYPES.GEN_RED];
+
+    if (firstText) {
+      const t1 = new Text({ text: firstText, style: { ...firstFont, fill: firstColor } });
+      t1.x = offset;
+      t1.y = y;
+      this._container.addChild(t1);
+      this._texts.push(t1);
+    }
+    if (secondText) {
+      const t2 = new Text({ text: secondText, style: { ...secondFont, fill: secondColor } });
+      t2.x = offset + (bEquip ? titleW : descW);
+      t2.y = y;
+      this._container.addChild(t2);
+      this._texts.push(t2);
+    }
 
     return 14;
   }
