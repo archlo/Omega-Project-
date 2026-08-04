@@ -386,7 +386,7 @@ export class UserList extends GamePanel {
     if (rawRange <= 0 || this._activeTab === TAB_INDICES.PARTY) {
       this._scrollBar.setRange(0);
     } else {
-      this._scrollBar.setRange(Math.floor(rawRange / 20) + 2);
+      this._scrollBar.setRange(Math.floor(rawRange / 20) + 3);
     }
   }
 

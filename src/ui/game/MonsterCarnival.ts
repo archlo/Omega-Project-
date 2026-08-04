@@ -200,7 +200,7 @@ export class MonsterCarnival extends GamePanel {
   private _updateScrollRange(): void {
     const list = this._getActiveList();
     const max = Math.max(0, list.length - LIST_ROWS);
-    this._scrollBar?.setRange(max);
+    this._scrollBar?.setRange(max + 1);
   }
 
   private _makeButton(loader: WzTextureLoader, uiWz: WzPackage | null, name: string, onClick: () => void): Button | null {

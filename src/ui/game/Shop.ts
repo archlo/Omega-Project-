@@ -299,12 +299,12 @@ export class Shop extends GamePanel {
     const list = this._activeTab === 2 ? this._sellItems :
       this._activeTab === 1 ? this._recommendedItems : this._buyItems;
     const max = Math.max(0, list.length - BUY_LIST_ROWS);
-    this._buyScrollBar?.setRange(max);
+    this._buyScrollBar?.setRange(max + 1);
   }
 
   private _updateSellScrollRange(): void {
     const max = Math.max(0, this._sellItems.length - SELL_LIST_ROWS);
-    this._sellScrollBar?.setRange(max);
+    this._sellScrollBar?.setRange(max + 1);
   }
 
   // --- Draw (OG: CShopDlg::Draw 0x6E9610) ---

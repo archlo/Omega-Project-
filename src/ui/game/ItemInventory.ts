@@ -926,7 +926,7 @@ export class ItemInventory extends GamePanel implements DragTarget {
       this._scrollBar.visible = !this._extended;
       const maxSlot = Math.max(0, ...this._items.filter(i => i.tab === this._activeTab).map(i => i.slot));
       const maxScroll = Math.max(0, Math.ceil(maxSlot / COLS) - ROWS);
-      this._scrollBar.setRange(maxScroll);
+      this._scrollBar.setRange(maxScroll + 1);
     }
 
     for (let r = 0; r < ROWS; r++) {

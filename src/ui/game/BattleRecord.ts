@@ -370,6 +370,13 @@ export class BattleRecord extends GamePanel {
     this._refreshCalcText();
   }
 
+  getDamageMeterSummary(): { avgDmg: number; maxDmg: number } {
+    return {
+      avgDmg: this._info.averageDamagePerSec,
+      maxDmg: this._info.maxDamage,
+    };
+  }
+
   private _refreshCalcText(): void {
     this._calcText!.text = this._serverOnCalc ? 'Server calculation: enabled' : 'Server calculation: disabled';
   }

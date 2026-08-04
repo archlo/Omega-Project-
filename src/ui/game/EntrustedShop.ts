@@ -220,7 +220,7 @@ export class EntrustedShop extends GamePanel {
 
   private _updateScrollRange(): void {
     const max = Math.max(0, this._items.length - LIST_ROWS);
-    this._scrollBar?.setRange(max);
+    this._scrollBar?.setRange(max + 1);
   }
 
   private _loadButton(loader: WzTextureLoader, prop: WzProperty | null, name: string): Button | null {

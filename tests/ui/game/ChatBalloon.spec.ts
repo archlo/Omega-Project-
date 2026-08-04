@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ChatBalloonLayer } from '../../../src/ui/game/ChatBalloon.js';
+import { ChatBalloonLayer, computeChatBalloonLayout } from '../../../src/ui/game/ChatBalloon.js';
 import { WzTextureLoader } from '../../../src/render/WzTextureLoader.js';
 
 // CChatBalloon (decompile/4A2060.c CheckTimeOut, 4A1300.c AdjustCoordY).
@@ -7,6 +7,12 @@ import { WzTextureLoader } from '../../../src/render/WzTextureLoader.js';
 // the center-piece sprite (`_c`) gates everything — matches the OG guard
 // `if (!this->m_pLayerChat.m_pInterface) return;` in CheckTimeOut.
 describe('ChatBalloonLayer', () => {
+  it('matches the v95 nine-piece bounds and head anchor math', () => {
+    const layout = computeChatBalloonLayout(80, 2, 13,
+      { left: 6, right: 6, top: 5, bottom: 5 }, 8, 7, { x: 100, y: 200 });
+    expect(layout).toEqual({ x: 54, y: 157, width: 92, height: 36, arrowX: 96, arrowY: 192 });
+  });
+
   it('does nothing without a loaded balloon sprite sheet', () => {
     const layer = new ChatBalloonLayer(new WzTextureLoader(), null, null);
     layer.Set(1, 'hello');
@@ -19,5 +25,11 @@ describe('ChatBalloonLayer', () => {
     const layer = new ChatBalloonLayer(new WzTextureLoader(), null, null);
     layer.Set(1, 'hello');
     for (let i = 0; i < 10; i++) layer.Update(1);
+  });
+
+  it('accepts an explicit fade delay separately from the visible timeout', () => {
+    const layer = new ChatBalloonLayer(new WzTextureLoader(), null, null);
+    layer.Set(7, 'hello', 2, 0, 0.5);
+    expect(layer.activeCount).toBe(0); // no WZ center canvas, matching OG load guard
   });
 });

@@ -143,7 +143,7 @@ export class SkillIncPanel extends GamePanel {
     this._skills = skills;
     this._scrollOffset = 0;
     this._scrollBar.pos = 0;
-    this._scrollBar.setRange(Math.max(0, skills.length - 3));
+    this._scrollBar.setRange(Math.max(0, skills.length - 3) + 1);
     this._root.position.set(x, y);
     this.isVisible = true;
   }
@@ -315,7 +315,7 @@ export class SkillDecPanel extends GamePanel {
     this._skills = skills;
     this._scrollOffset = 0;
     this._scrollBar.pos = 0;
-    this._scrollBar.setRange(Math.max(0, skills.length - 3));
+    this._scrollBar.setRange(Math.max(0, skills.length - 3) + 1);
     this._root.position.set(x, y);
     this.isVisible = true;
   }

@@ -47,6 +47,7 @@ export class ScrollBar {
 
   // WZ sprite assets
   private _trackSprite: Sprite | null = null;
+  private _trackTiles: Sprite[] = [];
   private _upNormal: Sprite | null = null;
   private _upHoverSprite: Sprite | null = null;
   private _downNormal: Sprite | null = null;
@@ -64,10 +65,13 @@ export class ScrollBar {
     loader: WzTextureLoader;
     uiWz: WzPackage | null;
     uol?: string;
+    /** v95 Basic.img variant: 0=VScr, 2..10=VScr2..VScr10. */
+    variant?: number;
   }) {
     this._onChange = onChange ?? null;
     this._height = height;
-    this._uol = wzAssets?.uol ?? 'Basic.img/VScr';
+    const variant = wzAssets?.variant ?? 0;
+    this._uol = wzAssets?.uol ?? `Basic.img/${variant > 0 ? `VScr${variant}` : 'VScr'}`;
     ScrollBar._instances.add(this);
     this._track = new Graphics();
     this._thumb = new Graphics();
@@ -105,6 +109,11 @@ export class ScrollBar {
 
   static updateAll(dt: number): void {
     for (const scrollbar of ScrollBar._instances) scrollbar.update(dt);
+  }
+
+  /** Release every captured scrollbar, including a drag released outside its panel. */
+  static releasePointer(): void {
+    for (const scrollbar of ScrollBar._instances) scrollbar._releasePointer();
   }
 
   private _loadWzAssets(uiWz: WzPackage | null, uol: string): void {
@@ -177,11 +186,14 @@ export class ScrollBar {
     }
   }
 
-  setRange(range: number): void {
-    this._range = Math.max(0, range);
+  /** Match CCtrlScrollBar::SetScrollRange: rangeCount includes position zero. */
+  setRange(rangeCount: number): void {
+    this._range = Math.max(0, Math.ceil(rangeCount) - 1);
     this._pos = Math.min(this._pos, this._range);
     this._redraw();
   }
+
+  get maxPosition(): number { return this._range; }
 
   private get _thumbTrackHeight(): number {
     return this._height - BTN_SIZE * 2;
@@ -224,10 +236,21 @@ export class ScrollBar {
       if (sprite) sprite.visible = false;
     }
 
+    this._trackTiles.forEach((tile) => { tile.removeFromParent(); tile.destroy(); });
+    this._trackTiles = [];
     if (track) {
-      track.visible = true;
-      track.position.set(0, BTN_SIZE);
-      track.scale.y = this._thumbTrackHeight / Math.max(1, track.texture.height);
+      // OG repeats the source canvas; stretching it changes the pixel pattern.
+      track.visible = false;
+      const tileHeight = Math.max(1, track.texture.height);
+      let y = BTN_SIZE;
+      while (y < BTN_SIZE + this._thumbTrackHeight) {
+        const tile = new Sprite(track.texture);
+        tile.position.set(0, y);
+        tile.height = Math.min(tileHeight, BTN_SIZE + this._thumbTrackHeight - y);
+        this.container.addChildAt(tile, 0);
+        this._trackTiles.push(tile);
+        y += tileHeight;
+      }
     }
 
     // Up button
@@ -311,8 +334,7 @@ export class ScrollBar {
   handleMouseButton(x: number, y: number, down: boolean): boolean {
     if (!down) {
       if (this._dragging) {
-        this._dragging = false;
-        this._repeat = null;
+        this._releasePointer();
         return true;
       }
       this._repeat = null;
@@ -390,6 +412,13 @@ export class ScrollBar {
     this._downHover = false;
     this._thumbHover = false;
     if (!this._dragging) this._redraw();
+  }
+
+  private _releasePointer(): void {
+    this._dragging = false;
+    this._repeat = null;
+    this._repeatElapsed = 0;
+    this._repeatDelay = 0;
   }
 
   get visible(): boolean { return this.container.visible; }

@@ -85,7 +85,7 @@ export class UserInfoWishList {
     this._texts = [];
 
     const maxScroll = Math.max(0, this._items.length - VISIBLE_ROWS);
-    if (this._scrollBar) this._scrollBar.setRange(maxScroll);
+    if (this._scrollBar) this._scrollBar.setRange(maxScroll + 1);
 
     const startIdx = this._scrollPos;
     for (let i = 0; i < VISIBLE_ROWS && startIdx + i < this._items.length; i++) {

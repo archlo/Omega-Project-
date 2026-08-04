@@ -80,7 +80,7 @@ export class UserInfoDetail {
     this._texts = [];
 
     const maxScroll = Math.max(0, Math.ceil(this._items.length / 2) - VISIBLE_ROWS);
-    if (this._scrollBar) this._scrollBar.setRange(maxScroll);
+    if (this._scrollBar) this._scrollBar.setRange(maxScroll + 1);
 
     const startRow = this._scrollPos;
     for (let row = 0; row < VISIBLE_ROWS; row++) {

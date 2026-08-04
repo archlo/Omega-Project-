@@ -125,7 +125,7 @@ export class SkillMacro extends GamePanel implements DragTarget {
     this._selectedSlot = 0;
     this._scrollOffset = 0;
     this._scrollBar.pos = 0;
-    this._scrollBar.setRange(Math.max(0, this._macros.length - 3));
+    this._scrollBar.setRange(Math.max(0, this._macros.length - 3) + 1);
     this._editingName = false;
     this.isVisible = true;
     this._refreshRows();

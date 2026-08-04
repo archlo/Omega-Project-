@@ -243,6 +243,8 @@ export class SkillBook extends GamePanel {
   characterHp = 0; // OG: HP check in OnSkillLevelUpButton
   linkedCharacter = '';
   wildHunterMobNames: string[] = [];
+  swallowBuffType = 0;
+  damageMeter: { avgDmg: number; maxDmg: number } | null = null;
   isAdmin = false; // OG: admin/tester/manager bypass
   private _lastSkillUpTime = 0; // OG: 500ms cooldown between skill up requests
   // OG: ExtendSP — dual-blade extended SP tracking
@@ -284,6 +286,14 @@ export class SkillBook extends GamePanel {
   setSpecialTooltipContext(linkedCharacter: string | undefined, wildHunterMobNames: string[]): void {
     this.linkedCharacter = linkedCharacter ?? '';
     this.wildHunterMobNames = [...wildHunterMobNames];
+  }
+
+  setSwallowBuffType(value: number): void {
+    this.swallowBuffType = value;
+  }
+
+  setDamageMeterSummary(summary: { avgDmg: number; maxDmg: number } | null): void {
+    this.damageMeter = summary;
   }
 
   private _titleText: Text;
@@ -1051,7 +1061,7 @@ export class SkillBook extends GamePanel {
     this._isAranJob = hasAran;
     // OG: SetScrollBar — range = skillCount - 3 (not VISIBLE_ROWS)
     const tab = this._tabs[this._activeTab] || [];
-    this._scrollBar.setRange(Math.max(0, tab.length - 3));
+    this._scrollBar.setRange(Math.max(0, tab.length - 3) + 1);
     // OG: GetRecommendSKill — WZ-driven from Skill.wz/<root>.img/recommend
     this._recommendSkillId = 0;
     if (tab.length > 0 && this.skillService) {
@@ -1541,6 +1551,9 @@ export class SkillBook extends GamePanel {
         const linkedSkill = skill.id === 12 || skill.id === 10000012 || skill.id === 20000012
           || skill.id === 20010012 || skill.id === 30000012;
         const wildHunterSkill = skill.id === 30001061 || skill.id === 30001062;
+        const swallowSkill = skill.id === 33101006;
+        const damageMeterSkill = skill.id === 1006 || skill.id === 10001006
+          || skill.id === 20001006 || skill.id === 20011006 || skill.id === 30001006;
         this._tooltip.DrawSkillTooltip(
            skill.id, skill.name, info?.Description || this.nameOf(skill.id),
             skill.level, skill.masterLevel > 0 ? skill.masterLevel : skill.maxLevel,
@@ -1554,6 +1567,14 @@ export class SkillBook extends GamePanel {
               icon: this._rowIcons[this._hoverIndex] ?? undefined,
               linkedCharName: linkedSkill && this.linkedCharacter ? this.linkedCharacter : undefined,
               wildHunterValues: wildHunterSkill ? this.wildHunterMobNames : undefined,
+              isSwallowBuff: swallowSkill && this.swallowBuffType !== 0,
+              swallowBuffType: swallowSkill ? this.swallowBuffType : undefined,
+              swallowBuffs: swallowSkill && this.swallowBuffType !== 0
+                ? [`Swallow buff type: ${this.swallowBuffType}`] : undefined,
+              damageMeter: damageMeterSkill ? this.damageMeter ?? undefined : undefined,
+              damageMeterValues: damageMeterSkill && this.damageMeter
+                ? [`Damage-meter average: ${this.damageMeter.avgDmg}`, `Damage-meter max: ${this.damageMeter.maxDmg}`]
+                : undefined,
             } : undefined,
          );
       }
@@ -1625,7 +1646,7 @@ export class SkillBook extends GamePanel {
     this._tooltip?.Hide();
     // OG: SetScrollBar — range = skillCount - 3
     const tab = this._tabs[this._activeTab] || [];
-    this._scrollBar.setRange(Math.max(0, tab.length - 3));
+    this._scrollBar.setRange(Math.max(0, tab.length - 3) + 1);
     // OG: GetRecommendSKill — WZ-driven from Skill.wz/<root>.img/recommend
     this._recommendSkillId = 0;
     if (tab.length > 0 && this.skillService) {

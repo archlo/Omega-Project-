@@ -5,6 +5,7 @@ import { WzPackage } from '../../wz/WzPackage.js';
 import { WzProperty } from '../../wz/WzProperty.js';
 import { WzCanvas } from '../../wz/WzCanvas.js';
 import { BuiltInFont } from '../BuiltInFont.js';
+import { StringPoolService } from '../../localization/StringPoolService.js';
 
 const Ttl = 4;
 // decompile/4A2060.c CChatBalloon::CheckTimeOut fades the balloon's alpha
@@ -16,11 +17,41 @@ const Ttl = 4;
 const FadeDuration = 1;
 const MaxTextWidth = 160;
 
+export interface ChatBalloonLayout {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  arrowX: number;
+  arrowY: number;
+}
+
+/** CChatBalloon::CreateCanvas/AdjustCoordY equivalent for the nine pieces. */
+export function computeChatBalloonLayout(
+  innerWidth: number,
+  lineCount: number,
+  lineHeight: number,
+  border: { left: number; right: number; top: number; bottom: number },
+  arrowWidth: number,
+  arrowHeight: number,
+  tip: { x: number; y: number },
+): ChatBalloonLayout {
+  const width = Math.max(innerWidth, 8) + border.left + border.right;
+  const height = Math.max(1, lineCount) * lineHeight + border.top + border.bottom;
+  const x = Math.floor(tip.x - width / 2);
+  const y = Math.floor(tip.y - arrowHeight - height);
+  return { x, y, width, height, arrowX: Math.floor(tip.x - arrowWidth / 2), arrowY: y + height - 1 };
+}
+
 interface Balloon {
   lines: string[];
   width: number;
   life: number;
   view: BalloonView;
+  fadeDelay: number;
+  fontColor: number;
+  fontFamily: string;
+  lineHeight: number;
 }
 
 interface BalloonAssets {
@@ -29,6 +60,8 @@ interface BalloonAssets {
   sw: WzSprite | null; s: WzSprite | null; se: WzSprite | null;
   arrow: WzSprite | null;
   fontColor: number;
+  fontFamily: string;
+  lineHeight: number;
 }
 
 // Per-balloon sprite set. CChatBalloon::CheckTimeOut/AdjustCoordY operate on
@@ -45,6 +78,8 @@ class BalloonView {
   sw: Sprite | null = null; s: Sprite | null = null; se: Sprite | null = null;
   arrow: Sprite | null = null;
   texts: Text[] = [];
+  composedWidth = 0;
+  composedHeight = 0;
 
   constructor(parent: Container, src: {
     nw: WzSprite | null; n: WzSprite | null; ne: WzSprite | null;
@@ -79,11 +114,18 @@ export class ChatBalloonLayer {
   private _root: Container;
   private _active = new Map<number, Balloon>();
 
-  constructor(loader: WzTextureLoader, ui: WzPackage | null, font: BuiltInFont | null) {
+  constructor(loader: WzTextureLoader, ui: WzPackage | null, font: BuiltInFont | null, strings?: StringPoolService | null) {
     this._font = font;
     this._root = new Container();
     for (let type = 0; type <= 3; type++) {
-      const b = ui?.GetItem(`ChatBalloon.img/${type}`);
+      // OG does not hard-code the numeric child for the public/group styles;
+      // it asks StringPool for the localized ChatBalloon prefix. Keep the
+      // numeric v95 export as a compatibility fallback.
+      const poolPrefix = type < 3 ? strings?.getString(1000 + type) : undefined;
+      const candidates = poolPrefix
+        ? [poolPrefix, `ChatBalloon.img/${type}`]
+        : [`ChatBalloon.img/${type}`];
+      const b = candidates.map((path) => ui?.GetItem(path)).find((v) => v instanceof WzProperty);
       if (!(b instanceof WzProperty)) continue;
       const value = b.Get('fontColor');
       const fontColor = typeof value === 'number' ? value & 0xFFFFFF
@@ -92,16 +134,23 @@ export class ChatBalloonLayer {
         const v = b.Get(k);
         return v instanceof WzCanvas ? loader.Load(v) : null;
       };
+      const readNumber = (key: string, fallback: number): number => {
+        const v = b.Get(key);
+        return typeof v === 'number' ? v : typeof v === 'bigint' ? Number(v) : fallback;
+      };
+      const face = b.Get('fontFace');
+      const fontFamily = typeof face === 'string' && face.length > 0 ? face : 'Arial';
       this._assets.set(type, {
         nw: P('nw'), n: P('n'), ne: P('ne'), w: P('w'), c: P('c'), e: P('e'),
         sw: P('sw'), s: P('s'), se: P('se'), arrow: P('arrow'), fontColor,
+        fontFamily, lineHeight: readNumber('lineHeight', this._font?.lineHeight ?? 13),
       });
     }
   }
 
   get root(): Container { return this._root; }
 
-  Set(charId: number, text: string, ttl: number = Ttl, type = 0): void {
+  Set(charId: number, text: string, ttl: number = Ttl, type = 0, fadeDelay = FadeDuration): void {
     if (!text || text.trim().length === 0) return;
     const assets = this._assets.get(type) ?? this._assets.get(0);
     if (!assets?.c) return;
@@ -116,12 +165,27 @@ export class ChatBalloonLayer {
       sw: assets.sw, s: assets.s, se: assets.se, arrow: assets.arrow,
     });
     (view as BalloonView & { fontColor?: number }).fontColor = assets.fontColor;
-    this._active.set(charId, { lines, width, life: ttl, view });
+    const delay = Math.max(0, fadeDelay);
+    this._active.set(charId, {
+      lines, width, life: Math.max(0, ttl) + delay, fadeDelay: delay, view,
+      fontColor: assets.fontColor, fontFamily: assets.fontFamily, lineHeight: assets.lineHeight,
+    });
   }
 
   Clear(charId: number): void {
     this._active.get(charId)?.view.destroy();
     this._active.delete(charId);
+  }
+
+  get activeCount(): number { return this._active.size; }
+
+  getBalloonAlpha(charId: number): number | undefined {
+    return this._active.get(charId)?.view.container.alpha;
+  }
+
+  getBalloonLayout(charId: number): { width: number; height: number } | undefined {
+    const view = this._active.get(charId)?.view;
+    return view ? { width: view.composedWidth, height: view.composedHeight } : undefined;
   }
 
   Update(dt: number): void {
@@ -170,39 +234,54 @@ export class ChatBalloonLayer {
     const v = b.view;
     // decompile/4A2060.c CheckTimeOut: alpha ramps to 0 over the fade
     // window once the message's timeout has elapsed.
-    const alpha = b.life < FadeDuration ? Math.max(0, b.life / FadeDuration) : 1;
+    const alpha = b.life < b.fadeDelay && b.fadeDelay > 0
+      ? Math.max(0, b.life / b.fadeDelay) : 1;
     v.container.alpha = alpha;
 
     for (const t of v.texts) t.destroy();
     v.texts = [];
 
-    const lineH = this._font?.lineHeight ?? 13;
-    const bl = v.w ? v.w.width : 6;
-    const br = v.e ? v.e.width : 6;
-    const bt = v.n ? v.n.height : 6;
-    const bb = v.s ? v.s.height : 6;
+    // Use source texture dimensions, not the last composed frame's scaled
+    // Sprite dimensions. This keeps the generated layout stable on redraw.
+    const naturalW = (px: Sprite | null, fallback: number) => px ? px.texture.width : fallback;
+    const naturalH = (px: Sprite | null, fallback: number) => px ? px.texture.height : fallback;
+    const bl = naturalW(v.w, 6);
+    const br = naturalW(v.e, 6);
+    const bt = naturalH(v.n, 6);
+    const bb = naturalH(v.s, 6);
+    const lineH = b.lineHeight;
     const innerW = Math.max(b.width, 8);
-    const innerH = b.lines.length * lineH;
-    const winW = innerW + bl + br;
-    const winH = innerH + bt + bb;
-    const winX = Math.floor(tip.x - winW / 2);
-    const winY = Math.floor(tip.y - (v.arrow?.height ?? 6) - winH);
+    const layout = computeChatBalloonLayout(innerW, b.lines.length, lineH,
+      { left: bl, right: br, top: bt, bottom: bb }, v.arrow?.texture.width ?? 6,
+      v.arrow?.texture.height ?? 6, tip);
+    const winW = layout.width;
+    const winH = layout.height;
+    v.composedWidth = winW;
+    v.composedHeight = winH + (v.arrow?.texture.height ?? 6);
+    const winX = layout.x;
+    const winY = layout.y;
+
+    const nwW = naturalW(v.nw, 6), neW = naturalW(v.ne, 6);
+    const swW = naturalW(v.sw, 6), seW = naturalW(v.se, 6);
+    const nwH = naturalH(v.nw, 6), neH = naturalH(v.ne, 6);
+    const swH = naturalH(v.sw, 6), seH = naturalH(v.se, 6);
 
     const s = (px: Sprite | null, x: number, y: number, w?: number, h?: number) => {
       if (!px) return;
       px.x = x; px.y = y; px.visible = true;
+      px.scale.set(1);
       if (w !== undefined) px.width = w;
       if (h !== undefined) px.height = h;
     };
 
     s(v.nw, winX, winY);
-    s(v.ne, winX + winW - (v.ne?.width ?? 0), winY);
-    s(v.sw, winX, winY + winH - (v.sw?.height ?? 0));
-    s(v.se, winX + winW - (v.se?.width ?? 0), winY + winH - (v.se?.height ?? 0));
-    s(v.n, winX + (v.nw?.width ?? 0), winY, Math.max(1, winW - (v.nw?.width ?? 0) - (v.ne?.width ?? 0)));
-    s(v.s, winX + (v.sw?.width ?? 0), winY + winH - (v.s?.height ?? 0), Math.max(1, winW - (v.sw?.width ?? 0) - (v.se?.width ?? 0)));
-    s(v.w, winX, winY + (v.nw?.height ?? 0), undefined, Math.max(1, winH - (v.nw?.height ?? 0) - (v.sw?.height ?? 0)));
-    s(v.e, winX + winW - (v.e?.width ?? 0), winY + (v.ne?.height ?? 0), undefined, Math.max(1, winH - (v.ne?.height ?? 0) - (v.se?.height ?? 0)));
+    s(v.ne, winX + winW - neW, winY);
+    s(v.sw, winX, winY + winH - swH);
+    s(v.se, winX + winW - seW, winY + winH - seH);
+    s(v.n, winX + nwW, winY, Math.max(1, winW - nwW - neW));
+    s(v.s, winX + swW, winY + winH - naturalH(v.s, bb), Math.max(1, winW - swW - seW));
+    s(v.w, winX, winY + nwH, undefined, Math.max(1, winH - nwH - swH));
+    s(v.e, winX + winW - naturalW(v.e, br), winY + neH, undefined, Math.max(1, winH - neH - seH));
 
     v.bg.clear();
     if (v.c) {
@@ -217,14 +296,17 @@ export class ChatBalloonLayer {
     }
 
     if (v.arrow) {
-      v.arrow.x = Math.floor(tip.x - v.arrow.width / 2);
-      v.arrow.y = winY + winH - 1;
+      v.arrow.scale.set(1);
+      v.arrow.x = Math.floor(tip.x - v.arrow.texture.width / 2);
+      v.arrow.y = layout.arrowY;
       v.arrow.visible = true;
     }
 
     if (this._font) {
       const textStyle = this._font.style.clone();
-      textStyle.fill = (v as BalloonView & { fontColor?: number }).fontColor ?? 0xFFFFFF;
+      textStyle.fill = b.fontColor;
+      textStyle.fontFamily = b.fontFamily;
+      textStyle.lineHeight = lineH;
       for (let i = 0; i < b.lines.length; i++) {
         const t = new Text({ text: b.lines[i], style: textStyle });
         t.x = winX + bl;

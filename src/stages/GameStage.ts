@@ -250,6 +250,7 @@ export class GameStage extends Stage {
   protected _statusBar!: StatusBar;
   protected _chatBar = new ChatBar();
   private _chatTarget = 'all';
+  private _pendingLocalBalloon: { text: string; at: number } | null = null;
   private _chatTab = 0;
   protected _miniMap!: MiniMap;
   // OG: CUIMiniMap::InsertStalkee/RemoveStalkee — TODO_AUDIT.md
@@ -797,6 +798,7 @@ export class GameStage extends Stage {
   }
 
   onMouseButton(x: number, y: number, down: boolean, _button: MouseButton): void {
+    if (!down) ScrollBar.releasePointer();
     // Dismiss context menu on any click
     if (this._contextMenu && down) {
       this._dismissContextMenu();
@@ -1653,7 +1655,7 @@ export class GameStage extends Stage {
       onBan: () => { this.game.session.send(GameSender.MemoryGameBan()); },
       onLeave: () => { this.game.session.send(GameSender.MiniRoomLeave()); },
     });
-    this._chatBalloon = new ChatBalloonLayer(this._loader, uiWz, font);
+    this._chatBalloon = new ChatBalloonLayer(this._loader, uiWz, font, this._stringPool);
     this.uiRoot.addChild(this._chatBalloon.root);
 
     this.uiRoot.addChild(this._gameMenu.container);
@@ -2205,6 +2207,8 @@ export class GameStage extends Stage {
         if (target) {
           this.game.session.send(GameSender.Whisper(target, msg));
           this._chatBar.addLine(`${target} : ${msg}`, 14, -1, true);
+          const targetChar = [...this._otherChars.values()].find((c) => c.Name === target);
+          if (targetChar) this._chatBalloon?.Set(targetChar.CharId, msg, 5, 2);
         }
         return;
       }
@@ -2214,6 +2218,12 @@ export class GameStage extends Stage {
           : this._chatTarget === 'guild' ? '/g '
           : this._chatTarget === 'alliance' ? '/a ' : '';
         if (prefix) { this._handleChatCommand(prefix + msg); return; }
+      }
+      if (!msg.startsWith('/') && this._chatTarget === 'all') {
+        // Render local speech immediately; suppress the matching server echo
+        // in onUserChat so the balloon is not recreated twice.
+        this._pendingLocalBalloon = { text: msg, at: performance.now() };
+        this._chatBalloon?.Set(this._localCharId, msg, 5, 0);
       }
       this._handleChatCommand(msg);
     };
@@ -3114,7 +3124,12 @@ export class GameStage extends Stage {
         this._chatBar.addLine(`${charName} : ${resolved}`, 0);
         this._statusMessenger.showLoot(`${charName}: ${resolved}`);
       }
-      this._chatBalloon?.Set(args.charId, resolved);
+      const isLocalEcho = args.charId === this._localCharId
+        && this._pendingLocalBalloon !== null
+        && performance.now() - this._pendingLocalBalloon.at < 2000
+        && this._pendingLocalBalloon.text === resolved;
+      if (isLocalEcho) this._pendingLocalBalloon = null;
+      else this._chatBalloon?.Set(args.charId, resolved, 5, 0);
     };
     fh.onUserEffect = (args) => this._onUserEffect(args);
     fh.onFuncKeyMappedInit = (entries) => { this._keyConfig.applyServerKeymap(entries); };
@@ -3153,7 +3168,9 @@ export class GameStage extends Stage {
       }
       const resolved = this._resolveChatItemLinks(text);
       this._chatBar.addLine(`${prefix} ${fromName}: ${resolved}`, lType);
-      this._chatBalloon?.Set(charId, resolved);
+      const balloonType = groupType === 2 || groupType === 3 ? 1
+        : groupType === 4 ? 2 : groupType === 5 || groupType === 26 ? 3 : 0;
+      this._chatBalloon?.Set(charId, resolved, 4, balloonType);
     };
     fh.onWhisper = ({ fromName, channelId, text }) => {
       // OG: CField::OnWhisper checks CConfig::IsInBlackList before
@@ -3166,6 +3183,8 @@ export class GameStage extends Stage {
       // OG: ChatLogAdd with lType=14 (whisper), channelID, bWhisperIcon
       this._chatBar.addLine(`${fromName} : ${this._resolveChatItemLinks(text)}`, 14, channelId, true);
       this._statusMessenger.showLoot(`[Whisper] ${fromName}: ${this._resolveChatItemLinks(text)}`);
+      const sender = [...this._otherChars.values()].find((c) => c.Name === fromName);
+      if (sender) this._chatBalloon?.Set(sender.CharId, this._resolveChatItemLinks(text), 4, 2);
     };
     fh.onPartyInvite = ({ inviterId, inviterName }) => {
       if (this._blackList.has(inviterName)) return;
@@ -3248,9 +3267,11 @@ export class GameStage extends Stage {
     const brh = game.battleRecordHandlers;
     brh.onDotDamage = (args) => {
       this._battleRecord?.setDotDamage(args);
+      this._skill.setDamageMeterSummary(this._battleRecord?.getDamageMeterSummary() ?? null);
     };
     brh.onServerOnCalcResult = (args) => {
       this._battleRecord?.setServerOnCalc(args.enabled);
+      this._skill.setDamageMeterSummary(this._battleRecord?.getDamageMeterSummary() ?? null);
     };
 
     fh.onMigrateCommand = (host, port) => {
@@ -5521,6 +5542,7 @@ export class GameStage extends Stage {
       // flag exists on this client's own outgoing damage anywhere, so
       // isCritical is always false here (documented simplification).
       this._battleRecord?.AddDamage(dmg, false, false);
+      this._skill.setDamageMeterSummary(this._battleRecord?.getDamageMeterSummary() ?? null);
       const ctl = this._mobCtl.get(closest.MobId);
       ctl?.OnDamagedByPlayer();
       ctl?.ApplyHitKnockback(closest.Position.x >= pos.x ? 25 : -25);
@@ -6691,6 +6713,10 @@ export class GameStage extends Stage {
   }
 
   private _onTemporaryStatSet(entries: { skillId: number; value: number; seconds: number }[]): void {
+    // OG SetToolTip_Skill reads CWvsContext::GetSwallowBuffType for
+    // 33101006. SecondaryStat already owns the decoded value; keep the skill
+    // tooltip synchronized whenever the local temporary-stat packet arrives.
+    this._skill.setSwallowBuffType(this.game.fieldHandlers.secondaryStat.buff.swallowBuff);
     this._buffList.skillService = this._skillService;
     this._buffList.textureLoader = this._loader;
     this._comboCounter = 0;
@@ -6712,6 +6738,7 @@ export class GameStage extends Stage {
   }
 
   private _onTemporaryStatReset(_mask: number): void {
+    this._skill.setSwallowBuffType(0);
     this._physics?.SetRepeatSkill(0);
     this._buffList.clearBuffs();
     this._fearEffect.hide();
@@ -7167,7 +7194,7 @@ export class GameStage extends Stage {
     if (talkers.length === 0) return;
     const npc = talkers[Math.floor(Math.random() * talkers.length)];
     const text = npc.GetRandomSpeech();
-    if (text) this._chatBalloon?.Set(npc.ObjId, text, 5);
+    if (text) this._chatBalloon?.Set(npc.ObjId, text, 5, 1);
   }
 
   /** ponytail: when combo counter > 0, try indexed variant <wzPath>/<combo>
@@ -7289,6 +7316,7 @@ export class GameStage extends Stage {
         const dmg = target.damage[i];
         this._dmgNumbers?.Add(dmg, mob.HeadPosition.x, mob.HeadPosition.y, DamageKind.MobDamage, i);
         this._battleRecord?.AddDamage(dmg, false, false);
+        this._skill.setDamageMeterSummary(this._battleRecord?.getDamageMeterSummary() ?? null);
       }
       const ctl = this._mobCtl.get(target.mobId);
       ctl?.OnDamagedByPlayer();

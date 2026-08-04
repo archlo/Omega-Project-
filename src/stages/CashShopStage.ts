@@ -1215,7 +1215,7 @@ export class CashShopStage extends Stage {
     const maxScroll = Math.max(0, Math.ceil(Math.max(0, this._lockerItems.length - LOCKER_COLS * LOCKER_ROWS) / LOCKER_COLS));
     if (this._lockerScrollbar) {
       this._lockerScrollbar.container.x = scrollbarX;
-      this._lockerScrollbar.setRange(maxScroll);
+      this._lockerScrollbar.setRange(maxScroll + 1);
     }
   }
 
@@ -1311,7 +1311,7 @@ export class CashShopStage extends Stage {
       }
     }
     if (this._btRebate) this._drawWzSprite(this._btRebate, LOCKER_X + 160, LOCKER_Y + 82);
-    this._inventoryScrollbar?.setRange(Math.max(0, items.length - 12));
+    this._inventoryScrollbar?.setRange(Math.max(0, items.length - 12) + 1);
   }
 
   /** Get items for the current inventory tab from CharacterData */
