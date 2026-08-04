@@ -102,6 +102,7 @@ import { Shop } from '../ui/game/Shop.js';
 import { GameMenu } from '../ui/game/GameMenu.js';
 import { Revive } from '../ui/game/Revive.js';
 import { ListService } from '../localization/ListService.js';
+import { StringPoolService } from '../localization/StringPoolService.js';
 import { CashShopStage } from './CashShopStage.js';
 import { Messenger } from '../ui/game/Messenger.js';
 import { StatusMessenger } from '../ui/game/StatusMessenger.js';
@@ -268,6 +269,7 @@ export class GameStage extends Stage {
   protected _item!: ItemInventory;
   protected _itemIcons: ItemIconLoader | null = null;
   protected _itemInfo: ItemInfoService | null = null;
+  protected _stringPool: StringPoolService | null = null;
   protected _questDetail: QuestDetail | null = null;
   protected _skill!: SkillBook;
   protected _stats!: StatsInfo;
@@ -375,6 +377,7 @@ export class GameStage extends Stage {
   protected _reactorWz: WzPackage | null = null;
   protected _tamingMobWz: WzPackage | null = null;
   protected _morphWz: WzPackage | null = null;
+  protected _etcWz: WzPackage | null = null;
   protected _questStates = new Map<number, number>();
   protected _pendingInviterId = 0;
   protected _hasPendingPartyInvite = false;
@@ -1015,6 +1018,7 @@ export class GameStage extends Stage {
       this._tamingMobWz = tamingMobWz;
       this._morphWz = morphWz;
       game.wz.string = stringWz;
+      this._stringPool = new StringPoolService(() => game.wz.string ?? null);
       game.wz.quest = questWz;
       game.wz.etc = etcWz;
       this._tipOfTheDay.Load(game.wz.etc);
@@ -1081,7 +1085,7 @@ export class GameStage extends Stage {
   private _initMenu(uiWz: WzPackage): void {
     const font = new BuiltInFont();
     this._itemIcons = new ItemIconLoader(this._loader, this._characterWz, this._itemWz);
-    this._itemInfo = new ItemInfoService(this._characterWz, this._itemWz, this._tamingMobWz, this._morphWz);
+     this._itemInfo = new ItemInfoService(this._characterWz, this._itemWz, this._tamingMobWz, this._morphWz, this._etcWz, this._skillWz);
     console.log(`[GameStage] ItemIconLoader created: charWz=${!!this._characterWz}, itemWz=${!!this._itemWz}`);
     this._itemOptionLoader = new ItemOptionLoader(this._itemWz);
     this._shopMarker = new ShopMarker(this._itemIcons);
@@ -1097,7 +1101,28 @@ export class GameStage extends Stage {
       this._applyStatToStatusBar(this._pendingStat);
       this._pendingStat = null;
     }
-    this._skill = new SkillBook(this._loader, uiWz, font, this._itemIcons);
+    this._skill = new SkillBook(this._loader, uiWz, font, this._itemIcons,
+      (id) => this.game.nameService.ItemDesc(id) ?? null,
+      (id) => {
+        const data = this._itemInfo?.GetSetItemTooltip(id);
+        return data ? {
+          name: data.name,
+          effects: data.effects.map((e) => ({
+            threshold: e.threshold,
+            effect: e.effect as unknown as Record<string, number>,
+          })),
+        } : null;
+      },
+      (optionId, level) => {
+        const entry = this._itemOptionLoader?.loadItemOption(optionId);
+        if (!entry || entry.aLevelData.length === 0) return null;
+        for (let i = entry.aLevelData.length - 1; i >= 0; i--) {
+          if (entry.aLevelData[i].nLevel <= level) {
+            return entry.aLevelData[i] as unknown as Record<string, number>;
+          }
+        }
+        return entry.aLevelData[0] as unknown as Record<string, number>;
+       }, this._itemInfo, this._stringPool);
     this._skillGuide = new SkillGuide(this._loader, uiWz);
     this._panels.push(this._skillGuide);
     this._keyConfig = new KeyConfig(this._loader, uiWz, font);
@@ -1191,8 +1216,22 @@ export class GameStage extends Stage {
       uiWz,
       font,
       icons: this._itemIcons,
-      descOf: (id) => this.game.nameService.ItemDesc(id) ?? null,
-    });
+       descOf: (id) => this.game.nameService.ItemDesc(id) ?? null,
+        setItemOf: (id) => {
+          const data = this._itemInfo?.GetSetItemTooltip(id);
+          return data ? { name: data.name, effects: data.effects.map((e) => ({ threshold: e.threshold, effect: e.effect as unknown as Record<string, number> })) } : null;
+        },
+       optionOf: (optionId, level) => {
+          const entry = this._itemOptionLoader?.loadItemOption(optionId);
+          if (!entry || entry.aLevelData.length === 0) return null;
+          for (let i = entry.aLevelData.length - 1; i >= 0; i--) {
+            if (entry.aLevelData[i].nLevel <= level) return entry.aLevelData[i] as unknown as Record<string, number>;
+          }
+          return entry.aLevelData[0] as unknown as Record<string, number>;
+       },
+       itemInfo: this._itemInfo,
+       strings: this._stringPool,
+       });
     // Apply pending equipped items if _onSetField ran before _initMenu
     this._applyPendingEquipped();
     this._syncEquipPetCount();
@@ -1202,7 +1241,29 @@ export class GameStage extends Stage {
       font,
       icons: this._itemIcons,
       descOf: (id) => this.game.nameService.ItemDesc(id) ?? null,
-    });
+      setItemOf: (id) => {
+        const data = this._itemInfo?.GetSetItemTooltip(id);
+        return data ? {
+          name: data.name,
+          effects: data.effects.map((e) => ({
+            threshold: e.threshold,
+            effect: e.effect as unknown as Record<string, number>,
+          })),
+        } : null;
+      },
+       optionOf: (optionId, level) => {
+        const entry = this._itemOptionLoader?.loadItemOption(optionId);
+        if (!entry || entry.aLevelData.length === 0) return null;
+        for (let i = entry.aLevelData.length - 1; i >= 0; i--) {
+          if (entry.aLevelData[i].nLevel <= level) {
+            return entry.aLevelData[i] as unknown as Record<string, number>;
+          }
+        }
+        return entry.aLevelData[0] as unknown as Record<string, number>;
+       },
+       itemInfo: this._itemInfo,
+       strings: this._stringPool,
+     });
     this._equip.onUnequip = (bodyPart) => {
       // OG: CDraggableItem::GetOffEquipItem precondition checks
       // 1. HP must be > 0 (can't unequip while dead)

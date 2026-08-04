@@ -146,7 +146,7 @@ export interface UserAttackArgs {
 export interface DropEnterArgs { dropId: number; isMoney: boolean; itemIdOrAmount: number; ownerId: number; sourceId: number; x: number; y: number; sourceX?: number; sourceY?: number; animated?: boolean; }
 export interface DropLeaveArgs { dropId: number; leaveType: number; pickUpId?: number; }
 
-export interface InventoryOpArg { opType: number; invType: number; pos: number; itemId?: number; quantity?: number; newPos?: number; equipExp?: number; petLevel?: number; petTameness?: number; petRepleteness?: number; petRemainLife?: number; equipStats?: EquipStats; }
+export interface InventoryOpArg { opType: number; invType: number; pos: number; itemId?: number; quantity?: number; attribute?: number; newPos?: number; equipExp?: number; petLevel?: number; petTameness?: number; petRepleteness?: number; petRemainLife?: number; equipStats?: EquipStats; }
 export interface UserChatArgs { charId: number; chatType: number; text: string; }
 export interface ScriptMessageArgs { speakerId: number; msgType: number; text: string; hasPrev: boolean; hasNext: boolean; quizHint?: string; quizMinLength?: number; quizMaxLength?: number; quizRemainTime?: number; defaultText?: string; minLength?: number; maxLength?: number; defaultNum?: number; minNum?: number; maxNum?: number; avatars?: number[]; pets?: number[]; slideMenuType?: number; menu?: string[]; questId?: number; boxWidth?: number; boxHeight?: number; }
 export interface FuncKeyEntry { keyIndex: number; type: number; actionId: number; }

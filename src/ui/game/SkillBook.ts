@@ -7,6 +7,8 @@ import { WzProperty } from '../../wz/WzProperty.js';
 import { WzCanvas } from '../../wz/WzCanvas.js';
 import { ScrollBar } from './ScrollBar.js';
 import { ItemTooltip } from './ItemTooltip.js';
+import { ItemInfoService } from '../../character/ItemInfoService.js';
+import { StringPoolService } from '../../localization/StringPoolService.js';
 import { TooltipAssets } from './TooltipAssets.js';
 import { SkillIncPanel, SkillDecPanel, SkillChangeConfirm } from './SkillIncDec.js';
 import type { BuiltInFont } from '../BuiltInFont.js';
@@ -307,7 +309,11 @@ export class SkillBook extends GamePanel {
   private static readonly _posKey = 'SkillBookWndPos';
 
   constructor(loader?: WzTextureLoader, ui?: WzPackage | null,
-    font?: BuiltInFont, icons?: ItemIconLoader) {
+    font?: BuiltInFont, icons?: ItemIconLoader,
+    descOf?: (itemId: number) => string | null,
+    setItemOf?: (itemId: number) => { name: string; effects: Array<{ threshold: number; effect: Record<string, number> }> } | null,
+     optionOf?: (optionId: number, level: number) => Record<string, number> | null,
+     itemInfo?: ItemInfoService | null, strings?: StringPoolService | null) {
     super();
     this._root.visible = false;
 
@@ -608,7 +614,8 @@ export class SkillBook extends GamePanel {
     // OG: Create tooltip for skill hover display
     if (font && icons && loader && ui) {
       const assets = new TooltipAssets(loader, ui);
-      this._tooltip = new ItemTooltip(font, icons, assets);
+      this._tooltip = new ItemTooltip(font, icons, assets,
+         descOf ?? null, setItemOf ?? null, optionOf ?? null, itemInfo ?? null, strings ?? null);
     }
   }
 
@@ -1302,13 +1309,21 @@ export class SkillBook extends GamePanel {
       const skill = tab[this._scrollOffset + this._hoverIndex];
       if (skill) {
         // OG: tooltip at (rx + offset, ry + IsMyAddon() + 20)
+        const info = this.skillService?.Get(skill.id);
+        // TODO: SkillInfoService does not currently expose the OG swallow,
+        // Wild Hunter, linked-character, expiry, or damage-meter context.
         this._tooltip.DrawSkillTooltip(
-          skill.id, skill.name, this.nameOf(skill.id),
+           skill.id, skill.name, info?.Description || this.nameOf(skill.id),
           skill.level, skill.maxLevel,
           '', '', [], // help text, next help text, required skills
-          this._mouseX, this._mouseY + 20, this._viewW, this._viewH,
-          true,
-        );
+           this._mouseX, this._mouseY + 20, this._viewW, this._viewH,
+           true,
+           info ? {
+             // SkillInfoService currently provides these fields directly.
+             masterLevel: info.DefaultMasterLev > 0 ? info.DefaultMasterLev : undefined,
+             icon: this._rowIcons[this._hoverIndex] ?? undefined,
+           } : undefined,
+         );
       }
     } else if (this._tooltip) {
       this._tooltip.Hide();

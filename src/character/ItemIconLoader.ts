@@ -5,6 +5,7 @@ import type { WzSprite } from '../render/WzSprite.js';
 import type { WzTextureLoader } from '../render/WzTextureLoader.js';
 import { WzUol } from '../wz/WzUol.js';
 import { Sprite } from 'pixi.js';
+import type { EquipStats, InventoryItem } from '../domain/InventoryItem.js';
 
 /**
 Resolves an item's inventory icon (the 32x32-ish cell sprite) from the WZ files.
@@ -25,6 +26,7 @@ export class ItemIconLoader {
   private _cache = new Map<number, WzSprite | null>();
   private _petCache = new Map<number, WzSprite | null>();
   private _attrCache = new Map<number, ItemAttr | null>();
+  private _runtimeItems = new Map<number, RuntimeItemData>();
   private _cashTag: WzSprite | null = null;
   private _cashTagLoaded = false;
 
@@ -111,7 +113,7 @@ export class ItemIconLoader {
       null when the item has no info node (caller shows just the name). Cached per id (misses too). */
   LoadAttr(itemId: number): ItemAttr | null {
     let cached = this._attrCache.get(itemId);
-    if (cached !== undefined) return cached;
+    if (cached !== undefined) return this._withRuntime(itemId, cached);
     let attr: ItemAttr | null = null;
     try {
       const info = this._infoNode(itemId);
@@ -139,6 +141,8 @@ export class ItemIconLoader {
           IncMmp: I(info, 'incMMP'),
            IncAcc: I(info, 'incACC'),
            IncEva: I(info, 'incEVA'),
+           IncCraft: I(info, 'incCraft'),
+           Knockback: I(info, 'knockback'),
            IncSpeed: I(info, 'incSpeed'),
            IncJump: I(info, 'incJump'),
            IncMHPr: I(info, 'incMHPr'),
@@ -162,7 +166,74 @@ export class ItemIconLoader {
       attr = null;
     }
     this._attrCache.set(itemId, attr);
-    return attr;
+    return this._withRuntime(itemId, attr);
+  }
+
+  /**
+   * Attach the decoded instance values used by the equip tooltip. WZ data is
+   * immutable and cached by item id; this overlay is deliberately separate so
+   * two instances of the same item do not rewrite the template attributes.
+   */
+  SetRuntimeItem(item: InventoryItem): void {
+    if (item.equip) this.SetRuntimeEquip(item.itemId, item.equip, item.attribute);
+    else this.ClearRuntimeItem(item.itemId);
+  }
+
+  /** Attach decoded equip fields while preserving the existing LoadAttr API. */
+  SetRuntimeEquip(itemId: number, equip: EquipStats, attribute = equip.attribute): void {
+    this._runtimeItems.set(itemId, { equip, attribute });
+  }
+
+  ClearRuntimeItem(itemId: number): void {
+    this._runtimeItems.delete(itemId);
+  }
+
+  private _withRuntime(itemId: number, attr: ItemAttr | null): ItemAttr | null {
+    const runtime = this._runtimeItems.get(itemId);
+    if (!runtime) return attr;
+
+    const equip = runtime.equip;
+    const result: ItemAttr = attr ? { ...attr } : {
+      IsEquip: true,
+      Category: Math.floor(itemId / 10000),
+      ReqLevel: 0, ReqStr: 0, ReqDex: 0, ReqInt: 0, ReqLuk: 0, ReqFame: 0, ReqJob: 0,
+      IncStr: 0, IncDex: 0, IncInt: 0, IncLuk: 0,
+      IncPad: 0, IncMad: 0, IncPdd: 0, IncMdd: 0, IncMhp: 0, IncMmp: 0,
+      IncAcc: 0, IncEva: 0, IncSpeed: 0, IncJump: 0, IncMHPr: 0, IncMMPr: 0,
+      IncCraft: 0, Knockback: 0, AttackSpeed: 0, Upgrades: 0, Price: 0,
+      Cash: false, Only: false, SetItemId: 0,
+    };
+
+    // Equip packet fields override the WZ template for this instance.
+    result.IncStr = equip.incStr; result.IncDex = equip.incDex;
+    result.IncInt = equip.incInt; result.IncLuk = equip.incLuk;
+    result.IncMhp = equip.incMhp; result.IncMmp = equip.incMmp;
+    result.IncPad = equip.incPad; result.IncMad = equip.incMad;
+    result.IncPdd = equip.incPdd; result.IncMdd = equip.incMdd;
+    result.IncAcc = equip.incAcc; result.IncEva = equip.incEva;
+    result.IncSpeed = equip.incSpeed; result.IncJump = equip.incJump;
+    result.ProtectionType = runtime.attribute & 3;
+    result.Durability = equip.durability;
+    result.Level = equip.level;
+    result.StarForce = equip.iuc;
+    result.Ruc = equip.ruc; result.CUC = equip.cuc; result.Iuc = equip.iuc;
+    result.Option1 = equip.option1; result.Option2 = equip.option2; result.Option3 = equip.option3;
+    result.Socket1 = equip.socket1; result.Socket2 = equip.socket2;
+    result.Attribute = runtime.attribute;
+
+    const nextExp = this._growthNextExp(itemId, equip.level);
+    result.Exp = equip.exp;
+    result.expPct = nextExp > 0 ? Math.max(0, Math.min(99, Math.floor(100 * equip.exp / nextExp))) : 0;
+    return result;
+  }
+
+  private _growthNextExp(itemId: number, level: number): number {
+    const info = this._infoNode(itemId);
+    const levels = info?.Get('level');
+    if (!levels || typeof levels !== 'object') return 0;
+    const next = (levels as Record<string, unknown>)[String(level + 1)];
+    if (!next || typeof next !== 'object') return 0;
+    return I(next as WzProperty, 'exp');
   }
 
   // Count of info/level/<n> children == the growth item's max level (0 = not growth).
@@ -286,6 +357,7 @@ export interface ItemAttr {
    IncStr: number; IncDex: number; IncInt: number; IncLuk: number;
    IncPad: number; IncMad: number; IncPdd: number; IncMdd: number; IncMhp: number; IncMmp: number; IncAcc: number; IncEva: number; IncSpeed: number; IncJump: number;
    IncMHPr: number; IncMMPr: number;
+   IncCraft: number; Knockback: number;
   AttackSpeed: number; Upgrades: number; Price: number;
   Cash: boolean; Only: boolean;
   // OG: CItemInfo::EQUIPITEM::nSetItemID (info/setItemID) — TODO_AUDIT.md
@@ -299,4 +371,15 @@ export interface ItemAttr {
   Level?: number;           // growth item level
   MaxLevel?: number;        // growth item max level (info/level/<n> count)
   StarForce?: number;       // star force enhancement count
+  Exp?: number;              // current growth EXP from the item instance
+  expPct?: number;           // OG display percentage, derived from next level EXP
+  Ruc?: number; CUC?: number; Iuc?: number;
+  Option1?: number; Option2?: number; Option3?: number;
+  Socket1?: number; Socket2?: number;
+  Attribute?: number;
+}
+
+interface RuntimeItemData {
+  equip: EquipStats;
+  attribute: number;
 }

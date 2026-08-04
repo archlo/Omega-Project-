@@ -1,11 +1,13 @@
 import { WzPackage } from '../wz/WzPackage.js';
 import { WzImage } from '../wz/WzImage.js';
 import { WzProperty } from '../wz/WzProperty.js';
+import { WzDirectory } from '../wz/WzDirectory.js';
+import { OG_V95_TOOLTIP_STRINGS, type StringPoolId } from './StringPoolIds.js';
 
 // OG: StringPool — resolves numeric IDs to localized strings from String.wz
 // In the v95 client, StringPool::GetString(id) loads from String.wz
-// The WZ structure is: String.wz/String.wz/img/NoSound.img/{id}
-// where {id} is the StringPool ID (decimal)
+  // Some WZ toolchains expose String.wz/NoSound.img/{id}; the v95 client
+  // itself uses embedded encrypted ms_aString/ms_aKey tables.
 
 export class StringPoolService {
   private _stringWz: (() => WzPackage | null);
@@ -22,6 +24,17 @@ export class StringPoolService {
     return this._cache.get(id);
   }
 
+  /** Resolve a decompiler-verified numeric StringPool ID. */
+  getById(id: StringPoolId): string | undefined {
+    return this.getString(id);
+  }
+
+  /** Resolve and format a StringPool template without inventing a fallback. */
+  formatById(id: StringPoolId, ...args: (number | string)[]): string | undefined {
+    const template = this.getById(id);
+    return template === undefined ? undefined : this.formatString(template, ...args);
+  }
+
   // OG: StringPool::GetStringW — resolves a StringPool ID to a wide string
   // Returns the string or a fallback if not found
   getStringOrFallback(id: number, fallback: string): string {
@@ -36,19 +49,29 @@ export class StringPoolService {
     const wz = this._stringWz();
     if (!wz) return;
 
-    // OG: StringPool loads from NoSound.img which contains all UI strings
-    // The structure is: NoSound.img/{id} where {id} is the StringPool ID
-    this._loadFromNoSound(wz);
+    // Different WZ packers preserve different levels of the String.wz path.
+    // The client accepts the image wherever the resource manager exposes it.
+    const image = this._findNoSound(wz.Root);
+    if (image) this._loadFromNoSound(image);
+    for (const [id, value] of Object.entries(OG_V95_TOOLTIP_STRINGS)) {
+      if (!this._cache.has(Number(id))) this._cache.set(Number(id), value);
+    }
   }
 
-  private _loadFromNoSound(wz: WzPackage): void {
-    try {
-      const image = wz.GetItem('NoSound.img');
-      if (!(image instanceof WzImage)) {
-        console.warn('StringPoolService: NoSound.img not found');
-        return;
+  private _findNoSound(container: WzDirectory | WzImage): WzImage | null {
+    if (container instanceof WzImage) return null;
+    for (const [name, value] of Object.entries(container.Items)) {
+      if (name.toLowerCase() === 'nosound.img' && value instanceof WzImage) return value;
+      if (value instanceof WzDirectory) {
+        const nested = this._findNoSound(value);
+        if (nested) return nested;
       }
+    }
+    return null;
+  }
 
+  private _loadFromNoSound(image: WzImage): void {
+    try {
       // Iterate through all properties in NoSound.img
       // Each property key is a numeric StringPool ID
       for (const [key, val] of Object.entries(image.Root.Items)) {
@@ -77,10 +100,13 @@ export class StringPoolService {
     let result = template;
     let argIndex = 0;
 
-    // Replace %d, %s, %f placeholders
-    result = result.replace(/%[dsf]/g, () => {
+    // Match the printf forms used by the v95 tooltip StringPool entries.
+    result = result.replace(/%[%dsfu]/g, (token) => {
+      if (token === '%%') return '%';
       if (argIndex < args.length) {
-        return String(args[argIndex++]);
+        const value = args[argIndex++];
+        if (token === '%f') return Number(value).toString();
+        return String(value);
       }
       return '%?';
     });

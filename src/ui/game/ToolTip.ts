@@ -338,7 +338,7 @@ export class ToolTip {
   // OG: DrawCanvasIcon @ 0x882200 — blit WZ canvas at position with alpha
   drawCanvasIcon(x: number, y: number, wzSprite: WzSprite | null): void {
     if (!wzSprite) return;
-    const sprite = wzSprite.ToPixi();
+    const sprite = wzSprite.NewSprite();
     sprite.x = x;
     sprite.y = y;
     this._container.addChild(sprite);
@@ -442,7 +442,11 @@ export class ToolTip {
       if (line.subContext) {
         const subFont = this.getFontByType(line.subType);
         const st = new Text({ text: line.subContext, style: subFont });
-        st.x = this._width - this._measureText(line.subContext, subFont) - 20;
+        // OG align=1001 is the stat-row layout: the value follows the label
+        // at labelWidth + (dot ? 6 : 0) + 10. Other rows right-align it.
+        st.x = line.align === 1001
+          ? (line.useDotImage ? 16 : 10) + line.width + 10
+          : this._width - this._measureText(line.subContext, subFont) - 20;
         st.y = y;
         this._container.addChild(st);
         this._texts.push(st);

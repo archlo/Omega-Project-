@@ -6,6 +6,9 @@ import { WzProperty } from '../../wz/WzProperty.js';
 import { WzCanvas } from '../../wz/WzCanvas.js';
 import { BuiltInFont } from '../BuiltInFont.js';
 import { ItemIconLoader, ItemAttr } from '../../character/ItemIconLoader.js';
+import { ItemInfoService } from '../../character/ItemInfoService.js';
+import { StringPoolService } from '../../localization/StringPoolService.js';
+import { OG_TOOLTIP_STRING_IDS } from '../../localization/StringPoolIds.js';
 import { TooltipAssets } from './TooltipAssets.js';
 import { ToolTip } from './ToolTip.js';
 const FONT_TYPES = ToolTip.FONT_TYPES;
@@ -25,10 +28,10 @@ const IdColor        = 0xE6E66E;
 
 // OG: Protection border colors (from SetToolTip_Equip)
 const PROTECTION_COLORS = [
-  0xFF66FFFF, // type 0: yellow/gold
-  0xFFFFA15C, // type 1: orange
-  0xFFFF61C2, // type 2: pink
-  0xFF00CCFF, // type 3: cyan/blue
+  0x66FFFF, // type 0: yellow/gold
+  0xFFA15C, // type 1: orange
+  0x61C2,   // type 2: pink
+  0x00CCFF, // type 3: cyan/blue
 ];
 
 const JobKlassNames = ['beginner', 'warrior', 'magician', 'bowman', 'thief', 'pirate'];
@@ -50,6 +53,52 @@ interface InfoLine {
   kind: InfoKind;
   sprite: WzSprite | null;
   text: string | null;
+  color?: number;
+}
+
+type EquipOptionLevel = {
+  niSTR?: number; niDEX?: number; niINT?: number; niLUK?: number;
+  niMaxHP?: number; niMaxMP?: number; niACC?: number; niEVA?: number;
+  niSpeed?: number; niJump?: number; niPAD?: number; niMAD?: number;
+  niPDD?: number; niMDD?: number; niSTRr?: number; niDEXr?: number;
+  niINTr?: number; niLUKr?: number; niMaxHPr?: number; niMaxMPr?: number;
+  niACCr?: number; niEVAr?: number; niPADr?: number; niMADr?: number;
+  niPDDr?: number; niMDDr?: number; niCr?: number; niCDr?: number;
+  niMAMr?: number; niSkill?: number; niAllSkill?: number; nRecoveryHP?: number;
+  nRecoveryMP?: number; nMPConReduce?: number; nIgnoreTargetDEF?: number;
+  nIgnoreDAM?: number; nIgnoreDAMr?: number; niDAMr?: number;
+  nDAMReflect?: number; niMesoProb?: number; niRewardProb?: number;
+};
+
+/** Bundle metadata already formatted by the caller/client data layer. */
+export interface BundleTooltipOptions {
+  ft?: { low: number; high: number };
+  bProtected?: number;
+  nPeriod?: number;
+  sDonator?: string;
+  sTitle?: string;
+  nOriginalPrice?: number;
+  nPrice?: number;
+  goodsInfo?: any;
+  bCashShop?: number;
+  nNpcShopTimeLimitedItemPeriod?: number;
+  nCommodityID?: number;
+  nITCSalePrice?: number;
+  ftITCDateExpired?: { low: number; high: number } | null;
+  sOrderComment?: string;
+  pii?: any;
+  // These are the OG preformatted trade-option strings. Do not localize here.
+  tradeOption?: string;
+  tradeOptionEx?: string;
+}
+
+export interface RingTooltipOptions {
+  // The caller may resolve the item-specific ring canvas from Item.wz.
+  ringImage?: WzSprite | Sprite | null;
+  resolveRingImage?: (itemId: number) => WzSprite | Sprite | null;
+  ringCanvas?: WzCanvas | null;
+  // Relationship strings are already localized/formatted by the caller.
+  partnerText?: string;
 }
 
 // OG class: CUIToolTip — the single shared tooltip renderer
@@ -58,7 +107,10 @@ export class ItemTooltip {
   private _font: BuiltInFont;
   private _icons: ItemIconLoader;
   private _assets: TooltipAssets;
+  private _itemInfo: ItemInfoService | null;
+  private _strings: StringPoolService | null;
   private _descOf: ((itemId: number) => string | null) | null;
+  private _setItemOf: ((itemId: number) => { name: string; effects: Array<{ threshold: number; effect: Record<string, number> }> } | null) | null;
   private _pLevel = 0; private _pStr = 0; private _pDex = 0; private _pInt = 0; private _pLuk = 0;
   private _pJob = 0;
 
@@ -73,13 +125,22 @@ export class ItemTooltip {
   // OG: SetToolTip_Equip parameters cache
   private _equipWidth = EquipWidth;
   private _toolTip: ToolTip;
+  private _optionOf: ((optionId: number, level: number) => EquipOptionLevel | null) | null;
 
   constructor(font: BuiltInFont, icons: ItemIconLoader, assets: TooltipAssets,
-    descOf: ((itemId: number) => string | null) | null = null) {
+    descOf: ((itemId: number) => string | null) | null = null,
+    setItemOf: ((itemId: number) => { name: string; effects: Array<{ threshold: number; effect: Record<string, number> }> } | null) | null = null,
+    optionOf: ((optionId: number, level: number) => EquipOptionLevel | null) | null = null,
+    itemInfo: ItemInfoService | null = null,
+    strings: StringPoolService | null = null) {
     this._font = font;
     this._icons = icons;
     this._assets = assets;
     this._descOf = descOf;
+    this._setItemOf = setItemOf;
+    this._optionOf = optionOf;
+    this._itemInfo = itemInfo;
+    this._strings = strings;
     this._toolTip = new ToolTip(assets);
 
     this._root = new Container();
@@ -87,7 +148,7 @@ export class ItemTooltip {
     this._root.addChild(this._g);
     this._iconSprite = new Sprite();
     this._root.addChild(this._iconSprite);
-    for (let i = 0; i < 32; i++) {
+    for (let i = 0; i < 128; i++) {
       const t = new Text({ text: '', style: this._font.style });
       t.visible = false;
       this._root.addChild(t);
@@ -109,13 +170,7 @@ export class ItemTooltip {
     equippedSetCount: number = 0,
     petLevel?: number, petTameness?: number, petRepleteness?: number, petRemainLife?: number,
     equipStats?: { incStr: number; incDex: number; incInt: number; incLuk: number; incPad: number; incMad: number; incPdd: number; incMdd: number; incMhp: number; incMmp: number; incAcc: number; incEva: number; incSpeed: number; incJump: number; ruc: number; cuc: number; option1: number; option2: number; option3: number },
-    bundleOpts?: {
-      ft?: { low: number; high: number }; bProtected?: number; nPeriod?: number;
-      sDonator?: string; sTitle?: string; nOriginalPrice?: number; nPrice?: number;
-      goodsInfo?: any; bCashShop?: number; nNpcShopTimeLimitedItemPeriod?: number;
-      nCommodityID?: number; nITCSalePrice?: number; ftITCDateExpired?: { low: number; high: number } | null;
-      sOrderComment?: string; pii?: any;
-    }): void {
+     bundleOpts?: BundleTooltipOptions): void {
     const attr = this._icons.LoadAttr(itemId);
     const isEquip = (attr?.IsEquip === true) || Math.floor(itemId / 1_000_000) === 1;
     this._grade = grade;
@@ -127,6 +182,17 @@ export class ItemTooltip {
   }
 
   Hide(): void { this._root.visible = false; }
+
+  private _string(id: number, fallback: string, ...args: (number | string)[]): string {
+    return (args.length > 0
+      ? this._strings?.formatById(id as any, ...args)
+      : this._strings?.getById(id as any)) ?? fallback;
+  }
+
+  private _itemIcon(itemId: number): WzSprite | null {
+    return this._assets.LoadCanvas(this._itemInfo?.GetItemIconCanvas(itemId) ?? null)
+      ?? this._icons.LoadIcon(itemId);
+  }
 
   private _txt(idx: number, x: number, y: number, text: string, color: number, size?: number): void {
     const t = this._texts[idx];
@@ -169,6 +235,7 @@ export class ItemTooltip {
     const w = EquipWidth; // OG: 236px for equip
     const info = this._buildInfoLines(itemId, attr, equippedSetCount, equipStats);
     const desc = this._descOf?.call(this, itemId);
+    const titleDesc = this._string(OG_TOOLTIP_STRING_IDS.equipTitleDescription, '');
     const descLines = !desc ? [] : this._wrapText(desc, w - 14);
 
     // OG: Layout calculation from SetToolTip_Equip
@@ -231,11 +298,13 @@ export class ItemTooltip {
     // trade-option desc at (18, yName).
     const nameColor = ItemTooltip._gradeColor(grade);
     const nameW = this._font.measure(name).x;
-    const nameX = Math.max(4, (w - nameW) / 2);
+    const titleDescW = titleDesc ? this._font.measure(titleDesc).x : 0;
+    const nameX = Math.max(4, (w - nameW - titleDescW) / 2);
     this._txt(0, nameX, yName, name, nameColor, 11);
+    if (titleDesc) this._txt(1, nameX + nameW, yName, titleDesc, ToolTip.getFontColor(11), 9);
     this._dot(10, yName + 5);
 
-    let ti = 1;
+    let ti = titleDesc ? 2 : 1;
 
     // OG: Cash item label (StringPool 5897) — shown after name when item is cash
     if (attr?.Cash) {
@@ -256,15 +325,29 @@ export class ItemTooltip {
     for (let d = 4; d < w - 4; d += 6) this._dot(d, yName + lh + 4);
 
     // OG: Item icon (68x68) — DrawItemIcon: 68x68 rect fill 0xA0FFFFFF at (10, y), then icon at (12, y+66)
-    const icon = this._icons.LoadIcon(itemId);
+    const icon = this._itemIcon(itemId);
     // OG: DrawItemIcon backdrop — 68x68 rect fill 0xA0FFFFFF (semi-transparent white)
     this._g.rect(IconX, yBlock, IconSize, IconSize).fill({ color: 0xFFFFFF, alpha: 0xa0 / 255 });
-    if (icon?.Texture) {
+    if (icon?.NewSprite) {
+      // WzSprite.NewSprite carries the WZ origin. DrawItemIcon receives the
+      // hotspot (10, iconTop); forcing a 64px scale loses both composition and
+      // the item's native centering.
+      const nativeIcon = icon.NewSprite();
+      if (this._iconSprite.parent) this._iconSprite.parent.removeChild(this._iconSprite);
+      this._iconSprite.destroy();
+      this._iconSprite = nativeIcon;
+      this._root.addChildAt(this._iconSprite, 1);
+      this._iconSprite.x = IconX;
+      this._iconSprite.y = yBlock;
+      this._iconSprite.visible = true;
+    } else if (icon?.Texture) {
+      // Compatibility path for lightweight icon providers used by tests and
+      // older callers that expose only a Pixi texture.
       this._iconSprite.texture = icon.Texture;
-      this._iconSprite.x = IconX + 2;
-      this._iconSprite.y = yBlock + 66;
-      this._iconSprite.width = IconSize - 4;
-      this._iconSprite.height = IconSize - 4;
+      this._iconSprite.x = IconX;
+      this._iconSprite.y = yBlock;
+      this._iconSprite.width = icon.Width ?? IconSize;
+      this._iconSprite.height = icon.Height ?? IconSize;
       this._iconSprite.visible = true;
     } else {
       this._iconSprite.visible = false;
@@ -278,10 +361,10 @@ export class ItemTooltip {
     // Non-POP rows with a 0 requirement still draw a Can-style '0' digit.
     const reqs: [string, number, boolean, boolean][] = [
       ['Level:', attr?.ReqLevel ?? 0, this._pLevel >= (attr?.ReqLevel ?? 0), false],
-      ['STR:', attr?.ReqStr ?? 0, this._pStr >= (attr?.ReqStr ?? 0), false],
-      ['DEX:', attr?.ReqDex ?? 0, this._pDex >= (attr?.ReqDex ?? 0), false],
-      ['INT:', attr?.ReqInt ?? 0, this._pInt >= (attr?.ReqInt ?? 0), false],
-      ['LUK:', attr?.ReqLuk ?? 0, this._pLuk >= (attr?.ReqLuk ?? 0), false],
+      [this._string(OG_TOOLTIP_STRING_IDS.str, 'STR:'), attr?.ReqStr ?? 0, this._pStr >= (attr?.ReqStr ?? 0), false],
+      [this._string(OG_TOOLTIP_STRING_IDS.dex, 'DEX:'), attr?.ReqDex ?? 0, this._pDex >= (attr?.ReqDex ?? 0), false],
+      [this._string(OG_TOOLTIP_STRING_IDS.int, 'INT:'), attr?.ReqInt ?? 0, this._pInt >= (attr?.ReqInt ?? 0), false],
+      [this._string(OG_TOOLTIP_STRING_IDS.luk, 'LUK:'), attr?.ReqLuk ?? 0, this._pLuk >= (attr?.ReqLuk ?? 0), false],
       ['POP:', attr?.ReqFame ?? 0, false, true],
     ];
     let reqIndex = 0;
@@ -356,7 +439,7 @@ export class ItemTooltip {
       const lineY = yInfo + il * (lh - 2);
       const line = info[il];
       if (line.kind === InfoKind.Text && line.text) {
-        this._txt(ti, 4, lineY, line.text, InfoColor, 9);
+        this._txt(ti, 4, lineY, line.text, line.color ?? InfoColor, 9);
       }
       ti++;
     }
@@ -391,15 +474,10 @@ export class ItemTooltip {
   private _drawConsumable(itemId: number, name: string, attr: ItemAttr | null,
     mouseX: number, mouseY: number, viewW: number, viewH: number,
     petLevel?: number, petTameness?: number, petRepleteness?: number, petRemainLife?: number,
-    bundleOpts?: {
-      ft?: { low: number; high: number }; bProtected?: number; nPeriod?: number;
-      sDonator?: string; sTitle?: string; nOriginalPrice?: number; nPrice?: number;
-      goodsInfo?: any; bCashShop?: number; nNpcShopTimeLimitedItemPeriod?: number;
-      nCommodityID?: number; nITCSalePrice?: number; ftITCDateExpired?: { low: number; high: number } | null;
-      sOrderComment?: string; pii?: any;
-    }): void {
+     bundleOpts?: BundleTooltipOptions): void {
     const lh = this._font.lineHeight;
-    const w = BundleWidth; // OG: 290px for bundle
+    // OG SetBasicInfo widens the 290px base when the item name needs it.
+    const w = Math.max(BundleWidth, this._font.measure(name).x + 23);
     const isPet = !!(petLevel !== undefined);
     const opts = bundleOpts ?? {};
 
@@ -419,29 +497,14 @@ export class ItemTooltip {
     }
     const petBlockH = isPet ? 4 + petLines.length * (lh - 1) + 4 : 0;
 
-    // OG: Donator info (StringPool 0x2B0)
-    const donatorLine = opts.sDonator ? `Donator: ${opts.sDonator}` : '';
-    const donatorH = donatorLine ? lh + 4 : 0;
-
-    // OG: Title (if provided)
-    const titleLine = opts.sTitle ?? '';
-    const titleH = titleLine ? lh + 4 : 0;
-
     // OG: Expiry date from ft
     const expiryStr = opts.ft ? this._toolTip.getItemExpireDate(opts.ft) : '';
-    const expiryH = expiryStr ? lh + 4 : 0;
-
-    // OG: Protected item indication
+    const titleLine = opts.sTitle ?? '';
+    const donatorLine = opts.sDonator ? `Donator: ${opts.sDonator}` : '';
     const protectedLine = opts.bProtected ? 'Protected Item' : '';
-    const protectedH = protectedLine ? lh + 4 : 0;
-
-    // OG: Period display
     const periodStr = (opts.nPeriod ?? 0) > 0 ? `Period: ${opts.nPeriod} days` : '';
-    const periodH = periodStr ? lh + 4 : 0;
-
-    // OG: NPC shop time limited
-    const timeLimitedStr = (opts.nNpcShopTimeLimitedItemPeriod ?? 0) > 0 ? `Time Limited: ${opts.nNpcShopTimeLimitedItemPeriod} days` : '';
-    const timeLimitedH = timeLimitedStr ? lh + 4 : 0;
+    const timeLimitedStr = (opts.nNpcShopTimeLimitedItemPeriod ?? 0) > 0
+      ? `Time Limited: ${opts.nNpcShopTimeLimitedItemPeriod} days` : '';
 
     // OG: Discount rate display
     const origPrice = opts.nOriginalPrice ?? 0;
@@ -454,7 +517,7 @@ export class ItemTooltip {
     // OG: ITC sale info
     const itcPrice = opts.nITCSalePrice ?? 0;
     const itcStr = itcPrice > 0 ? `ITC Price: ${itcPrice.toLocaleString()} mesos` : '';
-    const itcH = itcStr ? lh + 4 : 0;
+    const itcH = itcStr ? 38 : 0;
 
     // OG: ITC expiry
     const itcExpiryStr = opts.ftITCDateExpired ? this._toolTip.getItemExpireDate(opts.ftITCDateExpired) : '';
@@ -464,12 +527,23 @@ export class ItemTooltip {
     const orderCommentStr = opts.sOrderComment ?? '';
     const orderCommentH = orderCommentStr ? lh + 4 : 0;
 
+    // OG: two centered trade-option rows reserve 19px each before cash data.
+    const tradeOption = opts.tradeOption ?? '';
+    const tradeOptionEx = opts.tradeOptionEx ?? '';
+    const optionY = tradeOption ? (tradeOptionEx ? 38 : 19) : (tradeOptionEx ? 19 : 0);
+    const cashDescOffset = optionY + (expiryStr ? 20 : 0)
+      + (donatorLine ? 16 : 0) + (titleLine ? 16 : 0);
+
     const desc = this._descOf?.call(this, itemId) ?? '';
-    const descLines = this._wrapText(desc, w - 14);
+    // OG DrawTextSepartedLine uses x=92 and x2=270, i.e. a 178px column.
+    const descLines = this._wrapText(desc, 178);
+    const descH = descLines.length * (lh - 2);
+    const descOverflow = Math.max(0, descH - 68);
 
     // OG: Calculate total height
-    const extraH = donatorH + titleH + expiryH + protectedH + periodH + timeLimitedH + discountH + itcH + itcExpiryH + orderCommentH;
-    const h = 6 + lh + 4 + petBlockH + extraH + 6 + descLines.length * (lh - 1) + 6 + lh + 6;
+    const extraH = protectedLine || periodStr || timeLimitedStr ? lh + 4 : 0;
+    const h = 116 + cashDescOffset + descOverflow + (discountStr ? 35 : 0)
+      + itcH + itcExpiryH + orderCommentH + extraH;
 
     let x = mouseX + 16;
     let y = mouseY + 16;
@@ -478,6 +552,11 @@ export class ItemTooltip {
 
     this._g.clear();
     this._clearTexts(0);
+    for (const sp of this._blitSprites) {
+      if (sp.parent) sp.parent.removeChild(sp);
+      sp.destroy();
+    }
+    this._blitSprites = [];
     this._root.x = x;
     this._root.y = y;
 
@@ -488,99 +567,49 @@ export class ItemTooltip {
     this._g.rect(0, 0, 1, h).fill({ color: 0x1A4A6A });
     this._g.rect(w - 1, 0, 1, h).fill({ color: 0x1A4A6A });
 
-    // OG: Item name
+    // OG: Item name and trade metadata. The strings are supplied preformatted;
+    // localization and item-property classification remain outside this class.
     this._txt(0, 4, 6, name, NameColor, 11);
     this._g.rect(2, 6 + lh, w - 4, 1).fill({ color: InnerOutlineC, alpha: InnerOutlineA });
 
     let ti = 1;
-    let yCursor = 6 + lh + 4;
+    if (tradeOption) { this._txt(ti++, 0, 31, tradeOption, ToolTip.getFontColor(14), 10); }
+    if (tradeOptionEx) { this._txt(ti++, 0, tradeOption ? 50 : 31, tradeOptionEx, ToolTip.getFontColor(14), 10); }
+    if (expiryStr) { this._txt(ti++, 16, optionY + 29, expiryStr, ToolTip.getFontColor(22), 10); }
+    if (titleLine) { this._txt(ti++, 16, optionY + 31 + (expiryStr ? 16 : 0), titleLine, ToolTip.getFontColor(14), 10); }
+    if (donatorLine) { this._txt(ti++, 16, optionY + 31 + (expiryStr ? 16 : 0) + (titleLine ? 16 : 0), donatorLine, ToolTip.getFontColor(10), 9); }
 
-    // OG: Title (if provided)
-    if (titleLine) {
-      this._txt(ti, 4, yCursor, titleLine, ToolTip.getFontColor(10), 10); // HL_SPECIAL
-      ti++;
-      yCursor += lh;
+    // OG: item icon is always present at (10, nCashDescOffset + 32).
+    const icon = this._itemIcon(itemId);
+    if (icon?.Texture) {
+      this._iconSprite.texture = icon.Texture;
+      this._iconSprite.x = 10;
+      this._iconSprite.y = cashDescOffset + 32;
+      this._iconSprite.width = icon.Width ?? IconSize;
+      this._iconSprite.height = icon.Height ?? IconSize;
+      this._iconSprite.visible = true;
+    } else {
+      this._iconSprite.visible = false;
     }
 
-    // OG: Pet info block
-    if (isPet) {
-      for (let pl = 0; pl < petLines.length; pl++) {
-        this._txt(ti, 4, yCursor + pl * (lh - 1), petLines[pl], StatColor, 9);
-        ti++;
-      }
-      yCursor += petBlockH;
-      for (let d = 4; d < w - 4; d += 6) this._dot(d, yCursor - 2);
-      yCursor += 6;
-    }
-
-    // OG: Donator info
-    if (donatorLine) {
-      this._txt(ti, 4, yCursor, donatorLine, DescColor, 9);
-      ti++;
-      yCursor += lh + 4;
-    }
-
-    // OG: Protected item
-    if (protectedLine) {
-      this._txt(ti, 4, yCursor, protectedLine, ToolTip.getFontColor(10), 10);
-      ti++;
-      yCursor += lh + 4;
-    }
-
-    // OG: Period display
-    if (periodStr) {
-      this._txt(ti, 4, yCursor, periodStr, DescColor, 9);
-      ti++;
-      yCursor += lh + 4;
-    }
-
-    // OG: Time limited
-    if (timeLimitedStr) {
-      this._txt(ti, 4, yCursor, timeLimitedStr, DescColor, 9);
-      ti++;
-      yCursor += lh + 4;
-    }
-
-    // OG: Discount rate
-    if (discountStr) {
-      this._txt(ti, 4, yCursor, discountStr, ToolTip.getFontColor(14), 10); // GEN_RED
-      ti++;
-      yCursor += lh + 4;
-    }
-
-    // OG: ITC sale info
-    if (itcStr) {
-      this._txt(ti, 4, yCursor, itcStr, DescColor, 9);
-      ti++;
-      yCursor += lh + 4;
-    }
-
-    // OG: ITC expiry
-    if (itcExpiryStr) {
-      this._txt(ti, 4, yCursor, `ITC Expires: ${itcExpiryStr}`, DescColor, 9);
-      ti++;
-      yCursor += lh + 4;
-    }
-
-    // OG: Order comment
-    if (orderCommentStr) {
-      this._txt(ti, 4, yCursor, orderCommentStr, DescColor, 9);
-      ti++;
-      yCursor += lh + 4;
-    }
-
-    // OG: Expiry date
-    if (expiryStr) {
-      this._txt(ti, 4, yCursor, `Expires: ${expiryStr}`, DescColor, 9);
-      ti++;
-      yCursor += lh + 4;
-    }
-
-    // OG: Description
+    // OG: description starts at +32, or +44 when the requirement row is used.
+    const descY = cashDescOffset + ((attr?.Category === 301 || (attr?.ReqLevel ?? 0) > 0) ? 44 : 32);
     for (let dl = 0; dl < descLines.length; dl++) {
-      this._txt(ti, 4, yCursor + dl * (lh - 1), descLines[dl], DescColor, 9);
-      ti++;
+      this._txt(ti++, 92, descY + dl * (lh - 2), descLines[dl], DescColor, 9);
     }
+
+    // Remaining metadata is drawn after the OG description block.
+    let yCursor = descY + descH + 8;
+    if (isPet) {
+      for (const line of petLines) { this._txt(ti++, 10, yCursor, line, StatColor, 9); yCursor += lh - 1; }
+    }
+    if (protectedLine) { this._txt(ti++, 4, yCursor, protectedLine, ToolTip.getFontColor(10), 10); yCursor += lh + 4; }
+    if (periodStr) { this._txt(ti++, 4, yCursor, periodStr, DescColor, 9); yCursor += lh + 4; }
+    if (timeLimitedStr) { this._txt(ti++, 4, yCursor, timeLimitedStr, DescColor, 9); yCursor += lh + 4; }
+    if (discountStr) { this._txt(ti++, 10, Math.max(descH, 68) + cashDescOffset + 40, discountStr, ToolTip.getFontColor(14), 10); }
+    if (itcStr) { this._txt(ti++, 4, yCursor, itcStr, DescColor, 9); yCursor += lh + 4; }
+    if (itcExpiryStr) { this._txt(ti++, 4, yCursor, `ITC Expires: ${itcExpiryStr}`, DescColor, 9); yCursor += lh + 4; }
+    if (orderCommentStr) { this._txt(ti++, 4, yCursor, orderCommentStr, DescColor, 9); }
 
     // OG: Dot line before ID
     if (descLines.length > 0) {
@@ -591,7 +620,6 @@ export class ItemTooltip {
     const yId = yCursor + descLines.length * (lh - 1) + (descLines.length > 0 ? 12 : 6);
     this._txt(ti, 4, yId, `ID: ${itemId}`, IdColor, 9);
 
-    this._iconSprite.visible = false;
     this._root.visible = true;
   }
 
@@ -671,10 +699,10 @@ export class ItemTooltip {
 
   // OG: Build stat bonus info lines — uses actual equip stats when available
   private _buildInfoLines(_itemId: number, attr: ItemAttr | null, equippedSetCount = 0,
-    equipStats?: { incStr: number; incDex: number; incInt: number; incLuk: number; incPad: number; incMad: number; incPdd: number; incMdd: number; incMhp: number; incMmp: number; incAcc: number; incEva: number; incSpeed: number; incJump: number; ruc: number; cuc: number; option1: number; option2: number; option3: number; incMhpPr?: number; incMmpPr?: number }): InfoLine[] {
+     equipStats?: { incStr: number; incDex: number; incInt: number; incLuk: number; incPad: number; incMad: number; incPdd: number; incMdd: number; incMhp: number; incMmp: number; incAcc: number; incEva: number; incSpeed: number; incJump: number; ruc: number; cuc: number; option1: number; option2: number; option3: number; incMhpPr?: number; incMmpPr?: number }): InfoLine[] {
     const lines: InfoLine[] = [];
     if (attr === null) return lines;
-    const push = (text: string) => lines.push({ kind: InfoKind.Text, sprite: null, text });
+     const push = (text: string, color = InfoColor) => lines.push({ kind: InfoKind.Text, sprite: null, text, color });
 
     // OG: Weapon category name (StringPool 0x1A25)
     const cat = Math.floor(_itemId / 10000);
@@ -702,12 +730,12 @@ export class ItemTooltip {
     }
 
     // OG: Durability label (AddInfo, StringPool 0x1A0D) when WZ base durability > 0
-    if ((attr.DurabilityMax ?? 0) > 0) push('Durability:');
+    if ((attr.DurabilityMax ?? 0) > 0) push(this._string(OG_TOOLTIP_STRING_IDS.durability, 'Durability:'));
 
     // OG: Stat rows follow SetToolTip_Equip_Basic order and PrintValue formatting.
     // Instance stats win over WZ base; percent rows read from WZ base (pe2) in OG.
     // type 0 = "+N" (skip non-positive), type 1 = plain "N", type 2 = "N%".
-    const s = equipStats;
+     const s = equipStats;
     const base = (v: number | undefined): number => v ?? 0;
     const addStat = (label: string, v: number, type: 0 | 1 | 2): void => {
       if (v <= 0) return;
@@ -716,30 +744,80 @@ export class ItemTooltip {
     };
 
     // OG: STR -> LUK (type 0), MaxHP/MaxMP (type 0), MaxHPr/MaxMPr (type 2)
-    addStat('STR:', base(s?.incStr ?? attr.IncStr), 0);
-    addStat('DEX:', base(s?.incDex ?? attr.IncDex), 0);
-    addStat('INT:', base(s?.incInt ?? attr.IncInt), 0);
-    addStat('LUK:', base(s?.incLuk ?? attr.IncLuk), 0);
-    addStat('MHP:', base(s?.incMhp ?? attr.IncMhp), 0);
-    addStat('MMP:', base(s?.incMmp ?? attr.IncMmp), 0);
-    addStat('MHP:', base(s?.incMhpPr ?? attr.IncMHPr), 2);
-    addStat('MMP:', base(s?.incMmpPr ?? attr.IncMMPr), 2);
+    addStat(this._string(OG_TOOLTIP_STRING_IDS.str, 'STR:'), base(s?.incStr ?? attr.IncStr), 0);
+    addStat(this._string(OG_TOOLTIP_STRING_IDS.dex, 'DEX:'), base(s?.incDex ?? attr.IncDex), 0);
+    addStat(this._string(OG_TOOLTIP_STRING_IDS.int, 'INT:'), base(s?.incInt ?? attr.IncInt), 0);
+    addStat(this._string(OG_TOOLTIP_STRING_IDS.luk, 'LUK:'), base(s?.incLuk ?? attr.IncLuk), 0);
+    addStat(this._string(OG_TOOLTIP_STRING_IDS.mhp, 'MHP:'), base(s?.incMhp ?? attr.IncMhp), 0);
+    addStat(this._string(OG_TOOLTIP_STRING_IDS.mmp, 'MMP:'), base(s?.incMmp ?? attr.IncMmp), 0);
+    addStat(this._string(OG_TOOLTIP_STRING_IDS.mhp, 'MHP:'), base(s?.incMhpPr ?? attr.IncMHPr), 2);
+    addStat(this._string(OG_TOOLTIP_STRING_IDS.mmp, 'MMP:'), base(s?.incMmpPr ?? attr.IncMMPr), 2);
     // OG: PAD -> MDD (type 1, plain -- no '+')
-    addStat('PAD:', base(s?.incPad ?? attr.IncPad), 1);
-    addStat('MAD:', base(s?.incMad ?? attr.IncMad), 1);
-    addStat('PDD:', base(s?.incPdd ?? attr.IncPdd), 1);
-    addStat('MDD:', base(s?.incMdd ?? attr.IncMdd), 1);
+    addStat(this._string(OG_TOOLTIP_STRING_IDS.pad, 'PAD:'), base(s?.incPad ?? attr.IncPad), 1);
+    addStat(this._string(OG_TOOLTIP_STRING_IDS.mad, 'MAD:'), base(s?.incMad ?? attr.IncMad), 1);
+    addStat(this._string(OG_TOOLTIP_STRING_IDS.pdd, 'PDD:'), base(s?.incPdd ?? attr.IncPdd), 1);
+    addStat(this._string(OG_TOOLTIP_STRING_IDS.mdd, 'MDD:'), base(s?.incMdd ?? attr.IncMdd), 1);
     // OG: ACC/EVA/Craft/Speed/Jump (type 0)
-    addStat('ACC:', base(s?.incAcc ?? attr.IncAcc), 0);
-    addStat('EVA:', base(s?.incEva ?? attr.IncEva), 0);
-    addStat('Speed:', base(s?.incSpeed ?? attr.IncSpeed), 0);
-    addStat('Jump:', base(s?.incJump ?? attr.IncJump), 0);
+     addStat(this._string(OG_TOOLTIP_STRING_IDS.acc, 'ACC:'), base(s?.incAcc ?? attr.IncAcc), 0);
+     addStat(this._string(OG_TOOLTIP_STRING_IDS.eva, 'EVA:'), base(s?.incEva ?? attr.IncEva), 0);
+     addStat(this._string(OG_TOOLTIP_STRING_IDS.craft, 'Craft:'), base(attr.IncCraft), 0);
+     addStat(this._string(OG_TOOLTIP_STRING_IDS.speed, 'Speed:'), base(s?.incSpeed ?? attr.IncSpeed), 0);
+     addStat(this._string(OG_TOOLTIP_STRING_IDS.jump, 'Jump:'), base(s?.incJump ?? attr.IncJump), 0);
+      addStat(this._string(OG_TOOLTIP_STRING_IDS.knockback, 'Knockback:'), base(attr.Knockback), 2);
 
-    // OG: SetToolTip_SetItem appends its rows after SetToolTip_Equip_Basic
-    if (attr.SetItemId > 0) push(`Set Item: ${equippedSetCount} piece${equippedSetCount === 1 ? '' : 's'} equipped`);
+      // These flags are not present in every ItemAttr producer, but some
+      // callers already attach the OG names. Do not invent rows when absent.
+      const optional = attr as ItemAttr & Record<string, unknown>;
+      if (optional.IsPreventSlipItem || optional.preventSlip || optional.PreventSlip) push('Prevent Slip:');
+      if (optional.IsSupportWarmItem || optional.supportWarm || optional.SupportWarm) push('Warm Support:');
+
+      // SetToolTip_ItemOption: option IDs identify the level data; render the
+      // actual non-zero effects instead of exposing only the raw IDs.
+      const optionLevel = Number((s as (typeof s & { level?: number }) | undefined)?.level ?? 0);
+      for (const optionId of [s?.option1 ?? 0, s?.option2 ?? 0, s?.option3 ?? 0]) {
+        const option = this._optionOf?.(optionId, optionLevel);
+        if (!option) continue;
+        const optionRows: Array<[string, number, 0 | 1 | 2]> = [
+          ['STR:', option.niSTR ?? 0, 0], ['DEX:', option.niDEX ?? 0, 0],
+          ['INT:', option.niINT ?? 0, 0], ['LUK:', option.niLUK ?? 0, 0],
+          ['MHP:', option.niMaxHP ?? 0, 0], ['MMP:', option.niMaxMP ?? 0, 0],
+          ['ACC:', option.niACC ?? 0, 0], ['EVA:', option.niEVA ?? 0, 0],
+          ['Speed:', option.niSpeed ?? 0, 0], ['Jump:', option.niJump ?? 0, 0],
+          ['PAD:', option.niPAD ?? 0, 1], ['MAD:', option.niMAD ?? 0, 1],
+          ['PDD:', option.niPDD ?? 0, 1], ['MDD:', option.niMDD ?? 0, 1],
+          ['MHP:', option.niMaxHPr ?? 0, 2], ['MMP:', option.niMaxMPr ?? 0, 2],
+          ['PAD:', option.niPADr ?? 0, 2], ['MAD:', option.niMADr ?? 0, 2],
+          ['PDD:', option.niPDDr ?? 0, 2], ['MDD:', option.niMDDr ?? 0, 2],
+        ];
+        for (const [label, value, type] of optionRows) addStat(label, value, type);
+      }
+
+     // OG: SetToolTip_SetItem appends its rows after SetToolTip_Equip_Basic
+     const setItem = this._setItemOf?.( _itemId );
+     if (setItem) {
+        push(setItem.name, InfoColor);
+        for (const tier of setItem.effects) {
+          if (tier.threshold <= 0) continue;
+          const active = equippedSetCount >= tier.threshold;
+          const tierColor = active ? ToolTip.getFontColor(FONT_TYPES.HL_SPECIAL) : ToolTip.getFontColor(FONT_TYPES.GEN_GRAY);
+          push(`${tier.threshold} Set`, tierColor);
+         const e = tier.effect;
+         const rows: Array<[string, number]> = [
+           ['STR:', e.incSTR ?? 0], ['DEX:', e.incDEX ?? 0], ['INT:', e.incINT ?? 0], ['LUK:', e.incLUK ?? 0],
+           ['MHP:', e.incMHP ?? 0], ['MMP:', e.incMMP ?? 0], ['PAD:', e.incPAD ?? 0], ['MAD:', e.incMAD ?? 0],
+           ['PDD:', e.incPDD ?? 0], ['MDD:', e.incMDD ?? 0], ['ACC:', e.incACC ?? 0], ['EVA:', e.incEVA ?? 0],
+           ['Craft:', e.incCraft ?? 0], ['Speed:', e.incSpeed ?? 0], ['Jump:', e.incJump ?? 0], ['Knockback:', e.nKnockback ?? 0],
+         ];
+          for (const [label, value] of rows) if (value > 0) push(`${label} +${value}`, tierColor);
+       }
+     } else if (attr.SetItemId > 0) {
+       push(`Set Item: ${equippedSetCount} piece${equippedSetCount === 1 ? '' : 's'} equipped`);
+     }
 
     // OG: RUC (StringPool 0x2AD) is the last Equip_Basic row; scroll hammers are a client extra
-    const ruc = base(s?.ruc ?? attr.Upgrades);
+     // RUC is remaining upgrade slots. Prefer the instance value even when
+     // it is zero; only template-only tooltips fall back to WZ tuc.
+     const ruc = s ? base(s.ruc) : base(attr.Upgrades);
     if (ruc > 0) push(`Upgrades: ${ruc}`);
     if (s?.cuc) push(`Hammers: ${s.cuc}`);
 
@@ -771,12 +849,14 @@ export class ItemTooltip {
   }
 
   // OG: SetToolTip_Skill @ 0x8a2500 — skill tooltip with level info and required skills
-  // Handles swallow buff (33101006), Wild Hunter (30001061/30001062), linked character, skill expiry
+  // Context-dependent sections are supplied as preformatted strings. The original
+  // client gets these from StringPool/context state, so this layer must not guess
+  // their localization or values.
   DrawSkillTooltip(
     skillId: number, skillName: string, description: string,
     currentLevel: number, maxLevel: number,
     currentHelp: string, nextHelp: string,
-    reqSkills: Array<{ name: string; level: number }>,
+    reqSkills: Array<{ name: string; level: number; skillId?: number; icon?: WzSprite | Sprite }>,
     mouseX: number, mouseY: number, viewW: number, viewH: number,
     bShowLevel = true,
     // OG: Additional skill data for special handling
@@ -785,34 +865,38 @@ export class ItemTooltip {
       isWildHunter?: boolean; linkedCharName?: string;
       expiryStr?: string; masterLevel?: number;
       damageMeter?: { avgDmg: number; maxDmg: number };
+      icon?: WzSprite | Sprite;
+      masterLevelText?: string;
+      swallowBuffs?: string[];
+      wildHunterValues?: string[];
+      damageMeterValues?: string[];
     },
   ): void {
     const lh = this._font.lineHeight;
     const w = SkillWidth; // OG: 320px for skill tooltips
 
-    // OG: Calculate description height via DrawTextSepartedLine measurement
-    const descLines = this._wrapText(description, w - 94);
-    const descH = descLines.length * (lh - 2);
-
-    // OG: Level info height (2 lines per level: current + next)
-    let levelH = 0;
-    if (bShowLevel && currentLevel > 0) levelH += lh + 4; // current level line
-    if (currentLevel < maxLevel) levelH += lh + 4; // next level line
-
-    // OG: Required skills height
-    const reqH = reqSkills.length > 0 ? reqSkills.length * 14 + 20 : 0;
-
-    // OG: Swallow buff / Wild Hunter / DamageMeter extra height
-    let extraH = 0;
-    if (skillData?.isSwallowBuff) extraH += 5 * (lh + 4); // 5 buff types
-    if (skillData?.isWildHunter) extraH += lh + 4;
-    if (skillData?.linkedCharName) extraH += lh + 4;
-    if (skillData?.expiryStr) extraH += lh + 4;
-    if (skillData?.damageMeter) extraH += 2 * (lh + 4);
-
-    // OG: Height calculation from IDA (v17 = v15 + 128, where v15 is desc overflow)
-    const descOverflow = descH > 68 ? descH - 68 : 0;
-    const h = descOverflow + 128 + reqH + extraH;
+    // OG description column: x=87 through width-20. Help/info lines use the
+    // full inner width. Height must include every wrapped line, not just the
+    // description overflow used by the old placeholder.
+    const descLines = this._wrapText(description, w - 107);
+    const wrapInfo = (text: string): string[] => text ? this._wrapText(text, w - 20) : [];
+    const currentLines = bShowLevel && currentLevel > 0 ? wrapInfo(currentHelp) : [];
+    const nextLines = currentLevel < maxLevel ? wrapInfo(nextHelp) : [];
+    const masterText = skillData?.masterLevelText ??
+      (skillData?.masterLevel === undefined ? '' : String(skillData.masterLevel));
+    const specialLines = [
+      ...(skillData?.swallowBuffs ?? []),
+      ...(skillData?.wildHunterValues ?? []),
+      ...(skillData?.damageMeterValues ?? []),
+      ...(skillData?.linkedCharName ? [skillData.linkedCharName] : []),
+      ...(skillData?.expiryStr ? [skillData.expiryStr] : []),
+    ];
+    const contentH = 32 + Math.max(1, descLines.length) * (lh - 2) + 10 +
+      (bShowLevel && currentLevel > 0 ? lh + currentLines.length * (lh - 2) + 4 : 0) +
+      (currentLevel < maxLevel ? lh + nextLines.length * (lh - 2) + 4 : 0) +
+      (masterText ? lh + 4 : 0) + specialLines.length * (lh + 4);
+    const reqH = reqSkills.length > 0 ? 20 + reqSkills.length * 34 : 0;
+    const h = Math.max(128, contentH + (reqSkills.length ? 20 : 0) + reqH);
 
     let x = mouseX + 16;
     let y = mouseY + 16;
@@ -821,6 +905,11 @@ export class ItemTooltip {
 
     this._g.clear();
     this._clearTexts(0);
+    for (const sp of this._blitSprites) {
+      if (sp.parent) sp.parent.removeChild(sp);
+      sp.destroy();
+    }
+    this._blitSprites = [];
     this._root.x = x;
     this._root.y = y;
 
@@ -837,24 +926,23 @@ export class ItemTooltip {
 
     let ti = 0;
 
-    // OG: Skill name (centered)
-    this._txt(ti, 0, 6, skillName, NameColor, 11);
-    const nameW = this._font.measure(skillName).x;
-    this._texts[ti].x = (w - nameW) / 2;
+    // OG: DrawTextItemName(10, name), not a centered title.
+    this._txt(ti, 10, 6, skillName, NameColor, 11);
     ti++;
 
     // OG: Inner outline below name
     this._g.rect(2, 6 + lh, w - 4, 1).fill({ color: InnerOutlineC, alpha: InnerOutlineA });
 
-    // OG: Description (word-wrapped, x1=87 from IDA)
-    let yCursor = 6 + lh + 6;
+    // OG: description starts beside the optional icon at (87, 32).
+    let yCursor = 32;
     for (const line of descLines) {
-      this._txt(ti, 10, yCursor, line, DescColor, 9);
+      this._txt(ti, 87, yCursor, line, DescColor, 9);
       ti++;
       yCursor += lh - 2;
     }
 
     // OG: Dot line after description
+    yCursor = Math.max(yCursor, 32 + lh);
     yCursor += 4;
     for (let d = 4; d < w - 4; d += 6) this._dot(d, yCursor);
     yCursor += 6;
@@ -865,8 +953,7 @@ export class ItemTooltip {
       ti++;
       yCursor += lh;
       // Current level help text
-      const helpLines = this._wrapText(currentHelp, w - 20);
-      for (const line of helpLines) {
+      for (const line of currentLines) {
         this._txt(ti, 10, yCursor, line, DescColor, 9);
         ti++;
         yCursor += lh - 2;
@@ -880,7 +967,6 @@ export class ItemTooltip {
       ti++;
       yCursor += lh;
       // Next level help text
-      const nextLines = this._wrapText(nextHelp, w - 20);
       for (const line of nextLines) {
         this._txt(ti, 10, yCursor, line, DescColor, 9);
         ti++;
@@ -889,7 +975,13 @@ export class ItemTooltip {
       yCursor += 4;
     }
 
-    // OG: Required skills
+    if (masterText) {
+      this._txt(ti, 10, yCursor, masterText, ToolTip.getFontColor(10), 10);
+      ti++;
+      yCursor += lh + 4;
+    }
+
+    // OG: DrawReqSkill uses a 34px row for each required skill.
     if (reqSkills.length > 0) {
       for (let d = 4; d < w - 4; d += 6) this._dot(d, yCursor);
       yCursor += 6;
@@ -897,73 +989,46 @@ export class ItemTooltip {
       ti++;
       yCursor += lh;
       for (const req of reqSkills) {
-        this._txt(ti, 20, yCursor, `${req.name} (Lv.${req.level})`, DescColor, 9);
+        if (req.icon) {
+          const icon = req.skillId
+            ? this._assets.LoadCanvas(this._itemInfo?.GetSkillIconCanvas(req.skillId) ?? null)?.NewSprite()
+            : (req.icon as any)?.NewSprite?.() ?? req.icon as any;
+          if (icon) {
+            icon.x = 10;
+            icon.y = yCursor;
+            this._root.addChild(icon);
+            this._blitSprites.push(icon);
+          }
+        }
+        this._txt(ti, 60, yCursor + 2, req.name, DescColor, 9);
         ti++;
-        yCursor += 14;
+        this._txt(ti, 60, yCursor + 14, `Lv.${req.level}`, DescColor, 9);
+        ti++;
+        yCursor += 34;
       }
     }
 
-    // OG: Swallow buff (skill 33101006) — 5 buff types
-    if (skillData?.isSwallowBuff) {
-      for (let d = 4; d < w - 4; d += 6) this._dot(d, yCursor);
-      yCursor += 6;
-      this._txt(ti, 10, yCursor, 'Swallow Buff:', ToolTip.getFontColor(10), 10);
-      ti++;
-      yCursor += lh;
-      const swallowBuffs = ['Critical', 'MaxMP', 'Attack', 'Defence', 'Evasion'];
-      for (const buff of swallowBuffs) {
-        this._txt(ti, 20, yCursor, buff, DescColor, 9);
-        ti++;
-        yCursor += lh + 4;
-      }
-    }
-
-    // OG: Wild Hunter (30001061/30001062) — monster name display
-    if (skillData?.isWildHunter) {
-      for (let d = 4; d < w - 4; d += 6) this._dot(d, yCursor);
-      yCursor += 6;
-      this._txt(ti, 10, yCursor, 'Wild Hunter:', ToolTip.getFontColor(10), 10);
-      ti++;
-      yCursor += lh;
-      this._txt(ti, 20, yCursor, 'Linked Monster', DescColor, 9);
-      ti++;
-      yCursor += lh + 4;
-    }
-
-    // OG: Linked character (StringPool 5219)
-    if (skillData?.linkedCharName) {
-      for (let d = 4; d < w - 4; d += 6) this._dot(d, yCursor);
-      yCursor += 6;
-      this._txt(ti, 10, yCursor, `Linked Character: ${skillData.linkedCharName}`, DescColor, 9);
-      ti++;
-      yCursor += lh + 4;
-    }
-
-    // OG: Skill expiry
-    if (skillData?.expiryStr) {
-      for (let d = 4; d < w - 4; d += 6) this._dot(d, yCursor);
-      yCursor += 6;
-      this._txt(ti, 10, yCursor, skillData.expiryStr, ToolTip.getFontColor(14), 9);
-      ti++;
-      yCursor += lh + 4;
-    }
-
-    // OG: DamageMeter stats
-    if (skillData?.damageMeter) {
-      for (let d = 4; d < w - 4; d += 6) this._dot(d, yCursor);
-      yCursor += 6;
-      this._txt(ti, 10, yCursor, 'Damage Meter:', ToolTip.getFontColor(10), 10);
-      ti++;
-      yCursor += lh;
-      this._txt(ti, 20, yCursor, `Average: ${skillData.damageMeter.avgDmg.toLocaleString()}`, DescColor, 9);
-      ti++;
-      yCursor += lh + 4;
-      this._txt(ti, 20, yCursor, `Maximum: ${skillData.damageMeter.maxDmg.toLocaleString()}`, DescColor, 9);
+    // Special values are already formatted by the caller. Legacy flags remain
+    // accepted but intentionally produce no fabricated labels or numbers.
+    for (const line of specialLines) {
+      this._txt(ti, 10, yCursor, line, DescColor, 9);
       ti++;
       yCursor += lh + 4;
     }
 
     this._iconSprite.visible = false;
+    const exactSkillIcon = this._assets.LoadCanvas(this._itemInfo?.GetSkillIconCanvas(skillId) ?? null);
+    if (exactSkillIcon || skillData?.icon) {
+      const icon = exactSkillIcon?.NewSprite()
+        ?? (skillData?.icon as any)?.NewSprite?.()
+        ?? skillData?.icon as any;
+      if (icon) {
+        icon.x = 10;
+        icon.y = 32;
+        this._root.addChild(icon);
+        this._blitSprites.push(icon);
+      }
+    }
     this._root.visible = true;
   }
 
@@ -989,20 +1054,24 @@ export class ItemTooltip {
     if (deathStr) cashDescOffset += 16;
     if (donator) cashDescOffset += 16;
 
-    // OG: Description height via DrawTextSepartedLine measurement (x1=92, x2=270)
-    const descLines = this._wrapText(description, w - 92);
-    const descH = descLines.length * (lh - 2);
-    const descOverflow = descH > 68 ? descH - 68 : 0;
+    // OG: DrawTextSepartedLine(92, 270, ...) measures the 178px content span.
+    // Its returned height advances in 14px rows, independently of the font line height.
+    const descLines = this._wrapText(description, 270 - 92);
+    const descH = descLines.length * 14;
+    const descOverflow = Math.max(0, descH - 68);
 
     // OG: Discount height (35 if prices differ)
     const discountH = (nOriginalPrice > 0 && nOriginalPrice !== nPrice) ? 35 : 0;
 
-    // OG: MakingLimitInfo — build limit info strings from goodsInfo
+    // OG: MakingLimitInfo — build limit info strings from goodsInfo. Limit rows
+    // are bottom-anchored by DrawLimitInfo and do not increase m_nHeight.
     const limitTexts = this._toolTip.makingLimitInfo(goodsInfo ?? null);
-    const limitH = limitTexts.length > 0 ? limitTexts.length * 14 : 0;
 
+    // The optional rows below the core Pet layout need space of their own.
+    const skillH = skills.length * 14;
+    const expiryH = expiryStr ? 16 : 0;
     // OG: SetBasicInfo(6, 290, descOverflow + discountH + nCashDescOffset + 116, -1)
-    const h = descOverflow + discountH + cashDescOffset + 116 + limitH;
+    const h = descOverflow + discountH + cashDescOffset + 116 + skillH + expiryH;
 
     let x = mouseX + 16;
     let y = mouseY + 16;
@@ -1011,6 +1080,9 @@ export class ItemTooltip {
 
     this._g.clear();
     this._clearTexts(0);
+    // The icon sprite is shared with other tooltip kinds; never retain a prior
+    // Pet icon when this Pet has no item icon.
+    this._iconSprite.visible = false;
     // Clean up blit sprites (dead icon canvas, etc.)
     for (const sp of this._blitSprites) {
       if (sp.parent) sp.parent.removeChild(sp);
@@ -1029,10 +1101,13 @@ export class ItemTooltip {
 
     let ti = 0;
 
-    // OG: Pet name (DrawTextItemName at x=10, font type 1 = HL_WHITE, centered)
-    this._txt(ti, 0, 10, petName, NameColor, 11);
-    const nameW = this._font.measure(petName).x;
-    this._texts[ti].x = (w - nameW) / 2;
+    // OG: DrawTextItemName(10, sItemName, font type 1). When the owned pet
+    // name differs from its template, the client shows both names together.
+    const displayName = petName && petName.toLocaleLowerCase() !== templateName.toLocaleLowerCase()
+      ? `${petName} (${templateName})`
+      : templateName;
+    this._dot(13, 15);
+    this._txt(ti, 18, 10, displayName, NameColor, 11);
     ti++;
 
     // OG: Inner outline below name
@@ -1062,16 +1137,12 @@ export class ItemTooltip {
       ti++;
     }
 
-    // OG: Pet template name
-    this._txt(ti, 10, v42 + lh + 4, templateName, DescColor, 9);
-    ti++;
-    let yCursor = v42 + lh + 4 + lh;
+    let yCursor = v42 + lh + 4;
 
     // OG: Pet stats (level, tameness, repleteness) — extra info beyond OG
-    this._txt(ti, 10, yCursor, `Lv.${level}`, StatColor, 9);
-    this._txt(ti, 100, yCursor, `Tameness: ${tameness}`, StatColor, 9);
-    this._txt(ti, 200, yCursor, `Full: ${repleteness}`, StatColor, 9);
-    ti++;
+    this._txt(ti++, 10, yCursor, `Lv.${level}`, StatColor, 9);
+    this._txt(ti++, 100, yCursor, `Tameness: ${tameness}`, StatColor, 9);
+    this._txt(ti++, 200, yCursor, `Full: ${repleteness}`, StatColor, 9);
     yCursor += lh;
 
     // OG: Pet skills — extra info beyond OG
@@ -1086,7 +1157,8 @@ export class ItemTooltip {
     // OG: Item icon at (10, nCashDescOffset + 32) via DrawItemIcon
     if (itemId > 0) {
       const iconY = cashDescOffset + 32;
-      const icon = this._icons.LoadIcon(itemId);
+      const petCanvas = this._itemInfo?.GetPetIconCanvas(itemId);
+      const icon = this._assets.LoadCanvas(petCanvas) ?? this._itemIcon(itemId);
       if (icon?.Texture) {
         this._iconSprite.texture = icon.Texture;
         this._iconSprite.x = 10;
@@ -1102,7 +1174,7 @@ export class ItemTooltip {
       const descY = cashDescOffset + 32;
       for (let d = 4; d < w - 4; d += 6) this._dot(d, descY - 2);
       for (let dl = 0; dl < descLines.length; dl++) {
-        this._txt(ti, 92, descY + dl * (lh - 2), descLines[dl], DescColor, 9);
+        this._txt(ti, 92, descY + dl * 14, descLines[dl], DescColor, 9);
         ti++;
       }
     }
@@ -1131,7 +1203,9 @@ export class ItemTooltip {
           this._txt(ti, 10, limitY, text, ToolTip.getFontColor(11), 9);
       ti++;
     }
-        limitY += 14;
+        // OG DrawLimitInfo reserves 16px per entry, including empty
+        // separator entries produced by MakingLimitInfo.
+        limitY += 16;
       }
     }
 
@@ -1142,59 +1216,36 @@ export class ItemTooltip {
   // Loads ring image from WZ (StringPool 0xAD3), handles couple/friend/marriage records
   DrawRingTooltip(
     ringName: string, description: string,
-    partnerName: string, ringType: 'couple' | 'friend' | 'spouse',
+    partnerName: string, _ringType: 'couple' | 'friend' | 'spouse',
     expiryStr: string, itemId: number,
     mouseX: number, mouseY: number, viewW: number, viewH: number,
     equipStats?: { incStr: number; incDex: number; incInt: number; incLuk: number; incPad: number; incMad: number; incPdd: number; incMdd: number; incMhp: number; incMmp: number; incAcc: number; incEva: number; incSpeed: number; incJump: number; ruc: number; cuc: number },
     equipAttr?: ItemAttr | null,
+    options?: RingTooltipOptions,
   ): void {
     const lh = this._font.lineHeight;
-    const w = EquipWidth; // OG: 236px for ring tooltips
-
-    const descLines = this._wrapText(description, w - 20);
+    const w = EquipWidth;
+    const descLines = this._wrapText(description, 178);
     const descH = descLines.length * (lh - 2);
-    const partnerH = partnerName ? lh + 4 : 0;
-
-    // OG: Build stat lines from equip stats
-    const infoLines: string[] = [];
-    if (equipStats) {
-      if (equipStats.incStr) infoLines.push(`STR: +${equipStats.incStr}`);
-      if (equipStats.incDex) infoLines.push(`DEX: +${equipStats.incDex}`);
-      if (equipStats.incInt) infoLines.push(`INT: +${equipStats.incInt}`);
-      if (equipStats.incLuk) infoLines.push(`LUK: +${equipStats.incLuk}`);
-      if (equipStats.incPad) infoLines.push(`PAD: +${equipStats.incPad}`);
-      if (equipStats.incMad) infoLines.push(`MAD: +${equipStats.incMad}`);
-      if (equipStats.incPdd) infoLines.push(`PDD: +${equipStats.incPdd}`);
-      if (equipStats.incMdd) infoLines.push(`MDD: +${equipStats.incMdd}`);
-      if (equipStats.incMhp) infoLines.push(`MHP: +${equipStats.incMhp}`);
-      if (equipStats.incMmp) infoLines.push(`MMP: +${equipStats.incMmp}`);
-      if (equipStats.incAcc) infoLines.push(`ACC: +${equipStats.incAcc}`);
-      if (equipStats.incEva) infoLines.push(`EVA: +${equipStats.incEva}`);
-      if (equipStats.incSpeed) infoLines.push(`Speed: +${equipStats.incSpeed}`);
-      if (equipStats.incJump) infoLines.push(`Jump: +${equipStats.incJump}`);
-      if (equipStats.ruc) infoLines.push(`Upgrades: ${equipStats.ruc}`);
-    } else if (equipAttr) {
-      if (equipAttr.IncStr) infoLines.push(`STR: +${equipAttr.IncStr}`);
-      if (equipAttr.IncDex) infoLines.push(`DEX: +${equipAttr.IncDex}`);
-      if (equipAttr.IncInt) infoLines.push(`INT: +${equipAttr.IncInt}`);
-      if (equipAttr.IncLuk) infoLines.push(`LUK: +${equipAttr.IncLuk}`);
-      if (equipAttr.IncPad) infoLines.push(`PAD: +${equipAttr.IncPad}`);
-      if (equipAttr.IncMad) infoLines.push(`MAD: +${equipAttr.IncMad}`);
-      if (equipAttr.IncPdd) infoLines.push(`PDD: +${equipAttr.IncPdd}`);
-      if (equipAttr.IncMdd) infoLines.push(`MDD: +${equipAttr.IncMdd}`);
-      if (equipAttr.IncMhp) infoLines.push(`MHP: +${equipAttr.IncMhp}`);
-      if (equipAttr.IncMmp) infoLines.push(`MMP: +${equipAttr.IncMmp}`);
-      if (equipAttr.IncSpeed) infoLines.push(`Speed: +${equipAttr.IncSpeed}`);
-      if (equipAttr.IncJump) infoLines.push(`Jump: +${equipAttr.IncJump}`);
-      if (equipAttr.Upgrades) infoLines.push(`Upgrades: ${equipAttr.Upgrades}`);
-    }
-    const infoH = infoLines.length > 0 ? infoLines.length * (lh - 2) + 6 : 0;
-
-    // OG: Ring image from WZ (StringPool 0xAD3)
-    const ringImage = this._assets?.Get('ring');
-    const ringH = ringImage ? 68 : 0; // OG: ring image is 68px tall
-
-    const h = 10 + lh + 6 + partnerH + infoH + descH + ringH + 6 + lh + 10;
+    const partnerText = options?.partnerText ?? partnerName;
+    const ringAttr = equipAttr ?? {
+      IsEquip: true, Category: 111, ReqLevel: 0, ReqStr: 0, ReqDex: 0,
+      ReqInt: 0, ReqLuk: 0, ReqFame: 0, ReqJob: 0,
+      IncStr: 0, IncDex: 0, IncInt: 0, IncLuk: 0, IncPad: 0, IncMad: 0,
+      IncPdd: 0, IncMdd: 0, IncMhp: 0, IncMmp: 0, IncAcc: 0, IncEva: 0,
+      IncSpeed: 0, IncJump: 0, IncMHPr: 0, IncMMPr: 0, AttackSpeed: 0,
+      Upgrades: 0, Price: 0, Cash: false, Only: false, SetItemId: 0,
+    } as ItemAttr;
+    const info = this._buildInfoLines(itemId, ringAttr, 0, equipStats as any);
+    const ringImage = options?.ringImage ?? options?.resolveRingImage?.(itemId) ??
+      this._assets.LoadCanvas(options?.ringCanvas) ??
+      this._assets.LoadCanvas(this._itemInfo?.GetRingIconCanvas(itemId) ?? null);
+    const ringH = ringImage ? ((ringImage as WzSprite).Height ?? 68) : 0;
+    const contentTop = expiryStr ? 48 : 32;
+    const contentH = Math.max(68, descH, ringH);
+    const infoH = info.length ? 6 + info.length * (lh - 2) : 0;
+    const partnerH = partnerText ? lh + 4 : 0;
+    const h = contentTop + contentH + infoH + partnerH + (expiryStr ? 16 : 0) + 16;
 
     let x = mouseX + 16;
     let y = mouseY + 16;
@@ -1203,6 +1254,12 @@ export class ItemTooltip {
 
     this._g.clear();
     this._clearTexts(0);
+    for (const sp of this._blitSprites) {
+      if (sp.parent) sp.parent.removeChild(sp);
+      sp.destroy();
+    }
+    this._blitSprites = [];
+    this._iconSprite.visible = false;
     this._root.x = x;
     this._root.y = y;
 
@@ -1215,62 +1272,49 @@ export class ItemTooltip {
 
     let ti = 0;
 
-    // OG: Ring name (centered)
-    this._txt(ti, 0, 10, ringName, NameColor, 11);
-    const nameW = this._font.measure(ringName).x;
-    this._texts[ti].x = (w - nameW) / 2;
+    // SetToolTip_Ring uses the normal item-name renderer, not a new title
+    // format. The relation/expiry strings below are caller-provided.
+    this._dot(10, 15);
+    this._txt(ti, 18, 10, ringName, NameColor, 11);
     ti++;
 
     // OG: Inner outline below name
     this._g.rect(2, 10 + lh, w - 4, 1).fill({ color: InnerOutlineC, alpha: InnerOutlineA });
 
-    let yCursor = 10 + lh + 6;
-
-    // OG: Partner/friend/spouse name (StringPool 689/690/4236)
-    if (partnerName) {
-      let label = '';
-      switch (ringType) {
-        case 'couple': label = 'Partner: '; break;  // StringPool 689
-        case 'friend': label = 'Friend: '; break;   // StringPool 690
-        case 'spouse': label = 'Spouse: '; break;   // StringPool 4236
-      }
-      this._txt(ti, 10, yCursor, label + partnerName, DescColor, 9);
-      ti++;
-      yCursor += lh + 4;
-    }
-
-    // OG: Stat lines (from SetToolTip_Equip_Basic)
-    for (const line of infoLines) {
-      this._txt(ti, 10, yCursor, line, InfoColor, 9);
-      ti++;
-      yCursor += lh - 2;
-    }
-    if (infoLines.length > 0) {
-      for (let d = 4; d < w - 4; d += 6) this._dot(d, yCursor);
-      yCursor += 6;
-    }
-
-    // OG: Description
-    for (const line of descLines) {
-      this._txt(ti, 10, yCursor, line, DescColor, 9);
-      ti++;
-      yCursor += lh - 2;
-    }
-
-    // OG: Ring image (from WZ StringPool 0xAD3)
-    if (ringImage) {
-      this._blitAt(ringImage, (w - 68) / 2, yCursor);
-      yCursor += ringH;
-    }
-
-    // OG: Expiry date
     if (expiryStr) {
-      for (let d = 4; d < w - 4; d += 6) this._dot(d, yCursor);
-      yCursor += 6;
-      this._txt(ti, 10, yCursor, expiryStr, ToolTip.getFontColor(14), 9);
+      this._txt(ti++, 10, 31, expiryStr, ToolTip.getFontColor(22), 9);
     }
 
-    this._iconSprite.visible = false;
+    const imageY = contentTop;
+    if (ringImage) {
+      if (ringImage instanceof Sprite) {
+        ringImage.x = 10;
+        ringImage.y = imageY;
+        this._root.addChild(ringImage);
+        this._blitSprites.push(ringImage);
+      } else {
+        this._blitAt(ringImage, 10, imageY);
+      }
+    }
+    for (let descIndex = 0; descIndex < descLines.length; descIndex++) {
+      const line = descLines[descIndex];
+      this._txt(ti, 92, imageY + descIndex * (lh - 2), line, DescColor, 9);
+      ti++;
+    }
+    let yCursor = imageY + contentH + 4;
+    for (const line of info) {
+      if (line.text) this._txt(ti++, 10, yCursor, line.text, line.color ?? InfoColor, 9);
+      yCursor += lh - 2;
+    }
+    if (info.length) {
+      for (let d = 4; d < w - 4; d += 6) this._dot(d, yCursor);
+      yCursor += 6;
+    }
+    if (partnerText) {
+      this._txt(ti++, 10, yCursor, partnerText, DescColor, 9);
+      yCursor += partnerH;
+    }
+
     this._root.visible = true;
   }
 

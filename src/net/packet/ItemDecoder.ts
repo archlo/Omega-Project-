@@ -70,6 +70,7 @@ export class ItemDecoder {
     e.incJump = p.readShort();
     item.title = p.readString();
     item.attribute = p.readShort();
+    e.attribute = item.attribute;
     e.levelUpType = p.readByte();
     e.level = p.readByte();
     e.exp = p.readInt();

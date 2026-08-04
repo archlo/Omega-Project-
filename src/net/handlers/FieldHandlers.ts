@@ -2304,6 +2304,7 @@ export class FieldHandlers {
         case InventoryOpType.Add:
           op.item = ItemDecoder.Decode(p);
           op.itemId = op.item.itemId;
+          op.attribute = op.item.attribute;
           if (op.item.equip) op.equipStats = op.item.equip;
           op.petLevel = op.item.petLevel;
           op.petTameness = op.item.petTameness;

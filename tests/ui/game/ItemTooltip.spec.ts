@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { Sprite, Texture } from 'pixi.js';
+import { Sprite, Texture, Text } from 'pixi.js';
 import { ItemTooltip } from '../../../src/ui/game/ItemTooltip.js';
 import { BuiltInFont } from '../../../src/ui/BuiltInFont.js';
 import { TooltipAssets } from '../../../src/ui/game/TooltipAssets.js';
@@ -38,6 +38,7 @@ function makeAssets(overrides: Partial<Record<string, any>> = {}) {
     GrowthNone: vi.fn().mockReturnValue(overrides.GrowthNone ?? null),
     DurabilityBar: vi.fn().mockReturnValue(overrides.DurabilityBar ?? null),
     Percent: vi.fn().mockReturnValue(overrides.Percent ?? null),
+    LoadCanvas: vi.fn().mockReturnValue(overrides.LoadCanvas ?? null),
     BlitAt: vi.fn(),
     Dot: vi.fn().mockReturnValue(null),
   } as any;
@@ -47,6 +48,15 @@ function makeTooltip(overrides: { attr?: ItemAttr | null; icon?: any; assets?: a
   const icons = makeIcons(overrides);
   const assets = overrides.assets ?? makeAssets();
   return new ItemTooltip(makeMockFont(), icons, assets);
+}
+
+function makeExactItemInfo(icon: any) {
+  return {
+    GetItemIconCanvas: vi.fn().mockReturnValue({ exact: true }),
+    GetPetIconCanvas: vi.fn().mockReturnValue(null),
+    GetRingIconCanvas: vi.fn().mockReturnValue(null),
+    GetSkillIconCanvas: vi.fn().mockReturnValue(null),
+  } as any;
 }
 
 // ── ItemTooltip ─────────────────────────────────────────────────────────────
@@ -239,15 +249,15 @@ describe('ItemTooltip', () => {
       expect(nameText.y).toBe(10);
     });
 
-    it('positions icon sprite at (IconX+2, yBlock+66) with 64x64 size', () => {
+    it('positions icon sprite at the OG DrawItemIcon hotspot', () => {
       const icon = { Texture: Texture.EMPTY, Width: 32, Height: 32 } as any;
       const tip = makeTooltip({ attr: equipAttr(), icon });
       tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
       // _iconSprite is child index 1; yBlock = (10+15+3)+5 = 33
       const iconSprite = tip.root.children[1] as any;
-      expect(iconSprite.x).toBe(12);
-      expect(iconSprite.y).toBe(99);
-      expect(iconSprite.width).toBe(64);
+      expect(iconSprite.x).toBe(10);
+      expect(iconSprite.y).toBe(33);
+      expect(iconSprite.width).toBe(32);
       expect(iconSprite.visible).toBe(true);
     });
 
@@ -506,6 +516,58 @@ describe('ItemTooltip', () => {
       expect(tip.root.visible).toBe(true);
     });
 
+    it('prefers the ItemInfoService exact canvas over the legacy icon loader', () => {
+      const exactSprite = { NewSprite: vi.fn().mockReturnValue(new Sprite(Texture.EMPTY)) };
+      const assets = makeAssets({ LoadCanvas: vi.fn().mockReturnValue(exactSprite) });
+      const legacyIcon = { Texture: Texture.EMPTY, Width: 32, Height: 32 } as any;
+      const icons = makeIcons({ attr: {
+        IsEquip: true, Category: 130,
+        ReqLevel: 0, ReqStr: 0, ReqDex: 0, ReqInt: 0, ReqLuk: 0, ReqFame: 0, ReqJob: 0,
+        IncStr: 0, IncDex: 0, IncInt: 0, IncLuk: 0, IncPad: 0, IncMad: 0, IncPdd: 0,
+        IncMdd: 0, IncMhp: 0, IncMmp: 0, IncAcc: 0, IncEva: 0, IncSpeed: 0, IncJump: 0,
+        IncMHPr: 0, IncMMPr: 0, IncCraft: 0, Knockback: 0, AttackSpeed: 0, Upgrades: 0,
+        Price: 0, Cash: false, Only: false, SetItemId: 0,
+      }, icon: legacyIcon });
+      const info = makeExactItemInfo(exactSprite);
+      const tip = new ItemTooltip(makeMockFont(), icons, assets, null, null, null, info, null);
+      tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
+      expect(info.GetItemIconCanvas).toHaveBeenCalledWith(1300000);
+      expect(assets.LoadCanvas).toHaveBeenCalled();
+      expect(legacyIcon).toBeDefined();
+    });
+
+    it('uses the OG icon and 92px description column', () => {
+      const icon = { Texture: Texture.EMPTY, Width: 32, Height: 32 } as any;
+      const descOf = vi.fn().mockReturnValue('A short bundle desc');
+      const tip = new ItemTooltip(makeMockFont(), makeIcons({ icon }), makeAssets(), descOf);
+      tip.Draw(2000000, 'Potion', 0, 1, 100, 100, 1024, 768);
+
+      const iconSprite = tip.root.children[1] as any;
+      expect(iconSprite.visible).toBe(true);
+      expect(iconSprite.x).toBe(10);
+      expect(iconSprite.y).toBe(32);
+      const description = tip.root.children[3] as any;
+      expect(description.text).toBe('A short bundle desc');
+      expect(description.x).toBe(92);
+      expect(description.y).toBe(32);
+    });
+
+    it('places caller-formatted trade options before cash metadata', () => {
+      const icon = { Texture: Texture.EMPTY, Width: 32, Height: 32 } as any;
+      const tip = makeTooltip({ icon });
+      tip.Draw(2000000, 'Potion', 0, 1, 100, 100, 1024, 768, 0,
+        undefined, undefined, undefined, undefined, undefined,
+        { tradeOption: 'Trade once', tradeOptionEx: 'Account shared', sTitle: 'Cash title' });
+
+      const option = tip.root.children[3] as any;
+      const optionEx = tip.root.children[4] as any;
+      expect(option.text).toBe('Trade once');
+      expect(option.y).toBe(31);
+      expect(optionEx.text).toBe('Account shared');
+      expect(optionEx.y).toBe(50);
+      expect((tip.root.children[1] as any).y).toBe(86);
+    });
+
     it('positions tooltip to fit within viewport', () => {
       const tip = makeTooltip();
       tip.Draw(2000000, 'Item', 0, 1, 1000, 700, 1024, 768);
@@ -683,6 +745,100 @@ describe('ItemTooltip', () => {
       expect(tip.root.visible).toBe(true);
     });
 
+    it('uses the OG name/description columns and optional icon anchor', () => {
+      const tip = makeTooltip();
+      const icon = new Sprite(Texture.WHITE);
+      tip.DrawSkillTooltip(
+        1001000, 'Power Strike', 'Deals damage',
+        1, 1, '', '', [],
+        100, 100, 1024, 768, true, { icon },
+      );
+      const texts = tip.root.children.filter((child: any) => child instanceof Text && child.visible) as Text[];
+      expect(texts.find(t => t.text === 'Power Strike')?.x).toBe(10);
+      expect(texts.find(t => t.text === 'Deals damage')?.x).toBe(87);
+      expect(tip.root.children).toContain(icon);
+      expect(icon.x).toBe(10);
+      expect(icon.y).toBe(32);
+    });
+
+    it('accounts for wrapped help lines and displays master level text', () => {
+      const tip = makeTooltip();
+      tip.DrawSkillTooltip(
+        1001000, 'Skill', 'Desc',
+        1, 2, 'one two three four five six seven eight nine ten eleven twelve', '', [],
+        100, 100, 1024, 768, true, { masterLevel: 10 },
+      );
+      const texts = tip.root.children.filter((child: any) => child instanceof Text && child.visible) as Text[];
+      expect(texts.some(t => t.text === '10')).toBe(true);
+      expect(texts.length).toBeGreaterThan(5);
+    });
+
+    it('renders only caller-supplied special values', () => {
+      const tip = makeTooltip();
+      tip.DrawSkillTooltip(
+        33101006, 'Swallow', 'Buff', 1, 1, 'Effect', '', [],
+        100, 100, 1024, 768, true,
+        { isSwallowBuff: true, swallowBuffs: ['Critical +5%'] },
+      );
+      const texts = tip.root.children.filter((child: any) => child instanceof Text && child.visible) as Text[];
+      expect(texts.some(t => t.text === 'Critical +5%')).toBe(true);
+      expect(texts.some(t => t.text === 'Critical')).toBe(false);
+    });
+
+    it('uses OG name and description anchors and keeps stat rows in separate text slots', () => {
+      const tip = makeTooltip();
+      tip.DrawPetTooltip(
+        'Fluffy', 'White Bunny', 'A loyal companion',
+        1, 10, 50,
+        false, '',
+        '', '',
+        [],
+        100, 100, 1024, 768,
+      );
+
+      const texts = tip.root.children.filter((child: any) => child instanceof Object && 'text' in child) as any[];
+      const name = texts.find((text) => text.text === 'Fluffy (White Bunny)');
+      const description = texts.find((text) => text.text === 'A loyal companion');
+      expect(name).toMatchObject({ x: 18, y: 10 });
+      expect(description).toMatchObject({ x: 92, y: 32 });
+      expect(texts.filter((text) => text.text.startsWith('Lv.'))).toHaveLength(1);
+      expect(texts.filter((text) => text.text.startsWith('Tameness:'))).toHaveLength(1);
+      expect(texts.filter((text) => text.text.startsWith('Full:'))).toHaveLength(1);
+    });
+
+    it('clears a stale item icon on a subsequent pet draw', () => {
+      const icon = { Texture: Texture.WHITE, Width: 68, Height: 68 };
+      const tip = makeTooltip({ icon });
+      tip.DrawPetTooltip(
+        'Pet', 'Cat', '', 1, 10, 50, false, '', '', '', [],
+        100, 100, 1024, 768, 0, 0, 1234,
+      );
+      expect((tip.root.children[1] as any).visible).toBe(true);
+
+      tip.DrawPetTooltip(
+        'Pet', 'Cat', '', 1, 10, 50, false, '', '', '', [],
+        100, 100, 1024, 768,
+      );
+      expect((tip.root.children[1] as any).visible).toBe(false);
+    });
+
+    it('accounts for skill rows but keeps limit rows bottom-anchored', () => {
+      const tip = makeTooltip();
+      tip.DrawPetTooltip(
+        'Pet', 'Cat', '', 1, 10, 50, false, '', '', '',
+        ['Skill 1', 'Skill 2'],
+        100, 100, 1024, 768,
+        0, 0, 0,
+        { dwConditionFlag: 1, nOriginCount: 10, nRemainCount: 5 },
+      );
+      const skill = (tip.root.children as any[]).find((child) => child.text === 'Skill 2');
+      const limit = (tip.root.children as any[]).find((child) => child.text === 'Stock: 10');
+      expect(skill.y).toBe(79);
+      // Base height is 116 + two skill rows (28); seven limit entries are
+      // anchored from the bottom and do not add another 98px to the height.
+      expect(limit.y).toBe(64);
+    });
+
     it('positions tooltip to fit within viewport', () => {
       const tip = makeTooltip();
       tip.DrawPetTooltip(
@@ -743,6 +899,39 @@ describe('ItemTooltip', () => {
         { incStr: 5, incDex: 0, incInt: 0, incLuk: 0, incPad: 0, incMad: 0, incPdd: 0, incMdd: 0, incMhp: 0, incMmp: 0, incAcc: 0, incEva: 0, incSpeed: 0, incJump: 0, ruc: 0, cuc: 0 },
       );
       expect(tip.root.visible).toBe(true);
+    });
+
+    it('uses the item-specific ring resolver and caller-formatted relationship text', () => {
+      const ringImage = new Sprite(Texture.WHITE);
+      const assets = makeAssets();
+      const tip = makeTooltip({ assets });
+      tip.DrawRingTooltip(
+        'Ring', 'A ring description', 'Ignored raw name', 'couple',
+        'Expires: tomorrow', 1112000, 100, 100, 1024, 768,
+        { incStr: 0, incDex: 0, incInt: 0, incLuk: 0, incPad: 12, incMad: 0, incPdd: 0, incMdd: 0, incMhp: 0, incMmp: 0, incAcc: 0, incEva: 0, incSpeed: 0, incJump: 0, ruc: 0, cuc: 0 },
+        undefined,
+        { ringImage, partnerText: 'Coupled with Maple' },
+      );
+
+      expect(tip.root.children).toContain(ringImage);
+      expect(ringImage.x).toBe(10);
+      expect(ringImage.y).toBe(48);
+      const texts = tip.root.children.filter((child: any) => child.visible && typeof child.text === 'string') as any[];
+      expect(texts.some((text) => text.text === 'Coupled with Maple')).toBe(true);
+      expect(texts.some((text) => text.text === 'Partner: Ignored raw name')).toBe(false);
+      expect(texts.some((text) => text.text === 'PAD: 12')).toBe(true);
+    });
+
+    it('resolves a ring image by item ID without a fallback global ring asset', () => {
+      const ringImage = new Sprite(Texture.WHITE);
+      const resolver = vi.fn().mockReturnValue(ringImage);
+      const assets = makeAssets();
+      const tip = makeTooltip({ assets });
+      tip.DrawRingTooltip('Ring', '', '', 'friend', '', 1112803, 100, 100, 1024, 768,
+        undefined, undefined, { resolveRingImage: resolver });
+      expect(resolver).toHaveBeenCalledWith(1112803);
+      expect(assets.Get).not.toHaveBeenCalledWith('ring');
+      expect(tip.root.children).toContain(ringImage);
     });
 
     it('renders stat bonuses from equipAttr fallback', () => {

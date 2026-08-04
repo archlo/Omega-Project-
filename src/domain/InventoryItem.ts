@@ -42,4 +42,6 @@ export class EquipStats {
   grade = 0; released = false; vicious = 0;
   option1 = 0; option2 = 0; option3 = 0;
   socket1 = 0; socket2 = 0;
+  /** Raw GW_ItemSlotEquip attribute flags (protection/karma/etc.). */
+  attribute = 0;
 }

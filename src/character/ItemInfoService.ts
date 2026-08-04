@@ -1,6 +1,8 @@
 import type { WzPackage } from '../wz/WzPackage.js';
 import { WzProperty } from '../wz/WzProperty.js';
 import { WzImage } from '../wz/WzImage.js';
+import { WzCanvas } from '../wz/WzCanvas.js';
+import { WzUol } from '../wz/WzUol.js';
 
 /**
  * CItemInfo — typed TypeScript port of the OG CItemInfo singleton (196 methods).
@@ -35,7 +37,11 @@ export class ItemInfoService {
     private _itemWz: WzPackage | null,
     private _tamingMobWz: WzPackage | null = null,
     private _morphWz: WzPackage | null = null,
-  ) {}
+    private _etcWz: WzPackage | null = null,
+    private _skillWz: WzPackage | null = null,
+  ) {
+    this.RegisterSetItemInfo();
+  }
 
   // ─── Item Info Resolution ────────────────────────────────────────────
 
@@ -51,7 +57,8 @@ export class ItemInfoService {
       const category = equipCategory(itemId);
       if (!category || !this._characterWz) return null;
       const node = this._characterWz.GetItem(`${category}/${itemId.toString().padStart(8, '0')}.img`);
-      return node instanceof Object ? node as WzProperty : null;
+      if (node instanceof WzImage) return node.Root;
+      return node instanceof WzProperty ? node : null;
     }
     if (cat >= 2 && cat <= 5 && this._itemWz) {
       // Consume/Install/Etc/Cash → Item.wz/<Folder>/<id/10000:D4>.img/<id:D8>
@@ -59,7 +66,7 @@ export class ItemInfoService {
       if (!folder) return null;
       const img = Math.floor(itemId / 10000);
       const node = this._itemWz.GetItem(`${folder}/${img.toString().padStart(4, '0')}.img/${itemId.toString().padStart(8, '0')}`);
-      return node instanceof Object ? node as WzProperty : null;
+      return node instanceof WzProperty ? node : null;
     }
     return null;
   }
@@ -76,6 +83,54 @@ export class ItemInfoService {
     if (Math.floor(itemId / 10000) === 910) return prop;
     const info = prop.Get('info');
     return info instanceof Object ? info as WzProperty : null;
+  }
+
+  /**
+   * Resolve the canvas selected by CItemInfo::GetItemIcon.
+   *
+   * Verified v95 keys are info/icon, info/iconRaw, info/iconD and
+   * info/iconRawD. The D variants are the pet-dead canvases; ordinary item
+   * records simply do not contain them and therefore return null.
+   */
+  GetItemIconCanvas(itemId: number, variant: ItemIconCanvasVariant = 'icon'): WzCanvas | null {
+    const info = this.GetItemInfo(itemId);
+    if (!info && Math.floor(itemId / 10000) === 500) {
+      return this.GetPetIconCanvas(
+        itemId,
+        variant === 'iconRaw' || variant === 'iconRawD',
+        variant === 'iconD' || variant === 'iconRawD',
+      );
+    }
+    if (!info) return null;
+    const key = variant === 'icon' ? 'icon'
+      : variant === 'iconRaw' ? 'iconRaw'
+      : variant === 'iconD' ? 'iconD' : 'iconRawD';
+    return canvasAt(info, key);
+  }
+
+  /** Item.wz/Pet/<template>.img/info/{icon|iconRaw|iconD|iconRawD}. */
+  GetPetIconCanvas(templateId: number, raw = false, dead = false): WzCanvas | null {
+    if (!this._itemWz || templateId <= 0) return null;
+    const key = dead ? (raw ? 'iconRawD' : 'iconD') : (raw ? 'iconRaw' : 'icon');
+    return canvasAt(this._itemWz.GetItem(`Pet/${templateId}.img/info`), key);
+  }
+
+  /** Ring-specific spelling for callers that need the OG ring path contract. */
+  GetRingIconCanvas(itemId: number, raw = false): WzCanvas | null {
+    if (equipCategory(itemId) !== 'Ring') return null;
+    return this.GetItemIconCanvas(itemId, raw ? 'iconRaw' : 'icon');
+  }
+
+  /**
+   * Skill.wz stores icons under <job:D>.img/skill/<skillId>/icon. The
+   * disabled and mouse-over canvases are siblings in the same skill record.
+   */
+  GetSkillIconCanvas(skillId: number, variant: SkillIconCanvasVariant = 'icon'): WzCanvas | null {
+    if (!this._skillWz || skillId <= 0) return null;
+    const key = variant === 'icon' ? 'icon'
+      : variant === 'iconDisabled' ? 'iconDisabled' : 'iconMouseOver';
+    const job = Math.floor(skillId / 10000);
+    return canvasAt(this._skillWz.GetItem(`${job}.img/skill/${skillId}`), key);
   }
 
   // ─── Item Name/Description ───────────────────────────────────────────
@@ -265,15 +320,20 @@ export class ItemInfoService {
     return this._setItemInfo;
   }
 
+  GetSetItemTooltip(itemId: number): SetItemInfoData | null {
+    const setItemId = this.GetItemInfo(itemId) ? N(this.GetItemInfo(itemId) as WzProperty, 'setItemID') : 0;
+    return this._setItemInfo.get(setItemId) ?? null;
+  }
+
   /**
    * OG: CItemInfo::RegisterSetItemInfo (0x5AF950)
-   * Loads set item data from Item.wz/Special/SetItemInfo.img.
+   * Loads set item data from Etc.wz/SetItemInfo.img.
    */
   RegisterSetItemInfo(): void {
-    if (!this._itemWz) return;
-    const setNode = this._itemWz.GetItem('Special/SetItemInfo.img');
-    if (!setNode || typeof setNode !== 'object') return;
-    const obj = setNode as Record<string, unknown>;
+    if (!this._etcWz) return;
+    const setNode = this._etcWz.GetItem('SetItemInfo.img');
+    if (!(setNode instanceof WzProperty)) return;
+    const obj = setNode.Items;
     for (const key of Object.keys(obj)) {
       const setItemId = parseInt(key, 10);
       if (!isFinite(setItemId)) continue;
@@ -282,25 +342,32 @@ export class ItemInfoService {
       const p = setProp as WzProperty;
       const info: SetItemInfoData = {
         setItemId,
-        name: S(p, 'name'),
-        desc: S(p, 'desc'),
+        name: S(p, 'setItemName'),
+        desc: '',
         items: [],
+        effects: [],
       };
-      // Load set items (0, 1, 2, ...)
-      const itemsNode = p.Get('Item');
-      if (itemsNode && typeof itemsNode === 'object') {
-        const itemsObj = itemsNode as Record<string, unknown>;
-        for (let i = 0; ; i++) {
-          const itemNode = itemsObj[String(i)];
-          if (!itemNode || typeof itemNode !== 'object') break;
-          const ip = itemNode as WzProperty;
-          info.items.push({
-            itemId: N(ip, 'id'),
-            equippedCount: 0,
-          });
+      const itemIdNode = p.Get('ItemID');
+      if (itemIdNode instanceof WzProperty) {
+        for (const member of Object.keys(itemIdNode.Items)) {
+          const itemId = N(itemIdNode, member);
+          if (itemId) info.items.push({ itemId, equippedCount: 0 });
         }
       }
+      const effectsNode = p.Get('Effect');
+      if (effectsNode instanceof WzProperty) {
+        for (const thresholdKey of Object.keys(effectsNode.Items)) {
+          const ep = effectsNode.Get(thresholdKey);
+          if (!(ep instanceof WzProperty)) continue;
+          info.effects.push({ threshold: Number(thresholdKey), effect: setBonusFrom(ep) });
+        }
+        info.effects.sort((a, b) => a.threshold - b.threshold);
+      }
       this._setItemInfo.set(setItemId, info);
+      this._setItemEffects.push({
+        setItemId,
+        effects: info.effects.map((e) => ({ itemCount: e.threshold, optionType: 0, effect: e.effect })),
+      });
     }
   }
 
@@ -931,6 +998,9 @@ export interface EquipItemData {
   tamingMob: number;
 }
 
+export type ItemIconCanvasVariant = 'icon' | 'iconRaw' | 'iconD' | 'iconRawD';
+export type SkillIconCanvasVariant = 'icon' | 'iconDisabled' | 'iconMouseOver';
+
 export interface MovementProfile {
   speed: number;
   jump: number;
@@ -973,6 +1043,7 @@ export interface SetItemInfoData {
   name: string;
   desc: string;
   items: { itemId: number; equippedCount: number }[];
+  effects: { threshold: number; effect: SetBonusStats }[];
 }
 
 export interface SetEffectEntry {
@@ -992,6 +1063,7 @@ export interface SetBonusStats {
   incPAD: number; incMAD: number;
   incPDD: number; incMDD: number;
   incACC: number; incEVA: number;
+  incCraft?: number; nKnockback?: number;
   incSpeed: number; incJump: number;
   incMHPr: number; incMMPr: number;
   armor: number; boss: number;
@@ -1042,6 +1114,25 @@ function NF(p: WzProperty, key: string): number {
 function S(p: WzProperty, key: string): string {
   const v = p.Get(key);
   return typeof v === 'string' ? v : '';
+}
+
+function canvasAt(parent: unknown, key: string): WzCanvas | null {
+  if (!(parent instanceof WzProperty)) return null;
+  let node = parent.Get(key);
+  if (node instanceof WzUol) node = node.Resolve();
+  return node instanceof WzCanvas ? node : null;
+}
+
+function setBonusFrom(p: WzProperty): SetBonusStats {
+  return {
+    incSTR: N(p, 'incSTR'), incDEX: N(p, 'incDEX'), incINT: N(p, 'incINT'), incLUK: N(p, 'incLUK'),
+    incMHP: N(p, 'incMHP'), incMMP: N(p, 'incMMP'), incPAD: N(p, 'incPAD'), incMAD: N(p, 'incMAD'),
+    incPDD: N(p, 'incPDD'), incMDD: N(p, 'incMDD'), incACC: N(p, 'incACC'), incEVA: N(p, 'incEVA'),
+    incCraft: N(p, 'incCraft'), nKnockback: N(p, 'knockback'),
+    incSpeed: N(p, 'incSpeed'), incJump: N(p, 'incJump'), incMHPr: N(p, 'incMHPr'), incMMPr: N(p, 'incMMPr'),
+    armor: N(p, 'armor'), boss: N(p, 'boss'), ignoreTargetDEF: N(p, 'ignoreTargetDEF'),
+    mpConReduce: N(p, 'mpConReduce'), recoveryHP: N(p, 'recoveryHP'), recoveryMP: N(p, 'recoveryMP'),
+  };
 }
 
 function clamp(value: number, min: number, max: number): number {

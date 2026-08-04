@@ -6,6 +6,23 @@ import { WzProperty } from '../../wz/WzProperty.js';
 import { WzCanvas } from '../../wz/WzCanvas.js';
 import { WzUol } from '../../wz/WzUol.js';
 
+export type EquipTooltipCanvas =
+  | `Can/${string}`
+  | `Cannot/${string}`
+  | `Dot/${0 | 1 | 2}`
+  | `GrowthEnabled/${string}`
+  | `GrowthDisabled/${string}`
+  | `ItemCategory/${string}`
+  | `Property/${string}`
+  | `Speed/${string}`
+  | `WeaponCategory/${string}`
+  | 'Star/Star' | 'cash' | 'mesos';
+
+export type ItemCompositorAsset = 'shadow' | `quality/${0 | 1 | 2 | 3 | 4 | 5}`;
+
+export const TOOLTIP_EQUIP_ROOT = 'UIWindow.img/ToolTip/Equip' as const;
+export const TOOLTIP_EQUIP_FALLBACK_ROOT = 'UIWindow2.img/ToolTip/Equip' as const;
+
 // No separate shared-asset class — confirmed this chrome (Can/Cannot job
 // labels, digit-style glyphs, weapon-category icons, Star) is owned directly
 // by CUIToolTip's own methods: InitCanvas, GetFontByType (~15 call sites for
@@ -14,17 +31,19 @@ import { WzUol } from '../../wz/WzUol.js';
 // style shared class exists anywhere in this corpus.
 export class TooltipAssets {
   private _loader: WzTextureLoader;
+  private _uiWz: WzPackage | null;
   private _root: WzProperty | null;
   private _cache = new Map<string, WzSprite | null>();
 
   constructor(loader: WzTextureLoader, uiWz: WzPackage | null) {
     this._loader = loader;
+    this._uiWz = uiWz;
     // OG: CUIToolTip ctor loads the equip chrome from UIWindow.img/ToolTip/Equip
     // (verified in the v95 IDB + real UI.nx). Keep UIWindow2.img as a fallback
     // for clients that only ship the duplicate tree.
-    let v = uiWz?.GetItem('UIWindow.img/ToolTip/Equip');
+    let v = uiWz?.GetItem(TOOLTIP_EQUIP_ROOT);
     if (!(v instanceof WzProperty)) {
-      v = uiWz?.GetItem('UIWindow2.img/ToolTip/Equip');
+      v = uiWz?.GetItem(TOOLTIP_EQUIP_FALLBACK_ROOT);
     }
     this._root = v instanceof WzProperty ? v : null;
   }
@@ -45,6 +64,22 @@ export class TooltipAssets {
     return sprite;
   }
 
+  EquipCanvas(path: EquipTooltipCanvas): WzSprite | null {
+    return this.Get(path);
+  }
+
+  /** Verified v95 CItemInfo::DrawItemIconForSlot compositor resources. */
+  ItemCompositorCanvas(asset: ItemCompositorAsset): WzSprite | null {
+    if (!this._uiWz) return null;
+    const path = asset === 'shadow'
+      ? 'UIWindow.img/Item/shadow'
+      : `UIWindow.img/Item/Quality/${asset.substring('quality/'.length)}/0`;
+    const fallback = asset === 'shadow'
+      ? 'UIWindow2.img/Item/shadow'
+      : `UIWindow2.img/Item/Quality/${asset.substring('quality/'.length)}/0`;
+    return this._loadUiCanvas(path) ?? this._loadUiCanvas(fallback);
+  }
+
   // OG: WZ asset names use reqLEV, reqSTR, etc. — map from display names
   private static readonly REQ_MAP: Record<string, string> = {
     'level': 'reqLEV',
@@ -58,6 +93,10 @@ export class TooltipAssets {
   Req(key: string, met: boolean): WzSprite | null {
     const wzKey = TooltipAssets.REQ_MAP[key] ?? key;
     return this.Get(`${met ? 'Can' : 'Cannot'}/${wzKey}`);
+  }
+
+  Requirement(key: 'level' | 'str' | 'dex' | 'int' | 'luk' | 'pop', met: boolean): WzSprite | null {
+    return this.Req(key, met);
   }
 
   JobLabel(klass: string, greyed: boolean): WzSprite | null {
@@ -76,6 +115,10 @@ export class TooltipAssets {
     const ns = enabled ? 'GrowthEnabled' : 'GrowthDisabled';
     if (d < 0 || d > 9) return null;
     return this.Get(`${ns}/${d}`);
+  }
+
+  GrowthNumber(d: number, enabled: boolean): WzSprite | null {
+    return this.GrowthDigit(d, enabled);
   }
 
   // OG: m_pCanvasEquip_GrowthItem[0..3][enabled] = itemLEV/itemEXP/max/percent
@@ -100,6 +143,19 @@ export class TooltipAssets {
   get Cash(): WzSprite | null { return this.Get('cash'); }
   get Mesos(): WzSprite | null { return this.Get('mesos'); }
   get Star(): WzSprite | null { return this.Get('Star/Star'); }
+
+  // Ring canvases live under the item record, not under ToolTip/Equip. The
+  // item loader/caller owns that lookup; this hook only converts a WZ canvas
+  // when the caller already resolved it.
+  LoadCanvas(canvas: WzCanvas | null | undefined): WzSprite | null {
+    return canvas ? this._loader.Load(canvas) : null;
+  }
+
+  private _loadUiCanvas(path: string): WzSprite | null {
+    let node = this._uiWz?.GetItem(path);
+    if (node instanceof WzUol) node = node.Resolve();
+    return node instanceof WzCanvas ? this._loader.Load(node) : null;
+  }
 
   MeasureNumber(value: number, met: boolean, horzSpace = 0): number {
     let w = 0;

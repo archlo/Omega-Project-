@@ -212,6 +212,16 @@ describe('ToolTip', () => {
       tip.drawInfo();
       expect(tip.container.children.length).toBeGreaterThan(0);
     });
+
+    it('uses OG align=1001 label-relative value placement', () => {
+      const tip = makeToolTip();
+      tip.setBasicInfo(1, 200, 50, -1);
+      tip.makeLayer(0, 0, false);
+      tip.addInfoEx(1, 25, 'STR:', '+10', 1001);
+      tip.drawInfo();
+      const value = tip.container.children[2] as any;
+      expect(value.x).toBe(10 + (tip as any)._lines[0].width + 10);
+    });
   });
 
   describe('addOptionInfo', () => {

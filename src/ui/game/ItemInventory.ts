@@ -8,6 +8,8 @@ import type { EquipStats } from '../../domain/InventoryItem.js';
 import { InventoryType } from '../../domain/InventoryItem.js';
 import { TooltipAssets } from './TooltipAssets.js';
 import { ItemTooltip } from './ItemTooltip.js';
+import { ItemInfoService } from '../../character/ItemInfoService.js';
+import { StringPoolService } from '../../localization/StringPoolService.js';
 import { WzCanvas } from '../../wz/WzCanvas.js';
 import { WzProperty } from '../../wz/WzProperty.js';
 import { WzSprite } from '../../render/WzSprite.js';
@@ -188,6 +190,10 @@ export class ItemInventory extends GamePanel implements DragTarget {
     font?: BuiltInFont | null,
     icons?: ItemIconLoader | null,
     descOf?: (itemId: number) => string | null,
+    setItemOf?: (itemId: number) => { name: string; effects: Array<{ threshold: number; effect: Record<string, number> }> } | null,
+    optionOf?: (optionId: number, level: number) => Record<string, number> | null,
+    itemInfo?: ItemInfoService | null,
+    strings?: StringPoolService | null,
   } = {}) {
     super();
     this._root.visible = false;
@@ -199,7 +205,9 @@ export class ItemInventory extends GamePanel implements DragTarget {
     this._uiWz = opts.uiWz ?? null;
     if (opts.font && opts.icons) {
       const assets = new TooltipAssets(opts.loader ?? new WzTextureLoader(), opts.uiWz ?? null);
-      this._tooltip = new ItemTooltip(opts.font, opts.icons, assets, opts.descOf ?? null);
+      this._tooltip = new ItemTooltip(opts.font, opts.icons, assets,
+        opts.descOf ?? null, opts.setItemOf ?? null, opts.optionOf ?? null,
+        opts.itemInfo ?? null, opts.strings ?? null);
     } else {
       this._tooltip = null;
     }
@@ -639,6 +647,7 @@ export class ItemInventory extends GamePanel implements DragTarget {
           item.petRepleteness = op.petRepleteness;
           item.petRemainLife = op.petRemainLife;
           item.equipStats = op.equipStats;
+          if (op.equipStats) this._icons?.SetRuntimeEquip(op.itemId, op.equipStats, op.attribute ?? op.equipStats.attribute);
           // OG: CItemInfo::IsCashItem — items with ID >= 5000000 are cash items
           item.cash = Math.floor(op.itemId / 1_000_000) === 5;
           this._items.push(item);

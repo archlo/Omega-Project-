@@ -7,6 +7,8 @@ import { BuiltInFont } from '../BuiltInFont.js';
 import { ItemIconLoader } from '../../character/ItemIconLoader.js';
 import { TooltipAssets } from './TooltipAssets.js';
 import { ItemTooltip } from './ItemTooltip.js';
+import { ItemInfoService } from '../../character/ItemInfoService.js';
+import { StringPoolService } from '../../localization/StringPoolService.js';
 import { WzSprite } from '../../render/WzSprite.js';
 import { WzTextureLoader } from '../../render/WzTextureLoader.js';
 import { WzPackage } from '../../wz/WzPackage.js';
@@ -66,6 +68,10 @@ export class ItemUpgrade extends GamePanel implements DragTarget {
     font?: BuiltInFont | null;
     icons?: ItemIconLoader | null;
     descOf?: (itemId: number) => string | null;
+    setItemOf?: (itemId: number) => { name: string; effects: Array<{ threshold: number; effect: Record<string, number> }> } | null;
+    optionOf?: (optionId: number, level: number) => Record<string, number> | null;
+    itemInfo?: ItemInfoService | null;
+    strings?: StringPoolService | null;
   }) {
     super();
     this._nPOS = opts.nPOS;
@@ -76,7 +82,9 @@ export class ItemUpgrade extends GamePanel implements DragTarget {
 
     if (opts.font && opts.icons) {
       const assets = new TooltipAssets(opts.loader ?? new WzTextureLoader(), opts.uiWz ?? null);
-      this._tooltip = new ItemTooltip(opts.font, opts.icons, assets, opts.descOf ?? null);
+        this._tooltip = new ItemTooltip(opts.font, opts.icons, assets,
+         opts.descOf ?? null, opts.setItemOf ?? null, opts.optionOf ?? null,
+         opts.itemInfo ?? null, opts.strings ?? null);
     } else {
       this._tooltip = null;
     }

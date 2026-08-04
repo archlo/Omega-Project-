@@ -7,6 +7,8 @@ import { BuiltInFont } from '../BuiltInFont.js';
 import { ItemIconLoader } from '../../character/ItemIconLoader.js';
 import { TooltipAssets } from './TooltipAssets.js';
 import { ItemTooltip } from './ItemTooltip.js';
+import { ItemInfoService } from '../../character/ItemInfoService.js';
+import { StringPoolService } from '../../localization/StringPoolService.js';
 import { WzSprite } from '../../render/WzSprite.js';
 import { WzTextureLoader } from '../../render/WzTextureLoader.js';
 import { WzPackage } from '../../wz/WzPackage.js';
@@ -241,8 +243,12 @@ export class EquipInventory extends GamePanel implements DragTarget {
     loader?: WzTextureLoader,
     uiWz?: WzPackage | null,
     font?: BuiltInFont | null,
-    icons?: ItemIconLoader | null,
-    descOf?: (itemId: number) => string | null,
+      icons?: ItemIconLoader | null,
+      descOf?: (itemId: number) => string | null,
+      setItemOf?: (itemId: number) => { name: string; effects: Array<{ threshold: number; effect: Record<string, number> }> } | null,
+      optionOf?: (optionId: number, level: number) => Record<string, number> | null,
+      itemInfo?: ItemInfoService | null,
+      strings?: StringPoolService | null,
   } = {}) {
     super();
     this._root.visible = false;
@@ -266,7 +272,7 @@ export class EquipInventory extends GamePanel implements DragTarget {
     this._loader = opts.loader ?? null;
     if (opts.font && opts.icons) {
       const assets = new TooltipAssets(opts.loader ?? new WzTextureLoader(), opts.uiWz ?? null);
-      this._tooltip = new ItemTooltip(opts.font, opts.icons, assets, opts.descOf ?? null);
+        this._tooltip = new ItemTooltip(opts.font, opts.icons, assets, opts.descOf ?? null, opts.setItemOf ?? null, opts.optionOf ?? null, opts.itemInfo ?? null, opts.strings ?? null);
     } else {
       this._tooltip = null;
     }
@@ -500,6 +506,7 @@ export class EquipInventory extends GamePanel implements DragTarget {
   }
 
   setEquippedByBodyPart(bodyPart: number, itemId: number, name: string, grade = 0, stats?: EquipStats): void {
+    if (stats) this._icons?.SetRuntimeEquip(itemId, stats);
     for (const s of SLOTS) {
       if (s.bodyPart === bodyPart) { this._equipped.set(s.key, { itemId, name, grade, cash: Math.floor(itemId / 1_000_000) === 5, stats }); return; }
     }
