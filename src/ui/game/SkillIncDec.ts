@@ -37,7 +37,7 @@ const _blueLevelStyle = new TextStyle({ fill: '#6464FF', fontSize: 9, fontFamily
 const _spLabelStyle = new TextStyle({ fill: '#FF8888', fontSize: 9, fontFamily: 'monospace' });
 const _spBlueLabelStyle = new TextStyle({ fill: '#8888FF', fontSize: 9, fontFamily: 'monospace' });
 
-interface SkillRow {
+export interface SkillResetRow {
   id: number;
   name: string;
   level: number;
@@ -53,7 +53,7 @@ export class SkillIncPanel extends GamePanel {
   private _rows: { bg: Sprite; icon: Sprite; name: Text; level: Text; spLabel: Text; btn: Container }[] = [];
   private _scrollBar: ScrollBar;
   private _scrollOffset = 0;
-  private _skills: SkillRow[] = [];
+  private _skills: SkillResetRow[] = [];
   private _onSkillUp: ((skillId: number) => void) | null = null;
   private _textureLoader: WzTextureLoader | null = null;
   private _skill0Tex: Texture | null = null; // normal row bg
@@ -139,7 +139,7 @@ export class SkillIncPanel extends GamePanel {
 
   setOnSkillUp(cb: (skillId: number) => void): void { this._onSkillUp = cb; }
 
-  open(skills: SkillRow[], x: number, y: number): void {
+  open(skills: SkillResetRow[], x: number, y: number): void {
     this._skills = skills;
     this._scrollOffset = 0;
     this._scrollBar.pos = 0;
@@ -182,6 +182,11 @@ export class SkillIncPanel extends GamePanel {
     if (!this.isVisible) return false;
     const lx = x - this._root.x;
     const ly = y - this._root.y;
+    const sbx = lx - 1;
+    const sby = ly - 8;
+    if (sbx >= 0 && sbx < 12 && sby >= 0 && sby < 155) {
+      if (this._scrollBar.handleMouseButton(sbx, sby, down)) return true;
+    }
     if (!down) return true;
     if (lx >= 152 && lx < 170 && ly >= 6 && ly < 22) { this.isVisible = false; return true; }
     for (let i = 0; i < this._rows.length; i++) {
@@ -201,6 +206,16 @@ export class SkillIncPanel extends GamePanel {
     if (key === 'Escape') { this.isVisible = false; return true; }
     return true;
   }
+
+  onMouseMove(x: number, y: number): void {
+    if (!this.isVisible) return;
+    const lx = x - this._root.x;
+    const ly = y - this._root.y;
+    const sbx = lx - 1;
+    const sby = ly - 8;
+    if (sbx >= 0 && sbx < 12 && sby >= 0 && sby < 155) this._scrollBar.handleMouseMove(sbx, sby);
+    else this._scrollBar.handleMouseLeave();
+  }
 }
 
 // ─── CUISkillDec (Step 0) — Skill Decrement Panel ─────────────────────────
@@ -211,7 +226,7 @@ export class SkillDecPanel extends GamePanel {
   private _rows: { bg: Sprite; icon: Sprite; name: Text; level: Text; spLabel: Text; btn: Container }[] = [];
   private _scrollBar: ScrollBar;
   private _scrollOffset = 0;
-  private _skills: SkillRow[] = [];
+  private _skills: SkillResetRow[] = [];
   private _onSkillDown: ((skillId: number) => void) | null = null;
   private _textureLoader: WzTextureLoader | null = null;
   private _skill0Tex: Texture | null = null;
@@ -296,7 +311,7 @@ export class SkillDecPanel extends GamePanel {
 
   setOnSkillDown(cb: (skillId: number) => void): void { this._onSkillDown = cb; }
 
-  open(skills: SkillRow[], x: number, y: number): void {
+  open(skills: SkillResetRow[], x: number, y: number): void {
     this._skills = skills;
     this._scrollOffset = 0;
     this._scrollBar.pos = 0;
@@ -339,6 +354,11 @@ export class SkillDecPanel extends GamePanel {
     if (!this.isVisible) return false;
     const lx = x - this._root.x;
     const ly = y - this._root.y;
+    const sbx = lx - 1;
+    const sby = ly - 8;
+    if (sbx >= 0 && sbx < 12 && sby >= 0 && sby < 153) {
+      if (this._scrollBar.handleMouseButton(sbx, sby, down)) return true;
+    }
     if (!down) return true;
     if (lx >= 149 && lx < 167 && ly >= 6 && ly < 22) { this.isVisible = false; return true; }
     for (let i = 0; i < this._rows.length; i++) {
@@ -357,6 +377,16 @@ export class SkillDecPanel extends GamePanel {
     if (!this.isVisible) return false;
     if (key === 'Escape') { this.isVisible = false; return true; }
     return true;
+  }
+
+  onMouseMove(x: number, y: number): void {
+    if (!this.isVisible) return;
+    const lx = x - this._root.x;
+    const ly = y - this._root.y;
+    const sbx = lx - 1;
+    const sby = ly - 8;
+    if (sbx >= 0 && sbx < 12 && sby >= 0 && sby < 153) this._scrollBar.handleMouseMove(sbx, sby);
+    else this._scrollBar.handleMouseLeave();
   }
 }
 
@@ -491,7 +521,7 @@ export class SkillChangeConfirm extends GamePanel {
   }
 
   // OG: SetOption — receives dec/inc skill IDs
-  open(incSkill: SkillRow, decSkill: SkillRow, job: number, x: number, y: number): void {
+  open(incSkill: SkillResetRow, decSkill: SkillResetRow, job: number, x: number, y: number): void {
     const extendSP = isExtendSP(job);
     const tabPath = extendSP ? 'EvanTab' : 'Tab';
 

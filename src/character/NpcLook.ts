@@ -47,6 +47,13 @@ export class NpcLook {
   // HeadY is the NPC's head position relative to origin (negative = above origin)
   // Name tag goes BELOW the NPC feet, so we use a positive Y offset
   readonly HeadY = 10; // below NPC feet
+  /** World-space point at the top of the currently displayed NPC frame. */
+  get HeadPosition(): { x: number; y: number } {
+    const frames = this._anims.get(this._state);
+    const frame = frames?.[Math.min(this._frame, (frames?.length ?? 1) - 1)];
+    if (frame) return { x: this.Position.x, y: this.Position.y - frame.sprite.OriginY };
+    return { x: this.Position.x, y: this.Position.y - 86 };
+  }
   /** OG: entity layer assignment — derived from foothold layer at spawn */
   Layer = 7;
 

@@ -33,6 +33,8 @@ export class SkillInfo {
   PrepareAction = -1;
   PrepareTime = 0;
   SkillLVData = false;
+  /** OG SKILLENTRY::lReqSkill: required skill id -> required level. */
+  RequiredSkills: Map<number, number> = new Map();
 
   // --- UOL paths (effect animations) ---
   EffectUOL = '';
@@ -378,6 +380,20 @@ export class SkillInfoService {
     info.TimeLimited = SkillInfoService._readInt(node.Get('timeLimited'));
     info.MobCode = SkillInfoService._readInt(node.Get('mobCode'));
     info.ContinuousEffect = SkillInfoService._readInt(node.Get('continuous')) !== 0;
+
+    // Skill.wz uses reqSkill in the v95 export.  Accept req as well because
+    // a few event/job records use that older spelling.
+    for (const key of ['reqSkill', 'req']) {
+      const req = node.Get(key);
+      if (!(req instanceof WzProperty)) continue;
+      for (const [skillKey] of Object.entries(req.Items)) {
+        const requiredId = parseInt(skillKey, 10);
+        if (!Number.isFinite(requiredId)) continue;
+        const requiredLevel = SkillInfoService._readInt(req.Get(skillKey));
+        if (requiredId > 0 && requiredLevel > 0) info.RequiredSkills.set(requiredId, requiredLevel);
+      }
+      if (info.RequiredSkills.size > 0) break;
+    }
 
     // --- Passive skill offsets (psdSkill sub-tree) ---
     if (info.PsdSkill) {

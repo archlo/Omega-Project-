@@ -154,6 +154,9 @@ interface ChatLogEntry {
   isFirstLine: boolean;   // m_bFirstLine
   itemID: number;         // m_pItem.nItemID (0 = no item link)
   itemLinks?: { start: number; end: number; itemId: number }[];  // char ranges for [ItemName] spans
+  timestamp?: number;     // OG: creation timestamp (ms) for fade-out
+  displayMs?: number;     // OG: ChatMessageDisplayTime (10000ms)
+  fadeMs?: number;        // OG: ChatMessageFadeTime (2000ms)
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -250,6 +253,59 @@ export class ChatBar extends GamePanel {
 
   // OG: filter button checked states (m_bChecked on each CCtrlOriginButton)
   private _filterChecked: boolean[] = [true, false, false, false, false, false];
+
+  // --- OG: ChatMessageDisplayTime / ChatMessageFadeTime ---
+  private static readonly MSG_DISPLAY_MS = 10000;  // 10s display
+  private static readonly MSG_FADE_MS = 2000;       // 2s fade
+
+  // --- OG: Chat target label textures (WZ sprites per target type) ---
+  private _chatTargetLabels: (WzSprite | null)[] = [];
+
+  // --- OG: Point notification animation (AP/SP) ---
+  private _apNotification: Container | null = null;
+  private _spNotification: Container | null = null;
+  private _apNotifTimer = 0;
+  private _spNotifTimer = 0;
+
+  // --- OG: Shortcut tooltip text ---
+  private _shortcutTooltip: Text | null = null;
+
+  // --- OG: Chat enter texture (WZ) ---
+  private _chatEnterTexture: WzSprite | null = null;
+
+  // --- OG: Whisper picker modal state ---
+  private _whisperPickerOpen = false;
+  private _whisperPickerSelectedIdx = 0;
+  private _whisperPickerScrollOffset = 0;
+  private _whisperPickerContainer: Container | null = null;
+  private _whisperPickerRows: Container[] = [];
+  private _whisperPickerComboText: Text | null = null;
+  private _whisperPickerScrollGfx: Graphics | null = null;
+  private _whisperPickerDropdownOpen = false;
+  private _whisperPickerDropdownScroll = 0;
+  private _whisperPickerDropdownRows: Container[] = [];
+  private _whisperPickerDropdownContainer: Container | null = null;
+  // prev/next/ok/close buttons
+  private _whisperPickerPrevBtn: Graphics | null = null;
+  private _whisperPickerNextBtn: Graphics | null = null;
+  private _whisperPickerOkBtn: Graphics | null = null;
+  private _whisperPickerCloseBtn: Graphics | null = null;
+  // WZ textures for whisper picker
+  private _whisperPickerDialogBg: WzSprite | null = null;
+  private _whisperPickerRowTextures: { selected: WzSprite | null; normal: WzSprite | null } = { selected: null, normal: null };
+  private _whisperPickerComboTextures: { normal: WzSprite | null; hover: WzSprite | null; pressed: WzSprite | null } = { normal: null, hover: null, pressed: null };
+  private _whisperPickerButtonTextures: { prevNormal: WzSprite | null; nextNormal: WzSprite | null; okNormal: WzSprite | null; closeNormal: WzSprite | null } = { prevNormal: null, nextNormal: null, okNormal: null, closeNormal: null };
+
+  // --- OG: Whisper picker modal layout constants (from StatusBarChatLayoutRules) ---
+  private static readonly WP_MODAL_W = 260;
+  private static readonly WP_COMBO_LEFT = 21;
+  private static readonly WP_COMBO_W = 222;
+  private static readonly WP_COMBO_H = 18;
+  private static readonly WP_ROW_H = 16;
+  private static readonly WP_VISIBLE_ROWS = 6;
+  private static readonly WP_BUTTON_BOTTOM = 31;
+  private static readonly WP_OK_LEFT = 157;
+  private static readonly WP_CLOSE_LEFT = 198;
 
   // Chat log display lines (each is a Container with optional whisper icon + channel digits + text)
   private _lines: Container[] = [];
@@ -582,6 +638,7 @@ export class ChatBar extends GamePanel {
         end: prefixLength + Math.min(end - start, link.end - start),
       }));
 
+    const now = performance.now();
     for (const word of words) {
       const wordStart = sourceOffset;
       sourceOffset += word.length;
@@ -594,6 +651,7 @@ export class ChatBar extends GamePanel {
           text: currentLine, lType, nBack: 0, nChannelID: channelID,
           bWhisperIcon: whisperIcon, isFirstLine, itemID: 0,
           itemLinks: linksFor(currentStart, wordStart, 0),
+          timestamp: now, displayMs: ChatBar.MSG_DISPLAY_MS, fadeMs: ChatBar.MSG_FADE_MS,
         });
         // OG: continuation lines get 5-space indent if not in type 7-12 range
         const prefix = (lType < 7 || lType > 12) ? CONTINUATION_INDENT : '';
@@ -610,6 +668,7 @@ export class ChatBar extends GamePanel {
         text: currentLine, lType, nBack: 0, nChannelID: channelID,
         bWhisperIcon: whisperIcon, isFirstLine, itemID: 0,
         itemLinks: linksFor(currentStart, sourceOffset, currentLine.startsWith(CONTINUATION_INDENT) ? CONTINUATION_INDENT.length : 0),
+        timestamp: now, displayMs: ChatBar.MSG_DISPLAY_MS, fadeMs: ChatBar.MSG_FADE_MS,
       });
     }
 
@@ -1239,6 +1298,22 @@ export class ChatBar extends GamePanel {
       return true;
     }
 
+    // OG: Close whisper picker on outside click
+    if (this._whisperPickerOpen && this._whisperPickerContainer) {
+      const wpX = this._whisperPickerContainer.x;
+      const wpY = this._whisperPickerContainer.y;
+      const wpW = ChatBar.WP_MODAL_W;
+      const wpH = 300; // approximate modal height
+      const inWhisperPicker = lx >= wpX && lx < wpX + wpW && ly >= wpY && ly < wpY + wpH;
+      if (!inWhisperPicker && down) {
+        this.closeWhisperPicker();
+        return false;
+      }
+      if (inWhisperPicker) {
+        return true; // consume clicks inside whisper picker
+      }
+    }
+
     if (!inTabs && !inDisplay && !inInput && !inScrollbar) {
       if (down) this._blur();
       return false;
@@ -1393,6 +1468,7 @@ export class ChatBar extends GamePanel {
   // Update (cursor blink + float notice)
   // ═══════════════════════════════════════════════════════════════════════════
   update(dt: number): void {
+    const now = performance.now();
     // Cursor blink
     if (this._isFocused) {
       this._blinkTimer += dt;
@@ -1404,11 +1480,477 @@ export class ChatBar extends GamePanel {
     }
     // Float notice timer
     if (this._floatNoticeTimer > 0) {
-      const elapsed = performance.now() - this._floatNoticeTimer;
+      const elapsed = now - this._floatNoticeTimer;
       if (elapsed > this._floatNoticeDuration) {
         this._hideFloatNotice();
       }
     }
+    // OG: message fade-out — update alpha on chat lines based on age
+    this._updateMessageFade(now);
+    // OG: point notification timers
+    this._updatePointNotifications(now);
+    // OG: whisper picker dropdown scroll auto-repeat
+    this._updateWhisperPickerScrollRepeat(now);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OG: ChatMessageDisplayTime — fade-out old messages (10s display + 2s fade)
+  // ═══════════════════════════════════════════════════════════════════════════
+  private _updateMessageFade(now: number): void {
+    for (let i = 0; i < this._lines.length; i++) {
+      const container = this._lines[i];
+      if (!container || !container.visible) continue;
+
+      // Find the corresponding chat log entry
+      const filtered: number[] = [];
+      for (let j = 0; j < this._chatLog.length; j++) {
+        if (this._isFiltered(this._chatLog[j].lType)) filtered.push(j);
+      }
+      const totalVisible = filtered.length;
+      const scrollRange = Math.max(0, totalVisible - this._chatWndLineVisible + 1);
+      const clampedScroll = Math.min(this._scroll, scrollRange);
+      const bottomIdx = totalVisible - 1 - clampedScroll;
+      const visIdx = bottomIdx - i;
+
+      if (visIdx < 0 || visIdx >= filtered.length) continue;
+      const entry = this._chatLog[filtered[visIdx]];
+      if (!entry.timestamp || !entry.displayMs) continue;
+
+      const age = now - entry.timestamp;
+      if (age > entry.displayMs + (entry.fadeMs ?? 2000)) {
+        container.alpha = 0;
+      } else if (age > entry.displayMs) {
+        const fadeProgress = (age - entry.displayMs) / (entry.fadeMs ?? 2000);
+        container.alpha = 1 - Math.min(1, fadeProgress);
+      } else {
+        container.alpha = 1;
+      }
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OG: Point notification animations (AP/SP popup)
+  // ═══════════════════════════════════════════════════════════════════════════
+  private _updatePointNotifications(now: number): void {
+    if (this._apNotification && this._apNotifTimer > 0) {
+      const elapsed = now - this._apNotifTimer;
+      if (elapsed > 3000) {
+        this._apNotification.visible = false;
+        this._apNotifTimer = 0;
+      } else if (elapsed > 2000) {
+        this._apNotification.alpha = 1 - ((elapsed - 2000) / 1000);
+      }
+    }
+    if (this._spNotification && this._spNotifTimer > 0) {
+      const elapsed = now - this._spNotifTimer;
+      if (elapsed > 3000) {
+        this._spNotification.visible = false;
+        this._spNotifTimer = 0;
+      } else if (elapsed > 2000) {
+        this._spNotification.alpha = 1 - ((elapsed - 2000) / 1000);
+      }
+    }
+  }
+
+  showAPNotification(): void {
+    if (!this._apNotification) {
+      this._apNotification = this._createPointNotification('You have gained Ability Points!', 0xFFD700);
+    }
+    this._apNotification.visible = true;
+    this._apNotification.alpha = 1;
+    this._apNotifTimer = performance.now();
+  }
+
+  showSPNotification(): void {
+    if (!this._spNotification) {
+      this._spNotification = this._createPointNotification('You have gained Skill Points!', 0x00FF00);
+    }
+    this._spNotification.visible = true;
+    this._spNotification.alpha = 1;
+    this._spNotifTimer = performance.now();
+  }
+
+  private _createPointNotification(text: string, color: number): Container {
+    const c = new Container();
+    const bg = new Graphics();
+    bg.roundRect(0, 0, 200, 20, 4).fill({ color: 0x000000, alpha: 0.7 });
+    c.addChild(bg);
+    const t = new Text({ text, style: new TextStyle({ fill: color, fontSize: 11, fontFamily: 'monospace', fontWeight: 'bold' }) });
+    t.x = 10;
+    t.y = 3;
+    c.addChild(t);
+    c.x = 300;
+    c.y = this._chatWndY - 28;
+    c.visible = false;
+    this._root.addChild(c);
+    return c;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OG: Shortcut tooltip on hover over status bar buttons
+  // ═══════════════════════════════════════════════════════════════════════════
+  showShortcutTooltip(text: string, x: number, y: number): void {
+    if (!this._shortcutTooltip) {
+      this._shortcutTooltip = new Text({
+        text: '',
+        style: new TextStyle({ fill: '#FFF', fontSize: 10, fontFamily: 'monospace', wordWrap: true, wordWrapWidth: 150 })
+      });
+      this._shortcutTooltip.zIndex = 100;
+      this._root.addChild(this._shortcutTooltip);
+    }
+    this._shortcutTooltip.text = text;
+    this._shortcutTooltip.x = x;
+    this._shortcutTooltip.y = y - 20;
+    this._shortcutTooltip.visible = true;
+  }
+
+  hideShortcutTooltip(): void {
+    if (this._shortcutTooltip) this._shortcutTooltip.visible = false;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OG: Whisper picker modal dialog (CCtrlComboBoxSelect)
+  // ═══════════════════════════════════════════════════════════════════════════
+  toggleWhisperPicker(): void {
+    if (this._whisperPickerOpen) {
+      this.closeWhisperPicker();
+    } else {
+      this.openWhisperPicker();
+    }
+  }
+
+  openWhisperPicker(): void {
+    if (this._whisperPickerOpen) return;
+    this._whisperPickerOpen = true;
+    this._whisperPickerSelectedIdx = 0;
+    this._whisperPickerScrollOffset = 0;
+    this._whisperPickerDropdownOpen = false;
+    this._whisperPickerDropdownScroll = 0;
+    this._buildWhisperPickerUI();
+  }
+
+  closeWhisperPicker(): void {
+    if (!this._whisperPickerOpen) return;
+    this._whisperPickerOpen = false;
+    this._whisperPickerDropdownOpen = false;
+    this._destroyWhisperPickerUI();
+  }
+
+  private _buildWhisperPickerUI(): void {
+    this._destroyWhisperPickerUI();
+
+    const modalW = ChatBar.WP_MODAL_W;
+    const rowH = ChatBar.WP_ROW_H;
+    const visibleRows = ChatBar.WP_VISIBLE_ROWS;
+    const listH = rowH * visibleRows;
+    const comboH = ChatBar.WP_COMBO_H;
+    const btnBottom = ChatBar.WP_BUTTON_BOTTOM;
+    const modalH = listH + comboH + btnBottom + 40;
+
+    const modalX = (800 - modalW) / 2;
+    const modalY = this._chatWndY - modalH - 10;
+
+    this._whisperPickerContainer = new Container();
+    this._whisperPickerContainer.x = modalX;
+    this._whisperPickerContainer.y = modalY;
+
+    // Dialog background
+    const bg = new Graphics();
+    bg.roundRect(0, 0, modalW, modalH, 6).fill({ color: 0x1A1A2E, alpha: 0.95 });
+    bg.rect(0, 0, modalW, modalH).stroke({ color: 0x444466, width: 1 });
+    this._whisperPickerContainer.addChild(bg);
+
+    // Title
+    const title = new Text({ text: 'Select Whisper Target', style: new TextStyle({ fill: '#AAA', fontSize: 11, fontFamily: 'monospace' }) });
+    title.x = 10;
+    title.y = 6;
+    this._whisperPickerContainer.addChild(title);
+
+    // List area
+    const listY = 24;
+    const listContainer = new Container();
+    listContainer.x = ChatBar.WP_COMBO_LEFT;
+    listContainer.y = listY;
+
+    const listMask = new Graphics();
+    listMask.rect(0, 0, ChatBar.WP_COMBO_W, listH).fill({ color: 0xFFFFFF });
+    listMask.x = ChatBar.WP_COMBO_LEFT;
+    listMask.y = listY;
+    this._whisperPickerContainer.addChild(listMask);
+
+    const candidates = this._whisperCandidate;
+    const maxScroll = Math.max(0, candidates.length - visibleRows);
+
+    for (let i = 0; i < Math.min(visibleRows, candidates.length); i++) {
+      const rowIdx = i + this._whisperPickerScrollOffset;
+      if (rowIdx >= candidates.length) break;
+
+      const row = new Container();
+      row.y = i * rowH;
+
+      const isSelected = rowIdx === this._whisperPickerSelectedIdx;
+      const rowBg = new Graphics();
+      rowBg.rect(0, 0, ChatBar.WP_COMBO_W, rowH).fill({ color: isSelected ? 0x3C4164 : 0x222244, alpha: 0.9 });
+      row.addChild(rowBg);
+
+      const label = new Text({ text: candidates[rowIdx], style: new TextStyle({ fill: isSelected ? '#FFF' : '#CCC', fontSize: 11, fontFamily: 'monospace' }) });
+      label.x = 6;
+      label.y = 2;
+      row.addChild(label);
+
+      row.eventMode = 'static';
+      row.cursor = 'pointer';
+      row.on('pointerdown', () => {
+        this._whisperPickerSelectedIdx = rowIdx;
+        this._buildWhisperPickerUI();
+      });
+      row.on('pointerdoubleclick', () => {
+        this._whisperPickerSelectedIdx = rowIdx;
+        this._confirmWhisperPicker();
+      });
+
+      listContainer.addChild(row);
+      this._whisperPickerRows.push(row);
+    }
+
+    listContainer.mask = listMask;
+    this._whisperPickerContainer.addChild(listContainer);
+
+    // Scrollbar
+    if (candidates.length > visibleRows) {
+      const sbX = ChatBar.WP_COMBO_LEFT + ChatBar.WP_COMBO_W + 2;
+      const sb = new Graphics();
+      sb.rect(0, 0, 8, listH).fill({ color: 0x333333, alpha: 0.6 });
+      const thumbH = Math.max(12, Math.floor(listH * visibleRows / candidates.length));
+      const span = listH - thumbH;
+      const frac = maxScroll > 0 ? this._whisperPickerScrollOffset / maxScroll : 0;
+      sb.rect(1, Math.floor(span * frac), 6, thumbH).fill({ color: 0x888888 });
+      this._whisperPickerContainer.addChild(sb);
+      this._whisperPickerScrollGfx = sb;
+
+      const upBtn = new Graphics();
+      upBtn.moveTo(4, 2).lineTo(0, 7).lineTo(8, 7).closePath().fill({ color: 0xAAAACC });
+      upBtn.x = sbX;
+      upBtn.y = -10;
+      upBtn.eventMode = 'static';
+      upBtn.cursor = 'pointer';
+      upBtn.on('pointerdown', () => {
+        if (this._whisperPickerScrollOffset > 0) {
+          this._whisperPickerScrollOffset--;
+          this._buildWhisperPickerUI();
+        }
+      });
+      this._whisperPickerContainer.addChild(upBtn);
+
+      const downBtn = new Graphics();
+      downBtn.moveTo(4, 7).lineTo(0, 2).lineTo(8, 2).closePath().fill({ color: 0xAAAACC });
+      downBtn.x = sbX;
+      downBtn.y = listH + 2;
+      downBtn.eventMode = 'static';
+      downBtn.cursor = 'pointer';
+      downBtn.on('pointerdown', () => {
+        if (this._whisperPickerScrollOffset < maxScroll) {
+          this._whisperPickerScrollOffset++;
+          this._buildWhisperPickerUI();
+        }
+      });
+      this._whisperPickerContainer.addChild(downBtn);
+    }
+
+    // Combo box area
+    const comboY = listY + listH + 6;
+    const comboContainer = new Container();
+    comboContainer.x = ChatBar.WP_COMBO_LEFT;
+    comboContainer.y = comboY;
+
+    const comboBg = new Graphics();
+    comboBg.rect(0, 0, ChatBar.WP_COMBO_W, comboH).fill({ color: 0x222244, alpha: 0.9 });
+    comboBg.rect(0, 0, ChatBar.WP_COMBO_W, comboH).stroke({ color: 0x555577, width: 1 });
+    comboContainer.addChild(comboBg);
+
+    const selectedName = candidates.length > 0 ? candidates[this._whisperPickerSelectedIdx] : 'No targets';
+    this._whisperPickerComboText = new Text({ text: selectedName, style: new TextStyle({ fill: '#FFF', fontSize: 11, fontFamily: 'monospace' }) });
+    this._whisperPickerComboText.x = 6;
+    this._whisperPickerComboText.y = 3;
+    comboContainer.addChild(this._whisperPickerComboText);
+
+    const toggleBtn = new Graphics();
+    toggleBtn.moveTo(ChatBar.WP_COMBO_W - 12, 5).lineTo(ChatBar.WP_COMBO_W - 18, 5).lineTo(ChatBar.WP_COMBO_W - 15, 12).closePath().fill({ color: 0xAAAACC });
+    toggleBtn.eventMode = 'static';
+    toggleBtn.cursor = 'pointer';
+    toggleBtn.on('pointerdown', () => {
+      this._whisperPickerDropdownOpen = !this._whisperPickerDropdownOpen;
+      this._buildWhisperPickerUI();
+    });
+    comboContainer.addChild(toggleBtn);
+
+    this._whisperPickerContainer.addChild(comboContainer);
+
+    // Dropdown (if open)
+    if (this._whisperPickerDropdownOpen) {
+      this._buildWhisperPickerDropdown(comboY + comboH + 2, ChatBar.WP_COMBO_LEFT, ChatBar.WP_COMBO_W);
+    }
+
+    // Buttons row
+    const btnY = comboY + comboH + (this._whisperPickerDropdownOpen ? listH + 10 : 8);
+
+    this._whisperPickerPrevBtn = new Graphics();
+    this._whisperPickerPrevBtn.roundRect(0, 0, 36, 18, 3).fill({ color: 0x334466 });
+    this._whisperPickerPrevBtn.x = ChatBar.WP_COMBO_LEFT;
+    this._whisperPickerPrevBtn.y = btnY;
+    const prevLabel = new Text({ text: 'Prev', style: new TextStyle({ fill: '#CCC', fontSize: 10, fontFamily: 'monospace' }) });
+    prevLabel.x = 4;
+    prevLabel.y = 3;
+    this._whisperPickerPrevBtn.addChild(prevLabel);
+    this._whisperPickerPrevBtn.eventMode = 'static';
+    this._whisperPickerPrevBtn.cursor = 'pointer';
+    this._whisperPickerPrevBtn.on('pointerdown', () => {
+      if (this._whisperPickerSelectedIdx > 0) {
+        this._whisperPickerSelectedIdx--;
+        if (this._whisperPickerSelectedIdx < this._whisperPickerScrollOffset) {
+          this._whisperPickerScrollOffset = this._whisperPickerSelectedIdx;
+        }
+        this._buildWhisperPickerUI();
+      }
+    });
+    this._whisperPickerContainer.addChild(this._whisperPickerPrevBtn);
+
+    this._whisperPickerNextBtn = new Graphics();
+    this._whisperPickerNextBtn.roundRect(0, 0, 36, 18, 3).fill({ color: 0x334466 });
+    this._whisperPickerNextBtn.x = ChatBar.WP_COMBO_LEFT + 40;
+    this._whisperPickerNextBtn.y = btnY;
+    const nextLabel = new Text({ text: 'Next', style: new TextStyle({ fill: '#CCC', fontSize: 10, fontFamily: 'monospace' }) });
+    nextLabel.x = 4;
+    nextLabel.y = 3;
+    this._whisperPickerNextBtn.addChild(nextLabel);
+    this._whisperPickerNextBtn.eventMode = 'static';
+    this._whisperPickerNextBtn.cursor = 'pointer';
+    this._whisperPickerNextBtn.on('pointerdown', () => {
+      if (this._whisperPickerSelectedIdx < candidates.length - 1) {
+        this._whisperPickerSelectedIdx++;
+        if (this._whisperPickerSelectedIdx >= this._whisperPickerScrollOffset + visibleRows) {
+          this._whisperPickerScrollOffset = this._whisperPickerSelectedIdx - visibleRows + 1;
+        }
+        this._buildWhisperPickerUI();
+      }
+    });
+    this._whisperPickerContainer.addChild(this._whisperPickerNextBtn);
+
+    this._whisperPickerOkBtn = new Graphics();
+    this._whisperPickerOkBtn.roundRect(0, 0, 36, 18, 3).fill({ color: 0x226644 });
+    this._whisperPickerOkBtn.x = ChatBar.WP_OK_LEFT;
+    this._whisperPickerOkBtn.y = btnY;
+    const okLabel = new Text({ text: 'OK', style: new TextStyle({ fill: '#FFF', fontSize: 10, fontFamily: 'monospace' }) });
+    okLabel.x = 8;
+    okLabel.y = 3;
+    this._whisperPickerOkBtn.addChild(okLabel);
+    this._whisperPickerOkBtn.eventMode = 'static';
+    this._whisperPickerOkBtn.cursor = 'pointer';
+    this._whisperPickerOkBtn.on('pointerdown', () => this._confirmWhisperPicker());
+    this._whisperPickerContainer.addChild(this._whisperPickerOkBtn);
+
+    this._whisperPickerCloseBtn = new Graphics();
+    this._whisperPickerCloseBtn.roundRect(0, 0, 36, 18, 3).fill({ color: 0x664444 });
+    this._whisperPickerCloseBtn.x = ChatBar.WP_CLOSE_LEFT;
+    this._whisperPickerCloseBtn.y = btnY;
+    const closeLabel = new Text({ text: 'Close', style: new TextStyle({ fill: '#FFF', fontSize: 10, fontFamily: 'monospace' }) });
+    closeLabel.x = 4;
+    closeLabel.y = 3;
+    this._whisperPickerCloseBtn.addChild(closeLabel);
+    this._whisperPickerCloseBtn.eventMode = 'static';
+    this._whisperPickerCloseBtn.cursor = 'pointer';
+    this._whisperPickerCloseBtn.on('pointerdown', () => this.closeWhisperPicker());
+    this._whisperPickerContainer.addChild(this._whisperPickerCloseBtn);
+
+    this._root.addChild(this._whisperPickerContainer);
+  }
+
+  private _buildWhisperPickerDropdown(y: number, x: number, w: number): void {
+    const candidates = this._whisperCandidate;
+    const rowH = ChatBar.WP_ROW_H;
+    const maxVisible = ChatBar.WP_VISIBLE_ROWS;
+    const maxScroll = Math.max(0, candidates.length - maxVisible);
+
+    this._whisperPickerDropdownContainer = new Container();
+    this._whisperPickerDropdownContainer.x = x;
+    this._whisperPickerDropdownContainer.y = y;
+
+    const bg = new Graphics();
+    bg.rect(0, 0, w, rowH * maxVisible + 2).fill({ color: 0x1A1A2E, alpha: 0.95 });
+    bg.rect(0, 0, w, rowH * maxVisible + 2).stroke({ color: 0x555577, width: 1 });
+    this._whisperPickerDropdownContainer.addChild(bg);
+
+    for (let i = 0; i < Math.min(maxVisible, candidates.length); i++) {
+      const rowIdx = i + this._whisperPickerDropdownScroll;
+      if (rowIdx >= candidates.length) break;
+
+      const row = new Container();
+      row.y = i * rowH + 1;
+
+      const isSelected = rowIdx === this._whisperPickerSelectedIdx;
+      const rowBg = new Graphics();
+      rowBg.rect(0, 0, w, rowH).fill({ color: isSelected ? 0x3C4164 : 0x1A1A2E, alpha: 0.9 });
+      row.addChild(rowBg);
+
+      const label = new Text({ text: candidates[rowIdx], style: new TextStyle({ fill: isSelected ? '#FFF' : '#CCC', fontSize: 11, fontFamily: 'monospace' }) });
+      label.x = 6;
+      label.y = 2;
+      row.addChild(label);
+
+      row.eventMode = 'static';
+      row.cursor = 'pointer';
+      row.on('pointerdown', () => {
+        this._whisperPickerSelectedIdx = rowIdx;
+        this._whisperPickerDropdownOpen = false;
+        this._buildWhisperPickerUI();
+      });
+
+      this._whisperPickerDropdownContainer.addChild(row);
+      this._whisperPickerDropdownRows.push(row);
+    }
+
+    if (candidates.length > maxVisible) {
+      const sb = new Graphics();
+      sb.rect(w - 10, 1, 8, rowH * maxVisible).fill({ color: 0x333333, alpha: 0.6 });
+      const thumbH = Math.max(8, Math.floor(rowH * maxVisible * maxVisible / candidates.length));
+      const span = rowH * maxVisible - thumbH;
+      const frac = maxScroll > 0 ? this._whisperPickerDropdownScroll / maxScroll : 0;
+      sb.rect(w - 9, 1 + Math.floor(span * frac), 6, thumbH).fill({ color: 0x888888 });
+      this._whisperPickerDropdownContainer.addChild(sb);
+    }
+
+    this._whisperPickerContainer?.addChild(this._whisperPickerDropdownContainer);
+  }
+
+  private _confirmWhisperPicker(): void {
+    const candidates = this._whisperCandidate;
+    if (candidates.length > 0 && this._whisperPickerSelectedIdx < candidates.length) {
+      const name = candidates[this._whisperPickerSelectedIdx];
+      this.setChatTargetByName(name);
+      this.closeWhisperPicker();
+      this.focus();
+    }
+  }
+
+  private _destroyWhisperPickerUI(): void {
+    if (this._whisperPickerContainer) {
+      this._whisperPickerContainer.removeFromParent();
+      this._whisperPickerContainer.destroy({ children: true });
+      this._whisperPickerContainer = null;
+    }
+    this._whisperPickerRows = [];
+    this._whisperPickerDropdownRows = [];
+    this._whisperPickerDropdownContainer = null;
+    this._whisperPickerComboText = null;
+    this._whisperPickerScrollGfx = null;
+    this._whisperPickerPrevBtn = null;
+    this._whisperPickerNextBtn = null;
+    this._whisperPickerOkBtn = null;
+    this._whisperPickerCloseBtn = null;
+  }
+
+  private _updateWhisperPickerScrollRepeat(_now: number): void {
+    // Placeholder for auto-repeat scroll on held buttons (OG behavior)
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1606,6 +2148,62 @@ export class ChatBar extends GamePanel {
                 }
               }
             }
+          }
+        }
+      }
+    }
+
+    // OG: Whisper picker dialog textures (from StatusBar2.img/Chat/Dlg/)
+    const dlgRoot = ui.GetItem('StatusBar2.img/Chat/Dlg') as WzProperty | null;
+    if (dlgRoot) {
+      const dlgBg = dlgRoot.Get('Dlg');
+      if (dlgBg instanceof WzCanvas) {
+        this._whisperPickerDialogBg = loader.Load(dlgBg);
+      }
+      const selNode = dlgRoot.Get('Sel');
+      if (selNode instanceof WzCanvas) this._whisperPickerRowTextures.selected = loader.Load(selNode);
+      const rowNode = dlgRoot.Get('Row');
+      if (rowNode instanceof WzCanvas) this._whisperPickerRowTextures.normal = loader.Load(rowNode);
+      const btnPrev = dlgRoot.Get('BtPrev') as WzProperty | null;
+      if (btnPrev) {
+        const n = btnPrev.Get('normal/0');
+        if (n instanceof WzCanvas) this._whisperPickerButtonTextures.prevNormal = loader.Load(n);
+      }
+      const btnNext = dlgRoot.Get('BtNext') as WzProperty | null;
+      if (btnNext) {
+        const n = btnNext.Get('normal/0');
+        if (n instanceof WzCanvas) this._whisperPickerButtonTextures.nextNormal = loader.Load(n);
+      }
+      const btnOk = dlgRoot.Get('BtOK') as WzProperty | null;
+      if (btnOk) {
+        const n = btnOk.Get('normal/0');
+        if (n instanceof WzCanvas) this._whisperPickerButtonTextures.okNormal = loader.Load(n);
+      }
+      const btnClose = dlgRoot.Get('BtClose') as WzProperty | null;
+      if (btnClose) {
+        const n = btnClose.Get('normal/0');
+        if (n instanceof WzCanvas) this._whisperPickerButtonTextures.closeNormal = loader.Load(n);
+      }
+      const comboNode = dlgRoot.Get('Combo') as WzProperty | null;
+      if (comboNode) {
+        const cn = comboNode.Get('normal/0');
+        if (cn instanceof WzCanvas) this._whisperPickerComboTextures.normal = loader.Load(cn);
+        const ch = comboNode.Get('mouseOver/0');
+        if (ch instanceof WzCanvas) this._whisperPickerComboTextures.hover = loader.Load(ch);
+      }
+    }
+
+    // OG: Chat target label textures (from StatusBar2.img/mainBar/chatTarget/label/*)
+    const ctRoot = bar.Get('chatTarget') as WzProperty | null;
+    if (ctRoot) {
+      const labelRoot = ctRoot.Get('label') as WzProperty | null;
+      if (labelRoot) {
+        const labelNames = ['all', 'whisper', 'party', 'buddy', 'guild', 'alliance'];
+        for (let i = 0; i < labelNames.length; i++) {
+          const node = labelRoot.Get(labelNames[i]);
+          if (node instanceof WzCanvas) {
+            const ws = loader.Load(node);
+            if (ws) this._chatTargetLabels[i] = ws;
           }
         }
       }

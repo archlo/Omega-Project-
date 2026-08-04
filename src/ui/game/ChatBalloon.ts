@@ -32,6 +32,7 @@ class BalloonView {
   readonly container = new Container();
   readonly bg = new Graphics();
   nw: Sprite | null = null; n: Sprite | null = null; ne: Sprite | null = null;
+  c: Sprite | null = null;
   w: Sprite | null = null; e: Sprite | null = null;
   sw: Sprite | null = null; s: Sprite | null = null; se: Sprite | null = null;
   arrow: Sprite | null = null;
@@ -39,6 +40,7 @@ class BalloonView {
 
   constructor(parent: Container, src: {
     nw: WzSprite | null; n: WzSprite | null; ne: WzSprite | null;
+    c: WzSprite | null;
     w: WzSprite | null; e: WzSprite | null;
     sw: WzSprite | null; s: WzSprite | null; se: WzSprite | null;
     arrow: WzSprite | null;
@@ -51,6 +53,7 @@ class BalloonView {
       return sp;
     };
     this.nw = bind(src.nw); this.n = bind(src.n); this.ne = bind(src.ne);
+    this.c = bind(src.c);
     this.w = bind(src.w); this.e = bind(src.e);
     this.sw = bind(src.sw); this.s = bind(src.s); this.se = bind(src.se);
     this.arrow = bind(src.arrow);
@@ -64,6 +67,7 @@ class BalloonView {
 
 export class ChatBalloonLayer {
   private _font: BuiltInFont | null;
+  private _fontColor = 0xFFFFFF;
   private _nw: WzSprite | null; private _n: WzSprite | null; private _ne: WzSprite | null;
   private _w: WzSprite | null; private _c: WzSprite | null; private _e: WzSprite | null;
   private _sw: WzSprite | null; private _s: WzSprite | null; private _se: WzSprite | null;
@@ -78,6 +82,9 @@ export class ChatBalloonLayer {
 
     const b = ui?.GetItem('ChatBalloon.img/0');
     if (b instanceof WzProperty) {
+      const fontColor = b.Get('fontColor');
+      if (typeof fontColor === 'number') this._fontColor = fontColor & 0xFFFFFF;
+      else if (typeof fontColor === 'bigint') this._fontColor = Number(fontColor) & 0xFFFFFF;
       const P = (k: string): WzSprite | null => {
         const v = b.Get(k);
         return v instanceof WzCanvas ? loader.Load(v) : null;
@@ -102,6 +109,7 @@ export class ChatBalloonLayer {
     }
     const view = new BalloonView(this._root, {
       nw: this._nw, n: this._n, ne: this._ne, w: this._w, e: this._e,
+      c: this._c,
       sw: this._sw, s: this._s, se: this._se, arrow: this._arrow,
     });
     this._active.set(charId, { lines, width, life: ttl, view });
@@ -194,7 +202,16 @@ export class ChatBalloonLayer {
     s(v.e, winX + winW - (this._e?.Width ?? 0), winY + (this._ne?.Height ?? 0), undefined, Math.max(1, winH - (this._ne?.Height ?? 0) - (this._se?.Height ?? 0)));
 
     v.bg.clear();
-    v.bg.rect(winX + bl, winY + bt, innerW, innerH).fill({ color: 0x1A1C28, alpha: 0.9 });
+    if (v.c) {
+      v.c.x = winX + bl;
+      v.c.y = winY + bt;
+      v.c.width = innerW;
+      v.c.height = innerH;
+      v.c.visible = true;
+    } else {
+      // Keep a fallback for clients whose ChatBalloon asset is incomplete.
+      v.bg.rect(winX + bl, winY + bt, innerW, innerH).fill({ color: 0x1A1C28, alpha: 0.9 });
+    }
 
     if (v.arrow) {
       v.arrow.x = Math.floor(tip.x - (this._arrow?.Width ?? 0) / 2);
@@ -203,8 +220,10 @@ export class ChatBalloonLayer {
     }
 
     if (this._font) {
+      const textStyle = this._font.style.clone();
+      textStyle.fill = this._fontColor;
       for (let i = 0; i < b.lines.length; i++) {
-        const t = new Text({ text: b.lines[i], style: this._font.style });
+        const t = new Text({ text: b.lines[i], style: textStyle });
         t.x = winX + bl;
         t.y = winY + bt + i * lineH;
         v.container.addChild(t);

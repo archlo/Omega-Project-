@@ -369,24 +369,23 @@ export class PlayerController {
           if (wallX !== null) this._velocity.x = 0;
         }
       }
-      this.Position = {
-        x: this.Position.x + this._velocity.x * dt,
-        y: this.Position.y + this._velocity.y * dt,
-      };
-      // Landing check during stagger
-      if (this._velocity.y > 0) {
-        const fh = this._field.GetFootholdBelow(this.Position.x, this.Position.y);
-        if (fh !== null && fh.YAt(this.Position.x) !== null) {
-          const groundY = fh.YAt(this.Position.x)!;
-          if (this.Position.y >= groundY) {
-            this.Position.y = groundY;
-            this._velocity.y = 0;
-            this._grounded = true;
-            this._currentFoothold = fh.Id;
-            this._fallZMass = 0;
-            this._footholdPos = this._distanceAlongFoothold(fh, this.Position.x, groundY);
-          }
-        }
+      const nextX = this.Position.x + this._velocity.x * dt;
+      const nextY = this.Position.y + this._velocity.y * dt;
+      const collision = this.CollisionDetectFloat(nextX, nextY);
+      if (collision.blocked && collision.fh !== null) {
+        // Contact with a wall stops the knockback at the wall. It must not
+        // turn into another impulse or move the player through the wall.
+        this.Position = { x: collision.x, y: collision.y };
+        this._velocity.x = 0;
+      } else if (collision.landed && collision.fh !== null) {
+        this.Position = { x: collision.x, y: collision.y };
+        this._velocity.y = 0;
+        this._grounded = true;
+        this._currentFoothold = collision.fh.Id;
+        this._fallZMass = 0;
+        this._footholdPos = this._distanceAlongFoothold(collision.fh, collision.x, collision.y);
+      } else {
+        this.Position = { x: nextX, y: nextY };
       }
       this._clampToBounds();
       this._tickAnimAndFlush(dt);
@@ -647,9 +646,11 @@ export class PlayerController {
     }
     if (fh === null) { this._lastFhX1 = 0; this._lastFhY1 = 0; this._lastFootholdId = 0; this._grounded = false; return; }
 
-    // dx is RelPos distance. The original controller consumes the remaining
-    // distance after each edge transition in the same update.
-    let remaining = dx;
+    // Convert world-X movement to distance along the foothold. Using dx
+    // directly makes sloped footholds drift from their line and eventually
+    // causes the player to fall through a continuing platform.
+    const relScale = Math.abs(fh.Uvx) > 1e-6 ? fh.Uvx : 1;
+    let remaining = dx / relScale;
     for (let guard = 0; guard < 64; guard++) {
       if (this._footholdPos + remaining < 0 || this._footholdPos + remaining > fh.Length) {
         const movingBackward = this._footholdPos + remaining < 0;
@@ -685,10 +686,17 @@ export class PlayerController {
           return;
         }
 
-        // CVecCtrl::CollisionDetectWalk only changes footholds whose linked
-        // segment points right. A left-facing link is a hard edge: remain on
-        // the current foothold with zero along-foothold velocity.
-        if (nextFh.Uvx <= 0) {
+        // Linked footholds may be stored in either endpoint order. Resolve
+        // the endpoint nearest the current corner instead of treating a
+        // reversed segment as a wall.
+        const distanceToStart = Math.hypot(edgeX - nextFh.X1, edgeY - nextFh.Y1);
+        const distanceToEnd = Math.hypot(edgeX - nextFh.X2, edgeY - nextFh.Y2);
+        const nextPos = distanceToStart <= distanceToEnd ? 0 : nextFh.Length;
+        const nextX = nextPos === 0 ? nextFh.X2 : nextFh.X1;
+        const continues = movingBackward
+          ? nextX < edgeX - 1e-3
+          : nextX > edgeX + 1e-3;
+        if (!continues) {
           this.Position = { x: edgeX, y: edgeY };
           this._velocity = { x: 0, y: 0 };
           this._footholdPos = edgePos;
@@ -696,7 +704,6 @@ export class PlayerController {
           this._grounded = true;
           return;
         }
-        const nextPos = movingBackward ? nextFh.Length : 0;
         remaining += movingBackward ? fh.Length : -fh.Length;
         fh = nextFh;
         this._footholdPos = nextPos;

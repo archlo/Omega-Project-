@@ -14,6 +14,7 @@ import { WzCanvas } from '../../wz/WzCanvas.js';
 export class SkillGuide extends GamePanel {
   private _image: Sprite | null = null;
   private _grade = 0;
+  private _lastClickTime = 0;
   private _loader: WzTextureLoader | null = null;
   private _ui: WzPackage | null = null;
 
@@ -69,8 +70,10 @@ export class SkillGuide extends GamePanel {
   handleMouseButton(x: number, y: number, down: boolean): boolean {
     if (!this.isVisible) return false;
     if (!down) return true;
-    // OG: Close on any click (double-click in OG, but single-click is fine for now)
-    this.isVisible = false;
+    // OG closes CWndSkillGuide on a double-click, not the first click.
+    const now = performance.now();
+    if (now - this._lastClickTime < 400) this.isVisible = false;
+    this._lastClickTime = this.isVisible ? now : 0;
     return true;
   }
 

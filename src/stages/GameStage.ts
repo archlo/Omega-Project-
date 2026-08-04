@@ -572,16 +572,22 @@ export class GameStage extends Stage {
       this._chatBalloon?.Draw((charId) => {
         if (charId === this._localCharId && this._player) {
           const p = this._player.HeadPosition;
-          return this._camera.WorldToScreen(p.x, p.y);
+          return this._camera.WorldToScreen(
+            p.x,
+            p.y === this._player.Position.y ? p.y - 60 : p.y,
+          );
         }
         const other = this._otherChars.get(charId);
         if (other) {
           const p = other.HeadPosition;
-          return this._camera.WorldToScreen(p.x, p.y);
+          // A remote avatar can receive chat before its first rendered frame
+          // establishes the WZ head anchor. Keep the balloon above the body
+          // instead of placing it at the foothold origin.
+          return this._camera.WorldToScreen(p.x, p.y === other.Position.y ? p.y - 60 : p.y);
         }
         const npc = this._npcs.find((n) => n.ObjId === charId);
         if (npc) {
-          return this._camera.WorldToScreen(npc.Position.x, npc.Position.y + npc.HeadY);
+          return this._camera.WorldToScreen(npc.HeadPosition.x, npc.HeadPosition.y);
         }
         return null;
       });
@@ -1482,12 +1488,22 @@ export class GameStage extends Stage {
       }
     }
     this._skillMacro = new SkillMacro(this._loader, uiWz, font);
+    this._skillMacro.skillNameOf = (skillId) => this.game.nameService?.SkillName(skillId) ?? `Skill ${skillId}`;
+    this._skillMacro.skillIconOf = (skillId) => {
+      const canvas = this._skillService?.Get(skillId)?.Icon1 ?? this._skillService?.Get(skillId)?.Icon0;
+      return canvas ? this._loader.Load(canvas)?.Texture ?? null : null;
+    };
     // TODO_AUDIT.md Hundred-and-nineteenth pass: OnSave also updates _macroSlots
     // so the in-memory state stays consistent with what was just sent to the server.
     this._skillMacro.OnSave = (macros) => {
       for (const m of macros) {
         const s = this._macroSlots[m.slot];
-        if (s) this._macroSlots[m.slot] = { ...s, skills: [m.skills[0] ?? 0, m.skills[1] ?? 0, m.skills[2] ?? 0] };
+        if (s) this._macroSlots[m.slot] = {
+          ...s,
+          name: m.name ?? s.name,
+          mute: m.mute ?? s.mute,
+          skills: [m.skills[0] ?? 0, m.skills[1] ?? 0, m.skills[2] ?? 0],
+        };
       }
       this.game.session.send(GameSender.SkillMacroFlushToSvr(macros));
     };
@@ -2046,7 +2062,9 @@ export class GameStage extends Stage {
     // the macro window. Open with current server-decoded slots converted to
     // the SkillMacro panel's { slot, skills[] } format.
     this._skill.onMacroOpen = () => {
-      const macros = this._macroSlots.map((s, i) => ({ slot: i, skills: Array.from(s.skills) as number[] }));
+      const macros = this._macroSlots.map((s, i) => ({
+        slot: i, name: s.name, mute: s.mute, skills: Array.from(s.skills) as number[],
+      }));
       this._skillMacro?.Open(macros.length > 0 ? macros : Array.from({ length: 5 }, (_, i) => ({ slot: i, skills: [0, 0, 0] })));
     };
     this._statusBar.onStats = () => {
@@ -3251,7 +3269,9 @@ export class GameStage extends Stage {
     fh.onOpenSkillGuide = () => {
       // OG: CUserLocal::OnOpenSkillGuide (opcode 262) — opens skill UI then calls OpenCurSkillGuide
       // OpenCurSkillGuide opens the guide for the current skill root (grade from m_aSkillRoot)
-      this._skillGuide?.open(1, this._loader, this._uiWz);
+      this._skill.isVisible = true;
+      if (!this._skill.container.parent) this.uiRoot.addChild(this._skill.container);
+      this._skillGuide?.open(this._skill.activeSkillGuideGrade(), this._loader, this._uiWz);
     };
 
     // Phase 8 — new field-effect / UI handlers
@@ -6574,6 +6594,10 @@ export class GameStage extends Stage {
     // but never forwarded anywhere, so SkillBook's level-up button never
     // appeared at all regardless of any gating logic.
     if (args.sp !== undefined) this._skill.sp = args.sp;
+    // OG: Aran/Evan/Cygnus carry SP as ExtendSP::Decode entries rather than
+    // the ordinary short SP field.  FieldHandlers preserves that compact
+    // payload so CUISkillEx can use the selected job-degree slot verbatim.
+    if (args.extendedSp !== undefined) this._skill.setExtendedSp(args.extendedSp);
     if (args.str !== undefined) this._stats.str = args.str;
     if (args.dex !== undefined) this._stats.dex = args.dex;
     if (args.int !== undefined) this._stats.intStat = args.int;
@@ -6635,18 +6659,9 @@ export class GameStage extends Stage {
     this._equip.setHasNoviceSkill1004(hasNovice);
     this._skill.skillService = this._skillService;
     this._skill.textureLoader = this._loader;
-    const rows: SkillRow[] = [];
-    for (const r of records) {
-      const info = this._skillService?.Get(r.skillId);
-      rows.push({
-        id: r.skillId,
-        name: this._skill.nameOf(r.skillId),
-        level: r.level,
-        maxLevel: info?.MaxLevel ?? r.masterLevel,
-        passive: info?.Passive ?? false,
-      });
-    }
-    this._skill.setSkills(rows);
+    // CUISkill builds rows from the WZ skill roots and overlays the live
+    // character records.  This keeps available-but-unlearned skills visible.
+    this._skill.setSkillRecords(records);
     this._masteryFromSkills = this._computeMasteryFromSkills();
   }
 

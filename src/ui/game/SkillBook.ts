@@ -10,7 +10,7 @@ import { ItemTooltip } from './ItemTooltip.js';
 import { ItemInfoService } from '../../character/ItemInfoService.js';
 import { StringPoolService } from '../../localization/StringPoolService.js';
 import { TooltipAssets } from './TooltipAssets.js';
-import { SkillIncPanel, SkillDecPanel, SkillChangeConfirm } from './SkillIncDec.js';
+import { SkillIncPanel, SkillDecPanel, SkillChangeConfirm, SkillResetRow } from './SkillIncDec.js';
 import type { BuiltInFont } from '../BuiltInFont.js';
 import type { ItemIconLoader } from '../../character/ItemIconLoader.js';
 
@@ -186,6 +186,7 @@ export class SkillRow {
     public level: number,
     public maxLevel: number,
     public passive: boolean,
+    public masterLevel: number = maxLevel,
   ) {}
 }
 
@@ -250,6 +251,33 @@ export class SkillBook extends GamePanel {
   private _tabOption = 0;
   // OG: m_bDualRogueSkillWarning — shows warning for dual-blade job change
   private _dualRogueSkillWarning = false;
+  private _resetIncreaseRows: SkillResetRow[] = [];
+  private _resetDecreaseRows: SkillResetRow[] = [];
+  private _resetSelectedDecrease: SkillResetRow | null = null;
+  private _resetSelectedIncrease: SkillResetRow | null = null;
+  private _resetOrigin = { x: 0, y: 0 };
+
+  /**
+   * Applies the compact ExtendSP::Decode payload used by Aran/Evan/Cygnus.
+   * The wire format is count followed by (job-degree, sp) byte pairs.  The
+   * original CUISkillEx indexes this array by the selected tab, so keeping
+   * the degree in its native slot is important; deriving SP from row count
+   * makes later job tabs appear to have (or lose) points incorrectly.
+   */
+  setExtendedSp(encoded: Uint8Array | undefined): void {
+    if (!encoded || encoded.length === 0) return;
+    const next = [0, 0, 0, 0];
+    const count = Math.min(encoded[0] ?? 0, Math.floor((encoded.length - 1) / 2));
+    for (let i = 0; i < count; i++) {
+      const degree = encoded[1 + i * 2] ?? 0;
+      const value = encoded[2 + i * 2] ?? 0;
+      if (degree >= 0 && degree < next.length) next[degree] = value;
+    }
+    this._extendSP = next;
+    this._noviceSp = next[0] ?? 0;
+    this._scrollOffset = 0;
+    this.update(0);
+  }
 
   private _titleText: Text;
   private _titleSecond: Text;
@@ -258,6 +286,7 @@ export class SkillBook extends GamePanel {
   private _tabLabels: Text[] = [];
   private _tabLabelStrings: string[] = [...TAB_LABELS];
   private _tabKinds: ('regular' | 'dual' | 'aran')[] = [];
+  private _isAranJob = false;
   private _rowIcons: Sprite[] = [];
   private _rowNames: Text[] = [];
   private _rowLevels: Text[] = [];
@@ -268,6 +297,7 @@ export class SkillBook extends GamePanel {
   private _macroBtn: Container;
   // OG: Skill guide — OpenSkillGuide creates CWndSkillGuide (button IDs 3001-3004)
   onSkillGuide: ((grade: number) => void) | null = null;
+  onSkillResetConfirm: ((increaseSkillId: number, decreaseSkillId: number) => void) | null = null;
   // OG Draw WZ canvases (from OnCreate @ 0x851520)
   // OG draws m_pCanvasSkill[0]/[1] at EACH row position — need per-row sprites
   private _skillSlotNormalTex: Texture | null = null; // m_pCanvasSkill[0] — skill0
@@ -604,6 +634,32 @@ export class SkillBook extends GamePanel {
     this.skillIncPanel = new SkillIncPanel(loader, ui);
     this.skillDecPanel = new SkillDecPanel(loader, ui);
     this.skillChangeConfirm = new SkillChangeConfirm(loader, ui);
+    this.skillDecPanel.setOnSkillDown((skillId) => {
+      const selected = this._resetDecreaseRows.find((row) => row.id === skillId);
+      if (!selected) return;
+      this._resetSelectedDecrease = selected;
+      this.skillDecPanel.isVisible = false;
+      this.skillIncPanel.open(this._resetIncreaseRows, this._resetOrigin.x, this._resetOrigin.y);
+    });
+    this.skillIncPanel.setOnSkillUp((skillId) => {
+      const selected = this._resetIncreaseRows.find((row) => row.id === skillId);
+      if (!selected || !this._resetSelectedDecrease) return;
+      this._resetSelectedIncrease = selected;
+      this.skillIncPanel.isVisible = false;
+      this.skillChangeConfirm.open(selected, this._resetSelectedDecrease, this.characterJob,
+        this._resetOrigin.x, this._resetOrigin.y);
+    });
+    this.skillChangeConfirm.onConfirm = () => {
+      if (this._resetSelectedIncrease && this._resetSelectedDecrease) {
+        this.onSkillResetConfirm?.(this._resetSelectedIncrease.id, this._resetSelectedDecrease.id);
+      }
+      this._resetSelectedIncrease = null;
+      this._resetSelectedDecrease = null;
+    };
+    this.skillChangeConfirm.onCancel = () => {
+      this._resetSelectedIncrease = null;
+      this._resetSelectedDecrease = null;
+    };
     this._root.addChild(
       this.skillIncPanel.container,
       this.skillDecPanel.container,
@@ -623,6 +679,10 @@ export class SkillBook extends GamePanel {
   setViewSize(w: number, h: number): void { this._viewW = w; this._viewH = h; }
 
   private _getJobLevel(job: number): number { return getJobLevel(job); }
+
+  activeSkillGuideGrade(): number {
+    return Math.max(1, Math.min(4, this._activeTab + 1));
+  }
 
   private _getJobChangeLevel(job: number, step: number): number {
     return getJobChangeLevel(job, this.characterSubJob, step);
@@ -689,6 +749,13 @@ export class SkillBook extends GamePanel {
     const jobLevel = getJobLevel(job);
     if (jobLevel <= 0) return false;
 
+    const skill = this._findSkill(skillId);
+    const info = this.skillService?.Get(skillId);
+    if (!skill || skill.level >= (skill.masterLevel > 0 ? skill.masterLevel : skill.maxLevel)) return false;
+    for (const [requiredId, requiredLevel] of info?.RequiredSkills ?? []) {
+      if ((this._findSkill(requiredId)?.level ?? 0) < requiredLevel) return false;
+    }
+
     // OG: Check SP in current tier only (cross-tier handled by OnSkillLevelUpButton dialog)
     const mySP = this._getMySkillDegreeSP(jobLevel);
     const lvl = this.characterLevel;
@@ -707,6 +774,13 @@ export class SkillBook extends GamePanel {
     const degree = job % 10;
     if (degree < 1 || degree > 3) return false;
 
+    const skill = this._findSkill(skillId);
+    const info = this.skillService?.Get(skillId);
+    if (!skill || skill.level >= (skill.masterLevel > 0 ? skill.masterLevel : skill.maxLevel)) return false;
+    for (const [requiredId, requiredLevel] of info?.RequiredSkills ?? []) {
+      if ((this._findSkill(requiredId)?.level ?? 0) < requiredLevel) return false;
+    }
+
     const mySP = this._getMySkillDegreeSPDualJob(degree);
     const [cap1, cap2, cap3] = this._getMaxSkillDegreeSPDualJob(degree);
     return mySP < cap1 + cap2 + cap3;
@@ -723,9 +797,9 @@ export class SkillBook extends GamePanel {
     }
     // OG: For extendsp jobs, SP is tracked per-root via ExtendSP
     if (isExtendspJob(this.characterJob)) {
-      // Simplified: return SP proportional to skill count in tab
-      const tab = this._tabs[this._activeTab] || [];
-      return Math.min(this.sp, tab.length);
+      // CUISkillEx::SetButtons / OnSkillLevelUpButton call
+      // ExtendSP::Get(&extendSP, m_nCurTab) directly.
+      return this._extendSP[this._activeTab] ?? 0;
     }
     return this.sp;
   }
@@ -739,7 +813,6 @@ export class SkillBook extends GamePanel {
     if (this.isAdmin) {
       const tabSp = this.getTabSp();
       if (tabSp <= 0) return false;
-      this.sp--;
       this.onSendSkillUp?.(skillId);
       this.onSkillUp?.(skillId);
       return true;
@@ -764,7 +837,7 @@ export class SkillBook extends GamePanel {
     // OG: GetSkillLevelUpState != 1 check — state must be exactly 1 (allocatable)
     if (info && info.MaxLevel > 0) {
       const sk = this._findSkill(skillId);
-      if (sk && sk.level >= info.MaxLevel) return false;
+      if (sk && sk.level >= (sk.masterLevel > 0 ? sk.masterLevel : info.MaxLevel)) return false;
     }
 
     // OG: Validate skill can be leveled up (per-tier SP check)
@@ -777,7 +850,6 @@ export class SkillBook extends GamePanel {
     }
 
     // OG: SendSkillUpRequest
-    this.sp--;
     this.onSendSkillUp?.(skillId);
     this.onSkillUp?.(skillId);
     return true;
@@ -786,6 +858,89 @@ export class SkillBook extends GamePanel {
   setSkills(skills: SkillRow[]): void {
     this._skills = skills;
     this.rebuildTabs();
+  }
+
+  /** Opens the OG three-step SP reset wizard with caller-provided candidates. */
+  openSkillReset(decrease: SkillRow[], increase: SkillRow[], x = this._root.x, y = this._root.y): void {
+    const toResetRow = (row: SkillRow): SkillResetRow => ({
+      id: row.id,
+      name: row.name,
+      level: row.level,
+      maxLevel: row.masterLevel > 0 ? row.masterLevel : row.maxLevel,
+      icon: this.skillService?.Get(row.id)?.Icon1 ?? this.skillService?.Get(row.id)?.Icon0 ?? undefined,
+    });
+    this._resetDecreaseRows = decrease.map(toResetRow);
+    this._resetIncreaseRows = increase.map(toResetRow);
+    this._resetSelectedDecrease = null;
+    this._resetSelectedIncrease = null;
+    this._resetOrigin = { x, y };
+    this.skillDecPanel.open(this._resetDecreaseRows, x, y);
+  }
+
+  /**
+   * Build the visible skill list the same way CUISkill does: the character's
+   * skill records provide levels, while Skill.wz provides the complete skill
+   * roots.  This is intentionally separate from setSkills(), which remains a
+   * small deterministic API for tests and callers that already have rows.
+   */
+  setSkillRecords(records: Array<{ skillId: number; level: number; masterLevel?: number }>): void {
+    const byId = new Map(records.map((record) => [record.skillId, record]));
+    const roots = this._skillRootsForJob(this.characterJob, records.map((record) => record.skillId));
+    const ids = new Set<number>();
+
+    for (const root of roots) {
+      for (const skillId of this.skillService?.EnumerateSkillIds(root) ?? []) ids.add(skillId);
+    }
+
+    // Keep server records that are not discoverable through a WZ root.  This
+    // protects custom/event skills and makes live packets authoritative.
+    for (const record of records) ids.add(record.skillId);
+
+    const rows: SkillRow[] = [];
+    for (const skillId of Array.from(ids).sort((a, b) => a - b)) {
+      const record = byId.get(skillId);
+      const info = this.skillService?.Get(skillId);
+      if (info?.Invisible) continue;
+      const level = record?.level ?? 0;
+      const maxLevel = Math.max(1, info?.MaxLevel ?? record?.masterLevel ?? 1);
+      rows.push(new SkillRow(
+        skillId,
+        info?.Name || this.nameOf(skillId) || `Skill ${skillId}`,
+        level,
+        maxLevel,
+        info?.Passive ?? false,
+        record?.masterLevel ?? info?.DefaultMasterLev ?? maxLevel,
+      ));
+    }
+
+    this.setSkills(rows);
+  }
+
+  private _skillRootsForJob(job: number, knownSkillIds: number[]): number[] {
+    const roots = new Set<number>();
+    const addJobRoots = (value: number): void => {
+      if (value <= 0) return;
+      const tier = Math.floor((value % 1000) / 100);
+      if (tier > 0) {
+        const base = 100 * (tier + 10 * Math.floor(value / 1000));
+        roots.add(base);
+        const branch = Math.floor((value % 100) / 10);
+        if (branch > 0) {
+          const branchRoot = base + 10 * branch;
+          roots.add(branchRoot);
+          for (let i = 1; i <= 8 && value % 10 >= i; i++) roots.add(branchRoot + i);
+        }
+      }
+
+      // Extended jobs (Aran/Evan) and Dual Blade have root files named after
+      // the job itself in addition to the common explorer roots.
+      if (value >= 2000 || Math.floor(value / 10) === 43) roots.add(value);
+    };
+
+    addJobRoots(job);
+    for (const skillId of knownSkillIds) addJobRoots(Math.floor(skillId / 10000));
+    if (isBeginnerJob(job) || job === 0) roots.add(0);
+    return Array.from(roots).sort((a, b) => a - b);
   }
 
   rebuildTabs(): void {
@@ -804,7 +959,6 @@ export class SkillBook extends GamePanel {
       if (jobRoot === 2000 || (jobRoot >= 2100 && jobRoot < 2200)) hasAran = true;
     }
     if (hasDual) { labels.push(...new Array(7).fill('')); tabs.push(...new Array(7).fill(null).map(() => [])); }
-    if (hasAran) { labels.push(...new Array(4).fill('')); tabs.push(...new Array(4).fill(null).map(() => [])); }
 
     const dualBase = TAB_PREFIXES.length;
     const aranBase = dualBase + (hasDual ? 7 : 0);
@@ -815,7 +969,8 @@ export class SkillBook extends GamePanel {
       if (Math.floor(jobRoot / 10) === 43) {
         tabIdx = dualBase + Math.max(0, Math.min(6, jobRoot % 10));
       } else if (jobRoot === 2000 || (jobRoot >= 2100 && jobRoot < 2200)) {
-        tabIdx = aranBase + Math.max(0, Math.min(3, getJobLevel(jobRoot) - 1));
+        // Aran guide buttons are separate controls (3001-3004), not tabs.
+        tabIdx = Math.max(0, Math.min(4, explorerSkillDegree(jobRoot)));
       } else {
         tabIdx = Math.max(0, Math.min(4, explorerSkillDegree(jobRoot)));
       }
@@ -837,8 +992,9 @@ export class SkillBook extends GamePanel {
     this._tabKinds = [
       ...new Array(regularCount).fill('regular'),
       ...(hasDual ? new Array(7).fill('dual') : []),
-      ...(hasAran ? new Array(4).fill('aran') : []),
+      ...(hasAran ? [] : []),
     ];
+    this._isAranJob = hasAran;
     // OG: SetScrollBar — range = skillCount - 3 (not VISIBLE_ROWS)
     const tab = this._tabs[this._activeTab] || [];
     this._scrollBar.setRange(Math.max(0, tab.length - 3));
@@ -1032,7 +1188,8 @@ export class SkillBook extends GamePanel {
         this._rowNames[i].y = nTop - 18;
 
         // OG Draw: Level at (50, nTop) via m_pFont or m_pFontBonus if bonus>0
-        this._rowLevels[i].text = `${sk.level}/${sk.maxLevel}`;
+        const effectiveMasterLevel = sk.masterLevel > 0 ? sk.masterLevel : sk.maxLevel;
+        this._rowLevels[i].text = `${sk.level}/${effectiveMasterLevel}`;
         this._rowLevels[i].x = 50;
         this._rowLevels[i].y = nTop;
         this._rowLevels[i].style = new TextStyle({
@@ -1207,7 +1364,9 @@ export class SkillBook extends GamePanel {
     // The OG creates CWndSkillGuide with the grade parameter
     if (ly >= PANEL_H - 46 && ly < PANEL_H - 26 && lx >= 4 && lx < 62) {
       // Skill guide area — pass active tab + 1 as grade
-      this.onSkillGuide?.(this._activeTab + 1);
+      if (this._isAranJob) {
+        this.onSkillGuide?.(this.activeSkillGuideGrade());
+      }
       return true;
     }
 
@@ -1286,6 +1445,8 @@ export class SkillBook extends GamePanel {
     this._mouseX = x;
     this._mouseY = y;
     if (!this.isVisible) return;
+    this.skillIncPanel.onMouseMove(x, y);
+    this.skillDecPanel.onMouseMove(x, y);
     const lx = x - this._root.x;
     const ly = y - this._root.y;
     // Forward to scrollbar
@@ -1314,7 +1475,7 @@ export class SkillBook extends GamePanel {
         // Wild Hunter, linked-character, expiry, or damage-meter context.
         this._tooltip.DrawSkillTooltip(
            skill.id, skill.name, info?.Description || this.nameOf(skill.id),
-          skill.level, skill.maxLevel,
+           skill.level, skill.masterLevel > 0 ? skill.masterLevel : skill.maxLevel,
           '', '', [], // help text, next help text, required skills
            this._mouseX, this._mouseY + 20, this._viewW, this._viewH,
            true,
