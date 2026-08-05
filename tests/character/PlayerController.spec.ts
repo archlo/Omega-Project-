@@ -410,9 +410,224 @@ describe('PlayerController', () => {
       pc.SetUserFlying(false);
       expect(pc.CanClimbLadderOrRope()).toBe(true);
     });
+
+    it('grabs a rope from below with Up and snaps to its X', () => {
+      const field = makeField();
+      const rope = new (class {
+        X = 50; Top = 100; Bottom = 200; IsLadder = false; UpperFoothold = false;
+      })();
+      field.GetLadderOrRope = () => rope;
+      const pc = new PlayerController(field);
+      pc.Spawn({ x: 50, y: 200 });
+      pc.Update({ Left: false, Right: false, Up: true, Down: false, JumpPressed: false }, 1 / 60);
+
+      expect(pc.IsOnRope()).toBe(true);
+      expect(pc.Position.x).toBe(50);
+    });
+
+    it('only grabs downward when the rope upper endpoint is within 10px', () => {
+      const field = makeField();
+      const rope = new (class {
+        X = 50; Top = 205; Bottom = 260; IsLadder = false; UpperFoothold = false;
+      })();
+      field.GetLadderOrRope = () => rope;
+      const pc = new PlayerController(field);
+      pc.Spawn({ x: 50, y: 200 });
+      pc.Update({ Left: false, Right: false, Up: false, Down: true, JumpPressed: false }, 1 / 60);
+
+      expect(pc.IsOnRope()).toBe(true);
+      expect(pc.Position.y).toBe(205);
+    });
+
+    it('stays attached at the top of a rope without an upper foothold', () => {
+      const field = makeField();
+      const rope = new (class {
+        X = 50; Top = 100; Bottom = 200; IsLadder = false; UpperFoothold = false;
+      })();
+      field.GetLadderOrRope = () => rope;
+      const pc = new PlayerController(field);
+      pc.Spawn({ x: 50, y: 200 });
+      pc.Update({ Left: false, Right: false, Up: true, Down: false, JumpPressed: false }, 1 / 60);
+      for (let i = 0; i < 20; i++) {
+        pc.Update({ Left: false, Right: false, Up: true, Down: false, JumpPressed: false }, 0.1);
+      }
+
+      expect(pc.IsOnRope()).toBe(true);
+      expect(pc.Position.y).toBe(100);
+    });
+  });
+
+  describe('jump parity (OG CVecCtrl::JustJump 0x993EA0)', () => {
+    it('ground jump launches upward at the stat-scaled jump speed', () => {
+      const pc = new PlayerController(makeField());
+      pc.Spawn({ x: 0, y: 200 });
+
+      const ok = pc.JustJump({ Left: false, Right: false, Up: false, Down: false, JumpPressed: true }, 0);
+      expect(ok).toBe(true);
+      expect(pc.Grounded).toBe(false);
+
+      // vy = -jumpSpeed (555 px/s); over 1/60s the player rises ~9.25px.
+      pc.Update({ Left: false, Right: false, Up: false, Down: false, JumpPressed: false }, 1 / 60);
+      expect(pc.Position.y).toBeLessThan(200);
+      expect(pc.Position.y).toBeGreaterThan(180);
+    });
+
+    it('refuses to jump when a CantThrough platform is directly above', () => {
+      const field = makeField();
+      const plat = new Foothold();
+      plat.Id = 2; plat.X1 = -10; plat.Y1 = 160; plat.X2 = 10; plat.Y2 = 160;
+      plat.Prev = 0; plat.Next = 0; plat.CantThrough = true;
+      plat.InitVectors();
+      field._footholds[2] = plat;
+
+      const pc = new PlayerController(field);
+      pc.Spawn({ x: 0, y: 200 });
+
+      const ok = pc.JustJump({ Left: false, Right: false, Up: false, Down: false, JumpPressed: true }, 0);
+      expect(ok).toBe(false);
+      expect(pc.Grounded).toBe(true);
+    });
+
+    it('refuses to jump while pressing Down (platform drop stays grounded)', () => {
+      const pc = new PlayerController(makeField());
+      pc.Spawn({ x: 0, y: 200 });
+
+      const ok = pc.JustJump({ Left: false, Right: false, Up: false, Down: true, JumpPressed: true }, 0);
+      expect(ok).toBe(false);
+      expect(pc.Grounded).toBe(true);
+    });
+
+    it('jumping from a rope uses the 0.5 ladder-jump factor and detaches', () => {
+      const field = makeField();
+      const rope = new (class {
+        X = 50; Top = 100; Bottom = 200; IsLadder = false; UpperFoothold = false;
+      })();
+      field.GetLadderOrRope = () => rope;
+      const pc = new PlayerController(field);
+      pc.Spawn({ x: 50, y: 200 });
+      pc.Update({ Left: false, Right: false, Up: true, Down: false, JumpPressed: false }, 1 / 60);
+      expect(pc.IsOnRope()).toBe(true);
+
+      pc.Update({ Left: false, Right: false, Up: false, Down: false, JumpPressed: true }, 1 / 60);
+      expect(pc.IsOnRope()).toBe(false);
+      // The jump frame sets vy = -555 * 0.5 = -277.5; the next frame
+      // integrates it into a ~4px rise.
+      pc.Update({ Left: false, Right: false, Up: false, Down: false, JumpPressed: false }, 1 / 60);
+      expect(pc.Position.y).toBeLessThan(200);
+      expect(pc.Position.y).toBeGreaterThan(193);
+    });
+
+    it('jumping from a rope with a flying-capable shoe uses the 0.3 factor', () => {
+      const field = makeField();
+      const rope = new (class {
+        X = 50; Top = 100; Bottom = 200; IsLadder = false; UpperFoothold = false;
+      })();
+      field.GetLadderOrRope = () => rope;
+      const pc = new PlayerController(field);
+      pc.SetShoePhysics({ flyAcc: 10 });
+      pc.Spawn({ x: 50, y: 200 });
+      pc.Update({ Left: false, Right: false, Up: true, Down: false, JumpPressed: false }, 1 / 60);
+
+      pc.Update({ Left: false, Right: false, Up: false, Down: false, JumpPressed: true }, 1 / 60);
+      expect(pc.IsOnRope()).toBe(false);
+      // vy = -555 * 0.3 = -166.5; next frame integrates into a ~2.2px rise.
+      pc.Update({ Left: false, Right: false, Up: false, Down: false, JumpPressed: false }, 1 / 60);
+      expect(pc.Position.y).toBeLessThan(200);
+      expect(pc.Position.y).toBeGreaterThan(196);
+    });
+
+    it('rope grab and rope jump both fire onAttachedObjectChanged', () => {
+      const field = makeField();
+      const rope = new (class {
+        X = 50; Top = 100; Bottom = 200; IsLadder = false; UpperFoothold = false;
+      })();
+      field.GetLadderOrRope = () => rope;
+      const pc = new PlayerController(field);
+      let calls = 0;
+      pc.onAttachedObjectChanged = () => { calls++; };
+      pc.Spawn({ x: 50, y: 200 });
+      pc.Update({ Left: false, Right: false, Up: true, Down: false, JumpPressed: false }, 1 / 60);
+      expect(calls).toBe(1);
+      pc.Update({ Left: false, Right: false, Up: false, Down: false, JumpPressed: true }, 1 / 60);
+      expect(calls).toBe(2);
+    });
+
+    it('grabbing a rope mid-fall resets fall tracking so the landing is safe', () => {
+      const field = makeField();
+      field._footholds = {};
+      const ground = new Foothold();
+      ground.Id = 1; ground.X1 = -200; ground.Y1 = 700; ground.X2 = 200; ground.Y2 = 700;
+      ground.Prev = 0; ground.Next = 0;
+      ground.InitVectors();
+      field._footholds[1] = ground;
+      const rope = new (class {
+        X = 50; Top = 500; Bottom = 600; IsLadder = false; UpperFoothold = false;
+      })();
+      field.GetLadderOrRope = () => rope;
+
+      const pc = new PlayerController(field);
+      let damage = 0;
+      pc.onTakeFallDamage = (d) => { damage += d; };
+      pc.Spawn({ x: 50, y: 50 });
+
+      // Fall for a while, then grab the rope (Up) while falling.
+      let grabbed = false;
+      for (let i = 0; i < 120 && !grabbed; i++) {
+        pc.Update({ Left: false, Right: false, Up: i >= 40, Down: false, JumpPressed: false }, 1 / 60);
+        grabbed = pc.IsOnRope();
+      }
+      expect(grabbed).toBe(true);
+      expect(pc.Position.y).toBeLessThan(600);
+
+      // Jump from the rope and land on the ground at y=700.
+      for (let i = 0; i < 300 && !pc.Grounded; i++) {
+        pc.Update({ Left: false, Right: false, Up: false, Down: false, JumpPressed: true }, 1 / 60);
+      }
+      expect(pc.Grounded).toBe(true);
+      // Grab interrupted the long fall, so the short jump onto the ground
+      // (well under the 500px threshold) must not deal any damage.
+      expect(damage).toBe(0);
+    });
+
+    it('falling the same distance without grabbing a rope does deal damage', () => {
+      const field = makeField();
+      field._footholds = {};
+      const ground = new Foothold();
+      ground.Id = 1; ground.X1 = -200; ground.Y1 = 700; ground.X2 = 200; ground.Y2 = 700;
+      ground.Prev = 0; ground.Next = 0;
+      ground.InitVectors();
+      field._footholds[1] = ground;
+
+      const pc = new PlayerController(field);
+      let damage = 0;
+      pc.onTakeFallDamage = (d) => { damage += d; };
+      pc.Spawn({ x: 50, y: 50 });
+
+      for (let i = 0; i < 300 && !pc.Grounded; i++) {
+        pc.Update({ Left: false, Right: false, Up: false, Down: false, JumpPressed: false }, 1 / 60);
+      }
+      expect(pc.Grounded).toBe(true);
+      expect(damage).toBeGreaterThan(0);
+    });
   });
 
   describe('foothold collision parity', () => {
+    it('stops grounded walking at a vertical wall and pushes the player out', () => {
+      const field = makeField();
+      const wall = new Foothold();
+      wall.Id = 2; wall.X1 = 100; wall.Y1 = 200; wall.X2 = 100; wall.Y2 = 120;
+      wall.InitVectors();
+      field._footholds[2] = wall;
+
+      const pc = new PlayerController(field);
+      pc.Spawn({ x: 50, y: 200 });
+      pc.Update({ Left: false, Right: true, Up: false, Down: false, JumpPressed: false }, 1);
+
+      expect(pc.Position.x).toBeLessThan(100);
+      expect(pc.Grounded).toBe(true);
+      expect(pc.CurrentFoothold).toBe(1);
+    });
+
     it('ignores disabled crossing footholds', () => {
       const field = makeField();
       const disabled = new Foothold();
@@ -469,6 +684,68 @@ describe('PlayerController', () => {
       expect(collision.blocked).toBe(true);
       expect(Math.abs(collision.tangentVx ?? 0)).toBe(0);
       expect(Math.abs(collision.tangentVy ?? 0)).toBe(100);
+    });
+
+    it('treats a left-facing sloped ledge as a wall, not a landing', () => {
+      const field = makeField();
+      const ledge = new Foothold();
+      ledge.Id = 2; ledge.X1 = 50; ledge.Y1 = 150; ledge.X2 = 40; ledge.Y2 = 0;
+      ledge.InitVectors();
+      field._footholds = { 2: ledge };
+
+      const pc = new PlayerController(field);
+      pc.Spawn({ x: 0, y: 50 });
+      pc.ApplyKnockback(100, 100, 0);
+      const collision = pc.CollisionDetectFloat(100, 150);
+
+      expect(collision.fh?.Id).toBe(2);
+      expect(collision.blocked).toBe(true);
+      expect(collision.landed).toBe(false);
+      expect(Math.abs(collision.tangentVy ?? 0)).toBeGreaterThan(0);
+    });
+
+    it('returns the movement fraction consumed to reach the contact', () => {
+      const field = makeField();
+      const wall = new Foothold();
+      wall.Id = 2; wall.X1 = 50; wall.Y1 = 150; wall.X2 = 50; wall.Y2 = 0;
+      wall.InitVectors();
+      field._footholds = { 2: wall };
+
+      const pc = new PlayerController(field);
+      pc.Spawn({ x: 0, y: 50 });
+      pc.ApplyKnockback(100, 100, 0);
+      const collision = pc.CollisionDetectFloat(100, 150);
+
+      // Movement (0,50)->(100,150); the vertical wall sits at x=50, so the
+      // contact consumes exactly half of the segment (t = 50/100 = 0.5).
+      expect(collision.t).toBeGreaterThanOrEqual(0);
+      expect(collision.t!).toBeLessThanOrEqual(1);
+      expect(collision.x).toBeCloseTo(50, 0);
+      expect(collision.t).toBeCloseTo(0.5, 1);
+    });
+
+    it('bounds the fall endpoint before the foothold sweep', () => {
+      const field = makeField();
+      // A floor whose entire span sits past the right bound. Without the
+      // OG-ordered clamp-before-sweep, CollisionDetectFloat would land on it
+      // (out of bounds) and only the post-sweep clamp would yank the player
+      // back, leaving CurrentFoothold pointing at the out-of-bounds floor.
+      const floor = new Foothold();
+      floor.Id = 5; floor.X1 = 200; floor.Y1 = 0; floor.X2 = 400; floor.Y2 = 0;
+      floor.InitVectors();
+      field._footholds[5] = floor;
+      field._bounds = { left: -3000, top: -2000, right: 150, bottom: 2000 };
+
+      const pc = new PlayerController(field);
+      pc.Spawn({ x: 100, y: -1000 }); // airborne above, drifting right+down
+      // Knockback frame (its own path); then _fallFreely takes over while airborne.
+      pc.Update({ Left: false, Right: true, Up: false, Down: false, JumpPressed: false }, 0.1);
+      for (let i = 0; i < 50 && !pc.Grounded; i++) {
+        pc.Update({ Left: false, Right: true, Up: false, Down: false, JumpPressed: false }, 0.05);
+      }
+      // The clamped sweep must not have landed on the out-of-bounds floor.
+      expect(pc.Position.x).toBeLessThanOrEqual(150 + 0.5);
+      expect(pc.CurrentFoothold).not.toBe(5);
     });
 
     it('keeps a left-facing linked edge grounded instead of falling', () => {

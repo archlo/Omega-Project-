@@ -130,7 +130,7 @@ export class PlayerController {
   private _jumpSpeed = PlayerController.BaseJumpSpeed;
   private _shoe: ShoePhysics = {
     mass: 1, walkAcc: 1, walkDrag: 1, walkSpeed: 1,
-    walkSlant: PlayerController.WalkSlant, swimSpeedMultiplier: 1,
+    walkSlant: PlayerController.WalkSlant, flyAcc: 0, swimSpeedMultiplier: 1,
   };
 
   private get _physics() {
@@ -300,6 +300,7 @@ export class PlayerController {
       walkDrag: values.walkDrag !== undefined && values.walkDrag >= 0 ? values.walkDrag : this._shoe.walkDrag,
       walkSpeed: values.walkSpeed !== undefined && values.walkSpeed > 0 ? values.walkSpeed : this._shoe.walkSpeed,
       walkSlant: values.walkSlant !== undefined && values.walkSlant >= 0 ? values.walkSlant : this._shoe.walkSlant,
+      flyAcc: values.flyAcc !== undefined && values.flyAcc > 0 ? values.flyAcc : this._shoe.flyAcc,
       swimSpeedMultiplier: values.swimSpeedMultiplier !== undefined && values.swimSpeedMultiplier > 0
         ? values.swimSpeedMultiplier : this._shoe.swimSpeedMultiplier,
     };
@@ -333,6 +334,10 @@ export class PlayerController {
     this._lastSyncStance = this.Stance;
     this._fallStartFoothold = 0;
     this._fallOffset = { x: 0, y: 0 };
+    // Spawning airborne starts a fresh fall — don't inherit a phantom fall
+    // origin from a previous life (would cause bogus fall damage on landing).
+    this._fallStartY = this.Position.y;
+    this._freeFallElapsedMs = 0;
     this._trackedFhId = this._grounded ? this._currentFoothold : 0;
     const tracked = this._grounded ? this._field.GetFoothold(this._currentFoothold) : null;
     this._trackedFhOffset = tracked ? { x: tracked.MovementOffsetX, y: tracked.MovementOffsetY } : { x: 0, y: 0 };
@@ -504,6 +509,18 @@ export class PlayerController {
           this._velocity.x = PlayerController.decSpeed(this._velocity.x, this._shortDragForce, this._shoe.mass, 0, dt);
         }
       }
+
+      // A vertical foothold is a solid wall, not a walkable edge. Check the
+      // whole player body before advancing along the current foothold so a
+      // large frame step cannot tunnel through it.
+      const bodyTop = this.Position.y - PlayerController.BodyHeight;
+      const bodyBottom = this.Position.y;
+      const wallX = this._findWallCollisionX(this._velocity.x * dt, bodyTop, bodyBottom);
+      if (wallX !== null) {
+        const direction = this._velocity.x < 0 ? -1 : 1;
+        this.Position.x = wallX - direction * 0.5;
+        this._velocity.x = 0;
+      }
     } else {
       // OG: CVecCtrl::CalcFloat's plain-falling branch (decompile/9934C0.c)
       // — even a normal jump/fall (not flying or swimming) gets weak
@@ -538,46 +555,7 @@ export class PlayerController {
           downJumped = true;
         }
       } else {
-        // OG TryDoingFlyingRush (0x90BC10): CantThrough is checked by the CALLER
-        // on the foothold returned from GetFootholdAbove, not inside the query.
-        const aboveFh = this._field.GetFootholdAbove(this.Position.x, this.Position.y - PlayerController.BodyHeight, this.Position.y - 4);
-        if (aboveFh && aboveFh.CantThrough) {
-          // Jump blocked by platform above — stay grounded
-        } else {
-          // OG JustJump: vy = -(dJumpSpeed * walkJump / g)
-          // NOTE: OG uses pixels-per-tick velocity (30fps), not pixels-per-second.
-          // Our system uses dt-based physics, so we use -jumpSpeed directly.
-          // The gravity-dependency formula would require a full physics rewrite.
-          const jumpVy = -this._jumpSpeed;
-          // OG: horizontal boost — add (inputX × 0.8 × maxWalkSpeed) to current vx
-          // Only if player is moving slower than 0.8 × maxWalkSpeed in input direction
-          let jumpVx = this._velocity.x;
-          if (dir !== 0) {
-            const maxWalk = this._walkSpeed;
-            const boostThreshold = maxWalk * 0.8;
-            if (dir * this._velocity.x < boostThreshold) {
-              jumpVx = this._velocity.x + dir * boostThreshold;
-            }
-            // Clamp to maxWalkSpeed
-            jumpVx = Math.max(-maxWalk, Math.min(maxWalk, jumpVx));
-          }
-          this._pending.push({
-            attr: 1, vx: jumpVx, vy: jumpVy,
-            moveAction: StanceMoveAction(Stance.Jump, this.FacingLeft), elapse: 0,
-            x: this.Position.x, y: this.Position.y, fh: this._currentFoothold,
-            fhFallStart: 0, xOffset: 0, yOffset: 0, stat: 0,
-          });
-          this._velocity = { x: jumpVx, y: jumpVy };
-          this._freeFallElapsedMs = 0;
-          const jumpFh = this._field.GetFoothold(this._currentFoothold);
-          if (jumpFh) {
-            this._fallZMass = jumpFh.ZMass;
-            if (!jumpFh.IsWall) this._velocity.x *= jumpFh.Uvx;
-          }
-          this._notifyAttached();
-          this._grounded = false;
-          this._lastFhX1 = 0; this._lastFhY1 = 0; this._lastFootholdId = 0;
-        }
+        this.JustJump(input, dir);
       }
     }
 
@@ -731,6 +709,12 @@ export class PlayerController {
   private _fallFreely(input: PlayerInput, dt: number): void {
     let vy: number;
     let newY: number;
+    // OG WorkUpdateActive snapshots the pre-integration AbsPos (p1) before
+    // CalcFloat runs it; BoundPosMapRange(p1, tElapse) inside
+    // CollisionDetectFloat uses p1 as the "start" and m_ap as the clamped
+    // "end" to recover the fraction of the frame consumed reaching the bound.
+    const startX = this.Position.x;
+    const startY = this.Position.y;
 
     if (this._field.Info.Fly || this._field.Info.Swim) {
       // OG: CVecCtrl::CalcFloat's swim/passive-fly branch (decompile/
@@ -780,26 +764,62 @@ export class PlayerController {
 
     let newX = this.Position.x + this._velocity.x * dt;
 
+    // OG: CollisionDetectFloat calls BoundPosMapRange FIRST — clamp the
+    // post-integration position into the map MBR, zero the clamped velocity
+    // component, and consume the fraction of the frame spent reaching the
+    // bound. The sweeps below run from the clamped endpoint, so a player
+    // pushed out of bounds cannot land on a foothold beyond the map edge.
+    const boundFrac = this._boundPosMapRange(startX, startY, newX, newY);
+    newX = this.Position.x;
+    newY = this.Position.y;
+
+    const sweptTop = Math.min(startY, newY) - PlayerController.BodyHeight;
+    const sweptBottom = Math.max(startY, newY);
+    const wallX = this._findWallCollisionX(newX - startX, sweptTop, sweptBottom);
+    if (wallX !== null) {
+      const direction = this._velocity.x < 0 ? -1 : 1;
+      newX = wallX - direction * 0.5;
+      this._velocity.x = 0;
+    }
+
     // CollisionDetectFloat handles both airborne wall contacts and downward
     // floor crossings. Pure vertical falls use the direct query below.
     if (Math.abs(this._velocity.x) > 1) {
       const collision = this.CollisionDetectFloat(newX, newY);
       if (collision.blocked && collision.fh !== null) {
-        this.Position = { x: collision.x, y: collision.y };
-          this._velocity = {
-            x: collision.tangentVx ?? 0,
-            y: collision.tangentVy ?? this._velocity.y,
-          };
-          return;
+        // OG wall branch (bCalcFloat == 1): project the approach velocity onto
+        // the wall tangent and integrate the REMAINING frame time along it
+        // (trapezoidal: (new_tangent + uvx*old_tangential) * 0.5 * remain).
+        const wall = collision.fh;
+        const tVx = collision.tangentVx ?? 0;
+        const tVy = collision.tangentVy ?? 0;
+        const tFrac = collision.t ?? 0;
+        // remaining fraction of the frame after the bound (1 - boundFrac) and
+        // the wall contact (1 - tFrac within the post-bound movement).
+        const remain = Math.max(0, dt * (1 - boundFrac) * (1 - tFrac));
+        // rpV = OLD tangential velocity along the wall (pre-projection). For a
+        // player in free-fall this is the projection of the approach velocity.
+        const rpV = this._velocity.x * wall.Uvx + this._velocity.y * wall.Uvy;
+        this.Position = {
+          x: collision.x + (tVx + wall.Uvx * rpV) * 0.5 * remain,
+          y: collision.y + (tVy + wall.Uvy * rpV) * 0.5 * remain,
+        };
+        this._velocity = { x: tVx, y: tVy };
+        return;
       }
       if (vy > 0 && collision.landed && collision.fh !== null) {
           this.Position = { x: collision.x, y: collision.y };
-          this._velocity.y = 0;
           this._grounded = true;
-          if (!collision.fh.IsWall && collision.fh.Uvx !== 0) {
-            const dotProduct = this._velocity.x * collision.fh.Uvx;
-            this._velocity.x = dotProduct;
-          }
+          // OG CollisionDetectFloat uvx>0 branch: project the approach
+          // velocity onto the foothold tangent (m_rp.v = uvy*vy + uvx*vxa),
+          // then HALVE it when moving with the input, else zero it. The
+          // landed velocity is uv * m_rp.v (this also zeroes vy on flat
+          // ground because uvy == 0).
+          const fh = collision.fh;
+          const rpV = this._velocity.x * fh.Uvx + this._velocity.y * fh.Uvy;
+          const inputX = (input.Right ? 1 : 0) - (input.Left ? 1 : 0);
+          const landedRV = rpV * inputX >= 0 ? rpV * 0.5 : 0;
+          this._velocity = { x: fh.Uvx * landedRV, y: fh.Uvy * landedRV };
           this._currentFoothold = collision.fh.Id;
           this._fallZMass = 0;
           this._notifyAttached();
@@ -810,18 +830,20 @@ export class PlayerController {
     }
 
     if (vy > 0) {
-      // Simple vertical check — catches the common case (falling straight down)
-      const fh = this._field.GetFootholdBelow(newX, this.Position.y);
+      // Simple vertical check — catches the common case (falling straight down).
+      // startY is the pre-integration Y (the OG p1 snapshot); newY is the
+      // post-integration (and post-bound-clamp) Y this frame is moving to.
+      const fh = this._field.GetFootholdBelow(newX, startY);
       if (fh !== null && fh.YAt(newX) !== null) {
         const groundY = fh.YAt(newX)!;
-        if (this.Position.y < groundY && newY >= groundY) {
+        if (startY < groundY && newY >= groundY) {
           this.Position = { x: newX, y: groundY };
-          this._velocity.y = 0;
           this._grounded = true;
-          if (!fh.IsWall && fh.Uvx !== 0) {
-            const dotProduct = this._velocity.x * fh.Uvx;
-            this._velocity.x = dotProduct;
-          }
+          // Same OG landing-velocity rule as the swept path above.
+          const rpV = this._velocity.x * fh.Uvx + this._velocity.y * fh.Uvy;
+          const inputX = (input.Right ? 1 : 0) - (input.Left ? 1 : 0);
+          const landedRV = rpV * inputX >= 0 ? rpV * 0.5 : 0;
+          this._velocity = { x: fh.Uvx * landedRV, y: fh.Uvy * landedRV };
           this._currentFoothold = fh.Id;
           this._fallZMass = 0;
           this._notifyAttached();
@@ -839,10 +861,68 @@ export class PlayerController {
     const b = this._field.Bounds;
     if (!b) return;
     const x = Math.max(b.left!, Math.min(b.right!, this.Position.x));
-    const y = Math.max(b.top!, Math.min(b.bottom!, this.Position.y));
+    // OG BoundPosMapRange clamps left/right/top only. The bottom edge is an
+    // out-of-map rescue boundary, not a physical floor.
+    const y = Math.max(b.top!, this.Position.y);
     if (x === this.Position.x && y === this.Position.y) return;
     this._velocity = { x: x !== this.Position.x ? 0 : this._velocity.x, y: y !== this.Position.y ? 0 : this._velocity.y };
     this.Position = { x, y };
+  }
+
+  /** OG: CVecCtrl::BoundPosMapRange (0x990EA0) — clamps the post-integration
+   *  position into the map MBR, zeroes the clamped velocity component, and
+   *  returns the fraction of the frame consumed reaching the bound (0..1). The
+   *  bottom edge is NOT clamped (it is an out-of-map rescue boundary, not a
+   *  physical floor). Mutates this.Position to the clamped target and zeroes
+   *  the offending velocity component(s) in this._velocity. */
+  private _boundPosMapRange(startX: number, startY: number, endX: number, endY: number): number {
+    const b = this._field.Bounds;
+    if (!b) {
+      this.Position = { x: endX, y: endY };
+      return 1;
+    }
+    const dx0 = endX - startX;
+    const dy0 = endY - startY;
+    let x = endX;
+    let y = endY;
+    let frac = 1;
+    let zeroVx = false;
+    let zeroVy = false;
+
+    // X clamp (left or right). OG computes the consumed time first and clamps
+    // it to [0, tElapse] = [0, 1] as a fraction.
+    if (x < b.left!) {
+      x = b.left!;
+      zeroVx = true;
+      if (dx0 !== 0) frac = (x - startX) / dx0;
+    } else if (x > b.right!) {
+      x = b.right!;
+      zeroVx = true;
+      if (dx0 !== 0) frac = (x - startX) / dx0;
+    }
+    if (frac < 0) frac = 0;
+    if (frac > 1) frac = 1;
+
+    // Y clamp (top only). The bound time is the min of the X and Y consumed
+    // times, matching `if (result >= v4) return v4; return result;`.
+    if (y < b.top!) {
+      y = b.top!;
+      zeroVy = true;
+      if (dy0 !== 0) {
+        const r = (y - startY) / dy0;
+        const yFrac = r <= 0 ? 0 : r;
+        if (yFrac < frac) frac = yFrac;
+      }
+    }
+
+    if (zeroVx || zeroVy) {
+      this._velocity = {
+        x: zeroVx ? 0 : this._velocity.x,
+        y: zeroVy ? 0 : this._velocity.y,
+      };
+    }
+    this.Position = { x, y };
+    return frac;
   }
 
   private _tryRescueIfBelowMap(): void {
@@ -877,12 +957,25 @@ export class PlayerController {
   private _tryGrabLadder(input: PlayerInput): boolean {
     if (!input.Up && !input.Down) return false;
     if (!this.CanClimbLadderOrRope()) return false;
-    const lr = input.Up
-      ? this._field.GetLadderOrRope(this.Position.x, this.Position.y - 20, this.Position.x, this.Position.y)
-      : this._field.GetLadderOrRope(this.Position.x, this.Position.y, this.Position.x, this.Position.y + 10);
+
+    // OG acquisition has two distinct paths. A falling player can grab with
+    // Up while crossing the rope; a grounded player uses the 20px upward
+    // probe. Down only grabs a rope whose upper endpoint is within 10px below
+    // the player's feet.
+    let lr: LadderOrRope | null = null;
+    if (input.Up && !input.Down) {
+      if (!this._grounded && this._velocity.y <= 0) return false;
+      lr = this._field.GetLadderOrRope(
+        this.Position.x, this.Position.y - 20, this.Position.x, this.Position.y,
+      ) as LadderOrRope | null;
+    } else if (input.Down && !input.Up) {
+      if (!this._grounded) return false;
+      lr = this._field.GetLadderOrRope(
+        this.Position.x, this.Position.y, this.Position.x, this.Position.y + 10,
+      ) as LadderOrRope | null;
+      if (lr === null || this.Position.y > lr.Top || lr.Top > this.Position.y + 10) return false;
+    }
     if (lr === null) return false;
-    if (input.Up && !input.Down && this.Position.y <= lr.Top) return false;
-    if (input.Down && !input.Up && (this.Position.y < lr.Top || this.Position.y > lr.Bottom)) return false;
 
     this._climb = lr as LadderOrRope;
     this._climbGrabFrame = true; // consume input for one frame
@@ -893,12 +986,14 @@ export class PlayerController {
     this.ClimbMoving = false;
     this.Position = {
       x: lr.X,
-      y: input.Down && this.Position.y <= lr.Top + 10
-        ? lr.Top
-        : Math.max(lr.Top, Math.min(this.Position.y, lr.Bottom)),
+      y: input.Down ? lr.Top : Math.min(this.Position.y, lr.Bottom),
     };
     this.Stance = lr.IsLadder ? Stance.Ladder : Stance.Rope;
+    // OG: OnAttachedObjectChanged on grab — interrupts any ongoing fall so a
+    // landing after climbing doesn't inherit fall damage from before the grab.
     this._notifyAttached();
+    this._fallStartY = this.Position.y;
+    this._freeFallElapsedMs = 0;
     return true;
   }
 
@@ -914,14 +1009,20 @@ export class PlayerController {
       this.ClimbMoving = false;
       this._grounded = false;
       if (hopDir !== 0) this.FacingLeft = hopDir < 0;
-      // OG ladder jump vy: -(dJumpSpeed × walkJump / g × vMax)
-      // NOTE: OG uses pixels-per-tick velocity. Our system uses dt-based physics.
-      // vMax = 0.5 for normal ladder jump
-      const ladderJumpVy = -this._jumpSpeed * 0.5;
+      // OG CVecCtrl::JustJump ladder branch:
+      //   vy = -(dJumpSpeed × walkJump / g) × vMax, where vMax = 0.5 for a
+      //   normal shoe and 0.3 for a flying-capable shoe (shoe.flyAcc > 0).
+      //   Our _jumpSpeed already equals dJumpSpeed × walkJump in px/s.
+      const flyFactor = this._shoe.flyAcc > 0 ? 0.3 : 0.5;
+      const ladderJumpVy = -this._jumpSpeed * flyFactor;
       // OG ladder jump vx: dWalkSpeed × walkSpeed × inputX × 1.3
       const ladderJumpVx = hopDir * this._walkSpeed * 1.3;
       this._velocity = { x: ladderJumpVx, y: ladderJumpVy };
       this.Stance = Stance.Jump;
+      // OG: OnAttachedObjectChanged on detach + the fall starts from here.
+      this._notifyAttached();
+      this._fallStartY = this.Position.y;
+      this._freeFallElapsedMs = 0;
       return true;
     }
 
@@ -942,11 +1043,12 @@ export class PlayerController {
 
     // OG: boundary checks — top first, then bottom
     if (iy < 0 && newY <= lr.Top) {
-      // OG: check if there's an upper foothold to snap to
+      // OG stays attached at the top when there is no upper foothold.
       if (!lr.UpperFoothold) {
-        // No upper foothold — snap to top and leave ladder
+        // No upper foothold — snap to top and keep the ladder attachment.
         this.Position = { x: lr.X, y: lr.Top };
-        this._leaveLadderOntoGround(lr.X, lr.Top - 6);
+        this._velocity = { x: 0, y: 0 };
+        this.Stance = lr.IsLadder ? Stance.Ladder : Stance.Rope;
         return true;
       }
       // OG: has upper foothold — snap to y1 - 5 and transition to foothold
@@ -1112,6 +1214,8 @@ export class PlayerController {
     blocked?: boolean;
     tangentVx?: number;
     tangentVy?: number;
+    /** OG tCollide fraction (0..1) of the movement consumed to reach the contact. */
+    t?: number;
   } {
     const oldX = this.Position.x;
     const oldY = this.Position.y;
@@ -1136,6 +1240,7 @@ export class PlayerController {
     let bestFh: Foothold | null = null;
     let bestIx = 0;
     let bestIy = 0;
+    let bestT = 0;
     let bestTangentVx = 0;
     let bestTangentVy = 0;
     let reservedCandidate = false;
@@ -1218,6 +1323,7 @@ export class PlayerController {
         bestFh = fh;
         bestIx = ix;
         bestIy = iy;
+        bestT = tClamped;
         const tangent = this._projectVelocity(fh);
         bestTangentVx = tangent.x;
         bestTangentVy = tangent.y;
@@ -1239,6 +1345,7 @@ export class PlayerController {
           landed: true,
           tangentVx: 0,
           tangentVy: 0,
+          t: 1,
         };
       }
     }
@@ -1246,14 +1353,20 @@ export class PlayerController {
     if (bestFh !== null) {
       // Snap to the intersection point on the foothold
       if (bestFh.Id === this._landingNext) this._landingNext = 0;
+      // OG: the walkable branch is gated on `m_uvx > 0.0` (right-facing
+      // foothold). A left-facing or vertical foothold (`m_uvx <= 0.0`) is a
+      // WALL: it never grounds the player, the velocity is projected onto its
+      // tangent and the player keeps sliding. IsWall (X1 == X2) is NOT the
+      // discriminator — a left-facing sloped ledge must block, not land.
       return {
         x: bestIx,
         y: bestIy,
         fh: bestFh,
-        landed: !bestFh.IsWall,
-        blocked: bestFh.IsWall,
+        landed: bestFh.Uvx > 0,
+        blocked: bestFh.Uvx <= 0,
         tangentVx: bestTangentVx,
         tangentVy: bestTangentVy,
+        t: bestT,
       };
     }
 
@@ -1261,9 +1374,41 @@ export class PlayerController {
   }
 
   /** OG: CVecCtrl::JustJump — just jumped (internal) */
-  JustJump(): boolean {
-    // OG: called by Jump internally
-    return false;
+  JustJump(
+    input: PlayerInput = { Left: false, Right: false, Up: false, Down: false, JumpPressed: false },
+    dir = 0,
+  ): boolean {
+    if (!this._grounded || input.Down) return false;
+    const aboveFh = this._field.GetFootholdAbove(
+      this.Position.x, this.Position.y - PlayerController.BodyHeight, this.Position.y - 4,
+    );
+    if (aboveFh?.CantThrough) return false;
+
+    const jumpVy = -this._jumpSpeed;
+    let jumpVx = this._velocity.x;
+    if (dir !== 0) {
+      const boostThreshold = this._walkSpeed * 0.8;
+      if (dir * jumpVx < boostThreshold) jumpVx += dir * boostThreshold;
+      jumpVx = Math.max(-this._walkSpeed, Math.min(this._walkSpeed, jumpVx));
+    }
+
+    const jumpFh = this._field.GetFoothold(this._currentFoothold);
+    this._pending.push({
+      attr: 1, vx: jumpVx, vy: jumpVy,
+      moveAction: StanceMoveAction(Stance.Jump, this.FacingLeft), elapse: 0,
+      x: this.Position.x, y: this.Position.y, fh: this._currentFoothold,
+      fhFallStart: 0, xOffset: 0, yOffset: 0, stat: 0,
+    });
+    this._velocity = { x: jumpVx, y: jumpVy };
+    this._freeFallElapsedMs = 0;
+    if (jumpFh) {
+      this._fallZMass = jumpFh.ZMass;
+      if (!jumpFh.IsWall) this._velocity.x *= jumpFh.Uvx;
+    }
+    this._notifyAttached();
+    this._grounded = false;
+    this._lastFhX1 = 0; this._lastFhY1 = 0; this._lastFootholdId = 0;
+    return true;
   }
 
   /** OG: CVecCtrl::SetMovePathAttribute — sets move path attribute (internal) */
@@ -1285,6 +1430,28 @@ export class PlayerController {
     const dvy = this._velocity.y - this._lastSyncVel.y;
     if (dvx * dvx + dvy * dvy > 0.25) return true;
     return false;
+  }
+
+  private _findWallCollisionX(dx: number, bodyTop: number, bodyBottom: number): number | null {
+    if (Math.abs(dx) < 1e-6) return null;
+    const candidates = this._field.GetCrossCandidate(
+      this.Position.x, bodyTop, this.Position.x + dx, bodyBottom,
+    );
+    let nearest: number | null = null;
+    for (const fh of candidates) {
+      if (!fh.IsWall || fh.State === 0) continue;
+      const wallTop = Math.min(fh.Y1, fh.Y2);
+      const wallBottom = Math.max(fh.Y1, fh.Y2);
+      if (wallBottom < bodyTop || wallTop > bodyBottom) continue;
+
+      const distance = fh.X1 - this.Position.x;
+      if ((dx > 0 && (distance <= 1e-6 || distance > dx))
+        || (dx < 0 && (distance >= -1e-6 || distance < dx))) continue;
+      if (nearest === null || (dx > 0 ? distance < nearest - this.Position.x : distance > nearest - this.Position.x)) {
+        nearest = fh.X1;
+      }
+    }
+    return nearest;
   }
 
   private _applyMovingFootholdOffset(): void {
@@ -1329,5 +1496,6 @@ interface ShoePhysics {
   walkDrag: number;
   walkSpeed: number;
   walkSlant: number;
+  flyAcc: number;
   swimSpeedMultiplier: number;
 }

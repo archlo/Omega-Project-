@@ -9,7 +9,7 @@ import { WzSprite } from '../render/WzSprite.js';
 import { AnimatedSprite } from '../render/AnimatedSprite.js';
 import { MapScene } from './MapScene.js';
 import { MapInfo } from './MapInfo.js';
-import { Foothold } from './Foothold.js';
+import { Foothold, isBlockedArea } from './Foothold.js';
 import { Portal } from './Portal.js';
 import { LadderRope } from './LadderRope.js';
 import { FootholdIndex } from './FootholdIndex.js';
@@ -939,6 +939,36 @@ export class FieldScene {
     return result;
   }
 
+  /** OG CWvsPhysicalSpace2D::CanGoThrough: tests whether a movement segment
+   * crosses a blocking foothold for the current Z-mass page. */
+  CanGoThrough(x1: number, y1: number, x2: number, y2: number, zMass = 0): boolean {
+    if (x1 === x2 && y1 === y2) return true;
+    for (const fh of this.GetCrossCandidate(x1, y1, x2, y2)) {
+      if (fh.State === 0) continue;
+      if (fh.Uvx <= 0 && fh.ZMass !== 0 && fh.ZMass !== zMass) continue;
+
+      const crossOld = (fh.X1 - x1) * (fh.Y2 - fh.Y1) - (fh.Y1 - y1) * (fh.X2 - fh.X1);
+      const crossNew = (fh.X1 - x2) * (fh.Y2 - fh.Y1) - (fh.Y1 - y2) * (fh.X2 - fh.X1);
+      if (crossOld === 0 && crossNew === 0) continue;
+      if (crossOld > 0 || crossNew < 0) continue;
+
+      const crossFh1 = (x1 - fh.X1) * (y2 - y1) - (y1 - fh.Y1) * (x2 - x1);
+      const crossFh2 = (x1 - fh.X2) * (y2 - y1) - (y1 - fh.Y2) * (x2 - x1);
+      if ((crossFh1 > 0 && crossFh2 > 0) || (crossFh1 < 0 && crossFh2 < 0)) continue;
+
+      if (Math.abs(crossFh1) < 1e-7 && fh.Prev !== 0) {
+        const prev = this.GetFoothold(fh.Prev);
+        if (prev && !isBlockedArea(prev, fh, x2, y2)) continue;
+      }
+      if (Math.abs(crossFh2) < 1e-7 && fh.Next !== 0) {
+        const next = this.GetFoothold(fh.Next);
+        if (next && !isBlockedArea(fh, next, x2, y2)) continue;
+      }
+      return false;
+    }
+    return true;
+  }
+
   GetLadderOrRope(x1: number, y1: number, x2 = x1, y2 = y1): LadderRope | null {
     // OG: CWvsPhysicalSpace2D::GetLadderOrRope — the caller supplies a
     // rectangle; the space query expands only X by 10 and tests Y overlap.
@@ -1001,7 +1031,7 @@ export class FieldScene {
     let best: number | null = null;
     const candidates = this._footholdIndex.search(lo, yTop, hi, yBottom);
     for (const fh of candidates.length > 0 ? candidates : Object.values(this._footholds)) {
-      if (fh.X1 >= fh.X2 || fh.ZMass !== zmass) continue;
+      if ((!fh.IsWall && fh.X1 >= fh.X2) || fh.ZMass !== zmass) continue;
       const wx = fh.X1;
       if (wx < lo || wx > hi) continue;
       const wTop = Math.min(fh.Y1, fh.Y2), wBot = Math.max(fh.Y1, fh.Y2);
