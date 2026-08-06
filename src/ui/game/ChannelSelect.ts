@@ -1,175 +1,267 @@
-import { Container, Graphics, Text, TextStyle } from 'pixi.js';
+import { Container, Sprite, Texture } from 'pixi.js';
 import { GamePanel } from './GamePanel.js';
-import { WzCanvas } from '../../wz/WzCanvas.js';
+import { Button } from '../Button.js';
 import { WzProperty } from '../../wz/WzProperty.js';
-import { WzSprite } from '../../render/WzSprite.js';
+import { WzCanvas } from '../../wz/WzCanvas.js';
 import { WzTextureLoader } from '../../render/WzTextureLoader.js';
 import { WzPackage } from '../../wz/WzPackage.js';
 
-const PANEL_W = 280;
-const PANEL_H = 280;
-const TITLE_H = 22;
-const COL_W = 52;
-const COL_COUNT = 5;
-const ROW_H = 36;
+// OG: CUIChannelShift (v95) — in-game channel shift dialog.
+// Window 370x168, centered on screen (ctor 0x96BE90:
+//   x=(scrW-370)/2, y=(scrH-168)/2, wndKey=10, Origin_LT).
+// WZ: UI/UIWindow2.img/Channel (OnCreate 0x96C160):
+//   backgrnd          370x168 window background
+//   BtChange          id 1, AddButton offset (-20,0), canvas origin (-243,-141) → (223,141) 74x16
+//   BtCancel          id 2, AddButton offset (0,0),   canvas origin (-320,-141) → (320,141) 40x16
+//   channel0/channel1 68x19 cell backgrounds (m_pCanvasItem[0]/[1])
+//   world/<worldId>   world-name image, drawn at (16, 40-h/2)
+// Grid (GetRectFromIdx 0x9689C0): cell idx → left=70*(idx%5)+11, top=20*(idx/5)+55, 68x20.
+// Channel-number glyphs load from UI/UIWindow.img/Channel/ch/<idx> (0-based; ch/0 shows "1").
+// Draw (0x96CCB0): all cells drawn every frame; current channel (m_nChannelID) uses the
+// channel0 canvas, hover/selected cell (m_nSel) uses channel1; plain cells draw the number
+// glyph only. Number glyph at (left+8, top+5).
+const PANEL_W = 370;
+const PANEL_H = 168;
 
-const _titleStyle = new TextStyle({ fill: '#FFE4B5', fontSize: 11, fontFamily: 'monospace' });
-const _chanStyle = new TextStyle({ fill: '#FFF', fontSize: 10, fontFamily: 'monospace' });
-const _popStyle = new TextStyle({ fill: '#AAA', fontSize: 8, fontFamily: 'monospace' });
+// OG GetRectFromIdx: cell idx grid.
+function getRectFromIdx(idx: number): { left: number; top: number; right: number; bottom: number } {
+  const v4 = 70 * (idx % 5);
+  return { left: v4 + 11, top: 20 * (Math.floor(idx / 5)) + 55, right: v4 + 79, bottom: 20 * (Math.floor(idx / 5)) + 75 };
+}
+
+export interface ChannelEntry { channel: number; population: number; adult?: boolean; }
 
 export class ChannelSelect extends GamePanel {
   onChannelChange: ((ch: number) => void) | null = null;
 
-  private _channels: { channel: number; population: number }[] = [];
-  private _currentChannel = 0;
-  private _selectedChannel = -1;
+  private _loader: WzTextureLoader | null = null;
+  private _uiWz: WzPackage | null = null;
 
-  private _bg: Graphics;
-  private _wzBg: WzSprite | null;
-  private _chanSlots: { container: Container; index: number }[] = [];
-  private _btnChange: Container;
-  private _btnCancel: Container;
-  private _selHighlight: Graphics | null = null;
-  private _titleText: Text;
+  private _channels: ChannelEntry[] = [];
+  private _currentChannel = 0;  // 0-based grid index of the channel we're on
+  private _sel = 0;             // OG m_nSel — hovered/selected cell (starts at current)
+  private _worldId = 0;
+
+  // WZ sprites
+  private _bg: Sprite | null = null;
+  private _worldSprite: Sprite | null = null;
+  private _channel0Tex: Texture | null = null;  // current-channel cell bg (m_pCanvasItem[0])
+  private _channel1Tex: Texture | null = null;  // selected cell bg (m_pCanvasItem[1])
+  private _btnChange: Button | null = null;
+  private _btnCancel: Button | null = null;
+  private _cells: Array<{ container: Container; bg: Sprite; glyph: Sprite }> = [];
 
   constructor(opts: { loader?: WzTextureLoader; uiWz?: WzPackage | null } = {}) {
     super();
     this._root.visible = false;
+    this._loader = opts.loader ?? null;
+    this._uiWz = opts.uiWz ?? null;
 
-    // Try WZ background first
-    const chanProp = opts.uiWz?.GetItem('UIWindow2.img/Channel');
-    const wzBgNode = chanProp instanceof WzProperty ? chanProp.Get('backgrnd') : null;
-    this._wzBg = wzBgNode instanceof WzCanvas ? (opts.loader?.Load(wzBgNode) ?? null) : null;
+    // OG ctor: CreateWnd((scrW-370)/2, (scrH-168)/2, 370, 168, wndKey=10, Origin_LT)
+    const scrW = typeof window !== 'undefined' ? window.innerWidth : 800;
+    const scrH = typeof window !== 'undefined' ? window.innerHeight : 600;
+    this._root.x = Math.max(0, (scrW - PANEL_W) >> 1);
+    this._root.y = Math.max(0, (scrH - PANEL_H) >> 1);
 
-    this._bg = new Graphics();
-    this._root.addChild(this._bg);
-
-    if (this._wzBg) {
-      this._root.addChildAt(this._wzBg.ToPixi(), 0);
+    // OG: background — UI/UIWindow2.img/Channel/backgrnd
+    const bgNode = this._uiWz?.GetItem('UIWindow2.img/Channel/backgrnd');
+    if (bgNode instanceof WzCanvas && this._loader) {
+      const s = this._loader.Load(bgNode)?.ToPixi();
+      if (s) { this._bg = s; this._root.addChild(s); }
     }
 
-    this._titleText = new Text({ text: 'Select Channel', style: _titleStyle });
-    this._root.addChild(this._titleText);
+    // OG: m_pCanvasItem[0]/[1] — channel0 (current), channel1 (selected)
+    const chanProp = this._uiWz?.GetItem('UIWindow2.img/Channel');
+    if (chanProp instanceof WzProperty && this._loader) {
+      const c0 = chanProp.Get('channel0');
+      const c1 = chanProp.Get('channel1');
+      if (c0 instanceof WzCanvas) this._channel0Tex = this._loader.Load(c0)?.Texture ?? null;
+      if (c1 instanceof WzCanvas) this._channel1Tex = this._loader.Load(c1)?.Texture ?? null;
+    }
 
-    this._btnChange = this._makeBtn('Change', 160, PANEL_H - 28);
-    this._btnCancel = this._makeBtn('Cancel', 80, PANEL_H - 28);
-    this._root.addChild(this._btnChange, this._btnCancel);
+    // OG: BtChange (id 1) — CLayoutMan::AddButton offset (-20,0), canvas origin
+    // (-243,-141). Container pos = the layout offset; Button.fromWz renders at
+    // (pos - origin) = (223,141) and hitTest matches.
+    const chRoot = this._uiWz?.GetItem('UIWindow2.img/Channel/BtChange');
+    if (chRoot instanceof WzProperty && this._loader) {
+      this._btnChange = Button.fromWz(this._loader, chRoot, 'Change');
+      this._btnChange.onClick = () => this._confirm();
+      this._btnChange.container.position.set(-20, 0);
+      this._root.addChild(this._btnChange.container);
+    }
+    // OG: BtCancel (id 2) — AddButton offset (0,0), origin (-320,-141) → (320,141)
+    const ccRoot = this._uiWz?.GetItem('UIWindow2.img/Channel/BtCancel');
+    if (ccRoot instanceof WzProperty && this._loader) {
+      this._btnCancel = Button.fromWz(this._loader, ccRoot, 'Cancel');
+      this._btnCancel.onClick = () => { this.isVisible = false; };
+      this._btnCancel.container.position.set(0, 0);
+      this._root.addChild(this._btnCancel.container);
+    }
 
-    this._rebuild();
+    // OG: pre-build the cell sprites (all drawn every frame; bgs toggled per state)
+    for (let i = 0; i < 30; i++) {
+      const c = new Container();
+      const bg = new Sprite(this._channel0Tex ?? Texture.EMPTY);
+      bg.visible = false;
+      const glyph = new Sprite(Texture.EMPTY);
+      c.addChild(bg, glyph);
+      c.visible = false;
+      this._root.addChild(c);
+      this._cells.push({ container: c, bg, glyph });
+    }
   }
 
-  setChannels(channels: { channel: number; population: number }[], current: number): void {
+  setWorldId(worldId: number): void {
+    this._worldId = worldId;
+    this._loadWorld();
+  }
+
+  setChannels(channels: ChannelEntry[], current: number): void {
     this._channels = channels;
+    // OG: m_nSel = m_nChannelID (OnCreate); current channel id is the grid index.
     this._currentChannel = current;
-    this._selectedChannel = current;
+    this._sel = current;
     this._rebuild();
   }
 
+  private _loadWorld(): void {
+    if (!this._loader || !this._uiWz) return;
+    const node = this._uiWz.GetItem(`UIWindow2.img/Channel/world/${this._worldId}`);
+    if (!(node instanceof WzCanvas)) return;
+    const ws = this._loader.Load(node);
+    if (!ws) return;
+    const s = ws.ToPixi();
+    // OG Draw: Copy(16, 40 - h/2) — world name vertically centered at y=40.
+    s.position.set(16, 40 - Math.floor(ws.Height / 2));
+    if (this._worldSprite) {
+      this._root.removeChild(this._worldSprite);
+      this._worldSprite.destroy();
+    }
+    this._worldSprite = s;
+    this._root.addChildAt(s, Math.min(1, this._root.children.length));
+  }
+
+  private _rebuild(): void {
+    // OG: for each channel i < m_nChannelCount, draw cell + number glyph.
+    // Current channel (i == m_nChannelID) gets channel0 bg; hovered (i == m_nSel) gets
+    // channel1 bg; plain cells get the number glyph only.
+    const n = Math.min(this._channels.length, 30);
+    for (let i = 0; i < this._cells.length; i++) {
+      const cell = this._cells[i];
+      const show = i < n;
+      cell.container.visible = show;
+      if (!show) continue;
+      const rc = getRectFromIdx(i);
+      cell.container.position.set(rc.left, rc.top);
+
+      const isCurrent = i === this._currentChannel;
+      const isSel = i === this._sel;
+      let bgTex: Texture | null = null;
+      if (isCurrent || isSel) {
+        // Path A/E: selected → channel1; Path C: current (not selected) → channel0.
+        bgTex = isSel ? (this._channel1Tex ?? this._channel0Tex) : this._channel0Tex;
+      }
+      if (bgTex) {
+        cell.bg.texture = bgTex;
+        cell.bg.visible = true;
+      } else {
+        // No WZ texture loaded: still mark the cell so the selection state is
+        // visible (empty box) and hit-testing behaves the same as the OG.
+        cell.bg.texture = Texture.EMPTY;
+        cell.bg.visible = isCurrent || isSel;
+      }
+
+      // OG: UI/UIWindow.img/Channel/ch/<idx> number glyph at (left+8, top+5)
+      const glyphNode = this._uiWz?.GetItem(`UIWindow.img/Channel/ch/${i}`);
+      if (glyphNode instanceof WzCanvas && this._loader) {
+        const ws = this._loader.Load(glyphNode);
+        if (ws) cell.glyph.texture = ws.Texture;
+      }
+      cell.glyph.position.set(8, 5);
+    }
+  }
+
+  private _pressCell = -1;
+
+  // OG OnMouseButton: msg 513 (down) selects the cell and invalidates; msg 515
+  // (up) calls Update(this, 1) → SetRet(1) → sends the transfer.
   handleMouseButton(x: number, y: number, down: boolean): boolean {
     if (!this.isVisible) return false;
     const lx = x - this._root.x;
     const ly = y - this._root.y;
-    if (!down) return lx >= 0 && lx < PANEL_W && ly >= 0 && ly < PANEL_H;
-    for (const slot of this._chanSlots) {
-      const tr = slot.container;
-      if (lx >= tr.x && lx < tr.x + COL_W + 4 && ly >= tr.y && ly < tr.y + ROW_H) {
-        this._selectChannel(slot.index);
+
+    if (this._btnChange?.hitTest(lx, ly)) { if (down) this._btnChange.onClick?.(); return true; }
+    if (this._btnCancel?.hitTest(lx, ly)) { if (down) this._btnCancel.onClick?.(); return true; }
+
+    const idx = this._getIdxFromPoint(lx, ly);
+    if (down) {
+      // OG: selecting a cell that isn't the current one is allowed (guard
+      // IdxFromPoint != m_nSel handles the current-cell case below).
+      if (idx >= 0 && idx !== this._sel) {
+        this._pressCell = idx;
+        this._sel = idx;
+        this._rebuild();
         return true;
       }
+      this._pressCell = -1;
+      return lx >= 0 && lx < PANEL_W && ly >= 0 && ly < PANEL_H;
     }
-    if (this._hitBtn(this._btnChange, lx, ly)) { this._confirm(); return true; }
-    if (this._hitBtn(this._btnCancel, lx, ly)) { this.isVisible = false; return true; }
+    // msg 515 — release: confirm only if released over the cell that was pressed.
+    if (this._pressCell >= 0 && idx === this._pressCell) {
+      this._pressCell = -1;
+      this._confirm();
+      return true;
+    }
+    this._pressCell = -1;
     return lx >= 0 && lx < PANEL_W && ly >= 0 && ly < PANEL_H;
   }
 
-  onKeyPress(key: string): boolean {
-    if (!this.isVisible) return false;
-    if (key === 'Escape') { this.isVisible = false; return true; }
-    if (key === 'Enter') { this._confirm(); return true; }
-    return false;
+  // OG: GetIdxFromPoint (0x968A10) — first cell whose rect contains the point.
+  private _getIdxFromPoint(lx: number, ly: number): number {
+    for (let i = 0; i < this._channels.length; i++) {
+      const rc = getRectFromIdx(i);
+      if (lx >= rc.left && lx < rc.right && ly >= rc.top && ly < rc.bottom) return i;
+    }
+    return -1;
   }
 
-  private _rebuild(): void {
-    this._root.removeChildren();
-    this._chanSlots = [];
-
-    this._bg.clear();
-    if (!this._wzBg) {
-      this._bg.rect(0, 0, PANEL_W, PANEL_H).fill({  color: '#0C0E18', alpha: 0.95 });
-      this._bg.rect(0, 0, PANEL_W, PANEL_H).stroke({  color: '#3C4164', width: 1 });
-      this._bg.rect(0, 0, PANEL_W, TITLE_H).fill({  color: '#0F1224' });
-    }
-    this._root.addChild(this._bg);
-
-    if (this._wzBg) {
-      this._root.addChildAt(this._wzBg.ToPixi(), 0);
-    }
-
-    this._titleText.text = this._currentChannel > 0
-      ? `Select Channel (Ch.${this._currentChannel})`
-      : 'Select Channel';
-    this._titleText.x = 10; this._titleText.y = 4;
-    this._root.addChild(this._titleText);
-
-    for (let i = 0; i < Math.min(this._channels.length, 20); i++) {
-      const ch = this._channels[i];
-      const col = i % COL_COUNT;
-      const row = Math.floor(i / COL_COUNT);
-      const cx = 10 + col * (COL_W + 6);
-      const cy = TITLE_H + 8 + row * ROW_H;
-
-      const c = new Container();
-      const bg = new Graphics();
-      const isCurrent = ch.channel === this._currentChannel;
-      const isSelected = ch.channel === this._selectedChannel;
-      bg.rect(0, 0, COL_W, ROW_H - 4).fill({  color: isCurrent ? '#2A3A2A' : '#161824' });
-      bg.rect(0, 0, COL_W, ROW_H - 4).stroke({  color: isSelected ? '#8AF' : isCurrent ? '#5A7A5A' : '#303450', width: 1 });
-
-      const t1 = new Text({ text: `Ch.${ch.channel}`, style: _chanStyle });
-      t1.x = 4; t1.y = 4;
-      // population is a raw user count (WorldInformation's nUserNo) — no confirmed
-      // max-capacity scale exists to render this as a percentage, so show the count.
-      const t2 = new Text({ text: `${ch.population}`, style: _popStyle });
-      t2.x = 4; t2.y = 18;
-
-      c.addChild(bg, t1, t2);
-      c.x = cx; c.y = cy;
-
-      if (ch.channel === this._selectedChannel) {
-        this._selHighlight = bg;
-      }
-      this._root.addChild(c);
-      this._chanSlots.push({ container: c, index: i });
-    }
-
-    this._root.addChild(this._btnChange, this._btnCancel);
-  }
-
-  private _selectChannel(index: number): void {
-    this._selectedChannel = this._channels[index].channel;
-    this._rebuild();
-  }
-
+  // OG: SetRet(1) — send TransferChannelRequest for the selected channel.
   private _confirm(): void {
-    if (this._selectedChannel > 0 && this._selectedChannel !== this._currentChannel) {
-      this.onChannelChange?.(this._selectedChannel);
+    const ch = this._channels[this._sel];
+    if (ch && ch.channel !== this._currentChannel) {
+      this.onChannelChange?.(ch.channel);
     }
     this.isVisible = false;
   }
 
-  private _makeBtn(label: string, x: number, y: number): Container {
-    const c = new Container();
-    const bg = new Graphics();
-    bg.rect(0, 0, 60, 20).fill({  color: '#1E2030', alpha: 0.9 });
-    bg.rect(0, 0, 60, 20).stroke({  color: '#505570', width: 1 });
-    const t = new Text({ text: label, style: new TextStyle({ fill: '#CCC', fontSize: 10, fontFamily: 'monospace' }) });
-    t.x = 12; t.y = 4;
-    c.addChild(bg, t);
-    c.x = x; c.y = y;
-    return c;
-  }
-
-  private _hitBtn(btn: Container, lx: number, ly: number): boolean {
-    return lx >= btn.x && lx < btn.x + 60 && ly >= btn.y && ly < btn.y + 22;
+  onKeyPress(key: string): boolean {
+    if (!this.isVisible) return false;
+    switch (key) {
+      case 'Escape': this.isVisible = false; return true; // OG wParam 0x1B → SetRet(2)
+      case 'Enter': this._confirm(); return true;        // OG wParam 0x0D → Update(1)
+      case 'ArrowLeft': {
+        const p = this._sel;
+        this._sel = p >= 1 ? p - 1 : Math.max(0, this._currentChannel - 1);
+        this._rebuild();
+        return true;
+      }
+      case 'ArrowRight': {
+        this._sel = Math.min(this._channels.length - 1, this._sel + 1);
+        this._rebuild();
+        return true;
+      }
+      case 'ArrowUp': {
+        const p = this._sel;
+        this._sel = Math.max(0, p - 5);
+        this._rebuild();
+        return true;
+      }
+      case 'ArrowDown': {
+        this._sel = Math.min(this._channels.length - 1, this._sel + 5);
+        this._rebuild();
+        return true;
+      }
+      default: return false;
+    }
   }
 }

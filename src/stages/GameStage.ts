@@ -1173,7 +1173,8 @@ export class GameStage extends Stage {
       if (!this._channelSelect.isVisible) {
         const session = this.game.session;
         const world = session.worlds.find((w) => w.worldId === session.worldId);
-        const channels = (world?.channels ?? []).map((c) => ({ channel: c.channelId, population: c.userCount }));
+        const channels = (world?.channels ?? []).map((c) => ({ channel: c.channelId, population: c.userCount, adult: c.adult }));
+        this._channelSelect.setWorldId(session.worldId);
         this._channelSelect.setChannels(channels, session.channelId);
       }
       this._channelSelect.isVisible = !this._channelSelect.isVisible;
@@ -2186,7 +2187,8 @@ export class GameStage extends Stage {
     this._statusBar.onChannel = () => {
       const session = this.game.session;
       const world = session.worlds.find((w) => w.worldId === session.worldId);
-      const channels = (world?.channels ?? []).map((c) => ({ channel: c.channelId, population: c.userCount }));
+      const channels = (world?.channels ?? []).map((c) => ({ channel: c.channelId, population: c.userCount, adult: c.adult }));
+      this._channelSelect?.setWorldId(session.worldId);
       this._channelSelect?.setChannels(channels, session.channelId);
       if (this._channelSelect) this._channelSelect.isVisible = !this._channelSelect.isVisible;
     };
