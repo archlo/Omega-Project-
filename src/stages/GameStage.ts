@@ -3271,6 +3271,10 @@ export class GameStage extends Stage {
         }
         // OG: bPetActivated set when any pet exists
         this._charInfo.bPetActivated = this._charInfo.pets.some(p => p !== null);
+        // OG: CharacterInfo response opens the UserInfo window (right-click →
+        // context menu → "Info" → SendCharacterInfoRequest → SetUserInfo).
+        this._charInfo.isVisible = true;
+        if (!this._charInfo.container.parent) this.uiRoot.addChild(this._charInfo.container);
       }
       if (this._stats) this._stats.guild = info.guild ?? '';
       this._statusMessenger.showLoot(`[CharInfo] [${info.charId}] Lv.${info.level} ${jobName} Fame:${info.fame}`);

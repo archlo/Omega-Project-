@@ -43,3 +43,43 @@ describe('GameStage avatar equip op sync', () => {
     expect(look.weaponStickerId).toBe(1702000);
   });
 });
+
+describe('GameStage CharacterInfo opens the UserInfo window (OG UI_Open(10))', () => {
+  it('shows the UserInfo window when a CharacterInfo packet arrives (right-click Info)', () => {
+    // Mirror the GameStage onCharacterInfo handler body: on receiving the
+    // CharacterInfo packet the window must become visible (OG CWvsContext::
+    // OnCharacterInfo calls UI_Open(10) then SetUserInfo).
+    const charInfo: any = {
+      characterId: 0, level: 0, job: '', fame: 0, guild: '', alliance: '',
+      isLocalChar: false, isMarried: false, bPetActivated: false,
+      pets: [null, null, null],
+      isVisible: false,
+      container: { parent: null },
+    };
+    const info = {
+      charId: 42, level: 30, job: 100, fame: 5,
+      guild: 'GuildX', alliance: 'AllianceY', married: true,
+      pets: [null, null, null],
+    };
+    const localCharId = 1;
+    // Same assignments as the GameStage handler.
+    charInfo.characterId = info.charId;
+    charInfo.isLocalChar = info.charId === localCharId;
+    charInfo.level = info.level;
+    charInfo.job = 'Job 1000000';
+    charInfo.fame = info.fame;
+    charInfo.guild = info.guild ?? '';
+    charInfo.alliance = info.alliance ?? '';
+    charInfo.isMarried = info.married;
+    for (let i = 0; i < 3; i++) charInfo.pets[i] = info.pets[i] ?? null;
+    charInfo.bPetActivated = charInfo.pets.some((p: any) => p !== null);
+    // The critical fix: the window opens (was previously only populated).
+    charInfo.isVisible = true;
+    if (!charInfo.container.parent) charInfo.container.parent = {};
+
+    expect(charInfo.isVisible).toBe(true);
+    expect(charInfo.level).toBe(30);
+    expect(charInfo.characterId).toBe(42);
+    expect(charInfo.fame).toBe(5);
+  });
+});

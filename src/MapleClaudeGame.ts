@@ -234,6 +234,12 @@ export class MapleClaudeGame {
       (window as any).__altKey = e.altKey;
       this.stageDirector.onMouseButton(f.x, f.y, false, e.button);
     });
+    // OG: right-click opens the in-game player context menu (CUserLocal::
+    // HandleRButtonClk). Suppress the browser's native context menu so it
+    // doesn't appear over the canvas — the game handles button 2 in mousedown.
+    document.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+    });
     document.addEventListener('wheel', (e) => {
       (window as any).__wheelDelta = e.deltaY;
       const { x, y } = toCanvas(e.clientX, e.clientY);

@@ -307,7 +307,7 @@ export class CharInfo extends GamePanel {
     this._nameText.y = 50;
     this._contentLayer.addChild(this._nameText);
 
-    this._levelText = new Text({ text: '', style: _statStyle });
+    this._levelText = new Text({ text: '', style: _nameStyle });
     this._levelText.x = STAT_X; this._levelText.y = Y_LEVEL;
     this._contentLayer.addChild(this._levelText);
 
