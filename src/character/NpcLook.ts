@@ -407,6 +407,11 @@ export class NpcLook {
   }
 
   private _drawSpeechBubble(): void {
+    // OG CNpc::OnChat delegates entirely to CChatBalloon type 1001
+    // (ChatBalloon.img/npc). When GameStage has wired onChatBalloon the WZ
+    // layer owns the render; keep this box only as a standalone fallback so
+    // an NPC never draws two bubbles at once.
+    if (this.onChatBalloon) return;
     if (!this._currentSpeech || this._speechTimer <= 0) return;
     const bubbleW = 140;
     const pad = 6;
@@ -540,6 +545,9 @@ export class NpcLook {
       this._currentSpeech = text;
       // OG: CChatBalloon::MakeBalloon timeout = 5000ms
       this._speechTimer = 5;
+      // OG CNpc::OnChat calls MakeBalloon(type 1001) on the WZ layer; the
+      // internal box is only a fallback for unwired standalone consumers.
+      if (this.onChatBalloon) this.onChatBalloon(text);
     }
   }
 
@@ -656,8 +664,7 @@ export class NpcLook {
 
   /** OG: SetBalloonOffset — special balloon offset for certain NPCs */
   SetBalloonOffset(x: number, y: number): void {
-    this._ptBalloonOffset.x = x;
-    this._ptBalloonOffset.y = y;
+    this._ptBalloonOffset = { x, y };
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -801,6 +808,8 @@ export class NpcLook {
   private _nClientActionIdx = -1;
   /** OG: m_ptBalloonOffset — balloon position offset (NPC 1300000 uses y=-20) */
   private _ptBalloonOffset = { x: 0, y: 0 };
+  /** Balloon offset applied by the WZ ChatBalloonLayer anchor (OG m_ptBalloonOffset). */
+  get BalloonOffset(): { x: number; y: number } { return this._ptBalloonOffset; }
   /** OG: template action names (e.g. "walk", "sit") — indexed by actionIdx-2 */
   private _actionNames: string[] = [];
   /** OG: per-action chat entries — key = actionIdx, value = chat string indices */
@@ -810,6 +819,8 @@ export class NpcLook {
   private _speechLabel: Text | null = null;
   /** OG: callback fired when DoActionOrChat picks an action — GameStage wires this to send NpcMoveRequest */
   onDoActionOrChat: ((objectId: number, action: number, chatIdx: number) => void) | null = null;
+  /** OG CNpc::OnChat → CChatBalloon type 1001. GameStage wires this to the WZ ChatBalloonLayer. */
+  onChatBalloon: ((text: string) => void) | null = null;
 
   private _readDelay(node: WzProperty): number {
     const v = node.Get('delay');

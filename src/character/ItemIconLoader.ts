@@ -1,6 +1,6 @@
 import { WzCanvas } from '../wz/WzCanvas.js';
 import type { WzPackage } from '../wz/WzPackage.js';
-import type { WzProperty } from '../wz/WzProperty.js';
+import { WzProperty } from '../wz/WzProperty.js';
 import type { WzSprite } from '../render/WzSprite.js';
 import type { WzTextureLoader } from '../render/WzTextureLoader.js';
 import { WzUol } from '../wz/WzUol.js';
@@ -160,6 +160,9 @@ export class ItemIconLoader {
           // OG: DrawToolTip_Equip durability = 100*cur/max. info/durability is
           // the max; per-instance current durability comes from the item slot.
           DurabilityMax: I(info, 'durability'),
+          // OG: CItemInfo::EQUIPITEM reads info/incSkill as skillId → bonus.
+          // Used for the skill window's mSkillRecordEx "(+N)" display.
+          IncSkill: ItemIconLoader._incSkill(info),
         };
       }
     } catch {
@@ -247,6 +250,19 @@ export class ItemIconLoader {
       max = i;
     }
     return max;
+  }
+
+  /** OG: CItemInfo::EQUIPITEM info/incSkill — skillId → bonus level map. */
+  private static _incSkill(info: WzProperty): Map<number, number> | undefined {
+    const node = info.Get('incSkill');
+    if (!(node instanceof WzProperty)) return undefined;
+    const map = new Map<number, number>();
+    for (const [key, val] of Object.entries(node.Items)) {
+      const id = parseInt(key, 10);
+      if (isNaN(id) || typeof val !== 'number') continue;
+      map.set(id, val);
+    }
+    return map.size > 0 ? map : undefined;
   }
 
   private _infoNode(itemId: number): WzProperty | null {
@@ -377,6 +393,9 @@ export interface ItemAttr {
   Option1?: number; Option2?: number; Option3?: number;
   Socket1?: number; Socket2?: number;
   Attribute?: number;
+  // OG: mSkillRecordEx source — info/incSkill: skillId → bonus level from equipping
+  // this item. Absent when the item grants no skill levels (the common case).
+  IncSkill?: Map<number, number>;
 }
 
 interface RuntimeItemData {

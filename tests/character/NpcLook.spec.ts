@@ -72,4 +72,25 @@ describe('NpcLook', () => {
     expect(npc.FuncName).toBe('Storage Keeper');
     expect(npc.ShowNameTag).toBe(false);
   });
+
+  it('delegates OnChat to the WZ balloon layer via onChatBalloon', () => {
+    const npc = new NpcLook(2071010);
+    (npc as any)._bEnabled = true;
+    (npc as any)._speak = ['{NAME}: hello'];
+    const npcWz = {
+      GetItem(path: string) {
+        if (path !== '2071010.img') return null;
+        const image = Object.create(WzImage.prototype);
+        Object.defineProperty(image, 'Root', { get: () => prop({}) });
+        return image;
+      },
+    } as any;
+    npc.Load({ Load: () => { throw new Error('no sprites in this fixture'); } } as any, npcWz, (_id, key) => key === 'name' ? 'Ellinia' : undefined);
+
+    let bubble: string | null = null;
+    npc.onChatBalloon = (text) => { bubble = text; };
+    npc.OnChat(0);
+
+    expect(bubble).toBe('Ellinia: hello');
+  });
 });

@@ -180,6 +180,7 @@ export class SkillCastInfo {
 
 export class SkillInfoService {
   private readonly _skillWz: () => WzPackage | null;
+  private readonly _stringWz: () => WzPackage | null;
   private readonly _cache = new Map<number, SkillInfo | null>();
   private readonly _idsByRoot = new Map<number, number[]>();
   private readonly _bookIcons = new Map<number, WzCanvas | null>();
@@ -188,8 +189,45 @@ export class SkillInfoService {
   private readonly _mobSkillCache = new Map<number, MobSkillEntry | null>();
   private readonly _itemSkillCache = new Map<number, ItemSkillEntry | null>();
 
-  constructor(skillWz: () => WzPackage | null) {
+  constructor(skillWz: () => WzPackage | null, stringWz?: () => WzPackage | null) {
     this._skillWz = skillWz;
+    this._stringWz = stringWz ?? (() => null);
+  }
+
+  /**
+   * OG: String.wz Skill.img/<id>/<key> — the localized skill strings. The v95
+   * client loads skill names/descriptions/level-help from String.wz (not
+   * Skill.wz); Skill.wz nodes only carry icons, effects and numeric level data.
+   */
+  private _stringValue(skillId: number, key: string): string {
+    const wz = this._stringWz();
+    if (!wz) return '';
+    try {
+      const img = wz.GetItem('Skill.img');
+      if (!(img instanceof WzImage)) return '';
+      const skill = img.Root.Get(String(skillId).padStart(7, '0')) ?? img.Root.Get(String(skillId));
+      if (!(skill instanceof WzProperty)) return '';
+      const v = skill.Get(key);
+      return typeof v === 'string' ? v : '';
+    } catch {
+      return '';
+    }
+  }
+
+  /** OG: String.wz Skill.img/<root>/bookName — the skill book title. */
+  private _stringBookName(root: number): string {
+    const wz = this._stringWz();
+    if (!wz) return '';
+    try {
+      const img = wz.GetItem('Skill.img');
+      if (!(img instanceof WzImage)) return '';
+      const rootNode = img.Root.Get(String(root).padStart(3, '0')) ?? img.Root.Get(String(root));
+      if (!(rootNode instanceof WzProperty)) return '';
+      const v = rootNode.Get('bookName');
+      return typeof v === 'string' ? v : '';
+    } catch {
+      return '';
+    }
   }
 
   Get(skillId: number): SkillInfo | null {
@@ -247,17 +285,21 @@ export class SkillInfoService {
     return icon;
   }
 
-  // OG: get_labeled_string — book name from String.wz or Skill.wz info/name
+  // OG: get_labeled_string — book name from String.wz Skill.img/<root>/bookName,
+  // falling back to Skill.wz <root>.img/info/name.
   GetBookName(root: number): string {
     const cached = this._bookNames.get(root);
     if (cached !== undefined) return cached;
-    const wz = this._skillWz();
-    if (!wz) return '';
-    let name = '';
-    try {
-      const item = SkillInfoService._jobItem(wz, root, 'info/name');
-      if (typeof item === 'string') name = item;
-    } catch { /* ignore */ }
+    let name = this._stringBookName(root);
+    if (!name) {
+      const wz = this._skillWz();
+      if (wz) {
+        try {
+          const item = SkillInfoService._jobItem(wz, root, 'info/name');
+          if (typeof item === 'string') name = item;
+        } catch { /* ignore */ }
+      }
+    }
     this._bookNames.set(root, name);
     return name;
   }
@@ -371,8 +413,12 @@ export class SkillInfoService {
     if (icon instanceof WzCanvas) info.Icon = icon;
 
     // --- Name + description (via labeled_string pattern) ---
-    info.Name = SkillInfoService._readStr(node.Get('name'));
-    info.Description = SkillInfoService._readStr(node.Get('desc'));
+    // OG CSkillInfo::LoadSkill reads these from String.wz Skill.img; Skill.wz
+    // skill nodes rarely carry name/desc so prefer the String package.
+    info.Name = this._stringValue(skillId, 'name')
+      || SkillInfoService._readStr(node.Get('name'));
+    info.Description = this._stringValue(skillId, 'desc')
+      || SkillInfoService._readStr(node.Get('desc'));
 
     // --- Scalar fields (StringPool IDs in OG, direct WZ names here) ---
     info.SkillType = SkillInfoService._readInt(node.Get('skillType'));
@@ -514,9 +560,15 @@ export class SkillInfoService {
         mp.push(SkillInfoService._readInt(lp.Get('mpCon')));
         cd.push(SkillInfoService._readInt(lp.Get('cooltime')));
         bt.push(SkillInfoService._readInt(lp.Get('time')));
-        const levelHelp = ['desc', 'info', 'help', 'h']
+        // OG: the level node carries `hs` = the String.wz Skill.img key (e.g.
+        // "h1") that holds the per-level help text. Resolve it from String.wz,
+        // falling back to inline desc/info/help/h when the key is absent.
+        const hs = SkillInfoService._readStr(lp.Get('hs'));
+        const fromHs = hs ? this._stringValue(skillId, hs) : '';
+        const inlineHelp = ['desc', 'info', 'help', 'h']
           .map((key) => SkillInfoService._readStr(lp.Get(key)))
           .find((value) => value.length > 0) ?? '';
+        const levelHelp = fromHs || inlineHelp;
         help.push(levelHelp);
       }
       info.MpCon = mp;

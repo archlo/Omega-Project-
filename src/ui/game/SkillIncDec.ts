@@ -497,12 +497,17 @@ export class SkillChangeConfirm extends GamePanel {
     this._decRow = { bg: decBg, icon: decIcon, name: decName, level: decLevel, spLabel: decSpLabel };
 
     // OG: OK button (BtOK) and Cancel button (BtCancle) from WZ
+    // Structure: step2/BtOK/{normal,mouseOver,pressed,disabled}/0
     this._btOk = new Container();
     if (loader && ui) {
-      const node = ui.GetItem('UI/UIWindow2.img/Reset/SP/step2/BtOK/normal');
-      if (node instanceof WzCanvas) {
-        const sprite = loader.Load(node)?.ToPixi();
-        if (sprite) this._btOk.addChild(sprite);
+      const root = ui.GetItem('UI/UIWindow2.img/Reset/SP/step2/BtOK');
+      if (root instanceof WzProperty) {
+        const state = root.Get('normal');
+        const canvas = state instanceof WzProperty ? state.Get('0') : state;
+        if (canvas instanceof WzCanvas) {
+          const sprite = loader.Load(canvas)?.ToPixi();
+          if (sprite) this._btOk.addChild(sprite);
+        }
       }
     }
     this._btOk.position.set(37, 181);
@@ -510,10 +515,14 @@ export class SkillChangeConfirm extends GamePanel {
 
     this._btCancel = new Container();
     if (loader && ui) {
-      const node = ui.GetItem('UI/UIWindow2.img/Reset/SP/step2/BtCancle/normal');
-      if (node instanceof WzCanvas) {
-        const sprite = loader.Load(node)?.ToPixi();
-        if (sprite) this._btCancel.addChild(sprite);
+      const root = ui.GetItem('UI/UIWindow2.img/Reset/SP/step2/BtCancle');
+      if (root instanceof WzProperty) {
+        const state = root.Get('normal');
+        const canvas = state instanceof WzProperty ? state.Get('0') : state;
+        if (canvas instanceof WzCanvas) {
+          const sprite = loader.Load(canvas)?.ToPixi();
+          if (sprite) this._btCancel.addChild(sprite);
+        }
       }
     }
     this._btCancel.position.set(87, 181);

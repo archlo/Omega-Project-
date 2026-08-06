@@ -76,7 +76,7 @@ import { ItemIconLoader } from '../character/ItemIconLoader.js';
 import { ItemInfoService } from '../character/ItemInfoService.js';
 import { StatusBar } from '../ui/game/StatusBar.js';
 import { ChatBar, FILTER_ALL, FILTER_FRIEND, FILTER_PARTY, FILTER_GUILD, FILTER_ALLIANCE, FILTER_BUDDY, FILTER_EXPEDITION } from '../ui/game/ChatBar.js';
-import { ChatBalloonLayer } from '../ui/game/ChatBalloon.js';
+import { ChatBalloonLayer, BalloonType } from '../ui/game/ChatBalloon.js';
 import { MiniMap } from '../ui/game/MiniMap.js';
 import { BuffList } from '../ui/game/BuffList.js';
 import { Clock } from '../ui/game/Clock.js';
@@ -411,7 +411,10 @@ export class GameStage extends Stage {
   // ponytail: per-body-part EquipStats from InventoryOperation — includes
   // per-instance stat lines (incStr etc.) and option/socket IDs for stat computation.
   protected _equipStats = new Map<number, EquipStats>();
-  // OG: CUserLocal::ApplyWeaponOption — weapon item option combat modifiers
+  // OG: mSkillRecordEx — per-skill equipment-provided level bonus (SkillLevel -
+  // PureSkillLevel), shown as the green "(+N)" in the skill window. Rebuilt from
+  // equipped items' info/incSkill whenever equipment changes.
+  protected _equipSkillBonus = new Map<number, number>();
   // (critical prob/damage, DAMr, BossDAMr, IgnoreTargetDEF). Computed from
   // the weapon's ItemOption level data during stat sync, cached for attack use.
   // NOTE: actual fields moved to CUserLocal.ts — these are accessors for GameStage
@@ -590,7 +593,8 @@ export class GameStage extends Stage {
         }
         const npc = this._npcs.find((n) => n.ObjId === charId);
         if (npc) {
-          return this._camera.WorldToScreen(npc.HeadPosition.x, npc.HeadPosition.y);
+          const p = npc.HeadPosition;
+          return this._camera.WorldToScreen(p.x + npc.BalloonOffset.x, p.y + npc.BalloonOffset.y);
         }
         return null;
       });
@@ -1039,7 +1043,7 @@ export class GameStage extends Stage {
         game.wz.list = await open('List');
         game.listService = new ListService(game.wz.list);
       } catch (ex) { console.warn('List package unavailable — skipping ListService', ex); }
-      this._skillService = new SkillInfoService(() => this._skillWz);
+      this._skillService = new SkillInfoService(() => this._skillWz, () => game.wz.string ?? null);
     } catch (ex) { console.warn('Failed to open WZ files', ex); }
 
     // Wire WZ packages into ActionMan singleton (OG CActionMan WZ refs)
@@ -1655,7 +1659,7 @@ export class GameStage extends Stage {
       onBan: () => { this.game.session.send(GameSender.MemoryGameBan()); },
       onLeave: () => { this.game.session.send(GameSender.MiniRoomLeave()); },
     });
-    this._chatBalloon = new ChatBalloonLayer(this._loader, uiWz, font, this._stringPool);
+    this._chatBalloon = new ChatBalloonLayer(this._loader, uiWz, font);
     this.uiRoot.addChild(this._chatBalloon.root);
 
     this.uiRoot.addChild(this._gameMenu.container);
@@ -2208,7 +2212,9 @@ export class GameStage extends Stage {
           this.game.session.send(GameSender.Whisper(target, msg));
           this._chatBar.addLine(`${target} : ${msg}`, 14, -1, true);
           const targetChar = [...this._otherChars.values()].find((c) => c.Name === target);
-          if (targetChar) this._chatBalloon?.Set(targetChar.CharId, msg, 5, 2);
+          // OG CUser::OnChat bDead = (m_nMoveAction & ~1) === 18. Remote chars
+      // don't retain a raw moveAction, only a stance — TODO: track it.
+      if (targetChar) this._chatBalloon?.Set(targetChar.CharId, msg, 5, BalloonType.Player, 0, 1, false);
         }
         return;
       }
@@ -2223,7 +2229,7 @@ export class GameStage extends Stage {
         // Render local speech immediately; suppress the matching server echo
         // in onUserChat so the balloon is not recreated twice.
         this._pendingLocalBalloon = { text: msg, at: performance.now() };
-        this._chatBalloon?.Set(this._localCharId, msg, 5, 0);
+        this._chatBalloon?.Set(this._localCharId, msg, 5, BalloonType.Player, 0, 1, this._isPlayerDead);
       }
       this._handleChatCommand(msg);
     };
@@ -2267,6 +2273,9 @@ export class GameStage extends Stage {
       this.game.session.send(GameSender.SkillUp(skillId));
     };
     this._skill.nameOf = (id) => this.game.nameService?.SkillName(id) ?? `Skill ${id}`;
+    // OG: mSkillRecordEx — equipment-provided skill level bonuses shown as the
+    // green "(+N)" in the skill window (SkillLevel - PureSkillLevel).
+    this._skill.skillBonusOf = (skillId) => this._equipSkillBonus.get(skillId) ?? 0;
 
     this._stats.onHpUp = () => { this.game.session.send(GameSender.UserAbilityUp(MapleStat.MaxHp)); };
     this._stats.onMpUp = () => { this.game.session.send(GameSender.UserAbilityUp(MapleStat.MaxMp)); };
@@ -3129,7 +3138,12 @@ export class GameStage extends Stage {
         && performance.now() - this._pendingLocalBalloon.at < 2000
         && this._pendingLocalBalloon.text === resolved;
       if (isLocalEcho) this._pendingLocalBalloon = null;
-      else this._chatBalloon?.Set(args.charId, resolved, 5, 0);
+      else {
+        // OG bDead = (m_nMoveAction & ~1) === 18. Local uses the live HP-death
+        // flag; remote chars don't retain a raw moveAction — TODO: track it.
+        const bDead = args.charId === this._localCharId ? this._isPlayerDead : false;
+        this._chatBalloon?.Set(args.charId, resolved, 5, BalloonType.Player, 0, 1, bDead);
+      }
     };
     fh.onUserEffect = (args) => this._onUserEffect(args);
     fh.onFuncKeyMappedInit = (entries) => { this._keyConfig.applyServerKeymap(entries); };
@@ -3168,9 +3182,8 @@ export class GameStage extends Stage {
       }
       const resolved = this._resolveChatItemLinks(text);
       this._chatBar.addLine(`${prefix} ${fromName}: ${resolved}`, lType);
-      const balloonType = groupType === 2 || groupType === 3 ? 1
-        : groupType === 4 ? 2 : groupType === 5 || groupType === 26 ? 3 : 0;
-      this._chatBalloon?.Set(charId, resolved, 4, balloonType);
+      // OG bDead: remote source, moveAction not retained — TODO: track it.
+      this._chatBalloon?.Set(charId, resolved, 4, BalloonType.Player, 0, 1, false);
     };
     fh.onWhisper = ({ fromName, channelId, text }) => {
       // OG: CField::OnWhisper checks CConfig::IsInBlackList before
@@ -3184,7 +3197,7 @@ export class GameStage extends Stage {
       this._chatBar.addLine(`${fromName} : ${this._resolveChatItemLinks(text)}`, 14, channelId, true);
       this._statusMessenger.showLoot(`[Whisper] ${fromName}: ${this._resolveChatItemLinks(text)}`);
       const sender = [...this._otherChars.values()].find((c) => c.Name === fromName);
-      if (sender) this._chatBalloon?.Set(sender.CharId, this._resolveChatItemLinks(text), 4, 2);
+      if (sender) this._chatBalloon?.Set(sender.CharId, this._resolveChatItemLinks(text), 4, BalloonType.Player, 0, 1, false);
     };
     fh.onPartyInvite = ({ inviterId, inviterName }) => {
       if (this._blackList.has(inviterName)) return;
@@ -5746,6 +5759,7 @@ export class GameStage extends Stage {
       }
       this._pendingEquippedCash = null;
     }
+    this._refreshSkillBonuses();
   }
 
   private _applyEquipOps(ops: InventoryOpArg[]): void {
@@ -5776,7 +5790,32 @@ export class GameStage extends Stage {
           break;
       }
     }
-    if (equipOps > 0) console.log(`[GameStage] _applyEquipOps: ${equipOps} equip ops`);
+    if (equipOps > 0) {
+      console.log(`[GameStage] _applyEquipOps: ${equipOps} equip ops`);
+      this._refreshSkillBonuses();
+    }
+  }
+
+  /**
+   * OG: CUserLocal::UpdatePassiveSkillData / mSkillRecordEx — rebuild the
+   * equipment-provided skill-level bonus map from every equipped item's
+   * info/incSkill. The skill window shows this as the green "(+N)".
+   */
+  private _refreshSkillBonuses(): void {
+    const next = new Map<number, number>();
+    if (this._itemIcons) {
+      for (const itemId of this._equip.equippedItemIds()) {
+        const attr = this._itemIcons.LoadAttr(itemId);
+        if (!attr?.IncSkill) continue;
+        for (const [skillId, bonus] of attr.IncSkill) {
+          next.set(skillId, (next.get(skillId) ?? 0) + bonus);
+        }
+      }
+    }
+    this._equipSkillBonus = next;
+    if (this._skill) {
+      this._skill.skillBonusOf = (skillId) => this._equipSkillBonus.get(skillId) ?? 0;
+    }
   }
 
   private _bodyPartFromEquippedPos(invType: number, pos: number): number {
@@ -5815,6 +5854,7 @@ export class GameStage extends Stage {
         this._physics.WeaponWalk = imgEntry.nWalk || 1;
       }
     }
+    this._refreshSkillBonuses();
   }
 
   private _clearEquippedAvatarItem(invType: number, pos: number): void {
@@ -5840,6 +5880,7 @@ export class GameStage extends Stage {
     look.hairEquip.delete(bodyPart);
     look.unseenEquip.delete(bodyPart);
     this._itemEffects?.SetCharacter(this._localCharId, look);
+    this._refreshSkillBonuses();
   }
 
   /** v95 equip item id → equipped body part. 0 = not a known equip slot. */
@@ -6028,6 +6069,10 @@ export class GameStage extends Stage {
     // OG: DoActionOrChat → GenerateMovePath — sends NpcMoveRequest to server
     npc.onDoActionOrChat = (objectId, action, chatIdx) => {
       this.game.session.send(GameSender.NpcMoveRequest(objectId, action, chatIdx));
+    };
+    // OG CNpc::OnChat → CChatBalloon type 1001 (ChatBalloon.img/npc).
+    npc.onChatBalloon = (text) => {
+      this._chatBalloon?.Set(npc.ObjId, text, 5, BalloonType.Npc);
     };
     if (args.templateId === 1300000) {
       npc.SetBalloonOffset(0, -20);
@@ -7194,7 +7239,7 @@ export class GameStage extends Stage {
     if (talkers.length === 0) return;
     const npc = talkers[Math.floor(Math.random() * talkers.length)];
     const text = npc.GetRandomSpeech();
-    if (text) this._chatBalloon?.Set(npc.ObjId, text, 5, 1);
+    if (text) this._chatBalloon?.Set(npc.ObjId, text, 5, BalloonType.Npc);
   }
 
   /** ponytail: when combo counter > 0, try indexed variant <wzPath>/<combo>

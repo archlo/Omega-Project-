@@ -31,6 +31,9 @@ const TAB_X = 8;
 const TAB_Y = 10;
 const TAB_W = 154;
 const TAB_H = 20;
+// OG: each tab slot is 30px + 1px spacing (30*5 + 4 = 154). Aran guide buttons
+// and the tab strip share this slot layout.
+const TAB_SLOT_W = 30;
 
 // Scrollbar: (1, 8), 93×155
 const SB_X = 1;
@@ -55,6 +58,76 @@ const ROW_RIGHT = 149;
 // OG: get_basic_font — fonts loaded from WZ via CWnd::GetBasicFont
 // FONT_BASIC_WHITE = m_pFont (skill name, level), FONT_BASIC_BLACK = m_pFontNo (SP count)
 // FONT_SMALL_GRAY = m_pFontBonus (bonus text), FONT_BOOK_NAME = m_pFontBookName (book name)
+
+// OG: CWzResMan loads button states from "UI/UIWindow2.img/Skill/main/BtX/{state}/0".
+// The canvas is nested under a `0` property (normal/0, mouseOver/0, pressed/0,
+// disabled/0). Returns null when the state canvas is absent.
+function loadButtonStateSprite(loader: WzTextureLoader, root: WzProperty | null, state: string): Sprite | null {
+  if (!root || !loader) return null;
+  const stateProp = root.Get(state);
+  const canvas = stateProp instanceof WzProperty ? stateProp.Get('0') : stateProp;
+  if (canvas instanceof WzCanvas) return loader.Load(canvas)?.ToPixi() ?? null;
+  return null;
+}
+
+// OG: CWvsContext::GetSkillLevelUpState — the three-state machine that drives
+// the skill slot canvas (skill0/skill1), the icon (apCanvas[state+hover]), and
+// the SP-Up button enable. Decompiled @ 0x9D5A40:
+//   0  = a required skill has not reached its required level
+//  -1  = skill needs a master level but masterLev <= curSkillLev, OR already maxed
+//   1  = can level up (reqs met, below max, master level has headroom)
+function skillLevelUpState(skill: SkillRow, service: SkillInfoService | null, findSkill: (id: number) => SkillRow | null): number {
+  const info = service?.Get(skill.id);
+  for (const [reqId, reqLevel] of info?.RequiredSkills ?? []) {
+    if ((findSkill(reqId)?.level ?? 0) < reqLevel) return 0;
+  }
+  if (isSkillNeedMasterLevel(skill.id)) {
+    const curMaster = skill.masterLevel > 0 ? skill.masterLevel : skill.maxLevel;
+    if (curMaster <= skill.level) return -1;
+  }
+  const max = skill.masterLevel > 0 ? skill.masterLevel : skill.maxLevel;
+  return 2 * (skill.level < max ? 1 : 0) - 1;
+}
+
+// OG: is_ignore_master_level_for_common @ 0x47CC20 — master-book skills that
+// are exempt from the master-level gate. Constants decoded from disassembly.
+export function isIgnoreMasterLevelForCommon(skillId: number): boolean {
+  if (skillId <= 3220010) {
+    if (skillId >= 3220009) return true;
+    if (skillId === 2120009 || skillId === 1120012 || skillId === 1220013 || skillId === 1320011) return true;
+    if (skillId === 2320010 || skillId === 2220009) return true;
+    return skillId >= 3120010 && skillId <= 3120011;
+  }
+  if (skillId === 5220012 || skillId === 4120010 || skillId === 4220009 || skillId === 5120011) return true;
+  return skillId === 32120009 || skillId === 33120010;
+}
+
+// OG: is_skill_need_master_level @ 0x47CCB0 — which skills consume a master book.
+export function isSkillNeedMasterLevel(skillId: number): boolean {
+  if (isIgnoreMasterLevelForCommon(skillId)) return false;
+  const job = Math.floor(skillId / 10000);
+  if (Math.floor(job / 100) === 22 || job === 2001) {
+    const jl = getJobLevel(job);
+    return jl === 9 || jl === 10 || skillId === 22111001 || skillId === 22141002 || skillId === 22140000;
+  }
+  if (Math.floor(job / 10) === 43) {
+    return getJobLevel(job) === 4
+      || skillId === 4311003 || skillId === 4314920 || skillId === 4326906 || skillId === 4326909;
+  }
+  if (job === 100 * Math.floor(job / 100)) return false;
+  return job % 10 === 2;
+}
+
+// OG: is_nonslot_skill @ 0x849B90 — skills that cannot be dragged to a slot.
+export function isNonslotSkill(skillId: number): boolean {
+  if (skillId > 20001067) {
+    if (skillId > 30001067) return skillId === 33001002;
+    return skillId >= 30001066 || (skillId >= 20011066 && skillId <= 20011067);
+  }
+  if (skillId >= 20001066) return true;
+  if (skillId <= 4321000) return skillId === 4321000 || (skillId >= 1066 && skillId <= 1067);
+  return skillId >= 10011066 && skillId <= 10011067;
+}
 const _titleStyle = new TextStyle({ fill: '#DCC896', fontSize: 11, fontFamily: 'monospace' });
 const _labelStyle = new TextStyle({ fill: '#CCC', fontSize: 10, fontFamily: 'monospace' });
 const _valueStyle = new TextStyle({ fill: '#FFF', fontSize: 9, fontFamily: 'monospace' });
@@ -222,6 +295,9 @@ export class SkillBook extends GamePanel {
   // OG: CUISkill::OnButtonClicked id 0x7E7 → ShiftMacroUIState
   onMacroOpen: (() => void) | null = null;
   nameOf: (id: number) => string = () => '';
+  // OG: mSkillRecordEx — equipment-provided skill level bonus per skill id.
+  // Returns the bonus (SkillLevel - PureSkillLevel) used for the green "(+N)".
+  skillBonusOf: ((skillId: number) => number | undefined) | null = null;
   onDragStart: ((payload: SkillDragPayload, texture: Texture, x: number, y: number) => void) | null = null;
   // OG: SendSkillUpRequest callback
   onSendSkillUp: ((skillId: number) => void) | null = null;
@@ -345,6 +421,10 @@ export class SkillBook extends GamePanel {
   // OG: Aran special tab buttons — Tab/AranButton/Bt1-Bt4
   private _aranBtnTex: Texture[] = [];
   private _aranBtnDisabledTex: Texture[] = [];
+  // OG: Skill-guide launcher buttons (3001-3004) — CLayoutMan::AddButton loads
+  // Tab/AranButton/Bt1-4 and positions each on tab-strip slot N (30px slots +
+  // 1px spacing). Real buttons (not tabs); clicking one opens CWndSkillGuide(grade).
+  private _guideBtns: Array<{ container: Container }> = [];
   // OG: DualBlade tab textures — Tab/DualTab/disabled and Tab/DualTab/enabled
   private _dualTabDisabledTex: Texture[] = [];
   private _dualTabEnabledTex: Texture[] = [];
@@ -475,6 +555,7 @@ export class SkillBook extends GamePanel {
       }
 
       // OG: Aran special tab buttons — Tab/AranButton/Bt1-Bt4
+      // WZ structure: Tab/AranButton/BtN/{normal,mouseOver,pressed,disabled}/0
       const aranProp = prop?.Get('Tab');
       if (aranProp instanceof WzProperty) {
         const aranBtnProp = aranProp.Get('AranButton');
@@ -482,16 +563,10 @@ export class SkillBook extends GamePanel {
           for (let i = 1; i <= 4; i++) {
             const btnProp = aranBtnProp.Get(`Bt${i}`);
             if (btnProp instanceof WzProperty) {
-               const normal = btnProp.Get('normal');
-               const disabled = btnProp.Get('disabled');
-               if (normal instanceof WzCanvas) {
-                 const ws = loader.Load(normal);
-                 if (ws) this._aranBtnTex.push(ws.Texture);
-               }
-               if (disabled instanceof WzCanvas) {
-                 const ws = loader.Load(disabled);
-                 if (ws) this._aranBtnDisabledTex.push(ws.Texture);
-               }
+               const normal = loadButtonStateSprite(loader, btnProp, 'normal');
+               const disabled = loadButtonStateSprite(loader, btnProp, 'disabled');
+               if (normal) this._aranBtnTex.push(normal.texture);
+               if (disabled) this._aranBtnDisabledTex.push(disabled.texture);
             }
           }
         }
@@ -521,6 +596,42 @@ export class SkillBook extends GamePanel {
            }
         }
       }
+    }
+
+    // OG: CWndSkillGuide launchers (button ids 3001-3004) — real CCtrlOriginButton
+    // controls built from Tab/AranButton/Bt1-4, one per tab-strip slot N (30px
+    // slots + 1px spacing). Containers always exist so hit-testing and visibility
+    // work without a live WZ; textures load above when loader/ui are available.
+    for (let i = 1; i <= 4; i++) {
+      const guide = new Container();
+      let nPlain: Sprite | null = null;
+      let hPlain: Sprite | null = null;
+      let pPlain: Sprite | null = null;
+      let dPlain: Sprite | null = null;
+      if (loader && ui) {
+        const skillProp = ui.GetItem('UIWindow2.img/Skill/main');
+        const aranProp = skillProp instanceof WzProperty ? skillProp.Get('Tab') : null;
+        const aranBtnProp = aranProp instanceof WzProperty ? aranProp.Get('AranButton') : null;
+        const btnProp = aranBtnProp instanceof WzProperty ? aranBtnProp.Get(`Bt${i}`) : null;
+        const root = btnProp instanceof WzProperty ? btnProp : null;
+        const mk = (s: Sprite | null): Sprite | null => {
+          if (!s) return null;
+          const plain = new Sprite(s.texture);
+          plain.visible = false;
+          guide.addChild(plain);
+          return plain;
+        };
+        nPlain = mk(loadButtonStateSprite(loader, root, 'normal'));
+        hPlain = mk(loadButtonStateSprite(loader, root, 'mouseOver'));
+        pPlain = mk(loadButtonStateSprite(loader, root, 'pressed'));
+        dPlain = mk(loadButtonStateSprite(loader, root, 'disabled'));
+        if (nPlain) nPlain.visible = true;
+      }
+      guide.position.set(TAB_X + i * (TAB_SLOT_W + 1), TAB_Y);
+      guide.visible = false;
+      (guide as any).__spBtn = { normal: nPlain, hover: hPlain, pressed: pPlain, disabled: dPlain };
+      this._guideBtns.push({ container: guide });
+      this._root.addChild(guide);
     }
 
     // OG: Create per-row sprites for slot bg, recommend bg, and line bg
@@ -607,17 +718,20 @@ export class SkillBook extends GamePanel {
       this._root.addChild(tBonus);
 
       // OG: SP Up button — BtSpUp loaded from Skill/main/BtSpUp via CLayoutMan
+      // The WZ node is BtSpUp/{normal,mouseOver,pressed,disabled}/0 (12x12).
       const btn = new Container();
-      // Try loading from WZ: Skill/main/BtSpUp
-      if (loader && ui) {
-        const btSpUp = ui.GetItem('UIWindow2.img/Skill/main/BtSpUp');
-        if (btSpUp instanceof WzProperty) {
-           const normalNode = btSpUp.Get('normal');
-           if (normalNode instanceof WzCanvas) {
-             const s = loader.Load(normalNode)?.ToPixi();
-            if (s) btn.addChild(s);
-          }
-        }
+      const btSpUp = loader && ui ? ui.GetItem('UIWindow2.img/Skill/main/BtSpUp') : null;
+      const btSpUpRoot = btSpUp instanceof WzProperty ? btSpUp : null;
+      if (loader) {
+        const n = loadButtonStateSprite(loader, btSpUpRoot, 'normal');
+        const h = loadButtonStateSprite(loader, btSpUpRoot, 'mouseOver');
+        const p = loadButtonStateSprite(loader, btSpUpRoot, 'pressed');
+        const d = loadButtonStateSprite(loader, btSpUpRoot, 'disabled');
+        if (n) btn.addChild(n);
+        if (h) { h.visible = false; btn.addChild(h); }
+        if (p) { p.visible = false; btn.addChild(p); }
+        if (d) { d.visible = false; btn.addChild(d); }
+        (btn as any).__spBtn = { normal: n, hover: h, pressed: p, disabled: d };
       }
       btn.x = SP_BTN_X;
        btn.y = SP_BTN_Y_START + i * SP_BTN_STEP;
@@ -632,16 +746,20 @@ export class SkillBook extends GamePanel {
     this._root.addChild(this._scrollBar.container);
 
     // OG: Macro button — BtMacro id 0x7E7, loaded from Skill/main/BtMacro
+    // WZ node: BtMacro/{normal,mouseOver,pressed,disabled}/0 (49x18).
     this._macroBtn = new Container();
-    if (loader && ui) {
-      const btMacro = ui.GetItem('UIWindow2.img/Skill/main/BtMacro');
-      if (btMacro instanceof WzProperty) {
-         const normalNode = btMacro.Get('normal');
-         if (normalNode instanceof WzCanvas) {
-           const s = loader.Load(normalNode)?.ToPixi();
-           if (s) this._macroBtn.addChild(s);
-        }
-      }
+    if (loader) {
+      const btMacro = ui ? ui.GetItem('UIWindow2.img/Skill/main/BtMacro') : null;
+      const btMacroRoot = btMacro instanceof WzProperty ? btMacro : null;
+      const n = loadButtonStateSprite(loader, btMacroRoot, 'normal');
+      const h = loadButtonStateSprite(loader, btMacroRoot, 'mouseOver');
+      const p = loadButtonStateSprite(loader, btMacroRoot, 'pressed');
+      const d = loadButtonStateSprite(loader, btMacroRoot, 'disabled');
+      if (n) this._macroBtn.addChild(n);
+      if (h) { h.visible = false; this._macroBtn.addChild(h); }
+      if (p) { p.visible = false; this._macroBtn.addChild(p); }
+      if (d) { d.visible = false; this._macroBtn.addChild(d); }
+      (this._macroBtn as any).__spBtn = { normal: n, hover: h, pressed: p, disabled: d };
     }
     this._macroBtn.x = 4;
     this._macroBtn.y = PANEL_H - 26;
@@ -696,6 +814,44 @@ export class SkillBook extends GamePanel {
   setViewSize(w: number, h: number): void { this._viewW = w; this._viewH = h; }
 
   private _getJobLevel(job: number): number { return getJobLevel(job); }
+
+  /** OG: CWvsContext::GetSkillLevelUpState — 0/1/-1 state for this skill. */
+  getSkillLevelUpState(skill: SkillRow): number {
+    return skillLevelUpState(skill, this.skillService, (id) => this._findSkill(id));
+  }
+
+  /** OG: CCtrlButton sprite-state swap (normal/mouseOver/pressed/disabled). */
+  private _setBtnState(container: Container, state: 'normal' | 'hover' | 'pressed' | 'disabled'): void {
+    const states = (container as any).__spBtn as
+      | { normal?: Sprite | null; hover?: Sprite | null; pressed?: Sprite | null; disabled?: Sprite | null }
+      | undefined;
+    if (!states) return;
+    for (const key of ['normal', 'hover', 'pressed', 'disabled'] as const) {
+      const s = states[key];
+      if (s) s.visible = key === state;
+    }
+  }
+
+  /**
+   * OG: Aran/Cygnus skill-guide launchers (3001-3004). Show button for tab-strip
+   * slot `slot` only while the character hasn't unlocked that grade's tab
+   * (numTabs < 5). Hidden otherwise (SetTabItems only adds them when
+   * job/1000==2 && job%1000/100==1 and root count < 5).
+   */
+  private _refreshGuideButtons(numTabs: number): void {
+    for (let g = 0; g < this._guideBtns.length; g++) {
+      const btn = this._guideBtns[g];
+      const slot = g + 1;
+      const show = this._isAranJob && slot >= numTabs && slot < 5;
+      if (btn.container.visible !== show) {
+        btn.container.visible = show;
+        if (show) {
+          btn.container.position.set(TAB_X + slot * (TAB_SLOT_W + 1), TAB_Y);
+          this._setBtnState(btn.container, 'normal');
+        }
+      }
+    }
+  }
 
   activeSkillGuideGrade(): number {
     return Math.max(1, Math.min(4, this._activeTab + 1));
@@ -1202,11 +1358,12 @@ export class SkillBook extends GamePanel {
 
       if (sk) {
         // OG Draw: Slot background at (10, nTop-19) via m_pCanvasSkill[state]
-        // state 0=normal, 1=enabled (hovered row when skill can level up)
-        const canAllocate = tabSp > 0 && sk.level < sk.maxLevel && !sk.passive && this.canSkillUp(sk.id);
-        const isHoveredRow = isHovered && canAllocate;
+        // state = (GetSkillLevelUpState != 0): enabled texture whenever required
+        // skills are met (state -1 maxed, or 1 can-up), normal otherwise.
+        const state = skillLevelUpState(sk, this.skillService, (id) => this._findSkill(id));
+        const reqsMet = state !== 0;
         const slotBg = this._rowSlotBgs[i];
-        if (isHoveredRow && this._skillSlotEnabledTex) {
+        if (reqsMet && this._skillSlotEnabledTex) {
           slotBg.texture = this._skillSlotEnabledTex;
         } else if (this._skillSlotNormalTex) {
           slotBg.texture = this._skillSlotNormalTex;
@@ -1214,10 +1371,11 @@ export class SkillBook extends GamePanel {
         slotBg.position.set(10, nTop - 19);
         slotBg.visible = true;
 
-        // OG Draw: Skill icon at (12, nTop-17) via p->apCanvas[state+hover]
+        // OG Draw: Skill icon at (12, nTop-17) via p->apCanvas[v54 + v75]
+        // v54 = state != 0, v75 = hover && v54 → Icon0/Icon1/Icon2.
         this._rowIcons[i].texture = Texture.EMPTY;
         const info = this.skillService?.Get(sk.id);
-        const iconCanvas = canAllocate
+        const iconCanvas = reqsMet
           ? (isHovered ? (info?.Icon2 ?? info?.Icon1 ?? info?.Icon0) : (info?.Icon1 ?? info?.Icon0 ?? info?.Icon))
           : (info?.Icon0 ?? info?.Icon);
         if (iconCanvas) {
@@ -1252,11 +1410,16 @@ export class SkillBook extends GamePanel {
         this._rowNames[i].y = nTop - 18;
 
         // OG Draw: Level at (50, nTop) via m_pFont or m_pFontBonus if bonus>0
+        // PureSkillLevel = level without equipment bonus; difference = equipment
+        // skill bonus (mSkillRecordEx). When bonus > 0 the level itself is drawn
+        // with m_pFontBonus (green) and "(+%d)" follows at (65, nTop).
         const effectiveMasterLevel = sk.masterLevel > 0 ? sk.masterLevel : sk.maxLevel;
-        this._rowLevels[i].text = `${sk.level}/${effectiveMasterLevel}`;
+        const skillBonus = this.skillBonusOf ? this.skillBonusOf(sk.id) ?? 0 : 0;
+        const effLevel = sk.level + skillBonus;
+        this._rowLevels[i].text = `${effLevel}/${effectiveMasterLevel}`;
         this._rowLevels[i].x = 50;
         this._rowLevels[i].y = nTop;
-        this._rowLevels[i].style = new TextStyle({
+        this._rowLevels[i].style = skillBonus > 0 ? _bonusStyle : new TextStyle({
           fill: sk.level >= sk.maxLevel ? '#C8B450' : '#A0C8A0',
           fontSize: 9, fontFamily: 'monospace',
         });
@@ -1279,10 +1442,9 @@ export class SkillBook extends GamePanel {
         }
 
         // OG Draw: Bonus text at (65, nTop) via m_pFontBonus when SkillLevel - PureSkillLevel > 0
-        // PureSkillLevel = level without equipment bonus; difference = passive skill bonus
-        const bonus = 0;
-        if (bonus > 0) {
-          this._rowBonuses[i].text = `+${bonus}`;
+        // PureSkillLevel = level without equipment bonus; difference = equipment skill bonus
+        if (skillBonus > 0) {
+          this._rowBonuses[i].text = `+${skillBonus}`;
           this._rowBonuses[i].x = 65;
           this._rowBonuses[i].y = nTop;
           this._rowBonuses[i].visible = true;
@@ -1299,8 +1461,14 @@ export class SkillBook extends GamePanel {
           lineBg.visible = true;
         }
 
-        // OG: SetButton(idx, 1, enabled) — uses per-tab SP
-        this._rowSpBtns[i].visible = tabSp > 0 && sk.level < sk.maxLevel && !sk.passive && this.canSkillUp(sk.id);
+        // OG: SetButtons — SP Up button visible whenever the skill exists at
+        // this row (shown-disabled when it can't be leveled), hidden only when
+        // no skill occupies the row. Enabled when reqs met (state==1) AND nSP>0
+        // AND not bUpButtonDisabled (OG 0x84B220). CCtrlButton cycles
+        // normal→mouseOver on hover when enabled.
+        const btnEnabled = state === 1 && tabSp > 0 && !info?.UpButtonDisabled;
+        this._rowSpBtns[i].visible = true;
+        this._setBtnState(this._rowSpBtns[i], btnEnabled ? (isHovered ? 'hover' : 'normal') : 'disabled');
       } else {
         // OG: SetButton(idx, 0, 0) — hide
         this._rowSlotBgs[i].visible = false;
@@ -1320,9 +1488,14 @@ export class SkillBook extends GamePanel {
     // OG Draw: DrawTab — tab backgrounds from WZ (Tab/disabled/0-4, Tab/enabled/0-4)
     // OG uses CCtrlTab which renders each tab with WZ canvas textures
     // Tab width = (TAB_W - nTabSpace*(numTabs-1)) / numTabs, nTabSpace=1
+    // OG SetTabItems cycles images via `i % nTabImageCount` and marks item i
+    // enabled when `i < s_nTabCount` (7). The image arrays carry the per-slot
+    // texture; when the count exceeds the available images we wrap around.
     const numTabs = this._tabs.length;
     const tabSpacing = 1; // OG: nTabSpace = 1
     const tabW = numTabs > 0 ? Math.floor((TAB_W - tabSpacing * (numTabs - 1)) / numTabs) : TAB_W;
+    const regularImages = Math.max(1, this._tabEnabledTex.length, this._tabDisabledTex.length);
+    const dualImages = Math.max(1, this._dualTabEnabledTex.length, this._dualTabDisabledTex.length);
 
     for (let i = 0; i < this._tabSprites.length; i++) {
       const isActive = i === this._activeTab;
@@ -1337,13 +1510,17 @@ export class SkillBook extends GamePanel {
        const regularCount = this._tabKinds.filter(value => value === 'regular').length;
        const dualCount = this._tabKinds.filter(value => value === 'dual').length;
        const specialIndex = kind === 'dual' ? i - regularCount : i - regularCount - dualCount;
+       // OG: image index cycles `i % nTabImageCount`; special tabs use their own
+       // image set and also cycle within it.
+       const regIdx = regularCount > 0 ? i % regularImages : i % regularImages;
+       const specIdx = Math.max(0, specialIndex) % Math.max(1, kind === 'dual' ? dualImages : regularImages);
        const tabTex = kind === 'dual'
-         ? (isActive ? this._dualTabEnabledTex[specialIndex] : this._dualTabDisabledTex[specialIndex])
+         ? (isActive ? this._dualTabEnabledTex[specIdx] : this._dualTabDisabledTex[specIdx])
          : kind === 'aran'
-           ? (isActive ? this._aranBtnTex[specialIndex] : this._aranBtnDisabledTex[specialIndex])
+           ? (isActive ? this._aranBtnTex[specIdx] : this._aranBtnDisabledTex[specIdx])
            : (isActive
-             ? (this._tabEnabledTex[i] ?? this._tabEnabledTex[0] ?? null)
-             : (this._tabDisabledTex[i] ?? this._tabDisabledTex[0] ?? null));
+             ? (this._tabEnabledTex[regIdx] ?? this._tabEnabledTex[0] ?? null)
+             : (this._tabDisabledTex[regIdx] ?? this._tabDisabledTex[0] ?? null));
 
       if (tabTex) {
         this._tabSprites[i].texture = tabTex;
@@ -1363,6 +1540,12 @@ export class SkillBook extends GamePanel {
         fontSize: 9, fontFamily: 'monospace',
       });
     }
+
+    // OG: Aran guide buttons (3001-3004) — CLayoutMan::AddButton creates one per
+    // tab-strip slot N that the current character hasn't unlocked (numTabs < 5).
+    // Shown only for Aran/Cygnus (SetTabItems job/1000==2 && job%1000/100==1),
+    // i.e. _isAranJob here; each opens CWndSkillGuide(grade = slot index).
+    this._refreshGuideButtons(numTabs);
 
     // OG: Update sub-panels (CUISkillInc/Dec/DecEX)
     this.skillIncPanel.update(_dt);
@@ -1423,15 +1606,18 @@ export class SkillBook extends GamePanel {
       return true;
     }
 
-    // OG: OnButtonClicked ids 3001-3004 — skill guide (OpenSkillGuide)
-    // These are tab-specific guide buttons; we check if click is in the guide area
-    // The OG creates CWndSkillGuide with the grade parameter
-    if (ly >= PANEL_H - 46 && ly < PANEL_H - 26 && lx >= 4 && lx < 62) {
-      // Skill guide area — pass active tab + 1 as grade
-      if (this._isAranJob) {
-        this.onSkillGuide?.(this.activeSkillGuideGrade());
+    // OG: OnButtonClicked ids 3001-3004 — skill guide (OpenSkillGuide).
+    // Each AranButton BtN is a real button on tab-strip slot N; clicking opens
+    // CWndSkillGuide(grade = N).
+    for (let g = 0; g < this._guideBtns.length; g++) {
+      const btn = this._guideBtns[g];
+      if (!btn.container.visible) continue;
+      const bx = btn.container.x;
+      const by = btn.container.y;
+      if (lx >= bx && lx < bx + TAB_SLOT_W && ly >= by && ly < by + 18) {
+        this.onSkillGuide?.(g + 1);
+        return true;
       }
-      return true;
     }
 
     // OG: Tab click — nId=2000, param1=100 (TCN_SELCHANGE)
@@ -1447,7 +1633,9 @@ export class SkillBook extends GamePanel {
       }
     }
 
-    // OG: SP Up button clicks — nId=2010..2013
+    // OG: SP Up button clicks — nId=2010..2013 (CCtrlButton OnClick only
+    // fires for enabled buttons; OG CUISkill::OnButtonClicked routes to
+    // OnSkillLevelUpButton(nId-2010)).
     const tab = this._tabs[this._activeTab] || [];
     for (let i = 0; i < VISIBLE_ROWS; i++) {
       const btn = this._rowSpBtns[i];
@@ -1456,19 +1644,27 @@ export class SkillBook extends GamePanel {
         const abs = this._scrollOffset + i;
         if (abs < tab.length) {
           const sk = tab[abs];
+          // OG: CCtrlButton only dispatches OnButtonClicked for enabled buttons;
+          // CUISkill::OnButtonClicked then routes 2010-2013 to
+          // OnSkillLevelUpButton, which re-validates (state==1, SP>0, not
+          // UpButtonDisabled) before sending — so a disabled button click here
+          // is a no-op just like the OG.
           this.onSkillLevelUp(sk.id);
         }
         return true;
       }
     }
 
-    // OG: OnButtonDown (0x84B710) — left click (msg=513) checks icon first (bIcon=1)
+    // OG: OnMouseButton (0x84B710) msg==513 (left down) — GetSkillIndexFromPoint
+    // with bIcon=1 (icon rect). Drag starts only for skills that are not
+    // nonslot, not job-type-9, and have level > 0.
     const iconIdx = this._getSkillIndexFromPoint(lx, ly, true);
     if (iconIdx >= 0) {
       const abs = this._scrollOffset + iconIdx;
       if (abs < tab.length) {
         const sk = tab[abs];
-        if (!sk.passive && sk.level > 0) {
+        const jobType = Math.floor(sk.id / 1000) % 10;
+        if (jobType !== 0 && jobType !== 9 && !isNonslotSkill(sk.id) && sk.level > 0) {
           // OG: play_ui_sound(StringPool 0x75E) on drag start
           this.onDragSound?.();
           this.onDragStart?.({ skillId: sk.id }, this._rowIcons[iconIdx].texture, x, y);
@@ -1526,6 +1722,18 @@ export class SkillBook extends GamePanel {
     if (hoverIdx !== this._hoverIndex) {
       this._hoverIndex = hoverIdx;
       // Trigger redraw to update slot bg state (normal vs enabled)
+    }
+
+    // OG: guide-button hover — CCtrlButton mouseOver state on the skill-guide
+    // launchers. update() resets each to normal each frame; applying hover here
+    // happens after that reset during the same frame's event processing.
+    for (let g = 0; g < this._guideBtns.length; g++) {
+      const btn = this._guideBtns[g];
+      if (!btn.container.visible) continue;
+      const bx = btn.container.x;
+      const by = btn.container.y;
+      const hovered = lx >= bx && lx < bx + TAB_SLOT_W && ly >= by && ly < by + 18;
+      this._setBtnState(btn.container, hovered ? 'hover' : 'normal');
     }
 
     // OG: Show skill tooltip on hover — offset Y by 20 + addon offset

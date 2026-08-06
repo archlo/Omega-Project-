@@ -5,17 +5,35 @@ import { WzPackage } from '../../wz/WzPackage.js';
 import { WzProperty } from '../../wz/WzProperty.js';
 import { WzCanvas } from '../../wz/WzCanvas.js';
 import { BuiltInFont } from '../BuiltInFont.js';
-import { StringPoolService } from '../../localization/StringPoolService.js';
 
-const Ttl = 4;
-// decompile/4A2060.c CChatBalloon::CheckTimeOut fades the balloon's alpha
-// out linearly over m_tFadeDalay once its timeout has elapsed, rather than
-// disappearing instantly. The constructor (decompile/4A2620.c) only zeroes
-// m_tFadeDalay as a default; the real per-message fade duration is supplied
-// by the caller that shows the balloon (not found in this corpus), so this
-// is a reasonable approximation, not an extracted constant.
+/** OG CChatBalloon::MakeBalloon @0x4A84F0 nType values. */
+export const BalloonType = {
+  /** ChatBalloon.img/<nIdx> — player chat (CUser::OnChat @0x8E86C0). */
+  Player: 1000,
+  /** ChatBalloon.img/npc — NPC chat (CNpc::OnChat @0x675520). */
+  Npc: 1001,
+  /** ChatBalloon.img/pet/<nIdx> — pet chat (CPet @0x6A1450). */
+  Pet: 1002,
+  /** ChatBalloon.img/adboard/<nIdx> — routed to m_pLayerAD. */
+  AdBoard: 1003,
+  /** ChatBalloon.img/mob/<nIdx> — mob chat (CMob::TrySpeaking @0x64B6D0). */
+  Mob: 1004,
+  /** Special-font path (CreateCanvas font special-case). */
+  Special: 1005,
+} as const;
+
+export type BalloonTypeValue = typeof BalloonType[keyof typeof BalloonType];
+
+/** OG MakeBalloon tTimeOut for player chat: 5000ms (CUser::OnChat). */
+const DefaultTtl = 5;
+// OG CChatBalloon::CheckTimeOut @0x4A2060 fades the balloon's alpha out
+// linearly over m_tFadeDalay once its timeout has elapsed. Per-message fade
+// is supplied by the caller (SetFadeDelay @0x4A1200 clamps nDelay < 0 to 0);
+// 1s is the v95 default look used by the TS layer.
 const FadeDuration = 1;
-const MaxTextWidth = 160;
+// OG MakeBalloon reads the per-node nWidth via StringPool 0x1AA9, default 120
+// (CreateCanvas @0x4A59D0 width budget / CalcLongestTextForGlobal).
+const MaxTextWidth = 120;
 
 export interface ChatBalloonLayout {
   x: number;
@@ -39,8 +57,37 @@ export function computeChatBalloonLayout(
   const width = Math.max(innerWidth, 8) + border.left + border.right;
   const height = Math.max(1, lineCount) * lineHeight + border.top + border.bottom;
   const x = Math.floor(tip.x - width / 2);
-  const y = Math.floor(tip.y - arrowHeight - height);
+  // OG AdjustCoordY @0x4A1300 → RelMove(m_nPosY - m_nHeight - 5): the
+  // composed balloon sits 5px above its anchor Y.
+  const y = Math.floor(tip.y - 5 - arrowHeight - height);
   return { x, y, width, height, arrowX: Math.floor(tip.x - arrowWidth / 2), arrowY: y + height - 1 };
+}
+
+/** OG CreateCanvas @0x4A59D0: the node's `clr` is a signed BigInt ARGB color
+    (e.g. player 0xFF000000, npc 0xFF800000) threaded into IWzFont::Create. */
+export function decodeClr(value: unknown): number {
+  if (typeof value === 'bigint') return Number(value) & 0xFFFFFF;
+  if (typeof value === 'number') return value & 0xFFFFFF;
+  return 0xFFFFFF;
+}
+
+/**
+ * OG MakeBalloon path construction. Base = StringPool 0x59A "ChatBalloon.img";
+ * fragments appended per nType (0x59B npc, 0x1AC6 pet, 0x59C adboard, 0x666 mob),
+ * each followed by "/" + _Int2StrW(nIdx) where the node has numeric children.
+ * bDead (StringPool 0x1AA8) appends the bare "dead" node — no nIdx.
+ */
+export function chatBalloonNodePath(type: number, nIdx = 0, bDead = false): string {
+  const base = 'ChatBalloon.img';
+  if (bDead) return `${base}/dead`;
+  switch (type) {
+    case BalloonType.Npc: return `${base}/npc`;
+    case BalloonType.Pet: return `${base}/pet/${nIdx}`;
+    case BalloonType.AdBoard: return `${base}/adboard/${nIdx}`;
+    case BalloonType.Mob: return `${base}/mob/${nIdx}`;
+    case BalloonType.Player:
+    default: return `${base}/${nIdx}`;
+  }
 }
 
 interface Balloon {
@@ -110,49 +157,31 @@ class BalloonView {
 
 export class ChatBalloonLayer {
   private _font: BuiltInFont | null;
-  private _assets = new Map<number, BalloonAssets>();
+  private _loader: WzTextureLoader;
+  private _ui: WzPackage | null;
+  private _assets = new Map<string, BalloonAssets>();
   private _root: Container;
   private _active = new Map<number, Balloon>();
 
-  constructor(loader: WzTextureLoader, ui: WzPackage | null, font: BuiltInFont | null, strings?: StringPoolService | null) {
+  constructor(loader: WzTextureLoader, ui: WzPackage | null, font: BuiltInFont | null) {
     this._font = font;
+    this._loader = loader;
+    this._ui = ui;
     this._root = new Container();
-    for (let type = 0; type <= 3; type++) {
-      // OG does not hard-code the numeric child for the public/group styles;
-      // it asks StringPool for the localized ChatBalloon prefix. Keep the
-      // numeric v95 export as a compatibility fallback.
-      const poolPrefix = type < 3 ? strings?.getString(1000 + type) : undefined;
-      const candidates = poolPrefix
-        ? [poolPrefix, `ChatBalloon.img/${type}`]
-        : [`ChatBalloon.img/${type}`];
-      const b = candidates.map((path) => ui?.GetItem(path)).find((v) => v instanceof WzProperty);
-      if (!(b instanceof WzProperty)) continue;
-      const value = b.Get('fontColor');
-      const fontColor = typeof value === 'number' ? value & 0xFFFFFF
-        : typeof value === 'bigint' ? Number(value) & 0xFFFFFF : 0xFFFFFF;
-      const P = (k: string): WzSprite | null => {
-        const v = b.Get(k);
-        return v instanceof WzCanvas ? loader.Load(v) : null;
-      };
-      const readNumber = (key: string, fallback: number): number => {
-        const v = b.Get(key);
-        return typeof v === 'number' ? v : typeof v === 'bigint' ? Number(v) : fallback;
-      };
-      const face = b.Get('fontFace');
-      const fontFamily = typeof face === 'string' && face.length > 0 ? face : 'Arial';
-      this._assets.set(type, {
-        nw: P('nw'), n: P('n'), ne: P('ne'), w: P('w'), c: P('c'), e: P('e'),
-        sw: P('sw'), s: P('s'), se: P('se'), arrow: P('arrow'), fontColor,
-        fontFamily, lineHeight: readNumber('lineHeight', this._font?.lineHeight ?? 13),
-      });
-    }
   }
 
   get root(): Container { return this._root; }
 
-  Set(charId: number, text: string, ttl: number = Ttl, type = 0, fadeDelay = FadeDuration): void {
+  /**
+   * OG MakeBalloon(this, bsText, pLayerOverlay, pVectorOrigin, tTimeOut, nType,
+   * nIdx, bDead, nAdjustCoordY, nWidth). The anchor (pVectorOrigin) is resolved
+   * per-charId by the Draw callback.
+   */
+  Set(charId: number, text: string, ttl: number = DefaultTtl,
+    type: BalloonTypeValue = BalloonType.Player, nIdx = 0, fadeDelay = FadeDuration,
+    bDead = false): void {
     if (!text || text.trim().length === 0) return;
-    const assets = this._assets.get(type) ?? this._assets.get(0);
+    const assets = this._resolveAssets(type, nIdx, bDead);
     if (!assets?.c) return;
     this._active.get(charId)?.view.destroy();
     const lines = this._wrap(text);
@@ -164,7 +193,6 @@ export class ChatBalloonLayer {
       nw: assets.nw, n: assets.n, ne: assets.ne, w: assets.w, c: assets.c, e: assets.e,
       sw: assets.sw, s: assets.s, se: assets.se, arrow: assets.arrow,
     });
-    (view as BalloonView & { fontColor?: number }).fontColor = assets.fontColor;
     const delay = Math.max(0, fadeDelay);
     this._active.set(charId, {
       lines, width, life: Math.max(0, ttl) + delay, fadeDelay: delay, view,
@@ -213,6 +241,32 @@ export class ChatBalloonLayer {
     }
   }
 
+  private _resolveAssets(type: number, nIdx: number, bDead: boolean): BalloonAssets | undefined {
+    const path = chatBalloonNodePath(type, nIdx, bDead);
+    const cached = this._assets.get(path);
+    if (cached) return cached;
+    if (!(this._ui instanceof WzPackage)) return undefined;
+    const node = this._ui.GetItem(path);
+    if (!(node instanceof WzProperty)) return undefined;
+    // OG CreateCanvas @0x4A59D0: the font color is the node's `clr` property
+    // (BigInt, ARGB) threaded into IWzFont::Create. There is no per-node
+    // `fontFace`/`lineHeight` — those come from the global font object.
+    const fontColor = decodeClr(node.Get('clr'));
+    const P = (k: string): WzSprite | null => {
+      const v = node.Get(k);
+      return v instanceof WzCanvas ? this._loader.Load(v) : null;
+    };
+    const family = this._font?.style.fontFamily;
+    const fontFamily = Array.isArray(family) ? family[0] : (family ?? 'Arial');
+    const assets: BalloonAssets = {
+      nw: P('nw'), n: P('n'), ne: P('ne'), w: P('w'), c: P('c'), e: P('e'),
+      sw: P('sw'), s: P('s'), se: P('se'), arrow: P('arrow'), fontColor,
+      fontFamily, lineHeight: this._font?.lineHeight ?? 13,
+    };
+    this._assets.set(path, assets);
+    return assets;
+  }
+
   private _wrap(text: string): string[] {
     if (this._font === null) return [text];
     const lines: string[] = [];
@@ -232,8 +286,8 @@ export class ChatBalloonLayer {
 
   private _drawBubble(b: Balloon, tip: { x: number; y: number }): void {
     const v = b.view;
-    // decompile/4A2060.c CheckTimeOut: alpha ramps to 0 over the fade
-    // window once the message's timeout has elapsed.
+    // OG CheckTimeOut @0x4A2060: alpha ramps to 0 over the fade window once
+    // the message's timeout has elapsed.
     const alpha = b.life < b.fadeDelay && b.fadeDelay > 0
       ? Math.max(0, b.life / b.fadeDelay) : 1;
     v.container.alpha = alpha;
