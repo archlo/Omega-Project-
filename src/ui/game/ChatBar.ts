@@ -61,15 +61,16 @@ const SCROLLBAR_W = 8;
 const SCROLLBAR_MIN_H = 52;  // OG: hide thumb below this
 
 // --- Filter flags (OG OnButtonClicked 0x880540) ---
-// Index 0=All(0), 1=Buddy(0x08), 2=Guild(0x04), 3=Alliance(0x10), 4=Expedition(0x20), 5=System(0x4000000)
+// 0x3F6 All: flag=0 | 0x3F7 Friend: ^=8 | 0x3F8 Party: ^=4 |
+// 0x3F9 Guild: ^=0x10 | 0x3FA Alliance: ^=0x20 | 0x3FB Expedition: ^=0x4000000
 export const FILTER_ALL = 0;
-export const FILTER_BUDDY = 0x08;   // OG friend/buddy filter
-export const FILTER_GUILD = 0x04;   // OG guild filter
-export const FILTER_ALLIANCE = 0x10;
-export const FILTER_EXPEDITION = 0x4000000;
-export const FILTER_SYSTEM = 0x20;
-export const FILTER_PARTY = 0;       // Party not a separate filter in OG
+export const FILTER_BUDDY = 0x08;   // OG friend/buddy filter (0x3F7)
+export const FILTER_PARTY = 0x04;   // OG party filter (0x3F8)
+export const FILTER_GUILD = 0x10;   // OG guild filter (0x3F9)
+export const FILTER_ALLIANCE = 0x20; // OG alliance filter (0x3FA)
+export const FILTER_EXPEDITION = 0x4000000; // OG expedition filter (0x3FB)
 export const FILTER_FRIEND = FILTER_BUDDY; // Alias — OG uses "Buddy" not "Friend"
+// Note: there is NO system filter — chat types 12-24 always pass _isFiltered.
 const FILTER_FLAGS = [FILTER_ALL, FILTER_BUDDY, FILTER_PARTY, FILTER_GUILD, FILTER_ALLIANCE, FILTER_EXPEDITION];
 // OG button IDs for filter buttons
 const FILTER_BUTTON_IDS = [0x3F6, 0x3F7, 0x3F8, 0x3F9, 0x3FA, 0x3FB];
@@ -102,35 +103,38 @@ const CHAT_TYPE_FIND = 8;    // SendChatMsg
 const CHAT_TYPE_SYSTEM = 12;
 
 // --- OG per-type font colors (from OnCreate 0x87B5F0 m_pFontChatLog[0..26]) ---
-// Font height 11 for most, 12 for indices 15,18,19,20,21,22
+// VERIFIED from IDB (block-boundary parser + spot checks): idx 0=-1(white),
+// 1=-16711936(green), 2=pink party, 3=orange buddy, 4=purple guild,
+// 5=light-green alliance, 14=0xFF770042 whisper, 26=0xFF7DFFEE expedition.
+// Font height 11 for most, 12 for indices 6,15,18,19,20,21,22.
 const FONT_COLORS: { height: number; color: number }[] = [
   { height: 11, color: 0xFFFFFFFF },  // 0: white (default)
-  { height: 11, color: 0xFF00FF00 },  // 1: green (party)
-  { height: 11, color: 0xFF0099CC },  // 2: blue-pink (buddy)
-  { height: 11, color: 0xFF009800 },  // 3: dark green (guild)
-  { height: 11, color: 0xFFE19002 },  // 4: orange (alliance)
-  { height: 11, color: 0xFFA6D331 },  // 5: yellow-green (system)
-  { height: 12, color: 0xFFFF68E7 },  // 6: red-orange
-  { height: 11, color: 0xFFBC1A1B },  // 7: brown
-  { height: 11, color: 0xFFFFFF00 },  // 8: yellow (item link)
+  { height: 11, color: 0xFF00FF00 },  // 1: green
+  { height: 11, color: 0xFFFF99CC },  // 2: pink (party)
+  { height: 11, color: 0xFFFF9900 },  // 3: orange (buddy)
+  { height: 11, color: 0xFFE1ACFE },  // 4: purple (guild)
+  { height: 11, color: 0xFFA6FF7F },  // 5: light green (alliance)
+  { height: 12, color: 0xFFFF28A7 },  // 6: pink
+  { height: 11, color: 0xFFBBBBBB },  // 7: grey
+  { height: 11, color: 0xFFFFFF00 },  // 8: yellow
   { height: 11, color: 0xFFFFF080 },  // 9: light yellow
-  { height: 11, color: 0xFF60406F },  // 10: dark gray
+  { height: 11, color: 0xFF60CEFF },  // 10: light blue
   { height: 11, color: 0xFF000000 },  // 11: black
-  { height: 11, color: 0xFFFFAFC3 },  // 12: light pink
-  { height: 11, color: 0xFF0111FF },  // 13: blue
-  { height: 11, color: 0xFF760842 },  // 14: dark red (whisper)
+  { height: 11, color: 0xFFFFAFAF },  // 12: light pink
+  { height: 11, color: 0xFF003F7F },  // 13: dark blue
+  { height: 11, color: 0xFF770042 },  // 14: dark red (whisper)
   { height: 12, color: 0xFF000000 },  // 15: black
-  { height: 11, color: 0xFF44C0A6 },  // 16: teal
-  { height: 11, color: 0xFF6C0623 },  // 17: dark red
-  { height: 12, color: 0xFFFC9205 },  // 18: orange (marriage)
+  { height: 11, color: 0xFF462706 },  // 16: brown
+  { height: 11, color: 0xFF6C4CE3 },  // 17: purple
+  { height: 12, color: 0xFFFC8BE5 },  // 18: pink
   { height: 12, color: 0xFF000000 },  // 19: black
   { height: 12, color: 0xFFFFFFFF },  // 20: white
   { height: 12, color: 0xFF000000 },  // 21: black
   { height: 12, color: 0xFFFFFFFF },  // 22: white
-  { height: 11, color: 0xFF44C0A5 },  // 23: teal variant
-  { height: 11, color: 0xFFBC1A1B },  // 24: brown
+  { height: 11, color: 0xFF462705 },  // 23: brown
+  { height: 11, color: 0xFFBBBBBB },  // 24: grey
   { height: 11, color: 0xFFFFFF00 },  // 25: yellow
-  { height: 11, color: 0xFF7F0852 },  // 26: dark red
+  { height: 11, color: 0xFF7DFFEE },  // 26: teal (expedition)
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -246,6 +250,14 @@ export class ChatBar extends GamePanel {
   private _tabGraphics: Graphics[] = [];
   private _tabLabels: Text[] = [];
   private _tabBarSprites: (Sprite | null)[] = [];
+  private _tabBarCheckedSprites: (Sprite | null)[] = [];
+
+  // OG: filter button membership gating (_ResetChatBarPos) — hidden when the
+  // character isn't in the group; the matching filter bit is cleared.
+  private _memberParty = true;
+  private _memberGuild = true;
+  private _memberAlliance = true;
+  private _memberExpedition = true;
 
   // OG: whisper icon sprites (4 variants) and channel digit sprites (0-9)
   private _whisperIcons: (WzSprite | null)[] = [null, null, null, null];
@@ -574,27 +586,48 @@ export class ChatBar extends GamePanel {
   }
 
   private _updateFilterButtons(): void {
-    // OG: Filter buttons only visible in type 3 (expanded)
+    // OG: _ResetChatBarPos (0x86DC30) — hide filter buttons for groups the
+    // character isn't in, clear the matching filter bit, then lay out shown
+    // buttons left-to-right at x=1+i*46, y=m_ptChatWnd.y-19.
     const show = this._chatType === CHAT_TYPE_EXPANDED;
-    for (let i = 0; i < this._tabLabels.length; i++) {
-      // OG: filter button positions from _ResetChatBarPos
-      const btnX = 1 + i * TAB_SPACING;
-      const btnY = this._chatWndY - 19;
+    const members = [true, true, this._memberParty, this._memberGuild, this._memberAlliance, this._memberExpedition];
+    if (show) {
+      if (!this._memberParty) this._dwChatFilterFlag &= ~FILTER_PARTY;
+      if (!this._memberGuild) this._dwChatFilterFlag &= ~FILTER_GUILD;
+      if (!this._memberAlliance) this._dwChatFilterFlag &= ~FILTER_ALLIANCE;
+      if (!this._memberExpedition) this._dwChatFilterFlag &= ~FILTER_EXPEDITION;
+      this._filterChecked = this._computeFilterChecked();
+    }
 
-      this._tabGraphics[i].visible = show;
-      this._tabLabels[i].visible = show;
+    let shown = 0;
+    for (let i = 0; i < this._tabLabels.length; i++) {
+      const btnX = 1 + shown * TAB_SPACING;
+      const btnY = this._chatWndY - 19;
+      const tabVisible = show && members[i];
+
+      this._tabGraphics[i].visible = tabVisible;
+      this._tabLabels[i].visible = tabVisible;
       this._tabLabels[i].x = btnX + 4;
       this._tabLabels[i].y = btnY + 2;
       const wzTab = this._tabBarSprites[i];
-      if (wzTab) {
-        wzTab.visible = show;
-        wzTab.position.set(btnX, btnY);
-        this._tabGraphics[i].visible = false;
-        this._tabLabels[i].visible = false;
+      const wzChecked = this._tabBarCheckedSprites[i];
+      if (wzTab || wzChecked) {
+        if (wzTab) {
+          wzTab.visible = tabVisible && !this._filterChecked[i];
+          wzTab.position.set(btnX, btnY);
+        }
+        if (wzChecked) {
+          wzChecked.visible = tabVisible && this._filterChecked[i];
+          wzChecked.position.set(btnX, btnY);
+        }
+        if (wzTab || wzChecked) {
+          this._tabGraphics[i].visible = false;
+          this._tabLabels[i].visible = false;
+        }
       }
 
       // OG: _SetFilterButton — show checked state via background color
-      if (show) {
+      if (tabVisible) {
         const checked = this._filterChecked[i];
         this._tabGraphics[i].clear();
         if (checked) {
@@ -606,7 +639,21 @@ export class ChatBar extends GamePanel {
             .fill({ color: 0x222222, alpha: 0.6 });
         }
       }
+
+      if (tabVisible) shown++;
     }
+  }
+
+  // OG: _SetFilterButton (0x86CF80) checked masks, per button index
+  private _computeFilterChecked(): boolean[] {
+    return [
+      this._dwChatFilterFlag === 0,                      // [0] All: checked when no filter
+      (this._dwChatFilterFlag & FILTER_BUDDY) !== 0,     // [1] Friend: flag & 8
+      (this._dwChatFilterFlag & FILTER_PARTY) !== 0,     // [2] Party: flag & 4
+      (this._dwChatFilterFlag & FILTER_GUILD) !== 0,     // [3] Guild: flag & 0x10
+      (this._dwChatFilterFlag & FILTER_ALLIANCE) !== 0,  // [4] Alliance: flag & 0x20
+      (this._dwChatFilterFlag & FILTER_EXPEDITION) !== 0, // [5] Expedition: flag & 0x4000000
+    ];
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -884,20 +931,23 @@ export class ChatBar extends GamePanel {
   // ═══════════════════════════════════════════════════════════════════════════
   private _setFilterButton(): void {
     // OG: sets m_bChecked on each CCtrlOriginButton and invalidates
-    const flags = [
-      this._dwChatFilterFlag === 0,                      // All: checked when no filter
-      (this._dwChatFilterFlag & FILTER_BUDDY) !== 0,     // Friend
-      this._dwChatFilterFlag === 0,                      // Party shares the all filter in v95
-      (this._dwChatFilterFlag & FILTER_GUILD) !== 0,     // Guild
-      (this._dwChatFilterFlag & FILTER_ALLIANCE) !== 0,  // Alliance
-      (this._dwChatFilterFlag & FILTER_EXPEDITION) !== 0, // Expedition
-    ];
-    this._filterChecked = flags;
+    this._filterChecked = this._computeFilterChecked();
     // Redraw filter button visuals
     this._updateFilterButtons();
   }
   get chatTarget(): string { return CHAT_TARGET_INTERNAL[this._nChatTarget] ?? 'all'; }
   get activeTab(): number { return this._activeTab; }
+
+  // OG: _ResetChatBarPos membership gating — call when party/guild/alliance/
+  // expedition membership changes. Non-member group tabs are hidden and their
+  // filter bit cleared (exactly as the v95 client does).
+  setMembership(state: { party?: boolean; guild?: boolean; alliance?: boolean; expedition?: boolean }): void {
+    if (state.party !== undefined) this._memberParty = state.party;
+    if (state.guild !== undefined) this._memberGuild = state.guild;
+    if (state.alliance !== undefined) this._memberAlliance = state.alliance;
+    if (state.expedition !== undefined) this._memberExpedition = state.expedition;
+    this._setFilterButton();
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // OG: SetChatTarget (0x87FD30) — switch chat target by combo index
@@ -1389,8 +1439,18 @@ export class ChatBar extends GamePanel {
 
     // Tab click (OG: filter XOR toggle on m_dwChatFilterFlag)
     if (inTabs) {
-      const tab = Math.floor((lx - DISPLAY_X) / TAB_SPACING);
-      if (tab >= 0 && tab < TAB_NAMES.length) {
+      // OG: hit test against the compacted (membership-gated) layout — the
+      // same x=1+i*46 run used by _updateFilterButtons.
+      const members = [true, true, this._memberParty, this._memberGuild, this._memberAlliance, this._memberExpedition];
+      let tab = -1;
+      let shown = 0;
+      for (let i = 0; i < TAB_NAMES.length; i++) {
+        if (!members[i]) continue;
+        const x0 = 1 + shown * TAB_SPACING;
+        if (lx >= x0 && lx < x0 + TAB_SPACING) { tab = i; break; }
+        shown++;
+      }
+      if (tab >= 0) {
         this._activeTab = tab;
         if (tab === 0) {
           // OG: "All" tab clears all filters
@@ -2032,6 +2092,20 @@ export class ChatBar extends GamePanel {
                 s.anchor.set(0, 0);
                 s.position.set(DISPLAY_X + i * TAB_SPACING, this._chatWndY);
                 this._tabBarSprites[i] = s;
+                this._root.addChild(s);
+              }
+            }
+          }
+          const checked = (tapNode as any).Get('checked/0') ?? (tapNode as any).Get('checked');
+          if (checked instanceof WzCanvas) {
+            const wzSprite = loader.Load(checked);
+            if (wzSprite) {
+              const s = wzSprite.ToPixi();
+              if (s) {
+                s.anchor.set(0, 0);
+                s.position.set(DISPLAY_X + i * TAB_SPACING, this._chatWndY);
+                s.visible = false;
+                this._tabBarCheckedSprites[i] = s;
                 this._root.addChild(s);
               }
             }

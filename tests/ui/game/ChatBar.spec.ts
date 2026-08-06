@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Text } from 'pixi.js';
-import { ChatBar } from '../../../src/ui/game/ChatBar.js';
+import { ChatBar, FILTER_ALL, FILTER_BUDDY, FILTER_PARTY, FILTER_GUILD, FILTER_ALLIANCE, FILTER_EXPEDITION } from '../../../src/ui/game/ChatBar.js';
 
 // ponytail: avoids pulling in jsdom just to satisfy Text.width's canvas measurement in tests
 Object.defineProperty(Text.prototype, 'width', { get: () => 0 });
@@ -83,5 +83,112 @@ describe('ChatBar history recall', () => {
     bar.handleMouseButton(sx1, sy, true);
     bar.handleMouseButton(sx2, sy, true);
     expect(clicked).toEqual([100, 200]);
+  });
+});
+
+describe('ChatBar filter tabs (IDB OnButtonClicked 0x880540)', () => {
+  const TAB_H = 18;
+
+  // Expanded chat: height=70 → m_ptChatWnd.y = 515-70 = 445. The tab hit-test
+  // region (handleMouseButton) is ly in [m_ptChatWnd.y, +TAB_H); buttons are
+  // laid out at x = 1+i*46 with TAB_SPACING width.
+  function clickTab(bar: ChatBar, index: number): void {
+    const root = (bar as any)._root;
+    const chatWndY = (bar as any)._chatWndY;
+    const sx = root.x + 1 + index * 46 + 23;
+    const sy = root.y + chatWndY + 9;
+    bar.handleMouseButton(sx, sy, true);
+  }
+
+  function expand(bar: ChatBar): void {
+    bar.setChatType(3); // CHAT_TYPE_EXPANDED — only type with filter tabs
+  }
+
+  it('exports the IDB-verified filter flag constants', () => {
+    expect(FILTER_ALL).toBe(0);
+    expect(FILTER_BUDDY).toBe(0x08);        // 0x3F7 Friend
+    expect(FILTER_PARTY).toBe(0x04);        // 0x3F8 Party
+    expect(FILTER_GUILD).toBe(0x10);        // 0x3F9 Guild
+    expect(FILTER_ALLIANCE).toBe(0x20);     // 0x3FA Alliance
+    expect(FILTER_EXPEDITION).toBe(0x4000000); // 0x3FB Expedition
+  });
+
+  it('Party tab sets the 0x04 bit and filters to party messages only', () => {
+    const bar = new ChatBar();
+    expand(bar); // toggles MINIMAL → EXPANDED
+    expect((bar as any)._chatType).toBe(3);
+    bar.addLine('normal text', 0);
+    bar.addLine('party text', 2); // ChatType party
+    bar.addLine('whisper text', 14); // ChatType whisper — always passes
+
+    clickTab(bar, 2); // Party
+    expect((bar as any)._dwChatFilterFlag).toBe(FILTER_PARTY);
+
+    const filtered = (bar as any)._getFilteredChatLogCount();
+    // party(2) + whisper(14, always visible band) — normal(0) is filtered out
+    expect(filtered).toBe(2);
+  });
+
+  it('All tab clears every filter bit', () => {
+    const bar = new ChatBar();
+    expand(bar);
+    clickTab(bar, 2); // Party on
+    expect((bar as any)._dwChatFilterFlag).toBe(FILTER_PARTY);
+    clickTab(bar, 0); // All — resets to 0
+    expect((bar as any)._dwChatFilterFlag).toBe(0);
+    expect((bar as any)._filterChecked[0]).toBe(true);
+  });
+
+  it('tabs XOR their own bit (clicking twice toggles off)', () => {
+    const bar = new ChatBar();
+    expand(bar);
+    clickTab(bar, 3); // Guild
+    expect((bar as any)._dwChatFilterFlag).toBe(FILTER_GUILD);
+    clickTab(bar, 3);
+    expect((bar as any)._dwChatFilterFlag).toBe(0);
+  });
+
+  it('separate group tabs combine bits independently', () => {
+    const bar = new ChatBar();
+    expand(bar);
+    clickTab(bar, 1); // Friend
+    clickTab(bar, 2); // Party
+    expect((bar as any)._dwChatFilterFlag).toBe(FILTER_BUDDY | FILTER_PARTY);
+    clickTab(bar, 4); // Alliance
+    expect((bar as any)._dwChatFilterFlag).toBe(FILTER_BUDDY | FILTER_PARTY | FILTER_ALLIANCE);
+  });
+
+  it('membership gating hides a group tab and clears its filter bit', () => {
+    const bar = new ChatBar();
+    expand(bar);
+    clickTab(bar, 2); // Party on
+    expect((bar as any)._dwChatFilterFlag).toBe(FILTER_PARTY);
+
+    bar.setMembership({ party: false });
+    // _ResetChatBarPos: m_dwChatFilterFlag &= ~4 when not in party
+    expect((bar as any)._dwChatFilterFlag).toBe(0);
+    expect((bar as any)._tabGraphics[2].visible).toBe(false);
+    expect((bar as any)._tabGraphics[3].visible).toBe(true); // Guild still shown
+  });
+
+  it('membership gating compacts the tab strip layout', () => {
+    const bar = new ChatBar();
+    expand(bar);
+    // Hide Guild (index 3): Alliance (4) and Expedition (5) shift left one slot
+    bar.setMembership({ guild: false });
+    expect((bar as any)._tabLabels[4].x).toBe(1 + 3 * 46 + 4); // Alliance now at slot 3 (label = btnX+4)
+    expect((bar as any)._tabLabels[5].x).toBe(1 + 4 * 46 + 4); // Expedition at slot 4
+  });
+
+  it('uses ChatType-indexed font colors for group messages', () => {
+    const bar = new ChatBar();
+    // _chatFonts[2] = party pink, [3] = buddy orange, [4] = guild purple,
+    // [5] = alliance light green, [26] = expedition teal (IDB OnCreate)
+    const fonts: any[] = (bar as any)._chatFonts;
+    expect(fonts[2].fill).toBe('#ff99cc');
+    expect(fonts[3].fill).toBe('#ff9900');
+    expect(fonts[4].fill).toBe('#e1acfe');
+    expect(fonts[5].fill).toBe('#a6ff7f');
+    expect(fonts[26].fill).toBe('#7dffee');
   });
 });

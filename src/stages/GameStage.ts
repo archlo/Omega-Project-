@@ -258,6 +258,9 @@ export class GameStage extends Stage {
   // PartyLoadArgs.bossId, the same boss-tracking data the UserList
   // party-panel crown indicator is still self-flagged as not using).
   protected _partyCharIds = new Map<number, boolean>();
+  protected _inGuild = false;
+  protected _inAlliance = false;
+  protected _inExpedition = false;
   protected _buffList = new BuffList();
   protected _clock = new Clock();
   protected _killCountHud = new KillCountHud();
@@ -3175,10 +3178,10 @@ export class GameStage extends Stage {
       let lType: number;
       let filterType: number;
       switch (groupType) {
-        case 2:  prefix = '[Party]';    lType = 1;  filterType = FILTER_PARTY;    break; // ChatType.GROUPPARTY
-        case 3:  prefix = '[Buddy]';    lType = 2;  filterType = FILTER_BUDDY;    break; // ChatType.GROUPFRIEND
-        case 4:  prefix = '[Guild]';     lType = 3;  filterType = FILTER_GUILD;    break; // ChatType.GROUPGUILD
-        case 5:  prefix = '[Alliance]';  lType = 4;  filterType = FILTER_ALLIANCE; break; // ChatType.GROUPALLIANCE
+        case 2:  prefix = '[Party]';    lType = 2;  filterType = FILTER_PARTY;    break; // ChatType.GROUPPARTY
+        case 3:  prefix = '[Buddy]';    lType = 3;  filterType = FILTER_BUDDY;    break; // ChatType.GROUPFRIEND
+        case 4:  prefix = '[Guild]';     lType = 4;  filterType = FILTER_GUILD;    break; // ChatType.GROUPGUILD
+        case 5:  prefix = '[Alliance]';  lType = 5;  filterType = FILTER_ALLIANCE; break; // ChatType.GROUPALLIANCE
         case 26: prefix = '[Expedition]'; lType = 26; filterType = FILTER_EXPEDITION; break; // ChatType.EXPEDITION
         default: prefix = '[Group]';     lType = 0;  filterType = FILTER_ALL;      break;
       }
@@ -3523,6 +3526,7 @@ export class GameStage extends Stage {
       })));
       this._partyCharIds.clear();
       for (const m of members) this._partyCharIds.set(m.charId, m.charId === bossId);
+      this._chatBar.setMembership({ party: this._partyCharIds.size > 0 });
       // TODO_AUDIT.md Hundred-and-twenty-eighth pass: CUIPartyHP — show HP bars for party members.
       this._partyHPBar.setMembers(members);
     };
@@ -3538,6 +3542,8 @@ export class GameStage extends Stage {
     };
     fh.onExpeditionResult = (args) => {
       if (args.subAction === 'Get' || args.subAction === 'Notice' || args.subAction === 'MasterChanged' || args.subAction === 'Modified') {
+        this._inExpedition = true;
+        this._chatBar.setMembership({ expedition: true });
         const flatMembers: { subPartyIdx: number; charId: number; name: string; level: number; job: number }[] = [];
         for (let sp = 0; sp < args.data.aSubParty.length; sp++) {
           for (const m of args.data.aSubParty[sp].members) {
@@ -3546,6 +3552,8 @@ export class GameStage extends Stage {
         }
         this._userList.setExpedition(flatMembers);
       } else if (args.subAction === 'Removed') {
+        this._inExpedition = false;
+        this._chatBar.setMembership({ expedition: false });
         this._userList.setExpedition([]);
       } else if (args.subAction === 'Invite') {
         // ponytail: native confirm is enough until the real OG invite window exists.
@@ -3632,6 +3640,8 @@ export class GameStage extends Stage {
       this._userList.removeGuildMember(charId);
     };
     fh.onGuildLoad = (info) => {
+      this._inGuild = !!info;
+      this._chatBar.setMembership({ guild: this._inGuild });
       if (!info) { this._userList.setGuild('', []); return; }
       this._userList.setGuild(info.name, info.members.map((m) => ({
         charId: m.characterId, name: m.name, rank: m.rank === 1 ? 'Master' : 'Member', online: m.online,
@@ -3643,6 +3653,8 @@ export class GameStage extends Stage {
     // TODO_AUDIT.md Hundred-and-twenty-sixth pass: guildId propagated for
     // Kick/ChangeMaster/GradeChange buttons; sub-types 3/14/24/25 added.
     fh.onAllianceLoad = (info) => {
+      this._inAlliance = !!info;
+      this._chatBar.setMembership({ alliance: this._inAlliance });
       if (!info) { this._userList.setAlliance('', []); return; }
       this._userList.setAlliance(info.allianceName, info.members.map((m) => ({
         charId: m.characterId, name: m.name, level: m.level, job: m.job, grade: m.grade, guildId: m.guildId,
