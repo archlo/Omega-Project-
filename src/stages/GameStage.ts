@@ -2652,6 +2652,16 @@ export class GameStage extends Stage {
     if (this._item) this._item.nameOf = resolve(ns.ItemName.bind(ns));
     if (this._skill) this._skill.nameOf = resolve(ns.SkillName.bind(ns));
     if (this._quest) this._quest.nameOf = resolve(ns.QuestName.bind(ns));
+    if (this._quest) this._quest.levelOf = (id) => {
+      const q = this.game.questInfoService?.Get(id);
+      if (!q) return '';
+      const min = q.Start.LvMin;
+      const max = q.Start.LvMax;
+      if (min > 0 && max > 0) return `Lv.${min}~${max}`;
+      if (min > 0) return `Lv.${min}~`;
+      if (max > 0) return `~Lv.${max}`;
+      return '';
+    };
     if (this._medalQuestInfo) this._medalQuestInfo.nameOf = resolve(ns.QuestName.bind(ns));
     if (this._questTimerHud) this._questTimerHud.nameOf = resolve(ns.QuestName.bind(ns));
     this._mobNameOf = resolve(ns.MobName.bind(ns));
@@ -6825,12 +6835,37 @@ export class GameStage extends Stage {
   }
 
   private _refreshQuestLog(): void {
+    // OG LoadData (0x832D40): tab0=available, 1=in-progress, 2=completed, 3=party.
     const inProgress = this._questRecords.filter(q => q.state === 1).map(q => q.questId);
     const completed = this._questRecords.filter(q => q.state === 0).map(q => q.questId);
-    this._quest.setQuests([
-      { name: '[In Progress]', quests: inProgress },
-      { name: '[Completed]', quests: completed },
+    const party = this._questRecords
+      .filter(q => (q.questId - 1200) <= 0xC7)
+      .map(q => q.questId);
+    this._quest.setQuestLists([
+      [{ name: '[Available]', quests: this._availableQuestIds(inProgress, completed, party) }],
+      [{ name: '[In Progress]', quests: inProgress }],
+      [{ name: '[Completed]', quests: completed }],
+      [{ name: '[Party]', quests: party }],
     ]);
+  }
+
+  /** Quests the character can still start (loaded from QuestInfo, minus ones already taken). */
+  private _availableQuestIds(inProgress: number[], completed: number[], party: number[]): number[] {
+    const taken = new Set<number>([...inProgress, ...completed, ...party]);
+    const all = this.game.questInfoService;
+    if (!all) return [];
+    const ids: number[] = [];
+    for (const q of all.All().values()) {
+      if (taken.has(q.Id)) continue;
+      // OG tab0: quests whose start demand can currently be met (level range
+      // first check, mirroring CQuestMan::IsAvailableQuest conditions).
+      const lv = this._stats?.level ?? 0;
+      if (q.Start.LvMin > 0 && lv < q.Start.LvMin) continue;
+      if (q.Start.LvMax > 0 && lv > q.Start.LvMax) continue;
+      if (q.Id >= 1200 && q.Id <= 1500) continue; // party quests live on tab 3
+      ids.push(q.Id);
+    }
+    return ids;
   }
 
   private _onScriptMessage(args: ScriptMessageArgs): void {
