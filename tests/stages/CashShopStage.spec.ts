@@ -61,4 +61,70 @@ describe('CashShopStage', () => {
     expect(entries[0]).toEqual({ category: 1, gender: 2, sn: 300 });
     expect(entries[89]).toEqual({ category: 9, gender: 1, sn: 9999 });
   });
+
+  it('status bar values sit at OG positions (y 9/23/38, right-aligned at x 220)', () => {
+    (globalThis as any).window ??= {};
+    const stage = new CashShopStage(null) as any;
+    stage._nxCredit = 12345;
+    stage._maplePoints = 678;
+    stage._nxPrepaid = 0;
+    stage._clearDynamic = () => { stage._dynamicTexts = []; };
+    stage._drawStatusBar();
+
+    const texts = stage._dynamicTexts.map((t: any) => t.text);
+    expect(texts).toContain('12345');
+    expect(texts).toContain('678');
+    expect(texts).toContain('0');
+
+    // OG CCSWnd_Status::Draw @0x4CBCD0: values right-aligned at
+    // x = 220 - width, y = 9 (NexonCash), 23 (PrepaidNX), 38 (MaplePoint),
+    // relative to the status window at (254, 530).
+    const nxc = stage._dynamicTexts.find((t: any) => t.text === '12345');
+    expect(nxc.y).toBe(530 + 9);
+    const mp = stage._dynamicTexts.find((t: any) => t.text === '678');
+    expect(mp.y).toBe(530 + 38);
+    const prepaid = stage._dynamicTexts.find((t: any) => t.text === '0');
+    expect(prepaid.y).toBe(530 + 23);
+
+    // Right-aligned: x + width ≈ 254 + 220. '12345' = 5 chars * 7 = 35 wide.
+    expect(nxc.x).toBe(254 + 220 - 35);
+  });
+
+  it('status buttons render at y offset +13 per CCSWnd_Status::OnCreate', () => {
+    (globalThis as any).window ??= {};
+    const stage = new CashShopStage(null) as any;
+    stage._clearDynamic = () => { stage._dynamicTexts = []; };
+    const drawn: any[] = [];
+    stage._drawWzSprite = (sprite: any, x: number, y: number) => drawn.push({ x, y });
+    stage._btCharge = { ToPixi: () => ({}) };
+    stage._btCheck = { ToPixi: () => ({}) };
+    stage._btCoupon = { ToPixi: () => ({}) };
+    stage._btExit = { ToPixi: () => ({}) };
+    stage._drawStatusBar();
+
+    // OG CreateCtrl_2 y=13 relative to status window (y=530) → 543.
+    expect(drawn.filter((d) => d.y === 543).length).toBe(4);
+    // x positions 248/289/330/378 relative to status window (x=254).
+    expect(drawn.map((d) => d.x)).toEqual([502, 543, 584, 632]);
+  });
+
+  it('item grid plates place name/price at OG CCSWnd_List::Draw coords', () => {
+    (globalThis as any).window ??= {};
+    const stage = new CashShopStage(null) as any;
+    stage._clearDynamic = () => { stage._dynamicTexts = []; };
+    stage._getCurrentPageItems = () => [{ sn: 1001, itemId: 1302000, name: 'Test Sword', price: 100, discountRate: 0 }];
+    stage._page = 0;
+    stage._selectedPlate = -1;
+    stage._focusedPlate = -1;
+    stage._drawItemGrid();
+
+    const name = stage._dynamicTexts.find((t: any) => t.text === 'Test Sword');
+    const price = stage._dynamicTexts.find((t: any) => t.text === '100 NX');
+    // OG: name at rect.left+82, rect.top+6; price at rect.left+78, rect.top+32.
+    // First plate: left = 275 + 0, top = 95 + 0 + 2.
+    expect(name.x).toBe(275 + 82);
+    expect(name.y).toBe(95 + 2 + 6);
+    expect(price.x).toBe(275 + 78);
+    expect(price.y).toBe(95 + 2 + 32);
+  });
 });

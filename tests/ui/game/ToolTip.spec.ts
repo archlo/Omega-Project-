@@ -344,6 +344,46 @@ describe('ToolTip', () => {
     });
   });
 
+  // ── getItcPeriod (OG DrawITCSaleInfo period format) ────────────────────────
+
+  describe('getItcPeriod', () => {
+    it('returns empty string for null / zero FILETIME', () => {
+      const tip = makeToolTip();
+      expect(tip.getItcPeriod(null)).toBe('');
+      expect(tip.getItcPeriod({ low: 0, high: 0 })).toBe('');
+    });
+
+    it('formats days and hours remaining', () => {
+      const tip = makeToolTip();
+      const now = 1600000000000;
+      const inTwoDays = now + 2 * 86400000 + 5 * 3600000;
+      const ms = inTwoDays + 11644473600000;
+      const low = ms * 10000 & 0xFFFFFFFF;
+      const high = Math.floor(ms * 10000 / 0x100000000);
+      expect(tip.getItcPeriod({ low, high }, now)).toBe('2 days 5 hours');
+    });
+
+    it('formats only days when under one day boundary', () => {
+      const tip = makeToolTip();
+      const now = 1600000000000;
+      const inDays = now + 7 * 86400000;
+      const ms = inDays + 11644473600000;
+      const low = ms * 10000 & 0xFFFFFFFF;
+      const high = Math.floor(ms * 10000 / 0x100000000);
+      expect(tip.getItcPeriod({ low, high }, now)).toBe('7 days');
+    });
+
+    it('returns Expired when the expiry is in the past', () => {
+      const tip = makeToolTip();
+      const now = 1600000000000;
+      const past = now - 1000;
+      const ms = past + 11644473600000;
+      const low = ms * 10000 & 0xFFFFFFFF;
+      const high = Math.floor(ms * 10000 / 0x100000000);
+      expect(tip.getItcPeriod({ low, high }, now)).toBe('Expired');
+    });
+  });
+
   // ── printValue ─────────────────────────────────────────────────────────────
 
   describe('printValue', () => {
@@ -799,6 +839,71 @@ describe('ToolTip', () => {
       expect(ToolTip.FONT_TYPES.GEN_WHITE).toBe(11);
       expect(ToolTip.FONT_TYPES.GEN_RED).toBe(14);
       expect(ToolTip.FONT_TYPES.SKILL_DSC).toBe(27);
+    });
+  });
+
+  // ── getGenderFromId (OG get_gender_from_id @ 0x46f6d0) ─────────────────────
+
+  describe('getGenderFromId', () => {
+    it('returns 2 (unisex) for non-equip items', () => {
+      expect(ToolTip.getGenderFromId(2000000)).toBe(2);
+      expect(ToolTip.getGenderFromId(5000000)).toBe(2);
+    });
+
+    it('returns 0 (male) when itemId/1000 % 10 == 0', () => {
+      // 1040000: 1040000/1000 = 1040, %10 = 0 → male-only
+      expect(ToolTip.getGenderFromId(1040000)).toBe(0);
+    });
+
+    it('returns 1 (female) when itemId/1000 % 10 == 1', () => {
+      // 1041000: 1041000/1000 = 1041, %10 = 1 → female-only
+      expect(ToolTip.getGenderFromId(1041000)).toBe(1);
+    });
+
+    it('returns 2 for other gender digits', () => {
+      expect(ToolTip.getGenderFromId(1042000)).toBe(2);
+    });
+  });
+
+  // ── getItemName (OG GetItemName @ 0x8899b0) ───────────────────────────────
+
+  describe('getItemName', () => {
+    it('returns the base name with HL_WHITE lType by default', () => {
+      const tip = makeToolTip();
+      const r = tip.getItemName(1302000, 'Sword');
+      expect(r.name).toBe('Sword');
+      expect(r.lType).toBe(ToolTip.FONT_TYPES.HL_WHITE);
+    });
+
+    it('appends the gender prefix for gender-locked equips when requested', () => {
+      const tip = makeToolTip();
+      expect(tip.getItemName(1040000, 'Hat', { gender: true }).name).toBe('Hat (Male)');
+      expect(tip.getItemName(1041000, 'Hat', { gender: true }).name).toBe('Hat (Female)');
+      expect(tip.getItemName(2000000, 'Potion', { gender: true }).name).toBe('Potion');
+      expect(tip.getItemName(1300000, 'Sword').name).toBe('Sword');
+    });
+
+    it('uses HL_ORANGE lType for protected items', () => {
+      const tip = makeToolTip();
+      const r = tip.getItemName(1302000, 'Sword', { protected: true });
+      expect(r.lType).toBe(ToolTip.FONT_TYPES.HL_ORANGE);
+      expect(r.name).toBe('Sword');
+    });
+
+    it('maps quality grades to OG font lTypes', () => {
+      const tip = makeToolTip();
+      expect(tip.getItemName(1302000, 'S', { quality: -1 }).lType).toBe(ToolTip.FONT_TYPES.HL_GRAY);
+      expect(tip.getItemName(1302000, 'S', { quality: 1 }).lType).toBe(ToolTip.FONT_TYPES.HL_GREEN);
+      expect(tip.getItemName(1302000, 'S', { quality: 2 }).lType).toBe(ToolTip.FONT_TYPES.HL_BLUE);
+      expect(tip.getItemName(1302000, 'S', { quality: 3 }).lType).toBe(ToolTip.FONT_TYPES.HL_GOLD);
+      expect(tip.getItemName(1302000, 'S', { quality: 4 }).lType).toBe(ToolTip.FONT_TYPES.HL_GREEN2);
+      expect(tip.getItemName(1302000, 'S', { quality: 5 }).lType).toBe(ToolTip.FONT_TYPES.HL_EXCELLENT);
+    });
+
+    it('quality overrides protected lType', () => {
+      const tip = makeToolTip();
+      const r = tip.getItemName(1302000, 'S', { protected: true, quality: 3 });
+      expect(r.lType).toBe(ToolTip.FONT_TYPES.HL_GOLD);
     });
   });
 

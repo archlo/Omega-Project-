@@ -296,11 +296,18 @@ export class ItemTooltip {
     // text unverified → empty) right after it, both at yName.
     // DrawTextItemName separately draws the dot at (10, yName+5) and the
     // trade-option desc at (18, yName).
+    // OG: GetItemName @0x8899B0 — gender-locked equips can get a "Male"/"Female"
+    // prefix; the color comes from the rarity grade, not GetItemName's quality.
+    // The prefix is opt-in (the callers already pass server-resolved names).
+    const gItem = this._toolTip.getItemName(itemId, name, {
+      protected: attr?.ProtectionType !== undefined && attr.ProtectionType > 0,
+    });
+    const displayName = gItem.name;
     const nameColor = ItemTooltip._gradeColor(grade);
-    const nameW = this._font.measure(name).x;
+    const nameW = this._font.measure(displayName).x;
     const titleDescW = titleDesc ? this._font.measure(titleDesc).x : 0;
     const nameX = Math.max(4, (w - nameW - titleDescW) / 2);
-    this._txt(0, nameX, yName, name, nameColor, 11);
+    this._txt(0, nameX, yName, displayName, nameColor, 11);
     if (titleDesc) this._txt(1, nameX + nameW, yName, titleDesc, ToolTip.getFontColor(11), 9);
     this._dot(10, yName + 5);
 
@@ -519,8 +526,9 @@ export class ItemTooltip {
     const itcStr = itcPrice > 0 ? `ITC Price: ${itcPrice.toLocaleString()} mesos` : '';
     const itcH = itcStr ? 38 : 0;
 
-    // OG: ITC expiry
-    const itcExpiryStr = opts.ftITCDateExpired ? this._toolTip.getItemExpireDate(opts.ftITCDateExpired) : '';
+    // OG: ITC expiry — DrawITCSaleInfo formats the remaining sale period as
+    // StringPool 4774 ("%d days %d hours") from ftITCDateExpired.
+    const itcExpiryStr = opts.ftITCDateExpired ? this._toolTip.getItcPeriod(opts.ftITCDateExpired) : '';
     const itcExpiryH = itcExpiryStr ? lh + 4 : 0;
 
     // OG: Order comment
@@ -838,6 +846,10 @@ export class ItemTooltip {
     return lines;
   }
 
+  // OG: GetItemName @0x8899B0 supplies the equip name (gender prefix + protected
+  // bold). The name COLOR is driven by the rarity `grade` the caller passes
+  // (1=rare, 2=unique, 3=legendary, 4=epic); DrawItemTitle's equip branch uses
+  // a fixed font for the base name. These are the v95 rarity colors.
   private static _gradeColor(g: number): number {
     switch (g) {
       case 1: return 0x77CCFF;

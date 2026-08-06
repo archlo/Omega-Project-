@@ -61,9 +61,9 @@ export interface PetInfo {
 
 // ─── OG Font colors from ctor (m_apFont[0..11]) ──────────────────────────
 const FONT_COLORS = [
-  0x450055, 0xFF0000, 0x00FF00, 0xFFFF00,
-  0x0000FF, 0xFFFFFF, 0x521144, 0x450055,
-  0xFF0000, 0x00FF00, 0xFFFF00, 0x521144,
+  0x555555, 0x555555, 0xFF0000, 0xFF0000,
+  0x00FF00, 0x00FF00, 0x0000FF, 0x0000FF,
+  0xFFFFFF, 0xFFFFFF, 0x51378C, 0x51378C,
 ];
 
 // ─── OG StringPool IDs for buttons ────────────────────────────────────────
@@ -101,27 +101,39 @@ function getCTHeightMax(dlgType: UtilDlgType): number {
   switch (dlgType) {
     case UtilDlgType.TEXT: case UtilDlgType.YESNO: case UtilDlgType.LIST: return 240;
     case UtilDlgType.INPUT: case UtilDlgType.INPUT_STR:
-    case UtilDlgType.MLINPUT: case UtilDlgType.PET: return 0x7FFFFFFF;
-    case UtilDlgType.AVATAR: return 70;
-    case UtilDlgType.COMBOBOX: case UtilDlgType.IMAGE: return 300;
+    case UtilDlgType.COMBOBOX: case UtilDlgType.MLINPUT: return 0x7FFFFFFF;
+    case UtilDlgType.AVATAR: case UtilDlgType.PET: return 70;
+    case UtilDlgType.IMAGE: return 300;
     default: return 0;
   }
 }
 
 function getCTHeightMin(dlgType: UtilDlgType, bNoNPC: boolean): number {
-  if (dlgType === UtilDlgType.COMBOBOX) return 300;
+  if (dlgType === UtilDlgType.IMAGE) return 300;
   return bNoNPC ? 0 : 110;
 }
 
-function getBasicCTWidth(dlgType: UtilDlgType, bNoNPC: boolean, bScrollBar: boolean): number {
-  return getWndWidth(dlgType, bNoNPC) - (bScrollBar ? 4 : 0);
+// OG: GetBasicCTWidth @0x97ADD0 — fixed content widths per dialog type, NOT
+// windowWidth - 4. 0/1/4: 210 (noNPC) / 341; 2/3/7: 236 / 340; 5/6: 250; 9: 400.
+function getBasicCTWidth(dlgType: UtilDlgType, bNoNPC: boolean): number {
+  switch (dlgType) {
+    case UtilDlgType.TEXT: case UtilDlgType.YESNO: case UtilDlgType.LIST:
+      return bNoNPC ? 210 : 341;
+    case UtilDlgType.INPUT: case UtilDlgType.INPUT_STR: case UtilDlgType.COMBOBOX:
+      return bNoNPC ? 236 : 340;
+    case UtilDlgType.AVATAR: case UtilDlgType.PET: return 250;
+    case UtilDlgType.IMAGE: return 400;
+    default: return 0;
+  }
 }
 
 function getBasicCTMargin(dlgType: UtilDlgType): number {
   switch (dlgType) {
     case UtilDlgType.INPUT: case UtilDlgType.INPUT_STR:
-    case UtilDlgType.MLINPUT: case UtilDlgType.PET: return 2;
-    default: return 10;
+    case UtilDlgType.COMBOBOX: case UtilDlgType.MLINPUT: return 2;
+    case UtilDlgType.TEXT: case UtilDlgType.YESNO: case UtilDlgType.LIST:
+    case UtilDlgType.AVATAR: case UtilDlgType.PET: case UtilDlgType.IMAGE: return 8;
+    default: return 0;
   }
 }
 
@@ -212,7 +224,6 @@ export class UtilDlgEx extends GamePanel {
   private _apListCT: CtInfo[] = []; // OG: m_apListCT — selectable dot entries
   private _scrollBar: ScrollBar | null = null;
   private _listItems: Container[] = [];
-  private _bg: Graphics | null = null;
   private _contentLayer: Container = new Container();
   private _inputValue = '';
   private _inputText: Text | null = null;
@@ -641,7 +652,10 @@ export class UtilDlgEx extends GamePanel {
       this.m_wndHeight = this.m_scrHeight + 93;
     } else {
       this.m_ctLeft = 158;
-      this.m_ctTop = Math.floor((this.m_scrHeight - this.m_ctHeight - 20) / 2) + 22;
+      // OG Layout_MLINPUT @0x97B230: v5 = m_nInputLine > 1 ? 12*m_nInputLine : 0,
+      // ctTop = (scrHeight - m_ctHeight - v5 - 20)/2 + 22.
+      const v5 = this.m_nInputLine > 1 ? 12 * this.m_nInputLine : 0;
+      this.m_ctTop = Math.floor((this.m_scrHeight - this.m_ctHeight - v5 - 20) / 2) + 22;
       this.m_wndWidth = 519;
       this.m_wndHeight = this.m_scrHeight + 66;
     }
@@ -660,50 +674,57 @@ export class UtilDlgEx extends GamePanel {
   }
 
   // ─── Background (OG: SetBackground 0x97F180) ───────────────────────────
+  // The v95 UtilDlgEx subtree has NO single "backgrnd" canvas. SetBackground
+  // composites the dialog from component canvases:
+  //   with-NPC:      it(0,0) + ic tiled y=28..h-44 step 13 + is(0,h-44)
+  //   without-NPC:   t(0,0)  + c  tiled y=28..h-44 step 13 + s(0,h-44)
+  // Hard rule: no custom-drawn rectangles when a backgrnd canvas exists — if
+  // the composite canvases aren't loadable, draw nothing (content still shows).
   private _buildBackground(): void {
     for (let i = this._root.children.length - 1; i >= 0; i--) {
       const c = this._root.children[i];
       if (c !== this._contentLayer) this._root.removeChildAt(i);
     }
-    this._bg = new Graphics();
-    this._root.addChildAt(this._bg, 0);
 
-    // OG: loads backgrnd from UI/UIWindow2.img/UtilDlgEx
     const dlgProp = this._uiWz?.GetItem('UIWindow2.img/UtilDlgEx');
-    const bgNode = dlgProp instanceof WzProperty ? dlgProp.Get('backgrnd') : null;
-    let wzBg = null;
-    if (bgNode instanceof WzCanvas && this._loader) {
-      wzBg = this._loader.Load(bgNode);
-    } else if (bgNode instanceof WzProperty && this._loader) {
-      // Multi-frame background: try frame 0
-      const frame0 = bgNode.Get('0');
-      if (frame0 instanceof WzCanvas) wzBg = this._loader.Load(frame0);
-    }
+    const root = dlgProp instanceof WzProperty ? dlgProp : null;
+    const loader = this._loader;
 
-    if (wzBg) {
-      const s = wzBg.ToPixi();
-      s.width = this.m_wndWidth;
-      s.height = this.m_wndHeight;
-      this._root.addChildAt(s, 0);
-    } else {
-      // OG-style background frame
-      this._bg.rect(0, 0, this.m_wndWidth, this.m_wndHeight).fill({ color: 0x0C0E18, alpha: 0.95 });
-      this._bg.rect(0, 0, this.m_wndWidth, this.m_wndHeight).stroke({ color: 0x3C4164, width: 1 });
-      this._bg.rect(0, 0, this.m_wndWidth, 22).fill({ color: 0x0F1224 });
-    }
+    const loadCanvas = (name: string): WzSprite | null => {
+      if (!root || !loader) return null;
+      const n = root.Get(name);
+      return n instanceof WzCanvas ? loader.Load(n) : null;
+    };
 
-    // OG: NPC panel background when !m_bNoNPC
-    if (!this.m_bNoNPC && dlgProp instanceof WzProperty && this._loader) {
-      const npcBg = dlgProp.Get('backgrnd2');
-      if (npcBg instanceof WzCanvas) {
-        const sprite = this._loader.Load(npcBg);
-        if (sprite) {
-          const s = sprite.ToPixi();
-          s.x = 0; s.y = 0;
-          this._root.addChildAt(s, 1);
-        }
+    const composited = (() => {
+      // With-NPC dialog uses it/ic/is (special quest-style background).
+      if (!this.m_bNoNPC && (this.m_bParam & 6) !== 0) {
+        const top = loadCanvas('it');
+        const tile = loadCanvas('ic');
+        const bottom = loadCanvas('is');
+        if (top && tile && bottom) return { top, tile, bottom, step: 13, startY: 28, endOff: 44 };
       }
-    }
+      // Standard with-NPC / text dialog uses t/c/s.
+      if (!this.m_bNoNPC) {
+        const top = loadCanvas('t');
+        const tile = loadCanvas('c');
+        const bottom = loadCanvas('s');
+        if (top && tile && bottom) return { top, tile, bottom, step: 13, startY: 28, endOff: 44 };
+      }
+      return null;
+    })();
+
+    if (!composited) return;
+
+    const { top, tile, bottom, step, startY, endOff } = composited;
+    const add = (sprite: WzSprite, x: number, y: number): void => {
+      const sp = sprite.ToPixi();
+      sp.position.set(x, y);
+      this._root.addChild(sp);
+    };
+    add(top, 0, 0);
+    for (let y = startY; y < this.m_wndHeight - endOff; y += step) add(tile, 0, y);
+    add(bottom, 0, this.m_wndHeight - endOff);
   }
 
   // ─── Content ────────────────────────────────────────────────────────────
@@ -726,7 +747,7 @@ export class UtilDlgEx extends GamePanel {
 
   // ─── Text (TEXT/YESNO) — OG Draw 0x986c20 ─────────────────────────────
   private _buildTextContent(): void {
-    const clipW = getBasicCTWidth(this.m_dlgType, this.m_bNoNPC, this.m_bScrollBar);
+    const clipW = getBasicCTWidth(this.m_dlgType, this.m_bNoNPC);
     const clipH = this.m_scrHeight;
 
     const mask = new Graphics();
@@ -913,7 +934,7 @@ export class UtilDlgEx extends GamePanel {
 
   // ─── List (LIST/COMBOBOX) ───────────────────────────────────────────────
   private _buildListContent(): void {
-    const clipW = getBasicCTWidth(this.m_dlgType, this.m_bNoNPC, this.m_bScrollBar);
+    const clipW = getBasicCTWidth(this.m_dlgType, this.m_bNoNPC);
 
     const mask = new Graphics();
     mask.rect(this.m_ctLeft, this.m_ctTop, clipW, this.m_scrHeight).fill({ color: 0xFFFFFF });
@@ -1331,15 +1352,22 @@ export class UtilDlgEx extends GamePanel {
   }
 
   // ─── Button factory ─────────────────────────────────────────────────────
-  // OG: button WZ paths — mapped by button ID
+  // OG: button WZ paths — mapped by button ID. The v95 UtilDlgEx subtree has
+  // BtClose/BtNext/BtNo/BtOK/BtPrev/BtQGiveup/BtQNo/BtQYes/BtYes; quest
+  // dialogs (m_bQuest) swap Yes/No for BtQYes/BtQNo.
   private static readonly BTN_WZ_MAP: Record<number, string> = {
     1: 'UI/UIWindow2.img/UtilDlgEx/BtOK',
-    2: 'UI/UIWindow2.img/UtilDlgEx/BtCancel',
+    2: 'UI/UIWindow2.img/UtilDlgEx/BtClose',
     6: 'UI/UIWindow2.img/UtilDlgEx/BtYes',
     7: 'UI/UIWindow2.img/UtilDlgEx/BtNo',
     0x2000: 'UI/UIWindow2.img/UtilDlgEx/BtPrev',
-    // 0x2001 = 8193, used for both Next and Select depending on context
-    8193: 'UI/UIWindow2.img/UtilDlgEx/BtSelect',
+    0x2001: 'UI/UIWindow2.img/UtilDlgEx/BtNext',
+  };
+
+  // OG OnCreate_YESNO quest variant: 0xCD7 → BtQYes, 0xCD8 → BtQNo.
+  private static readonly BTN_WZ_MAP_QUEST: Record<number, string> = {
+    6: 'UI/UIWindow2.img/UtilDlgEx/BtQYes',
+    7: 'UI/UIWindow2.img/UtilDlgEx/BtQNo',
   };
 
   private _makeButton(label: string, id: number): Container {
@@ -1348,27 +1376,32 @@ export class UtilDlgEx extends GamePanel {
     (btn as any).__btnLabel = label;
 
     // Try loading WZ button background
-    const wzPath = UtilDlgEx.BTN_WZ_MAP[id];
+    const wzPath = this.m_bQuest ? (UtilDlgEx.BTN_WZ_MAP_QUEST[id] ?? UtilDlgEx.BTN_WZ_MAP[id]) : UtilDlgEx.BTN_WZ_MAP[id];
     let loaded = false;
     if (wzPath && this._uiWz && this._loader) {
       const node = this._uiWz.GetItem(wzPath);
+      // v95 button states are nested at Bt*/normal/0 (also mouseOver/0). The
+      // state node holds a "0" canvas child.
+      let canvas: WzCanvas | null = null;
       if (node instanceof WzCanvas) {
-        const sprite = this._loader.Load(node);
+        canvas = node;
+      } else if (node instanceof WzProperty) {
+        const normal = node.Get('normal');
+        if (normal instanceof WzProperty) {
+          const f0 = normal.Get('0');
+          if (f0 instanceof WzCanvas) canvas = f0;
+        }
+        if (!canvas) {
+          const f0 = node.Get('0');
+          if (f0 instanceof WzCanvas) canvas = f0;
+        }
+      }
+      if (canvas) {
+        const sprite = this._loader.Load(canvas);
         if (sprite) {
           const s = sprite.ToPixi();
           btn.addChild(s);
           loaded = true;
-        }
-      } else if (node instanceof WzProperty) {
-        // Try frame 0 for multi-frame buttons
-        const frame0 = node.Get('0');
-        if (frame0 instanceof WzCanvas) {
-          const sprite = this._loader.Load(frame0);
-          if (sprite) {
-            const s = sprite.ToPixi();
-            btn.addChild(s);
-            loaded = true;
-          }
         }
       }
     }
@@ -1622,7 +1655,7 @@ export class UtilDlgEx extends GamePanel {
       const line = this._lines[i];
       const bg = item.children[0] as Graphics;
       const h = line?.nHeight || 18;
-      const clipW = getBasicCTWidth(this.m_dlgType, this.m_bNoNPC, this.m_bScrollBar);
+      const clipW = getBasicCTWidth(this.m_dlgType, this.m_bNoNPC);
       bg.clear();
       bg.rect(0, 0, clipW, h).fill({
         color: line?.nSelect === this.m_nSelect ? 0x2A2D48 : 0x000000,

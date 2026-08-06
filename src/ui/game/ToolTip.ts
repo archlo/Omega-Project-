@@ -875,10 +875,41 @@ export class ToolTip {
     return 16;
   }
 
-  // OG: GetItemName @ 0x8899b0 — resolve item name + description type
-  getItemName(itemId: number): { name: string; descType: number } {
-    // Placeholder — actual implementation needs ItemInfo service
-    return { name: `Item ${itemId}`, descType: 0 };
+  // OG: GetItemName @ 0x8899b0 — resolve equip item display name + font type.
+  // gender prefix (StringPool 0x3C2/0x3C3) is appended for gender-locked equips;
+  // protected items use a bolded name (lType 3); CalcEquipItemQuality overrides
+  // the color lType: -1→4(HL_GRAY), 1→5(HL_GREEN), 2→6(HL_BLUE), 3→2(HL_GOLD),
+  // 4→8(HL_GREEN2), 5→9(HL_EXCELLENT).
+  // The StringPool format strings (0x828/0x829/0x1A19/0x1A1A) are the name +
+  // gender/protect decorations; the caller already resolved the base name, so
+  // this returns the resolved name + the lType used to color DrawItemTitle.
+  getItemName(itemId: number, name: string, opts: { protected?: boolean; quality?: number; gender?: boolean } = {}): { name: string; lType: number } {
+    const gender = ToolTip.getGenderFromId(itemId);
+    const genderTag = gender === 0 ? 'Male' : gender === 1 ? 'Female' : '';
+    const decorated = opts.gender && genderTag ? `${name} (${genderTag})` : name;
+
+    // OG: lType = 3 (protected) or 1 (normal); quality overrides afterward.
+    let lType: number = opts.protected ? FONT_TYPES.HL_ORANGE : FONT_TYPES.HL_WHITE;
+    switch (opts.quality ?? 0) {
+      case -1: lType = FONT_TYPES.HL_GRAY; break;
+      case 1: lType = FONT_TYPES.HL_GREEN; break;
+      case 2: lType = FONT_TYPES.HL_BLUE; break;
+      case 3: lType = FONT_TYPES.HL_GOLD; break;
+      case 4: lType = FONT_TYPES.HL_GREEN2; break;
+      case 5: lType = FONT_TYPES.HL_EXCELLENT; break;
+    }
+    return { name: decorated, lType };
+  }
+
+  /** OG: get_gender_from_id @ 0x46f6d0 — gender lock from item id.
+   *  Returns 0 = male-only, 1 = female-only, 2 = unisex. */
+  static getGenderFromId(itemId: number): number {
+    if (Math.floor(itemId / 1_000_000) !== 1) return 2;
+    switch (Math.floor(itemId / 1000) % 10) {
+      case 0: return 0;
+      case 1: return 1;
+      default: return 2;
+    }
   }
 
   // OG: GetItemExpireDate @ 0x889310 — format expiry date
@@ -891,6 +922,25 @@ export class ToolTip {
     if (isNaN(d.getTime())) return '';
 
     return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+
+  // OG: DrawITCSaleInfo @ 0x88e6a0 — ITC sale period remaining until the expiry
+  // date. The client subtracts "now" from ftITCExpiredDate (0x861C46800 = 1 day
+  // in 100ns units, 0x23C34600 = 1 hour) and formats StringPool 4774 with the
+  // whole-day and remainder-hour counts, e.g. "%d days %d hours".
+  getItcPeriod(ft: { low: number; high: number } | null, now = Date.now()): string {
+    if (!ft || (ft.low === 0 && ft.high === 0)) return '';
+    const ms = (ft.high * 0x100000000 + ft.low) / 10000 - 11644473600000;
+    const diff = ms - now;
+    if (diff <= 0) return 'Expired';
+    const DAY = 86400000;
+    const HOUR = 3600000;
+    const days = Math.floor(diff / DAY);
+    const hours = Math.floor((diff % DAY) / HOUR);
+    if (days > 0 && hours > 0) return `${days} days ${hours} hours`;
+    if (days > 0) return `${days} days`;
+    if (hours > 0) return `${hours} hours`;
+    return 'Expiring soon';
   }
 
   // OG: SetToolTip_SetItem_Basic @ 0x8a14b0 — set item tier data population

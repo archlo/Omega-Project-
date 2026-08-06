@@ -3,6 +3,7 @@ import { Stage, MouseButton } from '../app/Stage.js';
 import { MapleClaudeGame } from '../MapleClaudeGame.js';
 import { WzPackage } from '../wz/WzPackage.js';
 import { WzCanvas } from '../wz/WzCanvas.js';
+import { WzProperty } from '../wz/WzProperty.js';
 import { WzSprite } from '../render/WzSprite.js';
 import { WzTextureLoader } from '../render/WzTextureLoader.js';
 import { GameSender } from '../net/senders/GameSender.js';
@@ -843,38 +844,40 @@ export class CashShopStage extends Stage {
 
   // ── Status bar (CCSWnd_Status) — BOTTOM CENTER ──
   // OG: L=254, T=530, W=545, H=56
-  // Draw: 3 horizontal separator lines at Y=11/25/40, W=107 at X=120
-  // Text: "NexonCash", "MaplePoint", "Prepaid NXCash" labels + values
+  // Draw (0x4CBCD0): 3 separator blocks at Y=11/25/40, W=107 at X=120.
+  // The NX labels are baked into Base/backgrnd; only the gold values are drawn,
+  // right-aligned at x = 220 - valueWidth, at y = 9 (NexonCash), 23 (PrepaidNX),
+  // 38 (MaplePoint) — all relative to the status window.
   private _drawStatusBar(): void {
     // Background — use WZ sprite if available
     if (this._bgStatus) {
       this._drawWzSprite(this._bgStatus, STATUS_X, STATUS_Y);
     }
 
-    // NX balances — OG positions: labels at X=10-60, values right-aligned at X=220
-    // Separator lines at Y=11, Y=25, Y=40 (relative to status bar)
+    // Separator blocks (OG: raw_DrawRectangle filled 107x11 at X=120, Y=11/25/40)
     const lineX = STATUS_X + 120; // 0x78
     const lineW = 107; // 0x6B
-    const lineH = 11;  // 0x0B
+    for (const ly of [11, 25, 40]) {
+      this._g.rect(lineX, STATUS_Y + ly, lineW, 11).fill({ color: 0xF3F4F5, alpha: 0.15 });
+    }
 
-    // Separator lines (OG: color 0xFFF3F4F5)
-    this._g.moveTo(lineX, STATUS_Y + 11).lineTo(lineX + lineW, STATUS_Y + 11).stroke({ color: 0xF3F4F5, width: 1 });
-    this._g.moveTo(lineX, STATUS_Y + 25).lineTo(lineX + lineW, STATUS_Y + 25).stroke({ color: 0xF3F4F5, width: 1 });
-    this._g.moveTo(lineX, STATUS_Y + 40).lineTo(lineX + lineW, STATUS_Y + 40).stroke({ color: 0xF3F4F5, width: 1 });
-
-    // Labels (OG: font type 56, positions from pos: annotations)
-    this._addText('NexonCash', STATUS_X + 10, STATUS_Y + 11, COL_TEXT_WHITE, 11);
-    this._addText('MaplePoint', STATUS_X + 10, STATUS_Y + 25, COL_TEXT_WHITE, 11);
-    this._addText('Prepaid NXCash', STATUS_X + 10, STATUS_Y + 40, COL_TEXT_WHITE, 11);
-
-    // Values (right-aligned at X=220 from status bar left)
-    this._addText(String(this._nxCredit), STATUS_X + 220, STATUS_Y + 11, COL_TEXT_GOLD, 11);
-    this._addText(String(this._maplePoints), STATUS_X + 220, STATUS_Y + 25, COL_TEXT_GOLD, 11);
-    this._addText(String(this._nxPrepaid), STATUS_X + 220, STATUS_Y + 40, COL_TEXT_GOLD, 11);
+    // Values — right-aligned at x = 220 - width, y = 9/23/38 (OG order).
+    // Note: order is NexonCash(9), PrepaidNXCash(23), MaplePoint(38).
+    const values: Array<[number, number, string]> = [
+      [this._nxCredit, 9, 'NexonCash'],
+      [this._nxPrepaid, 23, 'PrepaidNXCash'],
+      [this._maplePoints, 38, 'MaplePoint'],
+    ];
+    for (const [amount, dy, _label] of values) {
+      const s = String(amount);
+      const w = s.length * 7; // monospace 11px ≈ 7px/char
+      this._addText(s, STATUS_X + 220 - w, STATUS_Y + dy, COL_TEXT_GOLD, 11);
+    }
 
     // OG button IDs: 1000=Charge, 1001=Check, 1002=Coupon, 1003=Exit
-    // Buttons positioned at right side of status bar — use mouseOver state on hover
-    const btnY = STATUS_Y;
+    // Buttons positioned at right side of status bar, y offset +13 (CreateCtrl_2
+    // y=13 relative to the status window at y=530) — use mouseOver on hover.
+    const btnY = STATUS_Y + 13;
     const statusBtns = [
       { normal: this._btCharge, over: this._btChargeOver, x: STATUS_X + 248, key: 'charge' },
       { normal: this._btCheck, over: this._btCheckOver, x: STATUS_X + 289, key: 'check' },
@@ -941,20 +944,21 @@ export class CashShopStage extends Stage {
               .stroke({ color: COL_TEXT_GOLD, width: 1 });
           }
 
-          // Item icon (OG: 64×64 area at plate+5,5 — left side)
+          // Item icon (OG CCSWnd_List::Draw @0x4CDA10: DrawItemIconForSlot at
+          // rect.left+7, rect.top+73 — anchored by the icon's origin so the
+          // picture renders at the plate's top-left).
           const icon = this._icons?.LoadIcon(item.itemId);
           if (icon) {
             const sp = this._createIcon(icon);
-            sp.position.set(px + 5, py + 5);
-            sp.scale.set(icon.Width > 64 ? 64 / icon.Width : 1);
+            sp.position.set(px + 7, py + 73);
           }
 
-          // Item name (right of icon)
-          this._addText(item.name.slice(0, 14), px + 70, py + 10, COL_TEXT_WHITE, 11);
+          // Item name (OG: DrawTextA at rect.left+82, rect.top+6)
+          this._addText(item.name.slice(0, 14), px + 82, py + 6, COL_TEXT_WHITE, 11);
 
-          // Price
+          // Price (OG: DrawTextA at rect.left+78, rect.top+32)
           const price = this._getSalePrice(item);
-          this._addText(`${price} NX`, px + 70, py + 28, COL_TEXT_GOLD, 11);
+          this._addText(`${price} NX`, px + 78, py + 32, COL_TEXT_GOLD, 11);
 
           // Discount badge — use WZ digit sprites if available
           if (item.discountRate > 0) {
@@ -3113,6 +3117,13 @@ export class CashShopStage extends Stage {
         for (let i = 1; i < parts.length && node; i++) {
           node = (node as any).Items?.[parts[i]];
         }
+        // OG v95 button-state canvases are nested under a "0" child
+        // (Bt*/normal/0, Bt*/mouseOver/0, ...). A bare property resolves to
+        // its "0" canvas; a direct canvas passes through.
+        if (node instanceof WzProperty && node.Get instanceof Function) {
+          const sub = node.Get('0');
+          if (sub instanceof WzCanvas) node = sub;
+        }
         return node instanceof WzCanvas ? this._loader!.Load(node) : null;
       } catch { return null; }
     };
@@ -3125,6 +3136,10 @@ export class CashShopStage extends Stage {
         const parts = path.split('/');
         let node: any = oneADayItems[parts[0]];
         for (let i = 1; i < parts.length && node; i++) node = node.Items?.[parts[i]];
+        if (node instanceof WzProperty && node.Get instanceof Function) {
+          const sub = node.Get('0');
+          if (sub instanceof WzCanvas) node = sub;
+        }
         return node instanceof WzCanvas ? this._loader!.Load(node) : null;
       } catch { return null; }
     };
@@ -3137,6 +3152,10 @@ export class CashShopStage extends Stage {
         const parts = path.split('/');
         let node: any = items[parts[0]];
         for (let i = 1; i < parts.length && node; i++) node = node.Items?.[parts[i]];
+        if (node instanceof WzProperty && node.Get instanceof Function) {
+          const sub = node.Get('0');
+          if (sub instanceof WzCanvas) node = sub;
+        }
         return node instanceof WzCanvas ? this._loader!.Load(node) : null;
       } catch { return null; }
     };
