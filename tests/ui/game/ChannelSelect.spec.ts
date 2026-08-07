@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { ChannelSelect } from '../../../src/ui/game/ChannelSelect.js';
+import { WzPackage } from '../../../src/wz/WzPackage.js';
+import { WzTextureLoader } from '../../../src/render/WzTextureLoader.js';
+
+(globalThis as any).window ??= {};
 
 // OG CUIChannelShift:
 //   GetRectFromIdx (0x9689C0): left=70*(idx%5)+11, top=20*(idx/5)+55, right=left+68, bottom=top+20.
@@ -106,5 +110,38 @@ describe('ChannelSelect (CUIChannelShift)', () => {
     expect(panel['_sel']).toBe(0); // 4 - 5 clamped to 0
     expect(panel.onKeyPress('ArrowDown')).toBe(true);
     expect(panel['_sel']).toBe(5);
+  });
+});
+
+// Integration test against the real v95 UI.nx — mirrors QuestLog.wz.spec.ts.
+// OG CUIChannelShift composites 3 background layers (backgrnd z=-1, backgrnd2
+// z=0, backgrnd3 z=1) via SetBackgrnd(bMulti=1); the window must render all 3.
+describe('ChannelSelect WZ asset resolution (real UI.nx)', () => {
+  it('loads backgrnd + backgrnd2 + backgrnd3, world name and cell glyphs', () => {
+    const ui = WzPackage.OpenBase('wz_client', 'UI');
+    const loader = new WzTextureLoader();
+    const panel = new ChannelSelect({ loader, uiWz: ui });
+    panel.setWorldId(0);
+    panel.setChannels(
+      Array.from({ length: 10 }, (_, i) => ({ channel: i, population: 100 })),
+      0,
+    );
+    panel.isVisible = true;
+
+    // All 3 background layers are present and textured.
+    expect(panel['_bg']).not.toBeNull();
+    expect(panel['_bg2']).not.toBeNull();
+    expect(panel['_bg3']).not.toBeNull();
+    const rootChildren = panel.container.children.filter((c: any) => c.texture !== undefined && c.texture !== null);
+    expect(rootChildren.length).toBeGreaterThanOrEqual(3);
+
+    // World name sprite present (canvas origin honored → lands above bg layers).
+    expect(panel['_worldSprite']).not.toBeNull();
+
+    // Channel cell glyphs textured (UIWindow.img/Channel/ch/<i>).
+    const glyphs = (panel['_cells'] as any[])
+      .map((c: any) => c.glyph)
+      .filter((g: any) => g.texture !== undefined && g.texture !== null);
+    expect(glyphs.length).toBeGreaterThan(0);
   });
 });

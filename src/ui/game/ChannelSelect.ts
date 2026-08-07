@@ -44,6 +44,8 @@ export class ChannelSelect extends GamePanel {
 
   // WZ sprites
   private _bg: Sprite | null = null;
+  private _bg2: Sprite | null = null;  // backgrnd2 (white content panel, origin -6,-22 → at 6,22)
+  private _bg3: Sprite | null = null;  // backgrnd3 (light-gray grid panel, origin -10,-27 → at 10,27)
   private _worldSprite: Sprite | null = null;
   private _channel0Tex: Texture | null = null;  // current-channel cell bg (m_pCanvasItem[0])
   private _channel1Tex: Texture | null = null;  // selected cell bg (m_pCanvasItem[1])
@@ -63,11 +65,24 @@ export class ChannelSelect extends GamePanel {
     this._root.x = Math.max(0, (scrW - PANEL_W) >> 1);
     this._root.y = Math.max(0, (scrH - PANEL_H) >> 1);
 
-    // OG: background — UI/UIWindow2.img/Channel/backgrnd
+    // OG: background — UI/UIWindow2.img/Channel/backgrnd (+ backgrnd2, backgrnd3).
+    // CUIChannelShift ctor allocates m_pCanvasBack[3]; SetBackgrnd(bMulti=1) composites
+    // backgrnd (z=-1), backgrnd2 (z=0), backgrnd3 (z=1) — WzSprite.ToPixi() honors the
+    // canvas origin, so backgrnd2 lands at (6,22) and backgrnd3 at (10,27) like the OG.
     const bgNode = this._uiWz?.GetItem('UIWindow2.img/Channel/backgrnd');
     if (bgNode instanceof WzCanvas && this._loader) {
       const s = this._loader.Load(bgNode)?.ToPixi();
       if (s) { this._bg = s; this._root.addChild(s); }
+    }
+    const chanPropBg = this._uiWz?.GetItem('UIWindow2.img/Channel');
+    if (chanPropBg instanceof WzProperty && this._loader) {
+      for (const [layer, target] of [['backgrnd2', '_bg2'], ['backgrnd3', '_bg3']] as const) {
+        const n = chanPropBg.Get(layer);
+        if (n instanceof WzCanvas) {
+          const s = this._loader.Load(n)?.ToPixi();
+          if (s) { (this as any)[target] = s; this._root.addChild(s); }
+        }
+      }
     }
 
     // OG: m_pCanvasItem[0]/[1] — channel0 (current), channel1 (selected)
@@ -138,7 +153,10 @@ export class ChannelSelect extends GamePanel {
       this._worldSprite.destroy();
     }
     this._worldSprite = s;
-    this._root.addChildAt(s, Math.min(1, this._root.children.length));
+    // Insert after the 3 background layers so the world name sits ON TOP of the
+    // (opaque) backgrnd2/backgrnd3 panels, but still under the channel cells.
+    const bgCount = [this._bg, this._bg2, this._bg3].filter((b): b is Sprite => b !== null).length;
+    this._root.addChildAt(s, bgCount);
   }
 
   private _rebuild(): void {
