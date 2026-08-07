@@ -43,10 +43,9 @@ export class NpcLook {
   FootholdId = 0;
   /** OG CNpcTemplate data — category, shop ID, quest conditions */
   _info: { Category?: number; ShopId?: number } | null = null;
-  // OG: NPC name tag is BELOW the NPC (positive Y), not above like characters
-  // HeadY is the NPC's head position relative to origin (negative = above origin)
-  // Name tag goes BELOW the NPC feet, so we use a positive Y offset
-  readonly HeadY = 10; // below NPC feet
+  // OG: NPC name tag + chat balloon are ABOVE the NPC's head. The sprite's WZ
+  // origin is at the feet (stand frames), so the head is at -OriginY.
+  readonly HeadY = 10;
   /** World-space point at the top of the currently displayed NPC frame. */
   get HeadPosition(): { x: number; y: number } {
     const frames = this._anims.get(this._state);
@@ -190,6 +189,7 @@ export class NpcLook {
     if (!this._bEnabled) return;
 
     this._replay.Update(dt, this.Position);
+    this.SnapToFoothold();
 
     // OG: both timers decrement by 30 per tick (fixed 30ms tick).
     // dt is in seconds — convert to ms for timer math.
@@ -264,6 +264,19 @@ export class NpcLook {
 
   SetFootholds(footholds: readonly Foothold[]): void { this._replay.SetFootholds(footholds); }
 
+  /** OG: the server's life `y` is the feet, but for many maps it sits a few
+   *  px above the foothold line, so a static NPC appears to hover. Snap the
+   *  feet flush to the ground at the NPC's x while it is idle (skipped while
+   *  a server move path is active — those positions are authoritative). */
+  SnapToFoothold(): void {
+    if (this._replay.isMoving) return;
+    const fh = this._replay.GetFoothold(this.FootholdId);
+    if (!fh) return;
+    const groundY = fh.YAt(this.Position.x);
+    if (groundY === null) return;
+    this.Position.y = Math.round(groundY);
+  }
+
   SetState(state: string): void {
     if (this._anims.has(state) && state !== this._state) {
       this._state = state;
@@ -310,13 +323,17 @@ export class NpcLook {
     const { sprite } = frames[Math.min(this._frame, frames.length - 1)];
     if (!this._bodySprite) {
       this._bodySprite = new Sprite(sprite.Texture);
-      this._bodySprite.anchor.set(
-        sprite.Width > 0 ? sprite.OriginX / sprite.Width : 0,
-        sprite.Height > 0 ? sprite.OriginY / sprite.Height : 0,
-      );
     } else {
       this._bodySprite.texture = sprite.Texture;
     }
+    // Re-apply the anchor every frame: the WZ origin (where the sprite's feet
+    // sit) is per-canvas, and the animation may cycle frames with different
+    // canvas sizes/origins. Stale anchor from the first frame makes the NPC
+    // float or sink as it animates.
+    this._bodySprite.anchor.set(
+      sprite.Width > 0 ? sprite.OriginX / sprite.Width : 0,
+      sprite.Height > 0 ? sprite.OriginY / sprite.Height : 0,
+    );
     // OG: put_flip(nDir == 0) — WZ sprites face LEFT by default;
     // flip (scale.x=-1) makes them face RIGHT; no flip keeps LEFT.
     // _facingLeft=true → should face LEFT → no flip → scale.x=1
@@ -358,11 +375,13 @@ export class NpcLook {
     if (!this._nameTagContainer) this._nameTagContainer = new Container();
     this._nameTagContainer.removeChildren();
 
-    // OG: name tag goes below NPC feet. Feet = sprite bottom = Height - OriginY.
+    // OG: CLife::MakeNameTag places the name tag BELOW the entity's feet
+    // (v95 shows the yellow name plate under the NPC/player, not above the
+    // head — the chat balloon goes above, the name stays below).
     const frames = this._anims.get(this._state);
     const frame = frames?.[Math.min(this._frame, frames.length - 1)];
     const feetY = frame ? (frame.sprite.Height - frame.sprite.OriginY) : 70;
-    let y = feetY + 10; // padding below feet
+    let y = feetY + 30; // padding below feet (user: +20 from the prior 10)
     if (this.Name) {
       if (!this._nameText) {
         this._nameText = new Text({ text: this.Name, style: { fontFamily: 'Arial', fontSize: 12, fill: 0xffcc00 } });

@@ -13,6 +13,12 @@ export class RemoteMoveReplay {
 
   SetFootholds(footholds: readonly Foothold[]): void { this._footholds = footholds; }
 
+  get isMoving(): boolean { return this._active; }
+
+  GetFoothold(id: number): Foothold | null {
+    return this._footholds.find(fh => fh.Id === id) ?? null;
+  }
+
   SetPath(path: DecodedMovePath, current: { x: number; y: number }, onElement?: (moveAction: number, index: number) => void): void {
     this._path.OriginX = path.elements.length > 0 ? path.originX : current.x;
     this._path.OriginY = path.elements.length > 0 ? path.originY : current.y;

@@ -93,6 +93,7 @@ export class StatusBar extends GamePanel {
   private _lastHpText = '';
   private _lastMpText = '';
   private _lastExpText = '';
+  private _lastNameText = '';
   private _textDirty = true;
 
   private readonly _hpOverlay: (Sprite | null)[] = [null, null];
@@ -112,8 +113,9 @@ export class StatusBar extends GamePanel {
   private readonly _gaugeLayer = new Container();
   private readonly _textLayer = new Container();
   private readonly _levelText: Text;
-  private readonly _nameText: Text;
   private readonly _nameTextWhite: Text;
+  /** OG SetStatusValue: name outline = 4 black diagonal-corner draws. */
+  private readonly _nameTextOutline: Text[] = [];
 
   private _openPopup: SubMenu | null = null;
   private _menuPopup: SubMenu | null = null;
@@ -167,8 +169,10 @@ export class StatusBar extends GamePanel {
     this._gaugeLayer = new Container();
     this._textLayer = new Container();
     this._levelText = new Text({ text: '', style: _titleStyle });
-    this._nameText = new Text({ text: '', style: _valueStyle });
     this._nameTextWhite = new Text({ text: '', style: new TextStyle({ fill: 0xffffff, fontSize: 11, fontFamily: 'monospace' }) });
+    for (let i = 0; i < 4; i++) {
+      this._nameTextOutline.push(new Text({ text: '', style: new TextStyle({ fill: 0x000000, fontSize: 11, fontFamily: 'monospace' }) }));
+    }
     this._root.addChild(this._gaugeGfx, this._gaugeLayer, this._textLayer);
     for (const cap of [...this._hpCap, ...this._mpCap, ...this._expCap]) {
       if (cap) { cap.visible = false; this._gaugeLayer.addChild(cap); }
@@ -260,10 +264,13 @@ export class StatusBar extends GamePanel {
     const hpText = `[${this.hp}\\${this.maxHp}]`;
     const mpText = `[${this.mp}\\${this.maxMp}]`;
     const expText = this._expText();
-    if (hpText !== this._lastHpText || mpText !== this._lastMpText || expText !== this._lastExpText) {
+    const nameText = `${this.charName}|${this.jobName}|${this.level}`;
+    if (hpText !== this._lastHpText || mpText !== this._lastMpText || expText !== this._lastExpText
+      || nameText !== this._lastNameText) {
       this._lastHpText = hpText;
       this._lastMpText = mpText;
       this._lastExpText = expText;
+      this._lastNameText = nameText;
       this._textDirty = true;
     }
 
@@ -610,16 +617,23 @@ export class StatusBar extends GamePanel {
   }
 
   private _drawNamePlate(g: Container, tl: { x: number; y: number }): void {
-    this._nameText.text = this.charName;
-    this._nameText.position.set(tl.x + NAME_POS.x + 1, tl.y + NAME_POS.y + 1);
-    this._nameText.style.fill = 0x000000;
-    g.addChild(this._nameText);
-
+    // OG CUIStatusBar::SetStatusValue (0x873590): the character name is drawn
+    // in FONT_SMALL_WHITE at (75, 561) with a black 4-way outline (the four
+    // shadow draws at 74/76 x and 560/562 y), and the JOB name alone (from
+    // get_job_name) at (75, 549) — NOT "Lv.X JobX"; the level is drawn
+    // separately as bitmap digits at the right-aligned x=45 column.
+    const diag = [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const;
+    for (let i = 0; i < diag.length; i++) {
+      const t = this._nameTextOutline[i];
+      t.text = this.charName;
+      t.position.set(tl.x + NAME_POS.x + diag[i][0], tl.y + NAME_POS.y + diag[i][1]);
+      g.addChild(t);
+    }
     this._nameTextWhite.text = this.charName;
     this._nameTextWhite.position.set(tl.x + NAME_POS.x, tl.y + NAME_POS.y);
     g.addChild(this._nameTextWhite);
 
-    this._levelText.text = `Lv.${this.level} ${this.jobName}`;
+    this._levelText.text = this.jobName;
     this._levelText.position.set(tl.x + JOB_POS.x, tl.y + JOB_POS.y);
     this._levelText.style.fill = 0xffe4b5;
     g.addChild(this._levelText);

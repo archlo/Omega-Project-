@@ -68,3 +68,25 @@ describe('StatusBar gauge fill (OG CGauge::SetVal 0x86DEA0)', () => {
     expect((bar as any)._lastExpText).toBe('100[99.98%]');
   });
 });
+
+describe('StatusBar name plate (OG SetStatusValue 0x873590)', () => {
+  it('draws ONLY the job name above the character name — no "Lv.X" prefix', () => {
+    const bar = new StatusBar(new WzTextureLoader(), null, new BuiltInFont());
+    bar.charName = 'Heena';
+    bar.jobName = 'Beginner';
+    bar.level = 12;
+    bar.update(0);
+    const children = (bar as any)._textLayer.children as any[];
+    // Job line is the job name alone (OG get_job_name at (75, 549)).
+    expect(children.some((c) => c.text === 'Beginner' && c.position.y === (bar as any)._barTopLeft.y + 52)).toBe(true);
+    expect(children.some((c) => c.text === 'Lv.12 Beginner')).toBe(false);
+    // Character name below the job: 1 white center + 4 black outline corners.
+    const white = children.filter((c) => c.text === 'Heena' && c.style?.fill === 0xffffff);
+    expect(white.length).toBe(1);
+    const outline = children.filter((c) => c.text === 'Heena' && c.style?.fill === 0x000000);
+    expect(outline.length).toBe(4);
+    const atNameY = (c: any) => Math.abs(c.position.y - ((bar as any)._barTopLeft.y + 64)) <= 1;
+    expect(white.filter(atNameY).length).toBe(1);
+    expect(outline.filter(atNameY).length).toBe(4);
+  });
+});

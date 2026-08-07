@@ -5,11 +5,11 @@ import { ChatBar, FILTER_ALL, FILTER_BUDDY, FILTER_PARTY, FILTER_GUILD, FILTER_A
 // ponytail: avoids pulling in jsdom just to satisfy Text.width's canvas measurement in tests
 Object.defineProperty(Text.prototype, 'width', { get: () => 0 });
 
-// OG edit control coordinates (ChatBar.ts constants)
+// OG edit control coordinates (ChatBar.ts constants, +20 CHAT_DY user tuning)
 const EDIT_X = 75;
-const EDIT_Y = 524;
+const EDIT_Y = 544;
 const DISPLAY_X = 0;
-const DISPLAY_Y_SMALL = 492;
+const DISPLAY_Y_SMALL = 512;
 const CHAT_HEIGHT_SMALL = 24;
 const TEXT_X = 9;
 const CHAR_W = 7;

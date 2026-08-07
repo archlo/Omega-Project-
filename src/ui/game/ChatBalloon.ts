@@ -58,9 +58,12 @@ export function computeChatBalloonLayout(
   const height = Math.max(1, lineCount) * lineHeight + border.top + border.bottom;
   const x = Math.floor(tip.x - width / 2);
   // OG AdjustCoordY @0x4A1300 → RelMove(m_nPosY - m_nHeight - 5): the
-  // composed balloon sits 5px above its anchor Y.
-  const y = Math.floor(tip.y - 5 - arrowHeight - height);
-  return { x, y, width, height, arrowX: Math.floor(tip.x - arrowWidth / 2), arrowY: y + height - 1 };
+  // composed balloon's bottom (the arrow tip) sits 5px above its anchor Y.
+  // The arrow is drawn below the body, so back the body up by the arrow
+  // height as well — the arrow's bottom edge lands at tip.y - 5.
+  const arrowY = Math.floor(tip.y - 5 - arrowHeight);
+  const y = Math.floor(arrowY - height);
+  return { x, y, width, height, arrowX: Math.floor(tip.x - arrowWidth / 2), arrowY };
 }
 
 /** OG CreateCanvas @0x4A59D0: the node's `clr` is a signed BigInt ARGB color
@@ -139,6 +142,12 @@ class BalloonView {
     const bind = (wz: WzSprite | null): Sprite | null => {
       if (!wz) return null;
       const sp = wz.ToPixi();
+      // The nine pieces + arrow are positioned by _drawBubble with (x, y)
+      // meaning the piece's TOP-LEFT (a simple 3x3 tiling grid), not the WZ
+      // origin. ToPixi() would anchor each piece at its WZ origin (inward
+      // corner), which scatters every piece off its grid slot — zero the
+      // anchor so the pieces tile into one coherent balloon.
+      sp.anchor.set(0);
       this.container.addChild(sp);
       return sp;
     };

@@ -583,19 +583,19 @@ export class GameStage extends Stage {
       }
       this._chatBalloon?.Draw((charId) => {
         if (charId === this._localCharId && this._player) {
+          // Anchor at the top of the avatar (HeadPosition) so the balloon
+          // body sits ABOVE the entity with the arrow pointing down at the
+          // head — "on top" of the character/NPC. Fall back to ~60px above
+          // the feet if the avatar hasn't produced a head anchor yet.
           const p = this._player.HeadPosition;
-          return this._camera.WorldToScreen(
-            p.x,
-            p.y === this._player.Position.y ? p.y - 60 : p.y,
-          );
+          const y = p.y === this._player.Position.y ? p.y - 60 : p.y;
+          return this._camera.WorldToScreen(p.x, y);
         }
         const other = this._otherChars.get(charId);
         if (other) {
           const p = other.HeadPosition;
-          // A remote avatar can receive chat before its first rendered frame
-          // establishes the WZ head anchor. Keep the balloon above the body
-          // instead of placing it at the foothold origin.
-          return this._camera.WorldToScreen(p.x, p.y === other.Position.y ? p.y - 60 : p.y);
+          const y = p.y === other.Position.y ? p.y - 60 : p.y;
+          return this._camera.WorldToScreen(p.x, y);
         }
         const npc = this._npcs.find((n) => n.ObjId === charId);
         if (npc) {
@@ -693,6 +693,7 @@ export class GameStage extends Stage {
   onMouseMove(x: number, y: number): void {
     super.onMouseMove(x, y);
     for (const p of this._panels) (p as any)?.onMouseMove?.(x, y);
+    this._chatBar?.onMouseMove(x, y);
     this._gameMenu?.SetMouse(x, y);
     this._dragController.updatePosition(x, y);
   }
@@ -706,6 +707,19 @@ export class GameStage extends Stage {
     if (this._gameMenu?.isVisible) { if (this._gameMenu.onKeyPress(key)) return; }
     for (let i = this._panels.length - 1; i >= 0; i--) {
       if (this._panels[i]?.isVisible && this._panels[i].onKeyPress(key)) return;
+    }
+    // OG: CUIStatusBar::OnKey guards on m_pFocus == m_pEditChatInput — while
+    // the chat edit box is active it owns every key (Enter=send, Escape=end,
+    // Tab=cycle target, letters=typing). While inactive, Enter activates it
+    // (StartChat) so the user can type. This is the missing 1:1 wiring — the
+    // ChatBar's onKeyPress was never routed from the stage.
+    if (this._chatBar) {
+      if (this._chatBar.isFocused) {
+        if (this._chatBar.onKeyPress(key)) return;
+      } else if (key === 'Enter') {
+        this._chatBar.startChat();
+        return;
+      }
     }
     // TODO_AUDIT.md Hundred-and-nineteenth pass: FuncKeyType.Skill (1) and
     // FuncKeyType.MacroSkill (8) dispatch. OG: CUserLocal::UseFuncKeyMapped
@@ -870,6 +884,15 @@ export class GameStage extends Stage {
       return;
     }
     super.onMouseButton(x, y, down, _button);
+    // OG: CUIStatusBar::OnMouseButton (0x8803F0) — clicks land on the chat
+    // bar FIRST (combo box opens the chat-target dropdown, edit click starts
+    // typing, log click routes whisper/item-links). This must run BEFORE the
+    // panel loop: the StatusBar's hit test swallows everything in its bar
+    // rectangle (y >= viewH - 85), and the chat combo/edit sit inside that
+    // region — so the panel loop would otherwise steal every chat-bar click.
+    // The ChatBar's hit test returns false for outside clicks so panels and
+    // world/entity handling below still receive them.
+    if (this._chatBar?.handleMouseButton(x, y, down)) return;
     for (let i = this._panels.length - 1; i >= 0; i--) {
       const p = this._panels[i];
       if (!p?.isVisible) continue;
@@ -1674,7 +1697,12 @@ export class GameStage extends Stage {
       onLeave: () => { this.game.session.send(GameSender.MiniRoomLeave()); },
     });
     this._chatBalloon = new ChatBalloonLayer(this._loader, uiWz, font);
-    this.uiRoot.addChild(this._chatBalloon.root);
+    // The chat balloon anchors via WorldToScreen (the map/camera viewport
+    // space that entities use), so it must live in the MAP layer — not the
+    // scaled+centered UI frame. On any window other than exactly 800x600 the
+    // frame transform diverges from the map, which made balloons drift away
+    // from the character/NPC.
+    this.mapRoot.addChild(this._chatBalloon.root);
 
     this.uiRoot.addChild(this._gameMenu.container);
     this.uiRoot.addChild(this._familyWindow.container);
@@ -6210,6 +6238,10 @@ export class GameStage extends Stage {
     npc.SetMoveAction(args.moveAction, false);
     npc.SetActive(args.bEnabled);
     npc.SetFootholds(Object.values(this._field?.Footholds ?? {}));
+    // OG renders at the raw packet y (which can float a few px over the
+    // foothold line) — snap the feet flush to the ground so static NPCs
+    // stand on the platform.
+    npc.SnapToFoothold();
     // OG: DoActionOrChat → GenerateMovePath — sends NpcMoveRequest to server
     npc.onDoActionOrChat = (objectId, action, chatIdx) => {
       this.game.session.send(GameSender.NpcMoveRequest(objectId, action, chatIdx));

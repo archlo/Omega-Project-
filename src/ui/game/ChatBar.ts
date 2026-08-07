@@ -22,11 +22,17 @@ const CHAT_TYPE_MINIMAL = 1;  // Collapsed: no edit, no combo, y=518, h=24
 const CHAT_TYPE_SMALL = 2;    // Small: edit+combo, y=492, h=24 (whisper mode)
 const CHAT_TYPE_EXPANDED = 3; // Full: edit+combo, y=515-h, h=stored/70
 
+// User tuning: shift the ENTIRE chat bar (log + input + combo) down by this
+// many px from the OG 800x600 frame positions, so it sits lower over the
+// status bar. The chatOpen/chatClose "+"-toggle buttons stay at their own
+// status-bar anchor (599) — the user wants their bottom "like before".
+const CHAT_DY = 20;
+
 // --- Edit control (OG MakeCtrlEdit 0x870BA0) ---
 // CreateCtrl(id=1011, x=75, y=524, w=409, h=12)
 const EDIT_ID = 1011;
 const EDIT_X = 75;
-const EDIT_Y = 524;
+const EDIT_Y = 524 + CHAT_DY;
 const EDIT_W = 409;
 const EDIT_H = 12;
 const EDIT_MAX_CHARS = 70;  // OG: 256 if GM, else 70
@@ -35,7 +41,7 @@ const EDIT_MAX_CHARS = 70;  // OG: 256 if GM, else 70
 // CreateCtrl_2(id=1012, x=3, y=519, w=68, h=21)
 const COMBO_ID = 1012;
 const COMBO_X = 3;
-const COMBO_Y = 519;
+const COMBO_Y = 519 + CHAT_DY;
 const COMBO_W = 68;
 const COMBO_H = 21;
 const COMBO_BOX_WIDTH = 90;  // OG: nBoxWidth = 90
@@ -178,7 +184,7 @@ export class ChatBar extends GamePanel {
   // --- OG state variables ---
   private _chatType = CHAT_TYPE_MINIMAL;
   private _chatHeight = 24;
-  private _chatWndY = 518;     // m_ptChatWnd.y
+  private _chatWndY = 518 + CHAT_DY;     // m_ptChatWnd.y
   private _chatWndLineVisible = 1; // m_nChatWndLineVisible
   private _nScrWidth = SCROLLBAR_W; // m_nScrWidth = CCtrlScrollBar::GetScrollBarSize(1, 8)
   private _dwChatFilterFlag = 0; // m_dwChatFilterFlag
@@ -443,14 +449,14 @@ export class ChatBar extends GamePanel {
     } else if (type === CHAT_TYPE_MINIMAL) {
       // OG: height=24, y=518, MakeCtrlEdit(0), scrollbar hidden
       this._chatHeight = 24;
-      this._chatWndY = 518;
+      this._chatWndY = 518 + CHAT_DY;
       this._chatWndLineVisible = 1;
       this._maxLines = 1;
       this._scroll = 0;
     } else if (type === CHAT_TYPE_SMALL) {
       // OG: height=24, y=492, MakeCtrlEdit(1), scrollbar hidden
       this._chatHeight = 24;
-      this._chatWndY = 492;
+      this._chatWndY = 492 + CHAT_DY;
       this._chatWndLineVisible = 1;
       this._maxLines = 1;
       this._scroll = 0;
@@ -466,7 +472,7 @@ export class ChatBar extends GamePanel {
       // OG: if height % 13 == 0, height += 2
       if (this._chatHeight % 13 === 0) this._chatHeight += 2;
       // OG: m_ptChatWnd.y = 515 - m_nChatWndHeight
-      this._chatWndY = 515 - this._chatHeight;
+      this._chatWndY = 515 + CHAT_DY - this._chatHeight;
       this._maxLines = this._chatWndLineVisible;
     }
 
@@ -996,6 +1002,8 @@ export class ChatBar extends GamePanel {
   // ═══════════════════════════════════════════════════════════════════════════
   // OG: StartChat (0x87A4B0) — activate input
   // ═══════════════════════════════════════════════════════════════════════════
+  get isFocused(): boolean { return this._isFocused; }
+
   focus(): void {
     if (this._chatType === CHAT_TYPE_MINIMAL) {
       this.setChatType(CHAT_TYPE_SMALL);
@@ -1336,7 +1344,7 @@ export class ChatBar extends GamePanel {
       && ly < displayY + this._chatHeight;
     const inInput = lx >= EDIT_X && lx < EDIT_X + EDIT_W && ly >= EDIT_Y && ly < EDIT_Y + EDIT_H;
     const scrollbarX = DISPLAY_X + 565 - this._nScrWidth;
-    const scrollbarTop = 516 - this._chatHeight;
+    const scrollbarTop = 516 + CHAT_DY - this._chatHeight;
     const inScrollbar = this._scrollGfx.visible
       && lx >= scrollbarX && lx < scrollbarX + SCROLLBAR_W
       && ly >= scrollbarTop && ly < scrollbarTop + this._chatHeight - 2;
@@ -1495,7 +1503,7 @@ export class ChatBar extends GamePanel {
     // OG: x = 565 - m_nScrWidth (type 2/3) or 515 - m_nScrWidth (type 1)
     const trackX = DISPLAY_X + 565 - this._nScrWidth;
     // OG: y = 516 - m_nChatWndHeight (type 3)
-    const trackTop = 516 - this._chatHeight;
+    const trackTop = 516 + CHAT_DY - this._chatHeight;
     // OG: height = m_nChatWndHeight - 2 (type 3)
     const trackH = this._chatHeight - 2;
     const totalLines = this._getFilteredChatLogCount();
@@ -2319,7 +2327,7 @@ export class ChatBar extends GamePanel {
     if (newH % 13 === 0) newH += 2;
     this._chatHeight = newH;
     // OG: m_ptChatWnd.y = 515 - m_nChatWndHeight
-    this._chatWndY = 515 - this._chatHeight;
+    this._chatWndY = 515 + CHAT_DY - this._chatHeight;
     this._maxLines = this._chatWndLineVisible;
     this._applyLayout();
     this._updateWzVisibility();
@@ -2338,7 +2346,7 @@ export class ChatBar extends GamePanel {
     const ly = y - this._root.y;
 
     if (this._isDraggingScroll) {
-      const trackTop = 516 - this._chatHeight;
+      const trackTop = 516 + CHAT_DY - this._chatHeight;
       const trackH = this._chatHeight - 2;
       const totalLines = this._getFilteredChatLogCount();
       const thumbH = Math.max(12, Math.floor(trackH * this._maxLines / Math.max(1, totalLines)));
@@ -2365,7 +2373,7 @@ export class ChatBar extends GamePanel {
       this._chatWndLineVisible = Math.floor(newH / 13);
       if (newH % 13 === 0) newH += 2;
       this._chatHeight = newH;
-      this._chatWndY = 515 - this._chatHeight;
+      this._chatWndY = 515 + CHAT_DY - this._chatHeight;
       this._maxLines = this._chatWndLineVisible;
       this._applyLayout();
       this._updateWzVisibility();

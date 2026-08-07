@@ -7,10 +7,14 @@ import { WzTextureLoader } from '../../../src/render/WzTextureLoader.js';
 // the center-piece sprite (`_c`) gates everything — matches the OG guard
 // `if (!this->m_pLayerChat.m_pInterface) return;` in CheckTimeOut.
 describe('ChatBalloonLayer', () => {
-  it('matches the v95 nine-piece bounds and head anchor math', () => {
+  it('matches the v95 nine-piece bounds and body-origin anchor math', () => {
+    // OG AdjustCoordY: the balloon's arrow tip sits 5px above the anchor
+    // (m_pBodyOrigin = the entity's navel/body origin).
     const layout = computeChatBalloonLayout(80, 2, 13,
       { left: 6, right: 6, top: 5, bottom: 5 }, 8, 7, { x: 100, y: 200 });
-    expect(layout).toEqual({ x: 54, y: 152, width: 92, height: 36, arrowX: 96, arrowY: 187 });
+    // width = 80 + 6 + 6 = 92; height = 2*13 + 5 + 5 = 36.
+    // arrowY = 200 - 5 - 7 = 188; y = 188 - 36 = 152.
+    expect(layout).toEqual({ x: 54, y: 152, width: 92, height: 36, arrowX: 96, arrowY: 188 });
   });
 
   it('does nothing without a loaded balloon sprite sheet', () => {
