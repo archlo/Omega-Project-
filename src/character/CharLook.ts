@@ -1,4 +1,4 @@
-import { Container, Graphics } from 'pixi.js';
+import { Container, Graphics, Text } from 'pixi.js';
 import { Stance, StanceToWzKey } from './Stance.js';
 import { WzTextureLoader } from '../render/WzTextureLoader.js';
 import { WzPackage } from '../wz/WzPackage.js';
@@ -36,6 +36,13 @@ export class CharLook {
   Position = { x: 0, y: 0 };
   FootholdId = 0;
   ChairHeight = 0;
+
+  /** Character name shown in a yellow plate BELOW the feet (OG
+   *  CLife::MakeNameTag type 1000). Empty = no tag (e.g. the inner avatar
+   *  used by OtherCharLook, which renders its own tags on the wrapper). */
+  charName = '';
+  private _nameTag: Text | null = null;
+  private static readonly NameTagY = 10; // padding below the feet
 
   constructor(skinId = 0) {
     this._skinId = skinId;
@@ -298,6 +305,24 @@ export class CharLook {
         this._layers[i].addChild(sp);
       }
     }
+    this._updateNameTag();
+  }
+
+  private _updateNameTag(): void {
+    if (!this.charName) {
+      if (this._nameTag) { this._nameTag.destroy(); this._nameTag = null; }
+      return;
+    }
+    if (!this._nameTag) {
+      this._nameTag = new Text({ text: '', style: { fontSize: 11, fill: 0xffe664, stroke: '#000000' } });
+      this._nameTag.anchor.set(0.5, 1);
+      this.container.addChild(this._nameTag);
+    }
+    this._nameTag.text = this.charName;
+    this._nameTag.y = CharLook.NameTagY;
+    // container.scale.x flips the whole avatar (±1); re-apply it so the
+    // name text reads normally (scale.x * scale.x = 1) instead of mirroring.
+    this._nameTag.scale.x = this.container.scale.x;
   }
 
   private _addPlaceholder(): void {

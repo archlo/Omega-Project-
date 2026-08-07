@@ -53,9 +53,6 @@ type OgMode = 0 | 1 | 2;
 // OG: m_nMiniMapType — 0=simple (has 2X button), 1=normal (has min/max/worldmap buttons)
 type MiniMapType = 0 | 1;
 
-// localStorage key for CUIWnd position (OG: CreateUIWndPosSaved with key 10)
-const PosSaveKey = 'MiniMapWndPos';
-
 export class MiniMap extends GamePanel {
   // OG: m_nOption — 0=normal, 1=huge, 2=collapsed
   private _mode: OgMode = 0;
@@ -83,10 +80,6 @@ export class MiniMap extends GamePanel {
   private _searchedShop = 0;
   // OG: m_bCreated — whether minimap has been created/initialized
   private _created = false;
-
-  // OG: saved window position from CUIWndPosSaved
-  private _savedX: number | null = null;
-  private _savedY: number | null = null;
 
   // OG: Remote player names (m_strRemoteNW/N/NE) — names displayed near minimap edges
   private _remoteNameNW = '';
@@ -144,20 +137,11 @@ export class MiniMap extends GamePanel {
     super();
     this._font = font;
     this.isVisible = true;
+    // User: the minimap stays ALWAYS at the top-left corner of the screen.
+    // Do NOT restore a saved window position — a stale localStorage entry
+    // (e.g. from an earlier draggable build) parked it off-screen and made it
+    // appear missing.
     this._root.position.set(4, 4);
-
-    // OG: Restore saved window position from CUIWndPosSaved
-    try {
-      const saved = localStorage.getItem(PosSaveKey);
-      if (saved) {
-        const { x, y } = JSON.parse(saved);
-        if (typeof x === 'number' && typeof y === 'number') {
-          this._savedX = x;
-          this._savedY = y;
-          this._root.position.set(x, y);
-        }
-      }
-    } catch {}
 
     const mm = ui?.GetItem('UIWindow2.img/MiniMap') as WzProperty | null;
     this._loadFrame(loader, mm?.Get('MinMap') as WzProperty | null, this._minMap);
@@ -504,19 +488,6 @@ export class MiniMap extends GamePanel {
     for (const b of this._buttons) {
       this._content.addChild(b.container);
     }
-
-    // OG: CUIWndPosSaved — save position to localStorage
-    this._savePosition();
-  }
-
-  // OG: Save window position for CUIWndPosSaved
-  private _savePosition(): void {
-    const pos = this._root.position;
-    this._savedX = pos.x;
-    this._savedY = pos.y;
-    try {
-      localStorage.setItem(PosSaveKey, JSON.stringify({ x: pos.x, y: pos.y }));
-    } catch {}
   }
 
   private _drawMapAndIcons(pane: { x: number; y: number; width: number; height: number }, scale: number): void {
@@ -577,12 +548,12 @@ export class MiniMap extends GamePanel {
     }
 
     // OG: MakeConvexLayer — draw foothold lines on minimap
-    if (this._data && this._data.Footholds.length > 0) {
+    if (this._data?.Footholds?.length) {
       this._drawFootholds(pane, scrOrig, mag, scale);
     }
 
     // OG: LoadLadderRope — draw ladders/ropes on minimap
-    if (this._data && this._data.LadderRopes.length > 0) {
+    if (this._data?.LadderRopes?.length) {
       this._drawLadderRopes(pane, scrOrig, mag, scale);
     }
 

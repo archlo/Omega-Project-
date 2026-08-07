@@ -5867,6 +5867,8 @@ export class GameStage extends Stage {
       this._statusBar.exp = stat.exp;
       this._statusBar.charName = stat.name;
       this._statusBar.jobName = this.game.nameService.SkillName(stat.job * 10000) ?? `Job ${stat.job}`;
+      // OG CUser::DrawNameTags — the local player's name plate below the feet.
+      if (this._player) this._player.charName = stat.name;
     }
     if (this._stats) {
       this._stats.level = stat.level;

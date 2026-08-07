@@ -30,3 +30,21 @@ describe('MiniMap party tracking', () => {
     expect(mm.playerWorldPos).toEqual({ x: 123, y: 456 });
   });
 });
+
+describe('MiniMap top-left position + render robustness', () => {
+  it('always anchors at the top-left corner (4,4), ignoring any saved position', () => {
+    (globalThis as any).localStorage = { getItem: () => JSON.stringify({ x: 4000, y: -500 }), setItem: () => {} };
+    const mm = new MiniMap(new WzTextureLoader(), null, null);
+    expect(mm.container.x).toBe(4);
+    expect(mm.container.y).toBe(4);
+  });
+
+  it('draws without crashing when map data lacks Footholds/LadderRopes arrays', () => {
+    const mm = new MiniMap(new WzTextureLoader(), null, null);
+    // A plain object (missing the optional Footholds field) must not throw.
+    mm.setMapData({ CanvasWidth: 180, CanvasHeight: 120 } as any, 'Test', 'Test');
+    mm.setFootholds({});
+    mm.playerWorldPos = { x: 10, y: 10 };
+    expect(() => mm.update(0)).not.toThrow();
+  });
+});

@@ -44,3 +44,38 @@ describe('OtherCharLook anchor getters', () => {
     expect(other.MuzzlePosition).toEqual({ x: 3, y: 4 });
   });
 });
+
+describe('Character name tags BELOW the feet (OG CLife::MakeNameTag type 1000)', () => {
+  it('local player (CharLook): renders the name below the feet', () => {
+    const look = new CharLook(0);
+    look.charName = 'Heena';
+    (look as any)._updateNameTag();
+    const tag = (look as any)._nameTag;
+    expect(tag).not.toBeNull();
+    expect(tag.text).toBe('Heena');
+    expect(tag.y).toBe(10);           // padding below the feet
+    expect(tag.anchor.y).toBe(1);     // bottom-center anchor
+    expect(tag.scale.x).toBe(1);      // no flip → not mirrored
+  });
+
+  it('local player (CharLook): counter-flips with the avatar so text stays readable', () => {
+    const look = new CharLook(0);
+    look.charName = 'Heena';
+    (look as any)._facingLeft = false; // facing right → container.scale.x = -1
+    (look as any)._rebuildDisplay();   // sets container.scale.x = -1
+    (look as any)._updateNameTag();
+    const tag = (look as any)._nameTag;
+    expect(tag).not.toBeNull();
+    // tag.scale.x == container.scale.x == -1 → net 1 (reads normally)
+    expect(tag.scale.x).toBe(-1);
+  });
+
+  it('remote char (OtherCharLook): places the name BELOW the feet, not above the head', () => {
+    const other = new OtherCharLook(1, 'Test', 50, null);
+    (other as any)._rebuildDisplay();
+    const name = (other as any)._nameText;
+    expect(name).not.toBeNull();
+    expect(name.text).toBe('[50] Test');
+    expect(name.y).toBe(10); // below feet (was -78 above the head)
+  });
+});

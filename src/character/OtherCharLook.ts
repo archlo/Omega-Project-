@@ -372,9 +372,11 @@ export class OtherCharLook {
       this._drawHpGauge();
     }
 
-    // ── Name tags (OG CUser::DrawNameTags) ──
+    // ── Name tags (OG CUser::DrawNameTags → CLife::MakeNameTag) ──
+    // The character name plate sits BELOW the feet (v95 yellow plate under
+    // the character, like NPCs); the HP gauge stays above the head (-105).
     // Tag 1: Character name (tagType 1000)
-    const nameTagY = -78;
+    const nameTagY = 10;
     const tag = `[${this.Level}] ${this.Name}`;
     if (!this._nameText) {
       this._nameText = new Text({ text: tag, style: { fontSize: 11, fill: 0xffe664, stroke: '#000000' } });
