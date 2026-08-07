@@ -174,39 +174,48 @@ export class MapScene {
   // Pixels-per-second for auto-scroll backgrounds. cx/cy in the WZ is the tile
   // repeat period, not a speed; empirically ~30 px/s looks like the original drift.
   private static readonly _ScrollPxSec = 30;
-  private _scrollLogged = false;
 
   update(dtMs: number): void {
     const dtSec = dtMs / 1000;
+    const spd = MapScene._ScrollPxSec * dtSec;
     for (let i = 0; i < this._backgrounds.length; i++) {
       const { info, anim } = this._backgrounds[i];
       anim?.Update(dtMs);
-      const period = info.Cx > 0 ? info.Cx : 100;
+      // The scroll wraps at the same period the tiler uses (canvas width when
+      // cx == 0, else cx) — a mismatched period makes the strip jump back.
+      const period = info.Cx > 0 ? info.Cx : (anim ? anim.Current?.Width ?? 100 : this._backWidth(i) ?? 100);
       const periodY = info.Cy > 0 ? info.Cy : 100;
-      const spd = MapScene._ScrollPxSec * dtSec;
+      const wrap = (v: number, p: number) => ((v % p) + p) % p;
       switch (info.Type) {
         case BackType.HMoveA:
-          if (!this._scrollLogged) { console.log(`[MapScene] HMoveA bg cx=${info.Cx} cy=${info.Cy} period=${period}`); this._scrollLogged = true; }
-          this._bgScrollX[i] = ((this._bgScrollX[i] ?? 0) - spd) % period; break;
-        case BackType.HMoveB: this._bgScrollX[i] = ((this._bgScrollX[i] ?? 0) + spd) % period; break;
-        case BackType.VMoveA: this._bgScrollY[i] = ((this._bgScrollY[i] ?? 0) - spd) % periodY; break;
-        case BackType.VMoveB: this._bgScrollY[i] = ((this._bgScrollY[i] ?? 0) + spd) % periodY; break;
+          this._bgScrollX[i] = wrap((this._bgScrollX[i] ?? 0) - spd, period); break;
+        case BackType.HMoveB: this._bgScrollX[i] = wrap((this._bgScrollX[i] ?? 0) + spd, period); break;
+        case BackType.VMoveA: this._bgScrollY[i] = wrap((this._bgScrollY[i] ?? 0) - spd, periodY); break;
+        case BackType.VMoveB: this._bgScrollY[i] = wrap((this._bgScrollY[i] ?? 0) + spd, periodY); break;
       }
     }
     for (let i = 0; i < this._foregrounds.length; i++) {
       const { info, anim } = this._foregrounds[i];
       anim?.Update(dtMs);
-      const period = info.Cx > 0 ? info.Cx : 100;
+      const period = info.Cx > 0 ? info.Cx : (anim ? anim.Current?.Width ?? 100 : this._fgWidth(i) ?? 100);
       const periodY = info.Cy > 0 ? info.Cy : 100;
-      const spd = MapScene._ScrollPxSec * dtSec;
+      const wrap = (v: number, p: number) => ((v % p) + p) % p;
       switch (info.Type) {
-        case BackType.HMoveA: this._fgScrollX[i] = ((this._fgScrollX[i] ?? 0) - spd) % period; break;
-        case BackType.HMoveB: this._fgScrollX[i] = ((this._fgScrollX[i] ?? 0) + spd) % period; break;
-        case BackType.VMoveA: this._fgScrollY[i] = ((this._fgScrollY[i] ?? 0) - spd) % periodY; break;
-        case BackType.VMoveB: this._fgScrollY[i] = ((this._fgScrollY[i] ?? 0) + spd) % periodY; break;
+        case BackType.HMoveA: this._fgScrollX[i] = wrap((this._fgScrollX[i] ?? 0) - spd, period); break;
+        case BackType.HMoveB: this._fgScrollX[i] = wrap((this._fgScrollX[i] ?? 0) + spd, period); break;
+        case BackType.VMoveA: this._fgScrollY[i] = wrap((this._fgScrollY[i] ?? 0) - spd, periodY); break;
+        case BackType.VMoveB: this._fgScrollY[i] = wrap((this._fgScrollY[i] ?? 0) + spd, periodY); break;
       }
     }
     for (const e of this._layer0Objects) e.anim?.Update(dtMs);
+  }
+
+  private _backWidth(i: number): number | null {
+    return this._backgrounds[i]?.sprite?.Width ?? this._backgrounds[i]?.anim?.Current?.Width ?? null;
+  }
+
+  private _fgWidth(i: number): number | null {
+    return this._foregrounds[i]?.sprite?.Width ?? this._foregrounds[i]?.anim?.Current?.Width ?? null;
   }
 
   private _drawBackEntry(
@@ -342,20 +351,25 @@ export class MapScene {
     const vpLeft = 0;
     const vpRight = screenWidth;
 
-    // Find leftmost tile: start from bx and wrap left until fully before viewport
-    // The reference calculates: tile_start_right = (bx + texW) % period, then
-    // derives tile_start_left from there. We replicate this in screen space.
-    const rem = ((bx + texW - vpLeft) % period + period) % period;
-    const tileStartRight = rem > 0 ? rem + vpLeft : period + vpLeft;
-    let tileStartLeft = tileStartRight - texW;
+    // OG CMapLoadable::MakeGrid lays the canvas out once at `bx + i*period`
+    // and animates the whole layer's offset by the scroll delta. Tiles are
+    // anchored RELATIVE to bx (the parallax/scroll anchor), so as bx moves
+    // continuously every tile slides continuously — a tile leaving the left
+    // edge is replaced by the next one entering from the right exactly one
+    // period later, which is seamless because the pattern repeats every
+    // `period`. `iStart` is the first tile whose RIGHT edge is past the
+    // viewport left edge (i.e. at least a sliver is visible); selecting the
+    // first tile by its left edge instead makes it pop a full period when bx
+    // crosses a boundary.
+    const iStart = Math.floor((vpLeft - texW - bx) / period) + 1;
+    let startX = bx + iStart * period;
+    if (startX >= vpRight) return;
 
-    if (tileStartLeft >= vpRight) return;
-
-    const tileCnt = Math.ceil((vpRight - tileStartLeft) / period);
+    const tileCnt = Math.ceil((vpRight - startX) / period);
     for (let j = 0; j < tileCnt; j++) {
       const s = this._cloneSprite(wz);
       s.alpha = alpha;
-      s.position.set(tileStartLeft + j * period, by);
+      s.position.set(startX + j * period, by);
       this.container.addChild(s);
     }
   }
@@ -371,9 +385,10 @@ export class MapScene {
     const vpTop = 0;
     const vpBottom = screenHeight;
 
-    const rem = ((by + texH - vpTop) % period + period) % period;
-    const tileStartBottom = rem > 0 ? rem + vpTop : period + vpTop;
-    let tileStartTop = tileStartBottom - texH;
+    // First tile whose BOTTOM edge is past the viewport top (relative-anchor,
+    // same seamless logic as _tileH).
+    const iStart = Math.floor((vpTop - texH - by) / period) + 1;
+    let tileStartTop = by + iStart * period;
 
     if (tileStartTop >= vpBottom) return;
 
@@ -397,17 +412,15 @@ export class MapScene {
     const texW = wz.Width;
     const texH = wz.Height;
 
-    // Horizontal
-    const remX = ((bx + texW) % px + px) % px;
-    const tileRightX = remX > 0 ? remX : px;
-    let startX = tileRightX - texW;
+    // Horizontal: first tile whose right edge is past the viewport left.
+    const iStartX = Math.floor((0 - texW - bx) / px) + 1;
+    let startX = bx + iStartX * px;
     if (startX >= screenWidth) return;
     const cntX = Math.ceil((screenWidth - startX) / px);
 
-    // Vertical
-    const remY = ((by + texH) % py + py) % py;
-    const tileBottomY = remY > 0 ? remY : py;
-    let startY = tileBottomY - texH;
+    // Vertical: first tile whose bottom edge is past the viewport top.
+    const iStartY = Math.floor((0 - texH - by) / py) + 1;
+    let startY = by + iStartY * py;
     if (startY >= screenHeight) return;
     const cntY = Math.ceil((screenHeight - startY) / py);
 

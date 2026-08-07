@@ -491,18 +491,15 @@ describe('PlayerController', () => {
       fh.X1 = -200; fh.Y1 = 200; fh.X2 = 200; fh.Y2 = 100; // uphill to the right
       fh.InitVectors();
       const pc = new PlayerController(field);
-      pc.Spawn({ x: -50, y: 163 }); // y just above the slope line at x=-50 (y=162.5)
+      pc.Spawn({ x: -50, y: fh.YAt(-50)! }); // exactly on the slope line at x=-50 (y=162.5)
       expect(pc.Grounded).toBe(true);
-      let trace = `spawn ${JSON.stringify(pc.Position)} fh=${pc.CurrentFoothold} vel=${JSON.stringify(pc['_velocity'])}\n`;
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 12; i++) {
         pc.Update({ Left: false, Right: true, Up: false, Down: false, JumpPressed: false }, 0.1);
-        trace += `f${i} ${JSON.stringify(pc.Position)} g=${pc.Grounded} fh=${pc.CurrentFoothold} vel=${JSON.stringify(pc['_velocity'])} fp=${pc['_footholdPos']}\n`;
-        if (!pc.Grounded) break;
+        expect(pc.Grounded, `frame ${i} fell off the slope`).toBe(true);
       }
-      process.stdout.write('SLOPE_TRACE_START\n' + trace + 'SLOPE_TRACE_END\n');
-      // Must have climbed rightward and up along the slope.
+      // Must have climbed rightward and up along the slope (not slipped down).
       expect(pc.Position.x).toBeGreaterThan(0);
-      expect(pc.Position.y).toBeLessThan(200);
+      expect(pc.Position.y).toBeLessThan(162.5);
     });
   });
 

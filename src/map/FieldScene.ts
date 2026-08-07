@@ -605,13 +605,12 @@ export class FieldScene {
     // player. Drive both every frame, matching how every other per-frame
     // layer in this method (tiles/objs/portals) is kept live.
     //
-    // screenW/screenH must be the real canvas size (game.pixiApp.screen.
-    // width/height), not the old hardcoded 800x600 default below — MapScene
-    // used to hardcode 400/300/800/600 internally for all its centering and
-    // tile-wrap math, which was harmless while SetCamera was dead code but
-    // became a real mis-centering/under-tiling bug the moment it went live.
-    // The defaults here exist only so callers that genuinely don't know the
-    // real size yet (e.g. tests) get the previous behavior, not a crash.
+    // screenW/screenH is the full window size (game.pixiApp.screen.
+    // width/height). The map layer (mapContainer) is unscaled and fills the
+    // window; the 800x600 UI frame is centered/scaled on top. The backdrop is
+    // laid out in window coordinates so it tracks the full window, matching
+    // how the camera positions entities (GameCamera.WorldToScreen uses the
+    // window-centered 800x600 viewport).
     this._mapScene?.update(dtMs);
     this._mapScene?.SetCamera({ x: this.Camera.Position.x, y: this.Camera.Position.y }, screenW, screenH);
     for (const layer of this._objLayers) {
