@@ -472,7 +472,10 @@ export class StatusBar extends GamePanel {
     if (midW > 0) {
       mid.visible = true;
       mid.position.set(sx, sy);
-      mid.scale.x = midW / mid.width;
+      // Scale against the BASE texture width, not sprite.width — Sprite.width
+      // already reflects the previous frame's scale, so dividing by it would
+      // compound the scale and make the fill lag/overshoot as HP changes.
+      mid.scale.x = midW / mid.texture.width;
     } else {
       mid.visible = false;
     }
