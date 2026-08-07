@@ -40,6 +40,14 @@ export interface PhysicsConstants {
   floatCoefficient: number;
   slipForce: number;
   slipSpeed: number;
+  // OG: CVecCtrl::CalcWalk (0x992BA0) friction clamp — dMaxFriction is the
+  // shoe·field·foothold drag product clamped to [dMinFriction, dMaxFriction]
+  // (WZ Physics.img/minFriction=0.05, maxFriction=2.0), then ×0.5 when <1,
+  // then multiplied by dWalkDrag. Also dSwimSpeedDec (0.9) scales walk
+  // force/speed while swimming.
+  minFriction: number;
+  maxFriction: number;
+  swimSpeedDec: number;
 }
 
 export const DEFAULT_PHYSICS: PhysicsConstants = {
@@ -48,6 +56,7 @@ export const DEFAULT_PHYSICS: PhysicsConstants = {
   flyForce: 120000, flySpeed: 200, swimForce: 120000, swimSpeed: 140,
   floatDrag1: 100000, floatDrag2: 10000, floatCoefficient: 0.01,
   slipForce: 5000, slipSpeed: 100,
+  minFriction: 0.05, maxFriction: 2.0, swimSpeedDec: 0.9,
 };
 
 interface ObjDraw {

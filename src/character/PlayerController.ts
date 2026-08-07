@@ -50,10 +50,12 @@ export class PlayerController {
   private static readonly FallDamageThreshold = 500;
   private static readonly FallDamagePerPx = 0.08;
   // OG: CVecCtrl::CalcWalk (0x992BA0) slip-branch constants — walkSlant is the
-  // shoe attribute threshold (m_pCurAttrShoe.walkSlant, defaults to 0.1); dSlipForce
-  // and dSlipSpeed are read from CONSTANTS+0x18/+0x20 (Physics.img/slipForce=5000,
-  // slipSpeed=100).
-  private static readonly WalkSlant = 0.1;
+  // shoe attribute threshold (m_pCurAttrShoe.walkSlant). The OG CAttrShoe
+  // ctor (0x50B710) defaults walkSlant to 0.9 (only near-vertical slopes slip)
+  // and mass to 100; the WZ shoe records don't carry walkSlant, so 0.9 is the
+  // live value. dSlipForce/dSlipSpeed come from Physics.img (slipForce=60000,
+  // slipSpeed=120) via PhysicsConstants — the statics below are unused fallbacks.
+  private static readonly WalkSlant = 0.9;
   private static readonly SlipForce = 5000;
   private static readonly SlipSpeed = 100;
 
@@ -417,6 +419,8 @@ export class PlayerController {
       let slopeFactor = 1.0;
       let forceMultiplier = 1.0;
       let speedMultiplier = 1.0;
+      // OG: hd = (m_uvy >= 0) ? -1 : 1 — downhill(-1)/uphill(+1) discriminator.
+      let hd = 1;
 
       if (fh && !fh.IsWall) {
         // OG: sin1 = |m_uvy| (screen-slope sine, never tan). The (1 ± sin²)
@@ -424,6 +428,7 @@ export class PlayerController {
         // the speed cap is always (1 + sin²) × maxSpeed.
         const sin1 = Math.abs(fh.Uvy);
         sin1Sq = sin1 * sin1;
+        hd = fh.Uvy >= 0 ? -1 : 1;
         slopeFactor = fh.Uvy >= 0 ? (1 + sin1Sq) : (1 - sin1Sq);
 
         // Foothold force attribute (ice, conveyors, etc.)
@@ -445,12 +450,25 @@ export class PlayerController {
       const footholdDrag = fh && fh.Drag > 0 ? fh.Drag : 1;
       const mass = this._shoe.mass;
       const fieldWalk = this._field.Info.FieldWalk;
-      const effectiveWalkDrag = this._physics.walkDrag * this._shoe.walkDrag
-        * this._field.Info.FieldDrag * footholdDrag;
-      const effectiveWalkForce = this._physics.walkForce * this._shoe.walkAcc * fieldWalk;
+      const swimScale = this._field.Info.Swim ? this._physics.swimSpeedDec : 1;
+      // OG: CVecCtrl::CalcWalk (0x992BA0) friction clamp. dMaxFriction is the
+      // shoe·field·foothold drag product clamped to [dMinFriction, dMaxFriction],
+      // then ×0.5 when <1, then multiplied by dWalkDrag; if the clamped value is
+      // 0 the drag falls back to dWalkDrag·0.2. The final value passed to
+      // DecSpeed is dMaxFriction·dWalkDrag (NOT the raw product).
+      let dMaxFriction = this._shoe.walkDrag * this._field.Info.FieldDrag * footholdDrag;
+      if (dMaxFriction > this._physics.maxFriction) dMaxFriction = this._physics.maxFriction;
+      if (dMaxFriction < this._physics.minFriction) dMaxFriction = this._physics.minFriction;
+      if (dMaxFriction < 1.0) dMaxFriction *= 0.5;
+      const effectiveWalkDrag = dMaxFriction === 0
+        ? this._physics.walkDrag * 0.2
+        : dMaxFriction * this._physics.walkDrag;
+      // OG: walk force = walkAcc · (dWalkForce · foothold.walk · field.walk);
+      // while swimming the whole force is scaled by dSwimSpeedDec.
+      const effectiveWalkForce = this._physics.walkForce * this._shoe.walkAcc * fieldWalk * swimScale;
 
       // OG: effective force — the slope factor and force-foothold multiplier
-      // both scale the force; the cap is (1 + sin²)·maxSpeed.
+      // both scale the force.
       let walkForce: number;
       if (dir !== 0) {
         walkForce = dir * effectiveWalkForce * slopeFactor * forceMultiplier;
@@ -460,16 +478,25 @@ export class PlayerController {
       } else {
         walkForce = 0;
       }
-      const walkMax = this._walkSpeed * this._shoe.walkSpeed * (1 + sin1Sq) * speedMultiplier;
+      // OG: base walk cap = shoe.walkSpeed · (dWalkSpeed · foothold.walk) ·
+      // dSwimSpeedDec · forceMultiplier. On a slope the OG AccSpeed cap is
+      // (1 + sin²)·base ONLY when hd·f ≤ 0 (force aligned with the downhill);
+      // walking uphill keeps plain base. The no-input DecSpeed target likewise
+      // uses the sloped cap when hd·v ≤ 0. (sin1 = 0 collapses both to base.)
+      const walkCapBase = this._walkSpeed * this._shoe.walkSpeed * swimScale * speedMultiplier;
+      const walkCapSloped = walkCapBase * (1 + sin1Sq);
+      const walkCap = hd * walkForce <= 0 ? walkCapSloped : walkCapBase;
 
       // Apply integrated physics: force + slope + drag
       if (dir !== 0) {
-        this._velocity.x = PlayerController.accSpeed(this._velocity.x, walkForce, mass, walkMax, dt);
+        this._velocity.x = PlayerController.accSpeed(this._velocity.x, walkForce, mass, walkCap, dt);
       } else if (fh && fh.Force !== 0) {
         // No input on force foothold — auto-slide
-        this._velocity.x = PlayerController.accSpeed(this._velocity.x, walkForce, mass, this._walkSpeed * Math.abs(fh.Force), dt);
+        this._velocity.x = PlayerController.accSpeed(this._velocity.x, walkForce, mass, walkCapBase, dt);
       } else if (Math.abs(this._velocity.x) > 0.5) {
-        // No input, no force — decelerate
+        // No input, no force — decelerate to 0. (OG: the sloped DecSpeed
+        // toward (1+sin²)·base is an intermediate setup step; the no-input
+        // no-force branch then decelerates to 0 regardless — LABEL_53.)
         this._velocity.x = PlayerController.decSpeed(this._velocity.x, effectiveWalkDrag, mass, 0, dt);
       }
 
@@ -481,14 +508,13 @@ export class PlayerController {
       if (fh && !fh.IsWall) {
         const sin1 = Math.abs(fh.Uvy);
         if (sin1 > this._shoe.walkSlant) {
-          const hd = fh.Uvy >= 0 ? -1 : 1;
           let slipForce = this._physics.slipForce * sin1 * -hd;
           let slipSpeed = sin1 * this._physics.slipSpeed;
           if (hd * dir <= 0) {
             // Input zero or walking with the slip
             if (dir !== 0 || fh.Force !== 0) {
               slipForce += walkForce;
-              slipSpeed += walkMax;
+              slipSpeed += walkCapSloped;
             }
           } else {
             // Walking against the slip — halve both
@@ -560,7 +586,12 @@ export class PlayerController {
     }
 
     if (this._grounded) {
-      this._walkOnFoothold(this._velocity.x * dt, dt, input);
+      // OG: CVecCtrl::CalcWalk integrates pos with the trapezoidal rule —
+      // pos = (v_old + v_new) · 0.5 · tSec + pos_old (m_rpLast snapshots the
+      // pre-integration velocity). Snapshot the pre-walk vx so the displacement
+      // below uses the average, not the Euler end-velocity.
+      const preWalkVx = this._velocity.x;
+      this._walkOnFoothold((preWalkVx + this._velocity.x) * 0.5 * dt, dt, input);
     } else {
       this._fallFreely(input, dt);
     }
@@ -682,7 +713,13 @@ export class PlayerController {
           this._grounded = true;
           return;
         }
-        remaining += movingBackward ? fh.Length : -fh.Length;
+        // Consume only the distance actually travelled to reach this edge
+        // (edgeDistance), not the whole foothold length. Crossing a junction
+        // mid-foothold otherwise leaves a wrong leftover, the loop misdetects
+        // direction on the next foothold, and the player falls through.
+        //   forward:  remaining -= edgeDistance   (travelled up to fh.Length)
+        //   backward: remaining += edgeDistance   (travelled down to 0)
+        remaining += movingBackward ? edgeDistance : -edgeDistance;
         fh = nextFh;
         this._footholdPos = nextPos;
         this._currentFoothold = nextFh.Id;

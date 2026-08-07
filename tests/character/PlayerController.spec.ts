@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { PlayerController } from '../../src/character/PlayerController.js';
+import { DEFAULT_PHYSICS } from '../../src/map/FieldScene.js';
 import { Stance } from '../../src/character/Stance.js';
 import { Foothold } from '../../src/map/Foothold.js';
 import { MapInfo } from '../../src/map/MapInfo.js';
@@ -348,6 +349,160 @@ describe('PlayerController', () => {
       field._footholds[1].MoveBy(25, -10);
       pc.Update({ Left: false, Right: false, Up: false, Down: false, JumpPressed: false }, 0);
       expect(pc.Position).toEqual({ x: 65, y: 190 });
+    });
+  });
+
+  describe('linked foothold junction traversal', () => {
+    it('crosses a junction mid-foothold without falling (leftover distance is edgeDistance, not fh.Length)', () => {
+      // Platform split into two linked footholds. The player spawns at
+      // x=60 (mid-foothold-1) and walks right far enough to cross the
+      // x=100 junction AND continue onto foothold 2 in the SAME frame.
+      const a = new Foothold();
+      a.Id = 1; a.X1 = 0; a.Y1 = 200; a.X2 = 100; a.Y2 = 200;
+      a.Next = 2; a.Prev = 0; a.InitVectors();
+      const b = new Foothold();
+      b.Id = 2; b.X1 = 100; b.Y1 = 200; b.X2 = 200; b.Y2 = 200;
+      b.Next = 0; b.Prev = 1; b.InitVectors();
+
+      const field = makeField();
+      field._footholds = { 1: a, 2: b };
+
+      const pc = new PlayerController(field);
+      pc.Spawn({ x: 60, y: 200 });
+      expect(pc.Grounded).toBe(true);
+      expect(pc.CurrentFoothold).toBe(1);
+
+      // Walk right 1s at full walk speed (~125px/s) — must cross the x=100
+      // junction and keep walking on foothold 2, never detaching.
+      for (let i = 0; i < 10; i++) {
+        pc.Update({ Left: false, Right: true, Up: false, Down: false, JumpPressed: false }, 0.1);
+        expect(pc.Grounded, `frame ${i} fell off`).toBe(true);
+      }
+      expect(pc.Position.x).toBeGreaterThan(120);
+      expect(pc.CurrentFoothold).toBe(2);
+    });
+
+    it('crosses a backward junction mid-foothold without falling', () => {
+      const a = new Foothold();
+      a.Id = 1; a.X1 = 0; a.Y1 = 200; a.X2 = 100; a.Y2 = 200;
+      a.Next = 2; a.Prev = 0; a.InitVectors();
+      const b = new Foothold();
+      b.Id = 2; b.X1 = 100; b.Y1 = 200; b.X2 = 200; b.Y2 = 200;
+      b.Next = 0; b.Prev = 1; b.InitVectors();
+
+      const field = makeField();
+      field._footholds = { 1: a, 2: b };
+
+      const pc = new PlayerController(field);
+      pc.Spawn({ x: 140, y: 200 });
+      expect(pc.Grounded).toBe(true);
+      expect(pc.CurrentFoothold).toBe(2);
+
+      for (let i = 0; i < 10; i++) {
+        pc.Update({ Left: true, Right: false, Up: false, Down: false, JumpPressed: false }, 0.1);
+        expect(pc.Grounded, `frame ${i} fell off`).toBe(true);
+      }
+      expect(pc.Position.x).toBeLessThan(80);
+      expect(pc.CurrentFoothold).toBe(1);
+    });
+  });
+
+  // OG: CVecCtrl::CalcWalk (0x992BA0) — friction clamp + dSwimSpeedDec + the
+  // (hd·f ≤ 0) slope speed-cap distinction, all verified against the live IDB
+  // decompile and wz_client/Map.nx Physics.img (minFriction=0.05,
+  // maxFriction=2.0, swimSpeedDec=0.9).
+  describe('CalcWalk parity (friction clamp, swim dec, slope cap)', () => {
+    it('clamps the friction product to [minFriction, maxFriction] before ×0.5 and ×dWalkDrag', () => {
+      const field = makeField() as any;
+      field.Physics = { ...DEFAULT_PHYSICS, maxFriction: 2.0, minFriction: 0.05, walkDrag: 80000 };
+      // Shoe walkDrag 5 → clamped to maxFriction 2.0 → effective drag 160000.
+      const pc = new PlayerController(field);
+      pc.SetShoePhysics({ mass: 10, walkDrag: 5 });
+      pc.Spawn({ x: 0, y: 200 });
+      // Push right for a tick to build velocity, then release.
+      pc.Update({ Left: false, Right: true, Up: false, Down: false, JumpPressed: false }, 0.1);
+      const fastV = pc['_velocity'].x;
+      expect(fastV).toBeGreaterThan(0);
+      // Release: decel uses 160000 drag / 10 mass = 16000 px/s² → stops fast.
+      pc.Update({ Left: false, Right: false, Up: false, Down: false, JumpPressed: false }, 0.05);
+      expect(pc['_velocity'].x).toBeCloseTo(0, -1);
+    });
+
+    it('reduces friction ×0.5 when the clamped product is < 1', () => {
+      const field = makeField() as any;
+      field.Physics = { ...DEFAULT_PHYSICS, maxFriction: 2.0, minFriction: 0.05, walkDrag: 80000 };
+      // Product = 0.4 → clamped stays 0.4 (<1) → ×0.5 = 0.2 → drag 16000.
+      const pc = new PlayerController(field);
+      pc.SetShoePhysics({ mass: 10, walkDrag: 0.4 });
+      pc.Spawn({ x: 0, y: 200 });
+      pc.Update({ Left: false, Right: true, Up: false, Down: false, JumpPressed: false }, 0.1);
+      const fastV = pc['_velocity'].x;
+      expect(fastV).toBeGreaterThan(0);
+      pc.Update({ Left: false, Right: false, Up: false, Down: false, JumpPressed: false }, 0.05);
+      // 0.2 × 80000 / 10 = 1600 px/s² of decel over 0.05s = 80 px/s removed —
+      // far less than the un-clamped 0.4 × 80000 / 10 = 3200 px/s².
+      expect(pc['_velocity'].x).toBeCloseTo(fastV - 80, 0);
+    });
+
+    it('scales grounded walk force/speed by dSwimSpeedDec while swimming', () => {
+      const field = makeField() as any;
+      field.Physics = { ...DEFAULT_PHYSICS, swimSpeedDec: 0.9 };
+      field._info.Swim = true;
+      const pc = new PlayerController(field);
+      pc.Spawn({ x: 0, y: 200 });
+      // Walk right 1s — the cap is 125 × 0.9 = 112.5 (not 125).
+      pc.Update({ Left: false, Right: true, Up: false, Down: false, JumpPressed: false }, 1.0);
+      expect(pc.Position.x).toBeGreaterThanOrEqual(110);
+      expect(pc.Position.x).toBeLessThan(125);
+    });
+
+    it('keeps the (1+sin²) speed cap only when the force aligns with the downhill (hd·f ≤ 0)', () => {
+      // Downhill (Uvy > 0 → hd = -1), walking right (dir > 0) → hd·f < 0 → cap = (1+sin²)·base.
+      const field = makeField() as any;
+      const fh = field._footholds[1];
+      fh.X1 = -200; fh.Y1 = 200; fh.X2 = 200; fh.Y2 = 220; // gentle downhill, Uvy>0
+      fh.InitVectors();
+      const pc = new PlayerController(field);
+      pc.Spawn({ x: 0, y: 210 });
+      pc.Update({ Left: false, Right: true, Up: false, Down: false, JumpPressed: false }, 1.0);
+      const downhillX = pc.Position.x;
+
+      // Uphill (Uvy < 0 → hd = 1), walking right → hd·f > 0 → cap stays base.
+      const field2 = makeField() as any;
+      const fh2 = field2._footholds[1];
+      fh2.X1 = -200; fh2.Y1 = 220; fh2.X2 = 200; fh2.Y2 = 200;
+      fh2.InitVectors();
+      const pc2 = new PlayerController(field2);
+      pc2.Spawn({ x: 0, y: 210 });
+      pc2.Update({ Left: false, Right: true, Up: false, Down: false, JumpPressed: false }, 1.0);
+      const uphillX = pc2.Position.x;
+
+      // Same slope magnitude; the downhill cap (1+sin²) is strictly larger.
+      expect(downhillX).toBeGreaterThan(uphillX);
+    });
+
+    it('walks up a moderate slope instead of slipping (OG CAttrShoe walkSlant=0.9)', () => {
+      // A 45°-ish uphill slope: Uvy = 0.5, so sin1 = 0.5 < 0.9. The OG default
+      // shoe walkSlant is 0.9 (CAttrShoe ctor 0x50B710), so the slip branch
+      // must NOT fire — the player should climb. With a bogus 0.1 threshold
+      // the slip branch braked velocity to 0 and the player never moved.
+      const field = makeField() as any;
+      const fh = field._footholds[1];
+      fh.X1 = -200; fh.Y1 = 200; fh.X2 = 200; fh.Y2 = 100; // uphill to the right
+      fh.InitVectors();
+      const pc = new PlayerController(field);
+      pc.Spawn({ x: -50, y: 163 }); // y just above the slope line at x=-50 (y=162.5)
+      expect(pc.Grounded).toBe(true);
+      let trace = `spawn ${JSON.stringify(pc.Position)} fh=${pc.CurrentFoothold} vel=${JSON.stringify(pc['_velocity'])}\n`;
+      for (let i = 0; i < 20; i++) {
+        pc.Update({ Left: false, Right: true, Up: false, Down: false, JumpPressed: false }, 0.1);
+        trace += `f${i} ${JSON.stringify(pc.Position)} g=${pc.Grounded} fh=${pc.CurrentFoothold} vel=${JSON.stringify(pc['_velocity'])} fp=${pc['_footholdPos']}\n`;
+        if (!pc.Grounded) break;
+      }
+      process.stdout.write('SLOPE_TRACE_START\n' + trace + 'SLOPE_TRACE_END\n');
+      // Must have climbed rightward and up along the slope.
+      expect(pc.Position.x).toBeGreaterThan(0);
+      expect(pc.Position.y).toBeLessThan(200);
     });
   });
 

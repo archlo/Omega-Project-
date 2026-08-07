@@ -44,6 +44,9 @@ import { loadFrameSequence } from '../character/WzFrameAnimation.js';
 import { getConsumeCashItemType } from '../util/CashSlotType.js';
 import { MobSoundService } from '../character/MobSoundService.js';
 import { InPacket } from '../net/packet/InPacket.js';
+import { OutPacket } from '../net/packet/OutPacket.js';
+import { InHeader } from '../net/packet/OpCodes.js';
+import { Portal } from '../map/Portal.js';
 import { MeleeAttackEncoder, MeleeTarget } from '../net/packet/MeleeAttackEncoder.js';
 import { getWeaponType, calcDamageRange } from '../net/packet/MeleeDamage.js';
 import { PlayerController } from '../character/PlayerController.js';
@@ -709,6 +712,13 @@ export class GameStage extends Stage {
     // (0x932e20) switch — case 1u calls UseSkill, case 8u calls
     // CMacroSysMan::DoActiveMacro(nID) which fires all non-zero slots in the
     // macro at index nID (0–4). _keyConfig may be null before _loadWzAsync.
+    if (key === 'ArrowUp') {
+      // OG: CUserLocal::OnKey wParam==38 → HandleUpKeyDown (0x919E50). The Up
+      // key is what actually triggers a portal's field transfer (and the hidden
+      // portal / ladder-adjacent flows) — the proximity auto-touch in
+      // _checkPortalTouch only covers walk-into types (1-6,9).
+      this._handleUpKeyDown();
+    }
     const fk = this._keyConfig?.forKey(key) ?? FuncKeyMappedNone;
     if (fk.type === FuncKeyType.Skill) {
       const rec = this._skillRecords.find((r) => r.skillId === fk.id);
@@ -5494,26 +5504,107 @@ export class GameStage extends Stage {
     this.game.session.send(GameSender.UserChat(line));
   }
 
-  // WZ portal "pt" types that plainly auto-trigger a field transfer on touch
-  // with no further server-side logic, per the long-public MapleStory
-  // portal-type convention. Deliberately excludes pt=0 (start point),
-  // pt=10/11 (hidden/key-press), and pt=7/8 (script portals — those likely
-  // expect a script-trigger flow before any field transfer, not an instant
-  // one) — wrong trigger behavior there is worse than just not firing.
-  private static readonly AutoTouchPortalTypes = new Set([1, 2, 3, 4, 5, 6, 9]);
+  // OG: CUserLocal::HandleUpKeyDown (0x919E50) — the Up-key portal trigger.
+  // Guards: not on one-time action (attacking), not immovable, no attract,
+  // on a foothold. Then CPortalList::FindPortal(x, y, nXrange=20) picks the
+  // first non-type-0 portal whose rect (x±20, y±50) contains the player.
+  //   - nTMap == 999999999 → script portals (7/8/11) send opcode 112
+  //     (portal-script request: fieldKey + portal name + x + y); other types
+  //     fall to the town-portal / open-gate path.
+  //   - same-map teleport (nTMap == current && !IsChangable, i.e. type 4/5
+  //     exempt) → in-map teleport.
+  //   - otherwise → CField::SendTransferFieldRequest(field, 0xFFFFFFFF,
+  //     portalName, 0, 0, 0) → the same UserTransferFieldRequest we send via
+  //     GameSender.TransferField. Exempt types 4/5 (IsChangable) don't play
+  //     the portal sound, and neither does the script path.
+  private _handleUpKeyDown(): void {
+    if (this._isFieldTransferring || !this._field || !this._physics) return;
+    if (this._physics.IsImmovable) return;
+    if (!this._physics.Grounded) return;
+    if (this._player?.IsPlayingOneTimeAction) return;
+
+    const pos = this._physics.Position;
+    const portal = this._findUpKeyPortal(pos.x, pos.y);
+    if (portal === null) {
+      // OG: no portal under the Up key → town portal / open-gate path.
+      // (Not wired — v95 town portals and open gates are party/skill flows.)
+      return;
+    }
+
+    // OG: nTMap == 999999999 → script portal or town-portal fallback.
+    if (portal.TargetMap === 999999999) {
+      if (portal.Type === 7 || portal.Type === 8 || portal.Type === 11) {
+        // OG opcode 112 — UserPortalScriptRequest (the client's "script
+        // portal" trigger). The v95 server resolves it from the portal name.
+        this._sendPortalScriptRequest(portal, pos);
+      }
+      return;
+    }
+
+    // OG: same-map teleport (field->m_dwField == portal->nTMap &&
+    // !IsChangable) → TryRegisterTeleport.
+    if (portal.TargetMap === this._field.LoadedMapId && !GameStage.IsChangablePortal(portal.Type)) {
+      // In-map teleport — the server resolves the destination portal from the
+      // CURRENT portal's own name (pn), so send portal.Name, not the target
+      // portal name.
+      this._isFieldTransferring = true;
+      this.game.session.send(GameSender.TransferField(this._fieldKey, portal.TargetMap, portal.Name, pos.x, pos.y));
+      return;
+    }
+
+    // OG: cross-field transfer. Send the CURRENT portal's own name (sName/pn);
+    // the server's MigrationHandler does getPortalByName(sName) on the current
+    // field and uses that portal's tm/tn for the destination.
+    this._isFieldTransferring = true;
+    this.game.session.send(GameSender.TransferField(this._fieldKey, portal.TargetMap, portal.Name, pos.x, pos.y));
+  }
+
+  /** OG: PORTAL::IsChangable — nType == 4 || nType == 5. These portals
+   *  transfer without the portal sound and skip the same-map teleport branch. */
+  private static IsChangablePortal(nType: number): boolean {
+    return nType === 4 || nType === 5;
+  }
+
+  /** OG: CPortalList::FindPortal (0x6AB230) with nXrange = 20 — the first
+   *  non-type-0 portal whose rect (x ± nXrange, y ± 50) contains the point. */
+  private _findUpKeyPortal(x: number, y: number): Portal | null {
+    const range = GameStage.UpKeyPortalRangeX;
+    for (const portal of Object.values(this._field!.Portals)) {
+      if (portal.Type === 0) continue;
+      if (Math.abs(x - portal.X) <= range && Math.abs(y - portal.Y) <= 50) return portal;
+    }
+    return null;
+  }
+
+  // OG: CPortalList::RestorePortal (0x6AD3C0) list membership. Only these
+  // portal types land in m_aPortal_Collision, and only those are ever checked
+  // per-frame by CUserLocal::CheckPortal_Collision (called from Update, next
+  // to CheckReactor_Collision):
+  //   - type 3  → default case: cross-field transfer (auto-touch)
+  //   - type 9  → script-portal request (opcode 112), delay/onlyOnce gated
+  //   - type 12 → vertical jump,  type 13 → custom impact (not transfers)
+  // Everything else (1,2,4,5,7,8,10,11) is NOT auto-touched — it requires the
+  // Up key (HandleUpKeyDown). Type 6 is a town portal; type 0 is a start point.
+  private static readonly AutoTouchTransferTypes = new Set([3, 9]);
+  private static readonly UpKeyPortalRangeX = 20;
   private static readonly PortalTouchRadiusX = 20;
   private static readonly PortalTouchRadiusYUp = 100;
   private static readonly PortalTouchRadiusYDown = 10;
+  // OG: CUserLocal::CheckPortal_Collision case 9 gates the script-portal
+  // request on `get_update_time() - m_tLastExclRequest >= nDelayTime` and
+  // `!bOnlyOnce || portalIdx != m_tPrevPortalIndex` — a per-portal cooldown.
+  private _portalCooldownUntil = 0;
+  private _lastScriptPortal = 0;
 
   private _checkPortalTouch(): void {
     if (this._isFieldTransferring || !this._field || !this._physics) return;
     const pos = this._physics.Position;
-
     // OG: CPortalList::UpdateHiddenPortal proximity check.
     // Hidden portals (pt=10/11) show PH/PSH animation when the player is
     // within the portal's hRange/vRange rect. Only one hidden portal is
     // active at a time — the first match wins (matching the OG's linear
-    // scan of m_aPortal_Hidden).
+    // scan of m_aPortal_Hidden). (Hidden portals are only *entered* via the
+    // Up key — this check just toggles the visible animation.)
     let foundHiddenIdx: number | null = null;
     for (const portal of Object.values(this._field.Portals)) {
       if (portal.Type !== 10 && portal.Type !== 11) continue;
@@ -5528,18 +5619,43 @@ export class GameStage extends Stage {
     }
     this._field.SetActiveHiddenPortal(foundHiddenIdx);
 
+    // OG: CUserLocal::CheckPortal_Collision — only the m_aPortal_Collision
+    // types (3, 9, 12, 13) are tested per-frame; type 3 auto-transfers,
+    // type 9 sends the script request with a delay/onlyOnce gate.
     for (const portal of Object.values(this._field.Portals)) {
-      if (!GameStage.AutoTouchPortalTypes.has(portal.Type)) continue;
+      if (!GameStage.AutoTouchTransferTypes.has(portal.Type)) continue;
       if (!portal.TargetPortal && portal.TargetMap === 999999999) continue;
       const dx = Math.abs(pos.x - portal.X);
       const dy = pos.y - portal.Y;
       if (dx <= GameStage.PortalTouchRadiusX
         && dy >= -GameStage.PortalTouchRadiusYUp && dy <= GameStage.PortalTouchRadiusYDown) {
+        if (portal.Type === 9) {
+          // OG case 9: script request, gated on nDelayTime and onlyOnce.
+          const now = Date.now();
+          if (now < this._portalCooldownUntil) return;
+          if (portal.OnlyOnce && portal.Index === this._lastScriptPortal) return;
+          this._portalCooldownUntil = now + Math.max(portal.Delay, 500);
+          this._lastScriptPortal = portal.Index;
+          this._sendPortalScriptRequest(portal, pos);
+          return;
+        }
+        // OG default case: cross-field transfer. Send the CURRENT portal's own
+        // name (sName/pn) — the server resolves the destination from it.
         this._isFieldTransferring = true;
-        this.game.session.send(GameSender.TransferField(this._fieldKey, portal.TargetMap, portal.TargetPortal, pos.x, pos.y));
+        this.game.session.send(GameSender.TransferField(this._fieldKey, portal.TargetMap, portal.Name, pos.x, pos.y));
         return;
       }
     }
+  }
+
+  /** OG: the opcode-112 portal-script request (fieldKey, portalName, x, y). */
+  private _sendPortalScriptRequest(portal: Portal, pos: { x: number; y: number }): void {
+    const p = OutPacket.Of(InHeader.UserPortalScriptRequest);
+    p.writeByte(this._fieldKey);
+    p.writeString(portal.Name);
+    p.writeShort(pos.x);
+    p.writeShort(pos.y);
+    this.game.session.send(p);
   }
 
   private _tryMeleeAttack(): void {
