@@ -80,6 +80,7 @@ describe('KeyConfig notice confirm dialog (real UI.nx)', () => {
       _noticeBgs: (object | null)[];
       _content: { children: unknown[] };
       _map: { type: number; id: number }[];
+      _pool: { type: number; id: number }[];
       _confirm: number;
       _noticeRect(): { x: number; y: number; w: number; h: number };
       handleMouseButton(x: number, y: number, down: boolean): boolean;
@@ -89,10 +90,25 @@ describe('KeyConfig notice confirm dialog (real UI.nx)', () => {
     };
   };
 
+  // handleMouseButton takes SCREEN coords and subtracts _root (200,150);
+  // the tests below call it with local + root so the panel-local coordinates
+  // land where the real client would click.
+  const sl = (x: number, y: number) => ({ x: x + 200, y: y + 150 });
+const clickDelete = (p: ReturnType<typeof makePanel>) => {
+    // BtDelete cell is (73,239) — click inside its button to raise the confirm.
+    // Button.onClick fires on mouse-up, so send both.
+    const c = sl(78, 244);
+    p.handleMouseButton(c.x, c.y, true);
+    p.handleMouseButton(c.x, c.y, false);
+  };
+
+  const boundSnapshot = (p: ReturnType<typeof makePanel>) =>
+    (p as unknown as { _map: { type: number; id: number }[] })._map.map(f => ({ ...f }));
+
   it('shows the baked notice/1 dialog for BtDelete and keeps the keyboard visible (no dim)', () => {
     const kc = makePanel();
     // BtDelete cell is (73,239) — click it to raise the confirm.
-    kc.handleMouseButton(78, 244, true);
+    clickDelete(kc);
     kc.update(0);
 
     const bg = kc._noticeBgs[1] as { position: { x: number }; width: number; height: number } | null;
@@ -107,7 +123,7 @@ describe('KeyConfig notice confirm dialog (real UI.nx)', () => {
   it('places dialog OK/Cancel at (157,53) / (201,53) relative to the notice origin', () => {
     const kc = makePanel();
     kc._noticeRect = () => ({ x: 100, y: 60, w: 260, h: 84 });
-    kc.handleMouseButton(78, 244, true);
+    clickDelete(kc);
     kc.update(0);
 
     const r = kc._noticeRect();
@@ -119,15 +135,16 @@ describe('KeyConfig notice confirm dialog (real UI.nx)', () => {
 
   it('notice Cancel aborts the clear and leaves bindings untouched', () => {
     const kc = makePanel();
-    kc.handleMouseButton(78, 244, true); // open the Delete confirm
+    const before = bound(kc);
+    clickDelete(kc); // open the Delete confirm
 
     // click the dialog Cancel (down + up over its button rect)
     const r = kc._noticeRect();
-    kc.handleMouseButton(r.x + 201 + 15, r.y + 53 + 8, true);
-    kc.handleMouseButton(r.x + 201 + 15, r.y + 53 + 8, false);
+    kc.handleMouseButton(sl(r.x + 201 + 15, r.y + 53 + 8).x, sl(r.x + 201 + 15, r.y + 53 + 8).y, true);
+    kc.handleMouseButton(sl(r.x + 201 + 15, r.y + 53 + 8).x, sl(r.x + 201 + 15, r.y + 53 + 8).y, false);
 
     expect(kc._confirm).toBe(0); // None
-    expect(kc._map.every(fk => fk.type !== 0)).toBe(true); // still bound
+    expect(bound(kc)).toEqual(before); // still bound
   });
 
   it('notice OK performs the clear-all for BtDelete', () => {
@@ -135,22 +152,23 @@ describe('KeyConfig notice confirm dialog (real UI.nx)', () => {
     let fired = false;
     kc.onBindingsChanged = () => { fired = true; };
 
-    kc.handleMouseButton(78, 244, true); // open the clear-all confirm
+    clickDelete(kc); // open the clear-all confirm
     const r = kc._noticeRect();
-    kc.handleMouseButton(r.x + 157 + 15, r.y + 53 + 8, true);
-    kc.handleMouseButton(r.x + 157 + 15, r.y + 53 + 8, false);
+    kc.handleMouseButton(sl(r.x + 157 + 15, r.y + 53 + 8).x, sl(r.x + 157 + 15, r.y + 53 + 8).y, true);
+    kc.handleMouseButton(sl(r.x + 157 + 15, r.y + 53 + 8).x, sl(r.x + 157 + 15, r.y + 53 + 8).y, false);
 
     expect(kc._confirm).toBe(0); // None
     expect(kc._map.every(fk => fk.type === 0 && fk.id === 0)).toBe(true);
     expect(fired).toBe(true);
+    expect(kc._pool.length).toBeGreaterThan(0); // the removed keys were stored
   });
 
   it('Escape still dismisses the dialog without applying the clear', () => {
     const kc = makePanel();
-    kc.handleMouseButton(78, 244, true);
+    clickDelete(kc);
     expect(kc._confirm).not.toBe(0);
     kc.onKeyPress('Escape');
     expect(kc._confirm).toBe(0);
-    expect(kc._map.every(fk => fk.type !== 0)).toBe(true);
+    expect(bound(kc).some(f => f.type !== 0)).toBe(true);
   });
 });

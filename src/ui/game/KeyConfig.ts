@@ -8,8 +8,8 @@ import { WzProperty } from '../../wz/WzProperty.js';
 import { WzCanvas } from '../../wz/WzCanvas.js';
 import { WzSprite } from '../../render/WzSprite.js';
 import { FuncKeyMapped, FuncKeyType, FuncKeyMappedNone } from '../../domain/FuncKeyMapped.js';
-import { CellSize, PaletteCount, MaxPool, ScRShift, ScLShift, ScRCtrl, ScLCtrl, ScRAlt, ScLAlt, 
-getBindableScancodes, tryGetCell, keyLabelOffset, paletteCell, poolCell, hitTestKey, hitTestPalette, paletteBinding, paletteSlotOf, initLayout } 
+import { CellSize, PaletteCount, MaxPool, RegionSlots, ScRShift, ScLShift, ScRCtrl, ScLCtrl, ScRAlt, ScLAlt, 
+getBindableScancodes, tryGetCell, keyLabelOffset, regionCell, hitTestKey, hitTestRegion, paletteBinding, paletteSlotOf, bindingAtCell, initLayout } 
   from './KeyConfigLayout.js';
 import type { DragTarget } from '../DragController.js';
 
@@ -192,13 +192,17 @@ export class KeyConfig extends GamePanel implements DragTarget {
     this._btNoticeOk = this._makeNoticeBtn('BtOK');
     this._btNoticeCancel = this._makeNoticeBtn('BtCancel');
 
-    this._gfx = new Graphics();
+this._gfx = new Graphics();
     this._content = new Container();
     this._clip = new Graphics();
     this._clip.rect(0, 0, this._panelW, this._panelH).fill({ color: 0xFFFFFF });
     this._content.mask = this._clip;
     this._gfx.mask = this._clip;
-    this._root.addChild(this._clip, this._content, this._gfx);
+    // Draw order matters: _gfx holds the cell backgrounds (rects), _content holds
+    // the key/palette icon sprites + buttons. In Pixi, later children render on
+    // top, so _gfx must come BEFORE _content or the cell rects cover the icons
+    // ("keys behind the palette").
+    this._root.addChild(this._clip, this._gfx, this._content);
 
     this._loadDefaultMap();
   }
@@ -499,31 +503,35 @@ export class KeyConfig extends GamePanel implements DragTarget {
         }
       }
     }
-    for (let slot = 0; slot < PaletteCount; slot++) {
-      const cell = paletteCell(slot);
-      this._gfx.rect(cell.x, cell.y, CellSize, CellSize).fill({ color: 0x1e2030 });
-      this._gfx.rect(cell.x, cell.y, CellSize, CellSize).stroke({ color: 0x2d3048, width: 1 });
+    for (let cell = 0; cell < RegionSlots; cell++) {
+      const g = regionCell(cell);
+      this._gfx.rect(g.x, g.y, CellSize, CellSize).fill({ color: 0x1e2030 });
+      this._gfx.rect(g.x, g.y, CellSize, CellSize).stroke({ color: 0x2d3048, width: 1 });
     }
   }
 
   private _drawPalette(): void {
-    for (let slot = 0; slot < PaletteCount; slot++) {
-      const fk = paletteBinding(slot);
-      if (fk.type === FuncKeyType.Menu && fk.id === 22) continue;
-      if (this._dragActive && fk.type === this._dragIcon.type && fk.id === this._dragIcon.id) continue;
-      const cell = paletteCell(slot);
+    const poolLen = Math.min(this._pool.length, MaxPool);
+    // Shared 54-cell strip (OG CalcKeyIconPosInfo @0x7d83D0): removed-key stash
+    // fills cells from the left, fixed basics fill what remains, so no removed
+    // key is hidden below the panel.
+    for (let cell = 0; cell < RegionSlots; cell++) {
+      let fk: FuncKeyMappedRecord;
+      if (cell < poolLen) {
+        const p = this._pool[cell];
+        if (this._dragActive && p.type === this._dragIcon.type && p.id === this._dragIcon.id) continue;
+        fk = p;
+      } else {
+        const basic = bindingAtCell(cell, poolLen);
+        if (!basic) continue;
+        if (basic.type === FuncKeyType.Menu && basic.id === 22) continue; // CashShop not bindable
+        if (this._dragActive && basic.type === this._dragIcon.type && basic.id === this._dragIcon.id) continue;
+        fk = basic as FuncKeyMappedRecord;
+      }
+      const part = regionCell(cell);
       // OG: placed items shown dimmed, unplaced items shown fully
       const isPlaced = this._isPlaced(fk);
-      this._drawIconAt(cell.x, cell.y, fk, isPlaced ? 0.4 : 1.0);
-    }
-    // The re-usable stash (OG ResetPaletteItems): keys cleared out below,
-    // waiting at the bottom to be dragged back onto a key.
-    for (let i = 0; i < Math.min(this._pool.length, MaxPool); i++) {
-      const fk = this._pool[i];
-      if (this._dragActive && fk.type === this._dragIcon.type && fk.id === this._dragIcon.id) continue;
-      const cell = poolCell(i);
-      const isPlaced = this._isPlaced(fk);
-      this._drawIconAt(cell.x, cell.y, fk, isPlaced ? 0.4 : 1.0);
+      this._drawIconAt(part.x, part.y, fk, isPlaced ? 0.4 : 1.0);
     }
   }
 
@@ -704,42 +712,36 @@ private _drawIconAt(cellX: number, cellY: number, fk: FuncKeyMappedRecord, alpha
       return true;
     }
 
-    const slot = hitTestPalette(lx, ly);
-    if (slot >= 0) {
-      const fk = paletteBinding(slot);
-      if (fk.type === FuncKeyType.Menu && fk.id === 22) return true; // CashShop not bindable
-      // If a key is selected, bind this palette action to it
+    // Shared bottom strip: cell < poolLen is the removed-key stash, else the
+    // fixed basic palette (OG CalcKeyIconPosInfo @0x7d83D0, 54-cell grid).
+    const cell = hitTestRegion(lx, ly);
+    if (cell >= 0) {
+      const poolLen = Math.min(this._pool.length, MaxPool);
+      let fk: FuncKeyMappedRecord | null;
+      // Stash cell → the removed binding; basic cells start after the stash.
+      if (cell < poolLen) {
+        fk = this._pool[cell];
+      } else if (cell - poolLen < PaletteCount) {
+        const basic = paletteBinding(cell - poolLen);
+        if (basic.type === FuncKeyType.Menu && basic.id === 22) return true; // CashShop
+        fk = basic;
+      } else {
+        fk = null;
+      }
+      if (!fk) { this._selectedKeySc = -1; return true; }
+      // If a key is selected, bind this action to it
       if (this._selectedKeySc >= 0) {
-        this._map[this._selectedKeySc] = fk;
+        this._map[this._selectedKeySc] = { ...fk };
         this._selectedKeySc = -1;
         this.onBindingsChanged?.();
         return true;
       }
-      // Otherwise start drag from palette
+      // Otherwise start drag from the region
       if (this._isPlaced(fk)) return true;
-      this._dragIcon = fk;
+      this._dragIcon = { ...fk };
       this._dragFromScancode = -1;
       this._dragActive = true;
       return true;
-    }
-
-    // The re-usable stash: drag a cleared-out key back onto the keyboard.
-    for (let i = 0; i < Math.min(this._pool.length, MaxPool); i++) {
-      const r = poolCell(i);
-      if (lx >= r.x && lx < r.x + CellSize && ly >= r.y && ly < r.y + CellSize) {
-        const fk = this._pool[i];
-        if (this._selectedKeySc >= 0) {
-          this._map[this._selectedKeySc] = { ...fk };
-          this._selectedKeySc = -1;
-          this.onBindingsChanged?.();
-          return true;
-        }
-        if (this._isPlaced(fk)) return true;
-        this._dragIcon = { ...fk };
-        this._dragFromScancode = -1;
-        this._dragActive = true;
-        return true;
-      }
     }
 
     // Click outside key/palette — deselect

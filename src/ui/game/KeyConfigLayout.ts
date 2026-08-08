@@ -5,6 +5,17 @@ import { FuncKeyMapped, FuncKeyType } from '../../domain/FuncKeyMapped.js';
 // model is owned by the singleton CFuncKeyMappedMan.
 export const CellSize = 32;
 export const PaletteCount = 42;
+
+// OG CUIKeyConfig::CalcKeyIconPosInfo @0x7d83D0 builds the bottom key palette
+// as a 54-slot grid over 3 rows (18 cols): rows at y = 267 / 301 / 335, each
+// cell 34px with x = 34*col + 6 (loop v18 91..144). Panel is 622x374, so those
+// three rows are the WHOLE visible strip — nothing below them is on screen.
+// The palette is shared: the removed-key stash fills cells from the left, and
+// the fixed basics (ResetPaletteItems, 42 entries) fill whatever cells remain.
+export const PaletteRows = 3;
+export const PaletteCols = 18;
+export const MaxPool = 96;
+export const RegionSlots = PaletteRows * PaletteCols; // 54
 export const ScRShift = 54, ScLShift = 42;
 export const ScRCtrl = 89, ScLCtrl = 29;
 export const ScRAlt = 90, ScLAlt = 56;
@@ -26,7 +37,7 @@ const Rows: { sc: number; adv: number }[][] = [
 export function initLayout(): void {
   if (Cells.size > 0) return; // already initialized
   buildKeyboard();
-  buildPalette();
+  buildPaletteGrid();
   applyWideKeyNudges();
 }
 
@@ -41,10 +52,10 @@ function buildKeyboard(): void {
   }
 }
 
-function buildPalette(): void {
-  for (let i = 0; i < PaletteCount; i++) {
-    const col = i % 18;
-    const rowY = 267 + 34 * Math.floor(i / 18);
+function buildPaletteGrid(): void {
+  for (let i = 0; i < RegionSlots; i++) {
+    const col = i % PaletteCols;
+    const rowY = 267 + 34 * Math.floor(i / PaletteCols);
     Palette[i] = { x: 34 * col + 6, y: rowY };
   }
 }
@@ -79,18 +90,19 @@ export function keyLabelOffset(scancode: number): { dx: number; dy: number } {
 }
 
 export function paletteCell(slot: number): { x: number; y: number } {
-  return Palette[slot];
+  return Palette[slot] ?? { x: 6, y: 267 };
 }
 
-// OG: after Clear All, the bound FuncKeys stay usable — they are kept in the
-// bottom palette area as unplaced entries the user can drag onto a key again
-// instead of vanishing forever. These cells extend the fixed 42-slot grid
-// (row gridIndex = 42 + idx, col 0..17) so they fit in the same palette strip.
-export const MaxPool = 12;
+// OG: removed-key stash + fixed basics share the single 54-cell strip. Cell
+// index < poolSize holds a removed binding; indices >= poolSize that are within
+// PaletteCount hold the fixed basic (menu/action/motion). poolSlot returns the
+// physical corner of that shared cell.
+export function poolSlot(index: number): { x: number; y: number } {
+  return Palette[index] ?? { x: 6, y: 267 };
+}
 
-export function poolCell(idx: number): { x: number; y: number } {
-  const gridIndex = PaletteCount + idx;
-  return { x: 34 * (gridIndex % 18) + 6, y: 267 + 34 * Math.floor(gridIndex / 18) };
+export function regionCell(cell: number): { x: number; y: number } {
+  return Palette[cell] ?? { x: 6, y: 267 };
 }
 
 export function hitTestKey(x: number, y: number): number {
@@ -111,6 +123,26 @@ export function hitTestPalette(x: number, y: number): number {
     if (x >= p.x && x < p.x + CellSize && y >= p.y && y < p.y + CellSize) return i;
   }
   return -1;
+}
+
+// Maps a point to a physical cell of the 54-slot bottom strip (0..53), or -1.
+export function hitTestRegion(x: number, y: number): number {
+  for (let i = 0; i < RegionSlots; i++) {
+    const p = Palette[i];
+    if (x >= p.x && x < p.x + CellSize && y >= p.y && y < p.y + CellSize) return i;
+  }
+  return -1;
+}
+
+// The binding shown at a bottom-strip cell, respecting the shared layout:
+// cells [0, poolLen) are removed-key stash, cells [poolLen, PaletteCount+poolLen)
+// are the fixed basics.
+export function bindingAtCell(cell: number, poolSize: number): FuncKeyMapped | null {
+  if (cell < 0) return null;
+  if (cell < poolSize) return null; // stash cell — resolved by the caller
+  const slot = cell - poolSize;
+  if (slot >= PaletteCount) return null;
+  return paletteBinding(slot);
 }
 
 export function paletteBinding(slot: number): FuncKeyMapped {
