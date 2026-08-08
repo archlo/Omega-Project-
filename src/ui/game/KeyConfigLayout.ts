@@ -82,6 +82,17 @@ export function paletteCell(slot: number): { x: number; y: number } {
   return Palette[slot];
 }
 
+// OG: after Clear All, the bound FuncKeys stay usable — they are kept in the
+// bottom palette area as unplaced entries the user can drag onto a key again
+// instead of vanishing forever. These cells extend the fixed 42-slot grid
+// (row gridIndex = 42 + idx, col 0..17) so they fit in the same palette strip.
+export const MaxPool = 12;
+
+export function poolCell(idx: number): { x: number; y: number } {
+  const gridIndex = PaletteCount + idx;
+  return { x: 34 * (gridIndex % 18) + 6, y: 267 + 34 * Math.floor(gridIndex / 18) };
+}
+
 export function hitTestKey(x: number, y: number): number {
   for (const [sc, p] of Cells) {
     if (x >= p.x && x < p.x + CellSize && y >= p.y && y < p.y + CellSize) {

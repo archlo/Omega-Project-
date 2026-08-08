@@ -8,9 +8,9 @@ import { WzProperty } from '../../wz/WzProperty.js';
 import { WzCanvas } from '../../wz/WzCanvas.js';
 import { WzSprite } from '../../render/WzSprite.js';
 import { FuncKeyMapped, FuncKeyType, FuncKeyMappedNone } from '../../domain/FuncKeyMapped.js';
-import { CellSize, PaletteCount, ScRShift, ScLShift, ScRCtrl, ScLCtrl, ScRAlt, ScLAlt, 
-getBindableScancodes, tryGetCell, keyLabelOffset, paletteCell, hitTestKey, hitTestPalette, paletteBinding, paletteSlotOf, initLayout } 
-from './KeyConfigLayout.js';
+import { CellSize, PaletteCount, MaxPool, ScRShift, ScLShift, ScRCtrl, ScLCtrl, ScRAlt, ScLAlt, 
+getBindableScancodes, tryGetCell, keyLabelOffset, paletteCell, poolCell, hitTestKey, hitTestPalette, paletteBinding, paletteSlotOf, initLayout } 
+  from './KeyConfigLayout.js';
 import type { DragTarget } from '../DragController.js';
 
 export enum KeyAction {
@@ -70,6 +70,13 @@ export class KeyConfig extends GamePanel implements DragTarget {
   private readonly _map: FuncKeyMappedRecord[] = Array.from({ length: MapSize }, () => FuncKeyMappedNone);
   private readonly _mapOnOpen: FuncKeyMappedRecord[] = Array.from({ length: MapSize }, () => FuncKeyMappedNone);
 
+  // OG CUIKeyConfig::OnButtonClicked (0x7d1 = BtDelete) after DoModal OK:
+  // memset(m_aFuncKeyMapped,0) then ResetPaletteItems() — every removed func-key
+  // becomes an AVAILABLE palette entry again at the bottom ("store down, reuse to
+  // re-add"). Skills/metals too, not just the fixed 42 basics. `_pool` is that
+  // re-usable stash of recently removed bindings that live outside the keyboard.
+  private _pool: FuncKeyMappedRecord[] = [];
+
   private readonly _loader: WzTextureLoader;
   private readonly _kc: WzProperty | null;
   private readonly _kc2: WzProperty | null;
@@ -91,8 +98,15 @@ export class KeyConfig extends GamePanel implements DragTarget {
   private readonly _btQuickSlot: Button | null;
   private readonly _allButtons: Button[] = [];
 
+  // OG: CNoticeDlg@CUIKeyConfig — the modal confirm for BtDefault (0) and
+  // BtDelete (1). Uses UIWindow2.img/KeyConfig/notice/<nType> (260x84) as the
+  // background; OK/BtOK at (157,53), Cancel/BtCancel at (201,53) from the
+  // dialog origin (CNoticeDlg::OnCreate @0x7DC280). The keyboard layers stay
+  // fully visible — no full-panel dim like the old hand-rolled confirm.
   // OG: Notice dialog backgrounds — notice/0-2
   private _noticeBgs: (Sprite | null)[] = [];
+  private readonly _btNoticeOk: Button | null;
+  private readonly _btNoticeCancel: Button | null;
   // OG: QuickSlot config sub-dialog
   private _qsBg: Sprite | null = null;
   private _qsBtOK: Button | null = null;
@@ -173,6 +187,10 @@ export class KeyConfig extends GamePanel implements DragTarget {
     this._btDefault = this._makeBtn('BtDefault', () => { this._confirm = Confirm.Default; });
     this._btDelete = this._makeBtn('BtDelete', () => { this._confirm = Confirm.Delete; });
     this._btQuickSlot = this._makeBtn('BtQuickSlot', () => { this.onOpenQuickSlot?.(); });
+    // OG: the notice dialog's own OK/Cancel CCtrlButton (nId 1/2), NOT the main
+    // window's BtOK/BtCancel — separate instances so layout stays independent.
+    this._btNoticeOk = this._makeNoticeBtn('BtOK');
+    this._btNoticeCancel = this._makeNoticeBtn('BtCancel');
 
     this._gfx = new Graphics();
     this._content = new Container();
@@ -205,6 +223,17 @@ export class KeyConfig extends GamePanel implements DragTarget {
     const pr = qsProp?.Get(name) as WzProperty | null;
     if (!pr) return null;
     const b = Button.fromWz(this._loader, pr);
+    return b;
+  }
+
+  // OG: CNoticeDlg builds its own BtOK/BtCancel CCtrlButton (nId 1/2) from the
+  // same UIWindow2.img/KeyConfig/{BtOK,BtCancel} — must NOT join _allButtons,
+  // which are positioned for the main window bottom row.
+  private _makeNoticeBtn(name: string): Button | null {
+    const pr = this._kc2?.Get(name) as WzProperty | null;
+    if (!pr) return null;
+    const b = Button.fromWz(this._loader, pr);
+    b.onClick = () => { if (name === 'BtOK') this._applyConfirm(); else this._confirm = Confirm.None; };
     return b;
   }
 
@@ -487,6 +516,15 @@ export class KeyConfig extends GamePanel implements DragTarget {
       const isPlaced = this._isPlaced(fk);
       this._drawIconAt(cell.x, cell.y, fk, isPlaced ? 0.4 : 1.0);
     }
+    // The re-usable stash (OG ResetPaletteItems): keys cleared out below,
+    // waiting at the bottom to be dragged back onto a key.
+    for (let i = 0; i < Math.min(this._pool.length, MaxPool); i++) {
+      const fk = this._pool[i];
+      if (this._dragActive && fk.type === this._dragIcon.type && fk.id === this._dragIcon.id) continue;
+      const cell = poolCell(i);
+      const isPlaced = this._isPlaced(fk);
+      this._drawIconAt(cell.x, cell.y, fk, isPlaced ? 0.4 : 1.0);
+    }
   }
 
   private _isPlaced(fk: FuncKeyMappedRecord): boolean {
@@ -557,34 +595,51 @@ private _drawIconAt(cellX: number, cellY: number, fk: FuncKeyMappedRecord, alpha
     return sprite;
   }
 
-  private _drawConfirm(): void {
-    const box = { x: Math.floor(this._panelW / 2) - 140, y: Math.floor(this._panelH / 2) - 40, w: 280, h: 90 };
-    this._gfx.rect(0, 0, this._panelW, this._panelH).fill({ color: 0x000000, alpha: 0.6 });
-    this._gfx.rect(box.x, box.y, box.w, box.h).fill({ color: 0x14161e, alpha: 0.98 });
-    this._gfx.rect(box.x, box.y, box.w, 1).fill({ color: 0x5a6478 });
-    this._gfx.rect(box.x, box.y + box.h - 1, box.w, 1).fill({ color: 0x5a6478 });
-    this._gfx.rect(box.x, box.y, 1, box.h).fill({ color: 0x5a6478 });
-    this._gfx.rect(box.x + box.w - 1, box.y, 1, box.h).fill({ color: 0x5a6478 });
+  // OG: CNoticeDlg window is 264x115; bg image 260x84, buttons at (157,53) for
+  // BtOK (nId 1) and (201,53) for BtCancel (nId 2) — window-relative.
+  private _noticeRect(): { x: number; y: number; w: number; h: number } {
+    return { x: Math.floor((this._panelW - 264) / 2), y: Math.floor((this._panelH - 115) / 2), w: 260, h: 84 };
+  }
 
-    const msg = this._confirm === Confirm.Default ? 'Restore the default key layout?' : 'Clear all key bindings?';
-    if (this._font) {
-      const t = new Text({ text: msg, style: new TextStyle({ fill: 0xe6dcc8, fontSize: 11, fontFamily: 'monospace' }) });
-      const m = this._font.measure(msg);
-      t.position.set(box.x + Math.floor((box.w - m.x) / 2), box.y + 16);
-      this._content.addChild(t);
+  private _drawConfirm(): void {
+    const type = this._confirm === Confirm.Default ? 0 : 1;
+    const r = this._noticeRect();
+    const bg = this._noticeBgs[type];
+    if (bg) {
+      // WZ bg with the baked message; the keyboard stays fully visible.
+      bg.position.set(r.x, r.y);
+      this._content.addChild(bg);
+    } else {
+      // Fallback when the WZ notice sprite is unavailable.
+      this._gfx.rect(r.x, r.y, r.w, r.h).fill({ color: 0x14161e, alpha: 0.98 });
+      this._gfx.rect(r.x, r.y, r.w, 1).fill({ color: 0x5a6478 });
+      this._gfx.rect(r.x, r.y + r.h - 1, r.w, 1).fill({ color: 0x5a6478 });
+      this._gfx.rect(r.x, r.y, 1, r.h).fill({ color: 0x5a6478 });
+      this._gfx.rect(r.x + r.w - 1, r.y, 1, r.h).fill({ color: 0x5a6478 });
+      const msg = this._confirm === Confirm.Default ? 'Restore the default key layout?' : 'Clear all key bindings?';
+      if (this._font) {
+        const t = new Text({ text: msg, style: new TextStyle({ fill: 0xe6dcc8, fontSize: 11, fontFamily: 'monospace' }) });
+        const m = this._font.measure(msg);
+        t.position.set(r.x + Math.floor((r.w - m.x) / 2), r.y + 16);
+        this._content.addChild(t);
+      }
     }
 
-    const yes = { x: box.x + box.w / 2 - 90, y: box.y + box.h / 2 + 12, w: 70, h: 24 };
-    const no = { x: box.x + box.w / 2 + 20, y: box.y + box.h / 2 + 12, w: 70, h: 24 };
-    const yesHover = this._dragMouseX >= this._root.x + yes.x && this._dragMouseX <= this._root.x + yes.x + yes.w && this._dragMouseY >= this._root.y + yes.y && this._dragMouseY <= this._root.y + yes.y + yes.h;
-    const noHover = this._dragMouseX >= this._root.x + no.x && this._dragMouseX <= this._root.x + no.x + no.w && this._dragMouseY >= this._root.y + no.y && this._dragMouseY <= this._root.y + no.y + no.h;
-    this._gfx.rect(yes.x, yes.y, yes.w, yes.h).fill({ color: yesHover ? 0x5a6ea0 : 0x3c4670 });
-    this._gfx.rect(no.x, no.y, no.w, no.h).fill({ color: noHover ? 0x5a6ea0 : 0x3c4670 });
-    const yesT = new Text({ text: 'OK', style: new TextStyle({ fill: 0xffffff, fontSize: 10, fontFamily: 'monospace' }) });
-    yesT.position.set(yes.x + 24, yes.y + 5);
-    const noT = new Text({ text: 'Cancel', style: new TextStyle({ fill: 0xffffff, fontSize: 10, fontFamily: 'monospace' }) });
-    noT.position.set(no.x + 15, no.y + 5);
-    this._content.addChild(yesT, noT);
+    // OG: BtOK (157,53), BtCancel (201,53) from the dialog origin.
+    this._placeNotice(this._btNoticeOk, r.x + 157, r.y + 53);
+    this._placeNotice(this._btNoticeCancel, r.x + 201, r.y + 53);
+    for (const b of [this._btNoticeOk, this._btNoticeCancel]) {
+      if (b) this._content.addChild(b.container);
+    }
+  }
+
+  // Sets the button container so its bounds top-left lands at the target,
+  // honoring the sprite's own WZ origin.
+  private _placeNotice(b: Button | null, x: number, y: number): void {
+    if (!b) return;
+    const bb = b.bounds;
+    b.container.x += x - bb.x;
+    b.container.y += y - bb.y;
   }
 
   handleMouseButton(x: number, y: number, down: boolean): boolean {
@@ -594,7 +649,8 @@ private _drawIconAt(cellX: number, cellY: number, fk: FuncKeyMappedRecord, alpha
     const inside = lx >= 0 && lx < this._panelW && ly >= 0 && ly < this._panelH;
 
     if (this._confirm !== Confirm.None) {
-      if (down) this._handleConfirmClick(lx, ly);
+      if (this._btNoticeOk?.handleMouseButton(lx, ly, down)) return true;
+      if (this._btNoticeCancel?.handleMouseButton(lx, ly, down)) return true;
       return true;
     }
 
@@ -667,6 +723,25 @@ private _drawIconAt(cellX: number, cellY: number, fk: FuncKeyMappedRecord, alpha
       return true;
     }
 
+    // The re-usable stash: drag a cleared-out key back onto the keyboard.
+    for (let i = 0; i < Math.min(this._pool.length, MaxPool); i++) {
+      const r = poolCell(i);
+      if (lx >= r.x && lx < r.x + CellSize && ly >= r.y && ly < r.y + CellSize) {
+        const fk = this._pool[i];
+        if (this._selectedKeySc >= 0) {
+          this._map[this._selectedKeySc] = { ...fk };
+          this._selectedKeySc = -1;
+          this.onBindingsChanged?.();
+          return true;
+        }
+        if (this._isPlaced(fk)) return true;
+        this._dragIcon = { ...fk };
+        this._dragFromScancode = -1;
+        this._dragActive = true;
+        return true;
+      }
+    }
+
     // Click outside key/palette — deselect
     this._selectedKeySc = -1;
 
@@ -728,16 +803,22 @@ private _layoutButtons(): void {
     this._selectedKeySc = -1;
   }
 
-  private _handleConfirmClick(lx: number, ly: number): void {
-    const yes = { x: Math.floor(this._panelW / 2) - 90, y: Math.floor(this._panelH / 2) + 12, w: 70, h: 24 };
-    const no = { x: Math.floor(this._panelW / 2) + 20, y: Math.floor(this._panelH / 2) + 12, w: 70, h: 24 };
-    if (lx >= yes.x && lx <= yes.x + yes.w && ly >= yes.y && ly <= yes.y + yes.h) this._applyConfirm();
-    else if (lx >= no.x && lx <= no.x + no.w && ly >= no.y && ly <= no.y + no.h) this._confirm = Confirm.None;
-  }
-
   private _applyConfirm(): void {
-    if (this._confirm === Confirm.Default) this._loadDefaultMap();
-    else if (this._confirm === Confirm.Delete) this._map.fill({ ...FuncKeyMappedNone });
+    if (this._confirm === Confirm.Default) {
+      this._loadDefaultMap();
+      this._pool.length = 0;
+    } else if (this._confirm === Confirm.Delete) {
+      // OG OnButtonClicked 0x7d1 → DoModal OK → memset(m_aFuncKeyMapped,0) +
+      // ResetPaletteItems(): the removed keys become available palette entries
+      // at the bottom so the user can re-add them. Skills/items too.
+      for (let i = 0; i < MapSize; i++) {
+        const fk = this._map[i];
+        if (fk.type !== FuncKeyType.None && !this._pool.some(p => p.type === fk.type && p.id === fk.id)) {
+          this._pool.push({ ...fk });
+        }
+      }
+      this._map.fill({ ...FuncKeyMappedNone });
+    }
     this.onBindingsChanged?.();
     this._confirm = Confirm.None;
   }

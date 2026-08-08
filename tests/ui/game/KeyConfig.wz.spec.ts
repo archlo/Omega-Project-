@@ -59,3 +59,98 @@ describe('KeyConfig WZ-origin buttons (real UI.nx)', () => {
     }
   });
 });
+
+// OG CUIKeyConfig + CNoticeDlg @0x7dc380: BtDefault (nId 0x7d0) / BtDelete
+// (nId 0x7d1) open a 264x115 modal window whose background is the baked
+// UIWindow2.img/KeyConfig/notice/<0|1> (260x84) image — NOT a full-panel dim.
+// The keyboard keys stay fully visible while the dialog is up. The dialog's
+// own BtOK is at (157,53) and BtCancel at (201,53) from the window origin
+// (CNoticeDlg::OnCreate @0x7dc280).
+describe('KeyConfig notice confirm dialog (real UI.nx)', () => {
+  const ui = WzPackage.OpenBase('wz_client', 'UI');
+  const loader = new WzTextureLoader();
+
+  const makePanel = () => {
+    const kc = new KeyConfig(loader, ui, null);
+    kc.isVisible = true;
+    return kc as unknown as {
+      _btDelete: { handleMouseButton(x: number, y: number, down: boolean): boolean };
+      _btNoticeOk: { container: { x: number; y: number }; bounds: { x: number; y: number; width: number; height: number }; handleMouseButton(x: number, y: number, down: boolean): boolean };
+      _btNoticeCancel: { container: { x: number; y: number }; bounds: { x: number; y: number; width: number; height: number }; handleMouseButton(x: number, y: number, down: boolean): boolean };
+      _noticeBgs: (object | null)[];
+      _content: { children: unknown[] };
+      _map: { type: number; id: number }[];
+      _confirm: number;
+      _noticeRect(): { x: number; y: number; w: number; h: number };
+      handleMouseButton(x: number, y: number, down: boolean): boolean;
+      update(dt: number): void;
+      onKeyPress(key: string): boolean;
+      onBindingsChanged: (() => void) | null;
+    };
+  };
+
+  it('shows the baked notice/1 dialog for BtDelete and keeps the keyboard visible (no dim)', () => {
+    const kc = makePanel();
+    // BtDelete cell is (73,239) — click it to raise the confirm.
+    kc.handleMouseButton(78, 244, true);
+    kc.update(0);
+
+    const bg = kc._noticeBgs[1] as { position: { x: number }; width: number; height: number } | null;
+    expect(bg).not.toBeNull();
+    // the notice background sprite is now a child of the content tree
+    expect(kc._content.children.some(c => c === bg)).toBe(true);
+    const r = kc._noticeRect();
+    expect(bg!.position.x).toBe(r.x);
+    expect(bg!.width).toBe(260);
+  });
+
+  it('places dialog OK/Cancel at (157,53) / (201,53) relative to the notice origin', () => {
+    const kc = makePanel();
+    kc._noticeRect = () => ({ x: 100, y: 60, w: 260, h: 84 });
+    kc.handleMouseButton(78, 244, true);
+    kc.update(0);
+
+    const r = kc._noticeRect();
+    expect(kc._btNoticeOk.bounds.x).toBe(r.x + 157);
+    expect(kc._btNoticeOk.bounds.y).toBe(r.y + 53);
+    expect(kc._btNoticeCancel.bounds.x).toBe(r.x + 201);
+    expect(kc._btNoticeCancel.bounds.y).toBe(r.y + 53);
+  });
+
+  it('notice Cancel aborts the clear and leaves bindings untouched', () => {
+    const kc = makePanel();
+    kc.handleMouseButton(78, 244, true); // open the Delete confirm
+
+    // click the dialog Cancel (down + up over its button rect)
+    const r = kc._noticeRect();
+    kc.handleMouseButton(r.x + 201 + 15, r.y + 53 + 8, true);
+    kc.handleMouseButton(r.x + 201 + 15, r.y + 53 + 8, false);
+
+    expect(kc._confirm).toBe(0); // None
+    expect(kc._map.every(fk => fk.type !== 0)).toBe(true); // still bound
+  });
+
+  it('notice OK performs the clear-all for BtDelete', () => {
+    const kc = makePanel();
+    let fired = false;
+    kc.onBindingsChanged = () => { fired = true; };
+
+    kc.handleMouseButton(78, 244, true); // open the clear-all confirm
+    const r = kc._noticeRect();
+    kc.handleMouseButton(r.x + 157 + 15, r.y + 53 + 8, true);
+    kc.handleMouseButton(r.x + 157 + 15, r.y + 53 + 8, false);
+
+    expect(kc._confirm).toBe(0); // None
+    expect(kc._map.every(fk => fk.type === 0 && fk.id === 0)).toBe(true);
+    expect(fired).toBe(true);
+  });
+
+  it('Escape still dismisses the dialog without applying the clear', () => {
+    const kc = makePanel();
+    kc.handleMouseButton(78, 244, true);
+    expect(kc._confirm).not.toBe(0);
+    kc.onKeyPress('Escape');
+    expect(kc._confirm).toBe(0);
+    expect(kc._map.every(fk => fk.type !== 0)).toBe(true);
+  });
+});
