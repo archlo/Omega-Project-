@@ -1233,6 +1233,12 @@ export class GameStage extends Stage {
     this._keyConfig.onSaveToServer = (changed) => {
       this.game.session.send(GameSender.FuncKeyMappedModified(changed.map((c) => ({ keyIndex: c.index, type: c.fk.type, actionId: c.fk.id }))));
     };
+    this._quickSlotConfig.keysOf = () => this._quickSlots?.GetKeys() ?? null;
+    this._quickSlotConfig.onConfirm = (keys) => { this._quickSlots?.SetKeys(keys); };
+    this._quickSlotConfig.bindingAt = (scancode) => this._keyConfig.bindingAt(scancode);
+    this._quickSlotConfig.skillIcon = (skillId) => this._skillIcon(skillId);
+    this._quickSlotConfig.itemIcon = (itemId) => this._itemIcons?.LoadIcon(itemId) ?? null;
+    this._quickSlotConfig.notify = (msg) => { this._notice?.show('QuickSlot', msg); };
     this._quickSlotConfig.OnOpenKeyConfig = () => { this._keyConfig.isVisible = true; };
     this._quickSlots = new QuickSlotBar(
       this._loader, uiWz, font,

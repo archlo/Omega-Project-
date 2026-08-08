@@ -191,7 +191,9 @@ export class KeyConfig extends GamePanel implements DragTarget {
   }
 
   private _makeBtn(name: string, onClick: () => void): Button | null {
-    const pr = (this._kc2?.Get(name) ?? this._kc?.Get(name)) as WzProperty | null;
+    // OG CUIKeyConfig::OnCreate @0x7dc5d0: AddButton("UI/UIWindow2.img/KeyConfig/<name>", nId, 0, 0).
+    // The UIWindow.img/KeyConfig copy with BtClose/BtHelp is a different (older) window — not v95.
+    const pr = this._kc2?.Get(name) as WzProperty | null;
     if (!pr) return null;
     const b = Button.fromWz(this._loader, pr);
     b.onClick = onClick;
@@ -494,12 +496,15 @@ export class KeyConfig extends GamePanel implements DragTarget {
     return false;
   }
 
-  private _drawIconAt(cellX: number, cellY: number, fk: FuncKeyMappedRecord, alpha = 1.0): void {
+private _drawIconAt(cellX: number, cellY: number, fk: FuncKeyMappedRecord, alpha = 1.0): void {
     const icon = this._iconFor(fk);
     if (icon) {
       const s = icon.ToPixi();
-      // OG DrawItemIcon/DrawSkillIcon receives the cell baseline at y + 32.
-      s.position.set(cellX - icon.Width * s.anchor.x, cellY + CellSize - icon.Height * s.anchor.y);
+      // OG DrawItemIcon/DrawSkillIcon receives the cell baseline at y + CellSize.
+      // The icons are origin=(0,height) → anchor.y = 1; we want the icon's BOTTOM
+      // edge on the cell bottom, so place at cellY + CellSize (NOT minus the
+      // anchor height, which lifts the icon one whole cell).
+      s.position.set(cellX, cellY + CellSize - icon.Height * (1 - s.anchor.y));
       s.alpha = alpha;
       this._content.addChild(s);
     } else {
@@ -684,18 +689,21 @@ export class KeyConfig extends GamePanel implements DragTarget {
     return false;
   }
 
-  private _layoutButtons(): void {
+private _layoutButtons(): void {
     const place = (b: Button | null, bx: number, by: number) => {
       if (b) b.container.position.set(bx, by);
     };
+    // OG CUIKeyConfig::OnCreate @0x7dc5d0: all five AddButton calls use layout
+    // offset (0,0) — the WZ canvas origin (already baked into WzSprite's anchor)
+    // positions each button at its home cell, so the container must stay at (0,0).
+    // (ChannelSelect precedent: container pos = the layout offset.)
     place(this._btClose, this._panelW - 18, 6);
     place(this._btHelp, this._panelW - 34, 6);
-    // These are WZ-origin positions, not visual top-left coordinates.
-    place(this._btQuickSlot, 147, 239);
-    place(this._btDefault, 10, 239);
-    place(this._btDelete, 73, 239);
-    place(this._btOk, 526, 239);
-    place(this._btCancel, 572, 239);
+    place(this._btQuickSlot, 0, 0);
+    place(this._btDefault, 0, 0);
+    place(this._btDelete, 0, 0);
+    place(this._btOk, 0, 0);
+    place(this._btCancel, 0, 0);
   }
 
   private _finishDrag(lx: number, ly: number): void {

@@ -273,6 +273,11 @@ export class QuickSlotBar extends GamePanel implements DragTarget {
     for (let i = 0; i < SlotCount && i < keys.length; i++) this._keys[i] = keys[i];
   }
 
+  /** Snapshot of the 8 quickslot keys — mirrors CQuickslotKeyMappedMan::m_aQuickslotKeyMapped. */
+  GetKeys(): number[] {
+    return [...this._keys];
+  }
+
   Relayout(viewWidth: number, viewHeight: number): void {
     this._viewW = viewWidth;
     this._viewH = viewHeight;
