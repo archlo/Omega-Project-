@@ -441,8 +441,11 @@ this._gfx = new Graphics();
       const icon = this._iconFor(this._dragIcon);
       if (icon) {
         const s = icon.ToPixi();
-        // Anchor is OriginY/Height; most key icons have origin at bottom
-        s.position.set(dmLx - icon.Width * s.anchor.x, dmLy - icon.Height * s.anchor.y);
+        // Center the ghost on the cursor (matches the placeholder's -16 center).
+        // The WZ origin anchor would pin the icon's bottom edge at the mouse,
+        // leaving the icon floating a full icon-height above the cursor.
+        s.anchor.set(0.5, 0.5);
+        s.position.set(dmLx, dmLy);
         this._content.addChild(s);
       } else {
         this._drawPlaceholder(dmLx - 16, dmLy - 16, this._dragIcon);

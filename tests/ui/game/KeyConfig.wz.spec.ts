@@ -135,8 +135,9 @@ const clickDelete = (p: ReturnType<typeof makePanel>) => {
 
   it('notice Cancel aborts the clear and leaves bindings untouched', () => {
     const kc = makePanel();
-    const before = bound(kc);
+    const before = boundSnapshot(kc);
     clickDelete(kc); // open the Delete confirm
+    kc.update(0); // draw → _placeNotice puts OK/Cancel at their dialog cells
 
     // click the dialog Cancel (down + up over its button rect)
     const r = kc._noticeRect();
@@ -144,7 +145,7 @@ const clickDelete = (p: ReturnType<typeof makePanel>) => {
     kc.handleMouseButton(sl(r.x + 201 + 15, r.y + 53 + 8).x, sl(r.x + 201 + 15, r.y + 53 + 8).y, false);
 
     expect(kc._confirm).toBe(0); // None
-    expect(bound(kc)).toEqual(before); // still bound
+    expect(boundSnapshot(kc)).toEqual(before); // still bound
   });
 
   it('notice OK performs the clear-all for BtDelete', () => {
@@ -153,6 +154,7 @@ const clickDelete = (p: ReturnType<typeof makePanel>) => {
     kc.onBindingsChanged = () => { fired = true; };
 
     clickDelete(kc); // open the clear-all confirm
+    kc.update(0);
     const r = kc._noticeRect();
     kc.handleMouseButton(sl(r.x + 157 + 15, r.y + 53 + 8).x, sl(r.x + 157 + 15, r.y + 53 + 8).y, true);
     kc.handleMouseButton(sl(r.x + 157 + 15, r.y + 53 + 8).x, sl(r.x + 157 + 15, r.y + 53 + 8).y, false);
@@ -167,8 +169,9 @@ const clickDelete = (p: ReturnType<typeof makePanel>) => {
     const kc = makePanel();
     clickDelete(kc);
     expect(kc._confirm).not.toBe(0);
+    kc.update(0);
     kc.onKeyPress('Escape');
     expect(kc._confirm).toBe(0);
-    expect(bound(kc).some(f => f.type !== 0)).toBe(true);
+    expect(boundSnapshot(kc).some(f => f.type !== 0)).toBe(true);
   });
 });

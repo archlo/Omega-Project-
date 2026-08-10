@@ -79,9 +79,12 @@ export class MiniMapMarkers {
     };
 
     // OG: MakeIconsForSimpleMiniMap loads from MiniMapSimpleMode/DefaultHelper
+    // (verified node names from the WZ: user/npc/startnpc/endnpc/friend/guild/
+    // guildmaster/match/party/partymaster/portal/another/anothertrader/
+    // usertrader + 8 arrows).
     const simpleRoot = ui?.GetItem('UIWindow2.img/MiniMapSimpleMode/DefaultHelper') as WzProperty | null;
     this.User = load(simpleRoot, 'user');
-    this.RemoteUser = load(simpleRoot, 'remoteuser');
+    this.RemoteUser = load(simpleRoot, 'another');
     this.Friend = load(simpleRoot, 'friend');
     this.Guild = load(simpleRoot, 'guild');
     this.GuildMaster = load(simpleRoot, 'guildmaster');
@@ -91,13 +94,19 @@ export class MiniMapMarkers {
     this.Npc = load(simpleRoot, 'npc');
     this.NpcStart = load(simpleRoot, 'startnpc');
     this.NpcEnd = load(simpleRoot, 'endnpc');
-    this.NpcLowLevel = load(simpleRoot, 'npclowlevel');
-    this.ShopSelf = load(simpleRoot, 'shopself');
-    this.ShopRemote = load(simpleRoot, 'shopremote');
+    // OG: m_pCanvasIconNpcLowLevelSimple = LowLVQuestMark/forMiniMap/0 (nested)
+    const lowLevelRoot = ui?.GetItem('UIWindow2.img/MiniMapSimpleMode/LowLVQuestMark/forMiniMap') as WzProperty | null;
+    this.NpcLowLevel = lowLevelRoot != null
+      ? load(lowLevelRoot, '0')
+      : load(simpleRoot, 'npclowlevel');
+    this.ShopSelf = load(simpleRoot, 'usertrader');
+    this.ShopRemote = load(simpleRoot, 'anothertrader');
     this.Portal = load(simpleRoot, 'portal');
-    this.Sheep = load(simpleRoot, 'sheep');
-    this.Wolves = load(simpleRoot, 'wolves');
-    this.NakedSheep = load(simpleRoot, 'nakedsheep');
+    // OG aliases (explicit AddRef copies in MakeIconsForSimpleMiniMap):
+    // Sheep ← RemoteUser, Wolves ← ShopSelf, NakedSheep ← Party
+    this.Sheep = this.RemoteUser;
+    this.Wolves = this.ShopSelf;
+    this.NakedSheep = this.Party;
 
     this.ArrowUp = load(simpleRoot, 'arrowup');
     this.ArrowDown = load(simpleRoot, 'arrowdown');
