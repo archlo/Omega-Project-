@@ -200,6 +200,14 @@ export class GameStage extends Stage {
   /** Stored when SetField arrives before Map.wz finishes loading. */
   private _deferredFieldArgs: SetFieldArgs | null = null;
   protected _otherChars = new Map<number, OtherCharLook>();
+  /**
+   * Friend-list → minimap stalkee fallback (OG CUIMiniMap m_mStalkee feed
+   * when the server never sends StalkResult): online friend charId → name.
+   * In-field online friends are fed to the minimap as stalkees so Friend
+   * icons / names / edge arrows render even without a server stalk feed.
+   */
+  private _onlineFriends = new Map<number, string>();
+  private _friendStalkeeIds = new Set<number>();
   /** ponytail: couple-chair pairs. Key=charId, value={itemId, pairCharId}.
    *  Proximity tracking works; overlay rendering (heart zone, per-character
    *  effect) deferred — cosmetic, no gameplay impact. */
@@ -2523,6 +2531,7 @@ export class GameStage extends Stage {
     for (const drop of this._drops) drop.Update(dt);
     if (this._drops.some((d) => d.Finished)) this._drops = this._drops.filter((d) => !d.Finished);
     for (const ch of this._otherChars.values()) ch.Update(dt);
+    this._syncFriendStalkees();
     this._updateCoupleChairs();
     for (const [charId, pets] of this._pets) {
       const ownerPos = charId === this._localCharId
@@ -3673,6 +3682,9 @@ export class GameStage extends Stage {
       // re-sending FriendAdd (no separate "set group" opcode exists — see
       // FriendRequestAction's doc comment), so until UserList gets real
       // grouped sub-lists this just surfaces the group OG already assigned.
+      this._onlineFriends.clear();
+      this._friendStalkeeIds.clear();
+      for (const f of friends) if (f.online) this._onlineFriends.set(f.charId, f.name);
       this._userList.setUsers(friends.map((f) => ({
         charId: f.charId, name: f.name, level: 0,
         job: f.online ? `Online${f.group ? ` [${f.group}]` : ''}` : 'Offline',
@@ -3680,6 +3692,11 @@ export class GameStage extends Stage {
     };
     fh.onFriendStatusChanged = (args) => {
       this._userList.updateFriendStatus(args.charId, args.online);
+      if (!args.online) {
+        this._onlineFriends.delete(args.charId);
+        this._friendStalkeeIds.delete(args.charId);
+        this._miniMap?.removeStalkee(args.charId);
+      }
     };
     // TODO_AUDIT.md Hundred-and-sixty-sixth pass: UpdateFriend (OG: decompile/A125D0.c) — incremental channel update.
     fh.onFriendUpdate = (charId, channel) => {
@@ -4136,8 +4153,20 @@ export class GameStage extends Stage {
     fh.onSetObjectState = (entries) => {
       this._chatBar.addLine(`[Object State] ${entries.length} entries`);
     };
+    // OG: CField::OnStalkResult (decompile/539910.c) feeds CUIMiniMap's
+    // m_mStalkee — the followed players tracked on the minimap. Entries
+    // carry (objId, name, x, y) for adds and objId for removes; each add
+    // becomes an InsertStalkee, each remove a RemoveStalkee. On-pane
+    // stalkees get the Friend icon + name; off-pane ones accumulate into
+    // the m_strRemote* buckets the minimap's edge arrows draw from.
     fh.onStalkResult = (entries) => {
-      this._chatBar.addLine(`[Stalk] ${entries.length} result entries`);
+      for (const e of entries) {
+        if (e.remove) {
+          this._miniMap?.removeStalkee(e.objId);
+        } else if (e.name !== undefined && e.x !== undefined && e.y !== undefined) {
+          this._miniMap?.insertStalkee(e.objId, e.name, e.x, e.y);
+        }
+      }
     };
     fh.onRequestFootHoldInfo = () => {
       this._chatBar.addLine('[FootHold] Info requested');
@@ -4784,6 +4813,7 @@ export class GameStage extends Stage {
     this._npcs.length = 0;
     this._mobCtl.clear();
     this._otherChars.clear();
+    this._friendStalkeeIds.clear();
     this._drops.length = 0;
     this._reactors.clear();
     this._employees.clear();
@@ -6294,9 +6324,36 @@ export class GameStage extends Stage {
 
   private _onUserLeave(charId: number): void {
     this._otherChars.delete(charId);
+    this._friendStalkeeIds.delete(charId);
+    this._miniMap?.removeStalkee(charId);
     this._itemEffects?.RemoveCharacter(charId);
     this._chatBalloon?.Clear(charId);
     this._removePetsForOwner(charId);
+  }
+
+  /**
+   * Friend-list → minimap stalkee fallback. The server's StalkBegin handler
+   * replies in a single-entry format our OnStalkResult decoder (count → array,
+   * OG CField::OnStalkResult @0x539910) cannot parse and never broadcasts
+   * StalkResult, so without this no Friend icons / names / edge arrows would
+   * ever appear. We match online friends (by charId) against in-field remote
+   * chars and feed live positions into CUIMiniMap::InsertStalkee. Outside the
+   * field (off-map friends, or when the server does send real stalk entries)
+   * the server-primed m_mStalkee path still wins because this only ever sets
+   * keys that exist in _otherChars.
+   */
+  private _syncFriendStalkees(): void {
+    if (this._onlineFriends.size === 0) return;
+    const mm = this._miniMap;
+    if (!mm) return;
+    for (const [charId, name] of this._onlineFriends) {
+      const ch = this._otherChars.get(charId);
+      if (!ch) continue;
+      const p = ch.Position;
+      if (!p) continue;
+      mm.insertStalkee(charId, name, p.x, p.y);
+      this._friendStalkeeIds.add(charId);
+    }
   }
 
   private _spawnPetsForOwner(ownerCharId: number, petIds: number[]): void {
