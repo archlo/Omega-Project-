@@ -1,6 +1,6 @@
 MapleClaude TS (Omega Project)
 
-A TypeScript reimplementation of the MapleStory v83-era client, built to run in both the browser and Node.js. It renders with PixiJS, speaks the original binary packet protocol over WebSockets, and reads game assets (UI, maps, characters, items, skills) from WZ data.
+A TypeScript reimplementation of the MapleStory v95-era client, built to run in both the browser and Node.js. It renders with PixiJS, speaks the original binary packet protocol over WebSockets, and reads game assets (UI, maps, characters, items, skills) from WZ data.
 
 > This is a personal reverse-engineering / reimplementation project, not affiliated with or endorsed by Nexon. It targets the legacy v83 client/server protocol.
 >
@@ -99,7 +99,7 @@ npm run build:browser  # browser bundle (vite build)
 ## Requirements
 
 - Node.js
-- A v83-compatible server emulator (e.g. Cosmic) to connect to
+- A v95-compatible server emulator (e.g. Cosmic) to connect to
 - Your own WZ/NX game assets, pointed to via `wzDir` — **not included in this repo**
 
 ## Notes
