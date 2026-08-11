@@ -74,6 +74,9 @@ const _redStyle = new TextStyle({ fill: '#CC0000', fontSize: 10, fontFamily: 'mo
 // All coordinates and behavior from IDA decompilation of v95 client.
 export class StatsInfo extends GamePanel {
   level = 1; job = 'Beginner'; ap = 0; fame = 0;
+  // OG CUIStat holds the numeric BasicStat.nJob; the display name comes from
+  // get_job_name. Keep the raw id so job logic never depends on parsing text.
+  jobId: number | null = null;
   str = 4; dex = 4; intStat = 4; luk = 4;
   // Base stats (without equipment) — used for StringPool 1979 bonus format
   baseStr = 4; baseDex = 4; baseInt = 4; baseLuk = 4;
@@ -105,6 +108,11 @@ export class StatsInfo extends GamePanel {
   private _wzBg: WzSprite | null = null;
   private _wzBg2: WzSprite | null = null;
   private _wzBg3: WzSprite | null = null;
+  // OG: beginner overlay covers — copied to the window canvas before text in Draw
+  // (cover0 160x308 at origin (-6,-22), cover1 150x121 at origin (-11,-181))
+  private _wzCover0: WzSprite | null = null;
+  private _wzCover1: WzSprite | null = null;
+  private _coverSprites: Sprite[] = [];
   private _contentLayer: Container;
   private _btHpUp: Button | null = null;
   private _btMpUp: Button | null = null;
@@ -136,11 +144,12 @@ export class StatsInfo extends GamePanel {
   private _lukLabel: Text;
   private _lukValue: Text;
 
-  // OG: m_apCanvasDisabled — stat icons from UI/UIWindow2.img/Stat/main/{statName}
-  // Loaded in OnCreate via IWzResMan::GetObjectA with path "UI/UIWindow2.img/Stat/main/" + statName
+  // OG: m_apCanvasDisabled — stat icons from UI/UIWindow2.img/Stat/main/Disabled/{statName}
+  // Loaded in OnCreate via IWzResMan::GetObjectA with path "UI/UIWindow2.img/Stat/main/Disabled/" + statName
   private _disabledCanvases: (Sprite | null)[] = [];
-  // OG: ms_aStatName — array of stat name strings used for disabled canvas loading and AutoApUp formatting
-  private static readonly STAT_NAMES = ['STR', 'DEX', 'INT', 'LUK', 'AP', 'HP', 'MP'];
+  // OG: ms_aStatName — exactly 4 entries {STR, DEX, INT, LUK} (verified from the
+  // static initializer @0xB0E900 and the 4-node WZ Disabled subtree)
+  private static readonly STAT_NAMES = ['STR', 'DEX', 'INT', 'LUK'];
   // OG: CUIStatDetail — shown when m_nOption=1, positioned at (GetAbsLeft+172, GetAbsTop+90)
   private _detailVisible = false;
   // OG: m_bBeginner — set in Draw based on job/level, gates the entire stats section
@@ -180,6 +189,10 @@ export class StatsInfo extends GamePanel {
       this._wzBg = this._loadWzSprite(loader, stat, 'backgrnd');
       this._wzBg2 = this._loadWzSprite(loader, stat, 'backgrnd2');
       this._wzBg3 = this._loadWzSprite(loader, stat, 'backgrnd3');
+      // OG: beginner covers (cover0/cover1) — copied to the window canvas before
+      // text in Draw when (job%1000==0 || job==2001) && level<=10
+      this._wzCover0 = this._loadWzSprite(loader, stat, 'cover0');
+      this._wzCover1 = this._loadWzSprite(loader, stat, 'cover1');
     }
 
     this._bg = new Graphics();
@@ -194,6 +207,20 @@ export class StatsInfo extends GamePanel {
       if (this._wzBg3) {
         const bg3 = this._wzBg3.ToPixi();
         this._root.addChild(bg3);
+      }
+      // OG: beginner covers (cover0/cover1) — drawn under the text but over the
+      // normal backgrnd layers when (job%1000==0 || job==2001) && level<=10
+      if (this._wzCover0) {
+        const c0 = this._wzCover0.ToPixi();
+        c0.visible = false;
+        this._root.addChild(c0);
+        this._coverSprites.push(c0);
+      }
+      if (this._wzCover1) {
+        const c1 = this._wzCover1.ToPixi();
+        c1.visible = false;
+        this._root.addChild(c1);
+        this._coverSprites.push(c1);
       }
     } else {
       this._rebuildBg();
@@ -372,7 +399,9 @@ export class StatsInfo extends GamePanel {
   }
 
   private _parseJobNumber(): number {
-    // Extract job number from job string — fallback to 0
+    // Prefer the raw numeric job id (set from GameStage). Fall back to
+    // extracting digits from the display string for callers that only set `job`.
+    if (this.jobId !== null && this.jobId >= 0) return this.jobId;
     const match = this.job.match(/(\d+)/);
     return match ? parseInt(match[1]) : 0;
   }
@@ -436,19 +465,21 @@ export class StatsInfo extends GamePanel {
     this._hpText.text = `${this.hp} / ${this.maxHp}`;
     this._mpText.text = `${this.mp} / ${this.maxMp}`;
 
-    // OG Draw: EXP percentage display (StringPool 1994 format "%d / %d (%d%%)")
+    // OG Draw: EXP percentage display — StringPool 1994 Format(exp, pct) = 2 args.
+    // The "next level" EXP is NOT shown here (it only appears in the 0x1A37 tooltip).
     // EXP% = nEXP / nNextLevelEXP * 100, clamped to 0 if nNextLevelEXP <= 0
     const expPct = this.nextLevelExp > 0 ? Math.floor((this.exp / this.nextLevelExp) * 100) : 0;
-    this._expText.text = `${this.exp} / ${this.nextLevelExp} (${expPct}%)`;
+    this._expText.text = `${this.exp} (${expPct}%)`;
 
-    // OG Draw: bBeginner check — (job == 0 * 1000 || job == 2001) && level <= 10
-    // When bBeginner: draw beginner text, skip stats section entirely
+    // OG Draw: bBeginner check — (job == 1000*(job/1000) || job == 2001) && level <= 10
+    // When bBeginner: draw beginner cover overlays, skip stats section entirely
     const jobNum = this._parseJobNumber();
     this._bBeginner = (jobNum % 1000 === 0 || jobNum === 2001) && this.level <= 10;
 
     if (this._bBeginner) {
-      // OG: when bBeginner, only name/job/level/guild/HP/MP/EXP/AP are drawn
-      // Stats section (STR/DEX/INT/LUK) and AP count are NOT drawn
+      // OG: beginner branch copies cover0/cover1 canvas overlays (behind text,
+      // over backgrnd); stats section (STR/DEX/INT/LUK) and AP count are NOT drawn
+      for (const c of this._coverSprites) c.visible = true;
       this._apValue.visible = false;
       this._strLabel.visible = false;
       this._strValue.visible = false;
@@ -464,14 +495,17 @@ export class StatsInfo extends GamePanel {
 
     // OG Draw: AP count centered at (85 - textWidth, 200)
     // CalcTextWidth → DrawTextA at (85 - nWidth, 200)
+    for (const c of this._coverSprites) c.visible = false;
     this._apValue.visible = true;
     this._apValue.text = `${this.ap}`;
     const apTextWidth = this._apValue.width;
     this._apValue.x = 85 - apTextWidth;
 
-    // OG Draw: Fame at y=158 — StringPool 6677 format "Fame: %d"
+    // OG Draw: Fame at y=158 — StringPool 6677 Format(POP), single %d like Level.
+    // The "Fame:" label is baked into the WZ backgrnd image, not drawn as text.
     this._fameText.visible = true;
-    this._fameText.text = `Fame: ${this.fame}`;
+    this._fameText.text = `${this.fame}`;
+    this._fameText.style = _valueStyle;
 
     // OG Draw: Stats section — only drawn when !bBeginner
     // StringPool 1979 format when basicStat != characterStat: "%d (+%d)(+%d)"
@@ -678,6 +712,8 @@ export class StatsInfo extends GamePanel {
   // OG: AutoApUp — computes ideal stat allocation based on job, shows confirmation dialog
   // StringPool 0x7C7 = header, 0x7C8 = per-stat format
   // Calls GetIdealStatUp (0x73DDB0) for job-based allocation
+  // The computed allocation awaiting the YesNo confirm (exposed for tests).
+  pendingAutoApAlloc: { str: number; dex: number; intStat: number; luk: number } | null = null;
   autoApUp(mode: number): void {
     if (this.ap <= 0) return;
 
@@ -687,12 +723,16 @@ export class StatsInfo extends GamePanel {
     // OG: GetIdealStatUp returns StatPair[] with { dwStatFlag, nValue }
     // Then AutoApUp caps each entry to available AP and shows confirmation
     const statPairs = getIdealStatUp(jobNum, level, this.str, this.dex, this.intStat, this.luk, mode === 1);
+    // OG: `if (GetIdealStatUp(bs, bWantToBeInfighter, &aStatUp))` — empty result = no-op
+    if (statPairs.length === 0) return;
 
     // Cap each allocation to available AP (OG: loops through pairs, caps each to remaining AP)
     let remaining = this.ap;
+    let lastFlag = 0;
     const alloc = { str: 0, dex: 0, intStat: 0, luk: 0 };
 
     for (const pair of statPairs) {
+      lastFlag = pair.dwStatFlag;
       let amount = Math.min(pair.nValue, remaining);
       if (amount < 0) amount = 0;
       remaining -= amount;
@@ -705,14 +745,18 @@ export class StatsInfo extends GamePanel {
       }
     }
 
-    // Distribute any remaining AP to the last stat (OG: adds remainder to last entry)
+    // OG: any leftover AP is added to the LAST pair in the array
+    // (a[v10 - 1].nValue += v6), regardless of its current value.
     if (remaining > 0) {
-      if (alloc.luk > 0) alloc.luk += remaining;
-      else if (alloc.intStat > 0) alloc.intStat += remaining;
-      else if (alloc.dex > 0) alloc.dex += remaining;
-      else alloc.str += remaining;
+      switch (lastFlag) {
+        case 0x40: alloc.str += remaining; break;
+        case 0x80: alloc.dex += remaining; break;
+        case 0x100: alloc.intStat += remaining; break;
+        case 0x200: alloc.luk += remaining; break;
+      }
     }
 
+    this.pendingAutoApAlloc = alloc;
     // OG: Show confirmation dialog (CUtilDlg::YesNo)
     this._showAutoApConfirm(alloc);
   }

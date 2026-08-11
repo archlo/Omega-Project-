@@ -1138,3 +1138,53 @@ export const enum Job {
 
   Jett         = 5000,
 }
+
+// OG: get_job_name @0x4B8960 — canonical v95 job display names.
+// The client resolves these through StringPool (job 0 → 0xC, 100 → 0x16, ...)
+// which our String.wz cannot resolve, so we ship the well-known literals.
+const JOB_NAMES: Record<number, string> = {
+  0: 'Beginner',
+  100: 'Warrior', 110: 'Fighter', 111: 'Crusader', 112: 'Hero',
+  120: 'Page', 121: 'White Knight', 122: 'Paladin',
+  130: 'Spearman', 131: 'Dragon Knight', 132: 'Dark Knight',
+  200: 'Magician',
+  210: 'Fire/Poison Wizard', 211: 'F/P Mage', 212: 'F/P Arch Mage',
+  220: 'Ice/Lightning Wizard', 221: 'I/L Mage', 222: 'I/L Arch Mage',
+  230: 'Cleric', 231: 'Priest', 232: 'Bishop',
+  300: 'Bowman', 310: 'Hunter', 311: 'Ranger', 312: 'Bowmaster',
+  320: 'Crossbowman', 321: 'Sniper', 322: 'Marksman',
+  400: 'Thief', 410: 'Assassin', 411: 'Hermit', 412: 'Night Lord',
+  420: 'Bandit', 421: 'Chief Bandit', 422: 'Shadower',
+  430: 'Blade Recruit', 431: 'Blade Acolyte', 432: 'Blade Specialist', 433: 'Blade Lord', 434: 'Blade Master',
+  500: 'Pirate', 510: 'Brawler', 511: 'Marauder', 512: 'Buccaneer',
+  520: 'Gunslinger', 521: 'Outlaw', 522: 'Corsair',
+  900: 'Game Master', 910: 'Super GM',
+  800: 'Manager',
+  2000: 'Legend',
+};
+
+// OG: get_job_name groups every advanced job of a lineage under one name
+// (Cygnus 1100-1112 → "Dawn Warrior", Aran 2000/2100-2112, Evan 2001/2200-2218,
+//  Resistance 3200/3300/3500 ...). Ranges mirror the decompile's shared StringPool IDs.
+export function JobName(job: number): string {
+  const exact = JOB_NAMES[job];
+  if (exact !== undefined) return exact;
+  if (job >= 1000 && job < 2000) {
+    if (job >= 1100 && job <= 1112) return 'Dawn Warrior';
+    if (job >= 1200 && job <= 1212) return 'Blaze Wizard';
+    if (job >= 1300 && job <= 1312) return 'Wind Archer';
+    if (job >= 1400 && job <= 1412) return 'Night Walker';
+    if (job >= 1500 && job <= 1512) return 'Thunder Breaker';
+    return 'Noblesse';
+  }
+  if (job === 2001) return 'Evan';
+  if (job >= 2100 && job < 2200) return 'Aran';
+  if (job >= 2200 && job < 2300) return 'Evan';
+  if (job >= 3000 && job < 4000) {
+    if (job >= 3200 && job <= 3212) return 'Battle Mage';
+    if (job >= 3300 && job <= 3312) return 'Wild Hunter';
+    if (job >= 3500 && job <= 3512) return 'Mechanic';
+    return 'Citizen';
+  }
+  return `Job ${job}`;
+}

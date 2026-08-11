@@ -63,9 +63,51 @@ describe('computeDerived damage formula', () => {
     expect(d.maxDamage).toBe(Math.floor((50 + 4 * 100) / 100 * (100 * 1.2) + 0.5));
   });
 
-  it('an unrecognized weapon type produces zero damage (k=0)', () => {
+  it('an unrecognized weapon type computes zero base damage but clamps to a minimum of 1', () => {
     const s = { ...defaultStatInputs(), jobId: 100, str: 100, dex: 50, weaponType: 999, watk: 100, mastery: 1 };
     const d = computeDerived(s);
-    expect(d.maxDamage).toBe(0);
+    expect(d.maxDamage).toBe(1);
+    expect(d.minDamage).toBe(1);
+  });
+});
+
+// OG: CUIStatDetail::Draw (0x8625F0) clamps the displayed damage range to
+// [1, 999999] — `if (nMinDmg > 1) {...} else nMinDmg = 1;` and the same for
+// nMaxDmg. This mirrors PDamage@0x730130 / MDamage@0x72CD60 (zmax(dmg,1.0),
+// zmin(dmg,999999)), so every job/race with zero equipment ATK still shows a
+// minimum 1 damage — never "0~0" in the ability-stats window.
+describe('computeDerived minimum damage clamp (OG [1, 999999])', () => {
+  it('unarmed beginner (job 0, no weapon) shows 1~1, not 0~0 / 0 floating damage', () => {
+    const s = { ...defaultStatInputs(), jobId: 0, str: 4, dex: 4, int: 4, luk: 4, weaponType: 0, watk: 0, matk: 0 };
+    const d = computeDerived(s);
+    expect(d.maxDamage).toBe(1);
+    expect(d.minDamage).toBe(1);
+  });
+
+  it('warrior-family job with no weapon still clamps to 1', () => {
+    const s = { ...defaultStatInputs(), jobId: 100, str: 100, dex: 50, weaponType: 0, watk: 0 };
+    const d = computeDerived(s);
+    expect(d.maxDamage).toBe(1);
+    expect(d.minDamage).toBe(1);
+  });
+
+  it('mage-branch job with zero MATK still clamps to 1 (not 0)', () => {
+    const s = { ...defaultStatInputs(), jobId: 200, int: 100, luk: 50, weaponType: 38, matk: 0 };
+    const d = computeDerived(s);
+    expect(d.maxDamage).toBe(1);
+    expect(d.minDamage).toBe(1);
+  });
+
+  it('Cygnus/Aran-style race job (job 1000/2001) with no ATK clamps to 1', () => {
+    const cygnus = { ...defaultStatInputs(), jobId: 1000, str: 10, dex: 5, weaponType: 30, watk: 0 };
+    expect(computeDerived(cygnus).maxDamage).toBe(1);
+    const aran = { ...defaultStatInputs(), jobId: 2001, str: 10, dex: 5, weaponType: 0, watk: 0 };
+    expect(computeDerived(aran).maxDamage).toBe(1);
+  });
+
+  it('excessively large damage still caps at 999999 (DamageMax)', () => {
+    const s = { ...defaultStatInputs(), jobId: 100, str: 9999, dex: 9999, weaponType: 31, watk: 99999, mastery: 1 };
+    const d = computeDerived(s);
+    expect(d.maxDamage).toBeLessThanOrEqual(999999);
   });
 });

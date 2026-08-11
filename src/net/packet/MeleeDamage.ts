@@ -66,6 +66,9 @@ export function calcBaseDamage(
 }
 
 // OG: adjust_ramdom_damage (0x726690) — effective mastery = min(0.95, nMastery/100 + k(WT))
+// OG: PDamage (0x730130, zmax(dmg,1)/zmin(dmg,999999)) and MDamage (0x72CD60)
+// clamp every damage roll to [1, 999999] BEFORE it is shown — so an unarmed
+// or 0-ATK character (any job/race) still deals a minimum of 1, never 0.
 export function calcDamageRange(
   jobId: number, weaponType: number, watk: number, matk: number,
   str: number, dex: number, int: number, luk: number,
@@ -76,7 +79,9 @@ export function calcDamageRange(
   const max = calcBaseDamage(primary, secondary, tertiary, attack, k);
   const effective = Math.min(0.95, mastery / 100 + getMasteryConst(weaponType));
   const min = Math.floor(max * effective + 0.5);
-  return { min: Math.max(0, Math.min(min, max)), max };
+  const maxDmg = Math.max(1, Math.min(max, 999_999));
+  const minDmg = Math.max(1, Math.min(min, maxDmg));
+  return { min: minDmg, max: maxDmg };
 }
 
 // ponytail: kept for test compat — superseded by calcDamageRange.

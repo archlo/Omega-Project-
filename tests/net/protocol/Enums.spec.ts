@@ -32,6 +32,7 @@ import {
   MessengerRequestAction,
   MiniRoomProtocol,
   Job,
+  JobName,
 } from '../../../src/net/protocol/Enums.js';
 
 describe('Protocol enums — values match the v95 dump (enums.json)', () => {
@@ -395,5 +396,31 @@ describe('Protocol enums — values match the v95 dump (enums.json)', () => {
     expect(Job.Legend).toBe(2000);
     expect(Job.Evan).toBe(2001);
     expect(Job.Jett).toBe(5000);
+  });
+
+  it('JobName (OG get_job_name — canonical v95 display names, incl. job 0)', () => {
+    expect(JobName(0)).toBe('Beginner');
+    expect(JobName(100)).toBe('Warrior');
+    expect(JobName(112)).toBe('Hero');
+    expect(JobName(200)).toBe('Magician');
+    expect(JobName(212)).toBe('F/P Arch Mage');
+    expect(JobName(412)).toBe('Night Lord');
+    expect(JobName(512)).toBe('Buccaneer');
+    expect(JobName(900)).toBe('Game Master');
+    expect(JobName(910)).toBe('Super GM');
+    expect(JobName(1000)).toBe('Noblesse');
+    expect(JobName(1112)).toBe('Dawn Warrior');
+    expect(JobName(1212)).toBe('Blaze Wizard');
+    expect(JobName(1312)).toBe('Wind Archer');
+    expect(JobName(1412)).toBe('Night Walker');
+    expect(JobName(1512)).toBe('Thunder Breaker');
+    expect(JobName(2000)).toBe('Legend');
+    expect(JobName(2001)).toBe('Evan');
+    expect(JobName(2218)).toBe('Evan');
+    expect(JobName(3000)).toBe('Citizen');
+    expect(JobName(3200)).toBe('Battle Mage');
+    expect(JobName(3300)).toBe('Wild Hunter');
+    expect(JobName(3500)).toBe('Mechanic');
+    expect(JobName(9999)).toBe('Job 9999');
   });
 });

@@ -72,7 +72,7 @@ import type {
 import { ScriptMessageType } from '../net/packet/ScriptMessageType.js';
 import { GameSender, ChatGroupType } from '../net/senders/GameSender.js';
 import { MiniRoomType, MiniRoomProtocol as MiniRoomProtocolFull } from '../net/packet/MiniRoomProtocol.js';
-import { MapleStat, MessengerAction, ShopResultType, TrunkResultType, DropLeaveType } from '../net/protocol/Enums.js';
+import { MapleStat, MessengerAction, ShopResultType, TrunkResultType, DropLeaveType, JobName } from '../net/protocol/Enums.js';
 import { EquipStats, InventoryType } from '../domain/InventoryItem.js';
 import { InventoryOpType } from '../net/protocol/Enums.js';
 import { ItemIconLoader } from '../character/ItemIconLoader.js';
@@ -200,14 +200,6 @@ export class GameStage extends Stage {
   /** Stored when SetField arrives before Map.wz finishes loading. */
   private _deferredFieldArgs: SetFieldArgs | null = null;
   protected _otherChars = new Map<number, OtherCharLook>();
-  /**
-   * Friend-list → minimap stalkee fallback (OG CUIMiniMap m_mStalkee feed
-   * when the server never sends StalkResult): online friend charId → name.
-   * In-field online friends are fed to the minimap as stalkees so Friend
-   * icons / names / edge arrows render even without a server stalk feed.
-   */
-  private _onlineFriends = new Map<number, string>();
-  private _friendStalkeeIds = new Set<number>();
   /** ponytail: couple-chair pairs. Key=charId, value={itemId, pairCharId}.
    *  Proximity tracking works; overlay rendering (heart zone, per-character
    *  effect) deferred — cosmetic, no gameplay impact. */
@@ -2340,7 +2332,16 @@ export class GameStage extends Stage {
     this._stats.onDexUp = () => { this.game.session.send(GameSender.UserAbilityUp(MapleStat.Dex)); };
     this._stats.onIntUp = () => { this.game.session.send(GameSender.UserAbilityUp(MapleStat.Int)); };
     this._stats.onLukUp = () => { this.game.session.send(GameSender.UserAbilityUp(MapleStat.Luk)); };
-    this._stats.onAutoApUp = (_mode) => { /* OG: AutoApUp — auto-allocate AP */ };
+    this._stats.onAutoApUp = (mode) => { this._stats.autoApUp(mode); };
+    // OG: AutoApUp → CUtilDlg::YesNo → IDYES(6) → SendAbilityUpRequest(ctx, &aStatUp)
+    this._stats.onAutoApConfirm = (alloc) => {
+      const entries: Array<[MapleStat, number]> = [];
+      if (alloc.str > 0) entries.push([MapleStat.Str, alloc.str]);
+      if (alloc.dex > 0) entries.push([MapleStat.Dex, alloc.dex]);
+      if (alloc.intStat > 0) entries.push([MapleStat.Int, alloc.intStat]);
+      if (alloc.luk > 0) entries.push([MapleStat.Luk, alloc.luk]);
+      if (entries.length > 0) this.game.session.send(GameSender.UserAbilityMassUp(entries));
+    };
     this._stats.onDetailToggle = () => {
       if (!this._statDetailInfo) return;
       this._statDetailInfo.isVisible = this._stats.detailVisible;
@@ -2531,7 +2532,6 @@ export class GameStage extends Stage {
     for (const drop of this._drops) drop.Update(dt);
     if (this._drops.some((d) => d.Finished)) this._drops = this._drops.filter((d) => !d.Finished);
     for (const ch of this._otherChars.values()) ch.Update(dt);
-    this._syncFriendStalkees();
     this._updateCoupleChairs();
     for (const [charId, pets] of this._pets) {
       const ownerPos = charId === this._localCharId
@@ -3295,7 +3295,7 @@ export class GameStage extends Stage {
       this._itemEffects?.SetCharacter(args.charId, args.look);
     };
     fh.onCharacterInfo = (info) => {
-      const jobName = this.game.nameService.SkillName(info.job * 10000) ?? `Job ${info.job}`;
+      const jobName = JobName(info.job);
       if (this._charInfo) {
         this._charInfo.characterId = info.charId;
         this._charInfo.isLocalChar = info.charId === this._localCharId;
@@ -3588,7 +3588,7 @@ export class GameStage extends Stage {
     fh.onPartyLoad = ({ members, bossId }) => {
       this._userList.setParty(members.map((m) => ({
         charId: m.charId, name: m.name, level: m.level,
-        job: this.game.nameService.SkillName(m.job * 10000) ?? `Job ${m.job}`,
+        job: JobName(m.job),
         isLeader: m.charId === bossId,
       })));
       this._partyCharIds.clear();
@@ -3605,7 +3605,7 @@ export class GameStage extends Stage {
       this._userList.setPartyBoss(newBossCharId);
     };
     fh.onPartyMemberStatChanged = ({ charId, level, job }) => {
-      this._userList.updatePartyMemberStat(charId, level, this.game.nameService.SkillName(job * 10000) ?? `Job ${job}`);
+      this._userList.updatePartyMemberStat(charId, level, JobName(job));
     };
     fh.onExpeditionResult = (args) => {
       if (args.subAction === 'Get' || args.subAction === 'Notice' || args.subAction === 'MasterChanged' || args.subAction === 'Modified') {
@@ -3682,9 +3682,6 @@ export class GameStage extends Stage {
       // re-sending FriendAdd (no separate "set group" opcode exists — see
       // FriendRequestAction's doc comment), so until UserList gets real
       // grouped sub-lists this just surfaces the group OG already assigned.
-      this._onlineFriends.clear();
-      this._friendStalkeeIds.clear();
-      for (const f of friends) if (f.online) this._onlineFriends.set(f.charId, f.name);
       this._userList.setUsers(friends.map((f) => ({
         charId: f.charId, name: f.name, level: 0,
         job: f.online ? `Online${f.group ? ` [${f.group}]` : ''}` : 'Offline',
@@ -3692,11 +3689,6 @@ export class GameStage extends Stage {
     };
     fh.onFriendStatusChanged = (args) => {
       this._userList.updateFriendStatus(args.charId, args.online);
-      if (!args.online) {
-        this._onlineFriends.delete(args.charId);
-        this._friendStalkeeIds.delete(args.charId);
-        this._miniMap?.removeStalkee(args.charId);
-      }
     };
     // TODO_AUDIT.md Hundred-and-sixty-sixth pass: UpdateFriend (OG: decompile/A125D0.c) — incremental channel update.
     fh.onFriendUpdate = (charId, channel) => {
@@ -4813,7 +4805,6 @@ export class GameStage extends Stage {
     this._npcs.length = 0;
     this._mobCtl.clear();
     this._otherChars.clear();
-    this._friendStalkeeIds.clear();
     this._drops.length = 0;
     this._reactors.clear();
     this._employees.clear();
@@ -5902,7 +5893,7 @@ export class GameStage extends Stage {
       this._statusBar.maxMp = stat.maxMp;
       this._statusBar.exp = stat.exp;
       this._statusBar.charName = stat.name;
-      this._statusBar.jobName = this.game.nameService.SkillName(stat.job * 10000) ?? `Job ${stat.job}`;
+      this._statusBar.jobName = JobName(stat.job);
       // OG CUser::DrawNameTags — the local player's name plate below the feet.
       if (this._player) this._player.charName = stat.name;
     }
@@ -5918,7 +5909,8 @@ export class GameStage extends Stage {
       this._stats.maxHp = stat.maxHp;
       this._stats.mp = stat.mp;
       this._stats.maxMp = stat.maxMp;
-      this._stats.job = this.game.nameService.SkillName(stat.job * 10000) ?? `Job ${stat.job}`;
+      this._stats.job = JobName(stat.job);
+      this._stats.jobId = stat.job;
       this._stats.setPlayerName(stat.name);
       this._stats.exp = stat.exp;
       this._stats.nextLevelExp = NextLevelExpTable[stat.level - 1] ?? 0;
@@ -5929,7 +5921,7 @@ export class GameStage extends Stage {
     if (this._charInfo) {
       this._charInfo.charName = stat.name;
       this._charInfo.level = stat.level;
-      this._charInfo.job = this.game.nameService.SkillName(stat.job * 10000) ?? `Job ${stat.job}`;
+      this._charInfo.job = JobName(stat.job);
       this._charInfo.isLocalChar = true;
       this._charInfo.characterId = this._localCharId;
     }
@@ -6324,36 +6316,9 @@ export class GameStage extends Stage {
 
   private _onUserLeave(charId: number): void {
     this._otherChars.delete(charId);
-    this._friendStalkeeIds.delete(charId);
-    this._miniMap?.removeStalkee(charId);
     this._itemEffects?.RemoveCharacter(charId);
     this._chatBalloon?.Clear(charId);
     this._removePetsForOwner(charId);
-  }
-
-  /**
-   * Friend-list → minimap stalkee fallback. The server's StalkBegin handler
-   * replies in a single-entry format our OnStalkResult decoder (count → array,
-   * OG CField::OnStalkResult @0x539910) cannot parse and never broadcasts
-   * StalkResult, so without this no Friend icons / names / edge arrows would
-   * ever appear. We match online friends (by charId) against in-field remote
-   * chars and feed live positions into CUIMiniMap::InsertStalkee. Outside the
-   * field (off-map friends, or when the server does send real stalk entries)
-   * the server-primed m_mStalkee path still wins because this only ever sets
-   * keys that exist in _otherChars.
-   */
-  private _syncFriendStalkees(): void {
-    if (this._onlineFriends.size === 0) return;
-    const mm = this._miniMap;
-    if (!mm) return;
-    for (const [charId, name] of this._onlineFriends) {
-      const ch = this._otherChars.get(charId);
-      if (!ch) continue;
-      const p = ch.Position;
-      if (!p) continue;
-      mm.insertStalkee(charId, name, p.x, p.y);
-      this._friendStalkeeIds.add(charId);
-    }
   }
 
   private _spawnPetsForOwner(ownerCharId: number, petIds: number[]): void {
@@ -6928,9 +6893,10 @@ export class GameStage extends Stage {
     if (args.job !== undefined) {
       this._job = args.job;
       this._skill.characterJob = args.job; // OG: job used in SP validation
-      const jobName = this.game.nameService.SkillName(args.job * 10000) ?? `Job ${args.job}`;
+      const jobName = JobName(args.job);
       if (this._charInfo) this._charInfo.job = jobName;
       this._stats.job = jobName;
+      this._stats.jobId = args.job;
       if (this._statusBar) this._statusBar.jobName = jobName;
     }
     // OG: CUIItem::Draw renders meso at y=268 from CharacterData.
