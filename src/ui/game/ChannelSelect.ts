@@ -59,9 +59,12 @@ export class ChannelSelect extends GamePanel {
     this._loader = opts.loader ?? null;
     this._uiWz = opts.uiWz ?? null;
 
-    // OG ctor: CreateWnd((scrW-370)/2, (scrH-168)/2, 370, 168, wndKey=10, Origin_LT)
-    const scrW = typeof window !== 'undefined' ? window.innerWidth : 800;
-    const scrH = typeof window !== 'undefined' ? window.innerHeight : 600;
+    // OG ctor: CreateWnd((scrW-370)/2, (scrH-168)/2, 370, 168, wndKey=10, Origin_LT).
+    // UI is an 800x600 logical frame (GameStage bottom-aligns it); center on
+    // that frame, NOT window.innerWidth/Height (which is raw-canvas space and
+    // drifts the panel off-center once the frame is bottom-aligned in-game).
+    const scrW = 800;
+    const scrH = 600;
     this._root.x = Math.max(0, (scrW - PANEL_W) >> 1);
     this._root.y = Math.max(0, (scrH - PANEL_H) >> 1);
 

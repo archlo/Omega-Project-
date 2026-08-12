@@ -59,8 +59,21 @@ export class GameCamera {
   private _clamp(): void {
     const hw = this.ViewWidth / 2;
     const hh = this.ViewHeight / 2;
-    this.Position.x = Math.max(this.MapBounds.left + hw, Math.min(this.MapBounds.right - hw, this.Position.x));
-    this.Position.y = Math.max(this.MapBounds.top + hh, Math.min(this.MapBounds.bottom - hh, this.Position.y));
+    // A map narrower than the viewport (e.g. dungeon 211042400 on a wide
+    // widescreen window) has `right - hw < left + hw`; the old clamp then
+    // pinned the camera to `left + hw`, leaving the map stuck at the left edge
+    // with its objects spread across a mostly-empty wide screen. Center the
+    // camera on the map instead so a narrow field stays centered.
+    const minX = this.MapBounds.left + hw;
+    const maxX = this.MapBounds.right - hw;
+    this.Position.x = maxX >= minX
+      ? Math.max(minX, Math.min(maxX, this.Position.x))
+      : (this.MapBounds.left + this.MapBounds.right) / 2;
+    const minY = this.MapBounds.top + hh;
+    const maxY = this.MapBounds.bottom - hh;
+    this.Position.y = maxY >= minY
+      ? Math.max(minY, Math.min(maxY, this.Position.y))
+      : (this.MapBounds.top + this.MapBounds.bottom) / 2;
   }
 
   WorldToScreen(worldX: number, worldY: number): { x: number; y: number } {

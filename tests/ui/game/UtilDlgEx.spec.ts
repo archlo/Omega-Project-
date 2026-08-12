@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { UtilDlgEx, UtilDlgType } from '../../../src/ui/game/UtilDlgEx.js';
 import { WzPackage } from '../../../src/wz/WzPackage.js';
 import { WzTextureLoader } from '../../../src/render/WzTextureLoader.js';
-
 (globalThis as any).window ??= {};
 
 function makeDialog(opts: any = {}): UtilDlgEx {
@@ -105,9 +104,8 @@ describe('UtilDlgEx WZ asset resolution (real UI.nx)', () => {
     d.m_bParam = 0;
     d['_buildBackground']();
 
-    // Root children: content layer + composited background sprites (not the
-    // Graphics fallback rects). The top "t" canvas is a real sprite.
-    const sprites = d.container.children.filter((c: any) => c.texture !== undefined);
+    // Background layer holds the composited sprites (t cap + c tiles + s cap).
+    const sprites = d['_bgLayer'].children.filter((c: any) => c.texture !== undefined);
     expect(sprites.length).toBeGreaterThan(0);
     // First sprite = top "t" cap at (0,0)
     expect(sprites[0].x).toBe(0);
@@ -123,7 +121,7 @@ describe('UtilDlgEx WZ asset resolution (real UI.nx)', () => {
     d.m_bParam = 2; // quest flag bit
     d['_buildBackground']();
 
-    const sprites = d.container.children.filter((c: any) => c.texture !== undefined);
+    const sprites = d['_bgLayer'].children.filter((c: any) => c.texture !== undefined);
     expect(sprites.length).toBeGreaterThan(0);
     // it is 519x28 top cap
     expect(sprites[0].x).toBe(0);
@@ -138,7 +136,113 @@ describe('UtilDlgEx WZ asset resolution (real UI.nx)', () => {
     d['_buildBackground']();
     // Per the authentic rule, when no backgrnd canvas is loadable we draw
     // nothing — no Graphics fallback rectangles are added.
-    const sprites = d.container.children.filter((c: any) => c.texture !== undefined);
+    const sprites = d['_bgLayer'].children.filter((c: any) => c.texture !== undefined);
     expect(sprites.length).toBe(0);
+  });
+});
+
+describe('UtilDlgEx SetNPC (authentic speaker + name tag)', () => {
+  it('positions the NPC in the left panel and adds a name-tag plate', () => {
+    const ui = WzPackage.OpenBase('wz_client', 'UI');
+    const npc = WzPackage.OpenBase('wz_client', 'Npc');
+    const d = new UtilDlgEx({ uiWz: ui, npcWz: npc, loader: new WzTextureLoader() });
+    d.npcNameOf = () => 'Test Npc';
+
+    // with-NPC TEXT dialog — window 519 wide, scrHeight = max(ctHeight, 110)
+    d.SetUtilDlgEx(UtilDlgType.TEXT, 2000, false, false, 'Hello adventurer!');
+    d.m_ctHeight = 36;
+    d['_layoutGen'](false);
+    d.show();
+
+    // speaker layer populated: NPC container + name tag
+    const npcLayer = d['_npcLayer'];
+    expect(npcLayer.children.length).toBeGreaterThan(0);
+    expect(d['_npcLook']).not.toBeNull();
+
+    // NPC 2000 stand frame is 56x70 → x = 76 - 28 = 48 (normal anchor)
+    const npcContainer = npcLayer.children.find((c: any) => c === d['_npcLook']?.container);
+    expect(npcContainer).toBeDefined();
+    expect((npcContainer as any).x).toBeCloseTo(48);
+
+    // name tag present at (xAnchor - 60, ...)
+    const tag = npcLayer.children.find((c: any) => c !== d['_npcLook']?.container);
+    expect(tag).toBeDefined();
+    expect((tag as any).x).toBeCloseTo(76 - 60);
+  });
+
+  it('uses x-anchor 442 when m_bSpeakerOnRight and 52 for avatar/pet', () => {
+    const ui = WzPackage.OpenBase('wz_client', 'UI');
+    const npc = WzPackage.OpenBase('wz_client', 'Npc');
+    const d = new UtilDlgEx({ uiWz: ui, npcWz: npc, loader: new WzTextureLoader() });
+    d.npcNameOf = () => 'N';
+    d.SetUtilDlgEx(UtilDlgType.TEXT, 2000, false, false, 'Hi');
+    d.m_ctHeight = 36;
+    d.m_bSpeakerOnRight = true;
+    d['_layoutGen'](false);
+    d.show();
+    const npcContainer = d['_npcLayer'].children.find((c: any) => c === d['_npcLook']?.container);
+    expect((npcContainer as any).x).toBeCloseTo(442 - 28);
+
+    const d2 = new UtilDlgEx({ uiWz: ui, npcWz: npc, loader: new WzTextureLoader() });
+    d2.SetUtilDlgEx(UtilDlgType.AVATAR, 2000, false, false, '');
+    d2.m_ctHeight = 36;
+    d2['_layoutGen'](true);
+    d2.show();
+    const av = d2['_npcLayer'].children.find((c: any) => c === d2['_npcLook']?.container);
+    expect((av as any).x).toBeCloseTo(52 - 28);
+  });
+
+  it('skips the speaker when m_bNoNPC (no speaker layer)', () => {
+    const d = makeDialog();
+    d.SetUtilDlgEx(UtilDlgType.TEXT, 0, true, false, 'plain');
+    d.show();
+    expect(d['_npcLayer'].children.length).toBe(0);
+  });
+
+  it('flips the speaker per m_bParam bit 8 (FlipSpeaker)', () => {
+    const ui = WzPackage.OpenBase('wz_client', 'UI');
+    const npc = WzPackage.OpenBase('wz_client', 'Npc');
+    const d = new UtilDlgEx({ uiWz: ui, npcWz: npc, loader: new WzTextureLoader() });
+    d.SetUtilDlgEx(UtilDlgType.TEXT, 2000, false, false, 'Hi');
+    d.m_ctHeight = 36;
+    d.m_bParam = 8;
+    d['_layoutGen'](false);
+    d.show();
+    expect(d['_npcLook']!.container.scale.x).toBeLessThan(0);
+  });
+});
+
+describe('UtilDlgEx quiz timer + list selection', () => {
+  it('auto-cancels a quiz when the countdown expires', () => {
+    const d = makeDialog();
+    const results: string[] = [];
+    d.onResult = (r) => results.push(r.type);
+    d.SetUtilDlgEx(UtilDlgType.INPUT_STR, 2000, false, false, 'Quiz?');
+    d.SetUtilDlgEx_INPUT_STR('hint', 1, 10, false, 0);
+    d.startQuizTimer(5);
+    d.show();
+    d.update(2); // 3s left
+    expect(results).toEqual([]);
+    d.update(4); // expired
+    expect(results).toContain('cancel');
+    expect(d.isVisible).toBe(false);
+  });
+
+  it('clicking a menu item then Select confirms the clicked choice', () => {
+    const d = makeDialog();
+    d.SetUtilDlgEx(UtilDlgType.LIST, 2000, false, false, 'Pick one');
+    d.AddDotLine('First', 0, 5);
+    d.AddDotLine('Second', 1, 5);
+    d.AddDotLine('Third', 2, 5);
+    d.SetUtilDlgEx_LIST(true);
+    d.show();
+
+    // click item "Second" (line index 2; _lines[0] is the parsed prompt)
+    d['_selectListItem'](2);
+    expect(d.m_nSelect).toBe(1);
+    // click Select (id 8193) → should confirm 1, not reset to the initial focus
+    d.OnButtonClicked(8193);
+    expect(d.GetSelect()).toBe(1);
+    expect(d.isVisible).toBe(false);
   });
 });

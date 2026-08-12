@@ -218,6 +218,25 @@ export class UtilDlgEx extends GamePanel {
   // ── Callbacks ───────────────────────────────────────────────────────────
   onResult: ((result: UtilDlgResult) => void) | null = null;
   _avatarNameOf: ((itemId: number) => string) | null = null;
+  /** Resolves the NPC display name for the speaker name tag (String.wz). */
+  npcNameOf: ((id: number) => string | null) | null = null;
+
+  // ── Script-dialog state (set by the GameStage script-message wiring) ───
+  /** Wire msgType of the Say/SayImage being answered (echoed in the reply). */
+  scriptMsgType = 0;
+  pendingQuestId = 0;
+  pendingNpcId = 0;
+  pendingX = 0;
+  pendingY = 0;
+  /** Quiz countdown (seconds remaining; 0 = disabled). Auto-cancels on expiry. */
+  private _quizRemain = 0;
+  private _quizTotal = 0;
+
+  /** OG CScriptMan::OnAskQuiz — starts the answer countdown. */
+  startQuizTimer(seconds: number): void {
+    this._quizTotal = Math.max(0, seconds);
+    this._quizRemain = this._quizTotal;
+  }
 
   // ── Internal ────────────────────────────────────────────────────────────
   private _lines: CtInfo[] = [];
@@ -237,6 +256,11 @@ export class UtilDlgEx extends GamePanel {
   private _loader: WzTextureLoader | null;
   private _fonts: TextStyle[] = [];
   private _apBtnFocus: Container[] = [];
+
+  /** OG m_pLayerNPC — the speaker (NPC/avatar) + its name tag. */
+  private _npcLayer = new Container();
+  /** Window background (t/c/s composite) — kept BELOW content + speaker. */
+  private _bgLayer = new Container();
 
   // ── Avatar rendering ────────────────────────────────────────────────────
   private _charLook: CharLook | null = null;
@@ -265,7 +289,11 @@ export class UtilDlgEx extends GamePanel {
     this._baseWz = opts.baseWz ?? null;
     this._npcWz = opts.npcWz ?? null;
     this._loader = opts.loader ?? null;
+    this._root.addChild(this._bgLayer);
     this._root.addChild(this._contentLayer);
+    this._root.addChild(this._npcLayer);
+    // OG CUtilDlgEx is a modal dialog — not draggable by its title area.
+    this.draggable = false;
 
     for (let i = 0; i < 12; i++) {
       this._fonts.push(new TextStyle({
@@ -306,6 +334,8 @@ export class UtilDlgEx extends GamePanel {
     this.m_bFinishShow = 0;
     this.m_nRet = -1;
     this.m_bTerminate = false;
+    this._quizRemain = 0;
+    this._quizTotal = 0;
     this._charLook = null;
     this._avatarLook = null;
     this._petLook = null;
@@ -666,6 +696,7 @@ export class UtilDlgEx extends GamePanel {
   // ═══════════════════════════════════════════════════════════════════════════
   show(): void {
     this._buildBackground();
+    this._setNpc();
     this._buildContent();
     this._buildButtons();
     this._root.x = (800 - this.m_wndWidth) / 2;
@@ -681,10 +712,7 @@ export class UtilDlgEx extends GamePanel {
   // Hard rule: no custom-drawn rectangles when a backgrnd canvas exists — if
   // the composite canvases aren't loadable, draw nothing (content still shows).
   private _buildBackground(): void {
-    for (let i = this._root.children.length - 1; i >= 0; i--) {
-      const c = this._root.children[i];
-      if (c !== this._contentLayer) this._root.removeChildAt(i);
-    }
+    this._bgLayer.removeChildren();
 
     const dlgProp = this._uiWz?.GetItem('UIWindow2.img/UtilDlgEx');
     const root = dlgProp instanceof WzProperty ? dlgProp : null;
@@ -720,11 +748,127 @@ export class UtilDlgEx extends GamePanel {
     const add = (sprite: WzSprite, x: number, y: number): void => {
       const sp = sprite.ToPixi();
       sp.position.set(x, y);
-      this._root.addChild(sp);
+      this._bgLayer.addChild(sp);
     };
     add(top, 0, 0);
     for (let y = startY; y < this.m_wndHeight - endOff; y += step) add(tile, 0, y);
     add(bottom, 0, this.m_wndHeight - endOff);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SetNPC (OG: 0x98C9B0) — the speaker renders in the dialog's left panel,
+  // standing at the bottom with a 121×23 name-tag plate below the feet.
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Authentic anchor math (struct offsets verified against CUtilDlgEx:
+  //   m_scrHeight @0xA8, m_height(CWnd) @0x28, m_bSpeakerOnRight @0xC38):
+  //   H   = speaker height, v127 = H + 23 (name-tag height)
+  //   x   = 52 (avatar/pet) | 442 (m_bSpeakerOnRight) | 76 (normal)
+  //   fits (v127 <= m_scrHeight):
+  //     npcY = (m_scrHeight - v127)/2 + 22;  tagY = H + 20 + (m_scrHeight - v127)/2 + 2
+  //   overflow:
+  //     npcY = m_wndHeight - v127 - 55;      tagY = m_wndHeight - 75
+  //   NPC +7 (normal) / +14 (avatar); flip via m_bParam bit 8 (FlipSpeaker).
+  private _setNpc(): void {
+    this._npcLayer.removeChildren();
+    if (this.m_bNoNPC || this.m_nTemplateID <= 0) return;
+    if (!this._npcWz || !this._loader) return;
+
+    if (!this._npcLook) {
+      this._npcLook = new NpcLook(this.m_nTemplateID);
+      this._npcLook.Load(this._loader, this._npcWz);
+    }
+    const look = this._npcLook;
+    if (!look.Loaded) return;
+
+    // Standing/idle action, no in-world name plate (the dialog draws its own).
+    look.ShowNameTag = false;
+    look.SetState('stand');
+    // OG: put_flip(layer, m_bParam & 8) mirrors the whole speaker layer.
+    look.FaceLeft(false);
+    look.container.scale.x = (this.m_bParam & 8) !== 0 ? -1 : 1;
+
+    const frame = this._npcFrame(look);
+    if (!frame) return;
+    const H = frame.sprite.Height;
+    const npcW = frame.sprite.Width;
+    const v127 = H + 23;
+
+    const bAvatar = this.m_dlgType === UtilDlgType.AVATAR || this.m_dlgType === UtilDlgType.PET;
+    const xAnchor = bAvatar ? 52 : (this.m_bSpeakerOnRight ? 442 : 76);
+
+    let npcY: number;
+    let tagY: number;
+    if (v127 <= this.m_scrHeight) {
+      const s = (this.m_scrHeight - v127) / 2;
+      npcY = s + 22;
+      tagY = H + 20 + s + 2;
+    } else {
+      npcY = this.m_wndHeight - v127 - 55;
+      tagY = this.m_wndHeight - 75;
+    }
+
+    // OG: RelMove(layerNPC, v128 - canvasW/2, v162 + (bAvatar ? 14 : 7)) anchors
+    // the CANVAS TOP-LEFT; NpcLook's container anchors at the feet, so add the
+    // frame's OriginY (feet offset) to drop the feet to the same spot.
+    look.container.position.set(
+      xAnchor - npcW / 2,
+      npcY + (bAvatar ? 14 : 7) + frame.sprite.OriginY,
+    );
+    this._npcLayer.addChild(look.container);
+
+    // Name tag — 121×23 plate (OG: bar canvas pasted at ((121-109)/2, 3),
+    // name centered at ((121-textW)/2, 5) with FONT_SMALL_WHITE).
+    this._buildNpcNameTag(xAnchor, tagY);
+  }
+
+  private _npcFrame(look: NpcLook): { sprite: WzSprite; delayMs: number } | null {
+    const stand = look.Animations.get('stand');
+    if (stand && stand.length > 0) return stand[0];
+    const first = [...look.Animations.values()][0];
+    return first && first.length > 0 ? first[0] : null;
+  }
+
+  private _buildNpcNameTag(x: number, y: number): void {
+    const tag = new Container();
+    tag.position.set(x - 60, y); // v128 - 121/2
+
+    let barLoaded = false;
+    if (this._uiWz && this._loader) {
+      const node = this._uiWz.GetItem('UI/UIWindow2.img/UtilDlgEx/bar');
+      if (node instanceof WzCanvas) {
+        const bar = this._loader.Load(node);
+        if (bar) {
+          const s = bar.ToPixi();
+          s.x = 6; s.y = 3;
+          tag.addChild(s);
+          barLoaded = true;
+        }
+      }
+    }
+    if (!barLoaded) {
+      const g = new Graphics();
+      g.rect(0, 3, 121, 19).fill({ color: 0xE8C63F });
+      g.rect(0, 3, 121, 19).stroke({ color: 0x000000, width: 1 });
+      tag.addChild(g);
+    }
+
+    const name = this.npcNameOf?.(this.m_nTemplateID) ?? this._npcLook?.Name ?? '';
+    if (name) {
+      const t = new Text({
+        text: name,
+        style: new TextStyle({ fill: 0x000000, fontSize: 11, fontFamily: 'Arial, sans-serif' }),
+      });
+      // Text.width needs a DOM canvas for font metrics — fall back to a fixed
+      // width estimate in node/test environments.
+      let textW = Math.ceil(name.length * 7);
+      if (typeof document !== 'undefined') {
+        try { textW = Math.ceil(t.width); } catch { /* canvas unavailable */ }
+      }
+      t.x = (121 - textW) / 2;
+      t.y = 5;
+      tag.addChild(t);
+    }
+    this._npcLayer.addChild(tag);
   }
 
   // ─── Content ────────────────────────────────────────────────────────────
@@ -754,20 +898,6 @@ export class UtilDlgEx extends GamePanel {
     mask.rect(this.m_ctLeft, this.m_ctTop, clipW, clipH).fill({ color: 0xFFFFFF });
     this._contentLayer.addChild(mask);
     this._contentLayer.mask = mask;
-
-    // OG: NPC speaker in left panel when !m_bNoNPC
-    if (!this.m_bNoNPC && this.m_nTemplateID > 0 && this._npcWz && this._loader) {
-      if (!this._npcLook) {
-        this._npcLook = new NpcLook(this.m_nTemplateID);
-        this._npcLook.Load(this._loader, this._npcWz);
-      }
-      if (this._npcLook.Loaded) {
-        // OG: NPC positioned at (0, 0) in left panel, scaled to fit
-        this._npcLook.container.position.set(6, this.m_ctTop + 10);
-        this._npcLook.container.scale.set(0.8, 0.8);
-        this._contentLayer.addChild(this._npcLook.container);
-      }
-    }
 
     let y = this.m_ctTop;
     for (let i = 0; i < this._lines.length; i++) {
@@ -1645,7 +1775,13 @@ export class UtilDlgEx extends GamePanel {
   // ═══════════════════════════════════════════════════════════════════════════
   private _selectListItem(idx: number): void {
     const line = this._lines[idx];
-    if (line && line.nSelect >= 0) this.m_nSelect = line.nSelect;
+    if (line && line.nSelect >= 0) {
+      this.m_nSelect = line.nSelect;
+      // Keep m_nListFocus in sync so the "Select" button (id 8193) confirms
+      // the CLICKED item instead of resetting to the initial focus (0).
+      const apIdx = this._apListCT.findIndex(l => l.nSelect === line.nSelect);
+      if (apIdx >= 0) this.m_nListFocus = apIdx;
+    }
     this._refreshListVisuals();
   }
 
@@ -1720,9 +1856,18 @@ export class UtilDlgEx extends GamePanel {
       this._petLook.Update(dt);
     }
 
-    // Animate NPC speaker
-    if (this._npcLook && !this.m_bNoNPC) {
-      // NpcLook doesn't have a simple Update method — it's static in dialog context
+    // Animate NPC speaker (OG SetNPC → Animate(GA_REPEAT) idle loop)
+    if (this._npcLook && !this.m_bNoNPC && this._npcLayer.children.length > 0) {
+      this._npcLook.Update(dt);
+    }
+
+    // Quiz countdown (OG CScriptMan::OnAskQuiz — timeout sends Cancel)
+    if (this._quizRemain > 0 && this.isVisible) {
+      this._quizRemain = Math.max(0, this._quizRemain - dt);
+      if (this._quizRemain <= 0) {
+        this._quizRemain = 0;
+        this.SetRet(2); // cancel → answer Cancel(0)
+      }
     }
 
     // Typewriter for TEXT/YESNO

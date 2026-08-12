@@ -68,7 +68,9 @@ export class WorldSelectStage extends Stage {
   private _chSelectOffset = { x: -2, y: -3 };
   private _chGaugeOffset = { x: 2, y: 15 };
   private _btBackPos = { x: 0, y: 546 };
-  private _btViewAllPos = { x: 670, y: 546 };
+  // OG CUILoginStart::SetButton @0x5F0790 — button[4] id 1004 (view all)
+  // CreateCtrl_2(this, 1004, 0, 270, 0, ...) → screen (0, 270).
+  private _btViewAllPos = { x: 0, y: 270 };
   private _stepIndicatorPos = { x: 0, y: 0 };
 
   private _frame: WzSprite | null = null;

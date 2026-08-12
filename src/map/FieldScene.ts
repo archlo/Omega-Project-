@@ -763,8 +763,12 @@ export class FieldScene {
     // OG: mobs and NPCs layered into field containers by their Layer field
     if (mobs) {
       for (const m of mobs) {
+        // Mob layer follows its current foothold each frame (same as the
+        // player/chars/drops loops) — falls back to the mob's stored Layer
+        // while airborne so it doesn't pop between layers mid-jump.
+        const mobLayer = this.LayerAt(m.Position.x, m.Position.y, m.Layer);
         allEntities.push({
-          layer: m.Layer,
+          layer: mobLayer,
           sortY: m.Position.y,
           container: m.container,
           draw: () => {

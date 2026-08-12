@@ -5,6 +5,7 @@ function makeSession(): any {
   const session: any = {
     account: { clientKey: new Uint8Array(8).fill(0xAB) },
     machineId: new Uint8Array(16).fill(0xCD),
+    worlds: [{ worldId: 0, name: 'Scania', channels: [{ channelId: 0, userCount: 200 }] }],
     onHandshakeReceived: null,
     onDisconnected: null,
     disconnectAsync: vi.fn(() => { session.isConnected = false; }),
@@ -78,5 +79,25 @@ describe('MigrationCoordinator', () => {
     expect(charId).toBe(42);
     expect(boundaryFn).toHaveBeenCalledOnce();
     expect(coordinator.migrationActive).toBe(false);
+  });
+
+  it('preserves the login world list across the channel-server migration (ChannelSelect needs it)', async () => {
+    const worldsBefore = session.worlds;
+    await coordinator.beginMigrateAsync(
+      new Uint8Array([10, 0, 0, 127]), 8585, 42
+    );
+    // Real ClientSession.connectAsync() wipes session.worlds when the channel
+    // socket opens — simulate that before the channel handshake arrives.
+    session.worlds = [];
+    expect(session.worlds.length).toBe(0);
+    await vi.advanceTimersByTimeAsync(100);
+    session.onHandshakeReceived({
+      version: 95, patch: '1', locale: 8,
+      sendIv: new Uint8Array(4), recvIv: new Uint8Array(4),
+    });
+    // World list restored → in-game channel panel can render its cells.
+    expect(session.worlds).toBe(worldsBefore);
+    expect(session.worlds).toHaveLength(1);
+    expect(session.worlds[0].channels[0].channelId).toBe(0);
   });
 });

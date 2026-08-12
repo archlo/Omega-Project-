@@ -70,10 +70,10 @@ import type {
   MessengerResultArgs, EntrustedShopCheckResultArgs, UserEffectArgs, UserAttackArgs,
   MacroSlot, PetActivatedArgs, PetEvolArgs,
 } from '../net/handlers/PacketArgs.js';
-import { ScriptMessageType } from '../net/packet/ScriptMessageType.js';
+import { ScriptMessageType, ScriptMessageParam } from '../net/packet/ScriptMessageType.js';
 import { GameSender, ChatGroupType } from '../net/senders/GameSender.js';
 import { MiniRoomType, MiniRoomProtocol as MiniRoomProtocolFull } from '../net/packet/MiniRoomProtocol.js';
-import { MapleStat, MessengerAction, ShopResultType, TrunkResultType, DropLeaveType, JobName } from '../net/protocol/Enums.js';
+import { MapleStat, MessengerAction, ShopResultType, TrunkResultType, DropLeaveType, JobName, ScriptAnswerAction } from '../net/protocol/Enums.js';
 import { EquipStats, InventoryType } from '../domain/InventoryItem.js';
 import { InventoryOpType } from '../net/protocol/Enums.js';
 import { ItemIconLoader } from '../character/ItemIconLoader.js';
@@ -101,7 +101,7 @@ import { KeyConfig, KeyAction } from '../ui/game/KeyConfig.js';
 import { OptionMenu } from '../ui/game/OptionMenu.js';
 import { SettingsStore } from '../settings/SettingsStore.js';
 import { CharInfo } from '../ui/game/CharInfo.js';
-import { NpcTalk, DialogType } from '../ui/game/NpcTalk.js';
+import { NpcTalk } from '../ui/game/NpcTalk.js';
 import { Shop } from '../ui/game/Shop.js';
 import { GameMenu } from '../ui/game/GameMenu.js';
 import { Revive } from '../ui/game/Revive.js';
@@ -125,7 +125,7 @@ import { ScrollBar } from '../ui/game/ScrollBar.js';
 import { DragController, DragTarget } from '../ui/DragController.js';
 import { BuiltInFont } from '../ui/BuiltInFont.js';
 import { Notice } from '../ui/game/Notice.js';
-import { UtilDlgEx, UtilDlgType } from '../ui/game/UtilDlgEx.js';
+import { UtilDlgEx, UtilDlgType, type UtilDlgResult } from '../ui/game/UtilDlgEx.js';
 import { AntiMacroDialog } from '../ui/game/AntiMacroDialog.js';
 import { QuitConfirmOverlay } from '../ui/QuitConfirmOverlay.js';
 import { Trunk } from '../ui/game/Trunk.js';
@@ -487,7 +487,7 @@ export class GameStage extends Stage {
     this._panels = [
       this._chatBar, this._clock, this._slideNotice, this._partyHPBar, this._killCountHud, this._massacreGaugeHud, this._questTimerHud, this._medalQuestInfo, this._optionMenu, this._charInfo!,
       this._npcTalk, this._shop!,
-      this._userList, this._statusMessenger, this._eventAlarm,
+      this._userList, this._statusMessenger, this._eventAlarm, this._utilDlg!,
       this._equip, this._item, this._skill, this._stats, this._keyConfig, this._quest,
     ];
   }
@@ -5176,6 +5176,9 @@ this._localCharId = args.characterId ?? 0;
       const g = this._field.GetFootholdBelow(args.x, args.y - 1);
       const gy = g?.YAt(args.x);
       if (gy != null) mob.Position.y = gy;
+      // OG: the mob renders in the layer of the foothold it stands on, so it
+      // depth-sorts against tiles/objs/entities correctly (not the default 7).
+      mob.Layer = this._field.LayerOfFoothold(args.fhId, this._field.LayerAt(args.x, args.y, 7));
     }
     this._mobs.set(args.mobId, mob);
     // OG: if mob enters with controller flag, immediately create MobController
@@ -5216,6 +5219,8 @@ this._localCharId = args.characterId ?? 0;
       // Snap to first element immediately for responsiveness
       const firstEl = path.elements[0];
       mob.Position = { x: firstEl.x, y: firstEl.y };
+      // OG: mob layer follows its foothold as it moves (depth sorting).
+      if (this._field) mob.Layer = this._field.LayerAt(mob.Position.x, mob.Position.y, mob.Layer);
 
       // If the mob has a controller (local client), update it
       const ctl = this._mobCtl.get(args.mobId);
@@ -5225,6 +5230,7 @@ this._localCharId = args.characterId ?? 0;
     } else {
       // No movement elements — just use origin
       mob.Position = { x: path.originX, y: path.originY };
+      if (this._field) mob.Layer = this._field.LayerAt(mob.Position.x, mob.Position.y, mob.Layer);
     }
 
     // Update animation based on move action (OG MobActionType → MobState mapping)
@@ -7137,69 +7143,79 @@ this._localCharId = args.characterId ?? 0;
   }
 
   private _onScriptMessage(args: ScriptMessageArgs): void {
+    const dlg = this._utilDlg;
+    if (!dlg) return;
+
+    // OG: CScriptMan::OnScriptMessage → CUtilDlgEx::SetUtilDlgEx. The packet's
+    // `messageParam` byte IS m_bParam (NotCancellable=0x1, PlayerAsSpeaker=0x2,
+    // SpeakerOnRight=0x4, FlipSpeaker=0x8) — forwarded so SetNPC/background/
+    // buttons honor the speaker layout. The Say/SayImage type must echo the
+    // wire msgType in the reply (two separate OnSay/OnSayImage functions each
+    // hardcode their own constant — Say=0, SayImage=1).
+    dlg.m_bParam = (args as { messageParam?: number }).messageParam ?? 0;
+    dlg.scriptMsgType = args.msgType;
+    dlg.npcNameOf = (id) => this.game.nameService?.NpcName(id) ?? null;
+    dlg.onResult = (r) => this._onScriptDialogResult(r, dlg);
+
     switch (args.msgType) {
       case 0: // SAY
       case 1: { // SAY_IMAGE
-        // Severe, confirmed bug (FIXED): this used to call `show(args.text)`
-        // with no second argument, which defaults to `DialogType.Ok` —
-        // always rendering a single "OK" button regardless of the real
-        // `hasPrev`/`hasNext` flags `FieldHandlers.ts` already decodes
-        // correctly for this exact opcode (confirmed against
-        // `CScriptMan::OnSay`, decompile/6DC110.c, in an earlier pass:
-        // `bPrev:byte` then `bNext:byte`, byte-for-byte what `args.hasPrev`/
-        // `args.hasNext` already hold) — those two fields were decoded but
-        // never read here. A multi-page NPC monologue (hasNext=true) should
-        // show "Next" (or "Prev"+"Next" once past the first page), not "OK".
-        //
-        // Nineteenth pass (FIXED): `onOk`/`onNext` themselves hardcoded
-        // `ScriptAnswerNext(0)` regardless of whether the real msgType was
-        // Say(0) or SayImage(1) — wrong for the SayImage case.
-        // `CScriptMan::OnSay` (decompile/6DC110.c) answers with a hardcoded
-        // `Encode1(0)`, but `CScriptMan::OnSayImage` (decompile/6DC310.c)
-        // answers with a hardcoded `Encode1(1)` instead — i.e. the real
-        // client always echoes the msgType of the message being answered,
-        // it's just implemented as two separate functions each writing
-        // their own constant rather than one shared echo. A SayImage(1)
-        // dialog answered with msgType=0 sends the wrong first byte of
-        // opcode 65 (`UserScriptMessageAnswer`), which is a real wire bug,
-        // not just a label cosmetic. Fixed by threading `args.msgType`
-        // through `NpcTalk.show()` and reading it back via the new
-        // `sayMsgType` getter in `onOk`/`onNext` below instead of a literal 0.
-        const type = args.hasPrev ? DialogType.PrevNext : args.hasNext ? DialogType.Next : DialogType.Ok;
-        this._npcTalk.show(args.text, type, args.msgType);
+        // hasPrev/hasNext (decoded by FieldHandlers from CScriptMan::OnSay)
+        // select Prev/Next vs OK — a multi-page monologue shows "Next" (or
+        // "Prev"+"Next" once past the first page), not a lone "OK".
+        dlg.SetUtilDlgEx(UtilDlgType.TEXT, args.speakerId, false, false, args.text);
+        dlg.m_bSpeakerOnRight = (dlg.m_bParam & ScriptMessageParam.SpeakerOnRight) !== 0;
+        dlg.SetUtilDlgEx_TEXT(args.hasPrev, args.hasNext);
+        dlg.show();
         break;
       }
-      case 2: // ASK_YES_NO
-        // Severe, confirmed bug (FIXED): same root cause as above, but with
-        // real functional impact, not just a cosmetic label — `show(args.text)`
-        // defaulted to `DialogType.Ok`, rendering a single "OK" button for
-        // what the real client (`CScriptMan::OnAskYesNo`/the AskYesNo case
-        // in `CScriptMan::OnScriptMessage`, decompile/6DE0F0.c, confirmed in
-        // an earlier pass) is a genuine yes/no prompt. Clicking the lone
-        // "OK" button called `_npcTalk.onOk`, which is wired to
-        // `GameSender.ScriptAnswerNext(0)` — the wrong response shape
-        // entirely for a YesNo answer (the correct response,
-        // `ScriptAnswerYesNo`, is already correctly wired to `onYes`/`onNo`,
-        // it just had no buttons to ever fire from). This silently broke
-        // every yes/no NPC script prompt in the game (confirm purchase,
-        // confirm warp, etc. — extremely common). Fixed to pass
-        // `DialogType.YesNo` so `NpcTalk._rebuildButtons` renders the real
-        // Yes/No buttons.
-        this._npcTalk.show(args.text, DialogType.YesNo);
-        break;
-      case 5: // ASK_MENU
-        if (args.menu) this._npcTalk.showMenu(args.text, args.menu);
+      case 2: // ASK_YES_NO — genuine yes/no prompt (CScriptMan::OnAskYesNo)
+        dlg.SetUtilDlgEx(UtilDlgType.YESNO, args.speakerId, false, false, args.text);
+        dlg.SetUtilDlgEx_YESNO();
+        dlg.show();
         break;
       case 3: // ASK_TEXT
-      case 14: // ASK_BOX_TEXT
-        this._npcTalk.showAskText(args.text, args.defaultText ?? '', args.minLength ?? 0, args.maxLength ?? 0);
+        dlg.SetUtilDlgEx(UtilDlgType.INPUT_STR, args.speakerId, false, false, args.text);
+        dlg.SetUtilDlgEx_INPUT_STR(args.defaultText ?? '', args.minLength ?? 0, args.maxLength ?? 0, false, 0);
+        dlg.show();
+        break;
+      case 14: // ASK_BOX_TEXT (multi-line)
+        dlg.SetUtilDlgEx(UtilDlgType.MLINPUT, args.speakerId, false, false, args.text);
+        dlg.SetUtilDlgEx_INPUT_MLSTR(args.defaultText ?? '', args.boxWidth ?? 0, args.boxHeight ?? 0);
+        dlg.show();
         break;
       case 4: // ASK_NUMBER
-        this._npcTalk.showAskNumber(args.text, args.defaultNum ?? 0, args.minNum ?? 0, args.maxNum ?? 0);
+        dlg.SetUtilDlgEx(UtilDlgType.INPUT, args.speakerId, false, false, args.text);
+        dlg.SetUtilDlgEx_INPUT_NO(args.defaultNum ?? 0, args.minNum ?? 0, args.maxNum ?? 0,
+          0, Math.max(1, (args.maxNum ?? 9).toString().length), false);
+        dlg.show();
         break;
-      case 13: // ASK_ACCEPT (quest)
-        this._npcTalk.showAskAccept(args.text, args.questId ?? 0, args.speakerId ?? 0, 0, 0);
+      case 5: // ASK_MENU — selectable dot list
+        dlg.SetUtilDlgEx(UtilDlgType.LIST, args.speakerId, false, false, args.text);
+        if (args.menu) {
+          for (let i = 0; i < args.menu.length; i++) dlg.AddDotLine(args.menu[i], i, 5);
+        }
+        dlg.SetUtilDlgEx_LIST(true);
+        dlg.show();
         break;
+      case 6: // ASK_QUIZ — free-text answer with the hint pre-filled
+      case 7: { // ASK_SPEED_QUIZ
+        dlg.SetUtilDlgEx(UtilDlgType.INPUT_STR, args.speakerId, false, false, args.text);
+        dlg.SetUtilDlgEx_INPUT_STR(args.quizHint ?? '', args.quizMinLength ?? 0, args.quizMaxLength ?? 0, false, 0);
+        dlg.startQuizTimer((args.quizRemainTime ?? 0) / 1000);
+        dlg.show();
+        break;
+      }
+      case 13: { // ASK_ACCEPT (quest) — quest-variant Yes/No (BtQYes/BtQNo)
+        dlg.pendingQuestId = args.questId ?? 0;
+        dlg.pendingNpcId = args.speakerId ?? 0;
+        dlg.pendingX = 0;
+        dlg.pendingY = 0;
+        dlg.SetUtilDlgEx(UtilDlgType.YESNO, args.speakerId, false, true, args.text);
+        dlg.SetUtilDlgEx_YESNO();
+        dlg.show();
+        break;
+      }
       case 15: { // ASK_SLIDE_MENU (quest reward selection)
         const questRe = /#q(\d+)#/;
         const qm = questRe.exec(args.text ?? '');
@@ -7210,8 +7226,49 @@ this._localCharId = args.characterId ?? 0;
         break;
       }
       default:
-        this._npcTalk.show(args.text ?? '');
+        dlg.SetUtilDlgEx(UtilDlgType.TEXT, args.speakerId, false, false, args.text ?? '');
+        dlg.SetUtilDlgEx_TEXT(false, false);
+        dlg.show();
         break;
+    }
+  }
+
+  /** Maps a CUtilDlgEx result to the wire script answer (opcode 65 / quest). */
+  private _onScriptDialogResult(r: UtilDlgResult, dlg: UtilDlgEx): void {
+    const msgType = dlg.scriptMsgType;
+    switch (r.type) {
+      case 'ok':
+      case 'next':
+        // Ok/Next → Select(1); menu selection carries GetSelect().
+        if (dlg.m_dlgType === UtilDlgType.LIST && dlg.m_nSelect >= 0) {
+          this.game.session.send(GameSender.ScriptAnswerNumber(ScriptMessageType.AskMenu, dlg.m_nSelect));
+        } else {
+          this.game.session.send(GameSender.ScriptAnswerSay(msgType, ScriptAnswerAction.Select));
+        }
+        break;
+      case 'prev':
+      case 'cancel':
+        // OG collapses Prev and Cancel to the same wire value
+        // (ScriptAnswerAction.Cancel) — there is no distinct back-page byte.
+        this.game.session.send(GameSender.ScriptAnswerCancel(msgType));
+        break;
+      case 'yes':
+        if (dlg.m_bQuest && dlg.pendingQuestId > 0) {
+          this.game.session.send(GameSender.QuestAccept(dlg.pendingQuestId, dlg.pendingNpcId, dlg.pendingX, dlg.pendingY));
+        } else {
+          this.game.session.send(GameSender.ScriptAnswerYesNo(true));
+        }
+        break;
+      case 'no':
+        this.game.session.send(GameSender.ScriptAnswerYesNo(false));
+        break;
+    }
+    if (msgType === ScriptMessageType.AskText && r.type === 'ok') {
+      this.game.session.send(GameSender.ScriptAnswerText(ScriptMessageType.AskText, dlg.GetInputStr_Result()));
+    } else if (msgType === ScriptMessageType.AskNumber && r.type === 'ok') {
+      this.game.session.send(GameSender.ScriptAnswerNumber(ScriptMessageType.AskNumber, dlg.GetInputNo_Result()));
+    } else if ((msgType === ScriptMessageType.AskQuiz || msgType === ScriptMessageType.AskSpeedQuiz) && r.type === 'ok') {
+      this.game.session.send(GameSender.ScriptAnswerText(msgType, dlg.GetInputStr_Result()));
     }
   }
 

@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { Container } from 'pixi.js';
 import { FieldScene } from '../../src/map/FieldScene.js';
 import { GameCamera } from '../../src/map/GameCamera.js';
+import { WzPackage } from '../../src/wz/WzPackage.js';
+import { WzTextureLoader } from '../../src/render/WzTextureLoader.js';
 
 // Regression test for the "nothing visible in-game" bug fixed in audit pass 22:
 // FieldScene.UpdateEntities()'s job is to re-parent each entity's already-
@@ -68,5 +70,34 @@ describe('FieldScene.UpdateEntities', () => {
     const countAfterFirst = layer.children.length;
     field.UpdateEntities([], player, [], null, null, 800, 600);
     expect(layer.children.length).toBe(countAfterFirst);
+  });
+});
+
+describe('FieldScene mob layering (real Henesys map)', () => {
+  it('renders a mob in the layer of the foothold it stands on', () => {
+    const map = WzPackage.OpenBase('wz_client', 'Map');
+    const field = new FieldScene(map, new WzTextureLoader(), new GameCamera({ x: 0, y: 0 }));
+    field.Load(100000000);
+
+    // Pick any real foothold and its layer.
+    const footholds = field['_footholds'] as Record<number, { Layer: number; X1: number; X2: number; YAt(x: number): number | null }>;
+    const fh = Object.values(footholds)[0];
+    expect(fh).toBeTruthy();
+    const x = (fh.X1 + fh.X2) / 2;
+    const y = fh.YAt(x) ?? 0;
+
+    const mob = {
+      Position: { x, y },
+      Layer: 7, // stale default — must be corrected by LayerAt
+      container: new Container(),
+    } as any;
+
+    field.UpdateEntities(new Map(), null, [], [mob], null, 800, 600);
+    // The mob's container must be attached to the foothold's layer container,
+    // not the stale default layer 7.
+    const parent = mob.container.parent;
+    expect(parent).not.toBeNull();
+    const parentIndex = (field['_layerContainers'] as Container[]).indexOf(parent);
+    expect(parentIndex).toBe(fh.Layer);
   });
 });
