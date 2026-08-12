@@ -111,6 +111,10 @@ export class OtherCharLook {
     }
   }
 
+  /** Resolves a medal item id to its display name (OG CUser::DrawNameTags →
+      CItemInfo::GetItemName for the type-1006 medal tag). */
+  itemNameOf: ((id: number) => string) | null = null;
+
   LoadSprites(loader: WzTextureLoader, charWz: WzPackage | null, itemWz: WzPackage | null, baseWz: WzPackage | null): void {
     this._loader = loader;
     this._charWz = charWz;
@@ -149,6 +153,17 @@ export class OtherCharLook {
     // The face should show pain expression during the hit animation
     this._charLook?.SetEmotion(1); // emotionId=1 = "hit" expression
     this._charLook?.PlayOneTimeAction('hit1');
+  }
+
+  // OG: CUser::OnSetDead — a remote character whose HP hits 0 plays the dead
+  // action and stays dead until they leave/re-enter the field.
+  private _isDead = false;
+  get IsDead(): boolean { return this._isDead; }
+
+  /** Play a one-shot body action (e.g. 'dead' on remote death). */
+  PlayOneTimeAction(actionKey: string): void {
+    if (actionKey === 'dead') this._isDead = true;
+    this._charLook?.PlayOneTimeAction(actionKey);
   }
 
   SetADBoard(message: string): void {
@@ -375,9 +390,10 @@ export class OtherCharLook {
     // ── Name tags (OG CUser::DrawNameTags → CLife::MakeNameTag) ──
     // The character name plate sits BELOW the feet (v95 yellow plate under
     // the character, like NPCs); the HP gauge stays above the head (-105).
-    // Tag 1: Character name (tagType 1000)
+    // Tag 1: Character name (tagType 1000) — just the name (m_sCharacterName),
+    // no level prefix (the OG draws only the name on a white plate).
     const nameTagY = 10;
-    const tag = `[${this.Level}] ${this.Name}`;
+    const tag = this.Name;
     if (!this._nameText) {
       this._nameText = new Text({ text: tag, style: { fontSize: 11, fill: 0xffe664, stroke: '#000000' } });
       this._nameText.anchor.set(0.5, 1);
@@ -401,15 +417,17 @@ export class OtherCharLook {
       this.container.addChild(this._guildText);
     }
 
-    // Tag 3: Medal name (tagType 1006) — below guild name
+    // Tag 3: Medal name (tagType 1006) — below guild name; OG uses the real
+    // medal item name (CItemInfo::GetItemName), not the raw id.
     if (this._medalItemId > 0) {
       const medalTagY = nameTagY + (displayGuild ? 25 : 13);
+      const medalName = this.itemNameOf?.(this._medalItemId) || `Medal[${this._medalItemId}]`;
       if (!this._medalText) {
-        this._medalText = new Text({ text: `Medal[${this._medalItemId}]`, style: { fontSize: 10, fill: 0xffc94a, stroke: '#000000' } });
+        this._medalText = new Text({ text: medalName, style: { fontSize: 10, fill: 0xffc94a, stroke: '#000000' } });
         this._medalText.anchor.set(0.5, 1);
         this._medalText.y = medalTagY;
       } else {
-        this._medalText.text = `Medal[${this._medalItemId}]`;
+        this._medalText.text = medalName;
       }
       this.container.addChild(this._medalText);
     }

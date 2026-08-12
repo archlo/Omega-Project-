@@ -75,7 +75,19 @@ describe('Character name tags BELOW the feet (OG CLife::MakeNameTag type 1000)',
     (other as any)._rebuildDisplay();
     const name = (other as any)._nameText;
     expect(name).not.toBeNull();
-    expect(name.text).toBe('[50] Test');
+    // OG CUser::DrawNameTags draws just m_sCharacterName (no level prefix).
+    expect(name.text).toBe('Test');
     expect(name.y).toBe(10); // below feet (was -78 above the head)
+  });
+
+  it('remote char medal tag resolves the real item name via itemNameOf', () => {
+    const other = new OtherCharLook(1, 'Test', 50, null);
+    other.itemNameOf = (id) => `MedalName${id}`;
+    other.SetMedalItemId(1122184);
+    (other as any)._rebuildDisplay();
+    const medal = (other as any)._medalText;
+    expect(medal).not.toBeNull();
+    // OG type-1006 tag uses CItemInfo::GetItemName, not "Medal[<id>]".
+    expect(medal.text).toBe('MedalName1122184');
   });
 });

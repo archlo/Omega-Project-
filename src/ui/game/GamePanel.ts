@@ -18,8 +18,11 @@ export class GamePanel {
 
   // --- Window drag (OG: CWndMan::m_pDragWnd) ---
   draggable = true;
-  private _wndDragging = false;
-  private _wndDragOff = { x: 0, y: 0 };
+  protected _wndDragging = false;
+  protected _wndDragOff = { x: 0, y: 0 };
+  /** Title-bar drag region height. OG CUIWnd::HitTest @0x8DD2C0 returns region 2
+   *  (drag) when ry <= 0x18 (24); CUISysOpt::HitTest uses ry < 50. */
+  protected _wndTitleH = 24;
 
   // --- Close button (OG: CUIWnd::m_pBtClose, id=1000) ---
   private _wndCloseBtn: Button | null = null;
@@ -48,7 +51,7 @@ export class GamePanel {
     if (!down) return false;
     const b = this._root.getLocalBounds();
     if (lx < b.x || lx >= b.x + b.width || ly < b.y || ly >= b.y + b.height) return false;
-    if (ly - b.y >= 22) return false;
+    if (ly - b.y >= this._wndTitleH) return false;
     this._wndDragging = true;
     this._wndDragOff = { x: lx, y: ly };
     return true;

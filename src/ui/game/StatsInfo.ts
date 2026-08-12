@@ -4,12 +4,14 @@ import { WzTextureLoader } from '../../render/WzTextureLoader.js';
 import { WzPackage } from '../../wz/WzPackage.js';
 import { WzProperty } from '../../wz/WzProperty.js';
 import { WzCanvas } from '../../wz/WzCanvas.js';
+import { WzVector } from '../../wz/WzVector.js';
 import { WzSprite } from '../../render/WzSprite.js';
 import { Button } from '../Button.js';
 import { Sprite } from 'pixi.js';
 import { getIdealStatUp, StatPair } from './StatDetailInfo.js';
 import { StringPoolService } from '../../localization/StringPoolService.js';
 import { ToolTip } from './ToolTip.js';
+import { ToolTipHelper } from './ToolTipHelper.js';
 
 // OG CUIStat constants (from IDA decompilation — Draw @ 0x864bd0)
 const PANEL_W = 172;
@@ -158,10 +160,19 @@ export class StatsInfo extends GamePanel {
 
   private _stringPool: StringPoolService | null = null;
   private _toolTip: ToolTip | null = null;
+  private _stringWz: (() => WzPackage | null) | null = null;
+  private _ttHelper: ToolTipHelper = new ToolTipHelper();
 
-  constructor(loader: WzTextureLoader, ui: WzPackage | null, stringPool?: StringPoolService) {
+  // OG: CToolTipHelper::LoadToolTip(StringPool 1993) — ToolTipHelp.img/Game/UIWnd/Stat.
+  // Each entry = { lt, rb (Vector2D hit rect), Title, Desc } from the String.nx subtree.
+  // CheckAndShow @0x8A0980 iterates these and PtInRect's the cursor; the matching
+  // entry's Title+Desc are shown via SetToolTip_String2 at (cursor, cursorY+20).
+  private static readonly TTH_PATH = 'ToolTipHelp.img/Game/UIWnd/Stat';
+
+  constructor(loader: WzTextureLoader, ui: WzPackage | null, stringPool?: StringPoolService | null, stringWz?: (() => WzPackage | null) | null) {
     super();
     this._stringPool = stringPool ?? null;
+    this._stringWz = stringWz ?? null;
     this._toolTip = new ToolTip();
     this._root.visible = false;
 
@@ -231,8 +242,9 @@ export class StatsInfo extends GamePanel {
     this._contentLayer.sortableChildren = true;
     this._root.addChild(this._contentLayer);
 
-    // OG: CToolTipHelper — load tooltip from StringPool 1993
-    // Loaded via ToolTip class
+    // OG: CToolTipHelper::LoadToolTip(this->m_ttHelper, StringPool 1993) —
+    // the real stat-row hover tooltips from ToolTipHelp.img/Game/UIWnd/Stat.
+    this._ttHelper.LoadToolTip(this._stringWz ? this._stringWz() : null, 'Stat');
 
     // OG: m_apCanvasDisabled — load stat icons from UI/UIWindow2.img/Stat/main/Disabled/{statName}
     // These are the small stat icons drawn next to each stat label in Draw
@@ -300,34 +312,38 @@ export class StatsInfo extends GamePanel {
 
     this._strLabel = new Text({ text: 'STR', style: _labelStyle });
     this._strLabel.x = TEXT_X; this._strLabel.y = Y_STR;
+    this._strLabel.visible = !this._wzBg; // label is baked into backgrnd2
     this._contentLayer.addChild(this._strLabel);
 
     this._strValue = new Text({ text: '0', style: _valueStyle });
-    this._strValue.x = TEXT_X + 30; this._strValue.y = Y_STR;
+    this._strValue.x = TEXT_X; this._strValue.y = Y_STR;
     this._contentLayer.addChild(this._strValue);
 
     this._dexLabel = new Text({ text: 'DEX', style: _labelStyle });
     this._dexLabel.x = TEXT_X; this._dexLabel.y = Y_DEX;
+    this._dexLabel.visible = !this._wzBg; // label is baked into backgrnd2
     this._contentLayer.addChild(this._dexLabel);
 
     this._dexValue = new Text({ text: '0', style: _valueStyle });
-    this._dexValue.x = TEXT_X + 30; this._dexValue.y = Y_DEX;
+    this._dexValue.x = TEXT_X; this._dexValue.y = Y_DEX;
     this._contentLayer.addChild(this._dexValue);
 
     this._intLabel = new Text({ text: 'INT', style: _labelStyle });
     this._intLabel.x = TEXT_X; this._intLabel.y = Y_INT;
+    this._intLabel.visible = !this._wzBg; // label is baked into backgrnd2
     this._contentLayer.addChild(this._intLabel);
 
     this._intValue = new Text({ text: '0', style: _valueStyle });
-    this._intValue.x = TEXT_X + 30; this._intValue.y = Y_INT;
+    this._intValue.x = TEXT_X; this._intValue.y = Y_INT;
     this._contentLayer.addChild(this._intValue);
 
     this._lukLabel = new Text({ text: 'LUK', style: _labelStyle });
     this._lukLabel.x = TEXT_X; this._lukLabel.y = Y_LUK;
+    this._lukLabel.visible = !this._wzBg; // label is baked into backgrnd2
     this._contentLayer.addChild(this._lukLabel);
 
     this._lukValue = new Text({ text: '0', style: _valueStyle });
-    this._lukValue.x = TEXT_X + 30; this._lukValue.y = Y_LUK;
+    this._lukValue.x = TEXT_X; this._lukValue.y = Y_LUK;
     this._contentLayer.addChild(this._lukValue);
 
     // OG: Load WZ buttons via CLayoutMan::AddButton
@@ -510,22 +526,22 @@ export class StatsInfo extends GamePanel {
       return `${base} (+${bonus})`;
     };
 
-    this._strLabel.visible = true;
+    this._strLabel.visible = !this._wzBg;
     this._strValue.visible = true;
     this._strValue.text = formatStat(this.baseStr, this.str);
     this._strValue.style = _valueStyle;
 
-    this._dexLabel.visible = true;
+    this._dexLabel.visible = !this._wzBg;
     this._dexValue.visible = true;
     this._dexValue.text = formatStat(this.baseDex, this.dex);
     this._dexValue.style = _valueStyle;
 
-    this._intLabel.visible = true;
+    this._intLabel.visible = !this._wzBg;
     this._intValue.visible = true;
     this._intValue.text = formatStat(this.baseInt, this.intStat);
     this._intValue.style = _valueStyle;
 
-    this._lukLabel.visible = true;
+    this._lukLabel.visible = !this._wzBg;
     this._lukValue.visible = true;
     this._lukValue.text = formatStat(this.baseLuk, this.luk);
     this._lukValue.style = _valueStyle;
@@ -575,7 +591,7 @@ export class StatsInfo extends GamePanel {
     this._playerName = name;
   }
 
-  // OG: OnMouseMove — EXP tooltip and CToolTipHelper (from cuistat_OnMouseMove_clean.txt)
+  // OG: OnMouseMove @0x8649D0 — EXP tooltip + CToolTipHelper::CheckAndShow.
   private _tooltipShown = false;
 
   handleMouseMove(x: number, y: number): void {
@@ -583,57 +599,30 @@ export class StatsInfo extends GamePanel {
     const lx = x - this._root.x;
     const ly = y - this._root.y;
 
-    // OG: EXP tooltip area hit-test: (rx - 55) > 0x6D || (ry - 138) > 0xD → goto LABEL_15
-    // If mouse is in EXP area (55, 138, 110, 14): show EXP tooltip via CUIToolTip::SetToolTip_String
+    // OG: EXP tooltip area hit-test: (rx - 55) > 0x6D || (ry - 138) > 0xD → goto LABEL_15.
+    // Inside rect (55, 138, 110, 14): SetToolTip_String(StringPool 0x1A37, exp, next).
     const inExpArea = (lx - EXP_TOOLTIP_X) <= EXP_TOOLTIP_W && (ly - EXP_TOOLTIP_Y) <= EXP_TOOLTIP_H;
 
     if (inExpArea) {
-      // OG: StringPool 0x1A37 = EXP tooltip format
-      // Shows: "EXP: %d / %d (%d%%)" or similar
+      // OG: 0x1A37 Format(exp, nextLevelExp) — 2 args (next EXP is only here, not on the panel).
       const expPct = this.nextLevelExp > 0 ? Math.floor((this.exp / this.nextLevelExp) * 100) : 0;
       const tooltipStr = `EXP: ${this.exp} / ${this.nextLevelExp} (${expPct}%)`;
-      if (tooltipStr) {
-        // OG: CUIToolTip::SetToolTip_String at (IsMyAddon() + rx + 20, ry + 20)
-        this._showExpTooltip(lx + 20, ly + 20, tooltipStr);
-        this._tooltipShown = true;
-      }
-    } else {
-      // OG LABEL_15: CToolTipHelper::CheckAndShow with offset 8 when beginner
-      // When not in EXP area, show CToolTipHelper if available
-      if (!this._tooltipShown) {
-        this._tooltipShown = true;
-        this._showTooltip(lx, ly);
-      }
+      this._showExpTooltip(lx, ly, tooltipStr);
+      this._tooltipShown = true;
+      return;
     }
 
-    // OG: clear tooltip when mouse leaves all areas
-    if (!inExpArea && this._tooltipShown) {
-      // Check if still in stat area
-      const inStatArea = lx >= 0 && lx < PANEL_W && ly >= Y_NAME && ly < Y_LUK + 16;
-      if (!inStatArea) {
-        this._tooltipShown = false;
-        this._hideTooltip();
-      }
+    // OG LABEL_15: CToolTipHelper::CheckAndShow(this->m_ttHelper, tooltip, rx, ry, 0, offset)
+    // offset = 8 when beginner (level<=10 && (job%1000==0 || job==2001)), else null.
+    const maxCount = this._bBeginner ? 8 : null;
+    const hit = this._ttHelper.checkAndShow(this._toolTip, lx, ly, maxCount);
+    if (hit >= 0 && this._toolTip) {
+      if (!this._toolTip.container.parent) this._root.addChild(this._toolTip.container);
+      this._tooltipShown = true;
+    } else if (this._tooltipShown) {
+      this._tooltipShown = false;
+      this._hideTooltip();
     }
-  }
-
-  private _showTooltip(lx: number, ly: number): void {
-    if (!this._toolTip) return;
-
-    // OG: CToolTipHelper::CheckAndShow — show stat tooltip on hover
-    this._toolTip.clearToolTip();
-
-    // Build tooltip content using ToolTip's line system
-    const tooltipText = this._buildTooltipText();
-    const lines = tooltipText.split('\n');
-
-    for (const line of lines) {
-      this._toolTip.addInfo(line, 11); // GEN_WHITE
-    }
-
-    // Position and show
-    this._toolTip.setToolTipString(lx + 20, ly + 20, '');
-    this._root.addChild(this._toolTip.container);
   }
 
   private _hideTooltip(): void {
@@ -645,33 +634,38 @@ export class StatsInfo extends GamePanel {
   private _showExpTooltip(lx: number, ly: number, text: string): void {
     if (!this._toolTip) return;
 
-    // OG: CUIToolTip::SetToolTip_String — shows a single-line tooltip near cursor
+    // OG: CUIToolTip::SetToolTip_String at (IsMyAddon() + rx + 20, ry + 20)
     this._toolTip.clearToolTip();
     this._toolTip.setToolTipString(lx + 20, ly + 20, text);
-    this._root.addChild(this._toolTip.container);
+    if (!this._toolTip.container.parent) this._root.addChild(this._toolTip.container);
   }
 
-  private _buildTooltipText(): string {
-    // OG: CToolTipHelper loads StringPool 1993 — a multi-line stat description
-    // Tooltip type 8 for beginner (job%1000==0 or job==2001, level<=10)
-    // Tooltip type 0 for normal characters
-    const isBeginner = this._bBeginner;
-    if (isBeginner) {
-      // Type 8: beginner-specific tooltip
-      return [
-        `Lv.${this.level} ${this.job}`,
-        `HP: ${this.hp}/${this.maxHp}  MP: ${this.mp}/${this.maxMp}`,
-        `AP: ${this.ap}`,
-        `Use AP to raise your stats!`,
-      ].join('\n');
+  // OG: CUIWnd::HitTest @0x8DD2C0 — ry > 0x18 (24) → region 1 (body), else region 2
+  // (drag title). beginDrag uses the fixed window rect (backgrnd 172x337 at 0,0)
+  // instead of getLocalBounds(), which is polluted by the tooltip container and
+  // Text children (and can throw before fonts are measured).
+  override beginDrag(lx: number, ly: number, down: boolean): boolean {
+    if (!this.draggable) return false;
+    if (!down && this._wndDragging) {
+      this._wndDragging = false;
+      return true;
     }
-    // Type 0: normal character tooltip
-    return [
-      `Lv.${this.level} ${this.job}`,
-      `HP: ${this.hp}/${this.maxHp}  MP: ${this.mp}/${this.maxMp}`,
-      `STR: ${this.str}  DEX: ${this.dex}  INT: ${this.intStat}  LUK: ${this.luk}`,
-      `AP: ${this.ap}  EXP: ${this.exp}/${this.nextLevelExp}`,
-    ].join('\n');
+    if (!down) return false;
+    if (lx < 0 || lx >= PANEL_W || ly < 0 || ly >= PANEL_H) return false;
+    if (ly >= this._wndTitleH) return false; // title bar = top 24px
+    this._wndDragging = true;
+    this._wndDragOff = { x: lx, y: ly };
+    return true;
+  }
+
+  override updateDrag(): void {
+    if (!this._wndDragging) return;
+    const mx = (window as any).__mouseX as number | undefined;
+    const my = (window as any).__mouseY as number | undefined;
+    if (mx !== undefined && my !== undefined) {
+      this._root.x = mx - this._wndDragOff.x;
+      this._root.y = my - this._wndDragOff.y;
+    }
   }
 
   handleMouseButton(x: number, y: number, down: boolean): boolean {
@@ -831,44 +825,39 @@ export class StatsInfo extends GamePanel {
           this._getStringPoolText(0x1A47),
         ], font);
         break;
-      case 1100: // Cygnus Knights
-        // nDir=2, nX=160, nY=248, StringPool 0x14BA + 0x14C0 + 0x1A47
+      case 1100: // Cygnus Knights — nDir=3, nX=160, nY=241, 0x14BA+0x14C1+0x1A45
+        this._createBalloonTip(1, 160, 241, 3, [
+          this._getStringPoolText(0x14BA),
+          this._getStringPoolText(0x14C1),
+          this._getStringPoolText(0x1A45),
+        ], font);
+        break;
+      case 1200: // Aran — nDir=2, nX=160, nY=266, 0x14BA+0x14C2+0x1A46
+        this._createBalloonTip(1, 160, 266, 2, [
+          this._getStringPoolText(0x14BA),
+          this._getStringPoolText(0x14C2),
+          this._getStringPoolText(0x1A46),
+        ], font);
+        break;
+      case 1300: // Evan — nDir=2, nX=160, nY=248, 0x14BA+0x14C3+0x1A47
         this._createBalloonTip(1, 160, 248, 2, [
           this._getStringPoolText(0x14BA),
-          this._getStringPoolText(0x14C0),
+          this._getStringPoolText(0x14C3),
           this._getStringPoolText(0x1A47),
         ], font);
         break;
-      case 1200: // Aran
-        // nDir=2, nX=160, nY=248, StringPool 0x14BA + 0x14C0 + 0x1A47
-        this._createBalloonTip(1, 160, 248, 2, [
+      case 1400: // Mercedes — nDir=2, nX=160, nY=284, 0x14BA+0x14C4+0x1A45
+        this._createBalloonTip(1, 160, 284, 2, [
           this._getStringPoolText(0x14BA),
-          this._getStringPoolText(0x14C0),
-          this._getStringPoolText(0x1A47),
+          this._getStringPoolText(0x14C4),
+          this._getStringPoolText(0x1A45),
         ], font);
         break;
-      case 1300: // Evan
-        // nDir=2, nX=160, nY=248, StringPool 0x14BA + 0x14C0 + 0x1A47
-        this._createBalloonTip(1, 160, 248, 2, [
+      case 1500: // Phantom — nDir=3, nX=160, nY=241, 0x14BA+0x14C5+0x1A45
+        this._createBalloonTip(1, 160, 241, 3, [
           this._getStringPoolText(0x14BA),
-          this._getStringPoolText(0x14C0),
-          this._getStringPoolText(0x1A47),
-        ], font);
-        break;
-      case 1400: // Mercedes
-        // nDir=2, nX=160, nY=248, StringPool 0x14BA + 0x14C0 + 0x1A47
-        this._createBalloonTip(1, 160, 248, 2, [
-          this._getStringPoolText(0x14BA),
-          this._getStringPoolText(0x14C0),
-          this._getStringPoolText(0x1A47),
-        ], font);
-        break;
-      case 1500: // Phantom
-        // nDir=2, nX=160, nY=248, StringPool 0x14BA + 0x14C0 + 0x1A47
-        this._createBalloonTip(1, 160, 248, 2, [
-          this._getStringPoolText(0x14BA),
-          this._getStringPoolText(0x14C0),
-          this._getStringPoolText(0x1A47),
+          this._getStringPoolText(0x14C5),
+          this._getStringPoolText(0x1A45),
         ], font);
         break;
     }
@@ -937,15 +926,16 @@ export class StatsInfo extends GamePanel {
     }
 
     // Fallback text for common StringPool IDs (when String.wz not available)
+    // Verified from CUISysOpt-era StringPool knowledge + job tip structure.
     const fallbacks: Record<number, string> = {
       0x14BA: 'Tip: Use AP to raise',
       0x14BB: 'your STR for melee attacks.',
       0x14BC: 'your INT for magic attacks.',
       0x14BD: 'your DEX for ranged attacks.',
       0x14BE: 'your DEX/LUK for criticals.',
-      0x14BF: 'your STR for melee attacks.',
+      0x14BF: 'your STR/DEX for weapons.',
       0x14C0: 'Tip: Pirates can use',
-      0x14C1: 'your STR for melee attacks.',
+      0x14C1: 'your STR/DEX for weapons.',
       0x14C2: 'your STR for combo attacks.',
       0x14C3: 'your INT for dragon magic.',
       0x14C4: 'your DEX for elemental arrows.',

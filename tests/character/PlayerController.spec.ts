@@ -973,4 +973,34 @@ describe('PlayerController', () => {
       expect(pc.Stance).toBe(Stance.Stand1);
     });
   });
+
+  describe('death (CUser::OnSetDead)', () => {
+    it('SetDead(true) freezes movement and sets Stance.Dead', () => {
+      const pc = new PlayerController(makeField());
+      pc.Spawn({ x: 0, y: 200 });
+      pc.SetDead(true);
+      expect(pc.IsDead).toBe(true);
+      expect(pc.Stance).toBe(Stance.Dead);
+      const before = { ...pc.Position };
+      pc.Update({ Left: true, Right: false, Up: false, Down: false, JumpPressed: true }, 0.5);
+      expect(pc.Position).toEqual(before);
+    });
+
+    it('SetDead(false) restores Stand stance', () => {
+      const pc = new PlayerController(makeField());
+      pc.Spawn({ x: 0, y: 200 });
+      pc.SetDead(true);
+      pc.SetDead(false);
+      expect(pc.IsDead).toBe(false);
+      expect(pc.Stance).toBe(Stance.Stand1);
+    });
+
+    it('SetDead(true) is idempotent (does not double-transition)', () => {
+      const pc = new PlayerController(makeField());
+      pc.Spawn({ x: 0, y: 200 });
+      pc.SetDead(true);
+      pc.SetDead(true);
+      expect(pc.IsDead).toBe(true);
+    });
+  });
 });

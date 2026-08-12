@@ -31,6 +31,10 @@ export class Revive extends GamePanel {
     this._font = font;
     this.isVisible = false;
 
+    // OG: CUIRevive::OnCreate @0x83CEA0 — the revive dialog background is
+    // UIWindow2.img/Notice/<0..4> (0 = plain "return to town", 1/2/4 = special
+    // variants) with btOK (id 6) / btCancle (id 7). Use Notice/0 for the plain
+    // town-revive case; the premium/soul-stone variants are a separate feature.
     const { backgrnd, btYes } = Revive._probeAssets(ui);
     this._backgrnd = backgrnd !== null ? loader.Load(backgrnd) : null;
     if (this._backgrnd) {
@@ -90,9 +94,13 @@ export class Revive extends GamePanel {
       this._fallbackBg.rect(tl.x, tl.y, this._panelWidth, this._panelHeight).stroke({ width: 1, color: 0x446688 });
     }
     if (this._message) this._message.position.set(tl.x + this._panelWidth / 2, tl.y + 24);
-    const btX = tl.x + (this._panelWidth - this._btOk.width) / 2;
-    const btY = tl.y + this._panelHeight - 30;
-    this._btOk.container.position.set(btX, btY);
+    if (!this._bgPixi) {
+      // Fallback-only: center the button under the message (the WZ Notice
+      // button is placed by its canvas origin inside the 300x131 panel).
+      const btX = tl.x + (this._panelWidth - this._btOk.width) / 2;
+      const btY = tl.y + this._panelHeight - 30;
+      this._btOk.container.position.set(btX, btY);
+    }
   }
 
   handleMouseButton(x: number, y: number, down: boolean): boolean {
@@ -121,16 +129,14 @@ export class Revive extends GamePanel {
 
   private static _probeAssets(ui: WzPackage | null): { backgrnd: WzCanvas | null; btYes: WzProperty | null } {
     if (ui === null) return { backgrnd: null, btYes: null };
-    const candidates = ['UIWindow.img/Revive/0', 'UIWindow.img/Revive'];
-    for (const path of candidates) {
-      const root = ui.GetItem(path);
-      if (!(root instanceof WzProperty)) continue;
-      const bg = root.Get('backgrnd');
-      const bt = (root.Get('BtYes') as WzProperty) ?? (root.Get('BtOK') as WzProperty) ?? (root.Get('BtRevive') as WzProperty);
-      if (bg instanceof WzCanvas || bt instanceof WzProperty) {
-        return { backgrnd: bg instanceof WzCanvas ? bg : null, btYes: bt instanceof WzProperty ? bt : null };
-      }
-    }
-    return { backgrnd: null, btYes: null };
+    // OG: CUIRevive::OnCreate — UIWindow2.img/Notice/<0..4> + btOK/btCancle
+    const root = ui.GetItem('UIWindow2.img/Notice');
+    if (!(root instanceof WzProperty)) return { backgrnd: null, btYes: null };
+    const bg = root.Get('0');
+    const bt = (root.Get('btOK') as WzProperty) ?? (root.Get('btYes') as WzProperty) ?? null;
+    return {
+      backgrnd: bg instanceof WzCanvas ? bg : null,
+      btYes: bt instanceof WzProperty ? bt : null,
+    };
   }
 }

@@ -8,6 +8,8 @@ import { WzCanvas } from '../../wz/WzCanvas.js';
 import { BuiltInFont } from '../BuiltInFont.js';
 import { Button } from '../Button.js';
 import { computeDerived, defaultStatInputs, DerivedStats, StatInputs, getWeaponType } from './StatDerived.js';
+import { ToolTip } from './ToolTip.js';
+import { ToolTipHelper } from './ToolTipHelper.js';
 
 // OG CUIStatDetail (3040 bytes, inherits CUIWnd) — 1:1 from IDA
 // Window size: 178×247 (ctor at 0x867560)
@@ -89,11 +91,21 @@ export class StatDetailInfo extends GamePanel {
   secEva = 0; secEvaBuff = 0;
   secSpeed = 0; secSpeedBuff = 0;
 
-  constructor(loader: WzTextureLoader, ui: WzPackage | null, font: BuiltInFont | null) {
+  // OG: CUIStatDetail::OnCreate @0x8623B0 — CToolTipHelper::LoadToolTip(StringPool 1978)
+  // → ToolTipHelp.img/Game/UIWnd/StatDetail; OnMouseMove @0x861450 → CheckAndShow(..., null).
+  private _ttHelper: ToolTipHelper = new ToolTipHelper();
+  private _toolTip: ToolTip | null = null;
+
+  constructor(loader: WzTextureLoader, ui: WzPackage | null, font: BuiltInFont | null, stringWz?: (() => WzPackage | null) | null) {
     super();
     this._loader = loader;
     this._font = font;
     this.isVisible = false;
+
+    // OG: CUIStatDetail::OnCreate @0x8623B0 — CToolTipHelper::LoadToolTip(StringPool 1978)
+    // → ToolTipHelp.img/Game/UIWnd/StatDetail; OnMouseMove @0x861450 → CheckAndShow(..., null).
+    this._ttHelper.LoadToolTip(stringWz ? stringWz() : null, 'StatDetail');
+    this._toolTip = new ToolTip();
 
     const detail = ui?.GetItem('UIWindow2.img/Stat/detail');
     const detailProp = detail instanceof WzProperty ? detail : null;
@@ -206,6 +218,17 @@ export class StatDetailInfo extends GamePanel {
     const pw = this._bg?.Width ?? 178;
     const ph = this._bg?.Height ?? 247;
     return x >= px && x < px + pw && y >= py && y < py + ph;
+  }
+
+  // OG: CUIStatDetail::OnMouseMove @0x861450 — CToolTipHelper::CheckAndShow(..., null)
+  handleMouseMove(x: number, y: number): void {
+    if (!this.isVisible) return;
+    const lx = x - this._root.x;
+    const ly = y - this._root.y;
+    const hit = this._ttHelper.checkAndShow(this._toolTip, lx, ly, null);
+    if (hit >= 0 && this._toolTip && !this._toolTip.container.parent) {
+      this._root.addChild(this._toolTip.container);
+    }
   }
 
   // ── OG: GetCriticalProp (0x861BF0) ────────────────────────────────

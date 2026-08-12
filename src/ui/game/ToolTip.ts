@@ -286,6 +286,57 @@ export class ToolTip {
     this.drawTextLeft(PADDING, text, font);
   }
 
+  // OG: SetToolTip_String2 @ 0x8953B0 — title + word-wrapped desc tooltip.
+  // Title centered in font type 1 (HL_WHITE); desc word-wrapped below in font
+  // type 10 (HL_SPECIAL). Width defaults to 270 (or 135 for object tooltips).
+  setToolTipString2(x: number, y: number, title: string, desc: string, bObjectToolTip = 0, maxW = 0): void {
+    const fontTitle = this.getFontByType(FONT_TYPES.HL_WHITE);
+    const fontDesc = this.getFontByType(FONT_TYPES.HL_SPECIAL);
+    let width = bObjectToolTip ? 135 : (maxW || 270);
+    const nVertMargin = bObjectToolTip ? 6 : 10;
+
+    let height = 2 * nVertMargin - 6;
+    let nPosY = nVertMargin;
+    if (title) {
+      const titleW = this._measureText(title, fontTitle) + 14;
+      const titleH = 14;
+      if (width < titleW) width = titleW;
+      height += titleH;
+    }
+    const descW = width - 15;
+    const descH = desc ? this._wrapHeight(desc, fontDesc, descW) : 0;
+    height += descH;
+
+    this.setBasicInfo(2, width, height, -1);
+    this.makeLayer(x, y, false, 0);
+
+    if (title) {
+      this.drawTextCenter(nPosY, title, fontTitle);
+      nPosY += 14;
+    }
+    if (desc) {
+      this.drawTextSepartedLine(10, 10 + descW, nPosY, desc, FONT_TYPES.HL_SPECIAL);
+    }
+  }
+
+  // Reuse the word-wrap logic to measure the rendered height of a desc block.
+  private _wrapHeight(text: string, font: TextStyle, maxW: number): number {
+    const words = text.split(/\s+/);
+    let curLine = '';
+    let lineCount = 0;
+    for (const word of words) {
+      const trial = curLine.length === 0 ? word : curLine + ' ' + word;
+      if (this._measureText(trial, font) > maxW && curLine.length > 0) {
+        lineCount++;
+        curLine = word;
+      } else {
+        curLine = trial;
+      }
+    }
+    if (curLine) lineCount++;
+    return lineCount * 14;
+  }
+
   // OG: DrawTextLeft @ 0x88c5e0
   drawTextLeft(y: number, text: string, font: TextStyle): void {
     const t = new Text({ text, style: font });

@@ -156,6 +156,23 @@ export class PlayerController {
   FacingLeft = false;
   ClimbMoving = false;
 
+  // OG: CUser::OnSetDead — dead characters are immovable and play the 'dead'
+  // action. GameStage sets this the instant HP hits 0 and clears it on revive.
+  private _isDead = false;
+  get IsDead(): boolean { return this._isDead; }
+  SetDead(dead: boolean): void {
+    if (this._isDead === dead) return;
+    this._isDead = dead;
+    if (dead) {
+      this._velocity.x = 0;
+      this._velocity.y = 0;
+      this.Stance = Stance.Dead;
+      this._pending = [];
+    } else {
+      this.Stance = this.WeaponStand === 2 ? Stance.Stand2 : Stance.Stand1;
+    }
+  }
+
   // OG: Weapon stand/walk type — determines which animation group to use
   // nStand=1 -> stand1/walk1, nStand=2 -> stand2/walk2
   // Set by GameStage when weapon changes
@@ -359,6 +376,8 @@ export class PlayerController {
 
   Update(input: PlayerInput, dt: number): void {
     if (this._isSitting) return;
+    // OG: dead characters are immovable (CUser::OnSetDead) — no input, no physics.
+    if (this._isDead) return;
     this._applyMovingFootholdOffset();
     this._wasGrounded = this._grounded;
     this._staggerTimer = Math.max(0, this._staggerTimer - dt);

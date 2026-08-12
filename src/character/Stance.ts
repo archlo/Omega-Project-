@@ -38,7 +38,9 @@ export function StanceToWzKey(s: Stance): string {
     into a Stance + facing. Indices not produced by StanceMoveAction (ladder/
     rope/fly/dead, and any value outside the table) fall back to Stand1,
     matching this client's existing one-directional (encode-only) coverage —
-    not a confirmed OG index for those stances. */
+    not a confirmed OG index for those stances. (The dead action is a separate
+    m_nMoveAction value, not a move-path stance nibble — remote death is driven
+    by the UserReceiveHP packet instead.) */
 export function MoveActionToStance(moveAction: number): { stance: Stance; facingLeft: boolean } {
   const facingLeft = ((moveAction >> 4) & 1) !== 0;
   const stIdx = moveAction & 0x0F;

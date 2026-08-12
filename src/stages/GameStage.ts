@@ -6,6 +6,7 @@ import { WzProperty } from '../wz/WzProperty.js';
 import { GameCamera } from '../map/GameCamera.js';
 import { FieldScene } from '../map/FieldScene.js';
 import { CharLook } from '../character/CharLook.js';
+import { Stance } from '../character/Stance.js';
 import * as Avatar from '../character/Avatar.js';
 import { NextLevelExpTable } from '../character/NextLevelExpTable.js';
 import { NpcLook } from '../character/NpcLook.js';
@@ -1151,7 +1152,7 @@ export class GameStage extends Stage {
 
     this._statusBar = new StatusBar(this._loader, uiWz, font);
     this._miniMap = new MiniMap(this._loader, uiWz, font);
-    this._stats = new StatsInfo(this._loader, uiWz);
+    this._stats = new StatsInfo(this._loader, uiWz, this._stringPool, () => this.game.wz.string ?? null);
     this._charInfo = new CharInfo(this._loader, uiWz, this._characterWz, this._itemWz, this._baseWz, this._itemIcons);
     this._charInfo.itemNameOf = (id) => this.game.nameService?.ItemName(id) ?? `Item ${id}`;
     this._charInfo.mobNameOf = (id) => this.game.nameService?.MobName(id) ?? `Mob ${id}`;
@@ -1266,7 +1267,7 @@ export class GameStage extends Stage {
     this._quickSlots.bindItemToKey = (scancode, itemId) => this._keyConfig.bindItemToKey(scancode, itemId);
     this.uiRoot.addChild(this._quickSlots.container);
     this._quickSlots.Relayout(this.game.pixiApp.screen.width, this.game.pixiApp.screen.height);
-    this._statDetailInfo = new StatDetailInfo(this._loader, uiWz, font);
+    this._statDetailInfo = new StatDetailInfo(this._loader, uiWz, font, () => this.game.wz.string ?? null);
     this._trunk = new Trunk(this._loader, uiWz, font);
     this._trunk.OnWithdraw = (invType, position) => {
       this.game.session.send(GameSender.TrunkWithdraw(invType, position));
@@ -1445,7 +1446,7 @@ export class GameStage extends Stage {
     this._revivePanel = new Revive(this._loader, uiWz, font);
     this._revivePanel.OnRevive = (premium) => {
       if (this._isPlayerDead) {
-        this._isPlayerDead = false;
+        this._applyLocalRevive();
         this.game.session.send(GameSender.Revive(this._fieldKey, premium));
       }
     };
@@ -2700,11 +2701,25 @@ export class GameStage extends Stage {
     for (const p of this._panels) { p?.update(dt); p?.updateDrag(); }
     // OG: CTemporaryStatView::Update — slide the expiry clock for active buffs
     this._buffList.update(dt);
-    // OG: CUIStatDetail follows main stat panel position
+    // OG: CUIStatDetail follows main stat panel position (CUIStat::OnMoveWnd
+    // @0x861590: MoveWnd(absLeft+172, absTop+90)). Slide smoothly toward the
+    // target instead of snapping, so opening/toggling the detail looks animated.
     if (this._statDetailInfo?.isVisible && this._stats) {
       const sx = this._stats.container.position.x;
       const sy = this._stats.container.position.y;
-      this._statDetailInfo.container.position.set(sx + 172, sy + 90);
+      const tx = sx + 172;
+      const ty = sy + 90;
+      const cur = this._statDetailInfo.container.position;
+      const dx = tx - cur.x;
+      const dy = ty - cur.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 0.5) {
+        // Exponential ease: move 25% of the remaining gap per frame (~10px/s @60fps decay).
+        const k = 0.25;
+        this._statDetailInfo.container.position.set(cur.x + dx * k, cur.y + dy * k);
+      } else {
+        this._statDetailInfo.container.position.set(tx, ty);
+      }
     }
     this._miniMap?.update(dt);
     this._gameMenu?.update(dt);
@@ -3395,6 +3410,9 @@ export class GameStage extends Stage {
     fh.onUserMove = (args) => {
       const other = this._otherChars.get(args.charId);
       if (!other) return;
+      // A dead remote character stays dead (their move packets only arrive while
+      // alive or to reposition the corpse — never to resurrect them in-place).
+      if (other.IsDead) return;
       if (args.movePath) other.SetMovePath(args.movePath);
       else other.Position = { x: args.x, y: args.y };
       if (args.facingLeft !== undefined) other.SetFacing(args.facingLeft);
@@ -3429,8 +3447,7 @@ export class GameStage extends Stage {
         this._stats.hp = Math.max(0, this._stats.hp - hpDec);
         this._statusBar.hp = this._stats.hp;
         if (this._stats.hp <= 0) {
-          this._isPlayerDead = true;
-          this._tombstone?.Spawn({ x: this._physics!.Position.x, y: this._physics!.Position.y });
+          this._applyLocalDeath();
         }
       }
     };
@@ -4419,9 +4436,16 @@ export class GameStage extends Stage {
     fh.onUserReceiveHP = ({ charId, curHP, maxHP }) => {
       const other = this._otherChars.get(charId);
       const pos = other?.HeadPosition ?? other?.Position;
-      if (pos) this._dmgNumbers?.Add(curHP, pos.x, pos.y - 10, DamageKind.HealHp);
-      const pct = maxHP > 0 ? Math.round(100 * curHP / maxHP) : 0;
-      this._statusMessenger.showLoot(`[HP] char ${charId} ${curHP}/${maxHP} (${pct}%)`);
+      if (pos && curHP > 0) this._dmgNumbers?.Add(curHP, pos.x, pos.y - 10, DamageKind.HealHp);
+      if (other) {
+        other.SetHpRatio(curHP, maxHP);
+        // OG CUser::OnSetDead @0x8E4250 — a remote character whose HP hits 0
+        // plays the dead action and stays dead until they leave the field.
+        if (curHP <= 0 && !other.IsDead) {
+          other.PlayOneTimeAction('dead');
+          other.SetStance(Stance.Dead);
+        }
+      }
     };
     fh.onUserGuildNameChanged = ({ charId, guildName }) => {
       const ch = this._otherChars.get(charId);
@@ -4730,6 +4754,11 @@ this._localCharId = args.characterId ?? 0;
       }
     }
     this._isFieldTransferring = false;
+    // Revive warp (server sends SetField with isRevive) — clear the local death
+    // state so the resurrected character can move again even if the revive
+    // button callback didn't run (e.g. auto-revive timeout, admin command).
+    this._applyLocalRevive();
+    this._revivePanel?.Close();
     this._comboKeys.clear();
     this._killCountHud.hide();
     this._massacreGaugeHud.hide();
@@ -4918,8 +4947,7 @@ this._localCharId = args.characterId ?? 0;
         this._stats.hp = Math.max(0, this._stats.hp - dmg);
         this._statusBar.hp = this._stats.hp;
         if (this._stats.hp <= 0) {
-          this._isPlayerDead = true;
-          this._tombstone?.Spawn({ x: this._physics!.Position.x, y: this._physics!.Position.y });
+          this._applyLocalDeath();
         }
       }
     };
@@ -6233,9 +6261,7 @@ this._localCharId = args.characterId ?? 0;
           this._physics.ApplyKnockback((dx >= 0 ? 1 : -1) * 200, -100, 0.3);
         }
         if (this._stats.hp <= 0) {
-          this._isPlayerDead = true;
-          // OG: tombstone spawns at PLAYER position, not mob position
-          if (this._physics) this._tombstone?.Spawn({ x: this._physics.Position.x, y: this._physics.Position.y });
+          this._applyLocalDeath();
         }
       }
     };
@@ -6271,9 +6297,7 @@ this._localCharId = args.characterId ?? 0;
           this._physics.ApplyKnockback((dx >= 0 ? 1 : -1) * 150, -80, 0.2);
         }
         if (this._stats.hp <= 0) {
-          this._isPlayerDead = true;
-          // OG: tombstone spawns at PLAYER position, not mob position
-          if (this._physics) this._tombstone?.Spawn({ x: this._physics.Position.x, y: this._physics.Position.y });
+          this._applyLocalDeath();
         }
       }
     };
@@ -6331,6 +6355,8 @@ this._localCharId = args.characterId ?? 0;
 
   private _onUserEnter(args: OtherCharEnterArgs): void {
     const ch = new OtherCharLook(args.charId, args.name, args.level, args.look ?? null);
+    // OG CUser::DrawNameTags → CItemInfo::GetItemName for the type-1006 medal tag.
+    ch.itemNameOf = (id) => this.game.nameService?.ItemName(id) ?? `Medal[${id}]`;
     ch.SetPosition(args.x, args.y);
     ch.LoadSprites(this._loader, this._characterWz, this._itemWz, this._baseWz);
     // OG CUser::DrawNameTags — guild/medal data from the enter packet
@@ -6873,14 +6899,34 @@ this._localCharId = args.characterId ?? 0;
     });
   }
 
+  // OG: CUserLocal::OnSetDead @0x903FC0 — the instant HP hits 0 the local
+  // character freezes (immovable), plays the 'dead' action, spins, spawns the
+  // tombstone at the player position, and schedules the revive dialog (which
+  // this client opens once the tombstone-fall finishes landing). All death
+  // triggers funnel through here so the state stays consistent.
+  private _applyLocalDeath(): void {
+    if (this._isPlayerDead) return;
+    this._isPlayerDead = true;
+    this._physics?.SetDead(true);
+    this._player?.PlayOneTimeAction('dead');
+    // OG: tombstone spawns at PLAYER position, not mob position
+    if (this._physics) this._tombstone?.Spawn({ x: this._physics.Position.x, y: this._physics.Position.y });
+  }
+
+  /** Revive: restore movement/stance and reset the tombstone (CUIRevive::Revive). */
+  private _applyLocalRevive(): void {
+    this._isPlayerDead = false;
+    this._physics?.SetDead(false);
+    this._tombstone?.Reset();
+  }
+
   private _onStatChanged(args: StatChangedArgs): void {
     if (args.hp !== undefined) {
       this._statusBar.hp = args.hp;
       this._stats.hp = args.hp;
       this._skill.characterHp = args.hp; // OG: HP check in OnSkillLevelUpButton
       if (args.hp <= 0 && this._physics) {
-        this._isPlayerDead = true;
-        this._tombstone?.Spawn({ x: this._physics.Position.x, y: this._physics.Position.y });
+        this._applyLocalDeath();
       }
     }
     if (args.maxHp !== undefined) { this._statusBar.maxHp = args.maxHp; this._stats.maxHp = args.maxHp; }
