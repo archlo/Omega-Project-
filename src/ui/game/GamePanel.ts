@@ -72,8 +72,11 @@ export class GamePanel {
    * @param uiWz - UI WZ package for loading button backgrounds
    * @param btCloseType - Close button type (0=none, 1-5=WZ styles, default=1)
    * @param panelW - Panel width (for positioning close button at top-right)
+   * @param pos - Explicit close button position. When omitted it is derived
+   *   from panelW as (panelW - 18, 6). OG windows with a real idb close
+   *   position (e.g. CUISkill m_nBtCloseX=153, m_nBtCloseY=6) pass this.
    */
-  createCloseButton(loader?: WzTextureLoader | null, uiWz?: WzPackage | null, btCloseType = 1, panelW?: number): void {
+  createCloseButton(loader?: WzTextureLoader | null, uiWz?: WzPackage | null, btCloseType = 1, panelW?: number, pos?: { x: number; y: number }): void {
     if (btCloseType === 0) return; // No close button
 
     const pw = panelW ?? 184;
@@ -81,8 +84,8 @@ export class GamePanel {
     this._wndPanelW = pw;
 
     // OG: close button position — top-right corner
-    this._wndCloseX = pw - 18;
-    this._wndCloseY = 6;
+    this._wndCloseX = pos?.x ?? pw - 18;
+    this._wndCloseY = pos?.y ?? 6;
 
     // Try loading WZ close button. If this panel was constructed before the
     // async UI package loaded, use the shared asset provider instead.

@@ -60,6 +60,8 @@ export interface SetFieldArgs {
   /** OG: CharacterData.equipped — decoded equip slots from SetField migrate path. */
   equipped?: { slot: number; item: any }[];
   equippedCash?: { slot: number; item: any }[];
+  /** OG: CharacterData.skillRecords — decoded from the SKILLRECORD flag block. */
+  skillRecords?: { skillId: number; level: number; masterLevel?: number }[];
   /** Non-migrate-only: field type (1 byte; e.g. 0=normal, 1=instance). */
   nFieldType?: number;
   posMap?: number; portal?: number;

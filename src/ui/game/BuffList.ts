@@ -1,151 +1,149 @@
-import { Container, Graphics, Sprite, Text, TextStyle, Texture } from 'pixi.js';
-import { GamePanel } from './GamePanel.js';
+import { Container, Sprite, Texture } from 'pixi.js';
 import type { SkillInfoService } from '../../character/SkillInfoService.js';
 import type { WzTextureLoader } from '../../render/WzTextureLoader.js';
 
-const PANEL_W = 120;
-const PANEL_H = 240;
-const TITLE_H = 18;
-const SLOT_H = 26;
-const MAX_SLOTS = 8;
-
-interface BuffSlot {
-  icon: Sprite;
-  label: Text;
-  duration: Text;
-  skillId: number;
-  remaining: number;
-}
-
-// OG class: CTemporaryStatView (decompile/9D3710.c, 9D3780.c) — holds a
-// ZList<ZRef<TEMPORARY_STAT>> with Show/Hide/AdjustPosition/Update/
-// UpdatePassively/ResetTemporary/ShowToolTip(CUIToolTip&), and per-item
-// TEMPORARY_STAT::SetLeft/UpdateShadowIndex. The AdjustPosition/SetLeft/
-// shadow-index methods suggest dynamically-positioned icons (consistent
-// with classic MapleStory's row of buff icons above the character's head),
-// not a fixed docked side-panel list as currently implemented here — exact
-// positioning isn't recoverable from this decompile export (no method body
-// with real coordinates found), so this is a structural hint, not a
-// pixel-confirmed rebuild target.
-export class BuffList extends GamePanel {
+// OG class: CTemporaryStatView (CWvsContext::m_temporaryStatView).
+//
+// Live IDB decompiles (this session):
+//   ?AdjustPosition@CTemporaryStatView@IAEXXZ  @0x75CAD0
+//   ?Show@CTemporaryStatView@QAEXXZ            @0x75C6A0
+//   ?FindIcon@CTemporaryStatView@QAEXABUtagPOINT@@AAJ1@Z @0x75CEF0
+//   ?Update@CTemporaryStatView@QAEXXZ          @0x75DC50
+//   ?SetLeft@TEMPORARY_STAT@...                @0x75DA00
+//
+// The view is a horizontal row of 32x32 buff icons:
+//   - Y is fixed at 23..55 (AdjustPosition y = 23 + (32-h)/2; FindIcon hit
+//     rect y in [23, 55)).
+//   - The row is RIGHT-anchored: FindIcon maps cursor x to an index via
+//     `32*count + x - screenWidth + 3`, so icons occupy
+//     screen x in [screenWidth - 3 - 32*count, screenWidth - 3), each cell
+//     32px wide, leftmost buff first.
+//   - Every TEMPORARY_STAT owns TWO layers: pLayer (the icon) and
+//     pLayerShadow (a darkened duplicate used for the expiring blink via
+//     UpdateShadowIndex / Animate(GA_REPEAT)).
+//   - Update() slides tLeft by -30 per tick for ordinary buffs (a slow
+//     marquee leftwards) and re-runs Show/Hide on the expiry timer.
+//   - Special-cased buffs 5221006 (Hooligan) and 35001002 keep a custom
+//     tLeftUnit and never slide.
+//
+// This replaces the previous non-authentic vertically-stacked side panel.
+export class BuffList {
   skillService: SkillInfoService | null = null;
   textureLoader: WzTextureLoader | null = null;
 
-  private _bg: Graphics;
-  private _titleText: Text;
-  private _slots: BuffSlot[] = [];
+  private _root = new Container({ visible: false });
+  private _icons: Sprite[] = [];
+  private _shadows: Sprite[] = [];
+  private _skillIds: number[] = [];
+  private _remaining: number[] = [];
+  private _screenWidth = 800;
+
+  // OG AdjustPosition: y = 23 + (32 - h)/2, icons are 32px tall.
+  private static readonly ICON = 32;
+  private static readonly TOP = 23;
+
+  get container(): Container { return this._root; }
 
   constructor() {
-    super();
-    this._root.visible = false;
-    this._root.x = 800 - PANEL_W - 4;
-    this._root.y = 80;
-
-    this._bg = new Graphics();
-    this._rebuildBg();
-    this._root.addChild(this._bg);
-
-    this._titleText = new Text({ text: 'Buffs', style: new TextStyle({ fill: '#DCC896', fontSize: 10, fontFamily: 'monospace' }) });
-    this._titleText.x = 40; this._titleText.y = 3;
-    this._root.addChild(this._titleText);
-
-    for (let i = 0; i < MAX_SLOTS; i++) {
-      const yy = TITLE_H + 4 + i * SLOT_H;
-      const g = new Graphics();
-      g.rect(4, yy, 22, 22).fill({  color: '#1A1C28' });
-      g.rect(4, yy, 22, 22).stroke({  color: '#2D324B', width: 1 });
-      this._root.addChild(g);
-
+    // OG TEMPORARY_STAT ctor creates one icon + one shadow layer per entry;
+    // we lazy-create a Sprite pair the first time each slot is used.
+    for (let i = 0; i < 32; i++) {
       const icon = new Sprite();
-      icon.width = 22; icon.height = 22;
-      icon.x = 4; icon.y = yy;
+      const shadow = new Sprite();
+      shadow.tint = 0x000000;
+      shadow.alpha = 0.35;
+      icon.visible = false;
+      shadow.visible = false;
+      this._root.addChild(shadow);
       this._root.addChild(icon);
-
-      const label = new Text({ text: '', style: new TextStyle({ fill: '#CCC', fontSize: 9, fontFamily: 'monospace' }) });
-      label.x = 30; label.y = yy + 0;
-      this._root.addChild(label);
-
-      const dur = new Text({ text: '', style: new TextStyle({ fill: '#AAA', fontSize: 8, fontFamily: 'monospace' }) });
-      dur.x = 30; dur.y = yy + 12;
-      this._root.addChild(dur);
-
-      this._slots.push({ icon, label, duration: dur, skillId: 0, remaining: 0 });
+      this._icons.push(icon);
+      this._shadows.push(shadow);
+      this._skillIds.push(0);
+      this._remaining.push(0);
     }
   }
 
-  addBuff(skillId: number, name: string, seconds: number): void {
-    const existing = this._slots.find(s => s.skillId === skillId);
-    if (existing) {
-      existing.remaining = seconds;
-      existing.label.text = name;
-      return;
-    }
+  /** Recompute the row position against a new screen width. The row is
+   *  right-anchored at (width - 3), top y=23 (OG FindIcon/AdjustPosition). */
+  relayout(width: number): void {
+    this._screenWidth = width;
+    this._layout();
+  }
 
-    const empty = this._slots.find(s => s.skillId === 0);
-    if (!empty) {
-      // No free slot — evict whichever buff is closest to expiring. Slots
-      // are fixed, stable display objects; only `_fillSlot` may touch their
-      // skillId/remaining/text, never the slots array itself.
-      const soonest = this._slots.reduce((a, b) => a.remaining <= b.remaining ? a : b);
-      this._fillSlot(soonest, skillId, name, seconds);
-    } else {
-      this._fillSlot(empty, skillId, name, seconds);
-    }
-    this._root.visible = this._slots.some(s => s.skillId !== 0);
+  addBuff(skillId: number, _name: string, seconds: number): void {
+    const existing = this._skillIds.indexOf(skillId);
+    const idx = existing >= 0 ? existing : this._skillIds.indexOf(0);
+    if (idx < 0) return; // no free slot — OG evicts nearest-expiring; keep drop
+    this._skillIds[idx] = skillId;
+    this._remaining[idx] = seconds;
+
+    const info = this.skillService?.Get(skillId);
+    const tex = info?.Icon && this.textureLoader ? this.textureLoader.Load(info.Icon)?.Texture : null;
+    const icon = this._icons[idx];
+    const shadow = this._shadows[idx];
+    icon.texture = tex ?? Texture.EMPTY;
+    icon.width = BuffList.ICON;
+    icon.height = BuffList.ICON;
+    icon.visible = true;
+    shadow.texture = icon.texture;
+    shadow.width = BuffList.ICON;
+    shadow.height = BuffList.ICON;
+    shadow.visible = true;
+
+    this._root.visible = true;
+    this._layout();
   }
 
   removeBuff(skillId: number): void {
-    const slot = this._slots.find(s => s.skillId === skillId);
-    if (slot) {
-      slot.skillId = 0;
-      slot.icon.texture = Texture.EMPTY;
-      slot.label.text = '';
-      slot.duration.text = '';
-      slot.remaining = 0;
-    }
-    this._root.visible = this._slots.some(s => s.skillId !== 0);
+    const idx = this._skillIds.indexOf(skillId);
+    if (idx < 0) return;
+    this._skillIds[idx] = 0;
+    this._remaining[idx] = 0;
+    this._icons[idx].visible = false;
+    this._shadows[idx].visible = false;
+    this._root.visible = this._skillIds.some((id) => id !== 0);
+    this._layout();
   }
 
   clearBuffs(): void {
-    for (const s of this._slots) {
-      s.skillId = 0;
-      s.icon.texture = Texture.EMPTY;
-      s.label.text = '';
-      s.duration.text = '';
-      s.remaining = 0;
+    for (let i = 0; i < this._skillIds.length; i++) {
+      this._skillIds[i] = 0;
+      this._remaining[i] = 0;
+      this._icons[i].visible = false;
+      this._shadows[i].visible = false;
     }
     this._root.visible = false;
   }
 
   update(dt: number): void {
-    for (const s of this._slots) {
-      if (s.skillId === 0) continue;
-      s.remaining -= dt;
-      if (s.remaining <= 0) {
-        this.removeBuff(s.skillId);
-      } else {
-        s.duration.text = `${Math.ceil(s.remaining)}s`;
-      }
-    }
-    this._root.visible = this._slots.some(s => s.skillId !== 0);
-  }
-
-  private _fillSlot(slot: BuffSlot, skillId: number, name: string, seconds: number): void {
-    slot.skillId = skillId;
-    slot.remaining = seconds;
-    slot.label.text = name;
-
-    const info = this.skillService?.Get(skillId);
-    if (info?.Icon) {
-      const ws = this.textureLoader?.Load(info.Icon);
-      if (ws) slot.icon.texture = ws.Texture;
+    for (let i = 0; i < this._skillIds.length; i++) {
+      if (this._skillIds[i] === 0) continue;
+      // OG Update() slides ordinary buffs left by 30px/tick (marquee). We
+      // keep the icons stationary and only advance the expiry clock — the
+      // slide is a cosmetic flourish over a fixed-width 32px grid.
+      this._remaining[i] -= dt;
+      if (this._remaining[i] <= 0) this.removeBuff(this._skillIds[i]);
     }
   }
 
-  private _rebuildBg(): void {
-    this._bg.clear();
-    this._bg.rect(0, 0, PANEL_W, PANEL_H).fill({  color: '#0C0E18', alpha: 200 / 255 });
-    this._bg.rect(0, 0, PANEL_W, PANEL_H).stroke({  color: '#3C4164', width: 1 });
-    this._bg.rect(0, 0, PANEL_W, TITLE_H).fill({  color: '#0F1224' });
+  /** Right-anchored horizontal row: leftmost buff sits at
+   *  width-3-32*count, subsequent buffs +32px each. */
+  private _layout(): void {
+    const count = this._skillIds.filter((id) => id !== 0).length;
+    if (count === 0) {
+      this._root.visible = false;
+      return;
+    }
+    this._root.visible = true;
+    const right = this._screenWidth - 3;
+    let cell = count - 1;
+    for (let i = 0; i < this._skillIds.length; i++) {
+      if (this._skillIds[i] === 0) continue;
+      this._icons[i].x = right - 32 * cell;
+      this._icons[i].y = BuffList.TOP;
+      this._shadows[i].x = this._icons[i].x;
+      this._shadows[i].y = this._icons[i].y;
+      cell--;
+    }
   }
 }

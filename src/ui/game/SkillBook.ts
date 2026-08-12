@@ -35,10 +35,11 @@ const TAB_H = 20;
 // and the tab strip share this slot layout.
 const TAB_SLOT_W = 30;
 
-// Scrollbar: (1, 8), 93×155
-const SB_X = 1;
-const SB_Y = 8;
-const SB_W = 93;
+// OG: CCtrlScrollBar(m_pParent, 2001, 1, 8, 153, 93, 155) — CUISkill::OnCreate
+// @0x851520. Args after nId are (type=1 vertical, variant=8 VScr8, x, y, length).
+const SB_X = 153;
+const SB_Y = 93;
+const SB_W = 15;
 const SB_H = 155;
 
 // OG: SP Up buttons: x=135, Y=113,153,193,233 — loaded from Skill/main/BtSpUp
@@ -739,10 +740,11 @@ export class SkillBook extends GamePanel {
       this._root.addChild(btn);
     }
 
-    // OG: Scrollbar at (1, 8), 93×155, nWheelRange=146
+    // OG: CUISkill::OnCreate @0x851520 — CCtrlScrollBar(m_pParent, 2001, 1, 8,
+    // 153, 93, 155): vertical, VScr8 variant, x=153, y=93, length=155.
     this._scrollBar = new ScrollBar(SB_X, SB_Y, SB_H, (pos: number) => {
       this._scrollOffset = pos;
-    });
+    }, { loader: loader ?? undefined!, uiWz: ui ?? null, variant: 8 });
     this._root.addChild(this._scrollBar.container);
 
     // OG: Macro button — BtMacro id 0x7E7, loaded from Skill/main/BtMacro
@@ -800,7 +802,10 @@ export class SkillBook extends GamePanel {
       this.skillDecPanel.container,
       this.skillChangeConfirm.container,
     );
-    this.createCloseButton(loader, ui, 1, PANEL_W);
+    // OG: CUISkill ctor @0x850690 — CUIWnd(this, 3, 5, 153, 6, 1, 0, 0):
+    // type 5 close button (Basic.img/BtClose3) at (153, 6), not the default
+    // (panelW - 18, 6) used by other windows.
+    this.createCloseButton(loader, ui, 5, PANEL_W, { x: 153, y: 6 });
 
     // OG: Create tooltip for skill hover display
     if (font && icons && loader && ui) {
@@ -1590,14 +1595,14 @@ export class SkillBook extends GamePanel {
     // Forward to scrollbar first
     const sbx = lx - SB_X;
     const sby = ly - SB_Y;
-    if (sbx >= 0 && sbx < 12 && sby >= 0 && sby < SB_H) {
+    if (sbx >= 0 && sbx < SB_W && sby >= 0 && sby < SB_H) {
       if (this._scrollBar.handleMouseButton(sbx, sby, down)) return true;
     }
 
     if (!down) return true;
 
-    // Close button
-    if (lx >= PANEL_W - 18 && ly < 22) { this.isVisible = false; return true; }
+    // Close button — OG: CUIWnd close at (153, 6), BtClose3
+    if (lx >= 153 && lx < 153 + 14 && ly >= 6 && ly < 6 + 14) { this.isVisible = false; return true; }
 
     // OG: OnButtonClicked id 2023 — macro toggle (0x7E7)
     if (lx >= this._macroBtn.x && lx < this._macroBtn.x + 58 &&
@@ -1712,7 +1717,7 @@ export class SkillBook extends GamePanel {
     // Forward to scrollbar
     const sbx = lx - SB_X;
     const sby = ly - SB_Y;
-    if (sbx >= 0 && sbx < 12 && sby >= 0 && sby < SB_H) {
+    if (sbx >= 0 && sbx < SB_W && sby >= 0 && sby < SB_H) {
       this._scrollBar.handleMouseMove(sbx, sby);
     } else {
       this._scrollBar.handleMouseLeave();

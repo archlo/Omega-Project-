@@ -90,10 +90,11 @@ export class SkillIncPanel extends GamePanel {
       if (ln instanceof WzCanvas) this._lineTex = loader.Load(ln)?.Texture ?? null;
     }
 
-    // OG: Scrollbar at (1, 8, 150, 93, 155), wheelRange=156
-    this._scrollBar = new ScrollBar(1, 8, 155, (pos: number) => {
+    // OG: CUISkillInc::OnCreate @0x858AC0 — CCtrlScrollBar(m_pParent, 2001, 1, 8,
+    // 150, 93, 155): vertical, VScr8 variant, x=150, y=93, length=155.
+    this._scrollBar = new ScrollBar(150, 93, 155, (pos: number) => {
       this._scrollOffset = pos;
-    });
+    }, { loader: loader ?? undefined!, uiWz: ui ?? null, variant: 8 });
     this._root.addChild(this._scrollBar.container);
 
     // OG: 4 visible rows, y = 40*i + 93
@@ -180,15 +181,16 @@ export class SkillIncPanel extends GamePanel {
 
   handleMouseButton(x: number, y: number, down: boolean): boolean {
     if (!this.isVisible) return false;
-    const lx = x - this._root.x;
+const lx = x - this._root.x;
     const ly = y - this._root.y;
-    const sbx = lx - 1;
-    const sby = ly - 8;
-    if (sbx >= 0 && sbx < 12 && sby >= 0 && sby < 155) {
+    const sbx = lx - 150;
+    const sby = ly - 93;
+    if (sbx >= 0 && sbx < 15 && sby >= 0 && sby < 155) {
       if (this._scrollBar.handleMouseButton(sbx, sby, down)) return true;
     }
     if (!down) return true;
-    if (lx >= 152 && lx < 170 && ly >= 6 && ly < 22) { this.isVisible = false; return true; }
+    // OG: CUISkillInc ctor @0x858AC0 — CUIWnd close at (152, 6), BtClose
+    if (lx >= 152 && lx < 166 && ly >= 6 && ly < 22) { this.isVisible = false; return true; }
     for (let i = 0; i < this._rows.length; i++) {
       const btn = this._rows[i].btn;
       if (!btn.visible) continue;
@@ -207,13 +209,13 @@ export class SkillIncPanel extends GamePanel {
     return true;
   }
 
-  onMouseMove(x: number, y: number): void {
+onMouseMove(x: number, y: number): void {
     if (!this.isVisible) return;
     const lx = x - this._root.x;
     const ly = y - this._root.y;
-    const sbx = lx - 1;
-    const sby = ly - 8;
-    if (sbx >= 0 && sbx < 12 && sby >= 0 && sby < 155) this._scrollBar.handleMouseMove(sbx, sby);
+    const sbx = lx - 150;
+    const sby = ly - 93;
+    if (sbx >= 0 && sbx < 15 && sby >= 0 && sby < 155) this._scrollBar.handleMouseMove(sbx, sby);
     else this._scrollBar.handleMouseLeave();
   }
 }
@@ -262,10 +264,11 @@ export class SkillDecPanel extends GamePanel {
       if (ln instanceof WzCanvas) this._lineTex = loader.Load(ln)?.Texture ?? null;
     }
 
-    // OG: Scrollbar at (1, 8, 150, 95, 153), wheelRange=156
-    this._scrollBar = new ScrollBar(1, 8, 153, (pos: number) => {
+    // OG: CUISkillDec::OnCreate @0x858690 — CCtrlScrollBar(m_pParent, 2001, 1, 8,
+    // 150, 95, 153): vertical, VScr8 variant, x=150, y=95, length=153.
+    this._scrollBar = new ScrollBar(150, 95, 153, (pos: number) => {
       this._scrollOffset = pos;
-    });
+    }, { loader: loader ?? undefined!, uiWz: ui ?? null, variant: 8 });
     this._root.addChild(this._scrollBar.container);
 
     // OG: 4 visible rows, y = 40*i + 95
@@ -352,15 +355,16 @@ export class SkillDecPanel extends GamePanel {
 
   handleMouseButton(x: number, y: number, down: boolean): boolean {
     if (!this.isVisible) return false;
-    const lx = x - this._root.x;
+const lx = x - this._root.x;
     const ly = y - this._root.y;
-    const sbx = lx - 1;
-    const sby = ly - 8;
-    if (sbx >= 0 && sbx < 12 && sby >= 0 && sby < 153) {
+    const sbx = lx - 150;
+    const sby = ly - 95;
+    if (sbx >= 0 && sbx < 15 && sby >= 0 && sby < 153) {
       if (this._scrollBar.handleMouseButton(sbx, sby, down)) return true;
     }
     if (!down) return true;
-    if (lx >= 149 && lx < 167 && ly >= 6 && ly < 22) { this.isVisible = false; return true; }
+    // OG: CUISkillDec ctor @0x858690 — CUIWnd close at (149, 6), BtClose
+    if (lx >= 149 && lx < 163 && ly >= 6 && ly < 22) { this.isVisible = false; return true; }
     for (let i = 0; i < this._rows.length; i++) {
       const btn = this._rows[i].btn;
       if (!btn.visible) continue;
@@ -379,13 +383,13 @@ export class SkillDecPanel extends GamePanel {
     return true;
   }
 
-  onMouseMove(x: number, y: number): void {
+onMouseMove(x: number, y: number): void {
     if (!this.isVisible) return;
     const lx = x - this._root.x;
     const ly = y - this._root.y;
-    const sbx = lx - 1;
-    const sby = ly - 8;
-    if (sbx >= 0 && sbx < 12 && sby >= 0 && sby < 153) this._scrollBar.handleMouseMove(sbx, sby);
+    const sbx = lx - 150;
+    const sby = ly - 95;
+    if (sbx >= 0 && sbx < 15 && sby >= 0 && sby < 153) this._scrollBar.handleMouseMove(sbx, sby);
     else this._scrollBar.handleMouseLeave();
   }
 }

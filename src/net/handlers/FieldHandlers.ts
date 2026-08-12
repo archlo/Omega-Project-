@@ -1633,6 +1633,10 @@ export class FieldHandlers {
       // OG: CharacterData.equipped — populate equip panel on field entry
       if (characterData.equipped) args.equipped = characterData.equipped;
       if (characterData.equippedCash) args.equippedCash = characterData.equippedCash;
+      // OG: CharacterData.skillRecords — the initial skill list arrives inside
+      // the SetField migrate CharacterData block (SKILLRECORD flag), NOT as a
+      // separate ChangeSkillRecordResult packet. Forward so CUISkill populates.
+      if (characterData.skillRecords.length > 0) args.skillRecords = characterData.skillRecords;
     } else {
       args.nFieldType = p.readByte();
       args.posMap = p.readInt();

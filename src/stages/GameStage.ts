@@ -397,8 +397,11 @@ export class GameStage extends Stage {
   private _pendingEquipped: { slot: number; item: any }[] | null = null;
   private _pendingEquippedCash: { slot: number; item: any }[] | null = null;
   private _pendingLinkedCharacter = '';
+  // OG: CharacterData.skillRecords from SetField arrive before _initMenu builds
+  // SkillBook — stashed here and applied once the panel exists (see _initMenu).
+  private _pendingSkillRecords: { skillId: number; level: number; masterLevel?: number }[] | null = null;
   protected _skillService: SkillInfoService | null = null;
-  protected _skillRecords: { skillId: number; level: number; masterLevel: number }[] = [];
+  protected _skillRecords: { skillId: number; level: number; masterLevel?: number }[] = [];
   // OG: CUser::AFTERIMAGEINFO — attack trail visual effect.
   // Registered after each attack, drawn as a fading afterimage sprite.
   private _afterimageInfo: {
@@ -481,7 +484,7 @@ export class GameStage extends Stage {
     // already-correct pattern the other ~25 `_initMenu`-constructed panels
     // already use at the `this._panels.push(...)` call below).
     this._panels = [
-      this._chatBar, this._buffList, this._clock, this._slideNotice, this._partyHPBar, this._killCountHud, this._massacreGaugeHud, this._questTimerHud, this._medalQuestInfo, this._optionMenu, this._charInfo!,
+      this._chatBar, this._clock, this._slideNotice, this._partyHPBar, this._killCountHud, this._massacreGaugeHud, this._questTimerHud, this._medalQuestInfo, this._optionMenu, this._charInfo!,
       this._npcTalk, this._shop!,
       this._userList, this._statusMessenger, this._eventAlarm,
       this._equip, this._item, this._skill, this._stats, this._keyConfig, this._quest,
@@ -681,6 +684,7 @@ export class GameStage extends Stage {
     this._item?.onResize(windowW, windowH);
     this._statusBar?.relayout(800, 600);
     this._chatBar?.relayout(windowW, windowH);
+    this._buffList.relayout(windowW);
     this._quickSlots?.Relayout(800, 600);
     this._revivePanel?.Relayout(800, 600);
     this._fearEffect.onResize(windowW, windowH);
@@ -1003,6 +1007,9 @@ export class GameStage extends Stage {
     this._player = new CharLook(0);
 
     for (const p of this._panels) if (p) this.uiRoot.addChild(p.container);
+    // OG: BuffList (CTemporaryStatView) is a fixed HUD, not a GamePanel — parent
+    // its row container so its icons render above the world but under tooltips.
+    this.uiRoot.addChild(this._buffList.container);
     this.uiRoot.addChild(this._dojangHud.container);
     this.uiRoot.addChild(this._dragController.container);
 
@@ -1176,6 +1183,10 @@ export class GameStage extends Stage {
         return entry.aLevelData[0] as unknown as Record<string, number>;
        }, this._itemInfo, this._stringPool);
      this._skill.setSpecialTooltipContext(this._pendingLinkedCharacter, []);
+     if (this._pendingSkillRecords && this._skill) {
+       this._onSkillRecordResult(this._pendingSkillRecords);
+       this._pendingSkillRecords = null;
+     }
      this._skillGuide = new SkillGuide(this._loader, uiWz);
     this._panels.push(this._skillGuide);
     this._keyConfig = new KeyConfig(this._loader, uiWz, font);
@@ -1779,7 +1790,7 @@ export class GameStage extends Stage {
       this._questReward!, this._notice!, this._antiMacroDialog!, this._questAlarm);
 
     // Fixed-position HUDs — not draggable
-    for (const p of [this._statusBar, this._chatBar, this._buffList, this._clock, this._slideNotice, this._partyHPBar, this._killCountHud, this._massacreGaugeHud, this._questTimerHud, this._quickSlots!]) {
+    for (const p of [this._statusBar, this._chatBar, this._clock, this._slideNotice, this._partyHPBar, this._killCountHud, this._massacreGaugeHud, this._questTimerHud, this._quickSlots!]) {
       p.draggable = false;
     }
 
@@ -2672,6 +2683,8 @@ export class GameStage extends Stage {
       if (tip) this._statusMessenger.showTip(tip);
     }
     for (const p of this._panels) { p?.update(dt); p?.updateDrag(); }
+    // OG: CTemporaryStatView::Update — slide the expiry clock for active buffs
+    this._buffList.update(dt);
     // OG: CUIStatDetail follows main stat panel position
     if (this._statDetailInfo?.isVisible && this._stats) {
       const sx = this._stats.container.position.x;
@@ -4687,9 +4700,20 @@ export class GameStage extends Stage {
     console.log(`[GameStage] _onSetField called: stat=${!!args.stat}, statusBar=${!!this._statusBar}, equipped=${args.equipped?.length ?? 0}`);
     this._fearEffect.hide();
     this._fieldKey = args.fieldKey;
-    this._localCharId = args.characterId ?? 0;
+this._localCharId = args.characterId ?? 0;
     this._pendingLinkedCharacter = args.linkedCharacter ?? '';
     this._skill?.setSpecialTooltipContext(this._pendingLinkedCharacter, this._skill.wildHunterMobNames);
+    // OG: the initial skill list ships inside the SetField migrate CharacterData
+    // block (SKILLRECORD flag) — feed CUISkill the same records a standalone
+    // ChangeSkillRecordResult would. Stash for _initMenu when SkillBook isn't
+    // constructed yet (mirrors _pendingStat).
+    if (args.skillRecords) {
+      if (this._skill) {
+        this._onSkillRecordResult(args.skillRecords);
+      } else {
+        this._pendingSkillRecords = args.skillRecords;
+      }
+    }
     this._isFieldTransferring = false;
     this._comboKeys.clear();
     this._killCountHud.hide();
@@ -6932,7 +6956,7 @@ export class GameStage extends Stage {
     this._syncStatDetailInputs();
   }
 
-  private _onSkillRecordResult(records: { skillId: number; level: number; masterLevel: number }[]): void {
+  private _onSkillRecordResult(records: { skillId: number; level: number; masterLevel?: number }[]): void {
     this._skillRecords = records;
     // OG: CUIEquip::Draw checks for novice skill 1004 via get_novice_skill_as_race(1004, nJob).
     // Skill 1004 is the base beginner skill; race-specific variants are 20001004 (aran), etc.
