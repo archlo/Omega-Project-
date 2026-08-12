@@ -96,9 +96,10 @@ export class StatsInfo extends GamePanel {
   onDetailToggle: (() => void) | null = null;
   // OG: AutoApUp shows confirmation dialog before sending
   onAutoApConfirm: ((alloc: { str: number; dex: number; intStat: number; luk: number }) => void) | null = null;
-
-  // OG: AutoApUp confirmation dialog
-  private _confirmContainer: Container | null = null;
+  // OG: AutoApUp → CUtilDlg::YesNo (the shared dialog hosted by the stage).
+  // Fired after the allocation is computed; the stage shows the YESNO dialog
+  // and on Yes calls onAutoApConfirm. StatsInfo itself draws NO dialog window.
+  onAutoApConfirmRequest: ((alloc: { str: number; dex: number; intStat: number; luk: number }) => void) | null = null;
 
   // OG: CreateTip — job-specific stat recommendation balloon tips (4140 bytes)
   // All positions, StringPool IDs, and directions from IDA decompilation
@@ -155,9 +156,6 @@ export class StatsInfo extends GamePanel {
   // OG: m_bBeginner — set in Draw based on job/level, gates the entire stats section
   private _bBeginner = false;
 
-  // OG: CUIWnd canvas overlay (StringPool 976) — semi-transparent mask
-  private _overlay: Graphics;
-
   private _stringPool: StringPoolService | null = null;
   private _toolTip: ToolTip | null = null;
 
@@ -180,8 +178,9 @@ export class StatsInfo extends GamePanel {
       this._root.y = 80;
     }
 
-    // OG: CUIWnd::OnCreate creates close button (type 1 = BtClose)
-    this.createCloseButton(loader, ui, 1, PANEL_W);
+    // OG: CUIStat ctor CUIWnd(this, 2, 5, 150, 6, 1, 0, 0) → closeType 5
+    // (UI/Basic.img/BtClose3) at (150, 6).
+    this.createCloseButton(loader, ui, 5, PANEL_W, { x: 150, y: 6 });
 
     // OG: CUIWnd::OnCreate loads 3 background layers from UIWindow2.img/Stat/main
     const stat = ui?.GetItem('UIWindow2.img/Stat/main') as WzProperty | null;
@@ -226,11 +225,6 @@ export class StatsInfo extends GamePanel {
       this._rebuildBg();
       this._root.addChild(this._bg);
     }
-
-    // OG: CUIWnd canvas overlay (StringPool 976) — semi-transparent mask
-    this._overlay = new Graphics();
-    this._overlay.rect(0, 0, PANEL_W, PANEL_H).fill({ color: '#000000', alpha: 0.3 });
-    this._root.addChild(this._overlay);
 
     // Content layer — ensures all text/buttons render ON TOP of backgrounds
     this._contentLayer = new Container();
@@ -698,10 +692,12 @@ export class StatsInfo extends GamePanel {
     const ly = y - this._root.y;
     if (!down) return true;
 
-    // Close button fallback
-    if (lx >= PANEL_W - 18 && ly < 22) { this.isVisible = false; return true; }
+    // OG: CUIWnd::OnButtonClicked(1000) — the real BtClose3 button (id 1000,
+    // type 5) handles the click instead of a raw top-right rect.
+    if (this.handleCloseButton(lx, ly, down)) return true;
 
-    return lx >= 0 && lx < PANEL_W && ly >= 0 && ly < PANEL_H;
+    const inside = lx >= 0 && lx < PANEL_W && ly >= 0 && ly < PANEL_H;
+    return inside;
   }
 
   onKeyPress(key: string): boolean {
@@ -757,81 +753,9 @@ export class StatsInfo extends GamePanel {
     }
 
     this.pendingAutoApAlloc = alloc;
-    // OG: Show confirmation dialog (CUtilDlg::YesNo)
-    this._showAutoApConfirm(alloc);
-  }
-
-  private _showAutoApConfirm(alloc: { str: number; dex: number; intStat: number; luk: number }): void {
-    if (!this._confirmContainer) {
-      this._confirmContainer = new Container();
-    }
-    this._confirmContainer.removeChildren();
-
-    // Background
-    const bg = new Graphics();
-    bg.roundRect(0, 0, 220, 120, 4).fill({ color: '#0C0C16', alpha: 240 / 255 });
-    bg.roundRect(0, 0, 220, 120, 4).stroke({ color: '#46465A', width: 1 });
-    this._confirmContainer.addChild(bg);
-
-    // Header text (StringPool 0x7C7)
-    const header = new Text({
-      text: 'Auto-allocate AP?',
-      style: new TextStyle({ fill: '#FFFFFF', fontSize: 11, fontFamily: 'monospace' }),
-    });
-    header.x = 10; header.y = 10;
-    this._confirmContainer.addChild(header);
-
-    // Per-stat allocation (StringPool 0x7C8 format)
-    const lines = [
-      `STR: +${alloc.str}`,
-      `DEX: +${alloc.dex}`,
-      `INT: +${alloc.intStat}`,
-      `LUK: +${alloc.luk}`,
-    ];
-    const detail = new Text({
-      text: lines.join('  '),
-      style: new TextStyle({ fill: '#C8C8C8', fontSize: 9, fontFamily: 'monospace' }),
-    });
-    detail.x = 10; detail.y = 35;
-    this._confirmContainer.addChild(detail);
-
-    // Yes button
-    const yesBtn = new Text({
-      text: '[Yes]',
-      style: new TextStyle({ fill: '#00FF00', fontSize: 11, fontFamily: 'monospace' }),
-    });
-    yesBtn.x = 50; yesBtn.y = 80;
-    yesBtn.eventMode = 'static';
-    yesBtn.cursor = 'pointer';
-    yesBtn.on('pointerdown', () => {
-      this._hideConfirm();
-      this.onAutoApConfirm?.(alloc);
-    });
-    this._confirmContainer.addChild(yesBtn);
-
-    // No button
-    const noBtn = new Text({
-      text: '[No]',
-      style: new TextStyle({ fill: '#FF0000', fontSize: 11, fontFamily: 'monospace' }),
-    });
-    noBtn.x = 120; noBtn.y = 80;
-    noBtn.eventMode = 'static';
-    noBtn.cursor = 'pointer';
-    noBtn.on('pointerdown', () => {
-      this._hideConfirm();
-    });
-    this._confirmContainer.addChild(noBtn);
-
-    this._confirmContainer.x = 10;
-    this._confirmContainer.y = 300;
-    this._root.addChild(this._confirmContainer);
-  }
-
-  private _hideConfirm(): void {
-    if (this._confirmContainer) {
-      this._confirmContainer.visible = false;
-      this._root.removeChild(this._confirmContainer);
-    }
+    // OG: Show confirmation dialog (CUtilDlg::YesNo) — routed to the shared
+    // stage dialog. On Yes the stage calls onAutoApConfirm(alloc).
+    this.onAutoApConfirmRequest?.(alloc);
   }
 
   // OG: DestroyTip — removes all tip layers

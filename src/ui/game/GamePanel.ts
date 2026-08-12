@@ -153,6 +153,12 @@ export class GamePanel {
     }
   }
 
+  /** OG: CUIWnd::OnButtonClicked(1000) — route a click to the WZ close button
+   *  (m_pBtClose, id 1000) using its own hit test, instead of a raw rect. */
+  protected handleCloseButton(lx: number, ly: number, down: boolean): boolean {
+    return this._wndCloseBtn?.handleMouseButton(lx, ly, down) ?? false;
+  }
+
   update(_dt: number): void {}
   onMouseWheel(x: number, y: number, delta: number): void {
     this._dispatchScrollbarWheel(this._root, x - this._root.x, y - this._root.y, delta);

@@ -2345,6 +2345,21 @@ export class GameStage extends Stage {
     this._stats.onLukUp = () => { this.game.session.send(GameSender.UserAbilityUp(MapleStat.Luk)); };
     this._stats.onAutoApUp = (mode) => { this._stats.autoApUp(mode); };
     // OG: AutoApUp → CUtilDlg::YesNo → IDYES(6) → SendAbilityUpRequest(ctx, &aStatUp)
+    this._stats.onAutoApConfirmRequest = (alloc) => {
+      const dlg = this._utilDlg;
+      if (!dlg) return;
+      const str = alloc.str > 0 ? `STR: +${alloc.str}` : '';
+      const dex = alloc.dex > 0 ? `DEX: +${alloc.dex}` : '';
+      const ints = alloc.intStat > 0 ? `INT: +${alloc.intStat}` : '';
+      const luk = alloc.luk > 0 ? `LUK: +${alloc.luk}` : '';
+      dlg.SetUtilDlgEx(UtilDlgType.YESNO, 0, true, false);
+      dlg.AddTextLine([str, dex, ints, luk].filter(Boolean).join('\n'));
+      dlg.SetUtilDlgEx_YESNO();
+      dlg.onResult = (r) => {
+        if (r.type === 'yes') this._stats.onAutoApConfirm?.(alloc);
+      };
+      dlg.show();
+    };
     this._stats.onAutoApConfirm = (alloc) => {
       const entries: Array<[MapleStat, number]> = [];
       if (alloc.str > 0) entries.push([MapleStat.Str, alloc.str]);

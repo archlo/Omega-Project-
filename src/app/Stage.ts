@@ -3,7 +3,9 @@ import { MapleClaudeGame } from '../MapleClaudeGame.js';
 import { MuteButton } from '../ui/MuteButton.js';
 import { BuiltInFont } from '../ui/BuiltInFont.js';
 
-export enum MouseButton { Left, Right, Middle }
+// Values match the DOM MouseEvent.button encoding (0=left, 1=middle, 2=right)
+// so the raw e.button can be passed straight through without remapping.
+export enum MouseButton { Left, Middle, Right }
 
 export abstract class Stage {
   protected game!: MapleClaudeGame;

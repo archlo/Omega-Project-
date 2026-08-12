@@ -173,20 +173,16 @@ export class ChannelSelect extends GamePanel {
       cell.container.position.set(rc.left, rc.top);
 
       const isCurrent = i === this._currentChannel;
-      const isSel = i === this._sel;
-      let bgTex: Texture | null = null;
-      if (isCurrent || isSel) {
-        // Path A/E: selected → channel1; Path C: current (not selected) → channel0.
-        bgTex = isSel ? (this._channel1Tex ?? this._channel0Tex) : this._channel0Tex;
-      }
+      // channel0 = the current (unusable/disabled) channel, channel1 = available.
+      const bgTex = isCurrent ? (this._channel0Tex ?? this._channel1Tex) : (this._channel1Tex ?? this._channel0Tex);
       if (bgTex) {
         cell.bg.texture = bgTex;
         cell.bg.visible = true;
       } else {
-        // No WZ texture loaded: still mark the cell so the selection state is
-        // visible (empty box) and hit-testing behaves the same as the OG.
+        // No WZ texture loaded: still show an (empty) box so every channel
+        // reads as a button and hit-testing works like the OG.
         cell.bg.texture = Texture.EMPTY;
-        cell.bg.visible = isCurrent || isSel;
+        cell.bg.visible = true;
       }
 
       // OG: UI/UIWindow.img/Channel/ch/<idx> number glyph at (left+8, top+5)

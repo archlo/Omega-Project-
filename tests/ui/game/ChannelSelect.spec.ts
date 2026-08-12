@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { Texture } from 'pixi.js';
 import { ChannelSelect } from '../../../src/ui/game/ChannelSelect.js';
 import { WzPackage } from '../../../src/wz/WzPackage.js';
 import { WzTextureLoader } from '../../../src/render/WzTextureLoader.js';
@@ -68,17 +69,18 @@ describe('ChannelSelect (CUIChannelShift)', () => {
     expect(panel['_sel']).toBe(1); // selection stays on the pressed cell
   });
 
-  it('keeps the current-channel cell highlighted on the channel0 canvas path', () => {
+  it('gives every channel cell a button bg — channel0 for current, channel1 for available', () => {
     const panel = new ChannelSelect();
     panel.setChannels(
       Array.from({ length: 3 }, (_, i) => ({ channel: i, population: 100 })),
       1, // current = channel 1 (grid index 1)
     );
     panel.isVisible = true;
-    // Current cell (index 1) and selected cell (index 1, m_nSel = current) → bg visible.
+    // Current cell (index 1) → channel0 (unusable); both bg sprites visible.
     expect(panel['_cells'][1].bg.visible).toBe(true);
-    // Plain cell (index 0) → no bg.
-    expect(panel['_cells'][0].bg.visible).toBe(false);
+    // Available cell (index 0, 2) → also gets a bg (button), NOT glyph-only.
+    expect(panel['_cells'][0].bg.visible).toBe(true);
+    expect(panel['_cells'][2].bg.visible).toBe(true);
   });
 
   it('Escape hides the panel and Enter confirms', () => {
@@ -138,10 +140,10 @@ describe('ChannelSelect WZ asset resolution (real UI.nx)', () => {
     // World name sprite present (canvas origin honored → lands above bg layers).
     expect(panel['_worldSprite']).not.toBeNull();
 
-    // Channel cell glyphs textured (UIWindow.img/Channel/ch/<i>).
+    // Channel cell glyphs textured (UIWindow.img/Channel/ch/<i>) — NOT Texture.EMPTY.
     const glyphs = (panel['_cells'] as any[])
       .map((c: any) => c.glyph)
-      .filter((g: any) => g.texture !== undefined && g.texture !== null);
-    expect(glyphs.length).toBeGreaterThan(0);
+      .filter((g: any) => g.texture !== undefined && g.texture !== null && g.texture !== Texture.EMPTY);
+    expect(glyphs.length).toBe(10);
   });
 });

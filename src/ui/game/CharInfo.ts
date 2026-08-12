@@ -344,6 +344,10 @@ export class CharInfo extends GamePanel {
     // Buttons
     this._loadButtons(loader);
 
+    // OG: CUIUserInfo ctor CUIWnd(this, 10, 5, 250, 6, 0, 0, 0) → closeType 5
+    // (UI/Basic.img/BtClose3) at (250, 6); backgrnd disabled.
+    this.createCloseButton(loader, ui, 5, PANEL_W, { x: 250, y: 6 });
+
     // OG: Boss pet crown — StringPool 0x125B (4699) canvas
     // Loaded from UI/UIWindow2.img/UserInfo/character/ or via resource manager
     // Positioned at (44, 267) initially, (44, 209) when pet 0 active
@@ -912,9 +916,9 @@ export class CharInfo extends GamePanel {
 
     if (!down) return true;
 
-    // Close button
-    const ph = STATE_HEIGHTS[this._state];
-    if (lx >= PANEL_W - 18 && ly < 22) { this.isVisible = false; return true; }
+    // OG: CUIWnd::OnButtonClicked(1000) — the real BtClose3 button (id 1000,
+    // type 5) handles the click instead of a raw top-right rect.
+    if (this.handleCloseButton(lx, ly, down)) return true;
 
     // Forward clicks to sub-windows
     if (this._detailVisible && this._detailPanel) {
@@ -953,7 +957,7 @@ export class CharInfo extends GamePanel {
       }
     }
 
-    return lx >= 0 && lx < PANEL_W && ly >= 0 && ly < ph;
+    return lx >= 0 && lx < PANEL_W && ly >= 0 && ly < STATE_HEIGHTS[this._state];
   }
 
   onKeyPress(key: string): boolean {
