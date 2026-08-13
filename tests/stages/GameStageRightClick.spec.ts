@@ -43,7 +43,9 @@ function makeStage(): any {
   stage._physics = null;
   stage._player = null;
   stage._pendingBridle = null;
+  stage._drops = [];
   stage.uiRoot = { addChild: vi.fn() };
+  stage.game = { session: { send: vi.fn() } };
   return stage;
 }
 
@@ -79,5 +81,33 @@ describe('GameStage player context menu (OG CUserLocal::HandleRButtonClk)', () =
     stage.onMouseButton(300, 300, false, MouseButton.Left);
     expect(stage._contextMenu).toBeNull();
     expect(send).toHaveBeenCalled();
+  });
+
+  it('left-click on an NPC sends the UserSelectNpc packet (OG CUserLocal::HandleLButtonClk)', () => {
+    const stage = makeStage();
+    const send = vi.fn();
+    stage.game = { session: { send } };
+    const npc = {
+      ObjId: 200000,
+      HitTest: (wx: number, wy: number) => wx === 300 && wy === 300,
+    };
+    stage._npcs = [npc];
+    stage._player = { Position: { x: 150, y: 150 } };
+
+    stage.onMouseButton(300, 300, false, MouseButton.Left);
+
+    expect(send).toHaveBeenCalledTimes(1);
+    const packet = send.mock.calls[0][0];
+    expect(packet.header).toBe(63); // InHeader.UserSelectNpc
+  });
+
+  it('click on empty ground does not send UserSelectNpc', () => {
+    const stage = makeStage();
+    const send = vi.fn();
+    stage.game = { session: { send } };
+    stage._npcs = [];
+
+    stage.onMouseButton(300, 300, false, MouseButton.Left);
+    expect(send).not.toHaveBeenCalled();
   });
 });

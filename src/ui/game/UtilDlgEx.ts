@@ -732,13 +732,11 @@ export class UtilDlgEx extends GamePanel {
         const bottom = loadCanvas('is');
         if (top && tile && bottom) return { top, tile, bottom, step: 13, startY: 28, endOff: 44 };
       }
-      // Standard with-NPC / text dialog uses t/c/s.
-      if (!this.m_bNoNPC) {
-        const top = loadCanvas('t');
-        const tile = loadCanvas('c');
-        const bottom = loadCanvas('s');
-        if (top && tile && bottom) return { top, tile, bottom, step: 13, startY: 28, endOff: 44 };
-      }
+      // Standard with-NPC / no-NPC text + input dialogs use t/c/s.
+      const top = loadCanvas('t');
+      const tile = loadCanvas('c');
+      const bottom = loadCanvas('s');
+      if (top && tile && bottom) return { top, tile, bottom, step: 13, startY: 28, endOff: 44 };
       return null;
     })();
 
@@ -834,7 +832,7 @@ export class UtilDlgEx extends GamePanel {
 
     let barLoaded = false;
     if (this._uiWz && this._loader) {
-      const node = this._uiWz.GetItem('UI/UIWindow2.img/UtilDlgEx/bar');
+      const node = this._uiWz.GetItem('UIWindow2.img/UtilDlgEx/bar');
       if (node instanceof WzCanvas) {
         const bar = this._loader.Load(node);
         if (bar) {
@@ -1090,7 +1088,7 @@ export class UtilDlgEx extends GamePanel {
 
       if (line.nType === 4) {
         const dotSel = line.nSelect === this.m_nSelect || line.nSelect === this._apListCT_nSelect;
-        const dotPath = dotSel ? 'UI/UIWindow2.img/UtilDlgEx/dot1' : 'UI/UIWindow2.img/UtilDlgEx/dot0';
+        const dotPath = dotSel ? 'UIWindow2.img/UtilDlgEx/dot1' : 'UIWindow2.img/UtilDlgEx/dot0';
         let drawn = false;
         if (this._uiWz && this._loader) {
           const dotNode = this._uiWz.GetItem(dotPath);
@@ -1486,18 +1484,18 @@ export class UtilDlgEx extends GamePanel {
   // BtClose/BtNext/BtNo/BtOK/BtPrev/BtQGiveup/BtQNo/BtQYes/BtYes; quest
   // dialogs (m_bQuest) swap Yes/No for BtQYes/BtQNo.
   private static readonly BTN_WZ_MAP: Record<number, string> = {
-    1: 'UI/UIWindow2.img/UtilDlgEx/BtOK',
-    2: 'UI/UIWindow2.img/UtilDlgEx/BtClose',
-    6: 'UI/UIWindow2.img/UtilDlgEx/BtYes',
-    7: 'UI/UIWindow2.img/UtilDlgEx/BtNo',
-    0x2000: 'UI/UIWindow2.img/UtilDlgEx/BtPrev',
-    0x2001: 'UI/UIWindow2.img/UtilDlgEx/BtNext',
+    1: 'UIWindow2.img/UtilDlgEx/BtOK',
+    2: 'UIWindow2.img/UtilDlgEx/BtClose',
+    6: 'UIWindow2.img/UtilDlgEx/BtYes',
+    7: 'UIWindow2.img/UtilDlgEx/BtNo',
+    0x2000: 'UIWindow2.img/UtilDlgEx/BtPrev',
+    0x2001: 'UIWindow2.img/UtilDlgEx/BtNext',
   };
 
   // OG OnCreate_YESNO quest variant: 0xCD7 → BtQYes, 0xCD8 → BtQNo.
   private static readonly BTN_WZ_MAP_QUEST: Record<number, string> = {
-    6: 'UI/UIWindow2.img/UtilDlgEx/BtQYes',
-    7: 'UI/UIWindow2.img/UtilDlgEx/BtQNo',
+    6: 'UIWindow2.img/UtilDlgEx/BtQYes',
+    7: 'UIWindow2.img/UtilDlgEx/BtQNo',
   };
 
   private _makeButton(label: string, id: number): Container {

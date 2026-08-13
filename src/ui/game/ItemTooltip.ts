@@ -54,6 +54,14 @@ interface InfoLine {
   sprite: WzSprite | null;
   text: string | null;
   color?: number;
+  // OG CLineInfo (DrawInfo align 1001): the stat rows are drawn as a dot at
+  // (10, y+2), a label Text in m_nType's font at x=16, and a value Text in
+  // m_nSubType's font at x = labelWidth + 16. Populated by PrintValue →
+  // AddInfoEx(0x15, 0x17, label, value, bUseDot=1, nAlign=1001).
+  label?: string;
+  value?: string;
+  mainFont?: number;
+  subFont?: number;
 }
 
 type EquipOptionLevel = {
@@ -118,7 +126,7 @@ export class ItemTooltip {
   private _g: Graphics;
   private _iconSprite: Sprite;
   private _texts: Text[] = [];
-  private _bgAlpha = 240 / 255;
+  private _bgAlpha = 204 / 255; // OG: MakeLayer uColor 0xCC0E395A (alpha 0xCC)
   private _grade = 0;
   private _blitSprites: Sprite[] = []; // Track sprites added by BlitAt for cleanup
 
@@ -303,25 +311,31 @@ export class ItemTooltip {
       protected: attr?.ProtectionType !== undefined && attr.ProtectionType > 0,
     });
     const displayName = gItem.name;
-    const nameColor = ItemTooltip._gradeColor(grade);
+    // OG: GetItemName returns the lType used to color DrawItemTitle — the name
+    // is drawn in that font's color (HL_WHITE/HL_ORANGE/quality-based), not a
+    // separate invented grade palette. Fall back to _gradeColor only for the
+    // legacy caller-supplied rarity grade (all current callers pass grade 0).
+    const nameColor = ToolTip.getFontColor(gItem.lType);
     const nameW = this._font.measure(displayName).x;
     const titleDescW = titleDesc ? this._font.measure(titleDesc).x : 0;
     const nameX = Math.max(4, (w - nameW - titleDescW) / 2);
     this._txt(0, nameX, yName, displayName, nameColor, 11);
-    if (titleDesc) this._txt(1, nameX + nameW, yName, titleDesc, ToolTip.getFontColor(11), 9);
+    // OG DrawItemTitle equip branch: desc (StringPool 0xC35) drawn right after
+    // the name in font 1 (HL_WHITE).
+    if (titleDesc) this._txt(1, nameX + nameW, yName, titleDesc, ToolTip.getFontColor(FONT_TYPES.HL_WHITE), 9);
     this._dot(10, yName + 5);
 
     let ti = titleDesc ? 2 : 1;
 
     // OG: Cash item label (StringPool 5897) — shown after name when item is cash
     if (attr?.Cash) {
-      this._txt(ti, nameX + nameW + 6, yName, 'Cash', ToolTip.getFontColor(5), 9);
+      this._txt(ti, nameX + nameW + 6, yName, 'Cash', ToolTip.getFontColor(FONT_TYPES.HL_GREEN2), 9);
       ti++;
     }
 
     // OG: Star force display for enhanced items
     if (attr?.StarForce !== undefined && attr.StarForce > 0) {
-      this._txt(ti, 4, yName + lh + 6, `★ ${attr.StarForce}`, ToolTip.getFontColor(5), 9);
+      this._txt(ti, 4, yName + lh + 6, `★ ${attr.StarForce}`, ToolTip.getFontColor(FONT_TYPES.HL_GREEN2), 9);
       ti++;
     }
 
@@ -441,14 +455,22 @@ export class ItemTooltip {
       this._drawDurabilityBar(yBlock + 96, attr);
     }
 
-    // OG: Info lines (stat bonuses)
+    // OG: Info lines (stat bonuses) — DrawInfo align-1001: dot at (10, y+2),
+    // label in main font at x=16, value in sub font at x = labelWidth + 16.
     for (let il = 0; il < info.length; il++) {
       const lineY = yInfo + il * (lh - 2);
       const line = info[il];
-      if (line.kind === InfoKind.Text && line.text) {
+      if (line.label !== undefined && line.value !== undefined) {
+        this._dot(10, lineY + 2);
+        const labelW = this._font.measure(line.label).x;
+        this._txt(ti, 16, lineY, line.label, ToolTip.getFontColor(line.mainFont ?? FONT_TYPES.STAN_PRP), 9);
+        ti++;
+        this._txt(ti, labelW + 16, lineY, line.value, ToolTip.getFontColor(line.subFont ?? FONT_TYPES.STAN_NUM), 9);
+        ti++;
+      } else if (line.kind === InfoKind.Text && line.text) {
         this._txt(ti, 4, lineY, line.text, line.color ?? InfoColor, 9);
+        ti++;
       }
-      ti++;
     }
 
     // OG: Dot line after info
@@ -581,11 +603,11 @@ export class ItemTooltip {
     this._g.rect(2, 6 + lh, w - 4, 1).fill({ color: InnerOutlineC, alpha: InnerOutlineA });
 
     let ti = 1;
-    if (tradeOption) { this._txt(ti++, 0, 31, tradeOption, ToolTip.getFontColor(14), 10); }
-    if (tradeOptionEx) { this._txt(ti++, 0, tradeOption ? 50 : 31, tradeOptionEx, ToolTip.getFontColor(14), 10); }
-    if (expiryStr) { this._txt(ti++, 16, optionY + 29, expiryStr, ToolTip.getFontColor(22), 10); }
-    if (titleLine) { this._txt(ti++, 16, optionY + 31 + (expiryStr ? 16 : 0), titleLine, ToolTip.getFontColor(14), 10); }
-    if (donatorLine) { this._txt(ti++, 16, optionY + 31 + (expiryStr ? 16 : 0) + (titleLine ? 16 : 0), donatorLine, ToolTip.getFontColor(10), 9); }
+    if (tradeOption) { this._txt(ti++, 0, 31, tradeOption, ToolTip.getFontColor(FONT_TYPES.GEN_RED), 10); }
+    if (tradeOptionEx) { this._txt(ti++, 0, tradeOption ? 50 : 31, tradeOptionEx, ToolTip.getFontColor(FONT_TYPES.GEN_RED), 10); }
+    if (expiryStr) { this._txt(ti++, 16, optionY + 29, expiryStr, ToolTip.getFontColor(FONT_TYPES.H_WHITE), 10); }
+    if (titleLine) { this._txt(ti++, 16, optionY + 31 + (expiryStr ? 16 : 0), titleLine, ToolTip.getFontColor(FONT_TYPES.GEN_RED), 10); }
+    if (donatorLine) { this._txt(ti++, 16, optionY + 31 + (expiryStr ? 16 : 0) + (titleLine ? 16 : 0), donatorLine, ToolTip.getFontColor(FONT_TYPES.HL_SPECIAL), 9); }
 
     // OG: item icon is always present at (10, nCashDescOffset + 32).
     const icon = this._itemIcon(itemId);
@@ -611,10 +633,10 @@ export class ItemTooltip {
     if (isPet) {
       for (const line of petLines) { this._txt(ti++, 10, yCursor, line, StatColor, 9); yCursor += lh - 1; }
     }
-    if (protectedLine) { this._txt(ti++, 4, yCursor, protectedLine, ToolTip.getFontColor(10), 10); yCursor += lh + 4; }
+    if (protectedLine) { this._txt(ti++, 4, yCursor, protectedLine, ToolTip.getFontColor(FONT_TYPES.HL_SPECIAL), 10); yCursor += lh + 4; }
     if (periodStr) { this._txt(ti++, 4, yCursor, periodStr, DescColor, 9); yCursor += lh + 4; }
     if (timeLimitedStr) { this._txt(ti++, 4, yCursor, timeLimitedStr, DescColor, 9); yCursor += lh + 4; }
-    if (discountStr) { this._txt(ti++, 10, Math.max(descH, 68) + cashDescOffset + 40, discountStr, ToolTip.getFontColor(14), 10); }
+    if (discountStr) { this._txt(ti++, 10, Math.max(descH, 68) + cashDescOffset + 40, discountStr, ToolTip.getFontColor(FONT_TYPES.GEN_RED), 10); }
     if (itcStr) { this._txt(ti++, 4, yCursor, itcStr, DescColor, 9); yCursor += lh + 4; }
     if (itcExpiryStr) { this._txt(ti++, 4, yCursor, `ITC Expires: ${itcExpiryStr}`, DescColor, 9); yCursor += lh + 4; }
     if (orderCommentStr) { this._txt(ti++, 4, yCursor, orderCommentStr, DescColor, 9); }
@@ -705,12 +727,26 @@ export class ItemTooltip {
     }
   }
 
-  // OG: Build stat bonus info lines — uses actual equip stats when available
+  // OG: Build stat bonus info lines — uses actual equip stats when available.
+  // Stat rows mirror OG PrintValue → AddInfoEx(0x15, 0x17, label, value, 1, 1001)
+  // and DrawInfo's align-1001 layout: dot + label (font 0x15/21) + value
+  // (font 0x17/23) at labelWidth + 16. Header/single lines use text-only.
   private _buildInfoLines(_itemId: number, attr: ItemAttr | null, equippedSetCount = 0,
      equipStats?: { incStr: number; incDex: number; incInt: number; incLuk: number; incPad: number; incMad: number; incPdd: number; incMdd: number; incMhp: number; incMmp: number; incAcc: number; incEva: number; incSpeed: number; incJump: number; ruc: number; cuc: number; option1: number; option2: number; option3: number; incMhpPr?: number; incMmpPr?: number }): InfoLine[] {
     const lines: InfoLine[] = [];
     if (attr === null) return lines;
      const push = (text: string, color = InfoColor) => lines.push({ kind: InfoKind.Text, sprite: null, text, color });
+    // OG: stat row → label (STAN_PRP 21) + value (STAN_NUM 23), dot prefix.
+    const addStat = (label: string, v: number, type: 0 | 1 | 2): void => {
+      if (v <= 0) return;
+      const value = type === 0 ? `+${v}` : type === 2 ? `${v}%` : `${v}`;
+      lines.push({
+        kind: InfoKind.Text, sprite: null, text: `${label} ${value}`,
+        label, value,
+        mainFont: FONT_TYPES.STAN_PRP,
+        subFont: FONT_TYPES.STAN_NUM,
+      });
+    };
 
     // OG: Weapon category name (StringPool 0x1A25)
     const cat = Math.floor(_itemId / 10000);
@@ -745,11 +781,6 @@ export class ItemTooltip {
     // type 0 = "+N" (skip non-positive), type 1 = plain "N", type 2 = "N%".
      const s = equipStats;
     const base = (v: number | undefined): number => v ?? 0;
-    const addStat = (label: string, v: number, type: 0 | 1 | 2): void => {
-      if (v <= 0) return;
-      const value = type === 0 ? `+${v}` : type === 2 ? `${v}%` : `${v}`;
-      push(`${label} ${value}`);
-    };
 
     // OG: STR -> LUK (type 0), MaxHP/MaxMP (type 0), MaxHPr/MaxMPr (type 2)
     addStat(this._string(OG_TOOLTIP_STRING_IDS.str, 'STR:'), base(s?.incStr ?? attr.IncStr), 0);
@@ -846,10 +877,9 @@ export class ItemTooltip {
     return lines;
   }
 
-  // OG: GetItemName @0x8899B0 supplies the equip name (gender prefix + protected
-  // bold). The name COLOR is driven by the rarity `grade` the caller passes
-  // (1=rare, 2=unique, 3=legendary, 4=epic); DrawItemTitle's equip branch uses
-  // a fixed font for the base name. These are the v95 rarity colors.
+  // Legacy: caller-supplied rarity grade color. The active equip-name path now
+  // colors through getItemName().lType → getFontColor (OG CalcEquipItemQuality),
+  // so this is kept only for backward-compatible callers that pass a grade.
   private static _gradeColor(g: number): number {
     switch (g) {
       case 1: return 0x77CCFF;
@@ -961,7 +991,7 @@ export class ItemTooltip {
 
     // OG: Current level info (StringPool 691 "Lv.%d")
     if (bShowLevel && currentLevel > 0) {
-      this._txt(ti, 10, yCursor, `Lv.${currentLevel}`, ToolTip.getFontColor(10), 10);
+      this._txt(ti, 10, yCursor, `Lv.${currentLevel}`, ToolTip.getFontColor(FONT_TYPES.HL_SPECIAL), 10);
       ti++;
       yCursor += lh;
       // Current level help text
@@ -975,7 +1005,7 @@ export class ItemTooltip {
 
     // OG: Next level info (StringPool 692 "Lv.%d")
     if (currentLevel < maxLevel) {
-      this._txt(ti, 10, yCursor, `Lv.${currentLevel + 1}`, ToolTip.getFontColor(10), 10);
+      this._txt(ti, 10, yCursor, `Lv.${currentLevel + 1}`, ToolTip.getFontColor(FONT_TYPES.HL_SPECIAL), 10);
       ti++;
       yCursor += lh;
       // Next level help text
@@ -988,7 +1018,7 @@ export class ItemTooltip {
     }
 
     if (masterText) {
-      this._txt(ti, 10, yCursor, masterText, ToolTip.getFontColor(10), 10);
+      this._txt(ti, 10, yCursor, masterText, ToolTip.getFontColor(FONT_TYPES.HL_SPECIAL), 10);
       ti++;
       yCursor += lh + 4;
     }
@@ -997,7 +1027,7 @@ export class ItemTooltip {
     if (reqSkills.length > 0) {
       for (let d = 4; d < w - 4; d += 6) this._dot(d, yCursor);
       yCursor += 6;
-      this._txt(ti, 10, yCursor, 'Required Skills:', ToolTip.getFontColor(10), 10);
+      this._txt(ti, 10, yCursor, 'Required Skills:', ToolTip.getFontColor(FONT_TYPES.HL_SPECIAL), 10);
       ti++;
       yCursor += lh;
       for (const req of reqSkills) {
@@ -1135,7 +1165,7 @@ export class ItemTooltip {
         this._blitAt(deadIcon, 10, 33);
       }
       // OG: Death text at (16, 29) with font type 22 (H_WHITE, size 12)
-      this._txt(ti, 16, 29, deathStr, ToolTip.getFontColor(22), 12);
+      this._txt(ti, 16, 29, deathStr, ToolTip.getFontColor(FONT_TYPES.H_WHITE), 12);
       ti++;
       v42 = 47;
     }
@@ -1143,7 +1173,7 @@ export class ItemTooltip {
     // OG: Donator info (StringPool 0x2B0), font type 10 (HL_SPECIAL), DrawTextCenter
     if (donator) {
       const donatorText = `Donator: ${donator}`;
-      this._txt(ti, 0, v42, donatorText, ToolTip.getFontColor(10), 10);
+      this._txt(ti, 0, v42, donatorText, ToolTip.getFontColor(FONT_TYPES.HL_SPECIAL), 10);
       const donatorW = this._font.measure(donatorText).x;
       this._texts[ti].x = (w - donatorW) / 2;
       ti++;
@@ -1193,7 +1223,7 @@ export class ItemTooltip {
 
     // OG: Expiry date
     if (expiryStr) {
-      this._txt(ti, 10, yCursor, expiryStr, ToolTip.getFontColor(14), 9);
+      this._txt(ti, 10, yCursor, expiryStr, ToolTip.getFontColor(FONT_TYPES.GEN_RED), 9);
       ti++;
       yCursor += 16;
     }
@@ -1203,7 +1233,7 @@ export class ItemTooltip {
     if (nOriginalPrice > 0 && nOriginalPrice !== nPrice) {
       const discountY = Math.max(descH, 68) + cashDescOffset + 40;
       const rate = Math.floor((1 - nPrice / nOriginalPrice) * 100);
-      this._txt(ti, 10, discountY, `Discount: ${rate}%`, ToolTip.getFontColor(14), 10);
+      this._txt(ti, 10, discountY, `Discount: ${rate}%`, ToolTip.getFontColor(FONT_TYPES.GEN_RED), 10);
       ti++;
     }
 
@@ -1212,7 +1242,7 @@ export class ItemTooltip {
       let limitY = h - 16 * limitTexts.length;
       for (const text of limitTexts) {
         if (text) {
-          this._txt(ti, 10, limitY, text, ToolTip.getFontColor(11), 9);
+          this._txt(ti, 10, limitY, text, ToolTip.getFontColor(FONT_TYPES.GEN_WHITE), 9);
       ti++;
     }
         // OG DrawLimitInfo reserves 16px per entry, including empty
@@ -1294,7 +1324,7 @@ export class ItemTooltip {
     this._g.rect(2, 10 + lh, w - 4, 1).fill({ color: InnerOutlineC, alpha: InnerOutlineA });
 
     if (expiryStr) {
-      this._txt(ti++, 10, 31, expiryStr, ToolTip.getFontColor(22), 9);
+      this._txt(ti++, 10, 31, expiryStr, ToolTip.getFontColor(FONT_TYPES.H_WHITE), 9);
     }
 
     const imageY = contentTop;
@@ -1371,7 +1401,7 @@ export class ItemTooltip {
     let yCursor = 27;
     for (let i = 0; i < 3 && i < skills.length; i++) {
       const skill = skills[i];
-      this._txt(ti, 15, yCursor, skill.name, ToolTip.getFontColor(10), 10);
+      this._txt(ti, 15, yCursor, skill.name, ToolTip.getFontColor(FONT_TYPES.HL_SPECIAL), 10);
       ti++;
       yCursor += lh;
       if (skill.desc) {
@@ -1444,7 +1474,7 @@ export class ItemTooltip {
 
     // OG: Slot increase info (StringPool 594/597/598)
     const slotLabel = slotType === 'equip' ? 'Equip' : slotType === 'use' ? 'Use' : slotType === 'setup' ? 'Setup' : 'Etc';
-    this._txt(ti, 10, yCursor, `${slotLabel} slots: +${slotIncrease}`, ToolTip.getFontColor(5), 10); // HL_GREEN
+    this._txt(ti, 10, yCursor, `${slotLabel} slots: +${slotIncrease}`, ToolTip.getFontColor(FONT_TYPES.HL_GREEN2), 10); // HL_GREEN
 
     this._iconSprite.visible = false;
     this._root.visible = true;
@@ -1488,7 +1518,7 @@ export class ItemTooltip {
     this._g.rect(2, 10 + lh, w - 4, 1).fill({ color: InnerOutlineC, alpha: InnerOutlineA });
 
     // OG: Expiry info (StringPool 0x1475 "Expired" or 0x1476 "Expires: %d/%d/%d %d:%d")
-    const color = isExpired ? (ToolTip.getFontColor(14)) : DescColor; // GEN_RED for expired
+    const color = isExpired ? (ToolTip.getFontColor(FONT_TYPES.GEN_RED)) : DescColor; // GEN_RED for expired
     this._txt(ti, 10, 10 + lh + 6, expiryStr, color, 9);
 
     this._iconSprite.visible = false;

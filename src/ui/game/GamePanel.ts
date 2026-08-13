@@ -100,10 +100,10 @@ export class GamePanel {
       // OG: BtCloseType 5 → "UI/Basic.img/BtClose3"
       // BtCloseType 4 → panel-specific close from Skill/main/BtClose etc.
       // BtCloseType 1-3 → StringPool-based close buttons
-      const closePath = btCloseType === 5
-        ? 'UI/Basic.img/BtClose3'
-        : 'UI/Basic.img/BtClose';
-      const node = assets.uiWz.GetItem(closePath);
+      // WzPackage.GetItem resolves both the flattened root and the OG "UI/"
+      // mount prefix, so the unprefixed path works across NX sets.
+      const closeBase = btCloseType === 5 ? 'Basic.img/BtClose3' : 'Basic.img/BtClose';
+      const node = assets.uiWz.GetItem(closeBase);
       if (node instanceof WzProperty) {
         const btn = Button.fromWz(assets.loader, node);
         btn.onClick = () => { this.isVisible = false; };
@@ -133,8 +133,8 @@ export class GamePanel {
   private _upgradeCloseButton(): void {
     if (this._wndCloseType === 0 || !GamePanel._closeAssets || !this._wndCloseBtn) return;
     const assets = GamePanel._closeAssets;
-    const closePath = this._wndCloseType === 5 ? 'UI/Basic.img/BtClose3' : 'UI/Basic.img/BtClose';
-    const node = assets.uiWz.GetItem(closePath);
+    const closeBase = this._wndCloseType === 5 ? 'Basic.img/BtClose3' : 'Basic.img/BtClose';
+    const node = assets.uiWz.GetItem(closeBase);
     if (!(node instanceof WzProperty)) return;
 
     const old = this._wndCloseBtn;

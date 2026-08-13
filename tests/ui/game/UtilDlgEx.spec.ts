@@ -139,6 +139,22 @@ describe('UtilDlgEx WZ asset resolution (real UI.nx)', () => {
     const sprites = d['_bgLayer'].children.filter((c: any) => c.texture !== undefined);
     expect(sprites.length).toBe(0);
   });
+
+  it('no-NPC dialogs (meso drop INPUT) composite the t/c/s background', () => {
+    const ui = WzPackage.OpenBase('wz_client', 'UI');
+    const d = makeDialog({ uiWz: ui, loader: new WzTextureLoader() });
+    d.m_wndWidth = 260;
+    d.m_wndHeight = 93;
+    d.m_bNoNPC = true;
+    d.m_bParam = 0;
+    d['_buildBackground']();
+    // The no-NPC branch of SetBackground @0x97F180 also composites t/c/s —
+    // a meso-drop dialog must not be a transparent floating box.
+    const sprites = d['_bgLayer'].children.filter((c: any) => c.texture !== undefined);
+    expect(sprites.length).toBeGreaterThan(0);
+    expect(sprites[0].x).toBe(0);
+    expect(sprites[0].y).toBe(0);
+  });
 });
 
 describe('UtilDlgEx SetNPC (authentic speaker + name tag)', () => {

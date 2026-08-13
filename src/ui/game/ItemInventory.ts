@@ -41,7 +41,8 @@ const TAB_X = 8;
 const TAB_Y = 24;
 const TAB_GAP = 1;
 const CLOSE_X_COLLAPSED = 150;
-const CLOSE_X_EXPANDED = FULL_PANEL_W - 20; // right edge of extended panel
+const CLOSE_X_EXPANDED = 574;
+const CLOSE_Y = 6;
 
 const TAB_NAMES = ['Equip', 'Use', 'Setup', 'Etc', 'Cash'];
 const TAB_COLORS = ['#5A825A', '#5A5AA0', '#826E46', '#646464', '#965096'];
@@ -87,6 +88,9 @@ export class ItemInventory extends GamePanel implements DragTarget {
   private _wzFullBg3: WzSprite | null = null;
   private _wzDisabled: WzSprite | null = null;
   private _wzActiveIcon: WzSprite | null = null;
+  // OG: DrawItemIconForSlot m_pItemShadow — UI/UIWindow2.img/Item/shadow, drawn
+  // under equip icons at (x-cx, y-cy) so the origin sits at the slot bottom-left.
+  private _wzShadow: WzSprite | null = null;
   private _titleText: Text;
   private _tabBgs: Graphics[] = [];
   private _tabSprites: Sprite[] = [];
@@ -231,6 +235,8 @@ export class ItemInventory extends GamePanel implements DragTarget {
     if (opts.loader && itemRoot) {
       this._wzDisabled = loadCanvas('disabled');
       this._wzActiveIcon = loadCanvas('activeIcon');
+      // OG: m_pItemShadow lives in the same window subtree (UI/UIWindow2.img/Item/shadow).
+      this._wzShadow = loadCanvas('shadow');
       for (let i = 0; i < 5; i++) {
         const enabled = itemRoot.GetItem(`Tab/enabled/${i}`);
         const disabled = itemRoot.GetItem(`Tab/disabled/${i}`);
@@ -242,7 +248,9 @@ export class ItemInventory extends GamePanel implements DragTarget {
       // OG: CUIItem::Toggle → Destroy → CreateUIWndPosSaved recreates only the
       // button for the current mode. Collapsed mode = BtFull only.
       this._btFull = this._makeButton(opts.loader, itemRoot, 'BtFull', () => this._setExtended(true));
-      this._btCashshop = this._makeButton(opts.loader, itemRoot, 'BtCashshop', () => this.onCashShop?.(TAB_TO_INVTYPE[this._activeTab]));
+      // OG OnCreate: BtCashshop is created ONLY in extended mode (its origin
+      // (-502,-267) sits on the 594px panel, off the 172px collapsed one).
+      // Deferred to _setExtended(true); not created here (collapsed default).
       this._btCoin = this._makeButton(opts.loader, itemRoot, 'BtCoin', () => this.onDropMoney?.());
       this._newTabOther = opts.loader.LoadAnimation(itemRoot.GetItem('New/Tab0'));
       this._newTabCurrent = opts.loader.LoadAnimation(itemRoot.GetItem('New/Tab1'));
@@ -259,9 +267,9 @@ export class ItemInventory extends GamePanel implements DragTarget {
       this._btGather = this._makeButton(opts.loader, arrangeRoot, 'BtGather', () => this.onGather?.(TAB_TO_INVTYPE[this._activeTab]));
     }
     // OG: m_pImgFontNumber — WZ image font for quantity digits.
-    // Loaded from UIWindow2.img/Item/number, matching EquipInventory's pattern.
-    if (itemRoot && opts.loader) {
-      const numProp = itemRoot.Get('number');
+    // StringPool 0x50E resolves to UI/Basic.img/ItemNo (digit canvases "0"-"9").
+    if (opts.uiWz && opts.loader) {
+      const numProp = opts.uiWz.GetItem('Basic.img/ItemNo');
       if (numProp instanceof WzProperty) {
         for (let i = 0; i < 10; i++) {
           const canvas = numProp.Get(String(i));
@@ -331,8 +339,9 @@ export class ItemInventory extends GamePanel implements DragTarget {
     this._root.addChild(this._scrollBar.container);
     this._rebuild();
 
-    // OG: CUIWnd close button — load from Basic.img/BtClose
-    this.createCloseButton(opts.loader ?? null, opts.uiWz ?? null, 1, PANEL_W);
+    // OG: CUIItem ctor → CUIWnd(this, 0, closeType=5, 150, 6, ...) and
+    // m_nBtCloseX = extended ? 574 : 150. BtCloseType 5 = UI/Basic.img/BtClose3.
+    this.createCloseButton(opts.loader ?? null, opts.uiWz ?? null, 5, PANEL_W, { x: CLOSE_X_COLLAPSED, y: CLOSE_Y });
   }
 
   private _makeButton(loader: WzTextureLoader, root: WzProperty, name: string, onClick: () => void): Button | null {
@@ -441,14 +450,16 @@ export class ItemInventory extends GamePanel implements DragTarget {
 
     // Buttons (same as constructor — _makeButton uses _root). OG creates only
     // the button for the current mode so the hidden sibling can't steal clicks.
+    // BtCashshop exists only in extended mode (OG OnCreate).
     if (extended) {
       this._btFull = null;
       this._btSmall = this._loader && this._itemWzRoot ? this._makeButton(this._loader, this._itemWzRoot, 'BtSmall', () => this._setExtended(false)) : this._btSmall;
+      this._btCashshop = this._loader && this._itemWzRoot ? this._makeButton(this._loader, this._itemWzRoot, 'BtCashshop', () => this.onCashShop?.(TAB_TO_INVTYPE[this._activeTab])) : this._btCashshop;
     } else {
       this._btSmall = null;
       this._btFull = this._loader && this._itemWzRoot ? this._makeButton(this._loader, this._itemWzRoot, 'BtFull', () => this._setExtended(true)) : this._btFull;
+      this._btCashshop = null;
     }
-    this._btCashshop = this._loader && this._itemWzRoot ? this._makeButton(this._loader, this._itemWzRoot, 'BtCashshop', () => this.onCashShop?.(TAB_TO_INVTYPE[this._activeTab])) : this._btCashshop;
     this._btCoin = this._loader && this._itemWzRoot ? this._makeButton(this._loader, this._itemWzRoot, 'BtCoin', () => this.onDropMoney?.()) : this._btCoin;
     this._rebuildArrangeButton();
 
@@ -461,7 +472,9 @@ export class ItemInventory extends GamePanel implements DragTarget {
     this._root.addChild(this._scrollBar.container);
 
     // OG: CUIWnd::CreateUIWndPosSaved recreates the close button after Destroy.
-    this.createCloseButton(this._loader, this._uiWz, 1, this._panelW);
+    // m_nBtCloseX = extended ? 574 : 150 (CUIItem ctor).
+    this.createCloseButton(this._loader, this._uiWz, 5, this._panelW,
+      { x: extended ? CLOSE_X_EXPANDED : CLOSE_X_COLLAPSED, y: CLOSE_Y });
 
     this.setMeso(this._mesoAmount);
     this._rebuild();
@@ -710,7 +723,7 @@ export class ItemInventory extends GamePanel implements DragTarget {
     if (!down) return true;
 
     const closeX = this._extended ? CLOSE_X_EXPANDED : CLOSE_X_COLLAPSED;
-    if (lx >= closeX && ly < TAB_Y + 19) { this.isVisible = false; return true; }
+    if (lx >= closeX && lx < closeX + 13 && ly >= CLOSE_Y && ly < CLOSE_Y + 13) { this.isVisible = false; return true; }
 
     const tabIdx = this._tabIndexAtPoint(lx, ly);
     if (tabIdx >= 0) {
@@ -873,7 +886,8 @@ export class ItemInventory extends GamePanel implements DragTarget {
     if (this._btFull) this._btFull.container.visible = !this._extended;
     if (this._btSmall) this._btSmall.container.visible = this._extended;
     // OG: OnTabChanged — Cash Shop enabled for TI 1/2/4, disabled for TI 3/5;
-    // also disabled when items ≥ 48 in extended mode.
+    // also disabled when items ≥ 48 in extended mode. BtCashshop only exists
+    // in extended mode (null in collapsed).
     if (this._btCashshop) {
       const ti = TAB_TO_INVTYPE[this._activeTab];
       const tiEnabled = ti === 1 || ti === 2 || ti === 4;
@@ -954,15 +968,11 @@ export class ItemInventory extends GamePanel implements DragTarget {
           this._slotBgs[idx].addChild(disabled);
         }
 
-        // OG: CDraggableItem::Draw active use-slot icon — positioned at
-        // (pRc.left - iconWidth, pRc.top - iconHeight) offset from the slot rect.
+        // OG: CDraggableItem::Draw active use-slot icon — the activeIcon canvas
+        // origin anchors at the slot's TOP-LEFT (Copy(pRc.left - cx, pRc.top - cy)).
         if (this._activeTab === 1 && item?.slot === this._activeUseSlot && this._wzActiveIcon) {
           const active = this._wzActiveIcon.ToPixi();
-          const iw = this._wzActiveIcon.Width;
-          const ih = this._wzActiveIcon.Height;
-          // ToPixi sets anchor to (OriginX/Width, OriginY/Height), so we
-          // compensate to place the sprite's top-left at (sx-iw, sy-ih).
-          active.position.set(sx - iw + this._wzActiveIcon.OriginX, sy - ih + this._wzActiveIcon.OriginY);
+          active.position.set(sx, sy);
           this._slotBgs[idx].addChild(active);
         }
 
@@ -995,17 +1005,29 @@ export class ItemInventory extends GamePanel implements DragTarget {
         if (this._icons) {
           const icon = this._icons.LoadIcon(item.id);
           if (icon) {
+            // OG: DrawItemIconForSlot draws m_pItemShadow (26x6, origin -3,6)
+            // first, only for equips, at (x-cx, y-cy) with the same slot
+            // bottom-left anchor as the icon.
+            const isEquip = Math.floor(item.id / 1_000_000) === 1
+              || (Math.floor(item.id / 1_000_000) === 5 && Math.floor(item.id / 10000) !== 500);
+            if (isEquip && this._wzShadow) {
+              const shadowSpr = this._wzShadow.ToPixi();
+              shadowSpr.position.set(sx, sy + SLOT_H);
+              this._slotBgs[idx].addChild(shadowSpr);
+            }
             const iconSpr = icon.ToPixi();
-            // Center the icon in the slot (icon is typically 32×32 or smaller)
-            const iw = icon.Texture.width;
-            const ih = icon.Texture.height;
-            iconSpr.position.set(sx + (SLOT_W - iw) / 2, sy + (SLOT_H - ih) / 2);
+            // OG: DrawItemIconForSlot copies at (x - cx, y - cy) with x=rcSlot.left,
+            // y=rcSlot.bottom — the icon's WZ origin anchors at the slot's
+            // BOTTOM-LEFT corner (Copy places origin at (x,y)). ToPixi sets the
+            // anchor to origin/size, so placing at (sx, sy+SLOT_H) reproduces it.
+            iconSpr.position.set(sx, sy + SLOT_H);
             this._slotBgs[idx].addChild(iconSpr);
-            // OG: DrawItemIconForSlot — cash tag overlay in bottom-right corner
+            // OG: DrawItemIconForSlot — cash tag at (x + 8 - cx, y - cy), i.e.
+            // origin anchored at (slot.left + 8, slot.bottom).
             if (item.cash) {
               const cashTag = this._icons.GetCashTag();
               if (cashTag) {
-                cashTag.position.set(sx + SLOT_W - cashTag.width, sy + SLOT_H - cashTag.height);
+                cashTag.position.set(sx + 8, sy + SLOT_H);
                 this._slotBgs[idx].addChild(cashTag);
               }
             }

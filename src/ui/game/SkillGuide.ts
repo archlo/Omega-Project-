@@ -23,9 +23,10 @@ export class SkillGuide extends GamePanel {
     this._loader = loader ?? null;
     this._ui = ui ?? null;
 
-    // OG: CWndSkillGuide::CWndSkillGuide — loads UI/UIWindow.img/AranSkillGuide/{nGrade}
+    // OG: CWndSkillGuide::CWndSkillGuide — loads UI/UIWindow.img/AranSkillGuide/{nGrade}.
+    // WzPackage.GetItem resolves both the flattened root and the OG "UI/" mount.
     if (loader && ui) {
-      const guideProp = ui.GetItem('UI/UIWindow.img/AranSkillGuide');
+      const guideProp = ui.GetItem('UIWindow.img/AranSkillGuide');
       const prop = guideProp instanceof WzProperty ? guideProp : null;
       // Load grade 1 by default (will be replaced in open())
       const gradeNode = prop?.Get('1');
@@ -49,7 +50,7 @@ export class SkillGuide extends GamePanel {
 
     // Load the grade-specific WZ image
     if (loader && ui) {
-      const guideProp = ui.GetItem('UI/UIWindow.img/AranSkillGuide');
+      const guideProp = ui.GetItem('UIWindow.img/AranSkillGuide');
       const prop = guideProp instanceof WzProperty ? guideProp : null;
       const gradeNode = prop?.Get(String(grade));
       if (gradeNode instanceof WzCanvas) {

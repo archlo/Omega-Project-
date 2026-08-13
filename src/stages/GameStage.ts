@@ -394,6 +394,8 @@ export class GameStage extends Stage {
   protected _friendLoadSent = false;
   /** Pending stat data from SetField — applied after _initMenu creates the statusBar. */
   private _pendingStat: CharacterStat | null = null;
+  /** Pending meso from SetField — applied after _initMenu creates the item panel. */
+  private _pendingMeso: number | null = null;
   /** Pending equipped items from SetField — applied after _initMenu creates the equip panel. */
   private _pendingEquipped: { slot: number; item: any }[] | null = null;
   private _pendingEquippedCash: { slot: number; item: any }[] | null = null;
@@ -1339,6 +1341,12 @@ export class GameStage extends Stage {
        itemInfo: this._itemInfo,
        strings: this._stringPool,
      });
+    // OG: CUIItem::Draw renders meso at y=268 — apply any money stashed before
+    // the item panel was constructed (SetField can arrive before _initMenu).
+    if (this._pendingMeso !== null) {
+      this._item.setMeso(this._pendingMeso);
+      this._pendingMeso = null;
+    }
     this._equip.onUnequip = (bodyPart) => {
       // OG: CDraggableItem::GetOffEquipItem precondition checks
       // 1. HP must be > 0 (can't unequip while dead)
@@ -4791,7 +4799,11 @@ this._localCharId = args.characterId ?? 0;
       this._applyPendingEquipped();
     }
     // OG: CUIItem::Draw renders meso from CharacterData at y=268.
-    if (args.money !== undefined) this._item?.setMeso(args.money);
+    // Stash if the item panel isn't constructed yet (mirrors _pendingStat).
+    if (args.money !== undefined) {
+      if (this._item) this._item.setMeso(args.money);
+      else this._pendingMeso = args.money;
+    }
     if (args.look) {
       this._player?.SetAvatar(args.look);
       if (this._charInfo) {

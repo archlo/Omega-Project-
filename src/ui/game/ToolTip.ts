@@ -21,96 +21,93 @@ interface LineInfo {
   useDotImage: boolean;
 }
 
-// OG: Font type mapping (GetFontByType @ 0x881d40)
-// Colors verified from constructor @ 0x8839c0 decompilation
+// OG: Font type mapping (GetFontByType @ 0x881d40) — verified from the IDB switch.
+// NOTE: the switch has 25 reachable cases and SKIPS HL_Green / Gen_Gold (those
+// members are created in the ctor but never returned by GetFontByType). The IDs
+// here match the switch EXACTLY — an off-by-one here miscolors every tooltip.
 const FONT_TYPES = {
   HL_WHITE: 1,
   HL_GOLD: 2,
   HL_ORANGE: 3,
   HL_GRAY: 4,
-  HL_GREEN: 5,
-  HL_BLUE: 6,
-  HL_VIOLET: 7,
-  HL_GREEN2: 8,
-  HL_EXCELLENT: 9,
-  HL_SPECIAL: 10,
-  GEN_WHITE: 11,
-  GEN_GRAY: 12,
-  GEN_GRAY2: 13,
-  GEN_RED: 14,
-  GEN_ORANGE: 15,
-  GEN_GOLD: 16,
-  GEN_PURPLE: 17,
-  GEN_GREEN: 18,
-  GEN_YELLOW: 19,
-  GEN_BLUE: 20,
-  GEN_UNKNOWN: 21,
-  H_WHITE: 22,
-  STAN_PRP: 23,
-  STAN_DSC: 24,
-  STAN_NUM: 25,
-  SKILL_PRP: 26,
-  SKILL_DSC: 27,
+  HL_BLUE: 5,
+  HL_VIOLET: 6,
+  HL_GREEN2: 7,
+  HL_EXCELLENT: 8,
+  HL_SPECIAL: 9,
+  GEN_WHITE: 10,
+  GEN_GRAY: 11,
+  GEN_GRAY2: 12,
+  GEN_RED: 13,
+  GEN_ORANGE: 14,
+  GEN_PURPLE: 15,
+  GEN_GREEN: 16,
+  GEN_YELLOW: 17,
+  GEN_BLUE: 18,
+  GEN_UNKNOWN: 19,
+  H_WHITE: 20,
+  STAN_PRP: 21,
+  STAN_DSC: 22,
+  STAN_NUM: 23,
+  SKILL_PRP: 24,
+  SKILL_DSC: 25,
 } as const;
 
-// OG: Font colors from constructor — all verified from IDA decompilation
+// OG: Font colors from constructor @0x8839c0 — verified via IWzFont::Create
+// color args (0xAARRGGBB → RGB only here; alpha is always 0xFF).
 const FONT_COLORS: Record<number, number> = {
   [FONT_TYPES.HL_WHITE]: 0xFFFFFF,
-  [FONT_TYPES.HL_GOLD]: 0xFFCC00,
-  [FONT_TYPES.HL_ORANGE]: 0xFF8C00,
+  [FONT_TYPES.HL_GOLD]: 0xFDF514,
+  [FONT_TYPES.HL_ORANGE]: 0xFF8A18,
   [FONT_TYPES.HL_GRAY]: 0xBCBCBC,
-  [FONT_TYPES.HL_GREEN]: 0x00FF00,
-  [FONT_TYPES.HL_BLUE]: 0x0096FF,
-  [FONT_TYPES.HL_VIOLET]: 0xFF00FF,
-  [FONT_TYPES.HL_GREEN2]: 0x00FF80,
-  [FONT_TYPES.HL_EXCELLENT]: 0x00FFFF,
-  [FONT_TYPES.HL_SPECIAL]: 0xFFEEFF,
+  [FONT_TYPES.HL_BLUE]: 0x5CA1FF,
+  [FONT_TYPES.HL_VIOLET]: 0xC261FF,
+  [FONT_TYPES.HL_GREEN2]: 0x7FFF00,
+  [FONT_TYPES.HL_EXCELLENT]: 0x37FF00,
+  [FONT_TYPES.HL_SPECIAL]: 0xFF007F,
   [FONT_TYPES.GEN_WHITE]: 0xFFFFFF,
-  [FONT_TYPES.GEN_GRAY]: 0xBCBCBC,
-  [FONT_TYPES.GEN_GRAY2]: 0x777777,
-  [FONT_TYPES.GEN_RED]: 0xFF7155,
-  [FONT_TYPES.GEN_ORANGE]: 0xFF8C00,
-  [FONT_TYPES.GEN_GOLD]: 0xFFCC00,
-  [FONT_TYPES.GEN_PURPLE]: 0x9966FF,
-  [FONT_TYPES.GEN_GREEN]: 0x00FF00,
-  [FONT_TYPES.GEN_YELLOW]: 0xFFFF00,
-  [FONT_TYPES.GEN_BLUE]: 0x00AAFF,
-  [FONT_TYPES.GEN_UNKNOWN]: 0x00FF80,
+  [FONT_TYPES.GEN_GRAY]: 0xBBBBBB,
+  [FONT_TYPES.GEN_GRAY2]: 0x7B8C91,
+  [FONT_TYPES.GEN_RED]: 0xF20303,
+  [FONT_TYPES.GEN_ORANGE]: 0xFF8A18,
+  [FONT_TYPES.GEN_PURPLE]: 0xFF99CC,
+  [FONT_TYPES.GEN_GREEN]: 0x7FFF00,
+  [FONT_TYPES.GEN_YELLOW]: 0xFFF54D,
+  [FONT_TYPES.GEN_BLUE]: 0x77CCFF,
+  [FONT_TYPES.GEN_UNKNOWN]: 0xFF0066,
   [FONT_TYPES.H_WHITE]: 0xFFFFFF,
-  [FONT_TYPES.STAN_PRP]: 0xFFFFFF,
-  [FONT_TYPES.STAN_DSC]: 0xC0C0C0,
+  [FONT_TYPES.STAN_PRP]: 0xFAE8CB,
+  [FONT_TYPES.STAN_DSC]: 0xFFFFFF,
   [FONT_TYPES.STAN_NUM]: 0xFFFFFF,
-  [FONT_TYPES.SKILL_PRP]: 0xFFFFFF,
-  [FONT_TYPES.SKILL_DSC]: 0xC0C0C0,
+  [FONT_TYPES.SKILL_PRP]: 0xFAE8CB,
+  [FONT_TYPES.SKILL_DSC]: 0xFFFFFF,
 };
 
-// OG: Font sizes from constructor
+// OG: Font sizes from constructor @0x8839c0 — size arg of each IWzFont::Create.
 const FONT_SIZES: Record<number, number> = {
-  [FONT_TYPES.HL_WHITE]: 11,
-  [FONT_TYPES.HL_GOLD]: 11,
-  [FONT_TYPES.HL_ORANGE]: 11,
-  [FONT_TYPES.HL_GRAY]: 11,
-  [FONT_TYPES.HL_GREEN]: 11,
-  [FONT_TYPES.HL_BLUE]: 11,
-  [FONT_TYPES.HL_VIOLET]: 11,
-  [FONT_TYPES.HL_GREEN2]: 11,
-  [FONT_TYPES.HL_EXCELLENT]: 11,
-  [FONT_TYPES.HL_SPECIAL]: 11,
-  [FONT_TYPES.GEN_WHITE]: 11,
-  [FONT_TYPES.GEN_GRAY]: 11,
-  [FONT_TYPES.GEN_GRAY2]: 11,
-  [FONT_TYPES.GEN_RED]: 11,
-  [FONT_TYPES.GEN_ORANGE]: 11,
-  [FONT_TYPES.GEN_GOLD]: 11,
-  [FONT_TYPES.GEN_PURPLE]: 11,
-  [FONT_TYPES.GEN_GREEN]: 11,
-  [FONT_TYPES.GEN_YELLOW]: 11,
-  [FONT_TYPES.GEN_BLUE]: 11,
-  [FONT_TYPES.GEN_UNKNOWN]: 11,
+  [FONT_TYPES.HL_WHITE]: 12,
+  [FONT_TYPES.HL_GOLD]: 12,
+  [FONT_TYPES.HL_ORANGE]: 12,
+  [FONT_TYPES.HL_GRAY]: 12,
+  [FONT_TYPES.HL_BLUE]: 12,
+  [FONT_TYPES.HL_VIOLET]: 12,
+  [FONT_TYPES.HL_GREEN2]: 12,
+  [FONT_TYPES.HL_EXCELLENT]: 12,
+  [FONT_TYPES.HL_SPECIAL]: 12,
+  [FONT_TYPES.GEN_WHITE]: 12,
+  [FONT_TYPES.GEN_GRAY]: 12,
+  [FONT_TYPES.GEN_GRAY2]: 12,
+  [FONT_TYPES.GEN_RED]: 12,
+  [FONT_TYPES.GEN_ORANGE]: 12,
+  [FONT_TYPES.GEN_PURPLE]: 12,
+  [FONT_TYPES.GEN_GREEN]: 12,
+  [FONT_TYPES.GEN_YELLOW]: 12,
+  [FONT_TYPES.GEN_BLUE]: 12,
+  [FONT_TYPES.GEN_UNKNOWN]: 12,
   [FONT_TYPES.H_WHITE]: 12,
-  [FONT_TYPES.STAN_PRP]: 8,
-  [FONT_TYPES.STAN_DSC]: 8,
-  [FONT_TYPES.STAN_NUM]: 8,
+  [FONT_TYPES.STAN_PRP]: 9,
+  [FONT_TYPES.STAN_DSC]: 9,
+  [FONT_TYPES.STAN_NUM]: 9,
   [FONT_TYPES.SKILL_PRP]: 11,
   [FONT_TYPES.SKILL_DSC]: 11,
 };
@@ -578,12 +575,14 @@ export class ToolTip {
   // desc (StringPool 0xC35, GetFontByType(1)) right after it.
   // Non-equip branch: desc (StringPool 0xC36, GetFontByType(10)) first, name
   // (GetFontByType(14)) after it. Both branches center the pair as a whole.
+  // IDB-verified: equip name=font 3 (HL_ORANGE), desc=font 1 (HL_WHITE);
+  // non-equip desc=font 10 (GEN_WHITE), name=font 14 (GEN_ORANGE).
   drawItemTitle(y: number, sText: string, bEquip = true, desc = '',
     titleColor?: number, descColor?: number): number {
     if (!sText) return 0;
 
-    const titleFont = this.getFontByType(bEquip ? FONT_TYPES.HL_WHITE : FONT_TYPES.GEN_RED);
-    const descFont = this.getFontByType(bEquip ? FONT_TYPES.GEN_WHITE : FONT_TYPES.H_WHITE);
+    const titleFont = this.getFontByType(bEquip ? FONT_TYPES.HL_ORANGE : FONT_TYPES.GEN_ORANGE);
+    const descFont = this.getFontByType(bEquip ? FONT_TYPES.HL_WHITE : FONT_TYPES.GEN_WHITE);
     const titleW = this._measureText(sText, titleFont);
     const descW = desc ? this._measureText(desc, descFont) : 0;
     const offset = (this._width - titleW - descW) / 2;
@@ -592,13 +591,13 @@ export class ToolTip {
     const firstText = bEquip ? sText : desc;
     const firstFont = bEquip ? titleFont : descFont;
     const firstColor = bEquip
-      ? titleColor ?? FONT_COLORS[FONT_TYPES.HL_WHITE]
-      : descColor ?? FONT_COLORS[FONT_TYPES.GEN_GRAY2];
+      ? titleColor ?? FONT_COLORS[FONT_TYPES.HL_ORANGE]
+      : descColor ?? FONT_COLORS[FONT_TYPES.GEN_WHITE];
     const secondText = bEquip ? desc : sText;
     const secondFont = bEquip ? descFont : titleFont;
     const secondColor = bEquip
-      ? descColor ?? FONT_COLORS[FONT_TYPES.GEN_GRAY2]
-      : titleColor ?? FONT_COLORS[FONT_TYPES.GEN_RED];
+      ? descColor ?? FONT_COLORS[FONT_TYPES.HL_WHITE]
+      : titleColor ?? FONT_COLORS[FONT_TYPES.GEN_ORANGE];
 
     if (firstText) {
       const t1 = new Text({ text: firstText, style: { ...firstFont, fill: firstColor } });
@@ -929,8 +928,8 @@ export class ToolTip {
   // OG: GetItemName @ 0x8899b0 — resolve equip item display name + font type.
   // gender prefix (StringPool 0x3C2/0x3C3) is appended for gender-locked equips;
   // protected items use a bolded name (lType 3); CalcEquipItemQuality overrides
-  // the color lType: -1→4(HL_GRAY), 1→5(HL_GREEN), 2→6(HL_BLUE), 3→2(HL_GOLD),
-  // 4→8(HL_GREEN2), 5→9(HL_EXCELLENT).
+  // the color lType: -1→4(HL_GRAY), 1→5(HL_BLUE), 2→6(HL_VIOLET), 3→2(HL_GOLD),
+  // 4→8(HL_GREEN2), 5→9(HL_EXCELLENT). IDs match GetFontByType @0x881D40.
   // The StringPool format strings (0x828/0x829/0x1A19/0x1A1A) are the name +
   // gender/protect decorations; the caller already resolved the base name, so
   // this returns the resolved name + the lType used to color DrawItemTitle.
@@ -943,8 +942,8 @@ export class ToolTip {
     let lType: number = opts.protected ? FONT_TYPES.HL_ORANGE : FONT_TYPES.HL_WHITE;
     switch (opts.quality ?? 0) {
       case -1: lType = FONT_TYPES.HL_GRAY; break;
-      case 1: lType = FONT_TYPES.HL_GREEN; break;
-      case 2: lType = FONT_TYPES.HL_BLUE; break;
+      case 1: lType = FONT_TYPES.HL_BLUE; break;
+      case 2: lType = FONT_TYPES.HL_VIOLET; break;
       case 3: lType = FONT_TYPES.HL_GOLD; break;
       case 4: lType = FONT_TYPES.HL_GREEN2; break;
       case 5: lType = FONT_TYPES.HL_EXCELLENT; break;
@@ -1022,9 +1021,9 @@ export class ToolTip {
       const isEquipped = i < equippedCount;
       const ft = isEquipped ? fontType : unEquippedFontType;
 
-      // OG: Tier header (StringPool 5820 "Set Item %d")
+      // OG: Tier header (StringPool 5820 "Set Item %d") drawn with font type 10
       if (i + 1 > 0) {
-        this.addInfo(`${i + 1} Set`, FONT_TYPES.GEN_GOLD, 0);
+        this.addInfo(`${i + 1} Set`, FONT_TYPES.HL_SPECIAL, 0);
       }
 
       // OG: Each stat via PrintValue with " +%d" format (type 0)

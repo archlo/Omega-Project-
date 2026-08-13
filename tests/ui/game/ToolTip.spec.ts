@@ -87,20 +87,23 @@ describe('ToolTip', () => {
   describe('getFontColor', () => {
     it('returns correct hex color for known types', () => {
       expect(ToolTip.getFontColor(1)).toBe(0xFFFFFF);  // HL_WHITE
-      expect(ToolTip.getFontColor(14)).toBe(0xFF7155); // GEN_RED
-      expect(ToolTip.getFontColor(5)).toBe(0x00FF00);  // HL_GREEN
+      expect(ToolTip.getFontColor(13)).toBe(0xF20303); // GEN_RED (IDB GetFontByType)
+      expect(ToolTip.getFontColor(5)).toBe(0x5CA1FF);  // HL_BLUE (IDB GetFontByType case 5)
+      expect(ToolTip.getFontColor(10)).toBe(0xFFFFFF); // GEN_WHITE (case 10)
+      expect(ToolTip.getFontColor(21)).toBe(0xFAE8CB); // STAN_PRP (case 21)
     });
 
     it('returns GEN_WHITE color for unknown type', () => {
-      expect(ToolTip.getFontColor(9999)).toBe(ToolTip.getFontColor(11));
+      expect(ToolTip.getFontColor(9999)).toBe(ToolTip.getFontColor(10));
     });
   });
 
   describe('getFontSize', () => {
     it('returns correct sizes', () => {
-      expect(ToolTip.getFontSize(1)).toBe(11);  // HL_WHITE
-      expect(ToolTip.getFontSize(22)).toBe(12); // H_WHITE
-      expect(ToolTip.getFontSize(23)).toBe(8);  // STAN_PRP
+      expect(ToolTip.getFontSize(1)).toBe(12);  // HL_WHITE (IDB ctor)
+      expect(ToolTip.getFontSize(20)).toBe(12); // H_WHITE
+      expect(ToolTip.getFontSize(21)).toBe(9);  // STAN_PRP (IDB ctor)
+      expect(ToolTip.getFontSize(23)).toBe(9);  // STAN_NUM
     });
 
     it('returns default 11 for unknown type', () => {
@@ -891,10 +894,9 @@ describe('ToolTip', () => {
     });
 
     it('maps quality grades to OG font lTypes', () => {
-      const tip = makeToolTip();
       expect(tip.getItemName(1302000, 'S', { quality: -1 }).lType).toBe(ToolTip.FONT_TYPES.HL_GRAY);
-      expect(tip.getItemName(1302000, 'S', { quality: 1 }).lType).toBe(ToolTip.FONT_TYPES.HL_GREEN);
-      expect(tip.getItemName(1302000, 'S', { quality: 2 }).lType).toBe(ToolTip.FONT_TYPES.HL_BLUE);
+      expect(tip.getItemName(1302000, 'S', { quality: 1 }).lType).toBe(ToolTip.FONT_TYPES.HL_BLUE);
+      expect(tip.getItemName(1302000, 'S', { quality: 2 }).lType).toBe(ToolTip.FONT_TYPES.HL_VIOLET);
       expect(tip.getItemName(1302000, 'S', { quality: 3 }).lType).toBe(ToolTip.FONT_TYPES.HL_GOLD);
       expect(tip.getItemName(1302000, 'S', { quality: 4 }).lType).toBe(ToolTip.FONT_TYPES.HL_GREEN2);
       expect(tip.getItemName(1302000, 'S', { quality: 5 }).lType).toBe(ToolTip.FONT_TYPES.HL_EXCELLENT);
