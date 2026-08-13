@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { MobLook } from '../../src/character/MobLook.js';
+import { WzImage } from '../../src/wz/WzImage.js';
+import { WzProperty } from '../../src/wz/WzProperty.js';
+import { WzCanvas } from '../../src/wz/WzCanvas.js';
 
 describe('MobLook anchors', () => {
   it('falls back to the old placeholder head position without WZ frames', () => {
@@ -24,5 +27,60 @@ describe('MobLook anchors', () => {
     mob.SetFacing(true);
 
     expect(mob.HeadPosition).toEqual({ x: 20, y: 117 });
+  });
+
+  it('follows the info/link redirect when the template img has no animation states', () => {
+    // Template 100000 (0100000.img) only carries info/link = "0100100" — its
+    // stand/move/hit/die states live in the linked 0100100.img (Snail).
+    const loader = {
+      Load: (raw: WzCanvas) => ({ raw, Width: 37, Height: 26, OriginX: 18, OriginY: 26 }),
+    } as any;
+
+    const stubWz = {
+      GetItem: (path: string) => {
+        if (path === '0100000.img') {
+          const img = new WzImage(null as any, 0);
+          (img as any)._root = new WzProperty(null as any, 0, { info: new WzProperty(null as any, 0, { link: '0100100' }) });
+          return img;
+        }
+        if (path === '0100100.img') {
+          const img = new WzImage(null as any, 0);
+          (img as any)._root = new WzProperty(null as any, 0, {
+            info: new WzProperty(null as any, 0, {}),
+            stand: new WzProperty(null as any, 0, { '0': new WzCanvas(null as any, 0) }),
+            move: new WzProperty(null as any, 0, { '0': new WzCanvas(null as any, 0) }),
+          });
+          return img;
+        }
+        return null;
+      },
+    };
+
+    const mob = new MobLook(1, 100000);
+    mob.Load(loader, stubWz as any);
+
+    expect((mob as any)._loaded).toBe(true);
+    // stand + move states loaded from the linked img
+    expect((mob as any)._anims.size).toBe(2);
+  });
+
+  it('leaves _loaded false when the link target is also missing animation states', () => {
+    const loader = { Load: (raw: WzCanvas) => ({ raw, Width: 37, Height: 26, OriginX: 18, OriginY: 26 }) } as any;
+    const stubWz = {
+      GetItem: (path: string) => {
+        if (path === '0100000.img') {
+          const img = new WzImage(null as any, 0);
+          (img as any)._root = new WzProperty(null as any, 0, { info: new WzProperty(null as any, 0, { link: '0100999' }) });
+          return img;
+        }
+        return null;
+      },
+    };
+
+    const mob = new MobLook(1, 100000);
+    mob.Load(loader, stubWz as any);
+
+    expect((mob as any)._loaded).toBe(false);
+    expect((mob as any)._anims.size).toBe(0);
   });
 });

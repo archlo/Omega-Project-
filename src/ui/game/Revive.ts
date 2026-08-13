@@ -87,7 +87,13 @@ export class Revive extends GamePanel {
     this._root.alpha = this._alpha;
     if (this._ignoreInputMs > 0) this._ignoreInputMs -= ms;
     const tl = this._topLeft();
-    if (this._bgPixi) this._bgPixi.position.set(tl.x, tl.y);
+    if (this._bgPixi) {
+      this._bgPixi.position.set(tl.x, tl.y);
+      // OG: CUIRevive::OnCreate plain case (Notice/0) — single btOK via
+      // AddButton offset (42, 0); its canvas origin (-196, -100) lands the
+      // sprite at panel-relative (238, 100).
+      this._btOk.container.position.set(tl.x + 42, tl.y);
+    }
     if (this._fallbackBg) {
       this._fallbackBg.clear();
       this._fallbackBg.rect(tl.x, tl.y, this._panelWidth, this._panelHeight).fill({ color: 0x0a1a2a, alpha: 0.9 });
@@ -121,9 +127,13 @@ export class Revive extends GamePanel {
   private get _panelHeight(): number { return this._backgrnd?.Height ?? FallbackPanelH; }
 
   private _topLeft(): { x: number; y: number } {
+    // OG: CUIRevive ctor @0x83D230 — CreateWnd(-150, -195, 300, 131, z=10,
+    // bScreenCoord=1, ..., Origin_CC). With Origin_CC the (l,t) is the window
+    // CENTER, so the panel is centered horizontally but raised 195px above
+    // screen center vertically.
     return {
       x: (this._viewW - this._panelWidth) / 2,
-      y: (this._viewH - this._panelHeight) / 2 - 40,
+      y: (this._viewH - this._panelHeight) / 2 - 195,
     };
   }
 

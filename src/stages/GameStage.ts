@@ -448,6 +448,9 @@ export class GameStage extends Stage {
   protected _comboCount = 0;
   private _pendingBridle: { slot: number; id: number } | null = null;
   protected _isPlayerDead = false;
+  // OG: CWvsContext::Update — CUIRevive opens exactly 2200ms after death
+  // (UI_OpenRevive stamps m_tReviveDialog; Update checks now - m_tReviveDialog > 2200).
+  protected _reviveDialogClockMs = -1;
   protected _fieldKey = 0;
   private _isFieldTransferring = false;
   private _townPortalStatus = '';
@@ -1473,10 +1476,9 @@ export class GameStage extends Stage {
     this.uiRoot.addChild(this._comboDisplay.container);
 
     this._tombstone = new TombstoneEffect(this._effectWz, this._mobSoundWz, this._loader, this.game.audioPlayer);
-    // `_isPlayerDead` is already set the instant HP hits 0 (see _onStatChanged
-    // below); the revive prompt itself only opens once the tombstone-fall
-    // animation actually finishes landing, matching the real client's flow.
-    this._tombstone.OnLanded = () => { this._revivePanel?.Open(); };
+    // OG: the revive prompt is NOT tied to the tombstone landing — CWvsContext::Update
+    // opens CUIRevive exactly 2200ms after death (see _reviveDialogClockMs in the
+    // per-frame update).
 
     this._worldMap = new WorldMap(this._loader, this._mapWz);
     // TODO_AUDIT.md 150th pass: click a map ID row in the transfer list to teleport.
@@ -2549,6 +2551,8 @@ export class GameStage extends Stage {
           this._tryMeleeAttack();
         }
       }
+      // OG: CWvsContext::Update — open the revive dialog 2200ms after death.
+      this._updateReviveDialog(dt * 1000);
     }
     this._camera.Update(dt);
     this._field?.Update(dt * 1000, this.game.pixiApp.screen.width, this.game.pixiApp.screen.height);
@@ -5789,7 +5793,6 @@ this._localCharId = args.characterId ?? 0;
   private _tryMeleeAttack(): void {
     if (!this._physics) return;
     this._attackCooldown = GameStage.AttackCooldownSeconds;
-    this._physics.StopWalking();
 
     const pos = this._physics.Position;
     const facingLeft = this._physics.FacingLeft;
@@ -6917,13 +6920,27 @@ this._localCharId = args.characterId ?? 0;
     this._player?.PlayOneTimeAction('dead');
     // OG: tombstone spawns at PLAYER position, not mob position
     if (this._physics) this._tombstone?.Spawn({ x: this._physics.Position.x, y: this._physics.Position.y });
+    // OG: UI_OpenRevive stamps m_tReviveDialog = get_update_time(); CWvsContext::Update
+    // opens CUIRevive once now - m_tReviveDialog > 2200.
+    this._reviveDialogClockMs = 0;
   }
 
   /** Revive: restore movement/stance and reset the tombstone (CUIRevive::Revive). */
   private _applyLocalRevive(): void {
     this._isPlayerDead = false;
+    this._reviveDialogClockMs = -1;
     this._physics?.SetDead(false);
     this._tombstone?.Reset();
+  }
+
+  /** OG: CWvsContext::Update — open CUIRevive once 2200ms has elapsed since death. */
+  protected _updateReviveDialog(dtMs: number): void {
+    if (this._reviveDialogClockMs < 0) return;
+    this._reviveDialogClockMs += dtMs;
+    if (this._reviveDialogClockMs >= 2200) {
+      this._reviveDialogClockMs = -1;
+      this._revivePanel?.Open();
+    }
   }
 
   private _onStatChanged(args: StatChangedArgs): void {

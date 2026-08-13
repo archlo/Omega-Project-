@@ -72,4 +72,30 @@ describe('Revive (CUIRevive)', () => {
     expect(r['_backgrnd']).not.toBeNull();
     expect(r['_btOk']).not.toBeNull();
   });
+
+  it('positions the panel + OK button per CUIRevive ctor/OnCreate', () => {
+    // OG ctor @0x83D230: CreateWnd(-150, -195, 300, 131, z=10, bScreenCoord=1,
+    // Origin_CC) — panel CENTER is (-150,-195) from screen center, so the
+    // top-left is raised 195px above the centered spot. OnCreate places btOK
+    // at AddButton offset (42,0) whose origin (-196,-100) lands it at (238,100)
+    // inside the panel.
+    const r = make();
+    r.Relayout(800, 600);
+    const tl = r['_topLeft']();
+    // Fallback panel is 320x140 (make() has no WZ bg): x=(800-320)/2=240,
+    // y=(600-140)/2 - 195 = 35.
+    expect(tl.x).toBe((800 - r['_panelWidth']) / 2);
+    expect(tl.y).toBe((600 - r['_panelHeight']) / 2 - 195);
+
+    // Fake a loaded WZ background so update() takes the WZ placement branch.
+    (r as any)._bgPixi = { position: { set: () => {} } };
+    r.Open();
+    r.update(0.01);
+    // OG AddButton offset (42,0): with the btOK canvas origin (-196,-100) the
+    // sprite lands at panel-relative (238,100) — offset - origin.
+    expect(r['_btOk'].container.position.x).toBe(tl.x + 42);
+    expect(r['_btOk'].container.position.y).toBe(tl.y);
+    expect(r['_btOk'].container.position.x - tl.x - (-196)).toBe(238);
+    expect(r['_btOk'].container.position.y - tl.y - (-100)).toBe(100);
+  });
 });

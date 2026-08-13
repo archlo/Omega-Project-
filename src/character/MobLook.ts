@@ -265,9 +265,20 @@ export class MobLook {
     if (mobWz === null) return;
 
     const strid = `${this.TemplateId.toString().padStart(7, '0')}.img`;
-    const img = mobWz.GetItem(strid);
-    const root = img instanceof WzImage ? img.Root : null;
+    let img = mobWz.GetItem(strid);
+    let root = img instanceof WzImage ? img.Root : null;
     if (!root) return;
+
+    // Check link redirect (OG: reads info/link when the template shares another mob's img)
+    const infoNode = root.Get('info') instanceof WzProperty ? (root.Get('info') as WzProperty) : null;
+    const linkNode = infoNode?.Get('link');
+    if (typeof linkNode === 'string') {
+      const linked = mobWz.GetItem(`${linkNode}.img`);
+      if (linked instanceof WzImage) {
+        img = linked;
+        root = linked.Root;
+      }
+    }
 
     for (let st = MobState.Stand; st <= MobState.DieF; st++) {
       const name = StateNames[st];

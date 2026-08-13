@@ -19,6 +19,9 @@ export class TombstoneEffect {
   private _burialSound: WzSound | null = null;
 
   private _world = { x: 0, y: 0 };
+  private _landingY = 0;
+  private _fallFromY = 0;
+  private _fallElapsedMs = 0;
   private _frameIndex = 0;
   private _frameTimerMs = 0;
   private _fellDown = false;
@@ -43,13 +46,20 @@ export class TombstoneEffect {
   Spawn(foothold: { x: number; y: number }): void {
     if (this.Started) return;
     this.Started = true;
-    this._world  = { ...foothold };
+    // OG: CUser::OnSetDead @0x8E4250 — the tomb is created 600px ABOVE the
+    // character's ground point then dropped to it over 440ms:
+    //   RelMove(bDyingNow, x, y - 600)            → place up in the sky
+    //   RelMove(bDyingNow, x, y, now + 440)       → fall to the ground
+    this._landingY = foothold.y;
+    this._fallFromY = foothold.y - 600;
+    this._world = { x: foothold.x, y: this._fallFromY };
     this._fallFrames = this._loadFrames('fall');
     this._landFrames = this._loadFrames('land');
     const tombItem = this._soundWz?.GetItem('Game.img/Tombstone');
     this._burialSound = tombItem instanceof WzSound ? tombItem : null;
     this._frameIndex = 0;
     this._frameTimerMs = 0;
+    this._fallElapsedMs = 0;
     this._fellDown = false;
     this._soundPlayed = false;
     if (this._fallFrames.length === 0 && this._landFrames.length === 0) {
@@ -63,6 +73,7 @@ export class TombstoneEffect {
     this._fellDown = false;
     this._frameIndex = 0;
     this._frameTimerMs = 0;
+    this._fallElapsedMs = 0;
   }
 
   Update(dt: number): void {
@@ -74,6 +85,12 @@ export class TombstoneEffect {
         this._land();
         return;
       }
+      // OG: linear drop from y-600 to the ground point over 440ms (RelMove
+      // with time = now + 440), running concurrently with the fall frames.
+      this._fallElapsedMs += ms;
+      const t = Math.min(1, this._fallElapsedMs / 440);
+      this._world.y = this._fallFromY + (this._landingY - this._fallFromY) * t;
+
       this._frameTimerMs += ms;
       while (this._frameIndex < this._fallFrames.length - 1) {
         const d = this._fallFrames[this._frameIndex].delayMs;
@@ -120,6 +137,7 @@ export class TombstoneEffect {
 
   private _land(): void {
     this._fellDown = true;
+    this._world.y = this._landingY;
     this.Landed = true;
     this._frameIndex = 0;
     this._frameTimerMs = 0;
