@@ -98,7 +98,15 @@ export class NpcLook {
       if (typeof name === 'string') this.Name = name;
       this.ShowNameTag = this._readBool(info.Get('hideName')) !== true;
       const link = info.Get('link');
-      if (typeof link === 'number') {
+      // OG: NPC links are string paths (e.g. "9010006"), unlike the numeric
+      // link index used for NPC/pet imitated looks in ActionMan. Re-resolve
+      // the template root to the linked img when the raw template carries no
+      // animation states of its own.
+      if (typeof link === 'string') {
+        const linkItem = npcWz.GetItem(`${link}.img`);
+        const linkRoot = linkItem instanceof WzImage ? linkItem.Root : null;
+        if (linkRoot) resolvedRoot = linkRoot;
+      } else if (typeof link === 'number') {
         const linkId = link;
         const linkStrid = `${linkId.toString().padStart(7, '0')}.img`;
         const linkItem = npcWz.GetItem(linkStrid);

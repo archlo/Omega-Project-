@@ -1131,7 +1131,7 @@ export class GameStage extends Stage {
       const streetName = this.game.nameService.MapStreetName(mapId) ?? '';
       this._miniMap.setMapData(this._field.MiniMap, mapName, streetName);
       this._miniMap.setPortals(
-        Object.values(this._field.Portals).map((p) => ({ x: p.X, y: p.Y })),
+        Object.values(this._field.Portals).map((p) => ({ x: p.X, y: p.Y, type: p.Type })),
       );
       // OG: m_nMiniMapType — read from field info (0=simple, 1=normal)
       this._miniMap.setMiniMapType(this._field.Info.MiniMapType as 0 | 1);
@@ -4988,7 +4988,7 @@ this._localCharId = args.characterId ?? 0;
       const streetName = this.game.nameService.MapStreetName(mapId) ?? '';
       this._miniMap.setMapData(this._field.MiniMap, mapName, streetName);
       this._miniMap.setPortals(
-        Object.values(this._field.Portals).map((p) => ({ x: p.X, y: p.Y })),
+        Object.values(this._field.Portals).map((p) => ({ x: p.X, y: p.Y, type: p.Type })),
       );
       // OG: m_nMiniMapType — read from field info (0=simple, 1=normal)
       this._miniMap.setMiniMapType(this._field.Info.MiniMapType as 0 | 1);
@@ -5281,7 +5281,8 @@ this._localCharId = args.characterId ?? 0;
     if (args.damage > 0) {
       mob._lastDamage = args.damage;
       mob.ShowHitEffect();
-      mob.ShowDamage(args.damage, false, false);
+      mob.RevealLabel();
+      this._dmgNumbers?.Add(args.damage, mob.HeadPosition.x, mob.HeadPosition.y, DamageKind.DamageNormal);
       this._mobSounds?.PlayDamage(mob.TemplateId);
     }
     // DamagedByMob mobs show HP indicator when damaged by other mobs
@@ -5825,7 +5826,9 @@ this._localCharId = args.characterId ?? 0;
       targets.push(new MeleeTarget(closest.MobId, [dmg], closest.Position.x, closest.Position.y, 0));
       closest.ShowHitEffect();
       this._mobSounds?.PlayDamage(closest.TemplateId);
-      this._dmgNumbers?.Add(dmg, closest.HeadPosition.x, closest.HeadPosition.y);
+      // Damage number is server-authoritative — the mobDamaged echo
+      // (OnMobDamaged) renders the WZ-digit number. No optimistic add here
+      // (would double-render for the local attacker).
       // TODO_AUDIT.md Sixty-seventh pass: CBattleRecordMan — no critical-hit
       // flag exists on this client's own outgoing damage anywhere, so
       // isCritical is always false here (documented simplification).

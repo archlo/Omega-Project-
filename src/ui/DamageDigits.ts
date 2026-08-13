@@ -39,7 +39,7 @@ export class DamageDigits {
     for (const node of ['NoCri1', 'NoCri0', 'Cri']) {
       if (DamageDigits._tryLoadDigits(effectWz, loader, `${BasicEff}/${node}`, this._crit)) break;
     }
-    for (const path of [`${BasicEff}/NoMiss/0`, `${BasicEff}/Miss/0`]) {
+    for (const path of [`${BasicEff}/NoRed0/Miss`, `${BasicEff}/NoViolet0/Miss`]) {
       const mc = effectWz.GetItem(path);
       if (mc instanceof WzCanvas) { this._miss = loader.Load(mc); break; }
     }

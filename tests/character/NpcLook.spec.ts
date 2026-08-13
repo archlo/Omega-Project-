@@ -4,6 +4,7 @@ import { NpcLook } from '../../src/character/NpcLook.js';
 import { Foothold } from '../../src/map/Foothold.js';
 import { WzProperty } from '../../src/wz/WzProperty.js';
 import { WzImage } from '../../src/wz/WzImage.js';
+import { WzCanvas } from '../../src/wz/WzCanvas.js';
 
 // Text.width measurement needs a canvas 2D context; provide the minimal shim.
 function installCanvasShim(): void {
@@ -102,6 +103,61 @@ describe('NpcLook', () => {
     expect(npc.Name).toBe('Mr. Kim');
     expect(npc.FuncName).toBe('Storage Keeper');
     expect(npc.ShowNameTag).toBe(false);
+  });
+
+  it('resolves string info/link templates to the linked img for animation states', () => {
+    // Template 1032105.img carries ONLY info (incl. link="9010006") and no
+    // animation states; the real stand/move frames live in 9010006.img.
+    const loader = {
+      Load: (raw: WzCanvas) => ({ raw, Width: 40, Height: 60, OriginX: 20, OriginY: 60 }),
+    } as any;
+
+    const stubWz = {
+      GetItem: (path: string) => {
+        if (path === '1032105.img') {
+          const img = new WzImage(null as any, 0);
+          (img as any)._root = new WzProperty(null as any, 0, { info: new WzProperty(null as any, 0, { link: '9010006' }) });
+          return img;
+        }
+        if (path === '9010006.img') {
+          const img = new WzImage(null as any, 0);
+          (img as any)._root = new WzProperty(null as any, 0, {
+            info: new WzProperty(null as any, 0, {}),
+            stand: new WzProperty(null as any, 0, { '0': new WzCanvas(null as any, 0), '1': new WzCanvas(null as any, 0) }),
+            move: new WzProperty(null as any, 0, { '0': new WzCanvas(null as any, 0) }),
+          });
+          return img;
+        }
+        return null;
+      },
+    };
+
+    const npc = new NpcLook(1032105);
+    npc.Load(loader, stubWz as any);
+
+    expect(npc.Loaded).toBe(true);
+    expect(npc.Animations.has('stand')).toBe(true);
+    expect(npc.Animations.has('move')).toBe(true);
+    expect(npc.Animations.get('stand')!.length).toBe(2);
+  });
+
+  it('leaves _loaded false when a string link target is missing', () => {
+    const loader = { Load: (raw: WzCanvas) => ({ raw, Width: 40, Height: 60, OriginX: 20, OriginY: 60 }) } as any;
+    const stubWz = {
+      GetItem: (path: string) => {
+        if (path === '1032105.img') {
+          const img = new WzImage(null as any, 0);
+          (img as any)._root = new WzProperty(null as any, 0, { info: new WzProperty(null as any, 0, { link: '9010006' }) });
+          return img;
+        }
+        return null;
+      },
+    };
+
+    const npc = new NpcLook(1032105);
+    npc.Load(loader, stubWz as any);
+
+    expect(npc.Loaded).toBe(false);
   });
 
   it('delegates OnChat to the WZ balloon layer via onChatBalloon', () => {

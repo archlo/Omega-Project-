@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { MiniMap } from '../../../src/ui/game/MiniMap.js';
+import { MiniMapData } from '../../../src/map/MiniMapData.js';
 import { WzTextureLoader } from '../../../src/render/WzTextureLoader.js';
 
 // TODO_AUDIT.md Sixty-ninth pass: CUIMiniMap party-member tracking
@@ -46,5 +47,73 @@ describe('MiniMap top-left position + render robustness', () => {
     mm.setFootholds({});
     mm.playerWorldPos = { x: 10, y: 10 };
     expect(() => mm.update(0)).not.toThrow();
+  });
+});
+
+describe('MiniMap player-dot alignment (map-fits but simple huge mode)', () => {
+  // map 10000-style: canvas authored at the field's native mag (4). Simple
+  // type (MiniMapType 0) starts in huge mode where _mag2X = Mag-1 = 3 — the
+  // OG world→canvas shift must stay at the canvas's native Mag, otherwise
+  // scrOrig becomes non-zero for a map that fits the pane and the player dot
+  // "follows" the character toward the pane middle instead of sitting on the
+  // true canvas pixel.
+  function makeMapData(): MiniMapData {
+    return new MiniMapData(
+      { width: 112, height: 57, ToPixi: () => ({}) } as any,
+      null,
+      1806,
+      913,
+      363,
+      149,
+      4,
+    );
+  }
+
+  it('keeps scrOrig at 0 for a map that fits the pane, even in huge mode', () => {
+    const mm = new MiniMap(new WzTextureLoader(), null, null);
+    mm.setMapData(makeMapData(), 'Mushroom Town', 'Maple Road');
+    mm.setMiniMapType(0);
+    mm.playerWorldPos = { x: 500, y: 300 };
+    // _mode 0 = huge. Before the fix _mag=3 (Mag-1) made scrOrig ~51.
+    const mmAny = mm as any;
+    const scrOrig = mmAny._calculateScr(mm.playerWorldPos, 112, 57, 4);
+    expect(scrOrig.x).toBe(0);
+    expect(scrOrig.y).toBe(0);
+  });
+
+  it('maps the player to the true canvas pixel ((world+realCX)>>Mag)', () => {
+    const mm = new MiniMap(new WzTextureLoader(), null, null);
+    mm.setMapData(makeMapData(), 'Mushroom Town', 'Maple Road');
+    mm.setMiniMapType(0);
+    mm.playerWorldPos = { x: 500, y: 300 };
+    const c = (mm as any)._transformPoint(mm.playerWorldPos, { x: 0, y: 0 }, 4);
+    // (500+363)>>4 = 863>>4 = 53; (300+149)>>4 = 449>>4 = 28
+    expect(c.x).toBe(53);
+    expect(c.y).toBe(28);
+  });
+});
+
+describe('MiniMap portal filtering (OG Update @0x8053A0: only nType 2|7)', () => {
+  it('keeps only type 2 and type 7 portals; drops spawn/script/hidden portals', () => {
+    const mm = new MiniMap(new WzTextureLoader(), null, null);
+    mm.setPortals([
+      { x: 10, y: 10, type: 0 },   // spawn
+      { x: 20, y: 20, type: 2 },   // field portal — kept
+      { x: 30, y: 30, type: 7 },   // script portal — kept
+      { x: 40, y: 40, type: 8 },   // hidden/script
+      { x: 50, y: 50, type: 10 },  // hidden
+      { x: 60, y: 60, type: 11 },  // hidden
+    ]);
+    expect((mm as any)._portals).toEqual([
+      { x: 20, y: 20, type: 2 },
+      { x: 30, y: 30, type: 7 },
+    ]);
+  });
+
+  it('replaces the previous list rather than appending', () => {
+    const mm = new MiniMap(new WzTextureLoader(), null, null);
+    mm.setPortals([{ x: 1, y: 1, type: 2 }]);
+    mm.setPortals([{ x: 2, y: 2, type: 2 }, { x: 3, y: 3, type: 0 }]);
+    expect((mm as any)._portals).toEqual([{ x: 2, y: 2, type: 2 }]);
   });
 });

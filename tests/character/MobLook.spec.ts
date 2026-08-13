@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MobLook } from '../../src/character/MobLook.js';
 import { WzImage } from '../../src/wz/WzImage.js';
 import { WzProperty } from '../../src/wz/WzProperty.js';
@@ -82,5 +82,17 @@ describe('MobLook anchors', () => {
 
     expect((mob as any)._loaded).toBe(false);
     expect((mob as any)._anims.size).toBe(0);
+  });
+
+  it('RevealLabel shows the HP bar + name tag only once', () => {
+    const mob = new MobLook(1, 100100);
+    expect((mob as any)._showLabel).toBe(false);
+
+    mob.RevealLabel();
+    expect((mob as any)._showLabel).toBe(true);
+
+    const updateSpy = vi.spyOn(mob as any, '_updateDisplay');
+    mob.RevealLabel();
+    expect(updateSpy).not.toHaveBeenCalled();
   });
 });

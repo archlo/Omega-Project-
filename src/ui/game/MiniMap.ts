@@ -142,7 +142,7 @@ export class MiniMap extends GamePanel {
   private readonly _npcs: { x: number; y: number; quest: boolean }[] = [];
   private readonly _others: { x: number; y: number }[] = [];
   private readonly _partyMembers: { x: number; y: number; isLeader: boolean }[] = [];
-  private readonly _portals: { x: number; y: number }[] = [];
+  private readonly _portals: { x: number; y: number; type: number }[] = [];
   private readonly _merchants: { x: number; y: number }[] = [];
   // OG: m_mStalkee (characterId → POINT) + m_mStalkeeName (characterId → name)
   // Stalkees are followed players shown with name labels on the minimap.
@@ -369,9 +369,12 @@ export class MiniMap extends GamePanel {
     this._partyMembers.push(...p);
   }
 
-  setPortals(portals: { x: number; y: number }[]): void {
+  // OG: CUIMiniMap::Update @0x8053A0 — only portals of nType 2|7 are drawn
+  // on the minimap (the visible field portals); spawn/script/hidden portals
+  // are not.
+  setPortals(portals: { x: number; y: number; type: number }[]): void {
     this._portals.length = 0;
-    this._portals.push(...portals);
+    this._portals.push(...portals.filter((p) => p.type === 2 || p.type === 7));
   }
 
   setMerchants(merchants: { x: number; y: number }[]): void {
@@ -567,7 +570,15 @@ export class MiniMap extends GamePanel {
     const canvas = this._miniMapType === 0
       ? (isHuge ? this._simpleCanvasHuge : this._simpleCanvas) ?? this._data?.Canvas
       : this._data?.Canvas;
-    const mag = this._mag;
+    // OG: the map's own miniMap canvas is authored at the field's native
+    // `mag` scale (e.g. map 10000: 112x57 canvas = 1806x913 world >> 4), so
+    // the world→canvas transform must shift by data.Mag — NOT by _mag, which
+    // in simple huge (2X) mode is _mag2X (Mag-1). Shifting at the wrong scale
+    // makes scrOrig non-zero for a map that actually fits the pane, and the
+    // player dot then subtracts that scroll from a non-scrolled (centered)
+    // map — the dot visibly "follows" the character toward the pane middle.
+    // Only a real 2X-author canvas (MiniMapSimpleMode/canvasHuge) uses _mag2X.
+    const mag = canvas === this._simpleCanvasHuge ? this._mag2X : (this._data?.Mag ?? this._mag);
 
     // OG: CalculateScr — compute screen origin from player position
     // This determines which part of the map to show in the pane
@@ -1100,7 +1111,7 @@ export class MiniMap extends GamePanel {
       const isHuge = this._miniMapType === 0 && this._mode === 0;
       const frame = this._frameFor(isHuge);
       const scale = isHuge ? 2 : 1;
-      const mag = this._mag;
+      const mag = this._data?.Mag ?? this._mag;
       const pane = {
         x: win.x + frame.borderL,
         y: win.y + frame.titleH,
@@ -1109,8 +1120,11 @@ export class MiniMap extends GamePanel {
       };
       // OG: CalculateScr for player position
       // BUG FIX: _calculateScr expects canvas-pixel dimensions, not screen-pixel
-      const canvasPaneW = this._data?.Canvas ? this._data.Canvas.Width : pane.width / scale;
-      const canvasPaneH = this._data?.Canvas ? this._data.Canvas.Height : pane.height / scale;
+      const canvas = this._miniMapType === 0
+        ? (isHuge ? this._simpleCanvasHuge : this._simpleCanvas) ?? this._data?.Canvas
+        : this._data?.Canvas;
+      const canvasPaneW = canvas ? canvas.Width : pane.width / scale;
+      const canvasPaneH = canvas ? canvas.Height : pane.height / scale;
       const scrOrig = this._calculateScr(this.playerWorldPos, canvasPaneW, canvasPaneH, mag);
       // OG: TransformPoint for player
       const c = this._transformPoint(this.playerWorldPos, scrOrig, mag);

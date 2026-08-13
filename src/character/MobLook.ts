@@ -422,13 +422,20 @@ export class MobLook {
     this._lastObstacleDamage = 0x7FFFFFFF;
   }
 
-  /** OG CMob::ShowDamage — floating damage number with zigzag + direction offset */
-  ShowDamage(nDamage: number, bCritical: boolean, bHalfHeight: boolean, zigZagDamage = 0, bAdjustHeight = false): void {
-    // OG: HP bar + name tag only appear after mob takes damage
-    if (!this._showLabel && nDamage > 0) {
+  /** OG CMob::ShowDamage — reveal the HP bar + name tag after the mob takes
+      damage. The floating number itself is drawn by the shared WZ-digit
+      renderer (CAnimationDisplayer::Effect_HP) in GameStage, not here. */
+  RevealLabel(): void {
+    if (!this._showLabel) {
       this._showLabel = true;
       this._updateDisplay();
     }
+  }
+
+  /** OG CMob::ShowDamage — floating damage number with zigzag + direction offset */
+  ShowDamage(nDamage: number, bCritical: boolean, bHalfHeight: boolean, zigZagDamage = 0, bAdjustHeight = false): void {
+    // OG: HP bar + name tag only appear after mob takes damage
+    this.RevealLabel();
     const head = this.HeadPosition;
     // OG: x offset = ±15 based on critical (even/odd) and facing direction
     let offsetX = 0;
