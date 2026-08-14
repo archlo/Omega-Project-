@@ -1,4 +1,4 @@
-import { Container, Graphics, Text, TextStyle } from 'pixi.js';
+import { Container, Graphics, Text, TextStyle, Sprite } from 'pixi.js';
 import { WzSprite } from '../render/WzSprite.js';
 import { WzTextureLoader } from '../render/WzTextureLoader.js';
 import { WzProperty } from '../wz/WzProperty.js';
@@ -31,6 +31,7 @@ export class ComboBox {
   private _dropdownLabels: Text[] = [];
   private _wzSprite: WzSprite | null = null;
   private _sprite: import('pixi.js').Sprite | null = null;
+  private _labelSprite: Sprite | null = null;
 
   private _items: ComboBoxItem[] = [];
   private _selectedIndex = 0;
@@ -93,6 +94,22 @@ export class ComboBox {
   /** Override the label text without changing the selected item. */
   setLabel(text: string): void {
     this._label.text = text;
+  }
+
+  /** Show a WZ label canvas (e.g. chatTarget/all) instead of the text label. */
+  setLabelSprite(sprite: Sprite | null): void {
+    if (this._labelSprite) {
+      this.container.removeChild(this._labelSprite);
+      this._labelSprite = null;
+    }
+    if (sprite) {
+      sprite.anchor.set(0, 0);
+      this._labelSprite = sprite;
+      this.container.addChild(sprite);
+      this._label.visible = false;
+    } else {
+      this._label.visible = true;
+    }
   }
 
   set selectedIndex(i: number) {

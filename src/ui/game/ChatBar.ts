@@ -146,7 +146,9 @@ const FONT_COLORS: { height: number; color: number }[] = [
 // ═══════════════════════════════════════════════════════════════════════════════
 // Styles
 // ═══════════════════════════════════════════════════════════════════════════════
-const _inputStyle = new TextStyle({ fill: '#FFD', fontSize: 11, fontFamily: 'monospace' });
+// OG m_paramEdit: sFont=StringPool 6693, nFontHeight=11, nBackColor=-1(white),
+// nFontColor=-16777216 = 0xFF000000 (black). The cream #FFD was a placeholder.
+const _inputStyle = new TextStyle({ fill: '#000000', fontSize: 11, fontFamily: 'monospace' });
 const _comboStyle = new TextStyle({ fill: '#FFF', fontSize: 11, fontFamily: 'monospace' });
 const _tabStyle = new TextStyle({ fill: '#CCC', fontSize: 10, fontFamily: 'monospace' });
 const _tabActiveStyle = new TextStyle({ fill: '#FFF', fontSize: 10, fontFamily: 'monospace' });
@@ -399,6 +401,7 @@ export class ChatBar extends GamePanel {
       const idx = CHAT_TARGET_INTERNAL.indexOf(val);
       if (idx >= 0) {
         this._nChatTarget = idx;
+        this._applyComboLabel(idx);
         this.onChatTargetChange?.(val);
       }
     };
@@ -963,9 +966,26 @@ export class ChatBar extends GamePanel {
     const cycleIndex = TAB_CYCLE.indexOf(target);
     if (cycleIndex >= 0) this._tabCycleIndex = cycleIndex;
     // OG: updates combo box selection
+    this._applyComboLabel(target);
     const internalName = CHAT_TARGET_INTERNAL[target] ?? 'all';
-    this._combo.setLabel(target === 7 ? 'Whisper' : (CHAT_TARGETS[target] ?? 'All'));
     this.onChatTargetChange?.(internalName);
+  }
+
+  /** Show the WZ label canvas for a chat target (OG combo draws the label canvas
+   * anchored at its origin relative to the base box). Falls back to text when no
+   * canvas exists (e.g. target 8 "Find", whisper 7). */
+  private _applyComboLabel(target: number): void {
+    const ws = this._chatTargetLabels[target];
+    if (ws) {
+      // base box origin (510,58); label origin (498,54) -> offset (12,4)
+      const s = ws.NewSprite();
+      s.anchor.set(0, 0);
+      s.position.set(510 - ws.OriginX, 58 - ws.OriginY);
+      this._combo.setLabelSprite(s);
+    } else {
+      this._combo.setLabelSprite(null);
+      this._combo.setLabel(target === 7 ? 'Whisper' : (CHAT_TARGETS[target] ?? 'All'));
+    }
   }
 
   // OG: SetChatTarget by internal index (for tab cycling)
@@ -977,7 +997,7 @@ export class ChatBar extends GamePanel {
   private setChatTargetByName(name: string): void {
     this._changeWhisperTarget(name);
     this._nChatTarget = 7;
-    this._combo.setLabel('Whisper');
+    this._applyComboLabel(7);
     this.onChatTargetChange?.('whisper');
     // Add to whisper candidate list (OG: AddWhisperCandidate)
     this._addWhisperCandidate(name);
@@ -1241,7 +1261,7 @@ export class ChatBar extends GamePanel {
         } else {
           // OG: m_nChatTarget = 7, update combo label
           this._nChatTarget = 7;
-          this._combo.setLabel('Whisper');
+          this._applyComboLabel(7);
           this.onChatTargetChange?.('whisper');
         }
       } else {
@@ -2062,10 +2082,12 @@ export class ChatBar extends GamePanel {
     this._layerEnter = loadCanvas(bar, 'chatEnter', DISPLAY_X, this._chatWndY, false);
     this._layerCover = loadCanvas(bar, 'chatCover', DISPLAY_X + DISPLAY_W_515 - 82, this._chatWndY, false);
 
-    // Combo box WZ sprite (OG: StatusBar2.img/mainBar/chatTarget/base)
+    // Combo box WZ sprite (OG: StatusBar2.img/mainBar/chatTarget/base/<state>/0)
+    // The `base` node holds normal/mouseOver/pressed/disabled states, each with a
+    // `0` canvas (68x21). loadWzAsset unwraps `0`/`bmp`, so descend to `base/normal`.
     const ctBase = bar.Get('chatTarget') as WzProperty | null;
     if (ctBase) {
-      this._combo.loadWzAsset(loader, ctBase, 'base');
+      this._combo.loadWzAsset(loader, ctBase, 'base/normal');
     }
 
     const addControl = (name: string, onClick: () => void): Button | null => {
@@ -2275,18 +2297,27 @@ export class ChatBar extends GamePanel {
       }
     }
 
-    // OG: Chat target label textures (from StatusBar2.img/mainBar/chatTarget/label/*)
+    // OG: Chat target label textures — DIRECT children of chatTarget
+    // (all, friend, party, guild, association, expedition). These are the combo
+    // box item labels (StringPool 0x324/0x327/0x323/0x189C/0x326/0x1896/0x322
+    // resolve to these canvas paths). No 'label' subfolder exists.
     const ctRoot = bar.Get('chatTarget') as WzProperty | null;
     if (ctRoot) {
-      const labelRoot = ctRoot.Get('label') as WzProperty | null;
-      if (labelRoot) {
-        const labelNames = ['all', 'whisper', 'party', 'buddy', 'guild', 'alliance'];
-        for (let i = 0; i < labelNames.length; i++) {
-          const node = labelRoot.Get(labelNames[i]);
-          if (node instanceof WzCanvas) {
-            const ws = loader.Load(node);
-            if (ws) this._chatTargetLabels[i] = ws;
-          }
+      // chat target value -> canvas child name (target 8 "Find" has no canvas)
+      const labelForTarget: Record<number, string> = {
+        0: 'all',
+        1: 'friend',
+        2: 'party',
+        3: 'expedition',
+        4: 'guild',
+        5: 'association',
+      };
+      for (const t of Object.keys(labelForTarget)) {
+        const target = Number(t);
+        const node = ctRoot.Get(labelForTarget[target]);
+        if (node instanceof WzCanvas) {
+          const ws = loader.Load(node);
+          if (ws) this._chatTargetLabels[target] = ws;
         }
       }
     }

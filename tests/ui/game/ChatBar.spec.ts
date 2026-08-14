@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { Text } from 'pixi.js';
+import { Text, Sprite, Texture } from 'pixi.js';
 import { ChatBar, FILTER_ALL, FILTER_BUDDY, FILTER_PARTY, FILTER_GUILD, FILTER_ALLIANCE, FILTER_EXPEDITION } from '../../../src/ui/game/ChatBar.js';
+import { WzSprite } from '../../../src/render/WzSprite.js';
 
 // ponytail: avoids pulling in jsdom just to satisfy Text.width's canvas measurement in tests
 Object.defineProperty(Text.prototype, 'width', { get: () => 0 });
@@ -190,5 +191,60 @@ describe('ChatBar filter tabs (IDB OnButtonClicked 0x880540)', () => {
     expect(fonts[4].fill).toBe('#e1acfe');
     expect(fonts[5].fill).toBe('#a6ff7f');
     expect(fonts[26].fill).toBe('#7dffee');
+  });
+});
+
+describe('ChatBar combo box label (OG chatTarget label canvases)', () => {
+  function combo(bar: ChatBar): any { return (bar as any)._combo; }
+
+  it('setChatTarget with a WZ label canvas shows the sprite and hides the text', () => {
+    const bar = new ChatBar();
+    // Stub the WZ label for target 2 (Party) — direct child canvas `party`,
+    // origin (498,54) vs base origin (510,58) → offset (12,4).
+    (bar as any)._chatTargetLabels[2] = new WzSprite(Texture.EMPTY, 498, 54);
+    bar.setChatTarget(2);
+
+    const c = combo(bar);
+    expect(c._labelSprite).toBeInstanceOf(Sprite);
+    expect(c._labelSprite.position.x).toBe(12); // 510 - 498
+    expect(c._labelSprite.position.y).toBe(4);  // 58 - 54
+    expect(c._label.visible).toBe(false);
+  });
+
+  it('fallbacks to text when no WZ canvas exists (whisper 7 / find 8)', () => {
+    const bar = new ChatBar();
+    bar.setChatTarget(7); // whisper has no canvas
+    const c = combo(bar);
+    expect(c._labelSprite).toBeNull();
+    expect(c._label.visible).toBe(true);
+    expect(c._label.text).toBe('Whisper');
+  });
+
+  it('combo click change routes through _applyComboLabel and fires onChatTargetChange', () => {
+    const bar = new ChatBar();
+    const changed: string[] = [];
+    bar.onChatTargetChange = (v) => changed.push(v);
+    const c = combo(bar);
+
+    // Open the dropdown and click Party (3rd visible item, index 2 — the two
+    // empty labels at indices 6/7 are filtered out). Dropdown rows are laid
+    // out upward from the box.
+    c.handleMouseButton(30, 10, true); // toggle open
+    const itemH = 16;
+    const idxInList = 2;
+    const ly = -c._items.filter((it: any) => it.label).length * itemH + idxInList * itemH + itemH / 2;
+    c.handleMouseButton(30, ly, true);
+
+    expect((bar as any)._nChatTarget).toBe(2);
+    expect(changed).toEqual(['party']);
+    expect(c._label.visible).toBe(true); // no WZ label stubbed → text fallback
+  });
+});
+
+describe('ChatBar input edit control (OG m_paramEdit)', () => {
+  it('input text is black (0xFF000000) per m_paramEdit.nFontColor', () => {
+    const bar = new ChatBar();
+    const st: any = (bar as any)._inputText.style;
+    expect(String(st.fill).toLowerCase()).toBe('#000000');
   });
 });
