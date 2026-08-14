@@ -1164,7 +1164,11 @@ export class SkillBook extends GamePanel {
 
     addJobRoots(job);
     for (const skillId of knownSkillIds) addJobRoots(Math.floor(skillId / 10000));
-    if (isBeginnerJob(job) || job === 0) roots.add(0);
+    // OG: CUISkill::SetSkillRootList @0x84BFE0 — after get_skill_root_from_job,
+    // always prepend the race beginner root (explorers 0, Noblesse 1000, Aran
+    // 2000, Citizen 3000); Evan (job/100==22 or job==2001) uses 2001 instead.
+    if (Math.floor(job / 100) === 22 || job === 2001) roots.add(2001);
+    else roots.add(1000 * Math.floor(job / 1000));
     return Array.from(roots).sort((a, b) => a - b);
   }
 

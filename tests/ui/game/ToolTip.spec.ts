@@ -78,7 +78,7 @@ describe('ToolTip', () => {
 
     it('falls back to GEN_WHITE for unknown type', () => {
       const tip = makeToolTip();
-      const known = tip.getFontByType(11);
+      const known = tip.getFontByType(10);
       const unknown = tip.getFontByType(9999);
       expect(unknown.fill).toEqual(known.fill);
     });
@@ -839,9 +839,9 @@ describe('ToolTip', () => {
   describe('FONT_TYPES', () => {
     it('has expected type constants', () => {
       expect(ToolTip.FONT_TYPES.HL_WHITE).toBe(1);
-      expect(ToolTip.FONT_TYPES.GEN_WHITE).toBe(11);
-      expect(ToolTip.FONT_TYPES.GEN_RED).toBe(14);
-      expect(ToolTip.FONT_TYPES.SKILL_DSC).toBe(27);
+      expect(ToolTip.FONT_TYPES.GEN_WHITE).toBe(10);
+      expect(ToolTip.FONT_TYPES.GEN_RED).toBe(13);
+      expect(ToolTip.FONT_TYPES.SKILL_DSC).toBe(25);
     });
   });
 
@@ -894,6 +894,7 @@ describe('ToolTip', () => {
     });
 
     it('maps quality grades to OG font lTypes', () => {
+      const tip = makeToolTip();
       expect(tip.getItemName(1302000, 'S', { quality: -1 }).lType).toBe(ToolTip.FONT_TYPES.HL_GRAY);
       expect(tip.getItemName(1302000, 'S', { quality: 1 }).lType).toBe(ToolTip.FONT_TYPES.HL_BLUE);
       expect(tip.getItemName(1302000, 'S', { quality: 2 }).lType).toBe(ToolTip.FONT_TYPES.HL_VIOLET);

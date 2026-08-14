@@ -44,6 +44,7 @@ import type { AnimFrame } from '../character/WzFrameAnimation.js';
 import { loadFrameSequence } from '../character/WzFrameAnimation.js';
 import { getConsumeCashItemType } from '../util/CashSlotType.js';
 import { MobSoundService } from '../character/MobSoundService.js';
+import { FieldSoundService } from '../character/FieldSoundService.js';
 import { InPacket } from '../net/packet/InPacket.js';
 import { OutPacket } from '../net/packet/OutPacket.js';
 import { InHeader } from '../net/packet/OpCodes.js';
@@ -196,6 +197,7 @@ export class GameStage extends Stage {
   protected _mobWz: WzPackage | null = null;
   protected _mobSoundWz: WzPackage | null = null;
   protected _mobSounds: MobSoundService | null = null;
+  protected _fieldSounds: FieldSoundService | null = null;
   protected _diedMobIds = new Set<number>();
   private _currentBgm = '';
   /** Stored when SetField arrives before Map.wz finishes loading. */
@@ -1067,6 +1069,7 @@ export class GameStage extends Stage {
       this._mobInfoSvc = new MobInfoService(this._mobWz);
       this._mobSoundWz = game.wz.sound ?? await open('Sound');
       this._mobSounds = new MobSoundService(this._mobSoundWz, game.audioPlayer);
+      this._fieldSounds = new FieldSoundService(this._mobSoundWz, game.audioPlayer);
 
       // Batch 2: less critical packages — open in parallel
       const [reactorWz, tamingMobWz, morphWz, stringWz, questWz, etcWz] = await Promise.all([
@@ -5610,7 +5613,7 @@ this._localCharId = args.characterId ?? 0;
       return;
     }
     if (lower === '/resetap') {
-      this._reset?.OpenAp({ str: this._stats.str, dex: this._stats.dex, int: this._stats.intStat, luk: this._stats.luk }, this._stats.ap);
+      this._reset?.OpenAp({ str: this._stats.baseStr, dex: this._stats.baseDex, int: this._stats.baseInt, luk: this._stats.baseLuk }, this._stats.ap);
       return;
     }
     if (lower === '/tournament') {
@@ -5991,9 +5994,13 @@ this._localCharId = args.characterId ?? 0;
     if (this._stats) {
       this._stats.level = stat.level;
       this._stats.str = stat.str;
+      this._stats.baseStr = stat.str;
       this._stats.dex = stat.dex;
+      this._stats.baseDex = stat.dex;
       this._stats.intStat = stat.int;
+      this._stats.baseInt = stat.int;
       this._stats.luk = stat.luk;
+      this._stats.baseLuk = stat.luk;
       this._stats.ap = stat.ap;
       this._stats.fame = stat.pop;
       this._stats.hp = stat.hp;
@@ -6628,6 +6635,9 @@ this._localCharId = args.characterId ?? 0;
     );
     drop.nameOf = this._itemNameOf;
     this._drops.push(drop);
+    // OG: CDropPool::Update plays the drop sound when a CREATE-type drop
+    // begins its toss (StringPool 1284 = Sound.wz/Game.img/DropItem).
+    if (args.animated) this._fieldSounds?.PlayDrop();
   }
 
   // TODO_AUDIT.md Twenty-fourth pass: CDropPool::OnDropLeaveField
@@ -6645,6 +6655,10 @@ this._localCharId = args.characterId ?? 0;
       || args.leaveType === DropLeaveType.PickedUpByMob
       || args.leaveType === DropLeaveType.PickedUpByPet;
     if (isPickup && args.pickUpId === this._localCharId && this._player) {
+      // OG: pickup sound (Sound.wz/Game.img/PickUpItem) when the local player
+      // collects the drop — including pet pickups, whose dropLeaveField also
+      // carries the owner's character id as pickUpId.
+      this._fieldSounds?.PlayPickUp();
       const drop = this._drops.find((d) => d.DropId === args.dropId);
       if (drop) { drop.StartAbsorb(() => this._player!.Position); return; }
     }
@@ -6823,11 +6837,15 @@ this._localCharId = args.characterId ?? 0;
     // Phase 6: BasicStatUp (Maple Warrior family) from SecondaryStat bit 67
     const basicStatUp = this.game.fieldHandlers.secondaryStat.getBasicStatUp();
 
-    // Phase 6-11: compute total stats via BasicStat pipeline
+    // Phase 6-11: compute total stats via BasicStat pipeline. The base inputs
+    // are the persistent server-side base stats (baseStr etc.); the computed
+    // totals are written back into the main StatsInfo panel's str/dex/... so
+    // equipping an item visibly changes the stat window (formatStat renders
+    // "base (+bonus)").
     const input: BasicStatInput = {
       ...defaultBasicStatInput(),
-      baseStr: this._stats.str, baseDex: this._stats.dex,
-      baseInt: this._stats.intStat, baseLuk: this._stats.luk,
+      baseStr: this._stats.baseStr, baseDex: this._stats.baseDex,
+      baseInt: this._stats.baseInt, baseLuk: this._stats.baseLuk,
       baseMaxHp: this._stats.maxHp, baseMaxMp: this._stats.maxMp,
       equipStr, equipDex, equipInt, equipLuk,
       equipMaxHp: equipMhp, equipMaxMp: equipMmp,
@@ -6846,6 +6864,17 @@ this._localCharId = args.characterId ?? 0;
     inp.luk = result.luk;
     inp.maxHp = result.maxHp;
     inp.maxMp = result.maxMp;
+    // Write the computed totals back into the main stat window so equipment
+    // bonuses are visible (baseStr etc. keep the raw server base for the
+    // StringPool 1979 "+N" bonus format and for AP-reset dialogs).
+    if (this._stats) {
+      this._stats.str = result.str;
+      this._stats.dex = result.dex;
+      this._stats.intStat = result.int;
+      this._stats.luk = result.luk;
+      this._stats.maxHp = result.maxHp;
+      this._stats.maxMp = result.maxMp;
+    }
     inp.watk = watk + this.game.fieldHandlers.secondaryStat.getBuffPAD();
     inp.matk = matk + this.game.fieldHandlers.secondaryStat.getBuffMAD();
     inp.accBonus = accBonus + this.game.fieldHandlers.secondaryStat.getBuffACC();
@@ -7004,16 +7033,17 @@ this._localCharId = args.characterId ?? 0;
     // the ordinary short SP field.  FieldHandlers preserves that compact
     // payload so CUISkillEx can use the selected job-degree slot verbatim.
     if (args.extendedSp !== undefined) this._skill.setExtendedSp(args.extendedSp);
-    if (args.str !== undefined) this._stats.str = args.str;
-    if (args.dex !== undefined) this._stats.dex = args.dex;
-    if (args.int !== undefined) this._stats.intStat = args.int;
-    if (args.luk !== undefined) this._stats.luk = args.luk;
+    if (args.str !== undefined) { this._stats.str = args.str; this._stats.baseStr = args.str; }
+    if (args.dex !== undefined) { this._stats.dex = args.dex; this._stats.baseDex = args.dex; }
+    if (args.int !== undefined) { this._stats.intStat = args.int; this._stats.baseInt = args.int; }
+    if (args.luk !== undefined) { this._stats.luk = args.luk; this._stats.baseLuk = args.luk; }
     if (args.ap !== undefined) this._stats.ap = args.ap;
     if (args.pop !== undefined) {
       this._stats.fame = args.pop;
       if (this._charInfo) this._charInfo.fame = args.pop;
     }
     if (args.job !== undefined) {
+      const prevJob = this._job;
       this._job = args.job;
       this._skill.characterJob = args.job; // OG: job used in SP validation
       const jobName = JobName(args.job);
@@ -7021,6 +7051,11 @@ this._localCharId = args.characterId ?? 0;
       this._stats.job = jobName;
       this._stats.jobId = args.job;
       if (this._statusBar) this._statusBar.jobName = jobName;
+      // OG: CUISkill::SetSkillRootList is driven by the live job — job
+      // advancement re-derives the skill roots/tabs. The server does not
+      // resend skill records on job change (kinoko behavior), so rebuild the
+      // SkillBook from the records we already hold with the new job.
+      if (prevJob !== args.job && this._skillRecords) this._onSkillRecordResult(this._skillRecords);
     }
     // OG: CUIItem::Draw renders meso at y=268 from CharacterData.
     if (args.meso !== undefined) {
@@ -7036,18 +7071,18 @@ this._localCharId = args.characterId ?? 0;
     }
     this._equip?.SetPlayerStats(
       args.level ?? this._stats.level,
-      args.str ?? this._stats.str,
-      args.dex ?? this._stats.dex,
-      args.int ?? this._stats.intStat,
-      args.luk ?? this._stats.luk,
+      args.str ?? this._stats.baseStr,
+      args.dex ?? this._stats.baseDex,
+      args.int ?? this._stats.baseInt,
+      args.luk ?? this._stats.baseLuk,
       args.job ?? 0,
     );
     this._item?.SetPlayerStats(
       args.level ?? this._stats.level,
-      args.str ?? this._stats.str,
-      args.dex ?? this._stats.dex,
-      args.int ?? this._stats.intStat,
-      args.luk ?? this._stats.luk,
+      args.str ?? this._stats.baseStr,
+      args.dex ?? this._stats.baseDex,
+      args.int ?? this._stats.baseInt,
+      args.luk ?? this._stats.baseLuk,
       args.job ?? 0,
     );
     // TODO_AUDIT.md Hundred-and-fourteenth pass: keep StatDetailInfo.Inputs
@@ -7652,6 +7687,17 @@ this._localCharId = args.characterId ?? 0;
    *  first (OG Effect_SkillUse format-ID-986 loop). Falls back to base path
    *  if no such sub-node. Remote chars not tracked — only local combo. */
   private _onUserEffect(args: UserEffectArgs): void {
+    if (args.effectType === 10) {
+      // OG: CUser::OnEffect case 0xA (JobChanged) — plays BasicEff.img/JobChanged
+      // at the character (layer under face) + Sound/Game.img/JobChanged.
+      const node = this._effectWz?.GetItem('BasicEff.img/JobChanged');
+      const charId = args.isLocal ? this._localCharId : args.charId;
+      const facingLeft = args.isLocal ? (this._physics?.FacingLeft ?? true) : (this._otherChars.get(args.charId)?.FacingLeft ?? true);
+      if (node) this._skillEffects?.PlayAtCaster(node, charId, facingLeft);
+      const sound = this._mobSoundWz?.GetItem('Game.img/JobChanged');
+      if (sound instanceof WzSound) this.game.audioPlayer.PlayEffect(sound.AudioBytes);
+      return;
+    }
     if (args.effectType !== 14 && args.effectType !== 20) return;
     let uol: string;
     try {
