@@ -545,10 +545,14 @@ export class ChatBar extends GamePanel {
     if (this._layerChatBar) {
       this._layerChatBar.position.set(0, this._chatWndY - 2);
     }
-    if (this._layerSpace) this._layerSpace.position.set(DISPLAY_X, this._chatWndY);
-    if (this._layerSpace2) this._layerSpace2.position.set(DISPLAY_X, this._chatWndY);
-    if (this._layerEnter) this._layerEnter.position.set(DISPLAY_X, this._chatWndY);
-    if (this._layerCover) this._layerCover.position.set(DISPLAY_X + DISPLAY_W_515 - 82, this._chatWndY);
+// OG mainBar layers are origin-anchored: screen = _barRef(512,599) − WZ origin,
+    // i.e. chatSpace (512,57)→(0,542), chatSpace2 (512,60)→(0,539), chatEnter
+    // (467,58)→(45,541), chatCover (509,57)→(3,542). As offsets from the log top
+    // (m_ptChatWnd.y=518): +24/+21/+23/+24. Shifted with the bar via _chatWndY.
+    if (this._layerSpace) this._layerSpace.position.set(DISPLAY_X, this._chatWndY + 24);
+    if (this._layerSpace2) this._layerSpace2.position.set(DISPLAY_X, this._chatWndY + 21);
+    if (this._layerEnter) this._layerEnter.position.set(DISPLAY_X + 45, this._chatWndY + 23);
+    if (this._layerCover) this._layerCover.position.set(DISPLAY_X + 3, this._chatWndY + 24);
 
     // Filter buttons position (OG: _ResetChatBarPos — x starts at 1, y = m_ptChatWnd.y - 19, spacing 46px)
     this._setFilterButton();
@@ -2076,11 +2080,13 @@ export class ChatBar extends GamePanel {
       return null;
     };
 
-    // Chat layers (OG OnCreate lines 1814-1893) — all direct children of mainBar
-    this._layerSpace = loadCanvas(bar, 'chatSpace', DISPLAY_X, this._chatWndY);
-    this._layerSpace2 = loadCanvas(bar, 'chatSpace2', DISPLAY_X, this._chatWndY);
-    this._layerEnter = loadCanvas(bar, 'chatEnter', DISPLAY_X, this._chatWndY, false);
-    this._layerCover = loadCanvas(bar, 'chatCover', DISPLAY_X + DISPLAY_W_515 - 82, this._chatWndY, false);
+// Chat layers (OG OnCreate lines 1814-1893) — all direct children of mainBar.
+    // Origin-anchored (screen = _barRef − WZ origin) → offsets from _chatWndY:
+    // chatSpace +24, chatSpace2 +21, chatEnter +23/x45, chatCover +24/x3.
+    this._layerSpace = loadCanvas(bar, 'chatSpace', DISPLAY_X, this._chatWndY + 24);
+    this._layerSpace2 = loadCanvas(bar, 'chatSpace2', DISPLAY_X, this._chatWndY + 21);
+    this._layerEnter = loadCanvas(bar, 'chatEnter', DISPLAY_X + 45, this._chatWndY + 23, false);
+    this._layerCover = loadCanvas(bar, 'chatCover', DISPLAY_X + 3, this._chatWndY + 24, false);
 
     // Combo box WZ sprite (OG: StatusBar2.img/mainBar/chatTarget/base/<state>/0)
     // The `base` node holds normal/mouseOver/pressed/disabled states, each with a

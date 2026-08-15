@@ -1732,8 +1732,10 @@ export class GameStage extends Stage {
     // space that entities use), so it must live in the MAP layer — not the
     // scaled+centered UI frame. On any window other than exactly 800x600 the
     // frame transform diverges from the map, which made balloons drift away
-    // from the character/NPC.
-    this.mapRoot.addChild(this._chatBalloon.root);
+    // from the character/NPC. It is parented into mapRoot in _onSetField AFTER
+    // the field container (with the other map overlays) so it renders above
+    // the full-screen map background — parenting it here put it at z=0,
+    // behind the field, making every bubble invisible.
 
     this.uiRoot.addChild(this._gameMenu.container);
     this.uiRoot.addChild(this._familyWindow.container);
@@ -4946,6 +4948,7 @@ this._localCharId = args.characterId ?? 0;
       if (node) this._skillEffects?.PlayFullScreen(node);
     }
     this.mapRoot.addChild(this._field.container);
+    if (this._chatBalloon) this.mapRoot.addChild(this._chatBalloon.root);
     if (this._dmgNumbers) this.mapRoot.addChild(this._dmgNumbers.container);
     this.mapRoot.addChild(this._shopMarkerLayer);
     this.mapRoot.addChild(this._skillEffectLayer);

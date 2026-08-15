@@ -248,3 +248,49 @@ describe('ChatBar input edit control (OG m_paramEdit)', () => {
     expect(String(st.fill).toLowerCase()).toBe('#000000');
   });
 });
+
+describe('ChatBar WZ layer positions (OG mainBar origin anchor)', () => {
+  function withLayers(bar: ChatBar): { space: Sprite; space2: Sprite; enter: Sprite; cover: Sprite } {
+    const mk = () => new Sprite(Texture.EMPTY);
+    const layers = { space: mk(), space2: mk(), enter: mk(), cover: mk() };
+    const b = bar as any;
+    b._layerSpace = layers.space;
+    b._layerSpace2 = layers.space2;
+    b._layerEnter = layers.enter;
+    b._layerCover = layers.cover;
+    b._applyLayout();
+    return layers;
+  }
+
+  it('anchors chat layers from the mainBar origin (screen = _barRef − WZ origin), shifted with _chatWndY', () => {
+    // _chatWndY = 518 + CHAT_DY(20) = 538 (expanded log top).
+    // chatSpace (512,57)→(0,542), chatSpace2 (512,60)→(0,539),
+    // chatEnter (467,58)→(45,541), chatCover (509,57)→(3,542).
+    // As offsets from the log top: +24/+21/+23/+24, kept relative to _chatWndY.
+    const bar = new ChatBar();
+    const { space, space2, enter, cover } = withLayers(bar);
+
+    expect(space.position.x).toBe(0);
+    expect(space.position.y).toBe(538 + 24); // 562
+    expect(space2.position.x).toBe(0);
+    expect(space2.position.y).toBe(538 + 21); // 559
+    expect(enter.position.x).toBe(45);
+    expect(enter.position.y).toBe(538 + 23); // 561
+    expect(cover.position.x).toBe(3);
+    expect(cover.position.y).toBe(538 + 24); // 562
+  });
+
+  it('shifts layers with the chat window type', () => {
+    // Expanded type: m_ptChatWnd.y = 515 − height (default height 70 →
+    // _chatWndY = 515 + 20 − 70 = 465). The layers track _chatWndY.
+    const bar = new ChatBar();
+    (bar as any).setChatType(3);
+    const b = bar as any;
+    expect(b._chatWndY).toBe(465);
+    const enter = new Sprite(Texture.EMPTY);
+    b._layerEnter = enter;
+    b._applyLayout();
+    expect(enter.position.x).toBe(45);
+    expect(enter.position.y).toBe(465 + 23); // 488
+  });
+});
