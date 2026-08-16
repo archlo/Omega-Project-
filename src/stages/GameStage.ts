@@ -5841,6 +5841,8 @@ this._localCharId = args.characterId ?? 0;
       const attr = weaponId !== null ? this._itemIcons?.LoadAttr(weaponId) : null;
       const dmgRange = calcDamageRange(this._job, wt, attr?.IncPad ?? 0, attr?.IncMad ?? 0, this._stats.str, this._stats.dex, this._stats.intStat, this._stats.luk, 0);
       const dmg = dmgRange.min + Math.floor(Math.random() * (dmgRange.max - dmgRange.min + 1));
+      // TEMP DEBUG: 1-hit kill investigation
+      console.log(`[MeleeDbgClient] job=${this._job} wt=${wt} incPad=${attr?.IncPad} incMad=${attr?.IncMad} str=${this._stats.str} dex=${this._stats.dex} int=${this._stats.intStat} luk=${this._stats.luk} range=${dmgRange.min}-${dmgRange.max} dmg=${dmg} weaponId=${weaponId}`);
       targets.push(new MeleeTarget(closest.MobId, [dmg], closest.Position.x, closest.Position.y, 0));
       closest.ShowHitEffect();
       this._mobSounds?.PlayDamage(closest.TemplateId);
