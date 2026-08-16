@@ -793,7 +793,7 @@ export class GameStage extends Stage {
         break;
       case 3: this._skill.isVisible = !this._skill.isVisible; break;           // Skills
       case 4: if (this._userList) this._userList.isVisible = !this._userList.isVisible; break; // Friends
-      case 5: if (this._worldMap) this._worldMap.isVisible = !this._worldMap.isVisible; break; // WorldMap
+      case 5: this._toggleWorldMap(); break; // WorldMap
       case 6: this._chatBar?.focus(); break;                                   // MapleChat
       case 7: this._miniMap.cycleMode(); break;                                // MiniMap toggle
       case 8: this._quest.isVisible = !this._quest.isVisible; break;           // QuestLog
@@ -1142,9 +1142,7 @@ export class GameStage extends Stage {
       this._miniMap.setMiniMapType(this._field.Info.MiniMapType as 0 | 1);
       this._miniMap.onPlayerDotClick = () => this.game.session.send(GameSender.UserMiniMapClick());
       this._miniMap.setFootholds(this._field.Footholds);
-      this._miniMap.onBtWorldMap = () => {
-        if (this._worldMap) this._worldMap.isVisible = !this._worldMap.isVisible;
-      };
+      this._miniMap.onBtWorldMap = () => this._toggleWorldMap();
     }
   }
 
@@ -2806,6 +2804,17 @@ export class GameStage extends Stage {
       return true;
     }
     return false;
+  }
+
+  /** OG: toggle CWorldMapDlg — opens the current field's deepest world map
+   *  (GetDeepestWorldMap) on show, hides when already open. */
+  private _toggleWorldMap(): void {
+    if (!this._worldMap) return;
+    if (this._worldMap.isVisible) {
+      this._worldMap.isVisible = false;
+      return;
+    }
+    this._worldMap.openForField(this._field?.LoadedMapId ?? 0);
   }
 
   // OG: CUserLocal::HandleXKeyDown (decompile, 0x90f6d0) — TODO_AUDIT.md
@@ -5015,9 +5024,7 @@ this._localCharId = args.characterId ?? 0;
       // Live foothold reference for dynamic foothold state on minimap
       this._miniMap.setFootholds(this._field.Footholds);
       // OG: WorldMap button on minimap → toggle CWorldMapDlg
-      this._miniMap.onBtWorldMap = () => {
-        if (this._worldMap) this._worldMap.isVisible = !this._worldMap.isVisible;
-      };
+      this._miniMap.onBtWorldMap = () => this._toggleWorldMap();
     }
     this._playMapBgm(this._field.Info.Bgm);
     // Initialize buff visuals for current field
