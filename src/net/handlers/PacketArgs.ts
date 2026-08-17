@@ -102,14 +102,12 @@ export interface NpcMoveArgs {
 }
 export interface OtherCharEnterArgs {
   charId: number; level: number; name: string; look?: AvatarLook; x: number; y: number;
+  moveAction?: number; foothold?: number;
   guildName?: string;
   guildMarkBg?: number; guildMarkBgColor?: number;
   guildMark?: number; guildMarkColor?: number;
-  allianceTag?: number;
   job?: number;
-  grade?: number;
-  chHair?: number; chHairColor?: number; chFace?: number;
-  sex?: number;
+  adminEffect?: number;
 }
 export interface OtherCharMoveArgs {
   charId: number; x: number; y: number; stance?: Stance; facingLeft?: boolean;

@@ -672,4 +672,96 @@ export class SecondaryStat {
     }
     return (mask[1] & (1n << (bit - 64n))) !== 0n;
   }
+
+  // ---- remote (OG SecondaryStat::DecodeForRemote @0x72B7B0) -----
+
+  /**
+   * Per-stat byte sizes in the OG DecodeForRemote order.
+   * Each tuple: [CTS bit position, bytes to skip when bit is set].
+   * Bit positions match the server's CharacterTemporaryStat enum.
+   */
+  private static readonly REMOTE_STAT_SKIP: readonly [number, number][] = [
+    [7, 1],    // Speed → Decode1
+    [21, 1],   // ComboCounter → Decode1
+    [22, 4],   // WeaponCharge → Decode4
+    [17, 4],   // Stun → Decode4
+    [20, 4],   // Darkness → Decode4
+    [19, 4],   // Seal → Decode4
+    [30, 4],   // Weakness → Decode4
+    [31, 4],   // Curse → Decode4
+    [18, 6],   // Poison → Decode2 + Decode4
+    [26, 4],   // ShadowPartner → Decode4
+    [10, 0],   // DarkSight → flag only
+    [16, 0],   // SoulArrow → flag only
+    [33, 2],   // Morph → Decode2
+    [49, 2],   // Ghost → Decode2
+    [39, 4],   // Attract → Decode4
+    [40, 4],   // SpiritJavelin → Decode4
+    [46, 4],   // BanMap → Decode4
+    [50, 4],   // Barrier → Decode4
+    [62, 4],   // DojangShield → Decode4
+    [51, 4],   // ReverseInput → Decode4
+    [53, 4],   // RespectPImmune → Decode4
+    [54, 4],   // RespectMImmune → Decode4
+    [55, 4],   // DefenseAtt → Decode4
+    [56, 4],   // DefenseState → Decode4
+    [59, 0],   // DojangBerserk → flag only
+    [60, 0],   // DojangInvincible → flag only
+    [66, 0],   // WindWalk → flag only
+    [73, 4],   // RepeatEffect → Decode4
+    [75, 4],   // StopPortion → Decode4
+    [76, 4],   // StopMotion → Decode4
+    [77, 4],   // Fear → Decode4
+    [79, 4],   // MagicShield → Decode4
+    [82, 0],   // Flying → flag only
+    [83, 4],   // Frozen → Decode4
+    [86, 4],   // SuddenDeath → Decode4
+    [88, 4],   // FinalCut → Decode4
+    [101, 1],  // Cyclone → Decode1
+    [108, 0],  // Sneak → flag only
+    [91, 0],   // MorewildDamageUp → flag only
+    [109, 4],  // Mechanic → Decode4
+    [111, 4],  // DarkAura → Decode4
+    [112, 4],  // BlueAura → Decode4
+    [113, 4],  // YellowAura → Decode4
+    [117, 0],  // BlessingArmor → flag only
+  ];
+
+  /**
+   * Skip the remote secondary stat payload from an InPacket.
+   * Matches OG SecondaryStat::DecodeForRemote (0x72B7B0):
+   *   - 16-byte UINT128 flag
+   *   - per-stat variable data (order/size per REMOTE_STAT_SKIP)
+   *   - 2 trailing bytes (DefenseAtt, DefenseState)
+   *   - up to 7 two-state entries (bits 122-128), each 15 bytes when set
+   */
+  static skipForRemote(p: InPacket): void {
+    const maskLo = p.readLong();
+    const maskHi = p.readLong();
+    const mask = [maskLo, maskHi];
+
+    for (const [bit, nbytes] of SecondaryStat.REMOTE_STAT_SKIP) {
+      if (nbytes > 0 && bit < 128) {
+        const bigBit = BigInt(bit);
+        const isSet = bit < 64
+          ? (maskLo & (1n << bigBit)) !== 0n
+          : (maskHi & (1n << (bigBit - 64n))) !== 0n;
+        if (isSet) p.skip(nbytes);
+      }
+    }
+
+    // Trailing bytes: DefenseAtt_Elem (byte) + DefenseState_Stat (byte)
+    p.skip(2);
+
+    // Two-state entries: bits 122..128, each 15 bytes when set
+    // (Decode1 + Decode4 + Decode4 + Decode4 + Decode2 = 15)
+    for (let i = 0; i < 7; i++) {
+      const bit = 122 + i;
+      const bigBit = BigInt(bit);
+      const isSet = bit < 64
+        ? (maskLo & (1n << bigBit)) !== 0n
+        : (maskHi & (1n << (bigBit - 64n))) !== 0n;
+      if (isSet) p.skip(15);
+    }
+  }
 }

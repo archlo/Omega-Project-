@@ -1850,28 +1850,124 @@ export class FieldHandlers {
   }
 
   private handleUserEnter(p: InPacket): void {
+    // OG CUserRemote::Init @0x955460 — field order verified from IDA decompile.
+    // CUserPool reads charId before dispatching; the handler receives the rest.
     const charId = p.readInt();
     const level = p.readByte();
-    const name = p.readString(13);
-    try {
-      const guildName = p.readString(12);
-      const guildMarkBg = p.readShort();
-      const guildMarkBgColor = p.readByte();
-      const guildMark = p.readShort();
-      const guildMarkColor = p.readByte();
-      const look = AvatarCodec.DecodeAvatarLook(p);
-      const job = p.readInt();
-      const grade = p.readInt();
-      const chHair = p.readInt();
-      const chHairColor = p.readInt();
-      const chFace = p.readInt();
-      const sex = p.readInt();
-      const x = p.readShort();
-      const y = p.readShort();
-      this.onUserEnter?.({ charId, level, name, look, x, y, guildName, guildMarkBg, guildMarkBgColor, guildMark, guildMarkColor, job, grade, chHair, chHairColor, chFace, sex });
-    } catch {
-      this.onUserEnter?.({ charId, level, name, x: 0, y: 0 });
+    const name = p.readString();       // DecodeStr — maple length-prefixed
+    const guildName = p.readString();   // DecodeStr
+    const guildMarkBg = p.readShort();
+    const guildMarkBgColor = p.readByte();
+    const guildMark = p.readShort();
+    const guildMarkColor = p.readByte();
+
+    // SecondaryStat::DecodeForRemote — 16-byte flag + variable per-stat data
+    SecondaryStat.skipForRemote(p);
+
+    // Job is a SHORT (unsigned __int16), not an int
+    const job = p.readShort();
+
+    // AvatarLook is decoded AFTER job (OG: AvatarLook::AvatarLook(&v69, iPacket))
+    const look = AvatarCodec.DecodeAvatarLook(p);
+
+    // 6 ints: driverID, passengerID, chocoCount, activeEffectItemID,
+    //         completedSetItemID, portableChairID
+    const driverID = p.readInt();
+    const passengerID = p.readInt();
+    const chocoCount = p.readInt();
+    const activeEffectItemID = p.readInt();
+    const completedSetItemID = p.readInt();
+    const portableChairID = p.readInt();
+
+    // Position
+    const x = p.readShort();
+    const y = p.readShort();
+    const moveAction = p.readByte();
+    const foothold = p.readShort();
+
+    // adminEffect — read after CVecCtrl setup, passed to CUser::Init
+    const adminEffect = p.readByte();
+
+    // Pet loop: while Decode1() { create CPet, CPet::Init }
+    while (p.readByte() !== 0) {
+      // Pet data is complex (CPet::Init) — skip by consuming the known fields.
+      // CPet::Init reads: nPetIndex(1), sPetName(maple), nLevel(1), nTameness(2),
+      // nRepleteness(1), nPetSkill(1?), nActivatedSkill(1), nHP(2), nMP(2),
+      // nExp(4), nFullness(1), nFriendship(1)
+      // For now, we don't support remote pets — but we must consume the bytes.
+      // This will throw on the first unknown field, caught below.
+      // TODO: implement CPet::Init decode when remote pets are needed.
+      break; // no pets encoded by our server currently (loop body never reached)
     }
+
+    // TamingMob: 3 ints (level, exp, fatigue)
+    p.readInt(); // nTamingMobLevel
+    p.readInt(); // nTamingMobExp
+    p.readInt(); // nTamingMobFatigue
+
+    // MiniRoom: Decode1 type; if non-zero: sn(4), title(mapleStr), private(1),
+    //           gameKind(1), curUsers(1), maxUsers(1), gameOn(1)
+    const miniRoomType = p.readByte();
+    if (miniRoomType !== 0) {
+      p.readInt();           // m_dwMiniRoomSN
+      p.readString();        // m_sMiniRoomTitle
+      p.readByte();          // m_bPrivate
+      p.readByte();          // m_nGameKind
+      p.readByte();          // m_nCurUsers
+      p.readByte();          // m_nMaxUsers
+      p.readByte();          // m_bGameOn
+    }
+
+    // AD Board: Decode1 has; if true: DecodeStr msg
+    const hasAdBoard = p.readByte();
+    if (hasAdBoard) {
+      p.readString(); // AD board text
+    }
+
+    // CoupleRecord: Decode1 has; if true: 8+8 bytes + 4 byte int
+    const hasCouple = p.readByte();
+    if (hasCouple) {
+      p.skip(8); // m_liCoupleItemSN
+      p.skip(8); // m_liPairItemSN
+      p.readInt(); // partnerCharId
+    }
+
+    // FriendshipRecord: Decode1 has; if true: 8+8 bytes + 4 byte int
+    const hasFriendship = p.readByte();
+    if (hasFriendship) {
+      p.skip(8); // m_liFriendshipItemSN
+      p.skip(8); // m_liFriendshipPairItemSN
+      p.readInt(); // partnerCharId
+    }
+
+    // MarriageRecord: Decode1 has; if true: 3 × 4 byte ints
+    const hasMarriage = p.readByte();
+    if (hasMarriage) {
+      p.readInt(); // m_dwMarriageCharacterID
+      p.readInt(); // m_dwMarriagePairCharacterID
+      p.readInt(); // m_nWeddingRingID
+    }
+
+    // Effect flags: Decode1 — dark force, dragon, swallowing effects
+    const effectFlags = p.readByte();
+
+    // NewYearCards: Decode1 has; if true: Decode4 count, then count × Decode4 cardId
+    const hasNewYearCards = p.readByte();
+    if (hasNewYearCards) {
+      const cardCount = p.readInt();
+      for (let i = 0; i < cardCount; i++) {
+        p.readInt(); // cardId
+      }
+    }
+
+    // Phase
+    const phase = p.readInt();
+
+    this.onUserEnter?.({
+      charId, level, name, look, x, y, moveAction, foothold, job,
+      guildName, guildMarkBg, guildMarkBgColor, guildMark, guildMarkColor,
+      adminEffect,
+    });
   }
 
   private handleUserLeave(p: InPacket): void {
