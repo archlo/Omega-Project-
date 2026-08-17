@@ -376,43 +376,65 @@ describe('FieldHandlers', () => {
   });
 
   it('UserEnterField fires callback', () => {
-    // Build a raw payload buffer for UserEnterField
-    // format: charId(4) + level(1) + name(13) + guild(12) + short + byte + short + byte + AvatarLook + 6*int + short(x) + short(y)
-    const raw = new Uint8Array([
-      0xD1, 0x07, 0x00, 0x00, // charId=2001
-      0x1E, // level=30
-      // name 'TestUser' (13 bytes)
-      0x54, 0x65, 0x73, 0x74, 0x55, 0x73, 0x65, 0x72, 0x00, 0x00, 0x00, 0x00, 0x00,
-      // guild '' (12 bytes)
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, // short 0
-      0x00, // byte 0
-      0x00, 0x00, // short 0
-      0x00, // byte 0
-      // AvatarLook (empty)
-      0x00, // gender
-      0x00, // skin
-      0x00, 0x00, 0x00, 0x00, // face
-      0x00, // ?
-      0x00, 0x00, 0x00, 0x00, // hair
-      0xFF, // equip terminator
-      0xFF, // unseen terminator
-      0x00, 0x00, 0x00, 0x00, // weaponStickerId
-      0x00, 0x00, 0x00, 0x00, // petId[0]
-      0x00, 0x00, 0x00, 0x00, // petId[1]
-      0x00, 0x00, 0x00, 0x00, // petId[2]
-      // 6 padding ints
-      0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00,
-      // x=500, y=600
-      0xF4, 0x01,
-      0x58, 0x02,
-    ]);
-    expect(raw.length).toBe(93);
+    // OG CUserRemote::Init field order (verified from IDA decompile 0x955460):
+    // charId(int) + level(byte) + name(mapleStr) + guildName(mapleStr) +
+    // guildMarkBg(short) + guildMarkBgColor(byte) + guildMark(short) + guildMarkColor(byte) +
+    // SecondaryStat::DecodeForRemote (16-byte flag + trailing 2 bytes) +
+    // job(short) + AvatarLook + 6×int + x(short) + y(short) + moveAction(byte) +
+    // foothold(short) + adminEffect(byte) + pets(byte 0) + 3×int(tamingMob) +
+    // miniRoom(byte 0) + adBoard(byte 0) + couple(byte 0) + friendship(byte 0) +
+    // marriage(byte 0) + effectFlags(byte 0) + newYearCards(byte 0) + phase(int)
+    const p = OutPacket.Raw();
+    p.writeInt(2001);           // charId
+    p.writeByte(30);            // level
+    p.writeString('TestUser');  // name (maple string)
+    p.writeString('');          // guildName (maple string, empty)
+    p.writeShort(0);            // guildMarkBg
+    p.writeByte(0);             // guildMarkBgColor
+    p.writeShort(0);            // guildMark
+    p.writeByte(0);             // guildMarkColor
+    // SecondaryStat::DecodeForRemote — empty: 16-byte flag(0) + 2 trailing bytes(0,0)
+    for (let i = 0; i < 16; i++) p.writeByte(0);
+    p.writeByte(0);             // DefenseAtt_Elem trailing
+    p.writeByte(0);             // DefenseState_Stat trailing
+    p.writeShort(0);            // job (short!)
+    // AvatarLook (empty)
+    p.writeByte(0);             // gender
+    p.writeByte(0);             // skin
+    p.writeInt(0);              // face
+    p.writeByte(0);             // padding
+    p.writeInt(0);              // hair
+    p.writeByte(0xFF);          // hairEquip terminator
+    p.writeByte(0xFF);          // unseenEquip terminator
+    p.writeInt(0);              // weaponStickerId
+    p.writeInt(0);              // petId[0]
+    p.writeInt(0);              // petId[1]
+    p.writeInt(0);              // petId[2]
+    // 6 ints
+    p.writeInt(0);              // driverID
+    p.writeInt(0);              // passengerID
+    p.writeInt(0);              // chocoCount
+    p.writeInt(0);              // activeEffectItemID
+    p.writeInt(0);              // completedSetItemID
+    p.writeInt(0);              // portableChairID
+    // position
+    p.writeShort(500);          // x
+    p.writeShort(600);          // y
+    p.writeByte(0);             // moveAction
+    p.writeShort(0);            // foothold
+    p.writeByte(0);             // adminEffect
+    p.writeByte(0);             // pets: end-of-loop marker
+    // tamingMob
+    p.writeInt(0); p.writeInt(0); p.writeInt(0);
+    p.writeByte(0);             // miniRoom type (none)
+    p.writeByte(0);             // adBoard (none)
+    p.writeByte(0);             // coupleRecord (none)
+    p.writeByte(0);             // friendshipRecord (none)
+    p.writeByte(0);             // marriageRecord (none)
+    p.writeByte(0);             // effectFlags
+    p.writeByte(0);             // newYearCards (none)
+    p.writeInt(0);              // phase
+    const raw = p.toArray();
     const args: Args[] = [];
     handlers.onUserEnter = (a) => args.push(a as any);
     dispatchPayload(router, OutHeader.UserEnterField, raw);
@@ -420,8 +442,11 @@ describe('FieldHandlers', () => {
     expect(args[0].charId).toBe(2001);
     expect(args[0].level).toBe(30);
     expect(args[0].name).toBe('TestUser');
+    expect(args[0].job).toBe(0);
     expect(args[0].x).toBe(500);
     expect(args[0].y).toBe(600);
+    expect(args[0].moveAction).toBe(0);
+    expect(args[0].foothold).toBe(0);
     expect(args[0].look).toBeDefined();
   });
 
