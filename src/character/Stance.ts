@@ -35,12 +35,8 @@ export function StanceToWzKey(s: Stance): string {
 
 /** Inverse of StanceMoveAction's stance-index table — decodes a MoveElement's
     `moveAction` byte (low nibble = stance index, bit 4 = facing-left) back
-    into a Stance + facing. Indices not produced by StanceMoveAction (ladder/
-    rope/fly/dead, and any value outside the table) fall back to Stand1,
-    matching this client's existing one-directional (encode-only) coverage —
-    not a confirmed OG index for those stances. (The dead action is a separate
-    m_nMoveAction value, not a move-path stance nibble — remote death is driven
-    by the UserReceiveHP packet instead.) */
+    into a Stance + facing. The dead action is a separate m_nMoveAction value,
+    not a move-path stance nibble — remote death is driven by UserReceiveHP. */
 export function MoveActionToStance(moveAction: number): { stance: Stance; facingLeft: boolean } {
   const facingLeft = ((moveAction >> 4) & 1) !== 0;
   const stIdx = moveAction & 0x0F;
@@ -51,6 +47,8 @@ export function MoveActionToStance(moveAction: number): { stance: Stance; facing
       case 2: return Stance.Walk1;
       case 3: return Stance.Walk2;
       case 5: return Stance.Jump;
+      case 6: return Stance.Ladder;
+      case 7: return Stance.Rope;
       case 8: return Stance.Alert;
       case 12: return Stance.Prone;
       case 15: return Stance.Sit;
@@ -68,6 +66,8 @@ export function StanceMoveAction(s: Stance, facingLeft: boolean): number {
       case Stance.Walk1: return 2;
       case Stance.Walk2: return 3;
       case Stance.Jump: return 5;
+      case Stance.Ladder: return 6;
+      case Stance.Rope: return 7;
       case Stance.Alert: return 8;
       case Stance.Prone: return 12;
       case Stance.Sit: return 15;

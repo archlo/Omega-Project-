@@ -1082,19 +1082,18 @@ export class PlayerController {
       return true;
     }
 
-    // OG: climbing movement — walkSpeed * inputY * 3.0 per frame
+    // OG: climbing movement — walkSpeed * inputY * 3.0 per tick at 30fps.
     // IDA: this->m_ap.y = walkSpeed * (inputY * 3.0) + currentY
-    // OG uses pixels-per-tick velocity (30fps), not pixels-per-second.
-    // Our system uses dt-based physics, so we scale by 30 to get px/s.
+    // _walkSpeed is in px/s (125 base).  In the OG per-tick path, walkSpeed
+    // from the shoe is already in px/tick (= _walkSpeed/30).  The climbing
+    // displacement per tick is thus (walkSpeed/30)*3.0, which as a rate equals
+    // walkSpeed * 3.0 px/s.  That's 3× the walk speed cap, matching OG feel.
     const iy = this._climbGrabFrame ? 0 : (input.Up ? -1 : 0) + (input.Down ? 1 : 0);
     this._climbGrabFrame = false;
-    // OG displacement per frame = walkSpeed * inputY * 3.0
-    // Convert to px/s: multiply by 30 (frame rate)
-    const climbSpeed = this._walkSpeed * 3.0 * 30;
+    const climbSpeed = this._walkSpeed * 3.0;
     this._velocity = { x: 0, y: iy * climbSpeed };
     this.ClimbMoving = iy !== 0;
 
-    // Position update uses dt (not raw per-frame like OG)
     const newY = this.Position.y + iy * climbSpeed * dt;
 
     // OG: boundary checks — top first, then bottom
