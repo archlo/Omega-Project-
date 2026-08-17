@@ -144,8 +144,8 @@ export interface UserAttackArgs {
   ballStart?: { x: number; y: number };
 }
 
-export interface DropEnterArgs { dropId: number; isMoney: boolean; itemIdOrAmount: number; ownerId: number; sourceId: number; x: number; y: number; sourceX?: number; sourceY?: number; animated?: boolean; }
-export interface DropLeaveArgs { dropId: number; leaveType: number; pickUpId?: number; }
+export interface DropEnterArgs { dropId: number; isMoney: boolean; itemIdOrAmount: number; ownerId: number; sourceId: number; x: number; y: number; sourceX?: number; sourceY?: number; animated?: boolean; fading?: boolean; }
+export interface DropLeaveArgs { dropId: number; leaveType: number; pickUpId?: number; petIndex?: number; delay?: number; }
 
 export interface InventoryOpArg { opType: number; invType: number; pos: number; itemId?: number; quantity?: number; attribute?: number; newPos?: number; equipExp?: number; petLevel?: number; petTameness?: number; petRepleteness?: number; petRemainLife?: number; equipStats?: EquipStats; }
 export interface UserChatArgs { charId: number; chatType: number; text: string; }

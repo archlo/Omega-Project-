@@ -6644,6 +6644,8 @@ this._localCharId = args.characterId ?? 0;
       { x: args.x, y: args.y },
       args.animated ?? false,
       icon,
+      undefined,
+      args.fading ?? false,
     );
     drop.nameOf = this._itemNameOf;
     this._drops.push(drop);
@@ -6673,6 +6675,11 @@ this._localCharId = args.characterId ?? 0;
       this._fieldSounds?.PlayPickUp();
       const drop = this._drops.find((d) => d.DropId === args.dropId);
       if (drop) { drop.StartAbsorb(() => this._player!.Position); return; }
+    }
+    // OG: meso explosion scatter — drops fly outward with random velocity then fade
+    if (args.leaveType === DropLeaveType.Explode) {
+      const drop = this._drops.find((d) => d.DropId === args.dropId);
+      if (drop) { drop.StartExplode(); return; }
     }
     this._drops = this._drops.filter(d => d.DropId !== args.dropId);
   }

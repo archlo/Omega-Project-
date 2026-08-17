@@ -7,6 +7,7 @@ export class DropSprite {
   Layer = 7;
 
   private static readonly Vy = 400;
+  private static readonly FadeDur = 3.0; // FadingOut duration in seconds
   private _source: { x: number; y: number };
   private _ground: { x: number; y: number };
   private _tEnd: number;
@@ -19,6 +20,7 @@ export class DropSprite {
   private _absorbTarget: (() => { x: number; y: number }) | null = null;
   private _absorbT = 0;
   private _alpha = 1;
+  private _explodeVel = { x: 0, y: 0 };
   private static readonly AbsorbDur = 0.4;
   Finished = false;
   nameOf: (id: number) => string = () => '';
@@ -32,13 +34,15 @@ export class DropSprite {
     animated: boolean,
     icon?: WzSprite | null,
     font?: unknown,
+    fading = false,
   ) {
     this._ground = { x: ground.x, y: ground.y };
     this._source = animated ? { x: source.x, y: source.y } : { x: ground.x, y: ground.y };
     this._icon = icon ?? null;
     this._tEnd = this._parabolicDuration(this._source.y, this._ground.y);
-    this._state = animated ? 1 : 3;
-    this.Position = { x: this._source.x, y: this._source.y };
+    // state 1=parabolic fall, 2=fall after apex, 3=idle bob, 4=fading out
+    this._state = fading ? 4 : (animated ? 1 : 3);
+    this.Position = fading ? { x: ground.x, y: ground.y } : { x: this._source.x, y: this._source.y };
     this._rebuildDisplay();
   }
 
@@ -47,6 +51,15 @@ export class DropSprite {
     this._absorbFrom = { x: this.Position.x, y: this.Position.y };
     this._absorbTarget = target;
     this._absorbT = 0;
+  }
+
+  /** Meso explosion scatter: fly outward with random velocity + fade. */
+  StartExplode(): void {
+    this._state = 5; // exploding
+    this._tick = 0;
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 150 + Math.random() * 200;
+    this._explodeVel = { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed - 200 };
   }
 
   private _parabolicDuration(y1: number, y2: number): number {
@@ -91,7 +104,25 @@ export class DropSprite {
         else this.Position = { x: this._ground.x, y };
         break;
       }
+      case 5: {
+        // Explode scatter: apply velocity + gravity, fade out
+        this._tick += dt;
+        this._explodeVel.y += 600 * dt; // gravity
+        this.Position = {
+          x: this.Position.x + this._explodeVel.x * dt,
+          y: this.Position.y + this._explodeVel.y * dt,
+        };
+        this._alpha = Math.max(0, 1 - this._tick / 0.6);
+        if (this._alpha <= 0) { this.Finished = true; return; }
+        break;
+      }
       default: {
+        // state 3 = idle bob, state 4 = fading out
+        if (this._state === 4) {
+          this._tick += dt;
+          this._alpha = Math.max(0, 1 - this._tick / DropSprite.FadeDur);
+          if (this._alpha <= 0) { this.Finished = true; return; }
+        }
         this._angle += Math.PI * dt;
         this.Position = { x: this._ground.x, y: this._ground.y + Math.sin(this._angle) * 3 };
         break;

@@ -2163,49 +2163,61 @@ export class FieldHandlers {
   }
 
   private handleDropEnter(p: InPacket): void {
-    // OG: CDropPool::OnDropEnterField (decompile/516670.c). A real int
-    // dwSourceID is encoded right after pt2.y (the landing position) and
-    // before the conditional pt1.x/pt1.y/tDelay (source position) block —
-    // this was previously missing entirely, which misaligned every read
-    // after it: the exposed sourceX/sourceY were actually reading
-    // dwSourceID's bytes instead of the real source position, so every
-    // animated drop arced in from a wrong/garbage position instead of the
-    // mob/player that dropped it.
+    // OG: CDropPool::OnDropEnterField — server writes:
+    //   enterType:byte, dropId:int, isMoney:bool, info:int, ownerId:int, ownType:byte,
+    //   x:short, y:short, sourceId:int,
+    //   if enterType != OnTheFoothold: srcX:short, srcY:short, delay:short,
+    //   if !isMoney: dateExpire:8bytes (FILETIME low+high int),
+    //   bByPet:bool, trailing:bool
     const enterType = p.readByte();
     const dropId = p.readInt();
     const isMoney = p.readBool();
     const info = p.readInt();
     const ownerId = p.readInt();
-    p.readByte();
+    p.readByte(); // ownType
     const x = p.readShort();
     const y = p.readShort();
     const sourceId = p.readInt();
-    // OG: source position block is written for all enter types except
-    // ON_THE_FOOTHOLD (server writes it whenever enterType != 2).
-    // Only Create (1) triggers the parabolic fall animation in DropSprite.
     const hasSourcePos = enterType !== DropEnterType.OnTheFoothold;
     const animated = enterType === DropEnterType.Create;
+    const fading = enterType === DropEnterType.FadingOut;
     let sx = x, sy = y;
     if (hasSourcePos) {
-      try {
-        sx = p.readShort();
-        sy = p.readShort();
-        p.readShort();
-      } catch { /* source position not available */ }
+      sx = p.readShort();
+      sy = p.readShort();
+      p.readShort(); // delay
     }
-    this.onDropEnter?.({ dropId, isMoney, itemIdOrAmount: info, ownerId, sourceId, x, y, sourceX: sx, sourceY: sy, animated });
+    if (!isMoney) {
+      p.readInt(); // dateExpire low
+      p.readInt(); // dateExpire high
+    }
+    const bByPet = p.readBool();
+    p.readBool(); // trailing
+    this.onDropEnter?.({ dropId, isMoney, itemIdOrAmount: info, ownerId, sourceId, x, y, sourceX: sx, sourceY: sy, animated, fading });
   }
 
   private handleDropLeave(p: InPacket): void {
+    // OG: CDropPool::OnDropLeaveField — server writes:
+    //   leaveType:byte, dropId:int,
+    //   if PICKED_UP_BY_USER/MOB/PET: pickUpId:int,
+    //   if PICKED_UP_BY_PET: petIndex:int,
+    //   if EXPLODE: delay:short
     const leaveType = p.readByte();
     const dropId = p.readInt();
     let pickUpId = 0;
+    let petIndex = -1;
+    let delay = 0;
     if (leaveType === DropLeaveType.PickedUpByUser
         || leaveType === DropLeaveType.PickedUpByMob
         || leaveType === DropLeaveType.PickedUpByPet) {
-      try { pickUpId = p.readInt(); } catch {}
+      pickUpId = p.readInt();
+      if (leaveType === DropLeaveType.PickedUpByPet) {
+        petIndex = p.readInt();
+      }
+    } else if (leaveType === DropLeaveType.Explode) {
+      delay = p.readShort();
     }
-    this.onDropLeave?.({ dropId, leaveType, pickUpId });
+    this.onDropLeave?.({ dropId, leaveType, pickUpId, petIndex, delay });
   }
 
   private handleMessage(p: InPacket): void {
