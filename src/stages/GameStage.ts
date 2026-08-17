@@ -1489,7 +1489,7 @@ export class GameStage extends Stage {
     // opens CUIRevive exactly 2200ms after death (see _reviveDialogClockMs in the
     // per-frame update).
 
-    this._worldMap = new WorldMap(this._loader, this._mapWz);
+    this._worldMap = new WorldMap(this._loader, this._mapWz, uiWz);
     // TODO_AUDIT.md 150th pass: click a map ID row in the transfer list to teleport.
     this._worldMap.onTeleportToMap = (mapId) => {
       this.game.session.send(GameSender.MapTransferRequest(0, true, mapId));

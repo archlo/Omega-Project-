@@ -7,6 +7,7 @@ import { WzImage } from '../../wz/WzImage.js';
 import { WzProperty } from '../../wz/WzProperty.js';
 import { WzCanvas } from '../../wz/WzCanvas.js';
 import { Button } from '../Button.js';
+import { ToolTip } from './ToolTip.js';
 
 /**
  * OG: CWorldMapDlg — world map dialog.
@@ -28,6 +29,15 @@ const BTN_QUEST_TOGGLE = 2000;
 /** OG: Draw blits the base canvas raw at (13, 24). */
 const BASE_X = 13;
 const BASE_Y = 24;
+
+// OG: MakeBorder — window dimensions from CWorldMapDlg::OnCreate.
+const WM_WIDTH = 800;
+const WM_HEIGHT = 600;
+
+// OG: MakeBorder border slice indices in UIWindow2.img/WorldMap/Border.
+// NX dump: 0=64x27 TL, 1=1x27 L, 2=64x27 TR, 3=64x1 top,
+//          4=64x1 bottom, 5=64x27 BL, 6=1x27 R, 7=64x27 BR.
+const BORDER_COUNT = 8;
 
 /** A clickable spot (WORLDMAP_ITEM) on the world map. */
 interface WorldMapSpot {
@@ -59,6 +69,7 @@ export class WorldMap extends GamePanel {
   // State
   private _loader: WzTextureLoader | null;
   private _mapWz: WzPackage | null;
+  private _uiWz: WzPackage | null;
   private _currentMapName = '';
   private _lastFieldId = -1;
   private _baseCanvas: WzSprite | null = null;
@@ -77,22 +88,32 @@ export class WorldMap extends GamePanel {
   // UI
   private _bg: Graphics;
   private _content: Container;
+  private _borderLayer: Container;
+  private _borderBuilt = false;
   private _btClose: Button | null = null;
   private _btQuestToggle: Button | null = null;
+  private _toolTip: ToolTip;
 
-  constructor(loader?: WzTextureLoader | null, mapWz?: WzPackage | null) {
+  constructor(loader?: WzTextureLoader | null, mapWz?: WzPackage | null, uiWz?: WzPackage | null) {
     super();
     this.isVisible = false;
     this.draggable = false;
     this._loader = loader ?? null;
     this._mapWz = mapWz ?? null;
+    this._uiWz = uiWz ?? null;
 
     this._bg = new Graphics();
+    this._borderLayer = new Container();
     this._content = new Container();
+    this._toolTip = new ToolTip();
+
     this._rebuildBg();
     this._root.addChild(this._bg);
+    this._root.addChild(this._borderLayer);
     this._root.addChild(this._content);
+    this._root.addChild(this._toolTip.container);
     this._createButtons();
+    this._makeBorder();
   }
 
   // ── World map mode ─────────────────────────────────────────────────
@@ -198,6 +219,7 @@ export class WorldMap extends GamePanel {
     this._loadMarkers();
     this._loadMapList(prop);
     this._loadMapLink(prop);
+    if (this._questToggle) this._scoreLinkMap();
     return true;
   }
 
@@ -357,22 +379,162 @@ export class WorldMap extends GamePanel {
     this._btClose = closeNode instanceof WzProperty
       ? Button.fromWz(this._loader ?? new WzTextureLoader(), closeNode, 'Close')
       : new Button('Close');
-    this._btClose.container.position.set(800 - 22, 4);
+    this._btClose.container.position.set(WM_WIDTH - 22, 4);
     this._btClose.onClick = () => { this.isVisible = false; };
     this._root.addChild(this._btClose.container);
 
     // OG: CreateCtrl_2(2000, m_width-65, 4) — quest toggle at top-right
     this._btQuestToggle = new Button(this._questToggle ? '?' : '!');
-    this._btQuestToggle.container.position.set(800 - 65, 4);
-    this._btQuestToggle.onClick = () => { this._questToggle = !this._questToggle; };
+    this._btQuestToggle.container.position.set(WM_WIDTH - 65, 4);
+    this._btQuestToggle.onClick = () => {
+      this._questToggle = !this._questToggle;
+      this._updateQuestToggle();
+    };
     this._root.addChild(this._btQuestToggle.container);
+  }
+
+  /**
+   * OG: OnButtonClicked id=2000 — toggles quest mode, persists via
+   * CConfig::SetQuestGuideOption, re-runs SetWorldMap (which calls
+   * ScoreLinkMap), and releases the quest-guide tip balloon.
+   */
+  private _updateQuestToggle(): void {
+    // Re-run SetWorldMap on the current map to score links for quest mode
+    const current = this._loadMapProp(this._currentMapName.replace(/^WorldMap\//, '').replace(/\.img$/, ''));
+    if (current) this._setWorldMap(current);
+  }
+
+  /**
+   * OG: ScoreLinkMap (0x9B83B0) — scores each MapLink against quest mob
+   * and demand-item lists. When quest toggle is active, links with the
+   * highest score are visually prioritized (the link image for the
+   * best-scoring link gets drawn).
+   */
+  private _scoreLinkMap(): void {
+    // Structural stub — requires CQuestMan data (mob lists, demand items)
+    // which is populated at runtime from the quest system. Without quest
+    // state wired, this is a no-op. When quest data becomes available,
+    // score each MapLink's linkMap against the current quest objectives
+    // and select the highest-scoring link.
   }
 
   private _rebuildBg(): void {
     this._bg.clear();
-    this._bg.rect(0, 0, 800, 600).fill({ color: '#080A14', alpha: 245 / 255 });
-    this._bg.rect(0, 0, 800, 600).stroke({ color: '#3C4164', width: 1 });
-    this._bg.rect(0, 0, 800, 22).fill({ color: '#0F1224' });
+    this._bg.rect(0, 0, WM_WIDTH, WM_HEIGHT).fill({ color: '#080A14', alpha: 245 / 255 });
+    this._bg.rect(0, 0, WM_WIDTH, WM_HEIGHT).stroke({ color: '#3C4164', width: 1 });
+    this._bg.rect(0, 0, WM_WIDTH, 22).fill({ color: '#0F1224' });
+  }
+
+  // ── MakeBorder (0x9B6490) ──────────────────────────────────────────
+
+  /**
+   * OG: MakeBorder (0x9B6490) — composites the 9-slice border chrome from
+   * UIWindow2.img/WorldMap onto a white-filled canvas.
+   *
+   * Border slices (NX dump):   *   0 = 64×27 top-left corner   *   1 = 1×27  left edge (tiled vertically)
+   *   2 = 64×27 top-right corner
+   *   3 = 64×1  top edge (tiled horizontally)
+   *   4 = 64×1  bottom edge (tiled horizontally)
+   *   5 = 64×27 bottom-left corner
+   *   6 = 1×27  right edge (tiled vertically)
+   *   7 = 64×27 bottom-right corner
+   *
+   * Draw order: white fill → horizontal edges → vertical edges → corners → title.
+   */
+  private _makeBorder(): void {
+    if (this._borderBuilt) return;
+    this._borderLayer.removeChildren();
+
+    const uiWz = this._uiWz;
+    const loader = this._loader;
+    if (!uiWz || !loader) {
+      this._borderBuilt = true;
+      return;
+    }
+
+    // Load all 8 border slices + title from UIWindow2.img/WorldMap.
+    const slices: (WzSprite | null)[] = [];
+    for (let i = 0; i < BORDER_COUNT; i++) {
+      const node = uiWz.GetItem(`UIWindow2.img/WorldMap/Border/${i}`);
+      slices.push(node instanceof WzCanvas ? loader.Load(node) : null);
+    }
+    const titleNode = uiWz.GetItem('UIWindow2.img/WorldMap/title');
+    const titleSprite = titleNode instanceof WzCanvas ? loader.Load(titleNode) : null;
+
+    // If any critical slices are missing, fall back to the Graphics border.
+    const hasAllSlices = slices.every((s) => s !== null);
+    if (!hasAllSlices) {
+      this._borderBuilt = true;
+      return;
+    }
+
+    // White background fill (OG: fills m_pBackgrnd with 0xFFFFFF first).
+    const bg = new Graphics();
+    bg.rect(0, 0, WM_WIDTH, WM_HEIGHT).fill({ color: 0xFFFFFF });
+    this._borderLayer.addChild(bg);
+
+    // Horizontal edges — tiled from x=64 to x=WM_WIDTH-64.
+    // Top edge = Border/3 (64×1), bottom edge = Border/4 (64×1).
+    const topEdge = slices[3]!;
+    const bottomEdge = slices[4]!;
+    for (let x = 64; x < WM_WIDTH - 64; x += topEdge.Width) {
+      const s1 = topEdge.NewSprite();
+      s1.anchor.set(0, 0);
+      s1.x = x;
+      s1.y = 0;
+      this._borderLayer.addChild(s1);
+
+      const s2 = bottomEdge.NewSprite();
+      s2.anchor.set(0, 0);
+      s2.x = x;
+      s2.y = WM_HEIGHT - 27;
+      this._borderLayer.addChild(s2);
+    }
+
+    // Vertical edges — tiled from y=27 to y=WM_HEIGHT-27.
+    // Left edge = Border/1 (1×27), right edge = Border/6 (1×27).
+    const leftEdge = slices[1]!;
+    const rightEdge = slices[6]!;
+    for (let y = 27; y < WM_HEIGHT - 27; y += leftEdge.Height) {
+      const s1 = leftEdge.NewSprite();
+      s1.anchor.set(0, 0);
+      s1.x = 0;
+      s1.y = y;
+      this._borderLayer.addChild(s1);
+
+      const s2 = rightEdge.NewSprite();
+      s2.anchor.set(0, 0);
+      s2.x = WM_WIDTH - 64;
+      s2.y = y;
+      this._borderLayer.addChild(s2);
+    }
+
+    // Corners (64×27 each).
+    // TL=0 at (0,0), TR=2 at (WM_WIDTH-64, 0), BL=5 at (0, WM_HEIGHT-27), BR=7 at (WM_WIDTH-64, WM_HEIGHT-27).
+    const cornerPositions: [WzSprite, number, number][] = [
+      [slices[0]!, 0, 0],
+      [slices[2]!, WM_WIDTH - 64, 0],
+      [slices[5]!, 0, WM_HEIGHT - 27],
+      [slices[7]!, WM_WIDTH - 64, WM_HEIGHT - 27],
+    ];
+    for (const [slice, cx, cy] of cornerPositions) {
+      const s = slice.NewSprite();
+      s.anchor.set(0, 0);
+      s.x = cx;
+      s.y = cy;
+      this._borderLayer.addChild(s);
+    }
+
+    // Title (57×15) at (304, 0).
+    if (titleSprite) {
+      const ts = titleSprite.NewSprite();
+      ts.anchor.set(0, 0);
+      ts.x = 304;
+      ts.y = 0;
+      this._borderLayer.addChild(ts);
+    }
+
+    this._borderBuilt = true;
   }
 
   // ── Drawing (OG: Draw 0x9BA060) ─────────────────────────────────────
@@ -501,6 +663,30 @@ export class WorldMap extends GamePanel {
     return changed;
   }
 
+  /**
+   * OG: CWorldMapDlg::OnMouseMove (0x9BAE40) — calls CheckSpotInfo +
+   * CheckLinkInfo, then shows tooltip for the hovered spot or link.
+   */
+  private _updateToolTip(rx: number, ry: number): void {
+    // Spot tooltip
+    if (this._selectedSpotTT >= 0) {
+      const spot = this._spots[this._selectedSpotTT];
+      if (spot && !spot.bNoToolTip && (spot.title || spot.desc)) {
+        this._toolTip.setToolTipString2(rx, ry + 20, spot.title, spot.desc);
+        return;
+      }
+    }
+    // Link tooltip
+    if (this._selectedLink >= 0) {
+      const link = this._links[this._selectedLink];
+      if (link?.toolTip) {
+        this._toolTip.setToolTipString2(rx, ry + 20, link.toolTip, '');
+        return;
+      }
+    }
+    this._toolTip.clearToolTip();
+  }
+
   handleMouseButton(mx: number, my: number, down: boolean): boolean {
     if (!this.isVisible) return false;
 
@@ -539,7 +725,7 @@ export class WorldMap extends GamePanel {
       return true;
     }
 
-    return lx >= 0 && lx < 800 && ly >= 0 && ly < 600;
+    return lx >= 0 && lx < WM_WIDTH && ly >= 0 && ly < WM_HEIGHT;
   }
 
   onMouseMove(mx: number, my: number): void {
@@ -548,6 +734,7 @@ export class WorldMap extends GamePanel {
     const ly = my - this._root.y;
     this._checkSpotInfo(lx, ly);
     this._checkLinkInfo(lx, ly);
+    this._updateToolTip(lx, ly);
   }
 
   handleWheel(_dx: number, _dy: number): void {
@@ -556,7 +743,11 @@ export class WorldMap extends GamePanel {
 
   onKeyPress(key: string): boolean {
     if (!this.isVisible) return false;
-    if (key === 'Escape') { this.isVisible = false; return true; }
+    if (key === 'Escape') {
+      this.isVisible = false;
+      this._toolTip.clearToolTip();
+      return true;
+    }
     return true;
   }
 
