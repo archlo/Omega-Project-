@@ -510,14 +510,12 @@ describe('FieldHandlers', () => {
     const args: Args[] = [];
     handlers.onDropEnter = (a) => args.push(a as any);
     const p = OutPacket.Raw();
-    // enterType=0 ("Show") is one of OG's animated cases (decompile/516670.c:
-    // `(unsigned)nEnterType < 2 || ==3 || ==4`), so a real packet for it
-    // includes dwSourceID followed by the pt1.x/pt1.y/tDelay source-position
-    // block — both omitted here previously, which only "worked" because the
-    // old (buggy) decode never read dwSourceID at all.
+    // enterType=0 (JustShowing) with source position block + trailing bByPet + trailing bool
     p.writeByte(0); p.writeInt(9001); p.writeByte(1); p.writeInt(1000); p.writeInt(42);
     p.writeByte(0); p.writeShort(50); p.writeShort(75);
     p.writeInt(777); p.writeShort(10); p.writeShort(20); p.writeShort(0);
+    // isMoney=true so no dateExpire, then bByPet + trailing
+    p.writeByte(0); p.writeByte(0);
     dispatchPayload(router, OutHeader.DropEnterField, p.toArray());
     expect(args).toHaveLength(1);
     expect(args[0].dropId).toBe(9001);
@@ -574,11 +572,12 @@ describe('FieldHandlers', () => {
     const args: Args[] = [];
     handlers.onDropLeave = (a) => args.push(a as any);
     const p = OutPacket.Raw();
-    p.writeByte(2); p.writeInt(9002);
+    p.writeByte(2); p.writeInt(9002); p.writeInt(12345); // leaveType=PickedUpByUser, pickUpId=12345
     dispatchPayload(router, OutHeader.DropLeaveField, p.toArray());
     expect(args).toHaveLength(1);
     expect(args[0].dropId).toBe(9002);
     expect(args[0].leaveType).toBe(2);
+    expect(args[0].pickUpId).toBe(12345);
   });
 
   it('InventoryOperation fires with ops array', () => {
