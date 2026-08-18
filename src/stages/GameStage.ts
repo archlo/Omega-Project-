@@ -5859,10 +5859,18 @@ this._localCharId = args.characterId ?? 0;
       const weaponId = this._equip.equippedWeaponItemId;
       const wt = weaponId !== null ? getWeaponType(weaponId) : 0;
       const attr = weaponId !== null ? this._itemIcons?.LoadAttr(weaponId) : null;
-      const dmgRange = calcDamageRange(this._job, wt, attr?.IncPad ?? 0, attr?.IncMad ?? 0, this._stats.str, this._stats.dex, this._stats.intStat, this._stats.luk, 0);
+      // OG: the damage range must reflect the equipped weapon's INSTANCE stats
+      // (base + scrolling + options) the same way the stat window does, not the
+      // bare WZ template. `_equipStats` is keyed by bodyPart (weapon = 11) and
+      // holds the per-instance GW_ItemSlotEquip bonuses; fall back to the
+      // template attr when the instance stats aren't present.
+      const weaponStats = this._equipStats.get(11);
+      const watk = weaponStats?.incPad ?? attr?.IncPad ?? 0;
+      const matk = weaponStats?.incMad ?? attr?.IncMad ?? 0;
+      const dmgRange = calcDamageRange(this._job, wt, watk, matk, this._stats.str, this._stats.dex, this._stats.intStat, this._stats.luk, 0);
       const dmg = dmgRange.min + Math.floor(Math.random() * (dmgRange.max - dmgRange.min + 1));
       // TEMP DEBUG: 1-hit kill investigation
-      console.log(`[MeleeDbgClient] job=${this._job} wt=${wt} incPad=${attr?.IncPad} incMad=${attr?.IncMad} str=${this._stats.str} dex=${this._stats.dex} int=${this._stats.intStat} luk=${this._stats.luk} range=${dmgRange.min}-${dmgRange.max} dmg=${dmg} weaponId=${weaponId}`);
+      console.log(`[MeleeDbgClient] job=${this._job} wt=${wt} incPad=${watk} incMad=${matk} str=${this._stats.str} dex=${this._stats.dex} int=${this._stats.intStat} luk=${this._stats.luk} range=${dmgRange.min}-${dmgRange.max} dmg=${dmg} weaponId=${weaponId}`);
       targets.push(new MeleeTarget(closest.MobId, [dmg], closest.Position.x, closest.Position.y, 0));
       closest.ShowHitEffect();
       this._mobSounds?.PlayDamage(closest.TemplateId);
@@ -6315,7 +6323,10 @@ this._localCharId = args.characterId ?? 0;
         this._player?.SetEmotion(1); // emotionId=1 = "hit" expression
         if (this._physics) {
           const dx = this._physics.Position.x - mob.Position.x;
-          this._physics.ApplyKnockback((dx >= 0 ? 1 : -1) * 200, -100, 0.3);
+          // OG: CUserLocal::SetImpact (0x905E10) → CVecCtrl::SetImpactNext with
+          // vx = ±nImpact, vy = -nImpact — equal magnitudes give the diagonal
+          // up-and-away launch (a halved vy barely lifts and reads as a glitch).
+          this._physics.ApplyKnockback((dx >= 0 ? 1 : -1) * 200, -200, 0.3);
         }
         if (this._stats.hp <= 0) {
           this._applyLocalDeath();
@@ -6351,7 +6362,8 @@ this._localCharId = args.characterId ?? 0;
         if (hpDamage > 0) this._dmgNumbers?.Add(hpDamage, this._physics!.Position.x, this._physics!.Position.y - 40, DamageKind.MobDamage);
         if (this._physics) {
           const dx = this._physics.Position.x - mob.Position.x;
-          this._physics.ApplyKnockback((dx >= 0 ? 1 : -1) * 150, -80, 0.2);
+          // OG: CUserLocal::SetImpact (0x905E10) — equal-magnitude diagonal launch.
+          this._physics.ApplyKnockback((dx >= 0 ? 1 : -1) * 150, -150, 0.2);
         }
         if (this._stats.hp <= 0) {
           this._applyLocalDeath();

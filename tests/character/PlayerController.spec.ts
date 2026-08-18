@@ -527,6 +527,27 @@ describe('PlayerController', () => {
       // Should still move due to knockback velocity, not from input
       expect(pc.Position.x).toBeLessThan(posBefore);
     });
+
+    it('detaches from the foothold (OG CVecCtrl::Impact) for a clean diagonal launch', () => {
+      const pc = new PlayerController(makeField());
+      pc.Spawn({ x: 50, y: 200 });
+      expect(pc.CurrentFoothold).toBe(1);
+      pc.ApplyKnockback(200, -200, 0.3);
+      expect(pc.CurrentFoothold).toBe(0);
+      expect(pc.Grounded).toBe(false);
+    });
+
+    it('stagger landing fallback stops the character from sinking below a foothold', () => {
+      const pc = new PlayerController(makeField());
+      pc.Spawn({ x: 50, y: 200 }); // feet exactly ON foothold y=200
+      pc.ApplyKnockback(150, -150, 0.3);
+      // Step through the whole stagger: the character must never end below
+      // the foothold surface (y > 200).
+      for (let i = 0; i < 20 && pc.IsStaggered; i++) {
+        pc.Update({ Left: false, Right: false, Up: false, Down: false, JumpPressed: false }, 1 / 60);
+      }
+      expect(pc.Position.y).toBeLessThanOrEqual(200);
+    });
   });
 
   describe('ladder eligibility', () => {

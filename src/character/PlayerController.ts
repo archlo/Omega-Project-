@@ -366,6 +366,12 @@ export class PlayerController {
     this._velocity = { x: vx, y: vy };
     this._grounded = false;
     this._staggerTimer = staggerSec;
+    // OG: CVecCtrl::Impact (0x992050) detaches from the foothold so the
+    // launch is a clean diagonal arc, not a slide glued to the surface.
+    this._currentFoothold = 0;
+    this._lastFhX1 = 0; this._lastFhY1 = 0; this._lastFootholdId = 0;
+    this._fallZMass = 0;
+    this._notifyAttached();
   }
 
   StopWalking(): void {
@@ -410,6 +416,29 @@ export class PlayerController {
         this._currentFoothold = collision.fh.Id;
         this._fallZMass = 0;
         this._footholdPos = this._distanceAlongFoothold(collision.fh, collision.x, collision.y);
+      } else if (this._velocity.y > 0) {
+        // OG: vertical landing fallback (same as _fallFreely). The segment
+        // crossing in CollisionDetectFloat is skipped when the player starts
+        // exactly ON the foothold line (crossOld==0 && crossNew==0), so a
+        // grounded player knocked back along the surface would otherwise sink
+        // a few px below the foothold before the next frame re-detects it.
+        const startY = this.Position.y;
+        const fh = this._field.GetFootholdBelow(nextX, startY);
+        if (fh !== null && fh.YAt(nextX) !== null) {
+          const groundY = fh.YAt(nextX)!;
+          if (startY <= groundY && nextY >= groundY) {
+            this.Position = { x: nextX, y: groundY };
+            this._velocity.y = 0;
+            this._grounded = true;
+            this._currentFoothold = fh.Id;
+            this._fallZMass = 0;
+            this._footholdPos = this._distanceAlongFoothold(fh, nextX, groundY);
+          } else {
+            this.Position = { x: nextX, y: nextY };
+          }
+        } else {
+          this.Position = { x: nextX, y: nextY };
+        }
       } else {
         this.Position = { x: nextX, y: nextY };
       }
