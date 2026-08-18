@@ -5,7 +5,6 @@ export class GameCamera {
   MapBounds = { left: -10000, top: -10000, right: 10000, bottom: 10000 };
   ViewWidth = 800;
   ViewHeight = 600;
-  FollowSpeed = 6;
 
   // OG: CAnimationDisplayer::Effect_Tremble drives the field's centerpoint
   // through native-engine RelMove() random offsets that decay over time
@@ -36,9 +35,14 @@ export class GameCamera {
   }
 
   Update(deltaTime: number): void {
-    const t = 1 - Math.pow(1 - Math.max(0, Math.min(1, this.FollowSpeed * deltaTime)), 1);
-    this.Position.x += (this.Target.x - this.Position.x) * t;
-    this.Position.y += (this.Target.y - this.Position.y) * t;
+    // OG: the field camera is native-engine driven — it follows the user's
+    // position 1:1 every frame (no game-side lerp), so the character stays
+    // pinned at the screen center (the view-range clamp in the field is the
+    // only thing that ever moves the character off-center, at map edges).
+    // The old exponential FollowSpeed=6 lerp let the character drift away
+    // from screen center while walking, which isn't authentic.
+    this.Position.x = this.Target.x;
+    this.Position.y = this.Target.y;
     this._clamp();
     this._updateShake(deltaTime * 1000);
   }

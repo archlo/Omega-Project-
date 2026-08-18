@@ -49,7 +49,7 @@ describe('GameCamera.Shake', () => {
     cam.ViewWidth = 800;
     cam.ViewHeight = 600;
     cam.MapBounds = { left: 0, top: 0, right: 2000, bottom: 1200 };
-    cam.Update(1); // FollowSpeed 6 * 1s → snaps to the target (1000,700)
+    cam.Update(1); // snap-follow → camera lands exactly on the target (1000,700)
     expect(cam.Position.x).toBeCloseTo(1000); // free to follow the target
     // Near the left edge, clamped to left + halfViewport.
     cam.Target = { x: 0, y: 0 };
@@ -59,5 +59,26 @@ describe('GameCamera.Shake', () => {
     cam.Target = { x: 2000, y: 1200 };
     cam.Update(1);
     expect(cam.Position.x).toBeCloseTo(1600);
+  });
+
+  it('snap-follows the target so the character stays at screen center (OG native-engine camera)', () => {
+    const cam = new GameCamera({ x: 500, y: 300 });
+    cam.ViewWidth = 800;
+    cam.ViewHeight = 600;
+    cam.MapBounds = { left: 0, top: 0, right: 2000, bottom: 1200 };
+    // A single Update() at any dt snaps the camera onto the target — the
+    // character's world position maps to the exact viewport center, matching
+    // the v95 native-engine camera that follows the user 1:1 every frame.
+    cam.Target = { x: 700, y: 400 };
+    cam.Update(0.016);
+    const screen = cam.WorldToScreen(700, 400);
+    expect(screen.x).toBeCloseTo(400);
+    expect(screen.y).toBeCloseTo(300);
+    // Continuing to move the target keeps the character pinned at center.
+    cam.Target = { x: 900, y: 500 };
+    cam.Update(0.016);
+    const moved = cam.WorldToScreen(900, 500);
+    expect(moved.x).toBeCloseTo(400);
+    expect(moved.y).toBeCloseTo(300);
   });
 });

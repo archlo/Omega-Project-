@@ -434,11 +434,15 @@ export class FieldScene {
         bottom = Math.max(bottom, Math.max(fh.Y1, fh.Y2) + 10);
       }
     }
-    const info = this._info;
-    if (info.VRLeft !== 0) left = Math.max(left, info.VRLeft + 20);
-    if (info.VRRight !== 0) right = Math.min(right, info.VRRight - 4);
-    if (info.VRTop !== 0) top = Math.max(top, info.VRTop + 65);
-    if (info.VRBottom !== 0) bottom = Math.min(bottom, info.VRBottom);
+    if (this._info.VRLeft !== 0 || this._info.VRRight !== 0) {
+      this._bounds = {
+        left: this._info.VRLeft,
+        top: this._info.VRTop,
+        right: this._info.VRRight,
+        bottom: this._info.VRBottom,
+      };
+      return;
+    }
     if (right <= left || bottom <= top) return;
     this._bounds = { left, top, right, bottom };
   }

@@ -371,8 +371,9 @@ export class GameStage extends Stage {
   protected _contextMenu: ContextMenu | null = null;
 
   protected _panels: GamePanel[] = [];
-  protected _fadePhase = 0;   // 0 idle, +1 fading to black, -1 fading in
+  protected _fadePhase = 0;   // 0 idle, +1 fading to black, 2 hold, -1 fading in
   protected _fadeAlpha = 0;   // 0 = clear .. 1 = opaque black
+  protected _holdTimer = 0;   // seconds elapsed in hold-at-black phase
   protected _pendingField: SetFieldArgs | null = null;
   private _fadeOverlay = new Graphics();
 
@@ -5148,9 +5149,13 @@ this._localCharId = args.characterId ?? 0;
     }
   }
 
-  /** Drives the map-change fade: fade to black → swap at full black → fade in. */
+  /** Drives the map-change fade: fade to black → swap at full black → fade in.
+   *  OG timings from CUser::OnSetPhase → RegisterFadeInOutAnimation:
+   *    tFadeIn=500ms, tDelay=400ms, tFadeOut=800ms, nAlpha=220.
+   *  We fold the delay into the hold-at-black phase. */
   private _advanceFieldTransition(dt: number): void {
-    const FadeToBlackPerSec = 1 / 0.18;  // ~180 ms to black
+    const FadeToBlackPerSec = 1 / 0.50;  // ~500 ms to black (OG tFadeIn)
+    const HoldAtBlackSec    = 0.40;       // 400 ms hold (OG tDelay)
     const FadeInPerSec      = 1 / 0.30;  // ~300 ms to clear
 
     // Start a deferred transition once Map.wz is finally loaded.
@@ -5161,18 +5166,28 @@ this._localCharId = args.characterId ?? 0;
       this._fadePhase = 1;
     }
 
-    if (this._fadePhase > 0) {
+    if (this._fadePhase === 1) {
+      // Phase 1: fade to black
       this._fadeAlpha += dt * FadeToBlackPerSec;
       if (this._fadeAlpha >= 1) {
         this._fadeAlpha = 1;
+        // Swap the field at full black
         if (this._pendingField) {
           const pending = this._pendingField;
           this._pendingField = null;
           this._applyFieldChange(pending);
         }
+        this._fadePhase = 2; // hold at black
+        this._holdTimer = 0;
+      }
+    } else if (this._fadePhase === 2) {
+      // Phase 2: hold at black (OG tDelay = 400ms)
+      this._holdTimer += dt;
+      if (this._holdTimer >= HoldAtBlackSec) {
         this._fadePhase = -1; // begin fade-in
       }
-    } else if (this._fadePhase < 0) {
+    } else if (this._fadePhase === -1) {
+      // Phase 3: fade in
       this._fadeAlpha -= dt * FadeInPerSec;
       if (this._fadeAlpha <= 0) {
         this._fadeAlpha = 0;
