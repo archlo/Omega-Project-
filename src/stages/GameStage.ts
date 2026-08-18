@@ -5317,7 +5317,8 @@ this._localCharId = args.characterId ?? 0;
   private _onMobDamaged(args: MobDamagedArgs): void {
     const mob = this._mobs.get(args.mobId);
     if (!mob) return;
-    if (args.hp >= 0) mob.Hp = args.hp;
+    console.log(`[MobDeathDbg] _onMobDamaged mobId=${args.mobId} damage=${args.damage} hp=${args.hp} maxHp=${args.maxHp} mobHp=${mob.Hp}/${mob.MaxHp}`);
+    if (args.hp >= 0 && args.maxHp > 0) mob.Hp = args.hp;
     if (args.damage > 0) {
       mob._lastDamage = args.damage;
       mob.ShowHitEffect();
@@ -5331,12 +5332,13 @@ this._localCharId = args.characterId ?? 0;
       mob.CreateHPIndicator(pct, 0xFF0000);
       mob.ShowHPIndicator();
     }
-    if (args.hp === 0) this._killMob(mob);
+    if (args.hp === 0 && args.maxHp > 0) this._killMob(mob);
   }
 
   private _onMobHpIndicator(mobId: number, pct: number): void {
     const mob = this._mobs.get(mobId);
     if (!mob) return;
+    console.log(`[MobDeathDbg] _onMobHpIndicator mobId=${mobId} pct=${pct} mobHp=${mob.Hp}/${mob.MaxHp}`);
     if (pct === 0) {
       this._killMob(mob);
       return;
@@ -5960,6 +5962,7 @@ this._localCharId = args.characterId ?? 0;
   }
 
   private _killMob(mob: MobLook): void {
+    console.log(`[MobDeathDbg] _killMob called mobId=${mob.MobId} tmpl=${mob.TemplateId} hp=${mob.Hp}/${mob.MaxHp}`);
     // OG: CMob::OnDie (decompile/64e4b0.c) calls TrySpeaking(-1,-1) after
     // setting m_nOneTimeAction to rand()%nDieCount+10 (Die1=10..DieF=12).
     // Match any SpeakEntry with action in {10,11,12} (MobActionType Die1-DieF).
@@ -6363,6 +6366,7 @@ this._localCharId = args.characterId ?? 0;
   }
 
   private _onMobLeave(mobId: number, _lt: number): void {
+    console.log(`[MobDeathDbg] _onMobLeave mobId=${mobId} leaveType=${_lt}`);
     const mob = this._mobs.get(mobId);
     // OG: CField_Dojang::Update — when boss mob leaves, clear the boss HP bar
     if (mob && this._field?.Info.FieldType === 14 && mob.IsBoss) {
