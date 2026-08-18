@@ -12,6 +12,13 @@ export class DropSprite {
   private _ground: { x: number; y: number };
   private _tEnd: number;
   private _icon: WzSprite | null = null;
+  // OG: CDropPool::MakeMoneyAnimation — meso bag spin frames (iconRaw/0..3)
+  // + per-frame delays. When present and IsMoney, Update cycles the sprite.
+  private _moneyFrames: (WzSprite | null)[] = [];
+  private _moneyDelays: number[] = [];
+  private _moneyFrame = 0;
+  private _moneyTimer = 0;
+  private _moneySprite: import('pixi.js').Sprite | null = null;
   private _state: number;
   private _tick = 0;
   private _angle = 0;
@@ -21,7 +28,11 @@ export class DropSprite {
   private _absorbT = 0;
   private _alpha = 1;
   private _explodeVel = { x: 0, y: 0 };
-  private static readonly AbsorbDur = 0.4;
+  // OG: CAnimationDisplayer::ABSORBITEM::Update (0x441650) — 700ms pickup
+  // flight. X/Y lerp linearly from the drop position to the target body over
+  // 700ms; a 40px arc peaks mid-flight (arc term = 11488774560*(v16-350)² >> 45);
+  // alpha holds 255 until 420ms then fades 255 → 63 over the last 280ms.
+  private static readonly AbsorbMs = 700;
   Finished = false;
   nameOf: (id: number) => string = () => '';
 
@@ -35,10 +46,20 @@ export class DropSprite {
     icon?: WzSprite | null,
     font?: unknown,
     fading = false,
+    moneyFrames?: { frames: (WzSprite | null)[]; delays: number[] } | null,
   ) {
     this._ground = { x: ground.x, y: ground.y };
     this._source = animated ? { x: source.x, y: source.y } : { x: ground.x, y: ground.y };
     this._icon = icon ?? null;
+    if (moneyFrames) {
+      this._moneyFrames = moneyFrames.frames;
+      this._moneyDelays = moneyFrames.delays;
+      // Skip null frames when building the cycleable list.
+      this._moneyFrames = moneyFrames.frames.filter((f): f is WzSprite => f !== null);
+      this._moneyDelays = this._moneyFrames.length === moneyFrames.frames.length
+        ? moneyFrames.delays
+        : moneyFrames.frames.map((f, i) => (f !== null ? moneyFrames.delays[i] : -1)).filter((d) => d >= 0);
+    }
     this._tEnd = this._parabolicDuration(this._source.y, this._ground.y);
     // state 1=parabolic fall, 2=fall after apex, 3=idle bob, 4=fading out
     this._state = fading ? 4 : (animated ? 1 : 3);
@@ -71,12 +92,24 @@ export class DropSprite {
   Update(dt: number): void {
     if (this._absorbing) {
       this._absorbT += dt;
-      const at = Math.min(1, this._absorbT / DropSprite.AbsorbDur);
+      // OG ABSORBITEM::Update: elapsed = v16 = tCur - tStarted (ms).
+      const v16 = this._absorbT * 1000;
+      if (v16 >= DropSprite.AbsorbMs) { this.Finished = true; return; }
       const tgt = this._absorbTarget ? this._absorbTarget() : this._absorbFrom;
-      this.Position.x = this._absorbFrom.x + (tgt.x - this._absorbFrom.x) * at * at;
-      this.Position.y = this._absorbFrom.y + (tgt.y - this._absorbFrom.y) * at * at;
-      this._alpha = 1 - at;
-      if (at >= 1) this.Finished = true;
+      // X: (x2*v16 + x1.x*(700-v16))/700 — linear from drop → target.
+      const x = (tgt.x * v16 + this._absorbFrom.x * (DropSprite.AbsorbMs - v16)) / DropSprite.AbsorbMs;
+      // Y: (v10*v16 + x1.y*(700-v16))/700 + arc - 40. The arc term
+      // 11488774560*(v16-350)² >> 45 is 40 at both ends and 0 mid-flight, so
+      // the effective -40 lifts the drop up 40px at the halfway point.
+      const d = v16 - 350;
+      // arc = (11488774560 * d * d) >> 45 (OG fixed-point) → float division.
+      const arc = (11488774560 * d * d) / 35184372088832;
+      const y = (tgt.y * v16 + this._absorbFrom.y * (DropSprite.AbsorbMs - v16)) / DropSprite.AbsorbMs + arc - 40;
+      this.Position = { x, y };
+      // Alpha: 255 for the first 420ms, then 192*(420-v16)/280 + 255 → 63 at 700ms.
+      let alpha = 255;
+      if (v16 > 420) alpha = Math.floor((192 * (420 - v16)) / 280) + 255;
+      this._alpha = Math.max(0, Math.min(1, alpha / 255));
       return;
     }
 
@@ -128,6 +161,26 @@ export class DropSprite {
         break;
       }
     }
+
+    // OG: CDropPool::MakeMoneyAnimation — the meso bag spins through its
+    // iconRaw/0..3 canvases on a per-bucket delay loop (80ms small, 200ms
+    // medium, [4000,120,120,120] big). Cycles only when resting on the ground
+    // (absorb/explode/fade already early-return or change the display).
+    if (this._moneyFrames.length > 1 && this._moneySprite) {
+      this._moneyTimer += dtMs;
+      const delay = this._moneyDelays[this._moneyFrame] ?? this._moneyDelays[0] ?? 80;
+      if (this._moneyTimer >= delay) {
+        this._moneyTimer = 0;
+        this._moneyFrame = (this._moneyFrame + 1) % this._moneyFrames.length;
+        const next = this._moneyFrames[this._moneyFrame];
+        if (next && this._moneySprite.parent) {
+          const newSprite = next.NewSprite();
+          this._moneySprite.parent.addChildAt(newSprite, this._moneySprite.parent.getChildIndex(this._moneySprite));
+          this._moneySprite.parent.removeChild(this._moneySprite);
+          this._moneySprite = newSprite;
+        }
+      }
+    }
   }
 
   draw(camX: number, camY: number, cx: number, cy: number): void {
@@ -143,6 +196,17 @@ export class DropSprite {
     const iconW = 20;
     const iconH = 20;
     const gfx = new Graphics();
+    if (this.IsMoney && (this._icon || this._moneyFrames.length > 0)) {
+      // OG meso bag sprite (Item.wz/Special/0900.img/0900000X/iconRaw/N).
+      // NewSprite() anchors by the canvas origin (e.g. (0,32) = ground/feet),
+      // so placing it at (0,0) puts the coin at the drop point. With a spin
+      // animation (MakeMoneyAnimation) the first frame is shown and swapped
+      // in Update; the last trailing child is the empty Graphics placeholder.
+      this._moneySprite = (this._moneyFrames.length > 0 ? this._moneyFrames[0] : this._icon)?.NewSprite() ?? null;
+      if (this._moneySprite) this.container.addChild(this._moneySprite);
+      this.container.addChild(gfx);
+      return;
+    }
     if (this.IsMoney) {
       const mesoColors = [
         { min: 1, color: 0xdcc864 },

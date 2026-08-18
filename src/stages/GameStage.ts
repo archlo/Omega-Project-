@@ -28,10 +28,6 @@ import { ShopMarker } from '../character/ShopMarker.js';
 import { SkillEffectOverlay } from '../character/SkillEffectOverlay.js';
 import { ItemEffectOverlay } from '../character/ItemEffectOverlay.js';
 import { ProjectileOverlay } from '../character/ProjectileOverlay.js';
-import { BuffVisualOverlay } from '../character/BuffVisualOverlay.js';
-import { AttackAction } from '../character/AttackAction.js';
-import { ActionMan } from '../character/ActionMan.js';
-import { TombstoneEffect } from '../character/TombstoneEffect.js';
 import { WzSound } from '../wz/WzSound.js';
 import { FearEffect } from '../character/FearEffect.js';
 import { LimitedViewOverlay } from '../character/LimitedViewOverlay.js';
@@ -6654,9 +6650,19 @@ this._localCharId = args.characterId ?? 0;
     // _initMenu, used elsewhere for inventory/shop icons) — previously never
     // threaded through to DropSprite at all, so every item drop rendered as
     // the generic colored-rectangle-with-name placeholder even when real WZ
-    // icon art was available. Money drops keep their dedicated coin-color
-    // placeholder (DropSprite's own IsMoney branch), so no icon lookup for those.
-    const icon = !args.isMoney && this._itemIcons ? this._itemIcons.LoadIcon(args.itemIdOrAmount) : null;
+    // icon art was available. Money drops use the meso bag sprite from
+    // Item.wz/Special/0900.img/0900000X/iconRaw/0 (OG CDropPool::GetMoneyIcon)
+    // instead of DropSprite's fallback coin-color rectangle.
+    const icon = !args.isMoney && this._itemIcons
+      ? this._itemIcons.LoadIcon(args.itemIdOrAmount)
+      : args.isMoney && this._itemIcons
+        ? this._itemIcons.GetMoneyIcon(args.itemIdOrAmount)
+        : null;
+    // OG: CDropPool::MakeMoneyAnimation — the meso bag's iconRaw/0..3 spin
+    // frames with per-bucket delays (80/200/[4000,120,120,120]ms).
+    const moneyFrames = args.isMoney && this._itemIcons
+      ? this._itemIcons.GetMoneyAnimation(args.itemIdOrAmount)
+      : null;
     const drop = new DropSprite(
       args.dropId, args.isMoney, args.itemIdOrAmount,
       { x: args.sourceX ?? args.x, y: args.sourceY ?? args.y },
@@ -6665,6 +6671,7 @@ this._localCharId = args.characterId ?? 0;
       icon,
       undefined,
       args.fading ?? false,
+      moneyFrames,
     );
     drop.nameOf = this._itemNameOf;
     this._drops.push(drop);
@@ -6693,7 +6700,9 @@ this._localCharId = args.characterId ?? 0;
       // carries the owner's character id as pickUpId.
       this._fieldSounds?.PlayPickUp();
       const drop = this._drops.find((d) => d.DropId === args.dropId);
-      if (drop) { drop.StartAbsorb(() => this._player!.Position); return; }
+      // OG ABSORBITEM target = character pos - CAvatar::GetHeight()/2 (body
+      // center); NavelPosition is that anchor on the local CharLook.
+      if (drop) { drop.StartAbsorb(() => this._player!.NavelPosition); return; }
     }
     // OG: meso explosion scatter — drops fly outward with random velocity then fade
     if (args.leaveType === DropLeaveType.Explode) {

@@ -1440,6 +1440,9 @@ export class PlayerController {
     if (aboveFh?.CantThrough) return false;
 
     const jumpVy = -this._jumpSpeed;
+    // OG: CVecCtrl::JustJump (0x993EA0) — fly-capable shoes (shoe.flyAcc > 0,
+    // same `v3` test as the ladder branch) jump 30% lower: `if (v3) vy *= 0.7`.
+    const flyCapableVy = this._shoe.flyAcc > 0 ? -this._jumpSpeed * 0.7 : jumpVy;
     let jumpVx = this._velocity.x;
     if (dir !== 0) {
       const boostThreshold = this._walkSpeed * 0.8;
@@ -1449,12 +1452,12 @@ export class PlayerController {
 
     const jumpFh = this._field.GetFoothold(this._currentFoothold);
     this._pending.push({
-      attr: 1, vx: jumpVx, vy: jumpVy,
+      attr: 1, vx: jumpVx, vy: flyCapableVy,
       moveAction: StanceMoveAction(Stance.Jump, this.FacingLeft), elapse: 0,
       x: this.Position.x, y: this.Position.y, fh: this._currentFoothold,
       fhFallStart: 0, xOffset: 0, yOffset: 0, stat: 0,
     });
-    this._velocity = { x: jumpVx, y: jumpVy };
+    this._velocity = { x: jumpVx, y: flyCapableVy };
     this._freeFallElapsedMs = 0;
     if (jumpFh) {
       this._fallZMass = jumpFh.ZMass;

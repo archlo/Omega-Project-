@@ -19,6 +19,10 @@ export class Button {
   width = 120;
   height = 28;
   label = '';
+  // OG: CCtrlButton::LoadToolTip — title/desc hover tooltip shown when the mouse
+  // is over the button (parent draws it via SetToolTip_String2). Null = no tip.
+  toolTipTitle: string | null = null;
+  toolTipDesc: string | null = null;
   container: Container;
   private _bg: Graphics;
   private _labelText: Text;
@@ -76,6 +80,12 @@ export class Button {
   get position() { return this.container.position; }
   set position(v: { x: number; y: number }) { this.container.position.set(v.x, v.y); }
 
+  /** OG: CCtrlButton::LoadToolTip — attach a hover tooltip title/desc. */
+  setToolTip(title: string, desc: string): void {
+    this.toolTipTitle = title;
+    this.toolTipDesc = desc;
+  }
+
   hitTest(x: number, y: number): boolean {
     const b = this.bounds;
     return x >= b.x && x < b.x + b.width && y >= b.y && y < b.y + b.height;
@@ -106,8 +116,7 @@ export class Button {
   }
 
   /** Reset pressed/hover state — call on global mouse-up or focus change */
-  resetState(): void {
-    if (this._pressed || this._hovered) {
+  resetState(): void {    if (this._pressed || this._hovered) {
       this._pressed = false;
       this._hovered = false;
       if (this._normal) this._refreshSprite();

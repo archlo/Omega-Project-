@@ -108,6 +108,56 @@ export class ItemIconLoader {
     return sprite;
   }
 
+  /** OG: CDropPool::GetMoneyIconType @0x50F440 — money-drop icon by amount.
+      <50 → 0, 50-99 → 1, 100-999 → 2, ≥1000 → 3. */
+  static MoneyIconType(nMoney: number): number {
+    if (nMoney < 50) return 0;
+    if (nMoney >= 100) return (nMoney >= 1000 ? 1 : 0) + 2;
+    return 1;
+  }
+
+  /** OG: CDropPool::GetMoneyIcon @0x512B30 — the meso bag sprite on the field.
+      Lives in `Item.wz/Special/0900.img/0900000X/iconRaw/<nCanvasNo>` (4 bag
+      sizes by amount, 4 animation canvases each). The field uses canvas 0.
+      Cached per (bucket, canvas) pair (misses too). */
+  GetMoneyIcon(nMoney: number, nCanvasNo = 0): WzSprite | null {
+    const bucket = ItemIconLoader.MoneyIconType(nMoney);
+    const key = bucket * 4 + nCanvasNo;
+    let cached = this._petCache.get(key);
+    if (cached !== undefined) return cached;
+    let sprite: WzSprite | null = null;
+    try {
+      if (this._itemWz !== null) {
+        const node = this._itemWz.GetItem(`Special/0900.img/${(9000000 + bucket).toString().padStart(8, '0')}/iconRaw/${nCanvasNo}`);
+        if (node instanceof WzUol) {
+          const resolved = node.Resolve();
+          if (resolved instanceof WzCanvas) sprite = this._loader.Load(resolved);
+        } else if (node instanceof WzCanvas) sprite = this._loader.Load(node);
+      }
+    } catch {
+      sprite = null;
+    }
+    this._petCache.set(key, sprite);
+    return sprite;
+  }
+
+  /** OG: CDropPool::MakeMoneyAnimation @0x512DF0 — the meso bag spin on the
+      field. Cycles the 4 `iconRaw/0..3` canvases with a per-amount-bucket
+      frame delay (80ms for <100, 200ms for 100-999, [4000,120,120,120] for
+      ≥1000), looping (GA_REPEAT). Returns frames + per-frame delays; null
+      frames are kept so the caller can skip them. */
+  GetMoneyAnimation(nMoney: number): { frames: (WzSprite | null)[]; delays: number[] } {
+    const bucket = ItemIconLoader.MoneyIconType(nMoney);
+    const delays = bucket >= 3
+      ? [4000, 120, 120, 120]
+      : bucket === 2
+        ? [200, 200, 200, 200]
+        : [80, 80, 80, 80];
+    const frames: (WzSprite | null)[] = [];
+    for (let i = 0; i < 4; i++) frames.push(this.GetMoneyIcon(nMoney, i));
+    return { frames, delays };
+  }
+
   /** Parsed item attributes for the tooltip (requirements + bonuses), read from the
       item's `info` node. Equips -> Character.wz; consumables/etc -> Item.wz. Returns
       null when the item has no info node (caller shows just the name). Cached per id (misses too). */

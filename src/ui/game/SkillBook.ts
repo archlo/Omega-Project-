@@ -1382,17 +1382,20 @@ export class SkillBook extends GamePanel {
 
         // OG Draw: Skill icon at (12, nTop-17) via p->apCanvas[v54 + v75]
         // v54 = state != 0, v75 = hover && v54 → Icon0/Icon1/Icon2.
-        this._rowIcons[i].texture = Texture.EMPTY;
+        const rowIcon = this._rowIcons[i];
         const info = this.skillService?.Get(sk.id);
-        const iconCanvas = reqsMet
-          ? (isHovered ? (info?.Icon2 ?? info?.Icon1 ?? info?.Icon0) : (info?.Icon1 ?? info?.Icon0 ?? info?.Icon))
-          : (info?.Icon0 ?? info?.Icon);
-        if (iconCanvas) {
-          const ws = this.textureLoader?.Load(iconCanvas);
-          if (ws) this._rowIcons[i].texture = ws.Texture;
+      if (rowIcon) {
+          rowIcon.texture = Texture.EMPTY;
+          const iconCanvas = reqsMet
+            ? (isHovered ? (info?.Icon2 ?? info?.Icon1 ?? info?.Icon0) : (info?.Icon1 ?? info?.Icon0 ?? info?.Icon))
+            : (info?.Icon0 ?? info?.Icon);
+          if (iconCanvas) {
+            const ws = this.textureLoader?.Load(iconCanvas);
+            if (ws?.Texture) rowIcon.texture = ws.Texture;
+          }
+          rowIcon.x = 12;
+          rowIcon.y = nTop - 17;
         }
-        this._rowIcons[i].x = 12;
-        this._rowIcons[i].y = nTop - 17;
 
         // OG Draw: Recommend indicator at (47, nTop-19) if skill == recommendID
         const recBg = this._rowRecommendBgs[i];
@@ -1482,7 +1485,7 @@ export class SkillBook extends GamePanel {
         // OG: SetButton(idx, 0, 0) — hide
         this._rowSlotBgs[i].visible = false;
         this._rowRecommendBgs[i].visible = false;
-        this._rowIcons[i].texture = Texture.EMPTY;
+        if (this._rowIcons[i]) this._rowIcons[i].texture = Texture.EMPTY;
         this._rowNames[i].text = '';
         this._rowLevels[i].text = '';
         this._rowCds[i].text = '';

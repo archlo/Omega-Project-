@@ -168,6 +168,10 @@ export class StatsInfo extends GamePanel {
   // CheckAndShow @0x8A0980 iterates these and PtInRect's the cursor; the matching
   // entry's Title+Desc are shown via SetToolTip_String2 at (cursor, cursorY+20).
   private static readonly TTH_PATH = 'ToolTipHelp.img/Game/UIWnd/Stat';
+  // OG: CUIStat::OnCreate calls CCtrlButton::LoadToolTip(btn, StringPool 1988/1989/1990,
+  // 1, 0) for BtAuto/BtAuto1/BtAuto2 — the tooltips live in ToolTipHelp.img/Game/Button/
+  // StatAuto, StatAuto1, StatAuto2 (Title + Desc children).
+  private static readonly BTN_TOOLTIP_PATH = 'ToolTipHelp.img/Game/Button';
 
   constructor(loader: WzTextureLoader, ui: WzPackage | null, stringPool?: StringPoolService | null, stringWz?: (() => WzPackage | null) | null) {
     super();
@@ -375,6 +379,12 @@ export class StatsInfo extends GamePanel {
       if (this._btAuto1) { this._btAuto1.onClick = () => this.onAutoApUp?.(1); this._btAuto1.container.zIndex = 50; this._contentLayer.addChild(this._btAuto1.container); }
       if (this._btAuto2) { this._btAuto2.onClick = () => this.onAutoApUp?.(0); this._btAuto2.container.zIndex = 50; this._contentLayer.addChild(this._btAuto2.container); }
       if (this._btDetailOpen) { this._btDetailOpen.onClick = () => this.toggleDetail(); this._contentLayer.addChild(this._btDetailOpen.container); }
+
+      // OG: CCtrlButton::LoadToolTip for the three auto-AP buttons (StringPool
+      // 1988/1989/1990 → ToolTipHelp.img/Game/Button/StatAuto, StatAuto1, StatAuto2)
+      this._loadButtonToolTip(this._btAuto, 'StatAuto');
+      this._loadButtonToolTip(this._btAuto1, 'StatAuto1');
+      this._loadButtonToolTip(this._btAuto2, 'StatAuto2');
     }
   }
 
@@ -390,6 +400,26 @@ export class StatsInfo extends GamePanel {
     }
     const btn = Button.fromWz(loader, btnProp);
     return btn;
+  }
+
+  // OG: CCtrlButton::LoadToolTip — reads Title/Desc children from the
+  // ToolTipHelp.img/Game/Button/<name> subtree and attaches them to the button.
+  // Loaded lazily; String.wz may not carry the subtree (then no tooltip).
+  private _loadButtonToolTip(btn: Button | null, name: string): void {
+    if (!btn || !this._stringWz) return;
+    let wz: WzPackage | null = null;
+    try { wz = this._stringWz(); } catch { return; }
+    if (!wz) return;
+    let node: unknown;
+    try {
+      node = wz.GetItem(`${StatsInfo.BTN_TOOLTIP_PATH}/${name}`);
+    } catch { return; }
+    if (!(node instanceof WzProperty)) return;
+    const title = node.Get('Title');
+    const desc = node.Get('Desc');
+    if (typeof title === 'string') {
+      btn.setToolTip(title, typeof desc === 'string' ? desc : '');
+    }
   }
 
   SetDerivedStats(atk: number, def: number, speed: number, jump: number): void {
@@ -599,14 +629,30 @@ export class StatsInfo extends GamePanel {
     const lx = x - this._root.x;
     const ly = y - this._root.y;
 
+    // OG: CCtrlButton hover tooltip — when the cursor is over a button with a
+    // loaded tooltip (BtAuto/BtAuto1/BtAuto2), the button control shows it via
+    // SetToolTip_String2 at (cursor, cursorY+20). Check before the stat-row
+    // CToolTipHelper rects since buttons sit inside the window.
+    for (const b of [this._btAuto, this._btAuto1, this._btAuto2]) {
+      if (!b || !b.container.visible || b.toolTipTitle == null) continue;
+      if (b.hitTest(lx, ly)) {
+        this._toolTip?.clearToolTip();
+        this._toolTip?.setToolTipString2(lx + 20, ly + 20, b.toolTipTitle, b.toolTipDesc ?? '');
+        if (this._toolTip && !this._toolTip.container.parent) this._root.addChild(this._toolTip.container);
+        this._tooltipShown = true;
+        return;
+      }
+    }
+
     // OG: EXP tooltip area hit-test: (rx - 55) > 0x6D || (ry - 138) > 0xD → goto LABEL_15.
     // Inside rect (55, 138, 110, 14): SetToolTip_String(StringPool 0x1A37, exp, next).
     const inExpArea = (lx - EXP_TOOLTIP_X) <= EXP_TOOLTIP_W && (ly - EXP_TOOLTIP_Y) <= EXP_TOOLTIP_H;
 
     if (inExpArea) {
-      // OG: 0x1A37 Format(exp, nextLevelExp) — 2 args (next EXP is only here, not on the panel).
-      const expPct = this.nextLevelExp > 0 ? Math.floor((this.exp / this.nextLevelExp) * 100) : 0;
-      const tooltipStr = `EXP: ${this.exp} / ${this.nextLevelExp} (${expPct}%)`;
+      // OG: 0x1A37 Format(exp, nextLevelExp) — exactly 2 args (next EXP is only
+      // here, not on the panel; the format string itself is unresolvable from
+      // this String.wz, so the fallback mirrors the 2-arg shape).
+      const tooltipStr = `EXP: ${this.exp} / ${this.nextLevelExp}`;
       this._showExpTooltip(lx, ly, tooltipStr);
       this._tooltipShown = true;
       return;
