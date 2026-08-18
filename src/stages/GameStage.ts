@@ -2319,6 +2319,11 @@ export class GameStage extends Stage {
     this._skill.onDragStart = (payload, texture, x, y) => { this._dragController.beginDrag(payload, texture, x, y); };
     this._skill.onSkillUp = (_skillId) => { /* OG: UI refresh only; packet sent via onSendSkillUp */ };
     this._skill.onSkillUse = (skillId, slv) => {
+      // OG: CUserLocal::UseSkill / TryDoingNormalAttack gates — a sealed player
+      // cannot cast (seal blocks active skills; dispel is the exception), and
+      // stunned/frozen players are immovable so casting is blocked by the
+      // physics immovability already.
+      if (this.game.fieldHandlers.secondaryStat.isSealActive()) return;
       this.game.session.send(GameSender.UseSkill(skillId, slv, Date.now()));
       // CUserLocal::ApplyMechanicMode/IsAbleToClimbLadderOrRope treats the
       // mechanic repeat skill as a distinct ladder restriction.
@@ -6996,6 +7001,10 @@ this._localCharId = args.characterId ?? 0;
     this._buffVisual.SetHyperBody(sec.isHyperBodyActive(), this._player);
     this._buffVisual.SetShadowPartner(sec.isShadowPartnerActive());
     this._buffVisual.SetBooster(sec.isBoosterActive());
+    // OG: CUserLocal::IsImmovable — stun/freeze/web debuffs make the character
+    // immovable. The visual above already draws the stun stars; this drives the
+    // physics so a stunned player actually can't move (CVecCtrl gates on it).
+    this._physics?.SetStunned(sec.isStunActive());
   }
 
   /** Mirror the local avatar/stat sources consumed by CVecCtrlUser's ladder gate. */
