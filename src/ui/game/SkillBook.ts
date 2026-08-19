@@ -1498,20 +1498,20 @@ export class SkillBook extends GamePanel {
     }
 
     // OG Draw: DrawTab — tab backgrounds from WZ (Tab/disabled/0-4, Tab/enabled/0-4)
-    // OG uses CCtrlTab which renders each tab with WZ canvas textures
-    // Tab width = (TAB_W - nTabSpace*(numTabs-1)) / numTabs, nTabSpace=1
-    // OG SetTabItems cycles images via `i % nTabImageCount` and marks item i
-    // enabled when `i < s_nTabCount` (7). The image arrays carry the per-slot
-    // texture; when the count exceeds the available images we wrap around.
+    // OG uses CCtrlTab which renders each tab with WZ canvas textures at natural
+    // size (no scaling). Each canvas is 30px wide; tabs are spaced 30+1=31px apart.
+    // RelocateTabPos stores nStart/nEnd per tab; Draw uses raw_Copy at nStart.
+    // The WZ canvases have negative origins (e.g. -10,-29) which PixiJS anchor
+    // handles automatically — position = (targetX, targetY) renders the content
+    // at (targetX - originX, targetY - originY).
     const numTabs = this._tabs.length;
-    const tabSpacing = 1; // OG: nTabSpace = 1
-    const tabW = numTabs > 0 ? Math.floor((TAB_W - tabSpacing * (numTabs - 1)) / numTabs) : TAB_W;
+    const tabSpacing = 1; // OG: gap between tab canvas edges
     const regularImages = Math.max(1, this._tabEnabledTex.length, this._tabDisabledTex.length);
     const dualImages = Math.max(1, this._dualTabEnabledTex.length, this._dualTabDisabledTex.length);
 
     for (let i = 0; i < this._tabSprites.length; i++) {
       const isActive = i === this._activeTab;
-      const tx = TAB_X + i * (tabW + tabSpacing);
+      const tx = TAB_X + i * (TAB_SLOT_W + tabSpacing);
 
       // Show/hide tabs based on actual count
       this._tabSprites[i].visible = i < numTabs;
@@ -1535,17 +1535,22 @@ export class SkillBook extends GamePanel {
              : (this._tabDisabledTex[regIdx] ?? this._tabDisabledTex[0] ?? null));
 
       if (tabTex) {
+        // OG: canvas drawn at natural size via raw_Copy — no width/height scaling.
+        // The WzSprite anchor (originX/width, originY/height) positions the canvas
+        // content correctly: setting position=(tx,ty) renders the visible area at
+        // (tx - originX, ty - originY), matching the OG raw_Copy(nStart) layout.
         this._tabSprites[i].texture = tabTex;
         this._tabSprites[i].position.set(tx, TAB_Y);
-        this._tabSprites[i].width = tabW;
-        this._tabSprites[i].height = TAB_H;
+        // Do NOT set width/height — OG uses AddItem_Canvas which stores the
+        // WZ canvas at natural size; RelocateTabPos positions by canvas width.
       }
 
-      // OG: Tab label text — centered in tab
+      // OG: Tab label text — centered in visible content area
+      // Canvas visible area is TAB_SLOT_W wide, offset by origin (-10) from position
        this._tabLabels[i].visible = !tabTex;
        this._tabLabels[i].text = this._tabLabelStrings[i] ?? '';
       this._tabLabels[i].anchor.set(0.5, 0);
-      this._tabLabels[i].x = tx + tabW / 2;
+      this._tabLabels[i].x = tx + TAB_SLOT_W / 2; // center in 30px visible area
       this._tabLabels[i].y = TAB_Y + 4;
       this._tabLabels[i].style = new TextStyle({
         fill: isActive ? '#FFFFFF' : '#888888',
@@ -1634,12 +1639,8 @@ export class SkillBook extends GamePanel {
 
     // OG: Tab click — nId=2000, param1=100 (TCN_SELCHANGE)
     for (let i = 0; i < this._tabs.length; i++) {
-      const tabSpacing = 1;
-      const tabW = this._tabs.length > 0
-        ? Math.floor((TAB_W - tabSpacing * (this._tabs.length - 1)) / this._tabs.length)
-        : TAB_W;
-      const tx = TAB_X + i * (tabW + tabSpacing);
-      if (lx >= tx && lx < tx + tabW && ly >= TAB_Y && ly < TAB_Y + TAB_H) {
+      const tx = TAB_X + i * (TAB_SLOT_W + 1);
+      if (lx >= tx && lx < tx + TAB_SLOT_W && ly >= TAB_Y && ly < TAB_Y + TAB_H) {
         this.onTabChanged(i);
         return true;
       }

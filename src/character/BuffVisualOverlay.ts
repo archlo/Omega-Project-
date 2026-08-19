@@ -52,6 +52,34 @@ export class BuffVisualOverlay {
     }
   }
 
+  /** Show/hide Freeze visual — ice crystals around character. */
+  SetFrozen(active: boolean): void {
+    if (active) {
+      const existing = this._buffs.get('frozen');
+      if (existing?.active) return;
+      const c = new Container();
+      this._drawIceCrystals(c);
+      this._buffs.set('frozen', { key: 'frozen', container: c, active: true });
+      this.container.addChild(c);
+    } else {
+      this._removeBuff('frozen');
+    }
+  }
+
+  /** Show/hide Web visual — web/net overlay on character. */
+  SetWeb(active: boolean): void {
+    if (active) {
+      const existing = this._buffs.get('web');
+      if (existing?.active) return;
+      const c = new Container();
+      this._drawWebOverlay(c);
+      this._buffs.set('web', { key: 'web', container: c, active: true });
+      this.container.addChild(c);
+    } else {
+      this._removeBuff('web');
+    }
+  }
+
   /** Show/hide Poison visual — green bubbles rising from character. */
   SetPoison(active: boolean): void {
     if (active) {
@@ -148,6 +176,12 @@ export class BuffVisualOverlay {
     switch (key) {
       case 'stun':
         this._animateStunStars(buff.container, t);
+        break;
+      case 'frozen':
+        this._animateFrozenCrystals(buff.container, t);
+        break;
+      case 'web':
+        this._animateWebOverlay(buff.container, t);
         break;
       case 'poison':
         this._animatePoisonBubbles(buff.container, dt);
@@ -272,6 +306,61 @@ export class BuffVisualOverlay {
     if (container.children.length > 0) {
       const glow = container.children[0];
       glow.alpha = 0.3 + Math.sin(t * 5) * 0.2;
+    }
+  }
+
+  // ── Ice Crystals (Frozen) ──
+
+  private _drawIceCrystals(container: Container): void {
+    // 4 ice crystals around character
+    for (let i = 0; i < 4; i++) {
+      const crystal = new Graphics();
+      const angle = (i * Math.PI * 2) / 4;
+      const r = 25;
+      crystal.moveTo(Math.cos(angle) * r, Math.sin(angle) * r);
+      for (let j = 0; j < 6; j++) {
+        const a = angle + (j * Math.PI * 2) / 6;
+        crystal.lineTo(Math.cos(a) * 8, Math.sin(a) * 8);
+      }
+      crystal.closePath();
+      crystal.fill({ color: 0x88CCFF, alpha: 0.7 });
+      container.addChild(crystal);
+    }
+  }
+
+  private _animateFrozenCrystals(container: Container, t: number): void {
+    const children = container.children;
+    for (let i = 0; i < children.length; i++) {
+      const crystal = children[i];
+      const baseAngle = (i * Math.PI * 2) / children.length;
+      const angle = baseAngle + t * 0.5;
+      const r = 25 + Math.sin(t * 2 + i) * 3;
+      crystal.x = Math.cos(angle) * r;
+      crystal.y = Math.sin(angle) * r;
+      crystal.rotation = t;
+      crystal.alpha = 0.5 + Math.sin(t * 3 + i) * 0.2;
+    }
+  }
+
+  // ── Web Overlay ──
+
+  private _drawWebOverlay(container: Container): void {
+    // Web/net pattern centered on character
+    const web = new Graphics();
+    web.moveTo(-30, -30).lineTo(30, 30).stroke({ color: 0xFFFFFF, width: 1, alpha: 0.5 });
+    web.moveTo(30, -30).lineTo(-30, 30).stroke({ color: 0xFFFFFF, width: 1, alpha: 0.5 });
+    web.moveTo(0, -30).lineTo(0, 30).stroke({ color: 0xFFFFFF, width: 1, alpha: 0.5 });
+    web.moveTo(-30, 0).lineTo(30, 0).stroke({ color: 0xFFFFFF, width: 1, alpha: 0.5 });
+    // Outer circle
+    web.circle(0, 0, 30).stroke({ color: 0xFFFFFF, width: 1, alpha: 0.4 });
+    container.addChild(web);
+  }
+
+  private _animateWebOverlay(container: Container, t: number): void {
+    if (container.children.length > 0) {
+      const web = container.children[0];
+      web.alpha = 0.3 + Math.sin(t * 2) * 0.2;
+      web.rotation = t * 0.3;
     }
   }
 }

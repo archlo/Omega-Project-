@@ -65,9 +65,12 @@ export class ItemDecoder {
     e.incMdd = p.readShort();
     e.incAcc = p.readShort();
     e.incEva = p.readShort();
-    e.craft = p.readShort();
+    e.incCraft = p.readShort();
     e.incSpeed = p.readShort();
     e.incJump = p.readShort();
+    e.incMhpPr = p.readShort();
+    e.incMmpPr = p.readShort();
+    e.Knockback = p.readShort();
     item.title = p.readString();
     item.attribute = p.readShort();
     e.attribute = item.attribute;

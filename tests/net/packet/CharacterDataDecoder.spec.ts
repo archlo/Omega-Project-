@@ -107,9 +107,9 @@ describe('CharacterDataDecoder', () => {
     p.writeByte(0); p.writeByte(0);
     p.writeShort(-1); // worn slot -1 (cap)
     p.writeByte(1); p.writeInt(1002140); p.writeByte(0); p.writeLong(0n); // type=Equip, itemId, cash=0, expire
-    // EquipStats: ruc, cuc (bytes) + 15 shorts (incStr..incJump)
+    // EquipStats: ruc, cuc (bytes) + 18 shorts (incStr..incJump, incMhpPr, incMmpPr, Knockback)
     p.writeByte(0); p.writeByte(0);
-    for (let i = 0; i < 15; i++) p.writeShort(0);
+    for (let i = 0; i < 18; i++) p.writeShort(0);
     p.writeString(''); p.writeShort(0); // title, attribute
     p.writeByte(0); p.writeByte(0); // levelUpType, level
     p.writeInt(0); p.writeInt(0); p.writeInt(0); // exp, durability, iuc

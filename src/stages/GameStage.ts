@@ -24,6 +24,10 @@ import { AffectedAreaLook } from '../character/AffectedAreaLook.js';
 import { OpenGateLook } from '../character/OpenGateLook.js';
 import { DamageKind, DamageNumber } from '../character/DamageNumber.js';
 import { DamageDigits } from '../ui/DamageDigits.js';
+import { BuffVisualOverlay } from '../character/BuffVisualOverlay.js';
+import { TombstoneEffect } from '../character/TombstoneEffect.js';
+import { ActionMan } from '../character/ActionMan.js';
+import { AttackAction } from '../character/AttackAction.js';
 import { ShopMarker } from '../character/ShopMarker.js';
 import { SkillEffectOverlay } from '../character/SkillEffectOverlay.js';
 import { ItemEffectOverlay } from '../character/ItemEffectOverlay.js';
@@ -41,6 +45,7 @@ import { loadFrameSequence } from '../character/WzFrameAnimation.js';
 import { getConsumeCashItemType } from '../util/CashSlotType.js';
 import { MobSoundService } from '../character/MobSoundService.js';
 import { FieldSoundService } from '../character/FieldSoundService.js';
+import { AnimationDisplayer } from '../render/AnimationDisplayer.js';
 import { InPacket } from '../net/packet/InPacket.js';
 import { OutPacket } from '../net/packet/OutPacket.js';
 import { InHeader } from '../net/packet/OpCodes.js';
@@ -281,6 +286,7 @@ export class GameStage extends Stage {
   protected _skill!: SkillBook;
   protected _stats!: StatsInfo;
   protected _prevExp = -1; // track EXP delta for popup display
+  protected _prevHp = -1; // track HP delta for poison DoT damage numbers
   protected _job = 0;
   protected _quest!: QuestLog;
   protected _medalQuestInfo = new MedalQuestInfo();
@@ -381,6 +387,7 @@ export class GameStage extends Stage {
   protected _skillWz: WzPackage | null = null;
   protected _uiWz: WzPackage | null = null;
   protected _effectWz: WzPackage | null = null;
+  protected _animation: AnimationDisplayer | null = null;
   protected _npcWz: WzPackage | null = null;
   protected _reactorWz: WzPackage | null = null;
   protected _tamingMobWz: WzPackage | null = null;
@@ -569,7 +576,7 @@ export class GameStage extends Stage {
         this._shopMarkerLayer.removeChildren();
         const rebuilt = this._shopMarker.RebuildDisplay(
           (name) => { for (const c of this._otherChars.values()) if (c.Name === name) return c.Position; return null; },
-          (wx, wy) => this._camera.WorldToScreen(wx, wy),
+          (wx: number, wy: number) => this._camera.WorldToScreen(wx, wy),
         );
         this._moveChildren(this._shopMarkerLayer, rebuilt);
         rebuilt.destroy();
@@ -1465,6 +1472,8 @@ export class GameStage extends Stage {
 
     this._skillEffects = new SkillEffectOverlay(this._loader);
     this._itemEffects = new ItemEffectOverlay(this._loader, this._characterWz, this._effectWz);
+    this._animation = new AnimationDisplayer(this._effectWz);
+    this.uiRoot.addChild(this._animation.container);
     this.uiRoot.addChild(this._skillScreenLayer);
     this.uiRoot.addChild(this._fearEffect.container);
     this.uiRoot.addChild(this._limitedView.container);
@@ -2693,11 +2702,12 @@ export class GameStage extends Stage {
       }
     }
 
-    this._dmgNumbers?.Update(dt);
+this._dmgNumbers?.Update(dt);
     ScrollBar.updateAll(dt);
     this._chatBalloon?.Update(dt);
     this._skillEffects?.Update(dt);
     this._itemEffects?.Update(dt);
+    this._animation?.Update(dt);
     this._projectiles.Update(dt);
     this._buffVisual.Update(dt);
     this._tombstone?.Update(dt);
@@ -3143,7 +3153,32 @@ export class GameStage extends Stage {
     // etc.) are internal state or need feature-specific UI this client
     // doesn't have yet — left as registered-but-unconsumed callbacks rather
     // than guessed at.
-    fh.onNotifyLevelUp = (args) => { this._chatBar.addLine(`${args.name} reached level ${args.level}.`); };
+    fh.onNotifyLevelUp = (args) => {
+      this._chatBar.addLine(`${args.name} reached level ${args.level}.`);
+      // Play level up effect on remote character
+      if (this._animation) {
+        const other = Array.from(this._otherChars.values()).find((c) => c.Name === args.name);
+        if (other) {
+          this._animation.EffectGeneral(
+            {
+              pos: { x: other.Position.x, y: other.Position.y },
+              z: 0,
+              origin: { x: 0, y: 0 },
+              flipX: false,
+              duration: 2000,
+            },
+            'BasicEff/LevelUp',
+            this._loader
+          );
+          if (this.game.audioPlayer && this._mobSoundWz) {
+            const soundNode = this._mobSoundWz.GetItem('LevelUp/levelup');
+            if (soundNode instanceof WzSound) {
+              this.game.audioPlayer.PlayEffect(soundNode.AudioBytes);
+            }
+          }
+        }
+      }
+    };
     fh.onNotifyWedding = (args) => {
       this._fieldSubgameHud.SetMessage(`Wedding: ${args.name}`);
       this._chatBar.addLine(`${args.name} got married.`);
@@ -4913,6 +4948,7 @@ this._localCharId = args.characterId ?? 0;
     this._openGates.clear();
     this._diedMobIds.clear();
     this._prevExp = -1;
+    this._prevHp = -1;
     this._pets.clear();
     this._dragons.clear();
     this._itemEffects?.Clear();
@@ -4975,6 +5011,12 @@ this._localCharId = args.characterId ?? 0;
 
     this._physics = new PlayerController(this._field);
     this._physics.SetStats(0, 0);
+    this._physics.onJump = () => {
+      if (this._mobSoundWz && this.game.audioPlayer) {
+        const soundNode = this._mobSoundWz.GetItem('Jump/jumpfly');
+        if (soundNode instanceof WzSound) this.game.audioPlayer.PlayEffect(soundNode.AudioBytes);
+      }
+    };
     this._physics.onTakeFallDamage = (dmg) => {
       if (this._stats?.hp !== undefined) {
         this._stats.hp = Math.max(0, this._stats.hp - dmg);
@@ -5221,6 +5263,12 @@ this._localCharId = args.characterId ?? 0;
       const g = this._field.GetFootholdBelow(args.x, args.y - 1);
       const gy = g?.YAt(args.x);
       if (gy != null) mob.Position.y = gy;
+      else {
+        // Fallback: try to find any foothold near the spawn point
+        const fallback = this._field.GetFootholdBelow(args.x, args.y);
+        const fallbackY = fallback?.YAt(args.x);
+        if (fallbackY != null) mob.Position.y = fallbackY;
+      }
       // OG: the mob renders in the layer of the foothold it stands on, so it
       // depth-sorts against tiles/objs/entities correctly (not the default 7).
       mob.Layer = this._field.LayerOfFoothold(args.fhId, this._field.LayerAt(args.x, args.y, 7));
@@ -6996,6 +7044,8 @@ this._localCharId = args.characterId ?? 0;
     const sec = this.game.fieldHandlers.secondaryStat;
     this._buffVisual.SetDarkSight(sec.isDarkSightActive(), this._player);
     this._buffVisual.SetStun(sec.isStunActive());
+    this._buffVisual.SetFrozen(sec.isFrozenActive());
+    this._buffVisual.SetWeb(sec.isWebActive());
     this._buffVisual.SetPoison(sec.isPoisonActive());
     this._buffVisual.SetSeal(sec.isSealActive());
     this._buffVisual.SetHyperBody(sec.isHyperBodyActive(), this._player);
@@ -7003,8 +7053,9 @@ this._localCharId = args.characterId ?? 0;
     this._buffVisual.SetBooster(sec.isBoosterActive());
     // OG: CUserLocal::IsImmovable — stun/freeze/web debuffs make the character
     // immovable. The visual above already draws the stun stars; this drives the
-    // physics so a stunned player actually can't move (CVecCtrl gates on it).
-    this._physics?.SetStunned(sec.isStunActive());
+    // physics so a stunned/frozen/webbed player actually can't move (CVecCtrl gates on it).
+    const isImmovableDebuff = sec.isStunActive() || sec.isFrozenActive() || sec.isWebActive();
+    this._physics?.SetStunned(isImmovableDebuff);
   }
 
   /** Mirror the local avatar/stat sources consumed by CVecCtrlUser's ladder gate. */
@@ -7057,6 +7108,16 @@ this._localCharId = args.characterId ?? 0;
 
   private _onStatChanged(args: StatChangedArgs): void {
     if (args.hp !== undefined) {
+      // OG: Show poison DoT damage number — mob poison ticks HP server-side,
+      // the client shows a red floating number when HP decreases from poison.
+      if (this._prevHp >= 0 && args.hp < this._prevHp && this._physics && this._dmgNumbers) {
+        const sec = this.game.fieldHandlers.secondaryStat;
+        if (sec.isPoisonActive()) {
+          const hpDamage = this._prevHp - args.hp;
+          this._dmgNumbers.Add(hpDamage, this._physics.Position.x, this._physics.Position.y - 40, DamageKind.MobDamage);
+        }
+      }
+      this._prevHp = args.hp;
       this._statusBar.hp = args.hp;
       this._stats.hp = args.hp;
       this._skill.characterHp = args.hp; // OG: HP check in OnSkillLevelUpButton
@@ -7085,12 +7146,33 @@ this._localCharId = args.characterId ?? 0;
       this._prevExp = args.exp;
     }
     if (args.level !== undefined) {
+      const prevLevel = this._stats.level ?? 0;
       this._statusBar.level = args.level;
       this._stats.level = args.level;
       this._skill.characterLevel = args.level;
       this._statusBar.nextExp = NextLevelExpTable[args.level - 1] ?? 0;
       // OG: pet auto-speaking on level up (event 0)
       this._firePetEvent(0);
+      // OG: level up effect and sound
+      if (args.level > prevLevel && this._animation && this._physics) {
+        this._animation.EffectGeneral(
+          {
+            pos: { x: this._physics.Position.x, y: this._physics.Position.y },
+            z: 0,
+            origin: { x: 0, y: 0 },
+            flipX: false,
+            duration: 2000,
+          },
+          'BasicEff/LevelUp',
+          this._loader
+        );
+        if (this.game.audioPlayer && this._mobSoundWz) {
+          const soundNode = this._mobSoundWz.GetItem('LevelUp/levelup');
+          if (soundNode instanceof WzSound) {
+            this.game.audioPlayer.PlayEffect(soundNode.AudioBytes);
+          }
+        }
+      }
     }
     // TODO_AUDIT.md Sixty-fifth pass: real bug found while wiring CUISkill's
     // skill-up gate — args.sp was already fully decoded (the ExtendSP fix)

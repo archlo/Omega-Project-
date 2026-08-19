@@ -1889,15 +1889,19 @@ export class FieldHandlers {
     const adminEffect = p.readByte();
 
     // Pet loop: while Decode1() { create CPet, CPet::Init }
+    // OG CPet::Init reads: templateId(4), name(mapleStr), lockerSN(8),
+    // x(2), y(2), moveAction(1), foothold(2), bNameTag(1), bChatBalloon(1)
     while (p.readByte() !== 0) {
-      // Pet data is complex (CPet::Init) — skip by consuming the known fields.
-      // CPet::Init reads: nPetIndex(1), sPetName(maple), nLevel(1), nTameness(2),
-      // nRepleteness(1), nPetSkill(1?), nActivatedSkill(1), nHP(2), nMP(2),
-      // nExp(4), nFullness(1), nFriendship(1)
-      // For now, we don't support remote pets — but we must consume the bytes.
-      // This will throw on the first unknown field, caught below.
-      // TODO: implement CPet::Init decode when remote pets are needed.
-      break; // no pets encoded by our server currently (loop body never reached)
+      p.readInt();           // nItemID (pet template ID)
+      p.readString();        // sPetName
+      p.readBytes(8);        // liPetLockerSN (8-byte long)
+      p.readShort();         // x position
+      p.readShort();         // y position
+      p.readByte();          // nMoveAction
+      p.readShort();         // nFoothold
+      p.readByte();          // bNameTag
+      p.readByte();          // bChatBalloon
+      // TODO: create PetLook for remote char when pet rendering is needed
     }
 
     // TamingMob: 3 ints (level, exp, fatigue)

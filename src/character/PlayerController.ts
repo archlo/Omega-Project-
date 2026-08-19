@@ -199,8 +199,9 @@ export class PlayerController {
     this.Stance = this.WeaponStand === 2 ? Stance.Stand2 : Stance.Stand1;
   }
 
-  onTakeFallDamage: ((damage: number) => void) | null = null;
+onTakeFallDamage: ((damage: number) => void) | null = null;
   onAttachedObjectChanged: ((footholdId: number, ladder: boolean) => void) | null = null;
+  onJump: (() => void) | null = null;
 
   // OG: CUserLocal state flags mirrored from IDA (0x9054b2 IsImmovable)
   private _isStunned = false;
@@ -1108,6 +1109,7 @@ export class PlayerController {
       this._notifyAttached();
       this._fallStartY = this.Position.y;
       this._freeFallElapsedMs = 0;
+      this.onJump?.();
       return true;
     }
 
@@ -1492,9 +1494,10 @@ export class PlayerController {
       this._fallZMass = jumpFh.ZMass;
       if (!jumpFh.IsWall) this._velocity.x *= jumpFh.Uvx;
     }
-    this._notifyAttached();
+this._notifyAttached();
     this._grounded = false;
     this._lastFhX1 = 0; this._lastFhY1 = 0; this._lastFootholdId = 0;
+    this.onJump?.();
     return true;
   }
 

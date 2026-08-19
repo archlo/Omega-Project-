@@ -12,8 +12,11 @@ const MaxDigits = 16;
 
 export class DamageDigits {
   readonly container = new Container();
-  private _white: (WzSprite | null)[] = new Array(10).fill(null);
-  private _crit: (WzSprite | null)[] = new Array(10).fill(null);
+  // OG Effect_HP: first digit uses _1 set, remaining digits use _0 set
+  private _white0: (WzSprite | null)[] = new Array(10).fill(null);
+  private _white1: (WzSprite | null)[] = new Array(10).fill(null);
+  private _crit0: (WzSprite | null)[] = new Array(10).fill(null);
+  private _crit1: (WzSprite | null)[] = new Array(10).fill(null);
   private _miss: WzSprite | null = null;
   // Keyed by "<slotKey>:<digitIndex>", not just digitIndex — multiple
   // damage numbers are commonly on screen at once (e.g. two simultaneous
@@ -26,18 +29,25 @@ export class DamageDigits {
   private _digitSprites = new Map<string, Sprite>();
   private _activeSlots = new Set<string>();
 
-  get LoadedWhite(): boolean { return this._white[0] !== null; }
-  get LoadedCrit(): boolean { return this._crit[0] !== null; }
+  get LoadedWhite(): boolean { return this._white0[0] !== null; }
+  get LoadedCrit(): boolean { return this._crit0[0] !== null; }
   get LoadedMiss(): boolean { return this._miss !== null; }
 
   constructor(effectWz: WzPackage | null, loader: WzTextureLoader) {
     if (effectWz === null) return;
 
+    // Load _1 sets (first digit) and _0 sets (remaining digits)
     for (const node of ['NoRed1', 'NoRed0', 'Basic']) {
-      if (DamageDigits._tryLoadDigits(effectWz, loader, `${BasicEff}/${node}`, this._white)) break;
+      if (DamageDigits._tryLoadDigits(effectWz, loader, `${BasicEff}/${node}`, this._white1)) break;
+    }
+    for (const node of ['NoRed0', 'NoRed1', 'Basic']) {
+      if (DamageDigits._tryLoadDigits(effectWz, loader, `${BasicEff}/${node}`, this._white0)) break;
     }
     for (const node of ['NoCri1', 'NoCri0', 'Cri']) {
-      if (DamageDigits._tryLoadDigits(effectWz, loader, `${BasicEff}/${node}`, this._crit)) break;
+      if (DamageDigits._tryLoadDigits(effectWz, loader, `${BasicEff}/${node}`, this._crit1)) break;
+    }
+    for (const node of ['NoCri0', 'NoCri1', 'Cri']) {
+      if (DamageDigits._tryLoadDigits(effectWz, loader, `${BasicEff}/${node}`, this._crit0)) break;
     }
     for (const path of [`${BasicEff}/NoRed0/Miss`, `${BasicEff}/NoViolet0/Miss`]) {
       const mc = effectWz.GetItem(path);
@@ -65,17 +75,22 @@ export class DamageDigits {
   }
 
   DrawNumber(slotKey: string, text: string, screenCenter: { x: number; y: number }, alpha: number, crit: boolean): boolean {
-    const set = crit ? this._crit : this._white;
-    if (set[0] === null) return false;
+    // OG Effect_HP: first digit uses _1 set, remaining digits use _0 set
+    const set0 = crit ? this._crit0 : this._white0;
+    const set1 = crit ? this._crit1 : this._white1;
+    if (set0[0] === null && set1[0] === null) return false;
 
     let totalW = 0;
     let count = 0;
+    let digitIdx = 0;
     for (const ch of text) {
       if (ch < '0' || ch > '9') continue;
+      const set = digitIdx === 0 ? set1 : set0;
       const sp = set[parseInt(ch)];
       if (sp === null) return false;
       totalW += sp.Width;
       count++;
+      digitIdx++;
     }
     if (count === 0) return false;
     totalW -= (count - 1) * DigitOverlap;
@@ -84,8 +99,10 @@ export class DamageDigits {
     let spIdx = 0;
     let x = Math.round(screenCenter.x - totalW / 2);
     const y = Math.round(screenCenter.y);
+    digitIdx = 0;
     for (const ch of text) {
       if (ch < '0' || ch > '9') continue;
+      const set = digitIdx === 0 ? set1 : set0;
       const sp = set[parseInt(ch)]!;
       const pixi = this._digitSprite(`${slotKey}:${spIdx++}`, sp);
       // NewSprite() already sets anchor = (OriginX/Width, OriginY/Height),
@@ -96,6 +113,7 @@ export class DamageDigits {
       pixi.alpha = alpha;
       pixi.visible = true;
       x += sp.Width - DigitOverlap;
+      digitIdx++;
     }
     for (; spIdx < MaxDigits; spIdx++) {
       const s = this._digitSprites.get(`${slotKey}:${spIdx}`);

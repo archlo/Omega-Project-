@@ -12,6 +12,8 @@ describe('GameStage mob debuffs on the player (stun immobilize + seal cast-block
     const secondaryStat = {
       isSealActive: () => false,
       isStunActive: () => false,
+      isFrozenActive: () => false,
+      isWebActive: () => false,
       isPoisonActive: () => false,
       isDarkSightActive: () => false,
       isHyperBodyActive: () => false,
@@ -25,7 +27,8 @@ describe('GameStage mob debuffs on the player (stun immobilize + seal cast-block
     };
     stage._physics = { SetStunned: vi.fn(), SetKnockbackStun: vi.fn() };
     stage._buffVisual = {
-      SetDarkSight: vi.fn(), SetStun: vi.fn(), SetPoison: vi.fn(), SetSeal: vi.fn(),
+      SetDarkSight: vi.fn(), SetStun: vi.fn(), SetFrozen: vi.fn(), SetWeb: vi.fn(),
+      SetPoison: vi.fn(), SetSeal: vi.fn(),
       SetHyperBody: vi.fn(), SetShadowPartner: vi.fn(), SetBooster: vi.fn(),
     };
     Object.assign(stage, over);

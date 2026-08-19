@@ -119,6 +119,7 @@ export class ItemTooltip {
   private _strings: StringPoolService | null;
   private _descOf: ((itemId: number) => string | null) | null;
   private _setItemOf: ((itemId: number) => { name: string; effects: Array<{ threshold: number; effect: Record<string, number> }> } | null) | null;
+  private _mobNameOf: ((mobId: number) => string | null) | null;
   private _pLevel = 0; private _pStr = 0; private _pDex = 0; private _pInt = 0; private _pLuk = 0;
   private _pJob = 0;
 
@@ -129,6 +130,7 @@ export class ItemTooltip {
   private _bgAlpha = 204 / 255; // OG: MakeLayer uColor 0xCC0E395A (alpha 0xCC)
   private _grade = 0;
   private _blitSprites: Sprite[] = []; // Track sprites added by BlitAt for cleanup
+  private _blitTexts: Text[] = []; // Track text sprites for cleanup
 
   // OG: SetToolTip_Equip parameters cache
   private _equipWidth = EquipWidth;
@@ -140,15 +142,17 @@ export class ItemTooltip {
     setItemOf: ((itemId: number) => { name: string; effects: Array<{ threshold: number; effect: Record<string, number> }> } | null) | null = null,
     optionOf: ((optionId: number, level: number) => EquipOptionLevel | null) | null = null,
     itemInfo: ItemInfoService | null = null,
-    strings: StringPoolService | null = null) {
+    strings: StringPoolService | null = null,
+    mobNameOf: ((mobId: number) => string | null) | null = null) {
     this._font = font;
     this._icons = icons;
     this._assets = assets;
-    this._descOf = descOf;
+this._descOf = descOf;
     this._setItemOf = setItemOf;
     this._optionOf = optionOf;
     this._itemInfo = itemInfo;
     this._strings = strings;
+    this._mobNameOf = mobNameOf;
     this._toolTip = new ToolTip(assets);
 
     this._root = new Container();
@@ -172,7 +176,7 @@ export class ItemTooltip {
     this._pLevel = level; this._pStr = str; this._pDex = dex; this._pInt = intt; this._pLuk = luk; this._pJob = job;
   }
 
-  // OG: Master draw dispatcher — routes to equip vs consumable
+// OG: Master draw dispatcher — routes to equip vs consumable vs pet
   Draw(itemId: number, name: string, grade: number, _quantity: number,
     mouseX: number, mouseY: number, viewW: number, viewH: number,
     equippedSetCount: number = 0,
@@ -181,11 +185,16 @@ export class ItemTooltip {
      bundleOpts?: BundleTooltipOptions): void {
     const attr = this._icons.LoadAttr(itemId);
     const isEquip = (attr?.IsEquip === true) || Math.floor(itemId / 1_000_000) === 1;
+    // Pet items: category 500 (5000000+)
+    const isPet = (attr?.Category === 500) || Math.floor(itemId / 1_000_000) === 500;
     this._grade = grade;
     if (isEquip) {
       this._drawEquip(itemId, name, grade, attr, mouseX, mouseY, viewW, viewH, equippedSetCount, equipStats);
+    } else if (isPet && petLevel !== undefined && petTameness !== undefined && petRepleteness !== undefined && petRemainLife !== undefined) {
+      // OG: SetToolTip_Pet / DrawPetTooltip path for pet items
+      this._drawPet(itemId, name, attr, mouseX, mouseY, viewW, viewH, petLevel, petTameness, petRepleteness, petRemainLife, bundleOpts);
     } else {
-      this._drawConsumable(itemId, name, attr, mouseX, mouseY, viewW, viewH, petLevel, petTameness, petRepleteness, petRemainLife, bundleOpts);
+      this._drawConsumable(itemId, name, attr, mouseX, mouseY, viewW, viewH, undefined, undefined, undefined, undefined, bundleOpts);
     }
   }
 
@@ -216,12 +225,35 @@ export class ItemTooltip {
     t.y = y;
   }
 
+  private _txtWithFont(idx: number, x: number, y: number, text: string, color: number, font: TextStyle): void {
+    const t = this._texts[idx];
+    if (!t) return;
+    t.visible = true;
+    t.text = text;
+    t.style = new TextStyle({
+      fontFamily: font.fontFamily,
+      fontSize: font.fontSize,
+      fontWeight: font.fontWeight,
+      fontStyle: font.fontStyle,
+      fill: color,
+    });
+    t.x = x;
+    t.y = y;
+  }
+
   private _clearTexts(from = 0): void {
     for (let i = from; i < this._texts.length; i++) this._texts[i].visible = false;
   }
 
   private _dot(x: number, y: number, alpha = 0.3): void {
     this._g.rect(x, y, 2, 2).fill({ color: 0xFFFFFF, alpha });
+  }
+
+  private _measureText(text: string, font: TextStyle): number {
+    const ctx = (Text as any).measureFont ? (Text as any).measureFont(text, font) : 0;
+    // Fallback: approximate measurement
+    const size = font.fontSize ?? 12;
+    return text.length * (size * 0.6);
   }
 
   // OG: BlitAt — create sprite from WzSprite and add to parent
@@ -250,10 +282,11 @@ export class ItemTooltip {
     // DrawTextItemName draws the dot canvas at (10, y+5) and name text at (18, y)
     const yName = 10;
     const yDot1 = yName + lh + 3;
-    const yBlock = yDot1 + 5;
+    // OG: iconTop = y + 32 (from SetToolTip_Equip @0x8A5670)
+    const yBlock = yName + 32; // 42
     // OG: DrawItemReqJob blits the job strip at raw y+141; icon top = y+32,
-    // so jobY = iconTop + 109.
-    const jobY = yBlock + JobStripDY - 32;
+    // so jobY = iconTop + 109 = 151.
+    const jobY = yBlock + 109;
     const yBlockBottom = jobY + 13;
     const yDot2 = yBlockBottom + 6;
     const yInfo = yDot2 + 6;
@@ -279,12 +312,8 @@ export class ItemTooltip {
     }
     this._blitSprites = [];
 
-    // OG: Background with border
+    // OG: Background only — no border (transparent border per MakeLayer)
     this._g.rect(0, 0, w, h).fill({ color: BgColor, alpha: this._bgAlpha });
-    this._g.rect(0, 0, w, 1).fill({ color: 0x1A4A6A });
-    this._g.rect(0, h - 1, w, 1).fill({ color: 0x1A4A6A });
-    this._g.rect(0, 0, 1, h).fill({ color: 0x1A4A6A });
-    this._g.rect(w - 1, 0, 1, h).fill({ color: 0x1A4A6A });
 
     // OG: Protection border (4px colored border on ALL sides based on protection type)
     if (attr && attr.ProtectionType !== undefined && attr.ProtectionType >= 0 && attr.ProtectionType <= 3) {
@@ -296,33 +325,36 @@ export class ItemTooltip {
     }
 
     const gx = x, gy = y;
-    this._root.x = gx;
+this._root.x = gx;
     this._root.y = gy;
 
     // OG: Item name — DrawItemTitle @0x88ccb0 (equip branch): the name is drawn
-    // centered at (w - titleW - descW)/2 with the desc (StringPool 0xC35,
-    // text unverified → empty) right after it, both at yName.
+    // centered at (w - titleW - descW)/2 with the desc (StringPool 0xC35)
+    // right after it, both at yName. Name uses font 3 (HL_ORANGE), desc uses font 1 (HL_WHITE).
     // DrawTextItemName separately draws the dot at (10, yName+5) and the
     // trade-option desc at (18, yName).
     // OG: GetItemName @0x8899B0 — gender-locked equips can get a "Male"/"Female"
     // prefix; the color comes from the rarity grade, not GetItemName's quality.
-    // The prefix is opt-in (the callers already pass server-resolved names).
     const gItem = this._toolTip.getItemName(itemId, name, {
       protected: attr?.ProtectionType !== undefined && attr.ProtectionType > 0,
     });
     const displayName = gItem.name;
     // OG: GetItemName returns the lType used to color DrawItemTitle — the name
-    // is drawn in that font's color (HL_WHITE/HL_ORANGE/quality-based), not a
-    // separate invented grade palette. Fall back to _gradeColor only for the
-    // legacy caller-supplied rarity grade (all current callers pass grade 0).
+    // is drawn in that font's color (HL_WHITE/HL_ORANGE/quality-based).
     const nameColor = ToolTip.getFontColor(gItem.lType);
-    const nameW = this._font.measure(displayName).x;
-    const titleDescW = titleDesc ? this._font.measure(titleDesc).x : 0;
+    
+    // Use ToolTip's fonts for correct OG rendering (12px, not 11px monospace)
+    const titleFont = this._toolTip.getFontByType(FONT_TYPES.HL_ORANGE);  // font 3
+    const descFont = this._toolTip.getFontByType(FONT_TYPES.HL_WHITE);    // font 1
+    const nameW = this._measureText(displayName, titleFont);
+    const titleDescW = titleDesc ? this._measureText(titleDesc, descFont) : 0;
     const nameX = Math.max(4, (w - nameW - titleDescW) / 2);
-    this._txt(0, nameX, yName, displayName, nameColor, 11);
-    // OG DrawItemTitle equip branch: desc (StringPool 0xC35) drawn right after
-    // the name in font 1 (HL_WHITE).
-    if (titleDesc) this._txt(1, nameX + nameW, yName, titleDesc, ToolTip.getFontColor(FONT_TYPES.HL_WHITE), 9);
+    
+    // Draw name in HL_ORANGE (font 3), centered
+    this._txtWithFont(0, nameX, yName, displayName, nameColor, titleFont);
+    // Draw title desc (StringPool 0xC35) in HL_WHITE (font 1) right after name
+    if (titleDesc) this._txtWithFont(1, nameX + nameW, yName, titleDesc, ToolTip.getFontColor(FONT_TYPES.HL_WHITE), descFont);
+    // OG DrawTextItemName: dot at (10, yName+5)
     this._dot(10, yName + 5);
 
     let ti = titleDesc ? 2 : 1;
@@ -496,6 +528,48 @@ export class ItemTooltip {
     this._root.visible = true;
   }
 
+  // OG: Pet tooltip — SetToolTip_Pet / DrawPetTooltip flow
+  // Separate from bundle tooltip; does NOT show invented pet stats/skills
+  private _drawPet(itemId: number, name: string, attr: ItemAttr | null,
+    mouseX: number, mouseY: number, viewW: number, viewH: number,
+    petLevel: number, petTameness: number, petRepleteness: number, petRemainLife: number,
+    bundleOpts?: BundleTooltipOptions): void {
+    const opts = bundleOpts ?? {};
+    const desc = this._descOf?.call(this, itemId) ?? '';
+    
+    // OG: death string from petRemainLife
+    const isDead = petRemainLife <= 0;
+    const deathStr = isDead ? 'Dead' : '';
+    
+    // OG: donator from bundleOpts.sDonator (StringPool 0x2B0 format)
+    const donator = opts.sDonator ?? '';
+    
+    // OG: expiry from bundleOpts.ft
+    const expiryStr = opts.ft ? this._toolTip.getItemExpireDate(opts.ft) : '';
+    
+    // OG: skills - not shown in pet tooltip (OG doesn't have skill list in pet tooltip)
+    const skills: string[] = [];
+    
+    // OG: goodsInfo for MakingLimitInfo
+    const goodsInfo = opts.goodsInfo ?? null;
+    
+    // OG: template name from item name/attr
+    const templateName = name;
+    
+    // Call the OG DrawPetTooltip
+    this.DrawPetTooltip(
+      name, templateName, desc,
+      petLevel, petTameness, petRepleteness,
+      isDead, deathStr,
+      donator, expiryStr,
+      skills,
+      mouseX, mouseY, viewW, viewH,
+      opts.nOriginalPrice ?? 0, opts.nPrice ?? 0,
+      itemId,
+      goodsInfo
+    );
+  }
+
   // OG: Full consumable tooltip — SetToolTip_Bundle flow
   // OG signature: (x, y, nItemID, ft, bProtected, nPeriod, sDonator, sTitle, nOriginalPrice, nPrice,
   //                goodsInfo, pe, bCashShop, nNpcShopTimeLimitedItemPeriod, nCommodityID,
@@ -586,28 +660,44 @@ export class ItemTooltip {
       if (sp.parent) sp.parent.removeChild(sp);
       sp.destroy();
     }
-    this._blitSprites = [];
+this._blitSprites = [];
     this._root.x = x;
     this._root.y = y;
 
-    // OG: Background (0xCC0E395A with alpha)
+    // OG: Background only — no border (transparent border per MakeLayer)
     this._g.rect(0, 0, w, h).fill({ color: 0x0E395A, alpha: 204 / 255 });
-    this._g.rect(0, 0, w, 1).fill({ color: 0x1A4A6A });
-    this._g.rect(0, h - 1, w, 1).fill({ color: 0x1A4A6A });
-    this._g.rect(0, 0, 1, h).fill({ color: 0x1A4A6A });
-    this._g.rect(w - 1, 0, 1, h).fill({ color: 0x1A4A6A });
 
     // OG: Item name and trade metadata. The strings are supplied preformatted;
     // localization and item-property classification remain outside this class.
     this._txt(0, 4, 6, name, NameColor, 11);
     this._g.rect(2, 6 + lh, w - 4, 1).fill({ color: InnerOutlineC, alpha: InnerOutlineA });
 
-    let ti = 1;
-    if (tradeOption) { this._txt(ti++, 0, 31, tradeOption, ToolTip.getFontColor(FONT_TYPES.GEN_RED), 10); }
-    if (tradeOptionEx) { this._txt(ti++, 0, tradeOption ? 50 : 31, tradeOptionEx, ToolTip.getFontColor(FONT_TYPES.GEN_RED), 10); }
-    if (expiryStr) { this._txt(ti++, 16, optionY + 29, expiryStr, ToolTip.getFontColor(FONT_TYPES.H_WHITE), 10); }
-    if (titleLine) { this._txt(ti++, 16, optionY + 31 + (expiryStr ? 16 : 0), titleLine, ToolTip.getFontColor(FONT_TYPES.GEN_RED), 10); }
-    if (donatorLine) { this._txt(ti++, 16, optionY + 31 + (expiryStr ? 16 : 0) + (titleLine ? 16 : 0), donatorLine, ToolTip.getFontColor(FONT_TYPES.HL_SPECIAL), 9); }
+let ti = 1;
+    // OG: Trade options use font 14 (GEN_ORANGE), not GEN_RED
+    const tradeFont = this._toolTip.getFontByType(FONT_TYPES.GEN_ORANGE);
+    const tradeColor = ToolTip.getFontColor(FONT_TYPES.GEN_ORANGE);
+    if (tradeOption) { this._txtWithFont(ti++, 0, 31, tradeOption, tradeColor, tradeFont); }
+    if (tradeOptionEx) { this._txtWithFont(ti++, 0, tradeOption ? 50 : 31, tradeOptionEx, tradeColor, tradeFont); }
+    // OG: Expiry uses font 22 (STAN_DSC) at 9px with dot blit, not H_WHITE at 10px
+    const expiryFont = this._toolTip.getFontByType(FONT_TYPES.STAN_DSC);
+    const expiryColor = ToolTip.getFontColor(FONT_TYPES.STAN_DSC);
+    if (expiryStr) { this._txtWithFont(ti++, 16, optionY + 29, expiryStr, expiryColor, expiryFont); this._dot(10, optionY + 29 + 2); }
+    // OG: Title uses DrawItemTitle centered (font 3 HL_ORANGE for equip, font 14 GEN_ORANGE for bundle)
+    // For bundle, title is drawn centered at the top area
+    if (titleLine) {
+      const titleFont = this._toolTip.getFontByType(FONT_TYPES.GEN_ORANGE);
+      const titleColor = ToolTip.getFontColor(FONT_TYPES.GEN_ORANGE);
+      const titleW = this._measureText(titleLine, titleFont);
+      const titleX = Math.max(4, (w - titleW) / 2);
+      this._txtWithFont(ti++, titleX, optionY + 31 + (expiryStr ? 16 : 0), titleLine, titleColor, titleFont);
+    }
+    // OG: Donator uses StringPool 0x2B0 format, not hardcoded "Donator: "
+    if (opts.sDonator) {
+      const donatorText = this._string(0x2B0, 'Donator: {0}', opts.sDonator);
+      const donatorFont = this._toolTip.getFontByType(FONT_TYPES.HL_SPECIAL);
+      const donatorColor = ToolTip.getFontColor(FONT_TYPES.HL_SPECIAL);
+      this._txtWithFont(ti++, 16, optionY + 31 + (expiryStr ? 16 : 0) + (titleLine ? 16 : 0), donatorText, donatorColor, donatorFont);
+    }
 
     // OG: item icon is always present at (10, nCashDescOffset + 32).
     const icon = this._itemIcon(itemId);
@@ -633,10 +723,23 @@ export class ItemTooltip {
     if (isPet) {
       for (const line of petLines) { this._txt(ti++, 10, yCursor, line, StatColor, 9); yCursor += lh - 1; }
     }
-    if (protectedLine) { this._txt(ti++, 4, yCursor, protectedLine, ToolTip.getFontColor(FONT_TYPES.HL_SPECIAL), 10); yCursor += lh + 4; }
-    if (periodStr) { this._txt(ti++, 4, yCursor, periodStr, DescColor, 9); yCursor += lh + 4; }
+if (periodStr) { this._txt(ti++, 4, yCursor, periodStr, DescColor, 9); yCursor += lh + 4; }
     if (timeLimitedStr) { this._txt(ti++, 4, yCursor, timeLimitedStr, DescColor, 9); yCursor += lh + 4; }
-    if (discountStr) { this._txt(ti++, 10, Math.max(descH, 68) + cashDescOffset + 40, discountStr, ToolTip.getFontColor(FONT_TYPES.GEN_RED), 10); }
+    // OG: Discount uses WZ digit sprites (DrawDiscount_Rate), not plain text
+    if (discountStr) {
+      const pct = Math.floor((1 - (opts.nPrice ?? 0) / (opts.nOriginalPrice ?? 1)) * 100);
+      // Use TooltipAssets.DrawDiscount to render WZ digit sprites
+      const discountSprite = this._assets.Get(`Discount/${pct}`);
+      if (discountSprite) {
+        this._blitAt(discountSprite, 10, Math.max(descH, 68) + cashDescOffset + 40);
+      } else {
+        // Fallback: render digits via DrawNumber
+        this._assets.DrawNumber(pct, true, 10, Math.max(descH, 68) + cashDescOffset + 40, this._root, 1);
+        // Draw '%' glyph
+        const pctSprite = this._assets.Get('Discount/%');
+        if (pctSprite) this._blitAt(pctSprite, 30, Math.max(descH, 68) + cashDescOffset + 40);
+      }
+    }
     if (itcStr) { this._txt(ti++, 4, yCursor, itcStr, DescColor, 9); yCursor += lh + 4; }
     if (itcExpiryStr) { this._txt(ti++, 4, yCursor, `ITC Expires: ${itcExpiryStr}`, DescColor, 9); yCursor += lh + 4; }
     if (orderCommentStr) { this._txt(ti++, 4, yCursor, orderCommentStr, DescColor, 9); }
@@ -890,7 +993,7 @@ export class ItemTooltip {
     }
   }
 
-  // OG: SetToolTip_Skill @ 0x8a2500 — skill tooltip with level info and required skills
+// OG: SetToolTip_Skill @ 0x8a2500 — skill tooltip with level info and required skills
   // Context-dependent sections are supplied as preformatted strings. The original
   // client gets these from StringPool/context state, so this layer must not guess
   // their localization or values.
@@ -917,6 +1020,28 @@ export class ItemTooltip {
     const lh = this._font.lineHeight;
     const w = SkillWidth; // OG: 320px for skill tooltips
 
+    // OG: Wild Hunter mob name resolution from WZ (Mob.wz templates)
+    // Wild Hunter skills (job 3300/3310/3311/3312) that summon mobs
+    // resolve mob template names from Mob.wz for display
+    let wildHunterValues = skillData?.wildHunterValues ?? [];
+    if (skillData?.isWildHunter && this._mobNameOf) {
+      // Known Wild Hunter summon skills and their mob templates
+      // These are resolved from Mob.wz at runtime in OG
+      const wildHunterMobTemplates: Record<number, number[]> = {
+        33101006: [9300400], // Summon Jaguar
+        33101007: [9300401], // Summon Jaguar (advanced)
+        33111006: [9300402], // Summon Falcon
+        33121006: [9300403], // Summon Wild Beast
+      };
+      const mobTemplates = wildHunterMobTemplates[skillId] || [];
+      const resolvedNames = mobTemplates
+        .map(mobId => this._mobNameOf!(mobId))
+        .filter((name): name is string => name !== null && name !== '');
+      if (resolvedNames.length > 0) {
+        wildHunterValues = resolvedNames.map(name => `Summon: ${name}`);
+      }
+    }
+
     // OG description column: x=87 through width-20. Help/info lines use the
     // full inner width. Height must include every wrapped line, not just the
     // description overflow used by the old placeholder.
@@ -928,7 +1053,7 @@ export class ItemTooltip {
       (skillData?.masterLevel === undefined ? '' : String(skillData.masterLevel));
     const specialLines = [
       ...(skillData?.swallowBuffs ?? []),
-      ...(skillData?.wildHunterValues ?? []),
+      ...wildHunterValues,
       ...(skillData?.damageMeterValues ?? []),
       ...(skillData?.linkedCharName ? [skillData.linkedCharName] : []),
       ...(skillData?.expiryStr ? [skillData.expiryStr] : []),
@@ -952,15 +1077,11 @@ export class ItemTooltip {
       sp.destroy();
     }
     this._blitSprites = [];
-    this._root.x = x;
+this._root.x = x;
     this._root.y = y;
 
-    // OG: Background
+    // OG: Background only — no border (transparent border per MakeLayer)
     this._g.rect(0, 0, w, h).fill({ color: BgColor, alpha: this._bgAlpha });
-    this._g.rect(0, 0, w, 1).fill({ color: 0x1A4A6A });
-    this._g.rect(0, h - 1, w, 1).fill({ color: 0x1A4A6A });
-    this._g.rect(0, 0, 1, h).fill({ color: 0x1A4A6A });
-    this._g.rect(w - 1, 0, 1, h).fill({ color: 0x1A4A6A });
 
     const gx = x, gy = y;
     this._root.x = gx;
@@ -1058,18 +1179,25 @@ export class ItemTooltip {
       yCursor += lh + 4;
     }
 
-    this._iconSprite.visible = false;
+this._iconSprite.visible = false;
     const exactSkillIcon = this._assets.LoadCanvas(this._itemInfo?.GetSkillIconCanvas(skillId) ?? null);
-    if (exactSkillIcon || skillData?.icon) {
-      const icon = exactSkillIcon?.NewSprite()
-        ?? (skillData?.icon as any)?.NewSprite?.()
-        ?? skillData?.icon as any;
-      if (icon) {
-        icon.x = 10;
-        icon.y = 32;
-        this._root.addChild(icon);
-        this._blitSprites.push(icon);
-      }
+    let icon = exactSkillIcon?.NewSprite()
+      ?? (skillData?.icon instanceof Sprite ? skillData.icon as Sprite : null)
+      ?? (skillData?.icon as any)?.NewSprite?.()
+      ?? (skillData?.icon ? this._assets.LoadCanvas(skillData.icon as any)?.NewSprite() : null);
+    if (icon) {
+      icon.x = 10;
+      icon.y = 32;
+      this._root.addChild(icon);
+      this._blitSprites.push(icon);
+    } else {
+      // Fallback: draw skill name text if no icon available
+      const name = skillName;
+      const nameText = new Text({ text: name, style: new TextStyle({ fill: 0xFFFFFF, fontSize: 12, fontFamily: 'monospace' }) });
+      nameText.x = 10;
+      nameText.y = 32;
+      this._root.addChild(nameText);
+      this._blitTexts.push(nameText);
     }
     this._root.visible = true;
   }
@@ -1131,15 +1259,16 @@ export class ItemTooltip {
       sp.destroy();
     }
     this._blitSprites = [];
+    for (const txt of this._blitTexts) {
+      if (txt.parent) txt.parent.removeChild(txt);
+      txt.destroy();
+    }
+    this._blitTexts = [];
     this._root.x = x;
     this._root.y = y;
 
-    // OG: Background (MakeLayer with 0xCC0E395A)
+    // OG: Background only — no border (transparent border per MakeLayer)
     this._g.rect(0, 0, w, h).fill({ color: BgColor, alpha: this._bgAlpha });
-    this._g.rect(0, 0, w, 1).fill({ color: 0x1A4A6A });
-    this._g.rect(0, h - 1, w, 1).fill({ color: 0x1A4A6A });
-    this._g.rect(0, 0, 1, h).fill({ color: 0x1A4A6A });
-    this._g.rect(w - 1, 0, 1, h).fill({ color: 0x1A4A6A });
 
     let ti = 0;
 
@@ -1170,9 +1299,9 @@ export class ItemTooltip {
       v42 = 47;
     }
 
-    // OG: Donator info (StringPool 0x2B0), font type 10 (HL_SPECIAL), DrawTextCenter
+// OG: Donator info (StringPool 0x2B0), font type 10 (HL_SPECIAL), DrawTextCenter
     if (donator) {
-      const donatorText = `Donator: ${donator}`;
+      const donatorText = this._string(0x2B0, 'Donator: {0}', donator);
       this._txt(ti, 0, v42, donatorText, ToolTip.getFontColor(FONT_TYPES.HL_SPECIAL), 10);
       const donatorW = this._font.measure(donatorText).x;
       this._texts[ti].x = (w - donatorW) / 2;
@@ -1181,20 +1310,8 @@ export class ItemTooltip {
 
     let yCursor = v42 + lh + 4;
 
-    // OG: Pet stats (level, tameness, repleteness) — extra info beyond OG
-    this._txt(ti++, 10, yCursor, `Lv.${level}`, StatColor, 9);
-    this._txt(ti++, 100, yCursor, `Tameness: ${tameness}`, StatColor, 9);
-    this._txt(ti++, 200, yCursor, `Full: ${repleteness}`, StatColor, 9);
-    yCursor += lh;
-
-    // OG: Pet skills — extra info beyond OG
-    if (skills.length > 0) {
-      for (const skill of skills) {
-        this._txt(ti, 10, yCursor, skill, DescColor, 9);
-        ti++;
-        yCursor += 14;
-      }
-    }
+    // OG: Pet tooltip does NOT show pet stats (level/tameness/fullness) or skills
+    // Those are shown in CUIPetEquip / pet info window, not in item tooltip
 
     // OG: Item icon at (10, nCashDescOffset + 32) via DrawItemIcon
     if (itemId > 0) {

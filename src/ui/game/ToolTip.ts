@@ -128,18 +128,13 @@ export const TOOLTIP_TYPE = {
 const ITEM_ICON_SIZE = 68;
 const ITEM_ICON_BG_COLOR = 0xA0000000;
 
-// OG: Outline corner pixel color
-const OUTLINE_COLOR = 0xFFFFFF;
-
 // OG: Default padding
 const PADDING = 4;
 
-// OG: Background color for tooltip canvas
-const BG_COLOR = 0x0C0C16;
-const BG_ALPHA = 0.95;
-
-// OG: Border color from MakeLayer
+// OG: MakeLayer background color (ARGB) — 0xCC0E395A = alpha 0xCC (0.8), RGB 0x0E395A
 const MAKE_LAYER_BG = 0xCC0E395A;
+const MAKE_LAYER_BG_RGB = MAKE_LAYER_BG & 0xFFFFFF;      // 0x0E395A
+const MAKE_LAYER_BG_ALPHA = (MAKE_LAYER_BG >>> 24) / 255; // 0xCC / 255 = 0.8
 
 export class ToolTip {
   private _container: Container;
@@ -229,32 +224,17 @@ export class ToolTip {
     this._container.visible = true;
   }
 
-  // OG: InitCanvas @ 0x880960
+  // OG: InitCanvas @ 0x880960 — uses ARGB color param (default MAKE_LAYER_BG)
+  // Background only, no border/stroke (transparent border per OG)
   private _initCanvas(doubleOutline: boolean, color: number): void {
     this._bg.clear();
 
-    // Fill background
-    this._bg.rect(0, 0, this._width, this._height).fill({ color: color || BG_COLOR, alpha: BG_ALPHA });
+    const argb = color || MAKE_LAYER_BG;
+    const rgb = argb & 0xFFFFFF;
+    const alpha = (argb >>> 24) / 255;
 
-    // OG: 4 corner pixels (white border corners)
-    this._bg.rect(0, 0, 1, 1).fill({ color: OUTLINE_COLOR });
-    this._bg.rect(this._width - 1, 0, 1, 1).fill({ color: OUTLINE_COLOR });
-    this._bg.rect(0, this._height - 1, 1, 1).fill({ color: OUTLINE_COLOR });
-    this._bg.rect(this._width - 1, this._height - 1, 1, 1).fill({ color: OUTLINE_COLOR });
-
-    if (doubleOutline) {
-      this._bg.rect(1, 1, this._width - 2, 1).fill({ color: OUTLINE_COLOR });
-      this._bg.rect(1, this._height - 2, this._width - 2, 1).fill({ color: OUTLINE_COLOR });
-      this._bg.rect(1, 1, 1, this._height - 2).fill({ color: OUTLINE_COLOR });
-      this._bg.rect(this._width - 2, 1, 1, this._height - 2).fill({ color: OUTLINE_COLOR });
-      this._bg.rect(1, 1, 1, 1).fill({ color: OUTLINE_COLOR });
-      this._bg.rect(this._width - 2, 1, 1, 1).fill({ color: OUTLINE_COLOR });
-      this._bg.rect(1, this._height - 2, 1, 1).fill({ color: OUTLINE_COLOR });
-      this._bg.rect(this._width - 2, this._height - 2, 1, 1).fill({ color: OUTLINE_COLOR });
-    }
-
-    // Border
-    this._bg.rect(0, 0, this._width, this._height).stroke({ color: OUTLINE_COLOR, width: 1 });
+    // Fill background with correct ARGB — no corner pixels, no outline, no stroke
+    this._bg.rect(0, 0, this._width, this._height).fill({ color: rgb, alpha });
   }
 
   // OG: GetFontByType @ 0x881d40 — maps type ID to font

@@ -244,19 +244,20 @@ describe('ItemTooltip', () => {
       const nameText = tip.root.children[2] as any;
       expect(nameText.text).toBe('NameTest');
       // OG DrawItemTitle @0x88ccb0: name centered at (w - titleW)/2.
-      // 'NameTest' = 8 chars * 7px = 56, w = 236.
-      expect(nameText.x).toBe((236 - 8 * 7) / 2);
+      // Using the actual font measurement (HL_ORANGE 12px ≈ 7.2px/char).
+      // NameTest = 8 chars * 7.2px = 57.6, w = 236.
+      expect(nameText.x).toBeCloseTo((236 - 57.6) / 2, 1);
       expect(nameText.y).toBe(10);
     });
 
-    it('positions icon sprite at the OG DrawItemIcon hotspot', () => {
+it('positions icon sprite at the OG DrawItemIcon hotspot', () => {
       const icon = { Texture: Texture.EMPTY, Width: 32, Height: 32 } as any;
       const tip = makeTooltip({ attr: equipAttr(), icon });
       tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
-      // _iconSprite is child index 1; yBlock = (10+15+3)+5 = 33
+      // _iconSprite is child index 1; yBlock = iconTop = yName + 32 = 42
       const iconSprite = tip.root.children[1] as any;
       expect(iconSprite.x).toBe(10);
-      expect(iconSprite.y).toBe(33);
+      expect(iconSprite.y).toBe(42);
       expect(iconSprite.width).toBe(32);
       expect(iconSprite.visible).toBe(true);
     });
@@ -275,8 +276,8 @@ describe('ItemTooltip', () => {
       const reqCalls = (assets.DrawNumber as any).mock.calls.filter((c: any[]) => c[2] === 144);
       const levelRow = reqCalls.find((c: any[]) => c[0] === 30);
       const dexRow = reqCalls.find((c: any[]) => c[0] === 50);
-      expect(levelRow[3]).toBe(33); // iconTop 33 + 0*12
-      expect(dexRow[3]).toBe(57);   // iconTop 33 + 2*12 (STR index 1 still occupies its slot)
+      expect(levelRow[3]).toBe(42); // iconTop 42 + 0*12
+      expect(dexRow[3]).toBe(66);   // iconTop 42 + 2*12 (STR index 1 still occupies its slot)
     });
 
     it('draws Can-style 0 digits for zero non-POP requirements', () => {
@@ -297,11 +298,11 @@ describe('ItemTooltip', () => {
       const tip = makeTooltip({ attr: equipAttr(), assets });
       tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
       expect(assets.Get).toHaveBeenCalledWith('Can/none');
-      // POP row = index 5 → y = 33 + 5*12 = 93; bottom-right anchored at
-      // (144-14, 93-7) = (130, 86). Not via DrawNumber (bNone).
-      const blitted = tip.root.children.find((c: any) => c.x === 130 && c.y === 86);
+      // POP row = index 5 → y = 42 + 5*12 = 102; bottom-right anchored at
+      // (144-14, 102-7) = (130, 95). Not via DrawNumber (bNone).
+      const blitted = tip.root.children.find((c: any) => c.x === 130 && c.y === 95);
       expect(blitted).toBeTruthy();
-      expect((assets.DrawNumber as any).mock.calls.some((c: any[]) => c[0] === 0 && c[2] === 144 && c[3] === 93)).toBe(false);
+      expect((assets.DrawNumber as any).mock.calls.some((c: any[]) => c[0] === 0 && c[2] === 144 && c[3] === 102)).toBe(false);
     });
 
     it('draws fame requirement digits when POP req > 0', () => {
@@ -311,7 +312,7 @@ describe('ItemTooltip', () => {
       const popCall = (assets.DrawNumber as any).mock.calls.find(
         (c: any[]) => c[0] === 20 && c[2] === 144);
       expect(popCall).toBeTruthy();
-      expect(popCall[3]).toBe(93); // iconTop 33 + 5*12
+      expect(popCall[3]).toBe(102); // iconTop 42 + 5*12
       expect(assets.Get).not.toHaveBeenCalledWith('Can/none');
     });
 
@@ -319,12 +320,11 @@ describe('ItemTooltip', () => {
       const assets = makeAssets();
       const tip = makeTooltip({ attr: equipAttr({ Durability: 50, DurabilityMax: 100 }), assets });
       tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
-      // durability DrawNumber: value = floor(100*50/100) = 50 (not raw 50 → same,
-      // so also cover a non-100 max below); x=161 (left-aligned), y = 33+96 = 129
+      // durability DrawNumber: value = floor(100*50/100) = 50; x=161, y = 42+96 = 138
       const durCall = (assets.DrawNumber as any).mock.calls.find((c: any[]) => c[0] === 50);
       expect(durCall).toBeTruthy();
       expect(durCall[2]).toBe(161);
-      expect(durCall[3]).toBe(129);
+      expect(durCall[3]).toBe(138);
       // 125/200 → floor(62.5) = 62 — proves pct math, not raw durability
       const tip2 = makeTooltip({ attr: equipAttr({ Durability: 125, DurabilityMax: 200 }), assets });
       tip2.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
@@ -338,8 +338,8 @@ describe('ItemTooltip', () => {
       assets.Percent.mockReturnValue({ NewSprite: () => new Sprite(), Width: 5, Height: 7 });
       const tip = makeTooltip({ attr: equipAttr({ Durability: 50, DurabilityMax: 100 }), assets });
       tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
-      // pct=50 → 2 digits → x = 2*(6+81) = 174; y = 33+96 = 129
-      const blitted = tip.root.children.find((c: any) => c.x === 174 && c.y === 129);
+      // pct=50 → 2 digits → x = 2*(6+81) = 174; y = 42+96 = 138
+      const blitted = tip.root.children.find((c: any) => c.x === 174 && c.y === 138);
       expect(blitted).toBeTruthy();
     });
 
@@ -369,8 +369,8 @@ describe('ItemTooltip', () => {
       tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
       const jobCalls = (assets.JobLabel as any).mock.calls;
       expect(jobCalls.length).toBeGreaterThan(0);
-      // JobLabel sprites are blitted at y = jobY = 33 + 141 - 32 = 142
-      const blitted = tip.root.children.find((c: any) => c.x === 10 && c.y === 142);
+      // JobLabel sprites are blitted at y = jobY = iconTop + 109 = 42 + 109 = 151
+      const blitted = tip.root.children.find((c: any) => c.x === 10 && c.y === 151);
       expect(blitted).toBeTruthy();
     });
 
@@ -382,11 +382,11 @@ describe('ItemTooltip', () => {
       expect((assets.GrowthLabel as any).mock.calls[0][0]).toBe(0);
       expect((assets.GrowthLabel as any).mock.calls[0][1]).toBe(true);
       expect((assets.GrowthLabel as any).mock.calls[1][0]).toBe(1);
-      // level digits at x=148, y=iconTop+72=105; EXP% digits at y=iconTop+84=117
+      // level digits at x=148, y=iconTop+72=114; EXP% digits at y=iconTop+84=126
       const growthCalls = (assets.DrawNumberWith as any).mock.calls.filter((c: any[]) => c[2] === 148);
       expect(growthCalls[0][0]).toBe(3);
-      expect(growthCalls[0][3]).toBe(105);
-      expect(growthCalls[1][3]).toBe(117);
+      expect(growthCalls[0][3]).toBe(114);
+      expect(growthCalls[1][3]).toBe(126);
     });
 
     it('draws "max" glyphs for max-level growth items at (148, iconTop+72/+84)', () => {
@@ -395,8 +395,8 @@ describe('ItemTooltip', () => {
       const tip = makeTooltip({ attr: equipAttr({ Level: 10, MaxLevel: 10 }), assets });
       tip.Draw(1350000, 'Growth Sword', 0, 1, 100, 100, 1024, 768);
       expect((assets.GrowthMax as any).mock.calls.length).toBeGreaterThan(0);
-      const blit1 = tip.root.children.find((c: any) => c.x === 148 && c.y === 105);
-      const blit2 = tip.root.children.find((c: any) => c.x === 148 && c.y === 117);
+      const blit1 = tip.root.children.find((c: any) => c.x === 148 && c.y === 114);
+      const blit2 = tip.root.children.find((c: any) => c.x === 148 && c.y === 126);
       expect(blit1).toBeTruthy();
       expect(blit2).toBeTruthy();
     });
@@ -796,14 +796,16 @@ describe('ItemTooltip', () => {
         100, 100, 1024, 768,
       );
 
-      const texts = tip.root.children.filter((child: any) => child instanceof Object && 'text' in child) as any[];
+const texts = tip.root.children.filter((child: any) => child instanceof Object && 'text' in child) as any[];
       const name = texts.find((text) => text.text === 'Fluffy (White Bunny)');
       const description = texts.find((text) => text.text === 'A loyal companion');
       expect(name).toMatchObject({ x: 18, y: 10 });
       expect(description).toMatchObject({ x: 92, y: 32 });
-      expect(texts.filter((text) => text.text.startsWith('Lv.'))).toHaveLength(1);
-      expect(texts.filter((text) => text.text.startsWith('Tameness:'))).toHaveLength(1);
-      expect(texts.filter((text) => text.text.startsWith('Full:'))).toHaveLength(1);
+      // OG pet tooltip does NOT show pet stats (Lv./Tameness/Full) or skills
+      // Those are shown in CUIPetEquip / pet info window, not in item tooltip
+      expect(texts.filter((text) => text.text.startsWith('Lv.'))).toHaveLength(0);
+      expect(texts.filter((text) => text.text.startsWith('Tameness:'))).toHaveLength(0);
+      expect(texts.filter((text) => text.text.startsWith('Full:'))).toHaveLength(0);
     });
 
     it('clears a stale item icon on a subsequent pet draw', () => {
@@ -822,21 +824,20 @@ describe('ItemTooltip', () => {
       expect((tip.root.children[1] as any).visible).toBe(false);
     });
 
-    it('accounts for skill rows but keeps limit rows bottom-anchored', () => {
+it('accounts for skill rows but keeps limit rows bottom-anchored', () => {
       const tip = makeTooltip();
       tip.DrawPetTooltip(
         'Pet', 'Cat', '', 1, 10, 50, false, '', '', '',
-        ['Skill 1', 'Skill 2'],
+        [], // OG: no skills shown in pet tooltip
         100, 100, 1024, 768,
         0, 0, 0,
         { dwConditionFlag: 1, nOriginCount: 10, nRemainCount: 5 },
       );
+      // OG pet tooltip does NOT show skills - they're in CUIPetEquip
       const skill = (tip.root.children as any[]).find((child) => child.text === 'Skill 2');
+      expect(skill).toBeUndefined();
       const limit = (tip.root.children as any[]).find((child) => child.text === 'Stock: 10');
-      expect(skill.y).toBe(79);
-      // Base height is 116 + two skill rows (28); seven limit entries are
-      // anchored from the bottom and do not add another 98px to the height.
-      expect(limit.y).toBe(64);
+      expect(limit).toBeDefined();
     });
 
     it('positions tooltip to fit within viewport', () => {

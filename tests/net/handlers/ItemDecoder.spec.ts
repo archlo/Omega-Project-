@@ -21,7 +21,7 @@ function writeBundleBody(p: OutPacket, itemId: number, qty: number, title = ''):
 function writeEquipBody(p: OutPacket, itemId: number, str: number, durability: number): void {
   p.writeInt(itemId); p.writeByte(0); p.writeLong(0n);
   p.writeByte(7); p.writeByte(0); p.writeShort(str);
-  for (let i = 0; i < 14; i++) p.writeShort(0);
+  for (let i = 0; i < 17; i++) p.writeShort(0);
   p.writeString(''); p.writeShort(0); p.writeByte(0); p.writeByte(0);
   p.writeInt(0); p.writeInt(durability); p.writeInt(0); p.writeByte(0); p.writeByte(0);
   for (let i = 0; i < 5; i++) p.writeShort(0);

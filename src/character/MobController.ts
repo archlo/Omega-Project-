@@ -97,6 +97,9 @@ export class MobController {
     this._currentFh = below && belowY !== null && belowY !== undefined
       && Math.abs(belowY - this._mob.Position.y) <= 4 ? below.Id : 0;
 
+    // Seat the mob on the foothold immediately so it doesn't float/sink
+    this._seatOnFoothold();
+
     if (this._info.FirstAttack) this._aggroTimer = Infinity;
 
     this._lastSyncPos = { ...this._mob.Position };

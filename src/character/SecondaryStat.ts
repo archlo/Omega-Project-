@@ -566,6 +566,12 @@ export class SecondaryStat {
   /** Seal active (non-zero = active). */
   isSealActive(): boolean { return this._buff.seal !== 0; }
 
+  /** Freeze active (non-zero = active). */
+  isFrozenActive(): boolean { return this._buff.frozen !== 0; }
+
+  /** Web/bind active (non-zero = active). */
+  isWebActive(): boolean { return this._buff.web !== 0; }
+
   /** Combo counter from aran combo skill (non-zero = active). */
   getAranCombo(): number { return this._buff.aranCombo; }
 

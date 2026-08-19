@@ -40,7 +40,7 @@ function writeCharacterStat(
 function writeEquipItem(p: OutPacket, itemId: number): void {
   p.writeByte(1); p.writeInt(itemId); p.writeByte(0); p.writeLong(0n);
   p.writeByte(0); p.writeByte(0);
-  for (let i = 0; i < 15; i++) p.writeShort(0);
+  for (let i = 0; i < 18; i++) p.writeShort(0);
   p.writeString(''); p.writeShort(0);
   p.writeByte(0); p.writeByte(0);
   p.writeInt(0); p.writeInt(0); p.writeInt(0);
