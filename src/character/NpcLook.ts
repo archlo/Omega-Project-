@@ -62,12 +62,20 @@ export class NpcLook {
   private _nameTagContainer: Container | null = null;
   private _nameText: Text | null = null;
   private _funcText: Text | null = null;
+  // Quest icons (OG: QuestMark.img)
+  private _questIcons: Sprite[] = [];
+  private _questIconContainer: Container | null = null;
   // Dirty tracking
   private _lastState = '';
   private _lastFrame = -1;
   private _lastFacing = false;
+  // WZ packages for loading additional assets (quest icons, etc.)
+  private _baseWz: WzPackage | null = null;
+  private _loader: WzTextureLoader | null = null;
 
-  constructor(public readonly NpcId: number) {}
+  constructor(public readonly NpcId: number, baseWz?: WzPackage | null) {
+    this._baseWz = baseWz ?? null;
+  }
 
   get NpcIdValue(): number { return this.NpcId; }
 
@@ -83,6 +91,7 @@ export class NpcLook {
   }
 
   Load(loader: WzTextureLoader, npcWz: WzPackage | null, textOf?: (npcId: number, key: string) => string | undefined): void {
+    this._loader = loader;
     if (npcWz === null) return;
 
     const strid = `${this.NpcId.toString().padStart(7, '0')}.img`;
@@ -163,13 +172,16 @@ export class NpcLook {
       if (!this.Name && name) this.Name = name;
       if (func) this.FuncName = func;
     }
-    this._loaded = this._anims.size > 0;
+this._loaded = this._anims.size > 0;
     // The packed NPC action indexes reserve 0/1 for stand/move. The remaining
     // indexes address the template's additional animation entries.
     this._actionNames = [];
     for (const key of this._anims.keys()) {
       if (key !== 'info' && key !== 'speak' && key !== 'stand' && key !== 'move') this._actionNames.push(key);
     }
+
+    // Load quest icons (QuestMark.img) - OG: UIWindow2.img/QuestMark
+    this._loadQuestIcons();
   }
 
   GetRandomSpeech(): string | null {
@@ -189,6 +201,62 @@ export class NpcLook {
         this._collectStrings(v, out, textOf);
       }
     }
+  }
+
+  /** Load quest icons from UIWindow2.img/QuestMark */
+  private _loadQuestIcons(): void {
+    // OG: QuestMark.img has 4 frames (0=exclamation, 1=question, 2=?, 3=?)
+    // Load from UIWindow2.img/QuestMark
+    if (!this._baseWz) return;
+    const questMarkRoot = this._baseWz.GetItem('UIWindow2.img/QuestMark');
+    if (!(questMarkRoot instanceof WzProperty)) return;
+    this._questIcons = [];
+    for (let i = 0; i < 4; i++) {
+      const frameNode = questMarkRoot.Get(`${i}`);
+      if (frameNode instanceof WzCanvas) {
+        const wzSprite = this._loader?.Load(frameNode);
+        if (wzSprite) this._questIcons.push(wzSprite.ToPixi());
+      } else if (frameNode && typeof (frameNode as any).Get === 'function') {
+        const inner = (frameNode as any).Get('0') ?? (frameNode as any).Get('bmp');
+        if (inner instanceof WzCanvas) {
+          const wzSprite = this._loader?.Load(inner);
+          if (wzSprite) this._questIcons.push(wzSprite.ToPixi());
+        }
+    }
+    }
+  }
+
+  /** Draw quest icon above NPC head (OG: QuestMark.img) */
+  private _drawQuestIcon(): void {
+    if (!this.QuestInfoVisible || this._questIcons.length === 0) return;
+
+    if (!this._questIconContainer) {
+      this._questIconContainer = new Container();
+      this.container.addChild(this._questIconContainer);
+    } else {
+      this._questIconContainer.removeChildren();
+    }
+
+    // OG: QuestMark frame 0 = exclamation (!), 1 = question (?), 2 = ?, 3 = ?
+    // Frame 0 (exclamation) = available quest
+    // Frame 1 (question) = in-progress/completable
+    const iconIndex = Math.min(this._questList.length > 0 ? 0 : 1, this._questIcons.length - 1);
+    const icon = this._questIcons[iconIndex];
+    if (!icon) return;
+
+    const frames = this._anims.get(this._state);
+    const frame = frames?.[Math.min(this._frame, frames.length - 1)];
+    if (!frame) return;
+
+    // Position above NPC head: at sprite top (OriginY from top) minus icon height
+    const iconSprite = new Sprite(icon.texture);
+    iconSprite.anchor.set(0.5, 1); // center-bottom anchor
+    const headY = -frame.sprite.OriginY; // top of sprite
+    iconSprite.position.set(0, headY - 10); // 10px above head
+    iconSprite.scale.x = this._facingLeft ? 1 : -1; // counter-flip for avatar flip
+
+    this._questIconContainer.addChild(iconSprite);
+    this.container.addChild(this._questIconContainer);
   }
 
   Update(dt: number): void {
@@ -358,6 +426,7 @@ export class NpcLook {
     // _facingLeft=false → should face RIGHT → flip → scale.x=-1
     this._bodySprite.scale.x = this._facingLeft ? 1 : -1;
     this.container.addChild(this._bodySprite);
+    this._drawQuestIcon();
     this._addNameTags();
     this._drawSpeechBubble();
   }

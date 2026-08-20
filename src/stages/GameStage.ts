@@ -2835,6 +2835,15 @@ this._dmgNumbers?.Update(dt);
       this._trySit();
       return true;
     }
+    // Emotion keys (F1-F7 by default) — send UserEmotion packet
+    for (let i = 1; i <= 7; i++) {
+      const action = KeyAction[`Emotion${i}` as keyof typeof KeyAction] as KeyAction;
+      if (this._keyConfig.isActionDown((k) => k === key, action)) {
+        this.game.session.send(GameSender.UserEmotion(i));
+        this._player?.SetEmotion(i);
+        return true;
+      }
+    }
     // OG: ToggleMiniMapState — Tab key cycles minimap modes (normal→huge→collapsed)
     if (key === 'Tab') {
       this._miniMap?.cycleMode();
@@ -6465,7 +6474,7 @@ this._localCharId = args.characterId ?? 0;
 
   private _onNpcEnter(args: NpcEnterArgs): void {
     if (this._npcs.some(n => n.ObjId === args.objId)) return;
-    const npc = new NpcLook(args.templateId);
+    const npc = new NpcLook(args.templateId, this._uiWz);
     npc.Load(this._loader, this._npcWz, (npcId, key) => this.game.nameService.NpcText(npcId, key));
     npc.LoadNames((npcId, key) => this.game.nameService.NpcText(npcId, key));
     npc.ObjId = args.objId;

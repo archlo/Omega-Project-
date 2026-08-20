@@ -26,13 +26,13 @@ const CHAT_TYPE_EXPANDED = 3; // Full: edit+combo, y=515-h, h=stored/70
 // many px from the OG 800x600 frame positions, so it sits lower over the
 // status bar. The chatOpen/chatClose "+"-toggle buttons stay at their own
 // status-bar anchor (599) — the user wants their bottom "like before".
-const CHAT_DY = 20;
+const CHAT_DY = 0;
 
 // --- Edit control (OG MakeCtrlEdit 0x870BA0) ---
 // CreateCtrl(id=1011, x=75, y=524, w=409, h=12)
 const EDIT_ID = 1011;
 const EDIT_X = 75;
-const EDIT_Y = 524 + CHAT_DY;
+const EDIT_Y = 524 + CHAT_DY + 10;
 const EDIT_W = 409;
 const EDIT_H = 12;
 const EDIT_MAX_CHARS = 70;  // OG: 256 if GM, else 70

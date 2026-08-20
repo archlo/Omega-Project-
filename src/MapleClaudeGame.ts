@@ -150,111 +150,113 @@ export class MapleClaudeGame {
     });
   }
 
-  async init(canvasId: string): Promise<void> {
-    const initW = typeof window !== 'undefined' ? window.innerWidth : 800;
-    const initH = typeof window !== 'undefined' ? window.innerHeight : 600;
+  async init(canvasId?: string): Promise<void> {
+    const hasDom = typeof document !== 'undefined' && typeof window !== 'undefined';
 
-    this.pixiApp = new Application();
-    await this.pixiApp.init({
-      width: initW,
-      height: initH,
-      backgroundColor: 0x000000,
-      canvas: document.getElementById(canvasId) as HTMLCanvasElement,
-      antialias: false,
-      resolution: 1,
-      autoDensity: false,
-    });
+    if (hasDom) {
+      const initW = window.innerWidth;
+      const initH = window.innerHeight;
 
-    // Layer order: full-width map → centered 800px UI → cursor
-    this.mapContainer = new Container();
-    this.frameContainer = new Container();
-    this.pixiApp.stage.addChild(this.mapContainer);
-    this.pixiApp.stage.addChild(this.frameContainer);
-    this._updateFrameTransform();
+      this.pixiApp = new Application();
+      await this.pixiApp.init({
+        width: initW,
+        height: initH,
+        backgroundColor: 0x000000,
+        canvas: document.getElementById(canvasId!) as HTMLCanvasElement,
+        antialias: false,
+        resolution: 1,
+        autoDensity: false,
+      });
 
-    const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
-    canvas.style.cursor = 'none';
-    this.pixiApp.stage.addChild(this.cursor.container);
-    canvas.style.cursor = 'none';
-    this.pixiApp.stage.addChild(this.cursor.container);
-
-    // Keyboard
-    document.addEventListener('keydown', (e) => {
-      // OG: prevent browser defaults for game keys (Alt→menu, Tab→focus, F1-F12→help, Space→scroll)
-      if (e.altKey || e.key === 'Tab' || e.key.startsWith('F') && /^F\d{1,2}$/.test(e.key)
-        || e.key === ' ' || e.key === 'ArrowUp' || e.key === 'ArrowDown'
-        || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-        e.preventDefault();
-      }
-      if (!this._prevKeys.has(e.key)) {
-        this.stageDirector.onKeyPress(e.key);
-      }
-      this._prevKeys.add(e.key);
-    });
-    document.addEventListener('keyup', (e) => { this._prevKeys.delete(e.key); });
-    window.addEventListener('blur', () => { this._prevKeys.clear(); });
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) this._prevKeys.clear();
-    });
-    document.addEventListener('keypress', (e) => { this.stageDirector.onTextInput(e.key); });
-
-    // Mouse — cursor gets raw canvas coords; __mouseX/Y and stages get
-    // frame-relative coords so UI hit-tests and panel dragging work.
-    const toCanvas = (cx: number, cy: number) => {
-      const r = canvas.getBoundingClientRect();
-      return { x: cx - r.left, y: cy - r.top };
-    };
-    document.addEventListener('mousemove', (e) => {
-      const { x, y } = toCanvas(e.clientX, e.clientY);
-      this.cursor.container.position.set(x, y);
-      const f = this._canvasToFrame(x, y);
-      (window as any).__mouseX = f.x;
-      (window as any).__mouseY = f.y;
-      this.stageDirector.onMouseMove(f.x, f.y);
-    });
-    document.addEventListener('mousedown', (e) => {
-      const { x, y } = toCanvas(e.clientX, e.clientY);
-      this.cursor.setClicked(true);
-      const f = this._canvasToFrame(x, y);
-      (window as any).__mouseX = f.x;
-      (window as any).__mouseY = f.y;
-      (window as any).__shiftKey = e.shiftKey;
-      (window as any).__ctrlKey = e.ctrlKey;
-      (window as any).__altKey = e.altKey;
-      this.stageDirector.onMouseButton(f.x, f.y, true, e.button);
-    });
-    document.addEventListener('mouseup', (e) => {
-      const { x, y } = toCanvas(e.clientX, e.clientY);
-      this.cursor.setClicked(false);
-      const f = this._canvasToFrame(x, y);
-      (window as any).__mouseX = f.x;
-      (window as any).__mouseY = f.y;
-      (window as any).__shiftKey = e.shiftKey;
-      (window as any).__ctrlKey = e.ctrlKey;
-      (window as any).__altKey = e.altKey;
-      this.stageDirector.onMouseButton(f.x, f.y, false, e.button);
-    });
-    // OG: right-click opens the in-game player context menu (CUserLocal::
-    // HandleRButtonClk). Suppress the browser's native context menu so it
-    // doesn't appear over the canvas — the game handles button 2 in mousedown.
-    document.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-    });
-    document.addEventListener('wheel', (e) => {
-      (window as any).__wheelDelta = e.deltaY;
-      const { x, y } = toCanvas(e.clientX, e.clientY);
-      const f = this._canvasToFrame(x, y);
-      this.stageDirector.onMouseWheel(f.x, f.y, e.deltaY);
-    });
-
-    // Resize
-    window.addEventListener('resize', () => {
-      const nw = window.innerWidth;
-      const nh = window.innerHeight;
-      this.pixiApp.renderer.resize(nw, nh);
+      // Layer order: full-width map → centered 800px UI → cursor
+      this.mapContainer = new Container();
+      this.frameContainer = new Container();
+      this.pixiApp.stage.addChild(this.mapContainer);
+      this.pixiApp.stage.addChild(this.frameContainer);
       this._updateFrameTransform();
-      this.stageDirector.onResize(nw, nh);
-    });
+
+      const canvas = document.getElementById(canvasId!) as HTMLCanvasElement;
+      canvas.style.cursor = 'none';
+      this.pixiApp.stage.addChild(this.cursor.container);
+
+      // Keyboard
+      document.addEventListener('keydown', (e) => {
+        // OG: prevent browser defaults for game keys (Alt→menu, Tab→focus, F1-F12→help, Space→scroll)
+        if (e.altKey || e.key === 'Tab' || e.key.startsWith('F') && /^F\d{1,2}$/.test(e.key)
+          || e.key === ' ' || e.key === 'ArrowUp' || e.key === 'ArrowDown'
+          || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+          e.preventDefault();
+        }
+        if (!this._prevKeys.has(e.key)) {
+          this.stageDirector.onKeyPress(e.key);
+        }
+        this._prevKeys.add(e.key);
+      });
+      document.addEventListener('keyup', (e) => { this._prevKeys.delete(e.key); });
+      window.addEventListener('blur', () => { this._prevKeys.clear(); });
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) this._prevKeys.clear();
+      });
+      document.addEventListener('keypress', (e) => { this.stageDirector.onTextInput(e.key); });
+
+      // Mouse — cursor gets raw canvas coords; __mouseX/Y and stages get
+      // frame-relative coords so UI hit-tests and panel dragging work.
+      const toCanvas = (cx: number, cy: number) => {
+        const r = canvas.getBoundingClientRect();
+        return { x: cx - r.left, y: cy - r.top };
+      };
+      document.addEventListener('mousemove', (e) => {
+        const { x, y } = toCanvas(e.clientX, e.clientY);
+        this.cursor.container.position.set(x, y);
+        const f = this._canvasToFrame(x, y);
+        (window as any).__mouseX = f.x;
+        (window as any).__mouseY = f.y;
+        this.stageDirector.onMouseMove(f.x, f.y);
+      });
+      document.addEventListener('mousedown', (e) => {
+        const { x, y } = toCanvas(e.clientX, e.clientY);
+        this.cursor.setClicked(true);
+        const f = this._canvasToFrame(x, y);
+        (window as any).__mouseX = f.x;
+        (window as any).__mouseY = f.y;
+        (window as any).__shiftKey = e.shiftKey;
+        (window as any).__ctrlKey = e.ctrlKey;
+        (window as any).__altKey = e.altKey;
+        this.stageDirector.onMouseButton(f.x, f.y, true, e.button);
+      });
+      document.addEventListener('mouseup', (e) => {
+        const { x, y } = toCanvas(e.clientX, e.clientY);
+        this.cursor.setClicked(false);
+        const f = this._canvasToFrame(x, y);
+        (window as any).__mouseX = f.x;
+        (window as any).__mouseY = f.y;
+        (window as any).__shiftKey = e.shiftKey;
+        (window as any).__ctrlKey = e.ctrlKey;
+        (window as any).__altKey = e.altKey;
+        this.stageDirector.onMouseButton(f.x, f.y, false, e.button);
+      });
+      // OG: right-click opens the in-game player context menu (CUserLocal::
+      // HandleRButtonClk). Suppress the browser's native context menu so it
+      // doesn't appear over the canvas — the game handles button 2 in mousedown.
+      document.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+      });
+      document.addEventListener('wheel', (e) => {
+        (window as any).__wheelDelta = e.deltaY;
+        const { x, y } = toCanvas(e.clientX, e.clientY);
+        const f = this._canvasToFrame(x, y);
+        this.stageDirector.onMouseWheel(f.x, f.y, e.deltaY);
+      });
+
+      // Resize
+      window.addEventListener('resize', () => {
+        const nw = window.innerWidth;
+        const nh = window.innerHeight;
+        this.pixiApp.renderer.resize(nw, nh);
+        this._updateFrameTransform();
+        this.stageDirector.onResize(nw, nh);
+      });
+    }
 
     await MachineIdProvider.Init();
     this.session.machineId = MachineIdProvider.GetMachineId();
@@ -269,7 +271,10 @@ export class MapleClaudeGame {
     this.battleRecordHandlers.register(this.router);
 
     this.stageDirector.replace(new SplashStage());
-    this.pixiApp.ticker.add(() => this._update());
+
+    if (this.pixiApp) {
+      this.pixiApp.ticker.add(() => this._update());
+    }
   }
 
   private _update(): void {
@@ -287,6 +292,6 @@ export class MapleClaudeGame {
 
   shutdown(): void {
     this.session.disconnectAsync();
-    this.pixiApp.destroy(true);
+    this.pixiApp?.destroy(true);
   }
 }

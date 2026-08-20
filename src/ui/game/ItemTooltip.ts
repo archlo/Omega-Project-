@@ -1180,8 +1180,8 @@ this._root.x = x;
         if (req.icon) {
           const icon = req.skillId
             ? this._assets.LoadCanvas(this._itemInfo?.GetSkillIconCanvas(req.skillId) ?? null)?.NewSprite()
-            : (req.icon as any)?.NewSprite?.() ?? req.icon as any;
-          if (icon) {
+            : (req.icon as WzSprite).NewSprite?.() ?? (req.icon instanceof Sprite && req.icon.position ? req.icon : null);
+          if (icon && icon.position) {
             icon.x = 10;
             icon.y = yCursor;
             this._root.addChild(icon);
@@ -1207,10 +1207,10 @@ this._root.x = x;
 this._iconSprite.visible = false;
     const exactSkillIcon = this._assets.LoadCanvas(this._itemInfo?.GetSkillIconCanvas(skillId) ?? null);
     let icon = exactSkillIcon?.NewSprite()
-      ?? (skillData?.icon instanceof Sprite ? skillData.icon as Sprite : null)
-      ?? (skillData?.icon as any)?.NewSprite?.()
+      ?? ((skillData?.icon as WzSprite | null)?.NewSprite?.() ?? null)
+      ?? (skillData?.icon instanceof Sprite && skillData.icon.position ? skillData.icon as Sprite : null)
       ?? (skillData?.icon ? this._assets.LoadCanvas(skillData.icon as any)?.NewSprite() : null);
-    if (icon) {
+    if (icon && icon.position) {
       icon.x = 10;
       icon.y = 32;
       this._root.addChild(icon);
