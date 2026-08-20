@@ -89,8 +89,8 @@ describe('GameStage chat wiring (OG CUIStatusBar 0x87FDE0 / 0x8803F0)', () => {
     const chat = new ChatBar();
     const stage = makeStage(chat);
     const comboSpy = vi.spyOn((chat as any)._combo, 'toggle');
-    // Combo box is at (3, 539) [519 + 20 CHAT_DY], 68x21 in frame coords.
-    stage.onMouseButton(10, 550, true, 0);
+    // Combo box is at (3, 519) [519 + 0 CHAT_DY], 68x21 in frame coords.
+    stage.onMouseButton(10, 530, true, 0);
     expect(comboSpy).toHaveBeenCalled();
   });
 

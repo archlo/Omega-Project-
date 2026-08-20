@@ -6,11 +6,11 @@ import { WzSprite } from '../../../src/render/WzSprite.js';
 // ponytail: avoids pulling in jsdom just to satisfy Text.width's canvas measurement in tests
 Object.defineProperty(Text.prototype, 'width', { get: () => 0 });
 
-// OG edit control coordinates (ChatBar.ts constants, +20 CHAT_DY user tuning)
+// OG edit control coordinates (ChatBar.ts constants, CHAT_DY=0)
 const EDIT_X = 75;
-const EDIT_Y = 544;
+const EDIT_Y = 534;
 const DISPLAY_X = 0;
-const DISPLAY_Y_SMALL = 512;
+const DISPLAY_Y_SMALL = 492;
 const CHAT_HEIGHT_SMALL = 24;
 const TEXT_X = 9;
 const CHAR_W = 7;
@@ -263,7 +263,7 @@ describe('ChatBar WZ layer positions (OG mainBar origin anchor)', () => {
   }
 
   it('anchors chat layers from the mainBar origin (screen = _barRef − WZ origin), shifted with _chatWndY', () => {
-    // _chatWndY = 518 + CHAT_DY(20) = 538 (expanded log top).
+    // _chatWndY = 518 + CHAT_DY(0) = 518 (minimal log top).
     // chatSpace (512,57)→(0,542), chatSpace2 (512,60)→(0,539),
     // chatEnter (467,58)→(45,541), chatCover (509,57)→(3,542).
     // As offsets from the log top: +24/+21/+23/+24, kept relative to _chatWndY.
@@ -271,26 +271,26 @@ describe('ChatBar WZ layer positions (OG mainBar origin anchor)', () => {
     const { space, space2, enter, cover } = withLayers(bar);
 
     expect(space.position.x).toBe(0);
-    expect(space.position.y).toBe(538 + 24); // 562
+    expect(space.position.y).toBe(518 + 24); // 542
     expect(space2.position.x).toBe(0);
-    expect(space2.position.y).toBe(538 + 21); // 559
+    expect(space2.position.y).toBe(518 + 21); // 539
     expect(enter.position.x).toBe(45);
-    expect(enter.position.y).toBe(538 + 23); // 561
+    expect(enter.position.y).toBe(518 + 23); // 541
     expect(cover.position.x).toBe(3);
-    expect(cover.position.y).toBe(538 + 24); // 562
+    expect(cover.position.y).toBe(518 + 24); // 542
   });
 
   it('shifts layers with the chat window type', () => {
     // Expanded type: m_ptChatWnd.y = 515 − height (default height 70 →
-    // _chatWndY = 515 + 20 − 70 = 465). The layers track _chatWndY.
+    // _chatWndY = 515 + 0 − 70 = 445). The layers track _chatWndY.
     const bar = new ChatBar();
     (bar as any).setChatType(3);
     const b = bar as any;
-    expect(b._chatWndY).toBe(465);
+    expect(b._chatWndY).toBe(445);
     const enter = new Sprite(Texture.EMPTY);
     b._layerEnter = enter;
     b._applyLayout();
     expect(enter.position.x).toBe(45);
-    expect(enter.position.y).toBe(465 + 23); // 488
+    expect(enter.position.y).toBe(445 + 23); // 468
   });
 });

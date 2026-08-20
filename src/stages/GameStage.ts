@@ -33,6 +33,7 @@ import { SkillEffectOverlay } from '../character/SkillEffectOverlay.js';
 import { ItemEffectOverlay } from '../character/ItemEffectOverlay.js';
 import { ProjectileOverlay } from '../character/ProjectileOverlay.js';
 import { WzSound } from '../wz/WzSound.js';
+import { WzUol } from '../wz/WzUol.js';
 import { FearEffect } from '../character/FearEffect.js';
 import { LimitedViewOverlay } from '../character/LimitedViewOverlay.js';
 import { SequencedKeyMan, type ComboCastContext } from '../character/SequencedKeyMan.js';
@@ -1194,7 +1195,7 @@ export class GameStage extends Stage {
     // Apply pending stat data AFTER stats panel is created
     if (this._pendingStat) {
       this._applyStatToStatusBar(this._pendingStat);
-      this._pendingStat = null;
+      // Don't null yet — _skill needs job/level/sp after it's created below
     }
     this._skill = new SkillBook(this._loader, uiWz, font, this._itemIcons,
       (id) => this.game.nameService.ItemDesc(id) ?? null,
@@ -1218,8 +1219,18 @@ export class GameStage extends Stage {
         }
         return entry.aLevelData[0] as unknown as Record<string, number>;
        }, this._itemInfo, this._stringPool);
-     this._skill.setSpecialTooltipContext(this._pendingLinkedCharacter, []);
-     if (this._pendingSkillRecords && this._skill) {
+      this._skill.setSpecialTooltipContext(this._pendingLinkedCharacter, []);
+      // After _skill is created, forward job/level/sp from the pending stat.
+      // _applyStatToStatusBar was called before _skill existed, so the
+      // forwarding there was null-guarded and skipped.  This catch-up call
+      // ensures _skillRootsForJob uses the correct job before setSkillRecords.
+      if (this._skill && this._pendingStat) {
+        this._skill.characterJob = this._pendingStat.job;
+        this._skill.characterLevel = this._pendingStat.level;
+        this._skill.characterHp = this._pendingStat.hp;
+        this._pendingStat = null;
+      }
+      if (this._pendingSkillRecords && this._skill) {
        this._onSkillRecordResult(this._pendingSkillRecords);
        this._pendingSkillRecords = null;
      }
@@ -1871,6 +1882,9 @@ export class GameStage extends Stage {
       // Send* request. Order matches OG exactly.
       const category = Math.floor(item.id / 10000);
 
+      // OG: play_item_sound — play Sound.wz/Item.img/{itemId}/Use on use
+      this._playItemUseSound(item.id);
+
       // Categories 207 (throwing stars) / 233 (bullets) — rechargeable, not lottery
       // OG: no dedicated handler, falls through to generic UseItem
       if (category === 207 || category === 233) {
@@ -2181,6 +2195,9 @@ export class GameStage extends Stage {
         slot: i, name: s.name, mute: s.mute, skills: Array.from(s.skills) as number[],
       }));
       this._skillMacro?.Open(macros.length > 0 ? macros : Array.from({ length: 5 }, (_, i) => ({ slot: i, skills: [0, 0, 0] })));
+      // OG CUIMacroSys ctor @0x84c0d0: CUIMacroSys(this, skillAbsLeft+174,
+      // skillAbsTop) — hang off the skill window's right edge.
+      this._skillMacro?.anchorToSkill(this._skill.container.position.x, this._skill.container.position.y);
     };
     this._statusBar.onStats = () => {
       this._stats.isVisible = !this._stats.isVisible;
@@ -2359,6 +2376,8 @@ export class GameStage extends Stage {
       // physics immovability already.
       if (this.game.fieldHandlers.secondaryStat.isSealActive()) return;
       this.game.session.send(GameSender.UseSkill(skillId, slv, Date.now()));
+      // OG: play_skill_sound(skillId, "use") on cast (CUserLocal::UseSkill)
+      this._playSkillSound(skillId, 'use');
       // CUserLocal::ApplyMechanicMode/IsAbleToClimbLadderOrRope treats the
       // mechanic repeat skill as a distinct ladder restriction.
       this._physics?.SetRepeatSkill(skillId === 35121005 ? skillId : 0);
@@ -2751,6 +2770,12 @@ this._dmgNumbers?.Update(dt);
       if (tip) this._statusMessenger.showTip(tip);
     }
     for (const p of this._panels) { p?.update(dt); p?.updateDrag(); }
+    // OG: CUIMacroSys ctor @0x84c0d0 anchors at (skillAbsLeft + 174, skillAbsTop)
+    // — the macro popup hangs off the skill window's right edge, so it must
+    // follow the skill window as it is dragged.
+    if (this._skillMacro?.isVisible && this._skill) {
+      this._skillMacro.anchorToSkill(this._skill.container.position.x, this._skill.container.position.y);
+    }
     // OG: CTemporaryStatView::Update — slide the expiry clock for active buffs
     this._buffList.update(dt);
     // OG: CUIStatDetail follows main stat panel position (CUIStat::OnMoveWnd
@@ -4839,6 +4864,16 @@ this._dmgNumbers?.Update(dt);
 this._localCharId = args.characterId ?? 0;
     this._pendingLinkedCharacter = args.linkedCharacter ?? '';
     this._skill?.setSpecialTooltipContext(this._pendingLinkedCharacter, this._skill.wildHunterMobNames);
+    // Stat / look / inventory — apply if statusBar/equip already exist,
+    // otherwise store for deferred application in _initMenu. This runs
+    // BEFORE the skillRecords block below so _skill.characterJob is set
+    // (stat.job) before setSkillRecords builds the job roots/tabs.
+    const stat = args.stat;
+    if (stat && this._statusBar) {
+      this._applyStatToStatusBar(stat);
+    } else if (stat) {
+      this._pendingStat = stat;
+    }
     // OG: the initial skill list ships inside the SetField migrate CharacterData
     // block (SKILLRECORD flag) — feed CUISkill the same records a standalone
     // ChangeSkillRecordResult would. Stash for _initMenu when SkillBook isn't
@@ -4869,14 +4904,6 @@ this._localCharId = args.characterId ?? 0;
       this.game.session.send(GameSender.GuildLoad());
     }
 
-    // Stat / look / inventory — apply if statusBar/equip already exist,
-    // otherwise store for deferred application in _initMenu.
-    const stat = args.stat;
-    if (stat && this._statusBar) {
-      this._applyStatToStatusBar(stat);
-    } else if (stat) {
-      this._pendingStat = stat;
-    }
     // Store equipped items — applied in _initMenu if statusBar/equip panel not ready yet
     this._pendingEquipped = args.equipped ?? null;
     this._pendingEquippedCash = args.equippedCash ?? null;
@@ -5047,7 +5074,7 @@ this._localCharId = args.characterId ?? 0;
     this._physics.SetStats(0, 0);
     this._physics.onJump = () => {
       if (this._mobSoundWz && this.game.audioPlayer) {
-        const soundNode = this._mobSoundWz.GetItem('Jump/jumpfly');
+        const soundNode = this._mobSoundWz.GetItem('Game.img/Jump');
         if (soundNode instanceof WzSound) this.game.audioPlayer.PlayEffect(soundNode.AudioBytes);
       }
     };
@@ -5961,6 +5988,8 @@ this._localCharId = args.characterId ?? 0;
       targets.push(new MeleeTarget(closest.MobId, [dmg], closest.Position.x, closest.Position.y, 0));
       closest.ShowHitEffect();
       this._mobSounds?.PlayDamage(closest.TemplateId);
+      // OG: weapon attack sound via sSfx from Character.wz → Sound.wz/Weapon.img/{sSfx}/Attack
+      this._playWeaponAttackSound(weaponId);
       // Damage number is server-authoritative — the mobDamaged echo
       // (OnMobDamaged) renders the WZ-digit number. No optimistic add here
       // (would double-render for the local attacker).
@@ -6027,6 +6056,50 @@ this._localCharId = args.characterId ?? 0;
       weaponItemId: weaponId ?? 0,
       subWeaponItemId: 0,
     };
+  }
+
+  // OG: weapon attack sound — reads sSfx from the weapon's Character.wz entry
+  // and plays Sound.wz/Weapon.img/{sSfx}/Attack.
+  private _playWeaponAttackSound(weaponId: number | null): void {
+    if (!this._mobSoundWz || !this.game.audioPlayer || !weaponId) return;
+    const actMan = ActionMan.GetInstance();
+    const entry = actMan.GetCharacterImgEntry(weaponId, null);
+    const sfx = entry?.sSfx;
+    if (!sfx) return;
+    const soundNode = this._mobSoundWz.GetItem(`Weapon.img/${sfx}/Attack`);
+    if (soundNode instanceof WzSound) {
+      this.game.audioPlayer.PlayEffect(soundNode.AudioBytes);
+    } else if (soundNode instanceof WzUol) {
+      const resolved = soundNode.Resolve();
+      if (resolved instanceof WzSound) this.game.audioPlayer.PlayEffect(resolved.AudioBytes);
+    }
+  }
+
+  // OG: item consumption sound — plays Sound.wz/Item.img/{itemId}/Use
+  private _playItemUseSound(itemId: number): void {
+    if (!this._mobSoundWz || !this.game.audioPlayer) return;
+    const paddedId = String(itemId).padStart(8, '0');
+    const soundNode = this._mobSoundWz.GetItem(`Item.img/${paddedId}/Use`);
+    if (soundNode instanceof WzSound) {
+      this.game.audioPlayer.PlayEffect(soundNode.AudioBytes);
+    } else if (soundNode instanceof WzUol) {
+      const resolved = soundNode.Resolve();
+      if (resolved instanceof WzSound) this.game.audioPlayer.PlayEffect(resolved.AudioBytes);
+    }
+  }
+
+  // OG: play_skill_sound @0x966b60 — plays Sound.wz/Skill.img/{skillId}/{seType}.
+  // seType values: "attack1", "attack2", "attack3", "use", "hit",
+  // "summoned", "delayedHit", "getoff".
+  private _playSkillSound(skillId: number, seType: string): void {
+    if (!this._mobSoundWz || !this.game.audioPlayer || skillId <= 0) return;
+    const soundNode = this._mobSoundWz.GetItem(`Skill.img/${skillId}/${seType}`);
+    if (soundNode instanceof WzSound) {
+      this.game.audioPlayer.PlayEffect(soundNode.AudioBytes);
+    } else if (soundNode instanceof WzUol) {
+      const resolved = soundNode.Resolve();
+      if (resolved instanceof WzSound) this.game.audioPlayer.PlayEffect(resolved.AudioBytes);
+    }
   }
 
   private _comboContext(): ComboCastContext {
@@ -6136,6 +6209,13 @@ this._localCharId = args.characterId ?? 0;
       this._stats.jobCategory = Math.floor(stat.job / 100) % 10;
     }
     this._job = stat.job;
+    // Forward job/level/sp to SkillBook — these must be set before any
+    // setSkillRecords call, or the skill tab list is empty on first login.
+    if (this._skill) {
+      this._skill.characterJob = stat.job;
+      this._skill.characterLevel = stat.level;
+      this._skill.characterHp = stat.hp;
+    }
     if (this._equip) this._equip.setJobId(stat.job, stat.level, stat.subJob);
     if (this._charInfo) {
       this._charInfo.charName = stat.name;
@@ -7188,20 +7268,15 @@ this._localCharId = args.characterId ?? 0;
       // OG: pet auto-speaking on level up (event 0)
       this._firePetEvent(0);
       // OG: level up effect and sound
-      if (args.level > prevLevel && this._animation && this._physics) {
-        this._animation.EffectGeneral(
-          {
-            pos: { x: this._physics.Position.x, y: this._physics.Position.y },
-            z: 0,
-            origin: { x: 0, y: 0 },
-            flipX: false,
-            duration: 2000,
-          },
-          'BasicEff/LevelUp',
-          this._loader
-        );
+      if (args.level > prevLevel && this._physics) {
+        // OG: CAnimationDisplayer::Effect_General at the character.
+        // _loadLayer appends .img and expects a numbered sub-img, but BasicEff
+        // uses named children (LevelUp, JobChanged).  Load the node directly
+        // and route through PlayAtCaster, same pattern as job-change (case 10).
+        const effNode = this._effectWz?.GetItem('BasicEff.img/LevelUp');
+        if (effNode) this._skillEffects?.PlayAtCaster(effNode, this._localCharId, this._physics?.FacingLeft ?? true);
         if (this.game.audioPlayer && this._mobSoundWz) {
-          const soundNode = this._mobSoundWz.GetItem('LevelUp/levelup');
+          const soundNode = this._mobSoundWz.GetItem('Game.img/LevelUp');
           if (soundNode instanceof WzSound) {
             this.game.audioPlayer.PlayEffect(soundNode.AudioBytes);
           }
@@ -7948,6 +8023,12 @@ this._localCharId = args.characterId ?? 0;
     attacker?.SetFacing(args.facingLeft);
     // TODO_AUDIT.md Hundred-and-forty-ninth pass: prefer the decoded packet action over local random-pick fallback.
     if (attacker && !attacker.PlayAttackCode(args.action)) attacker.Attack();
+
+    // OG: CUserRemote::OnAttack plays the remote player's skill sound
+    // (play_skill_sound @0x966b60 — Skill.img/{skillId}/attack1..3).
+    if (attacker && args.skillId > 0 && (args.attackType === 'magic' || args.attackType === 'shoot')) {
+      this._playSkillSound(args.skillId, 'attack1');
+    }
 
     if (args.attackType === 'magic' && attacker && args.skillId === 2221006 && args.targets.length > 0) {
       const points = [attacker.Position];

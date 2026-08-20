@@ -763,8 +763,11 @@ export class SkillBook extends GamePanel {
       if (d) { d.visible = false; this._macroBtn.addChild(d); }
       (this._macroBtn as any).__spBtn = { normal: n, hover: h, pressed: p, disabled: d };
     }
-    this._macroBtn.x = 4;
-    this._macroBtn.y = PANEL_H - 26;
+    // BtMacro WZ origin is (-117,-255) — WzSprite.ToPixi anchors on the origin,
+    // so a container at (0,0) places the texture at (117,255) bottom-right.
+    // Manually offsetting the container would double the origin (OptionMenu pattern).
+    this._macroBtn.x = 0;
+    this._macroBtn.y = 0;
     this._root.addChild(this._macroBtn);
 
     // OG: CUISkillInc/Dec/DecEX sub-panels (skill increment/decrement windows)
@@ -1616,9 +1619,10 @@ export class SkillBook extends GamePanel {
     // Close button — OG: CUIWnd close at (153, 6), BtClose3
     if (lx >= 153 && lx < 153 + 14 && ly >= 6 && ly < 6 + 14) { this.isVisible = false; return true; }
 
-    // OG: OnButtonClicked id 2023 — macro toggle (0x7E7)
-    if (lx >= this._macroBtn.x && lx < this._macroBtn.x + 58 &&
-        ly >= this._macroBtn.y && ly < this._macroBtn.y + 18) {
+    // OG: OnButtonClicked id 2023 — macro toggle (0x7E7).
+    // Texture renders at (117,255) from container (0,0) via the (-117,-255) origin.
+    if (lx >= 117 && lx < 117 + 49 &&
+        ly >= 255 && ly < 255 + 18) {
       this.onMacroOpen?.();
       return true;
     }
