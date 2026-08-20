@@ -300,15 +300,25 @@ export class NpcLook {
     this._facingLeft = left;
   }
 
-  /** World-space hit test against the current frame's sprite bounds (falls back to the 40x70 placeholder box). */
+  /** World-space hit test against the current frame's sprite bounds (falls back to a generous 80x100 box at the NPC's feet). */
   HitTest(worldX: number, worldY: number): boolean {
     const frames = this._anims.get(this._state);
     const frame = frames?.[Math.min(this._frame, frames.length - 1)];
-    const halfW = frame ? frame.sprite.OriginX : 20;
-    const top = frame ? -frame.sprite.OriginY : -70;
-    const bottom = frame ? frame.sprite.Height - frame.sprite.OriginY : 0;
-    const left = -halfW;
-    const right = frame ? frame.sprite.Width - halfW : 20;
+    let halfW, top, bottom, left, right;
+    if (frame) {
+      halfW = frame.sprite.OriginX;
+      top = -frame.sprite.OriginY;
+      bottom = frame.sprite.Height - frame.sprite.OriginY;
+      left = -halfW;
+      right = frame.sprite.Width - halfW;
+    } else {
+      // Fallback: larger 80x100 box centered at NPC's feet
+      halfW = 40;
+      top = -100;
+      bottom = 0;
+      left = -halfW;
+      right = halfW;
+    }
     const dx = worldX - this.Position.x;
     const dy = worldY - this.Position.y;
     return dx >= left && dx < right && dy >= top && dy < bottom;

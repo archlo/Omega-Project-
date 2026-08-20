@@ -712,6 +712,15 @@ export class GameStage extends Stage {
     this._chatBar?.onMouseMove(x, y);
     this._gameMenu?.SetMouse(x, y);
     this._dragController.updatePosition(x, y);
+
+    // NPC hover detection for cursor feedback
+    const world = this._camera.ScreenToWorld(x, y);
+    const npc = this._npcs.find((n) => n.HitTest(world.x, world.y));
+    if (npc && this.game.pixiApp.canvas.style.cursor !== 'pointer') {
+      this.game.pixiApp.canvas.style.cursor = 'pointer';
+    } else if (!npc && this.game.pixiApp.canvas.style.cursor === 'pointer') {
+      this.game.pixiApp.canvas.style.cursor = 'default';
+    }
   }
 
   onMouseWheel(x: number, y: number, deltaY: number): void {
@@ -844,6 +853,8 @@ export class GameStage extends Stage {
     }).catch(() => { /* screenshot failed silently */ });
   }
 
+  private _clickedNpc: NpcLook | null = null;
+
   onMouseButton(x: number, y: number, down: boolean, _button: MouseButton): void {
     if (!down) ScrollBar.releasePointer();
     // Dismiss context menu on any click
@@ -920,17 +931,31 @@ export class GameStage extends Stage {
       if (p.handleMouseButton(x, y, down)) return;
     }
     // Global mouse up for ChatBar scrollbar drag
-    if (!down) {
-      (this._chatBar as any)?.handleMouseButtonGlobal?.(x, y, down);
-    }
-    if (!down) {
+    if (down) {
+      // Track NPC on mouse down for click detection
       const world = this._camera.ScreenToWorld(x, y);
       const npc = this._npcs.find((n) => n.HitTest(world.x, world.y));
       if (npc) {
+        this._clickedNpc = npc;
+      }
+    } else {
+      // On mouse up, send packet if we tracked an NPC on down AND it's still under cursor,
+      // OR if no NPC was tracked but one is currently under cursor (backward compatibility)
+      const world = this._camera.ScreenToWorld(x, y);
+      const npcUnderCursor = this._npcs.find((n) => n.HitTest(world.x, world.y));
+      if (this._clickedNpc) {
+        // Clicked NPC on down - verify it's still under cursor on up
+        if (this._clickedNpc.HitTest(world.x, world.y)) {
+          const px = this._player?.Position.x ?? 0;
+          const py = this._player?.Position.y ?? 0;
+          this.game.session.send(GameSender.UserSelectNpc(this._clickedNpc.ObjId, px, py));
+        }
+        this._clickedNpc = null;
+      } else if (npcUnderCursor) {
+        // Backward compat: just mouse up on NPC (no prior down)
         const px = this._player?.Position.x ?? 0;
         const py = this._player?.Position.y ?? 0;
-        this.game.session.send(GameSender.UserSelectNpc(npc.ObjId, px, py));
-        return;
+        this.game.session.send(GameSender.UserSelectNpc(npcUnderCursor.ObjId, px, py));
       }
       let other: OtherCharLook | null = null;
       for (const c of this._otherChars.values()) { if (c.HitTest(world.x, world.y)) { other = c; break; } }
