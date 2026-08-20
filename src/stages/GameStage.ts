@@ -1460,7 +1460,7 @@ export class GameStage extends Stage {
     };
 
     this._revivePanel = new Revive(this._loader, uiWz, font);
-    this._revivePanel.OnRevive = (premium) => {
+    this._revivePanel.OnRevive = (premium, kind) => {
       if (this._isPlayerDead) {
         this._applyLocalRevive();
         this.game.session.send(GameSender.Revive(this._fieldKey, premium));

@@ -17,6 +17,7 @@ const TEXT_Y_PAD = 3;
 export interface ComboBoxItem {
   label: string;
   value: string;
+  sprite?: import('pixi.js').Sprite;
 }
 
 export class ComboBox {
@@ -168,11 +169,20 @@ export class ComboBox {
         this._dropdownContainer.addChild(check);
       }
 
-      const t = new Text({ text: visible[i].label, style: this._label.style });
-      t.x = TEXT_PAD;
-      t.y = iy + TEXT_Y_PAD;
-      this._dropdownContainer.addChild(t);
-      this._dropdownLabels.push(t);
+      const item = visible[i];
+      if (item.sprite) {
+        // Use WZ sprite for the dropdown item label
+        const s = item.sprite;
+        s.position.set(TEXT_PAD, iy + TEXT_Y_PAD);
+        this._dropdownContainer.addChild(s);
+      } else {
+        // Fallback to text label
+        const t = new Text({ text: item.label, style: this._label.style });
+        t.x = TEXT_PAD;
+        t.y = iy + TEXT_Y_PAD;
+        this._dropdownContainer.addChild(t);
+        this._dropdownLabels.push(t);
+      }
     }
   }
 
@@ -221,6 +231,35 @@ export class ComboBox {
           this._sprite = s;
           this._bg.visible = false;
           this._triangle.visible = false;
+        }
+      }
+    }
+  }
+
+  /**
+   * Load dropdown item sprites from a WZ property node.
+   * The node should have children matching the item values (e.g. "all", "friend", "party", etc.)
+   * Each child should have a '0' or 'bmp' canvas.
+   */
+  loadDropdownItemSprites(loader: WzTextureLoader, root: WzProperty): void {
+    for (const item of this._items) {
+      if (!item.value) continue;
+      const node = root.Get(item.value);
+      if (!node) continue;
+      let canvas: WzCanvas | null = null;
+      if (node instanceof WzCanvas) {
+        canvas = node;
+      } else if (typeof (node as any).Get === 'function') {
+        canvas = (node as any).Get('0') ?? (node as any).Get('bmp');
+      }
+      if (canvas instanceof WzCanvas) {
+        const wzSprite = loader.Load(canvas);
+        if (wzSprite) {
+          const s = wzSprite.ToPixi();
+          if (s) {
+            s.anchor.set(0, 0);
+            item.sprite = s;
+          }
         }
       }
     }

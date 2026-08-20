@@ -98,6 +98,15 @@ export interface BundleTooltipOptions {
   // These are the OG preformatted trade-option strings. Do not localize here.
   tradeOption?: string;
   tradeOptionEx?: string;
+  // Missing OG params (audit: 11/20 missing)
+  nKarma?: number;              // Karma flag (0=untradeable, 1=tradeable once, etc.)
+  nNewYearCard?: number;        // New year card flag
+  sCashTitle?: string;          // Cash shop title override
+  nLimitGoods?: number;         // Purchase limit count
+  nMarriage?: number;           // Marriage/wedding item flag
+  sCharacterName?: string;      // Character name for gift/wedding
+  nGiftFrom?: number;           // Gift sender character ID
+  nPetSlot?: number;            // Pet slot index for pet items
 }
 
 export interface RingTooltipOptions {
@@ -600,7 +609,7 @@ this._root.x = gx;
     }
     const petBlockH = isPet ? 4 + petLines.length * (lh - 1) + 4 : 0;
 
-    // OG: Expiry date from ft
+// OG: Expiry date from ft
     const expiryStr = opts.ft ? this._toolTip.getItemExpireDate(opts.ft) : '';
     const titleLine = opts.sTitle ?? '';
     const donatorLine = opts.sDonator ? `Donator: ${opts.sDonator}` : '';
@@ -608,6 +617,14 @@ this._root.x = gx;
     const periodStr = (opts.nPeriod ?? 0) > 0 ? `Period: ${opts.nPeriod} days` : '';
     const timeLimitedStr = (opts.nNpcShopTimeLimitedItemPeriod ?? 0) > 0
       ? `Time Limited: ${opts.nNpcShopTimeLimitedItemPeriod} days` : '';
+
+    // Missing OG params
+    const karmaStr = opts.nKarma !== undefined ? `Karma: ${opts.nKarma === 1 ? 'Tradeable Once' : opts.nKarma === 2 ? 'Untradeable' : 'Tradeable'}` : '';
+    const newYearCardStr = opts.nNewYearCard ? 'New Year Card' : '';
+    const cashTitleLine = opts.sCashTitle ?? '';
+    const limitGoodsStr = (opts.nLimitGoods ?? 0) > 0 ? `Limit: ${opts.nLimitGoods} per account` : '';
+    const marriageStr = opts.nMarriage ? 'Wedding Gift' : '';
+    const giftFromStr = opts.nGiftFrom ? `From: ${opts.sCharacterName ?? `Char ${opts.nGiftFrom}`}` : '';
 
     // OG: Discount rate display
     const origPrice = opts.nOriginalPrice ?? 0;
@@ -631,12 +648,21 @@ this._root.x = gx;
     const orderCommentStr = opts.sOrderComment ?? '';
     const orderCommentH = orderCommentStr ? lh + 4 : 0;
 
+    // Missing OG params height calculations
+    const karmaH = karmaStr ? lh + 4 : 0;
+    const newYearCardH = newYearCardStr ? lh + 4 : 0;
+    const cashTitleH = cashTitleLine ? lh + 4 : 0;
+    const limitGoodsH = limitGoodsStr ? lh + 4 : 0;
+    const marriageH = marriageStr ? lh + 4 : 0;
+    const giftFromH = giftFromStr ? lh + 4 : 0;
+
     // OG: two centered trade-option rows reserve 19px each before cash data.
     const tradeOption = opts.tradeOption ?? '';
     const tradeOptionEx = opts.tradeOptionEx ?? '';
     const optionY = tradeOption ? (tradeOptionEx ? 38 : 19) : (tradeOptionEx ? 19 : 0);
     const cashDescOffset = optionY + (expiryStr ? 20 : 0)
-      + (donatorLine ? 16 : 0) + (titleLine ? 16 : 0);
+      + (donatorLine ? 16 : 0) + (titleLine ? 16 : 0)
+      + (karmaStr ? 16 : 0) + (newYearCardStr ? 16 : 0) + (cashTitleLine ? 16 : 0);
 
     const desc = this._descOf?.call(this, itemId) ?? '';
     // OG DrawTextSepartedLine uses x=92 and x2=270, i.e. a 178px column.
@@ -644,10 +670,11 @@ this._root.x = gx;
     const descH = descLines.length * (lh - 2);
     const descOverflow = Math.max(0, descH - 68);
 
-    // OG: Calculate total height
+// OG: Calculate total height
     const extraH = protectedLine || periodStr || timeLimitedStr ? lh + 4 : 0;
+    const missingParamsH = karmaH + newYearCardH + cashTitleH + limitGoodsH + marriageH + giftFromH;
     const h = 116 + cashDescOffset + descOverflow + (discountStr ? 35 : 0)
-      + itcH + itcExpiryH + orderCommentH + extraH;
+      + itcH + itcExpiryH + orderCommentH + extraH + missingParamsH;
 
     let x = mouseX + 16;
     let y = mouseY + 16;
@@ -724,25 +751,23 @@ let ti = 1;
       for (const line of petLines) { this._txt(ti++, 10, yCursor, line, StatColor, 9); yCursor += lh - 1; }
     }
 if (periodStr) { this._txt(ti++, 4, yCursor, periodStr, DescColor, 9); yCursor += lh + 4; }
-    if (timeLimitedStr) { this._txt(ti++, 4, yCursor, timeLimitedStr, DescColor, 9); yCursor += lh + 4; }
+if (timeLimitedStr) { this._txt(ti++, 4, yCursor, timeLimitedStr, DescColor, 9); yCursor += lh + 4; }
     // OG: Discount uses WZ digit sprites (DrawDiscount_Rate), not plain text
     if (discountStr) {
-      const pct = Math.floor((1 - (opts.nPrice ?? 0) / (opts.nOriginalPrice ?? 1)) * 100);
-      // Use TooltipAssets.DrawDiscount to render WZ digit sprites
-      const discountSprite = this._assets.Get(`Discount/${pct}`);
-      if (discountSprite) {
-        this._blitAt(discountSprite, 10, Math.max(descH, 68) + cashDescOffset + 40);
-      } else {
-        // Fallback: render digits via DrawNumber
-        this._assets.DrawNumber(pct, true, 10, Math.max(descH, 68) + cashDescOffset + 40, this._root, 1);
-        // Draw '%' glyph
-        const pctSprite = this._assets.Get('Discount/%');
-        if (pctSprite) this._blitAt(pctSprite, 30, Math.max(descH, 68) + cashDescOffset + 40);
-      }
+      const discountY = Math.max(descH, 68) + cashDescOffset + 40;
+      // Use ToolTip's drawDiscountRate which loads WZ discount digit sprites
+      this._toolTip.drawDiscountRate(10, discountY, opts.nOriginalPrice ?? 0, opts.nPrice ?? 0);
     }
     if (itcStr) { this._txt(ti++, 4, yCursor, itcStr, DescColor, 9); yCursor += lh + 4; }
     if (itcExpiryStr) { this._txt(ti++, 4, yCursor, `ITC Expires: ${itcExpiryStr}`, DescColor, 9); yCursor += lh + 4; }
-    if (orderCommentStr) { this._txt(ti++, 4, yCursor, orderCommentStr, DescColor, 9); }
+if (orderCommentStr) { this._txt(ti++, 4, yCursor, orderCommentStr, DescColor, 9); }
+    // Missing OG params
+    if (karmaStr) { this._txt(ti++, 4, yCursor, karmaStr, DescColor, 9); yCursor += lh + 4; }
+    if (newYearCardStr) { this._txt(ti++, 4, yCursor, newYearCardStr, DescColor, 9); yCursor += lh + 4; }
+    if (cashTitleLine) { this._txt(ti++, 4, yCursor, cashTitleLine, DescColor, 9); yCursor += lh + 4; }
+    if (limitGoodsStr) { this._txt(ti++, 4, yCursor, limitGoodsStr, DescColor, 9); yCursor += lh + 4; }
+    if (marriageStr) { this._txt(ti++, 4, yCursor, marriageStr, DescColor, 9); yCursor += lh + 4; }
+    if (giftFromStr) { this._txt(ti++, 4, yCursor, giftFromStr, DescColor, 9); yCursor += lh + 4; }
 
     // OG: Dot line before ID
     if (descLines.length > 0) {

@@ -28,6 +28,7 @@ export class Button {
   private _labelText: Text;
   private _hovered = false;
   private _pressed = false;
+  private _checked = false;
 
   // Optional WZ-sprite states (normal/mouseOver/pressed/disabled). When
   // `_normal` is set, the button renders these sprites instead of the
@@ -36,6 +37,7 @@ export class Button {
   private _hover: WzSprite | null = null;
   private _pressedSprite: WzSprite | null = null;
   private _disabled: WzSprite | null = null;
+  private _checkedSprite: WzSprite | null = null;
   private _sprite: import('pixi.js').Sprite | null = null;
 
   constructor(label?: string) {
@@ -65,6 +67,7 @@ export class Button {
     b._hover = Button._loadFirst(loader, buttonRoot, 'mouseOver');
     b._pressedSprite = Button._loadFirst(loader, buttonRoot, 'pressed');
     b._disabled = Button._loadFirst(loader, buttonRoot, 'disabled');
+    b._checkedSprite = Button._loadFirst(loader, buttonRoot, 'checked');
     b._refreshSprite();
     return b;
   }
@@ -161,6 +164,7 @@ export class Button {
   private _refreshSprite(): void {
     if (!this._normal) return;
     const sprite = !this.enabled ? (this._disabled ?? this._normal)
+      : this._checked ? (this._checkedSprite ?? this._normal)
       : this._pressed ? (this._pressedSprite ?? this._normal)
       : this._hovered ? (this._hover ?? this._normal)
       : this._normal;
@@ -175,6 +179,13 @@ export class Button {
     // the sprite already has the button text baked into the image.
     this._bg.visible = false;
     this._labelText.visible = false;
+  }
+
+  /** Set checked state (for filter buttons with normal/checked states) */
+  setChecked(checked: boolean): void {
+    if (this._checked === checked) return;
+    this._checked = checked;
+    this._refreshSprite();
   }
 
   private drawBg(): void {

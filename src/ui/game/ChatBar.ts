@@ -259,6 +259,7 @@ export class ChatBar extends GamePanel {
   private _tabLabels: Text[] = [];
   private _tabBarSprites: (Sprite | null)[] = [];
   private _tabBarCheckedSprites: (Sprite | null)[] = [];
+  private _tabBarButtons: (Button | null)[] = [];
 
   // OG: filter button membership gating (_ResetChatBarPos) — hidden when the
   // character isn't in the group; the matching filter bit is cleared.
@@ -655,6 +656,14 @@ export class ChatBar extends GamePanel {
 
       if (tabVisible) shown++;
     }
+
+    // Sync Button-based tab bar checked states
+    for (let i = 0; i < this._tabBarButtons.length; i++) {
+      const btn = this._tabBarButtons[i];
+      if (btn) {
+        btn.setChecked(this._filterChecked[i]);
+      }
+    }
   }
 
   // OG: _SetFilterButton (0x86CF80) checked masks, per button index
@@ -942,12 +951,30 @@ export class ChatBar extends GamePanel {
   // ═══════════════════════════════════════════════════════════════════════════
   // OG: _SetFilterButton (0x86CF80) — update button checked states
   // ═══════════════════════════════════════════════════════════════════════════
-  private _setFilterButton(): void {
+private _setFilterButton(): void {
     // OG: sets m_bChecked on each CCtrlOriginButton and invalidates
     this._filterChecked = this._computeFilterChecked();
     // Redraw filter button visuals
     this._updateFilterButtons();
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Handle filter button click from Button-based tab bar
+  // ═══════════════════════════════════════════════════════════════════════════
+  private _handleFilterButtonClick(tab: number): void {
+    // Mirror the OG tab click logic from handleMouseButton
+    if (tab === 0) {
+      // OG: "All" tab clears all filters
+      this._dwChatFilterFlag = 0;
+    } else if (tab < FILTER_FLAGS.length) {
+      // OG: other tabs toggle via XOR on m_dwChatFilterFlag
+      this._dwChatFilterFlag ^= FILTER_FLAGS[tab];
+    }
+    this._setFilterButton();
+    this._refreshChatLog();
+    this.onTabChange?.(tab);
+  }
+
   get chatTarget(): string { return CHAT_TARGET_INTERNAL[this._nChatTarget] ?? 'all'; }
   get activeTab(): number { return this._activeTab; }
 
@@ -1378,6 +1405,13 @@ export class ChatBar extends GamePanel {
     const comboLy = ly - COMBO_Y;
     if (this._combo.handleMouseButton(comboLx, comboLy, down)) {
       return true;
+    }
+
+    // Delegate tab bar filter button hit testing to Button components
+    for (const btn of this._tabBarButtons) {
+      if (btn && btn.handleMouseButton(lx, ly, down)) {
+        return true;
+      }
     }
 
     // OG: Close whisper picker on outside click
@@ -2088,12 +2122,15 @@ export class ChatBar extends GamePanel {
     this._layerEnter = loadCanvas(bar, 'chatEnter', DISPLAY_X + 45, this._chatWndY + 23, false);
     this._layerCover = loadCanvas(bar, 'chatCover', DISPLAY_X + 3, this._chatWndY + 24, false);
 
-    // Combo box WZ sprite (OG: StatusBar2.img/mainBar/chatTarget/base/<state>/0)
+// Combo box WZ sprite (OG: StatusBar2.img/mainBar/chatTarget/base/<state>/0)
     // The `base` node holds normal/mouseOver/pressed/disabled states, each with a
     // `0` canvas (68x21). loadWzAsset unwraps `0`/`bmp`, so descend to `base/normal`.
-    const ctBase = bar.Get('chatTarget') as WzProperty | null;
-    if (ctBase) {
-      this._combo.loadWzAsset(loader, ctBase, 'base/normal');
+    const ctTarget = bar.Get('chatTarget') as WzProperty | null;
+    if (ctTarget) {
+      // Load combo box background states
+      this._combo.loadWzAsset(loader, ctTarget, 'base/normal');
+      // Load dropdown item sprites from chatTarget children (all, friend, party, guild, association, expedition)
+      this._combo.loadDropdownItemSprites(loader, ctTarget);
     }
 
     const addControl = (name: string, onClick: () => void): Button | null => {
@@ -2107,44 +2144,27 @@ export class ChatBar extends GamePanel {
     };
     this._chatOpenButton = addControl('chatOpen', () => this.setChatType(CHAT_TYPE_EXPANDED));
     this._chatCloseButton = addControl('chatClose', () => this.setChatType(CHAT_TYPE_MINIMAL));
-    this._scrollUpButton = addControl('scrollUp', () => this.scrollBy(-1));
-    this._scrollDownButton = addControl('scrollDown', () => this.scrollBy(1));
+    // scrollUp/scrollDown buttons don't exist in v95 StatusBar2.img/mainBar - use graphics fallback
+    // this._scrollUpButton = addControl('scrollUp', () => this.scrollBy(-1));
+    // this._scrollDownButton = addControl('scrollDown', () => this.scrollBy(1));
 
-    // Tab bar filter buttons (OG: StatusBar2.img/chat/Tap/*)
+    // Tab bar filter buttons (OG: StatusBar2.img/chat/Tap/*) - use Button.fromWz for proper state handling
     const chatRoot = ui.GetItem('StatusBar2.img/chat') as WzProperty | null;
-    // OG: WZ node names for filter buttons
-    const filterWzNames = ['all', 'friend', 'party', 'guild', 'association', 'expedition'];
     if (chatRoot) {
-      for (let i = 0; i < Math.min(TAB_NAMES.length, 6); i++) {
-        const tapRoot = chatRoot.Get('Tap') as WzProperty | null;
-        const tapNode = tapRoot?.Get(filterWzNames[i]);
-        if (tapNode && typeof (tapNode as any).Get === 'function') {
-          const normal = (tapNode as any).Get('normal/0') ?? (tapNode as any).Get('normal');
-          if (normal instanceof WzCanvas) {
-            const wzSprite = loader.Load(normal);
-            if (wzSprite) {
-              const s = wzSprite.ToPixi();
-              if (s) {
-                s.anchor.set(0, 0);
-                s.position.set(DISPLAY_X + i * TAB_SPACING, this._chatWndY);
-                this._tabBarSprites[i] = s;
-                this._root.addChild(s);
-              }
-            }
-          }
-          const checked = (tapNode as any).Get('checked/0') ?? (tapNode as any).Get('checked');
-          if (checked instanceof WzCanvas) {
-            const wzSprite = loader.Load(checked);
-            if (wzSprite) {
-              const s = wzSprite.ToPixi();
-              if (s) {
-                s.anchor.set(0, 0);
-                s.position.set(DISPLAY_X + i * TAB_SPACING, this._chatWndY);
-                s.visible = false;
-                this._tabBarCheckedSprites[i] = s;
-                this._root.addChild(s);
-              }
-            }
+      const tapRoot = chatRoot.Get('Tap') as WzProperty | null;
+      if (tapRoot) {
+        // OG: WZ node names for filter buttons
+        const filterWzNames = ['all', 'friend', 'party', 'guild', 'association', 'expedition'];
+        for (let i = 0; i < Math.min(TAB_NAMES.length, 6); i++) {
+          const tapNode = tapRoot.Get(filterWzNames[i]) as WzProperty | null;
+          if (tapNode) {
+            const btn = Button.fromWz(loader, tapNode, TAB_NAMES[i]);
+            btn.container.position.set(DISPLAY_X + i * TAB_SPACING, this._chatWndY);
+            btn.onClick = () => {
+              this._handleFilterButtonClick(i);
+            };
+            this._tabBarButtons[i] = btn;
+            this._root.addChild(btn.container);
           }
         }
       }

@@ -1,7 +1,9 @@
-import { Container, Graphics, Text } from 'pixi.js';
+import { Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
 import type { AvatarLook } from '../domain/AvatarLook.js';
 import { WzTextureLoader } from '../render/WzTextureLoader.js';
 import type { WzPackage } from '../wz/WzPackage.js';
+import { WzProperty } from '../wz/WzProperty.js';
+import { WzCanvas } from '../wz/WzCanvas.js';
 import { CharLook } from './CharLook.js';
 import { Stance } from './Stance.js';
 import type { TempStatBuff } from '../net/handlers/PacketArgs.js';
@@ -72,6 +74,8 @@ export class OtherCharLook {
 
   // Cached display objects
   private _nameText: Text | null = null;
+  private _nameTagPlate: Sprite | null = null;
+  private _nameTagSprite: Sprite | null = null;
   private _guildText: Text | null = null;
   private _medalText: Text | null = null;
   private _placeholderGfx: Graphics | null = null;
@@ -122,6 +126,21 @@ export class OtherCharLook {
     this._baseWz = baseWz;
     if (this._charLook === null) return;
     this._charLook.Load(charWz, itemWz, baseWz, loader);
+
+    // OG: Name tag plate from UIWindow2.img/UtilDlgEx/bar (109x19)
+    // Composed into a 121x23 plate with bar at (6,3), text centered at y=5 from top
+    if (baseWz) {
+      const utilDlgEx = baseWz.GetItem('UIWindow2.img/UtilDlgEx');
+      if (utilDlgEx instanceof WzProperty) {
+        const barNode = utilDlgEx.Get('bar');
+        if (barNode instanceof WzCanvas) {
+          const wzSprite = loader.Load(barNode);
+          if (wzSprite) {
+            this._nameTagPlate = wzSprite.ToPixi();
+          }
+        }
+      }
+    }
   }
 
   SetPosition(x: number, y: number): void {
@@ -388,20 +407,47 @@ export class OtherCharLook {
     }
 
     // ── Name tags (OG CUser::DrawNameTags → CLife::MakeNameTag) ──
-    // The character name plate sits BELOW the feet (v95 yellow plate under
+    // The character name plate sits BELOW the feet (v95 white plate under
     // the character, like NPCs); the HP gauge stays above the head (-105).
     // Tag 1: Character name (tagType 1000) — just the name (m_sCharacterName),
     // no level prefix (the OG draws only the name on a white plate).
     const nameTagY = 10;
-    const tag = this.Name;
-    if (!this._nameText) {
-      this._nameText = new Text({ text: tag, style: { fontSize: 11, fill: 0xffe664, stroke: '#000000' } });
-      this._nameText.anchor.set(0.5, 1);
-      this._nameText.y = nameTagY;
+    const tag = this.Name ?? '';
+    if (this._nameTagPlate) {
+      // OG: plate is 121x23, bar (109x19) at (6,3), text centered at y=5 from plate top
+      if (!this._nameText) {
+        this._nameText = new Text({ text: tag, style: { fontSize: 11, fill: 0xFFFFFF, stroke: { color: '#000000', width: 2 } } });
+        this._nameText.anchor.set(0.5, 0);
+      } else {
+        this._nameText.text = tag;
+      }
+      // Position text on the plate: plate top at nameTagY - 23 (since anchor is bottom), text at plate top + 5
+      const plateY = nameTagY - 23;
+      this._nameText.y = plateY + 5;
+      this._nameText.x = 0; // centered on plate
+      this._nameText.scale.x = this.container.scale.x; // counter-flip for avatar flip
+
+      if (!this._nameTagSprite) {
+        this._nameTagSprite = new Sprite(this._nameTagPlate.texture);
+        this._nameTagSprite.anchor.set(0.5, 1);
+        this.container.addChild(this._nameTagSprite);
+      }
+      this._nameTagSprite.texture = this._nameTagPlate.texture;
+      this._nameTagSprite.y = nameTagY;
+      this._nameTagSprite.scale.x = this.container.scale.x;
+
+      this.container.addChild(this._nameText);
     } else {
-      this._nameText.text = tag;
+      // Fallback: plain text with yellow fill (old behavior)
+      if (!this._nameText) {
+        this._nameText = new Text({ text: tag, style: { fontSize: 11, fill: 0xffe664, stroke: '#000000' } });
+        this._nameText.anchor.set(0.5, 1);
+        this._nameText.y = nameTagY;
+      } else {
+        this._nameText.text = tag;
+      }
+      this.container.addChild(this._nameText);
     }
-    this.container.addChild(this._nameText);
 
     // Tag 2: Guild name (tagType 1004) — below character name
     const displayGuild = this._teamName || this._guildName;

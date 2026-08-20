@@ -11,20 +11,27 @@ import { Button } from '../Button.js';
 const FallbackPanelW = 320;
 const FallbackPanelH = 140;
 const FadeSeconds = 0.2;
+// OG: CUIRevive::Update @0x83CE70 — auto-revive after 600000ms (10 minutes)
+const AutoReviveTimeoutMs = 600000;
+
+export type ReviveKind = 'town' | 'soulStone' | 'wheelOfDestiny';
 
 export class Revive extends GamePanel {
-  OnRevive: ((premium: boolean) => void) | null = null;
+  OnRevive: ((premium: boolean, kind: ReviveKind) => void) | null = null;
 
   private _backgrnd: WzSprite | null;
   private _bgPixi: import('pixi.js').Sprite | null = null;
   private _fallbackBg: Graphics | null = null;
   private _message: Text | null = null;
   private _btOk: Button;
+  private _btCancel: Button | null = null;
   private _font: BuiltInFont | null;
   private _viewW = 800;
   private _viewH = 600;
   private _alpha = 0;
   private _ignoreInputMs = 0;
+  private _kind: ReviveKind = 'town';
+  private _autoReviveTimerMs = 0;
 
   constructor(loader: WzTextureLoader, ui: WzPackage | null, font: BuiltInFont | null) {
     super();
@@ -35,7 +42,7 @@ export class Revive extends GamePanel {
     // UIWindow2.img/Notice/<0..4> (0 = plain "return to town", 1/2/4 = special
     // variants) with btOK (id 6) / btCancle (id 7). Use Notice/0 for the plain
     // town-revive case; the premium/soul-stone variants are a separate feature.
-    const { backgrnd, btYes } = Revive._probeAssets(ui);
+    const { backgrnd, btYes, btCancel } = Revive._probeAssets(ui, 'town');
     this._backgrnd = backgrnd !== null ? loader.Load(backgrnd) : null;
     if (this._backgrnd) {
       this._bgPixi = this._backgrnd.ToPixi();
@@ -53,26 +60,51 @@ export class Revive extends GamePanel {
       this._root.addChild(this._message);
     }
     this._btOk = btYes !== null ? Button.fromWz(loader, btYes, 'OK') : new Button('OK');
-    this._btOk.onClick = () => this._acceptTownRevive();
+    this._btOk.onClick = () => this._acceptRevive(false);
     this._root.addChild(this._btOk.container);
+
+    // OG: btCancle button (id 7) — cancels the revive dialog without sending Revive
+    if (btCancel) {
+      this._btCancel = Button.fromWz(loader, btCancel, 'Cancel');
+      this._btCancel.onClick = () => this._cancelRevive();
+      this._root.addChild(this._btCancel.container);
+    }
   }
 
-  Open(): void {
+  Open(kind: ReviveKind = 'town'): void {
+    this._kind = kind;
+    this._autoReviveTimerMs = 0;
     this.isVisible = true;
     this._alpha = 0;
     this._ignoreInputMs = 250;
+    // Load the correct WZ assets for this revive kind
+    this._loadAssetsForKind(kind);
   }
 
   Close(): void {
     this.isVisible = false;
     this._alpha = 0;
     this._ignoreInputMs = 0;
+    this._autoReviveTimerMs = 0;
   }
 
-  private _acceptTownRevive(): void {
+  private _loadAssetsForKind(kind: ReviveKind): void {
+    // For now, we only probe 'town' (Notice/0). Premium variants (Notice/2, Notice/4)
+    // would be loaded here when implemented.
+    this._kind = kind;
+  }
+
+  private _acceptRevive(premium: boolean): void {
     if (this._ignoreInputMs > 0) return;
     this.Close();
-    this.OnRevive?.(false);
+    this.OnRevive?.(premium, this._kind);
+  }
+
+  private _cancelRevive(): void {
+    if (this._ignoreInputMs > 0) return;
+    // OG: Cancel just closes the dialog without sending revive packet
+    // The player remains dead until they click OK or auto-revive triggers
+    this.Close();
   }
 
   Relayout(viewWidth: number, viewHeight: number): void {
@@ -86,6 +118,14 @@ export class Revive extends GamePanel {
     this._alpha = Math.min(1, this._alpha + dt / FadeSeconds);
     this._root.alpha = this._alpha;
     if (this._ignoreInputMs > 0) this._ignoreInputMs -= ms;
+
+    // OG: CUIRevive::Update @0x83CE70 — auto-revive after 600000ms (10 minutes)
+    this._autoReviveTimerMs += ms;
+    if (this._autoReviveTimerMs >= AutoReviveTimeoutMs) {
+      this._autoReviveTimerMs = 0;
+      this._acceptRevive(false); // Auto-revive as town revive (non-premium)
+    }
+
     const tl = this._topLeft();
     if (this._bgPixi) {
       this._bgPixi.position.set(tl.x, tl.y);
@@ -93,6 +133,10 @@ export class Revive extends GamePanel {
       // AddButton offset (42, 0); its canvas origin (-196, -100) lands the
       // sprite at panel-relative (238, 100).
       this._btOk.container.position.set(tl.x + 42, tl.y);
+      // OG: btCancle at offset (0, 0) with origin (-320, -141) -> panel-relative (320, 141)
+      if (this._btCancel) {
+        this._btCancel.container.position.set(tl.x + 0, tl.y);
+      }
     }
     if (this._fallbackBg) {
       this._fallbackBg.clear();
@@ -101,24 +145,30 @@ export class Revive extends GamePanel {
     }
     if (this._message) this._message.position.set(tl.x + this._panelWidth / 2, tl.y + 24);
     if (!this._bgPixi) {
-      // Fallback-only: center the button under the message (the WZ Notice
-      // button is placed by its canvas origin inside the 300x131 panel).
-      const btX = tl.x + (this._panelWidth - this._btOk.width) / 2;
-      const btY = tl.y + this._panelHeight - 30;
-      this._btOk.container.position.set(btX, btY);
+      // Fallback-only: center the buttons under the message
+      const btOkX = tl.x + (this._panelWidth - this._btOk.width - (this._btCancel?.width ?? 0) - 10) / 2;
+      const btOkY = tl.y + this._panelHeight - 30;
+      this._btOk.container.position.set(btOkX, btOkY);
+      if (this._btCancel) {
+        this._btCancel.container.position.set(btOkX + this._btOk.width + 10, btOkY);
+      }
     }
   }
 
   handleMouseButton(x: number, y: number, down: boolean): boolean {
     if (!this.isVisible) return false;
     this._btOk.handleMouseButton(x, y, down);
+    this._btCancel?.handleMouseButton(x, y, down);
     return true;
   }
 
   onKeyPress(key: string): boolean {
     if (!this.isVisible) return false;
     if (key === 'Enter' || key === ' ' || key === 'y' || key === 'Y') {
-      this._acceptTownRevive();
+      this._acceptRevive(false);
+    }
+    if (key === 'Escape' || key === 'n' || key === 'N') {
+      this._cancelRevive();
     }
     return true;
   }
@@ -137,16 +187,20 @@ export class Revive extends GamePanel {
     };
   }
 
-  private static _probeAssets(ui: WzPackage | null): { backgrnd: WzCanvas | null; btYes: WzProperty | null } {
-    if (ui === null) return { backgrnd: null, btYes: null };
+  private static _probeAssets(ui: WzPackage | null, kind: ReviveKind): { backgrnd: WzCanvas | null; btYes: WzProperty | null; btCancel: WzProperty | null } {
+    if (ui === null) return { backgrnd: null, btYes: null, btCancel: null };
     // OG: CUIRevive::OnCreate — UIWindow2.img/Notice/<0..4> + btOK/btCancle
-    const root = ui.GetItem('UIWindow2.img/Notice');
-    if (!(root instanceof WzProperty)) return { backgrnd: null, btYes: null };
+    // kind 'town' -> Notice/0, 'soulStone' -> Notice/2, 'wheelOfDestiny' -> Notice/4
+    const noticeIndex = kind === 'soulStone' ? 2 : kind === 'wheelOfDestiny' ? 4 : 0;
+    const root = ui.GetItem(`UIWindow2.img/Notice/${noticeIndex}`);
+    if (!(root instanceof WzProperty)) return { backgrnd: null, btYes: null, btCancel: null };
     const bg = root.Get('0');
     const bt = (root.Get('btOK') as WzProperty) ?? (root.Get('btYes') as WzProperty) ?? null;
+    const btCancel = root.Get('btCancle') as WzProperty ?? null; // OG uses "btCancle" (typo in original)
     return {
       backgrnd: bg instanceof WzCanvas ? bg : null,
       btYes: bt instanceof WzProperty ? bt : null,
+      btCancel: btCancel instanceof WzProperty ? btCancel : null,
     };
   }
 }
