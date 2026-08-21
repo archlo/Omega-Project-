@@ -27,6 +27,8 @@ export class CharLook {
   private _emotionDelays: number[] = [];
   private _oneTimeActionTimer = 0;
   private _anchors: AvatarAnchors = ZeroAnchors;
+  /** OG CAvatar::m_dwMorphTemplateID — blocks emotions when morphed. */
+  morphTemplateId = 0;
 
   readonly container = new Container();
   /** 5 OG-style layer containers: 0=UnderCharacter, 1=UnderFace, 2=Face,
@@ -186,6 +188,8 @@ export class CharLook {
   }
 
   SetEmotion(emotionId: number): void {
+    // OG CAvatar::SetEmotion @0x466b00 — morphed characters cannot show emotions
+    if (this.morphTemplateId !== 0) return;
     this._emotionId = emotionId;
     this._emotionFrame = 0;
     this._emotionFrameTimer = 0;

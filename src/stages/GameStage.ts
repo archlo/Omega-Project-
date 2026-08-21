@@ -52,7 +52,7 @@ import { OutPacket } from '../net/packet/OutPacket.js';
 import { InHeader } from '../net/packet/OpCodes.js';
 import { Portal } from '../map/Portal.js';
 import { MeleeAttackEncoder, MeleeTarget } from '../net/packet/MeleeAttackEncoder.js';
-import { getWeaponType, calcDamageRange } from '../net/packet/MeleeDamage.js';
+import { getWeaponType, calcDamageRange, calcHitRate } from '../net/packet/MeleeDamage.js';
 import { PlayerController } from '../character/PlayerController.js';
 import { CharacterStat } from '../domain/CharacterStat.js';
 import { WzTextureLoader } from '../render/WzTextureLoader.js';
@@ -464,6 +464,8 @@ export class GameStage extends Stage {
   private _isFieldTransferring = false;
   private _townPortalStatus = '';
   private _lastUnequipTime = 0;
+  // OG: CWvsContext::SendEmotionChange @0x9f9320 — 2000ms cooldown
+  private _lastEmotionTime = 0;
   private _isRidingTamingMob = false;
   protected _mobNameOf: (id: number) => string = () => '';
   protected _itemNameOf: (id: number) => string = () => '';
@@ -2364,7 +2366,13 @@ export class GameStage extends Stage {
       this._notice?.show('Item Info', `${name} (${itemId})`);
     };
     this._chatBar.onEmotion = (emotion) => {
+      // OG: SendEmotionChange @0x9f9320 — 2000ms cooldown + local face change
+      const now = Date.now();
+      if (now - this._lastEmotionTime < 2000) return;
+      if (emotion > 0x17) return; // max emotion ID (23)
+      this._lastEmotionTime = now;
       this.game.session.send(GameSender.UserEmotion(emotion));
+      this._player?.SetEmotion(emotion); // optimistic local face change
     };
 
     this._skill.onDragStart = (payload, texture, x, y) => { this._dragController.beginDrag(payload, texture, x, y); };
@@ -2864,6 +2872,10 @@ this._dmgNumbers?.Update(dt);
     for (let i = 1; i <= 7; i++) {
       const action = KeyAction[`Emotion${i}` as keyof typeof KeyAction] as KeyAction;
       if (this._keyConfig.isActionDown((k) => k === key, action)) {
+        // OG: SendEmotionChange @0x9f9320 — 2000ms cooldown
+        const now = Date.now();
+        if (now - this._lastEmotionTime < 2000) return true;
+        this._lastEmotionTime = now;
         this.game.session.send(GameSender.UserEmotion(i));
         this._player?.SetEmotion(i);
         return true;
@@ -3443,6 +3455,13 @@ this._dmgNumbers?.Update(dt);
       const other = this._otherChars.get(args.charId);
       if (!other) return;
       other.SetEmotion(args.emotion);
+    };
+    // OG: CUser::OnRandomEmotion (0x8e34b0) — itemId → random emotion from AreaBuffItem
+    fh.onUserRandomEmotion = (itemId: number) => {
+      // AreaBuffItem emotion list not yet wired; pick a random emotion 1-7
+      const randomEmotion = 1 + Math.floor(Math.random() * 7);
+      this._player?.SetEmotion(randomEmotion);
+      this.game.session.send(GameSender.UserEmotion(randomEmotion));
     };
     fh.onUserSetActivePortableChair = (args) => {
       if (args.charId === 0) return;
@@ -5435,6 +5454,10 @@ this._localCharId = args.characterId ?? 0;
       mob.RevealLabel();
       this._dmgNumbers?.Add(args.damage, mob.HeadPosition.x, mob.HeadPosition.y, DamageKind.DamageNormal);
       this._mobSounds?.PlayDamage(mob.TemplateId);
+    } else if (args.damage === 0) {
+      // OG CMob::ShowDamage: nDamage==0 → CAnimationDisplayer::Effect_Miss
+      mob.RevealLabel();
+      this._dmgNumbers?.AddMiss(mob.HeadPosition.x, mob.HeadPosition.y);
     }
     // DamagedByMob mobs show HP indicator when damaged by other mobs
     if (mob.DamagedByMob && args.maxHp > 0) {
@@ -5982,25 +6005,31 @@ this._localCharId = args.characterId ?? 0;
       const watk = weaponStats?.incPad ?? attr?.IncPad ?? 0;
       const matk = weaponStats?.incMad ?? attr?.IncMad ?? 0;
       const dmgRange = calcDamageRange(this._job, wt, watk, matk, this._stats.str, this._stats.dex, this._stats.intStat, this._stats.luk, 0);
-      const dmg = dmgRange.min + Math.floor(Math.random() * (dmgRange.max - dmgRange.min + 1));
-      // TEMP DEBUG: 1-hit kill investigation
-      console.log(`[MeleeDbgClient] job=${this._job} wt=${wt} incPad=${watk} incMad=${matk} str=${this._stats.str} dex=${this._stats.dex} int=${this._stats.intStat} luk=${this._stats.luk} range=${dmgRange.min}-${dmgRange.max} dmg=${dmg} weaponId=${weaponId}`);
+      // OG: CalcDamage::CalcAccR (0x724CE0) — client rolls hit/miss per mob.
+      // Player ACC = floor(dex * 1.2 + luk * 1.0) + equip/buff accBonus.
+      const playerBaseAcc = Math.floor(this._stats.dex * 1.2 + this._stats.luk * 1.0);
+      const playerTotalAcc = playerBaseAcc + (this._statDetailInfo?.Inputs.accBonus ?? 0);
+      const mobEva = closest._info?.Eva ?? 0;
+      const mobLevel = closest._info?.Level ?? 1;
+      const hitRate = calcHitRate(playerTotalAcc, mobEva, this._stats.level, mobLevel);
+      const hit = Math.random() * 100 < hitRate;
+      const dmg = hit
+        ? dmgRange.min + Math.floor(Math.random() * (dmgRange.max - dmgRange.min + 1))
+        : 0;
       targets.push(new MeleeTarget(closest.MobId, [dmg], closest.Position.x, closest.Position.y, 0));
-      closest.ShowHitEffect();
-      this._mobSounds?.PlayDamage(closest.TemplateId);
       // OG: weapon attack sound via sSfx from Character.wz → Sound.wz/Weapon.img/{sSfx}/Attack
       this._playWeaponAttackSound(weaponId);
-      // Damage number is server-authoritative — the mobDamaged echo
-      // (OnMobDamaged) renders the WZ-digit number. No optimistic add here
-      // (would double-render for the local attacker).
-      // TODO_AUDIT.md Sixty-seventh pass: CBattleRecordMan — no critical-hit
-      // flag exists on this client's own outgoing damage anywhere, so
-      // isCritical is always false here (documented simplification).
-      this._battleRecord?.AddDamage(dmg, false, false);
-      this._skill.setDamageMeterSummary(this._battleRecord?.getDamageMeterSummary() ?? null);
-      const ctl = this._mobCtl.get(closest.MobId);
-      ctl?.OnDamagedByPlayer();
-      ctl?.ApplyHitKnockback(closest.Position.x >= pos.x ? 25 : -25);
+      if (hit) {
+        closest.ShowHitEffect();
+        this._mobSounds?.PlayDamage(closest.TemplateId);
+        // Damage number is server-authoritative — the mobDamaged echo
+        // (OnMobDamaged) renders the WZ-digit number.
+        this._battleRecord?.AddDamage(dmg, false, false);
+        this._skill.setDamageMeterSummary(this._battleRecord?.getDamageMeterSummary() ?? null);
+        const ctl = this._mobCtl.get(closest.MobId);
+        ctl?.OnDamagedByPlayer();
+        ctl?.ApplyHitKnockback(closest.Position.x >= pos.x ? 25 : -25);
+      }
     }
 
     // TODO_AUDIT.md Hundred-and-forty-ninth pass: send and render the same basic-attack action.
@@ -7183,6 +7212,8 @@ this._localCharId = args.characterId ?? 0;
       morphTemplateId: avatar?.morphTemplateId || buff.morph,
       ridingVehicle: avatar?.ridingVehicle || buff.rideVehicle || (this._isRidingTamingMob ? 1 : 0),
     });
+    // Sync morph state to CharLook so SetEmotion guards against it (OG CAvatar::SetEmotion @0x466b2a).
+    this._player!.morphTemplateId = avatar?.morphTemplateId || buff.morph;
   }
 
   // OG: CUserLocal::OnSetDead @0x903FC0 — the instant HP hits 0 the local
