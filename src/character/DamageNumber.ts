@@ -33,9 +33,15 @@ interface Entry {
 }
 
 export class DamageNumber {
-  private static readonly RiseDuration = 0.7;
-  private static readonly FadeDuration = 0.3;
-  private static readonly TotalLife = DamageNumber.RiseDuration + DamageNumber.FadeDuration;
+  // OG CAnimationDisplayer::Effect_HP (0x444EB0):
+  //   InsertCanvas(t=400, alpha=255) — full opacity for 400ms
+  //   InsertCanvas(t=600, alpha=0)   — fade out over 200ms
+  //   RelMove at t+250 moves layer 30px UP (the "rise")
+  //   RegisterOneTimeAnimation auto-destroys at t=600
+  private static readonly HoldDuration = 0.4;   // 400ms at full alpha
+  private static readonly FadeDuration = 0.2;    // 200ms fade to 0
+  private static readonly TotalLife = DamageNumber.HoldDuration + DamageNumber.FadeDuration; // 0.6s
+  private static readonly RiseDuration = DamageNumber.TotalLife; // rise spans entire life
 
   readonly container = new Container();
   private _digits: DamageDigits | null = null;
@@ -71,7 +77,7 @@ export class DamageNumber {
       // stagger local to the renderer instead of cloning ZigZagDamage.
       worldY: worldY - Math.max(0, hitIndex) * 14,
       age: 0,
-      vy: -80,
+      vy: -50, // OG: RelMove 30px up over 600ms = 50 px/s
     });
   }
 
@@ -83,8 +89,8 @@ export class DamageNumber {
     for (let i = this._entries.length - 1; i >= 0; i--) {
       const e = this._entries[i];
       e.age += dt;
+      // OG RelMove at t+250 moves 30px UP over 600ms = 50 px/s
       e.worldY += e.vy * dt;
-      e.vy = Math.min(0, e.vy + 40 * dt);
       if (e.age >= DamageNumber.TotalLife) {
         const text = this._fallbackTexts.get(e.id);
         if (text) { text.destroy(); this._fallbackTexts.delete(e.id); }
@@ -109,9 +115,10 @@ export class DamageNumber {
     }
 
     for (const e of this._entries) {
+      // OG Effect_HP: alpha=255 for HoldDuration, then linear fade to 0 over FadeDuration
       let alpha = 1;
-      if (e.age >= DamageNumber.RiseDuration) {
-        alpha = 1 - (e.age - DamageNumber.RiseDuration) / DamageNumber.FadeDuration;
+      if (e.age >= DamageNumber.HoldDuration) {
+        alpha = 1 - (e.age - DamageNumber.HoldDuration) / DamageNumber.FadeDuration;
       }
       alpha = Math.max(0, Math.min(1, alpha));
 

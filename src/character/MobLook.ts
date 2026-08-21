@@ -143,8 +143,6 @@ export class MobLook {
   private _speechText = '';
   private _speechTimer = 0;
   private _statusBadges = new Map<string, { text: string; timer: number }>();
-  private _damageNumbers: { text: string; x: number; y: number; timer: number; color: number; scale: number }[] = [];
-  private _damageContainer: Container | null = null;
 
   // OG CMob fields
   private _mobCtrlState = -1;  // -1=idle, -2=waiting, -3=active, 1=moving, 3/4=attacking
@@ -341,40 +339,6 @@ export class MobLook {
     this._tLastHitExpire = this._tHitExpire;
   }
 
-  /** OG CMob::OnHit (0x653110) — full 15-param hit processing from server */
-  OnHit(
-    dwCharacterId: number,
-    nSkillID: number,
-    nHitAction: number,
-    bLeft: boolean,
-    nDamage: number,
-    bCriticalAttack: boolean,
-    nAttackIdx: number,
-    bChase: number,
-    nMoveType: number,
-    nBulletCashItemID: number,
-    nMoveEndingPosX: number,
-    nMoveEndingPosY: number,
-    bMoveLeft: boolean,
-    bZigZagDamage: boolean,
-  ): void {
-    // OG: show hit effect (hit animation)
-    if (nHitAction > 0 && nDamage > 0) {
-      this.ShowHitEffect(nDamage);
-      // OG: play hit sound (SE_MOB_HIT)
-      this.onHitSound?.(this.TemplateId);
-    }
-    // OG: show damage number (skip for certain skills)
-    const skipDamageSkills = [1221011, 21120006, 33101005];
-    if (!skipDamageSkills.includes(nSkillID)) {
-      this.ShowDamage(nDamage, bCriticalAttack, false, bZigZagDamage ? 15 : 0, true);
-    }
-    // OG: show catch effect for certain skills
-    if (nSkillID === 1121001 || nSkillID === 1321001) {
-      this.ShowCatchEffect();
-    }
-  }
-
   Say(text: string, durationSec = 4): void {
     if (!text) return;
     this._speechText = text;
@@ -430,41 +394,6 @@ export class MobLook {
       this._showLabel = true;
       this._updateDisplay();
     }
-  }
-
-  /** OG CMob::ShowDamage — floating damage number with zigzag + direction offset */
-  ShowDamage(nDamage: number, bCritical: boolean, bHalfHeight: boolean, zigZagDamage = 0, bAdjustHeight = false): void {
-    // OG: HP bar + name tag only appear after mob takes damage
-    this.RevealLabel();
-    const head = this.HeadPosition;
-    // OG: x offset = ±15 based on critical (even/odd) and facing direction
-    let offsetX = 0;
-    if (bAdjustHeight) {
-      const adj = (bCritical ? 1 : 0) % 2 !== 0 ? 15 : -15;
-      offsetX = (this._info?.NoFlip || (this._nOneTimeAction & 1) !== 0) ? -adj : adj;
-    }
-    // OG: y = zigZagDamage - bCritical * (bHalfHeight ? 15 : 30) - 15
-    const offsetY = zigZagDamage - (bCritical ? 1 : 0) * (bHalfHeight ? 15 : 30) - 15;
-    let color = 0xffffff; // white normal
-    let text = `${nDamage}`;
-    if (nDamage === 0) {
-      text = 'MISS';
-      color = 0xaaaaaa;
-    } else if (bCritical) {
-      color = 0xff6600; // orange critical
-      text = `${nDamage}!`;
-    } else if (nDamage < 0) {
-      color = 0x00ff00; // green heal
-      text = `${Math.abs(nDamage)}`;
-    }
-    this._damageNumbers.push({
-      text,
-      x: head.x + offsetX,
-      y: head.y + offsetY,
-      timer: 1.2,
-      color,
-      scale: bCritical ? 1.3 : 1.0,
-    });
   }
 
   SetFacing(facingLeft: boolean): void {
@@ -556,31 +485,7 @@ export class MobLook {
     this._lastObstacleDamage = 0x7FFFFFFF;
   }
 
-  /** OG CMob::ShowDamage — damage number display with type variants */
-  ShowDamageAdvanced(
-    nHitAction: number, nDamage: number, bLeft: boolean,
-    nSkillID: number, nMoveEndingPosY: number, bMagicAttack: boolean,
-  ): void {
-    const head = this.HeadPosition;
-    const offsetX = (Math.random() - 0.5) * 30;
-    const offsetY = -30;
-    let color = 0xffffff;
-    let text = `${nDamage}`;
-    if (nDamage === 0) {
-      text = 'MISS';
-      color = 0xaaaaaa;
-    } else if (nSkillID === 35111001 || nSkillID === 35111009 || nSkillID === 35111010 || nSkillID === 35121012) {
-      color = 0xff6600; // mechanic special
-      text = `${nDamage}!`;
-    } else if (bLeft) {
-      color = 0xff0000; // critical
-      text = `${nDamage}!`;
-    }
-    this._damageNumbers.push({
-      text, x: head.x + offsetX, y: head.y + offsetY,
-      timer: 1.2, color, scale: bLeft ? 1.3 : 1.0,
-    });
-  }
+
 
   /** OG CMob::CreateHPIndicator — boss HP bar indicator */
   CreateHPIndicator(pct: number, color: number): void {
@@ -1128,19 +1033,6 @@ export class MobLook {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // OG CMob::OnMobAttackedByMob (0x6436A0) — mob-vs-mob damage
-  // ═══════════════════════════════════════════════════════════════════════════
-  OnMobAttackedByMob(attackerId: number, damage: number): void {
-    // Simplified mob-vs-mob damage
-    if (damage > 0) {
-      this.Hp = Math.max(0, this.Hp - damage);
-      this._showLabel = true;
-      this.ShowDamage(damage, false, false);
-      if (this.Hp <= 0) this.OnDie();
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
   // Anger gauge system (placeholder)
   // ═══════════════════════════════════════════════════════════════════════════
   private _angerGauge = 0;
@@ -1396,13 +1288,6 @@ export class MobLook {
       badge.timer -= dt;
       if (badge.timer <= 0) this._statusBadges.delete(key);
     }
-    // Update damage numbers
-    for (let i = this._damageNumbers.length - 1; i >= 0; i--) {
-      const d = this._damageNumbers[i];
-      d.timer -= dt;
-      d.y -= 40 * dt; // float upward
-      if (d.timer <= 0) this._damageNumbers.splice(i, 1);
-    }
     // Death fade-out: after die animation completes, fade over 500ms
     if (this._dead) {
       if (this._fadeTimer > 0) {
@@ -1600,7 +1485,6 @@ export class MobLook {
     }
     this._drawBadges();
     this._drawSpeechBubble();
-    this._drawDamageNumbers();
     this._drawHPIndicator();
   }
 
@@ -1690,30 +1574,6 @@ export class MobLook {
     this._speechLabel.y = boxY + pad;
 
     this.container.addChild(this._speechBg, this._speechLabel);
-  }
-
-  private _drawDamageNumbers(): void {
-    if (this._damageNumbers.length === 0) return;
-    if (!this._damageContainer) this._damageContainer = new Container();
-    this._damageContainer.removeChildren();
-    for (const d of this._damageNumbers) {
-      const alpha = Math.min(1, d.timer * 2); // fade out in last 0.5s
-      const label = new Text({
-        text: d.text,
-        style: {
-          fontSize: Math.round(14 * d.scale),
-          fill: d.color,
-          fontWeight: 'bold',
-          stroke: { color: '#000000', width: 2 },
-        },
-      });
-      label.anchor.set(0.5, 0.5);
-      // Position relative to mob origin (0,0 = feet)
-      label.position.set(d.x - this.Position.x, d.y - this.Position.y);
-      label.alpha = alpha;
-      this._damageContainer.addChild(label);
-    }
-    this.container.addChild(this._damageContainer);
   }
 
   private _drawHpBar(): void {

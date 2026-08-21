@@ -9,7 +9,8 @@ import { CharLook } from '../character/CharLook.js';
 import { Stance } from '../character/Stance.js';
 import * as Avatar from '../character/Avatar.js';
 import { NextLevelExpTable } from '../character/NextLevelExpTable.js';
-import { NpcLook } from '../character/NpcLook.js';
+import { NpcLook, NPC_QUEST_STATE } from '../character/NpcLook.js';
+import type { QuestData } from '../character/QuestInfoService.js';
 import { OtherCharLook } from '../character/OtherCharLook.js';
 import { MobLook } from '../character/MobLook.js';
 import { ReactorLook } from '../character/ReactorLook.js';
@@ -447,6 +448,8 @@ export class GameStage extends Stage {
   // FuncKeyType.MacroSkill key dispatch and SkillMacro.Open.
   protected _macroSlots: MacroSlot[] = [];
   protected _questRecords: { questId: number; state: number }[] = [];
+  /** Last level seen by the NPC quest-mark refresh (dedupes SetField spam). */
+  private _lastQuestMarkLevel = -1;
   protected _physics: PlayerController | null = null;
   protected _localCharId = 0;
   protected _pendingQuestId = 0;
@@ -4112,7 +4115,6 @@ this._dmgNumbers?.Update(dt);
         this._isRidingTamingMob = flag !== 0;
         this._physics?.SetLadderRestrictions({ vehicleActive: this._isRidingTamingMob });
         this._syncLadderEligibility();
-        this._syncStatDetailInputs();
       }
       // OG: CUIUserInfo::SetTamingMobInfo — feed taming mob data to char info panel
       if (this._charInfo) {
@@ -5446,14 +5448,14 @@ this._localCharId = args.characterId ?? 0;
   private _onMobDamaged(args: MobDamagedArgs): void {
     const mob = this._mobs.get(args.mobId);
     if (!mob) return;
-    console.log(`[MobDeathDbg] _onMobDamaged mobId=${args.mobId} damage=${args.damage} hp=${args.hp} maxHp=${args.maxHp} mobHp=${mob.Hp}/${mob.MaxHp}`);
     if (args.hp >= 0 && args.maxHp > 0) mob.Hp = args.hp;
+    // OG CMob::OnHit: hit effect + sound are triggered by the optimistic
+    // path in _tryMeleeAttack / _onUserAttack — _onMobDamaged only handles
+    // the server-authoritative HP update, damage number, and kill.
     if (args.damage > 0) {
       mob._lastDamage = args.damage;
-      mob.ShowHitEffect();
       mob.RevealLabel();
       this._dmgNumbers?.Add(args.damage, mob.HeadPosition.x, mob.HeadPosition.y, DamageKind.DamageNormal);
-      this._mobSounds?.PlayDamage(mob.TemplateId);
     } else if (args.damage === 0) {
       // OG CMob::ShowDamage: nDamage==0 → CAnimationDisplayer::Effect_Miss
       mob.RevealLabel();
@@ -6192,6 +6194,99 @@ this._localCharId = args.characterId ?? 0;
     return this._questStates.get(id) ?? 0;
   }
 
+  /** OG CQuestMan::CheckStartDemand @0x6BB6E0 — client-side subset. Checks the
+   * demand conditions the client can evaluate locally: npc, level range
+   * (with nLevelThreshold relaxation for near-start marks), jobs, dates,
+   * day-of-week, precede quests and start-item demands. Mob progress is not
+   * tracked client-side, so mob demands are not evaluated here. */
+  private _checkStartDemand(q: QuestData, npcTemplateId: number, levelThreshold: number): boolean {
+    const lv = this._stats?.level ?? 0;
+    const job = this._stats?.jobId ?? 0;
+    const req = q.Start;
+    if (req.Npc !== 0 && req.Npc !== npcTemplateId) return false;
+    if (req.LvMax > 0 && lv > req.LvMax) return false;
+    // OG: party quests (1200-1467) never get the level-threshold relaxation.
+    const isParty = q.Id >= 1200 && q.Id <= 1467;
+    if (req.LvMin > 0 && !isParty) {
+      if (levelThreshold <= 0) {
+        if (lv < req.LvMin) return false;
+      } else if (lv < req.LvMin && req.LvMin > lv + levelThreshold) {
+        return false;
+      }
+    }
+    if (req.Jobs.length > 0 && !req.Jobs.includes(job)) return false;
+    const now = new Date();
+    if (req.StartDate && now < req.StartDate) return false;
+    if (req.EndDate && now > req.EndDate) return false;
+    if (req.DayOfWeekMask !== 0 && (req.DayOfWeekMask & (1 << now.getDay())) === 0) return false;
+    for (const pq of req.Quests) {
+      const rec = this._questRecords.find(r => r.questId === pq.id);
+      if (pq.state === 2 && (!rec || rec.state !== 0)) return false;   // must be completed
+      if (pq.state === 1 && (!rec || rec.state !== 1)) return false;   // must be in progress
+    }
+    for (const it of req.Items) {
+      if (it.count > 0 && this._item.countItem(it.id) < it.count) return false;
+    }
+    return true;
+  }
+
+  /** OG CQuestMan::CheckCompleteDemand @0x6BC3D0 — client-side subset:
+   * npc + level range + complete-item demands. Completion via mob counts /
+   * mob-item drops cannot be verified locally, so those quests stay on the
+   * in-progress mark until the server script confirms completion. */
+  private _checkCompleteDemand(q: QuestData, npcTemplateId: number): boolean {
+    const lv = this._stats?.level ?? 0;
+    const req = q.Complete;
+    if (req.Npc !== 0 && req.Npc !== npcTemplateId) return false;
+    if (req.LvMin > 0 && lv < req.LvMin) return false;
+    if (req.LvMax > 0 && lv > req.LvMax) return false;
+    for (const it of req.Items) {
+      if (it.count > 0 && this._item.countItem(it.id) < it.count) return false;
+    }
+    return true;
+  }
+
+  /** OG CNpc::SetQuestList @0x671980 classification: bucket every quest bound
+   * to this NPC by record state, then pick the mark by OG priority —
+   * PreComplete(2) > PreStart(0) > Perform(1) > NearStart(3), else None(6). */
+  private _npcQuestStateOf(npcTemplateId: number): number {
+    const svc = this.game.questInfoService;
+    if (!svc) return NPC_QUEST_STATE.None;
+    let preStart = false, perform = false, preComplete = false, nearStart = false;
+    for (const entry of svc.ForNpc(npcTemplateId)) {
+      const q = svc.Get(entry.questId);
+      if (!q) continue;
+      if (q.Id >= 1200 && q.Id <= 1467) continue; // party quests use GetPartyQuestIconPath
+      const rec = this._questRecords.find(r => r.questId === q.Id);
+      if (rec && rec.state === 1) {
+        if (this._checkCompleteDemand(q, npcTemplateId)) perform = true;
+        else preComplete = true;
+      } else if (rec) {
+        // completed before — repeatable only when no interval gate blocks it
+        if (q.RepeatInterval <= 0 && this._checkStartDemand(q, npcTemplateId, 0)) preStart = true;
+      } else {
+        if (this._checkStartDemand(q, npcTemplateId, 0)) {
+          preStart = true;
+        } else if (this._checkStartDemand(q, npcTemplateId, 10)) {
+          nearStart = true;
+        }
+      }
+    }
+    if (preComplete) return NPC_QUEST_STATE.PreComplete;
+    if (preStart) return NPC_QUEST_STATE.PreStart;
+    if (perform) return NPC_QUEST_STATE.Perform;
+    if (nearStart) return NPC_QUEST_STATE.NearStart;
+    return NPC_QUEST_STATE.None;
+  }
+
+  /** Re-evaluate every NPC's quest mark (OG re-runs SetQuestList each tick;
+   * we refresh on the state-change triggers instead: enter / record / level). */
+  private _refreshNpcQuestMarks(): void {
+    for (const npc of this._npcs) {
+      npc.SetQuestList(this._npcQuestStateOf(npc.NpcId));
+    }
+  }
+
   /** Mirrors equip-tab (`invType===1`) ops with a negative slot — the real
       `nCurItemPos`/`GW_ItemSlotEquip` convention for "currently worn" — into the
       separate paper-doll `EquipInventory` panel. `_item.applyOps` already tracks
@@ -6254,6 +6349,13 @@ this._localCharId = args.characterId ?? 0;
       this._charInfo.characterId = this._localCharId;
     }
     this._syncStatDetailInputs();
+    // Level changes move quests between available/near-start marks
+    // (OG re-runs SetQuestList every tick; level is the only stat that
+    // participates in the demand checks).
+    if (stat.level !== this._lastQuestMarkLevel) {
+      this._lastQuestMarkLevel = stat.level;
+      this._refreshNpcQuestMarks();
+    }
   }
 
   /** Apply pending equipped items from SetField — called after _initMenu creates the equip panel. */
@@ -6612,6 +6714,9 @@ this._localCharId = args.characterId ?? 0;
     if (args.templateId === 1300000) {
       npc.SetBalloonOffset(0, -20);
     }
+    // OG CNpc::Update calls SetQuestList every tick; on enter we compute the
+    // mark once — later changes flow through _refreshNpcQuestMarks.
+    npc.SetQuestList(this._npcQuestStateOf(args.templateId));
     this._npcs.push(npc);
   }
 
@@ -7463,6 +7568,7 @@ this._localCharId = args.characterId ?? 0;
       this._questDetail.SetQuest(this.game.questInfoService?.Get(args.questId) ?? null, args.state);
     }
     this._refreshQuestLog();
+    this._refreshNpcQuestMarks();
   }
 
   private _refreshQuestLog(): void {

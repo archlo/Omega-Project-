@@ -22,6 +22,26 @@ const GENERIC_GREETINGS = [
   'Good to see you!',
 ];
 
+/** OG CNpc::SetQuestList (0x671980) m_nQuestState values. The number indexes
+ * the WZ node UI/UIWindow2.img/QuestIcon/<state> directly (OG builds the
+ * layer UOL with Format(StringPool(0x19BC), nQuestState)). */
+export const NPC_QUEST_STATE = {
+  /** Start demand met now — animated "!" mark. */
+  PreStart: 0,
+  /** In progress AND complete demand met — completable mark. */
+  Perform: 1,
+  /** In progress, complete demand unmet — "in progress" mark (highest priority). */
+  PreComplete: 2,
+  /** Start demand met except LvMin, which is within +10 levels — dim "?" mark. */
+  NearStart: 3,
+  /** Available but every pre-start quest is worthless (IsWorthlessQuest). */
+  Worthless: 4,
+  /** Worthless + show-only-worthy setting — empty UOL, no visible mark. */
+  Hidden: 5,
+  /** No quest relation — no layer at all. */
+  None: 6,
+} as const;
+
 export class NpcLook {
   private _anims = new Map<string, { sprite: WzSprite; delayMs: number }[]>();
   private _state = 'stand';
@@ -62,8 +82,17 @@ export class NpcLook {
   private _nameTagContainer: Container | null = null;
   private _nameText: Text | null = null;
   private _funcText: Text | null = null;
-  // Quest icons (OG: QuestMark.img)
-  private _questIcons: Sprite[] = [];
+  // OG: m_pLayerQuestInfo — quest mark layer above the NPC head.
+  // Assets: UI/UIWindow2.img/QuestIcon/<state>/<frame> (NOT "QuestMark" —
+  // that node only exists under QuestGuide for the world map).
+  private _questIcons = new Map<number, { sprite: WzSprite; delayMs: number }[]>();
+  private _questFrames: { sprite: WzSprite; delayMs: number }[] = [];
+  private _questFrame = 0;
+  private _questFrameTimer = 0;
+  /** OG m_nQuestState (SetQuestList @0x671980). */
+  private _questState: number = NPC_QUEST_STATE.None;
+  /** OG m_nLastQuestState — SetQuestList early-outs when unchanged unless bReload. */
+  private _lastAppliedQuestState = -1;
   private _questIconContainer: Container | null = null;
   // Dirty tracking
   private _lastState = '';
@@ -180,8 +209,7 @@ this._loaded = this._anims.size > 0;
       if (key !== 'info' && key !== 'speak' && key !== 'stand' && key !== 'move') this._actionNames.push(key);
     }
 
-    // Load quest icons (QuestMark.img) - OG: UIWindow2.img/QuestMark
-    this._loadQuestIcons();
+    // Quest marks load lazily per state — see SetQuestList / _loadQuestIconFrames.
   }
 
   GetRandomSpeech(): string | null {
@@ -203,60 +231,64 @@ this._loaded = this._anims.size > 0;
     }
   }
 
-  /** Load quest icons from UIWindow2.img/QuestMark */
-  private _loadQuestIcons(): void {
-    // OG: QuestMark.img has 4 frames (0=exclamation, 1=question, 2=?, 3=?)
-    // Load from UIWindow2.img/QuestMark
-    if (!this._baseWz) return;
-    const questMarkRoot = this._baseWz.GetItem('UIWindow2.img/QuestMark');
-    if (!(questMarkRoot instanceof WzProperty)) return;
-    this._questIcons = [];
-    for (let i = 0; i < 4; i++) {
-      const frameNode = questMarkRoot.Get(`${i}`);
-      if (frameNode instanceof WzCanvas) {
-        const wzSprite = this._loader?.Load(frameNode);
-        if (wzSprite) this._questIcons.push(wzSprite.ToPixi());
-      } else if (frameNode && typeof (frameNode as any).Get === 'function') {
-        const inner = (frameNode as any).Get('0') ?? (frameNode as any).Get('bmp');
-        if (inner instanceof WzCanvas) {
-          const wzSprite = this._loader?.Load(inner);
-          if (wzSprite) this._questIcons.push(wzSprite.ToPixi());
+  /** Load (and cache) the animated frames of one QuestIcon state node. */
+  private _loadQuestIconFrames(state: number): { sprite: WzSprite; delayMs: number }[] {
+    const cached = this._questIcons.get(state);
+    if (cached) return cached;
+    const frames: { sprite: WzSprite; delayMs: number }[] = [];
+    if (this._baseWz && this._loader) {
+      const iconRoot = this._baseWz.GetItem('UIWindow2.img/QuestIcon');
+      const stateNode = iconRoot instanceof WzProperty ? iconRoot.Get(`${state}`) : null;
+      if (stateNode instanceof WzCanvas || stateNode instanceof WzProperty) {
+        let fi = 0;
+        while (true) {
+          const raw = stateNode instanceof WzCanvas
+            ? (fi === 0 ? stateNode : null)
+            : stateNode.Get(`${fi}`);
+          if (raw === null || raw === undefined) break;
+          if (raw instanceof WzCanvas) {
+            const sprite = this._loader.Load(raw);
+            if (sprite) frames.push({ sprite, delayMs: this._readDelayFromCanvas(raw) || 150 });
+          } else if (raw instanceof WzProperty) {
+            // Frame wrapper property: canvas at child "0" (or direct bmp), delay sibling.
+            const inner = (raw.Get('0') ?? raw.Get('bmp'));
+            if (inner instanceof WzCanvas) {
+              const wrapped = this._loader.Load(inner);
+              if (wrapped) frames.push({ sprite: wrapped, delayMs: this._readDelay(raw) });
+            }
+          }
+          fi++;
         }
+      }
     }
-    }
+    this._questIcons.set(state, frames);
+    return frames;
   }
 
-  /** Draw quest icon above NPC head (OG: QuestMark.img) */
+  /** OG SetQuestList layer build — render current quest-mark frame into the
+   * persistent layer container anchored above the NPC head.
+   * OG offset: x = m_ptBalloonOffset.x + 20, y = -15 - m_ptBalloonOffset.y - height,
+   * attached to m_pvc (the feet-anchored move controller). */
   private _drawQuestIcon(): void {
-    if (!this.QuestInfoVisible || this._questIcons.length === 0) return;
-
     if (!this._questIconContainer) {
       this._questIconContainer = new Container();
-      this.container.addChild(this._questIconContainer);
-    } else {
-      this._questIconContainer.removeChildren();
     }
-
-    // OG: QuestMark frame 0 = exclamation (!), 1 = question (?), 2 = ?, 3 = ?
-    // Frame 0 (exclamation) = available quest
-    // Frame 1 (question) = in-progress/completable
-    const iconIndex = Math.min(this._questList.length > 0 ? 0 : 1, this._questIcons.length - 1);
-    const icon = this._questIcons[iconIndex];
-    if (!icon) return;
-
-    const frames = this._anims.get(this._state);
-    const frame = frames?.[Math.min(this._frame, frames.length - 1)];
-    if (!frame) return;
-
-    // Position above NPC head: at sprite top (OriginY from top) minus icon height
-    const iconSprite = new Sprite(icon.texture);
-    iconSprite.anchor.set(0.5, 1); // center-bottom anchor
-    const headY = -frame.sprite.OriginY; // top of sprite
-    iconSprite.position.set(0, headY - 10); // 10px above head
-    iconSprite.scale.x = this._facingLeft ? 1 : -1; // counter-flip for avatar flip
-
-    this._questIconContainer.addChild(iconSprite);
+    // _rebuildDisplay removeChildren()'s the whole node first — re-parent so
+    // the mark survives repeated rebuilds (frame/state/facing changes).
     this.container.addChild(this._questIconContainer);
+    this._questIconContainer.removeChildren();
+    if (this._questState === NPC_QUEST_STATE.None || this._questFrames.length === 0) return;
+    const frame = this._questFrames[Math.min(this._questFrame, this._questFrames.length - 1)];
+    const sprite = frame.sprite.ToPixi();
+    // Canvas top-left anchored at the OG layer origin point (InsertCanvas semantics).
+    sprite.position.set(-frame.sprite.OriginX, -frame.sprite.OriginY);
+    this._questIconContainer.addChild(sprite);
+    const standFrames = this._anims.get('stand');
+    const height = standFrames?.[0]?.sprite.OriginY ?? 86;
+    this._questIconContainer.position.set(
+      this.BalloonOffset.x + 20,
+      -15 - this.BalloonOffset.y - height,
+    );
   }
 
   Update(dt: number): void {
@@ -317,6 +349,16 @@ this._loaded = this._anims.size > 0;
     }
 
     // OG: _GetSnapshot — position sync happens in GameStage via physics update
+
+    // OG: quest mark animates on its own GA_REPEAT timer (WZ delay per frame)
+    if (this._questFrames.length > 0) {
+      this._questFrameTimer -= dtMs;
+      if (this._questFrameTimer <= 0) {
+        this._questFrame = (this._questFrame + 1) % this._questFrames.length;
+        this._questFrameTimer = this._questFrames[this._questFrame].delayMs || 150;
+        this._rebuildDisplay();
+      }
+    }
 
     // Only rebuild when state, frame, or facing changed
     if (this._state !== this._lastState || this._frame !== this._lastFrame || this._facingLeft !== this._lastFacing) {
@@ -674,45 +716,30 @@ this._loaded = this._anims.size > 0;
   // ──────────────────────────────────────────────────────────────────────────
 
   /** OG CNpc::SetQuestList (0x671980) — sets quest list from server */
-  SetQuestList(bClear: boolean | number[]): void {
-    // OG: when called with 0 (false), clears quest info layer
-    // when called with quest list, populates quest icons
-    if (typeof bClear === 'boolean') {
-      if (!bClear) {
-        // OG: clear quest list and hide quest info layer
-        this._questList = [];
-        this._questInfoVisible = false;
-      }
-    } else {
-      this._questList = bClear;
-      this._questInfoVisible = bClear.length > 0;
-    }
+  /** OG CNpc::SetQuestList (0x671980) - quest mark state machine.
+   * OG calls this every Update tick with bReload=0; the layer only rebuilds
+   * when the state changed (m_nLastQuestState guard) or bReload is set.
+   * State 6 (None) releases the quest-info layer. */
+  SetQuestList(nQuestState: number, bReload = false): void {
+    if (!bReload && nQuestState === this._lastAppliedQuestState) return;
+    this._lastAppliedQuestState = nQuestState;
+    this._questState = nQuestState;
+    this._questFrames = nQuestState === NPC_QUEST_STATE.None
+      ? []
+      : this._loadQuestIconFrames(nQuestState);
+    this._questFrame = 0;
+    this._questFrameTimer = this._questFrames[0]?.delayMs ?? 150;
+    this._rebuildDisplay();
   }
 
-  /** OG CNpc::ShowQuestList (0x672b50) — renders quest icons above NPC */
-  ShowQuestList(): void {
-    // OG: renders quest exclamation/question marks above NPC
-    // Quest icons are loaded from Quest.wz and positioned above the NPC
-    // In our TS: GameStage reads questList to decide icon rendering
+  /** OG m_nQuestState accessor. */
+  get QuestState(): number { return this._questState; }
+  /** Get quest list for external rendering (MiniMap marker: any visible mark). */
+  get QuestList(): number[] {
+    return this._questState === NPC_QUEST_STATE.None ? [] : [this._questState];
   }
-
-  /** OG CNpc::SetAcceptQuestOnlyOne (0x672010) — sets quest acceptance mode */
-  SetAcceptQuestOnlyOne(nQuestId: number): void {
-    // OG: when set, NPC only shows one quest at a time
-    // The quest ID restricts which quest dialog is shown
-    this._acceptQuestOnlyOne = nQuestId;
-  }
-
-  /** OG CNpc::SetCompletedQuestOnlyOne (0x6724f0) — sets quest completion mode */
-  SetCompletedQuestOnlyOne(nQuestId: number): void {
-    // OG: when set, NPC only shows one quest completion at a time
-    this._completedQuestOnlyOne = nQuestId;
-  }
-
-  /** Get quest list for external rendering (GameStage) */
-  get QuestList(): number[] { return this._questList; }
-  /** Whether quest info layer is visible */
-  get QuestInfoVisible(): boolean { return this._questInfoVisible; }
+  /** Whether the quest info layer is visible */
+  get QuestInfoVisible(): boolean { return this._questState !== NPC_QUEST_STATE.None; }
 
   /** OG CNpc::GenerateMovePath — server-controlled, no-op on client */
   GenerateMovePath(_nAction: number, _nChatIdx: number): void {
@@ -896,13 +923,6 @@ this._loaded = this._anims.size > 0;
   /** OG: m_pShoeAttr — field shoe attribute (ice physics etc.) */
   private _shoeAttr: unknown | null = null;
   private _mapleTVMessage = '';
-  private _questList: number[] = [];
-  /** OG: m_bQuestInfoVisible — quest info layer visibility */
-  private _questInfoVisible = false;
-  /** OG: m_nAcceptQuestOnlyOne — restricts to one quest acceptance */
-  private _acceptQuestOnlyOne = 0;
-  /** OG: m_nCompletedQuestOnlyOne — restricts to one quest completion */
-  private _completedQuestOnlyOne = 0;
   private _currentSpeech = '';
   private _tFrameDelay = 0;
   private _nOneTimeAction = -1;
