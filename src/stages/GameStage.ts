@@ -376,10 +376,22 @@ export class GameStage extends Stage {
 
   protected _panels: GamePanel[] = [];
   protected _fadePhase = 0;   // 0 idle, +1 fading to black, 2 hold, -1 fading in
-  protected _fadeAlpha = 0;   // 0 = clear .. 1 = opaque black
+  // OG starts the in-game stage behind an opaque CInterStage (black) — the first
+  // SetField fades in from black, so the login→game swap never shows a half-built map.
+  protected _fadeAlpha = 1;   // 0 = clear .. 1 = opaque black
   protected _holdTimer = 0;   // seconds elapsed in hold-at-black phase
   protected _pendingField: SetFieldArgs | null = null;
+  // Rendered frames since the field was swapped in — the hold-at-black phase
+  // waits for these so the fade-in never reveals a still-loading map.
+  private _framesSinceSwap = 0;
   private _fadeOverlay = new Graphics();
+  // OG: CAnimationDisplayer::RegisterFadeInOutAnimation entries driven by the
+  // FieldFadeInOut packet (scripted fades). Black overlay, alpha 0→nAlpha over
+  // tFadeIn ms, hold tDelay ms, back to 0 over tFadeOut ms.
+  private _fieldFades: {
+    tFadeIn: number; tDelay: number; tFadeOut: number; nAlpha: number;
+    elapsed: number; fadeOutStarted: boolean;
+  }[] = [];
 
   protected _field: FieldScene | null = null;
   protected _mapWz: WzPackage | null = null;
@@ -3577,13 +3589,17 @@ this._dmgNumbers?.Update(dt);
     };
 
     // Phase 8 — new field-effect / UI handlers
-    // OG: CUserLocal::OnFieldFadeInOut — fade screen to color and back
-    fh.onFieldFadeInOut = (color, duration, fadeOut, fadeTime) => {
-      // For now, log the fade event. Full implementation needs CAnimationDisplayer.
-      console.log(`[FieldFade] color=${color} dur=${duration} out=${fadeOut} fadeTime=${fadeTime}`);
+    // OG: CUserLocal::OnFieldFadeInOut @0x905790 — decodes tFadeIn/tDelay/tFadeOut/
+    // nAlpha and registers a CAnimationDisplayer fade at (avatar layer Z - 2).
+    fh.onFieldFadeInOut = (tFadeIn, tDelay, tFadeOut, nAlpha) => {
+      this._fieldFades.push({
+        tFadeIn, tDelay, tFadeOut, nAlpha,
+        elapsed: 0, fadeOutStarted: false,
+      });
     };
-    fh.onFieldFadeOutForce = (_color) => {
-      // OG: RemoveAllFadeInAnimation — force-clear all active fade animations
+    // OG: CUserLocal::OnFieldFadeOutForce @0x9057F0 → RemoveAllFadeInAnimation(tFadeOut)
+    fh.onFieldFadeOutForce = (tFadeOut) => {
+      this._forceFieldFadesOut(tFadeOut);
     };
     // OG: CUserLocal::OnNotifyHPDecByField — environmental HP drain
     fh.onNotifyHPDecByField = (hpDec) => {
@@ -5274,14 +5290,17 @@ this._localCharId = args.characterId ?? 0;
     }
   }
 
-  /** Drives the map-change fade: fade to black → swap at full black → fade in.
+  /** Drives the map-change fade: fade to black → swap at full black → hold until
+   *  the new field has actually rendered → fade in.
    *  OG timings from CUser::OnSetPhase → RegisterFadeInOutAnimation:
    *    tFadeIn=500ms, tDelay=400ms, tFadeOut=800ms, nAlpha=220.
-   *  We fold the delay into the hold-at-black phase. */
+   *  We fold the delay into the hold-at-black phase and hold it longer until the
+   *  swapped-in field has rendered a couple of frames behind black. */
   private _advanceFieldTransition(dt: number): void {
     const FadeToBlackPerSec = 1 / 0.50;  // ~500 ms to black (OG tFadeIn)
-    const HoldAtBlackSec    = 0.40;       // 400 ms hold (OG tDelay)
-    const FadeInPerSec      = 1 / 0.30;  // ~300 ms to clear
+    const HoldAtBlackSec    = 0.40;      // 400 ms hold (OG tDelay)
+    const FadeInPerSec      = 1 / 0.80;  // OG tFadeOut = 800 ms back to clear
+    const MinRenderedFrames = 2;         // field must render this many frames before reveal
 
     // Start a deferred transition once Map.wz is finally loaded.
     if (this._fadePhase === 0 && this._deferredFieldArgs && this._mapWz) {
@@ -5292,7 +5311,7 @@ this._localCharId = args.characterId ?? 0;
     }
 
     if (this._fadePhase === 1) {
-      // Phase 1: fade to black
+      // Phase 1: fade to black (already black on first entry — swaps immediately)
       this._fadeAlpha += dt * FadeToBlackPerSec;
       if (this._fadeAlpha >= 1) {
         this._fadeAlpha = 1;
@@ -5304,20 +5323,84 @@ this._localCharId = args.characterId ?? 0;
         }
         this._fadePhase = 2; // hold at black
         this._holdTimer = 0;
+        this._framesSinceSwap = 0;
       }
     } else if (this._fadePhase === 2) {
-      // Phase 2: hold at black (OG tDelay = 400ms)
+      // Phase 2: hold at black until the OG tDelay elapsed AND the new field
+      // has rendered — revealing earlier showed a still-loading map.
       this._holdTimer += dt;
-      if (this._holdTimer >= HoldAtBlackSec) {
+      if (this._holdTimer >= HoldAtBlackSec && this._framesSinceSwap >= MinRenderedFrames) {
         this._fadePhase = -1; // begin fade-in
       }
     } else if (this._fadePhase === -1) {
-      // Phase 3: fade in
+      // Phase 3: fade in (OG tFadeOut = 800 ms)
       this._fadeAlpha -= dt * FadeInPerSec;
       if (this._fadeAlpha <= 0) {
         this._fadeAlpha = 0;
         this._fadePhase = 0;
       }
+    }
+
+    this._updateFieldFades(dt);
+    this._drawFadeOverlays();
+  }
+
+  /** Per-frame update of packet-driven FieldFadeInOut animations. */
+  private _updateFieldFades(dt: number): void {
+    const ms = dt * 1000;
+    for (let i = this._fieldFades.length - 1; i >= 0; i--) {
+      const f = this._fieldFades[i];
+      f.elapsed += ms;
+      if (!f.fadeOutStarted && f.elapsed >= f.tFadeIn + f.tDelay) {
+        f.fadeOutStarted = true;
+        f.elapsed = Math.min(f.elapsed, f.tFadeIn + f.tDelay); // restart the out-clock at 0
+      }
+      if (f.fadeOutStarted && f.elapsed >= f.tFadeOut) {
+        this._fieldFades.splice(i, 1);
+      }
+    }
+  }
+
+  /** Force every fade that hasn't started its fade-out to begin fading now.
+   *  OG: CAnimationDisplayer::RemoveAllFadeInAnimation(tFadeOut). */
+  private _forceFieldFadesOut(tFadeOut: number): void {
+    for (const f of this._fieldFades) {
+      if (!f.fadeOutStarted) {
+        f.fadeOutStarted = true;
+        f.elapsed = 0;
+        f.tFadeOut = tFadeOut;
+      }
+    }
+  }
+
+  /** Render the transition + scripted fades as full-screen black overlays above
+   *  the world but below nothing else in uiRoot order (added last = topmost).
+   *  The map-change overlay uses _fadeAlpha; each FieldFadeInOut entry uses
+   *  nAlpha/255 × envelope (in over tFadeIn, hold tDelay, out over tFadeOut). */
+  private _drawFadeOverlays(): void {
+    const w = this.game.pixiApp.screen.width;
+    const h = this.game.pixiApp.screen.height;
+
+    // Count rendered frames while holding at black so the reveal waits for the map.
+    if (this._fadePhase === 2) this._framesSinceSwap++;
+
+    let maxAlpha = this._fadeAlpha;
+    for (const f of this._fieldFades) {
+      let env: number;
+      if (!f.fadeOutStarted) {
+        env = f.tFadeIn <= 0 ? 1 : Math.min(1, f.elapsed / f.tFadeIn);
+      } else {
+        env = f.tFadeOut <= 0 ? 0 : Math.max(0, 1 - f.elapsed / f.tFadeOut);
+      }
+      maxAlpha = Math.max(maxAlpha, (f.nAlpha / 255) * env);
+    }
+
+    if (maxAlpha > 0) {
+      this._fadeOverlay.clear();
+      this._fadeOverlay.rect(0, 0, w, h).fill({ color: 0x000000, alpha: maxAlpha });
+      this.uiRoot.addChild(this._fadeOverlay);
+    } else if (this._fadeOverlay.parent) {
+      this._fadeOverlay.parent.removeChild(this._fadeOverlay);
     }
   }
 
@@ -8019,17 +8102,6 @@ this._localCharId = args.characterId ?? 0;
             if (frames.length > 0) {
               this._coupleHearts.push({ a, b, frames, frameIndex: 0, frameTimer: 0, itemId: sitters[i].itemId });
       }
-    }
-
-    // Map-change transition: full-screen black overlay above everything.
-    if (this._fadeAlpha > 0) {
-      const w = this.game.pixiApp.screen.width;
-      const h = this.game.pixiApp.screen.height;
-      this._fadeOverlay.clear();
-      this._fadeOverlay.rect(0, 0, w, h).fill({ color: 0x000000, alpha: this._fadeAlpha });
-      this.uiRoot.addChild(this._fadeOverlay);
-    } else if (this._fadeOverlay.parent) {
-      this._fadeOverlay.parent.removeChild(this._fadeOverlay);
     }
   }
       }

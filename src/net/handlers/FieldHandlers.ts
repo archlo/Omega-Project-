@@ -362,10 +362,12 @@ export class FieldHandlers {
   onRequestFootHoldInfo: (() => void) | null = null;
   onAntiMacroResult: ((args: AntiMacroResultArgs) => void) | null = null;
   onDestroyShopResult: ((args: DestroyShopResultArgs) => void) | null = null;
-  // OG: CUserLocal::OnFieldFadeInOut (decompile 0x9057a3)
-  onFieldFadeInOut: ((color: number, duration: number, fadeOut: number, fadeTime: number) => void) | null = null;
-  // OG: CUserLocal::OnFieldFadeOutForce (decompile 0x9057f4)
-  onFieldFadeOutForce: ((color: number) => void) | null = null;
+  // OG: CUserLocal::OnFieldFadeInOut @0x905790 — decodes tFadeIn, tDelay,
+  // tFadeOut, nAlpha (4 ints) and registers a fade-in/hold/fade-out overlay.
+  onFieldFadeInOut: ((tFadeIn: number, tDelay: number, tFadeOut: number, nAlpha: number) => void) | null = null;
+  // OG: CUserLocal::OnFieldFadeOutForce @0x9057F0 — decodes 1 int (tFadeOut)
+  // and forces every not-yet-fading-out animation to start fading now.
+  onFieldFadeOutForce: ((tFadeOut: number) => void) | null = null;
   // OG: CUserLocal::OnNotifyHPDecByField (decompile 0x90fedb)
   onNotifyHPDecByField: ((hpDec: number) => void) | null = null;
   // OG: CUserLocal::OnSetDirectionMode (decompile 0x905502)
@@ -901,17 +903,17 @@ export class FieldHandlers {
     // the bag was empty.
     router.register(OutHeader.RandomMesobagFailed, (_p) => {});
     router.register(OutHeader.FieldFadeInOut, (p) => {
-      // OG: CUserLocal::OnFieldFadeInOut — reads 4 ints: color, duration, fadeOut, fadeTime
-      const color = p.readInt();
-      const duration = p.readInt();
-      const fadeOut = p.readInt();
-      const fadeTime = p.readInt();
-      this.onFieldFadeInOut?.(color, duration, fadeOut, fadeTime);
+      // OG: CUserLocal::OnFieldFadeInOut @0x905790 — 4 ints: tFadeIn, tDelay, tFadeOut, nAlpha
+      const tFadeIn = p.readInt();
+      const tDelay = p.readInt();
+      const tFadeOut = p.readInt();
+      const nAlpha = p.readInt();
+      this.onFieldFadeInOut?.(tFadeIn, tDelay, tFadeOut, nAlpha);
     });
     router.register(OutHeader.FieldFadeOutForce, (p) => {
-      // OG: CUserLocal::OnFieldFadeOutForce — reads 1 int: color
-      const color = p.readInt();
-      this.onFieldFadeOutForce?.(color);
+      // OG: CUserLocal::OnFieldFadeOutForce @0x9057F0 — 1 int: tFadeOut
+      const tFadeOut = p.readInt();
+      this.onFieldFadeOutForce?.(tFadeOut);
     });
     router.register(OutHeader.NotifyHPDecByField, (p) => {
       // OG: CUserLocal::OnNotifyHPDecByField — reads 1 int: HP drain amount

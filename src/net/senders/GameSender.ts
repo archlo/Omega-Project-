@@ -2410,10 +2410,11 @@ export class GameSender {
     return p;
   }
 
-  /** Sub-action 24: CCashShop::SendPurchaseRecordRequest — check purchase record for an item. */
+  /** Sub-action 0x2C (44): CCashShop::RequestCashPurchaseRecord @0x4823C0 —
+   *  purchase record for a limit(2|3) commodity SN (0 = the global flag). */
   static CashShopPurchaseRecord(sn: number): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(24);
+    p.writeByte(44);
     p.writeInt(sn);
     return p;
   }

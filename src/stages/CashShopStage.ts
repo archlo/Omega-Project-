@@ -10,10 +10,12 @@ import { GameSender } from '../net/senders/GameSender.js';
 import { ItemIconLoader } from '../character/ItemIconLoader.js';
 import { ItemInfoService } from '../character/ItemInfoService.js';
 import { CashShopDecoder } from '../net/packet/CashShopDecoder.js';
+import { WzSound } from '../wz/WzSound.js';
 import { CharLook } from '../character/CharLook.js';
 import { AvatarCodec } from '../net/handlers/AvatarCodec.js';
 import { ScrollBar } from '../ui/game/ScrollBar.js';
 import type { ModifiedCommodityEntry, SetCashShopArgs } from '../domain/CashShopData.js';
+import { CashCommodityTable } from '../domain/CashCommodityTable.js';
 import type {
   CashShopCashAmount,
   CashShopGachaponResult,
@@ -163,12 +165,22 @@ export class CashShopStage extends Stage {
   private _discountRates: Map<string, number> = new Map(); // key: "category:index" → rate%
   private _notSaleSNs: Set<number> = new Set();
   private _stockStates = new Map<number, number>();
+  // OG m_mPurchaseRecord / m_nPurchaseRecord — CCashShop::GetCashPurchaseRecord
+  // @0x482450. Keyed by SN (key 0 = the global once-per-account flag);
+  // unknown keys default to "purchased" until the server responds.
+  private _purchaseRecords = new Map<number, boolean>();
+  private _purchaseRecordGlobal = -1;
+  private _purchaseRecordRequested = new Set<number>();
   private _limitGoods: Array<{ sns: number[]; count: number; state: number; condition: number; dateStart: number; dateEnd: number; hourStart: number; hourEnd: number; weekdays: number[] }> = [];
   private _zeroGoods: Array<{ startSN: number; endSN: number; eventSN: number; condition: number; dateStart: number; dateEnd: number; hourStart: number; hourEnd: number; weekdays: number[] }> = [];
 
   // ── UI state ──
   private _activeTab = 0;
   private _page = 0;
+  // OG m_nCurCategorySub — sub-category within the active tab (Category.img row)
+  private _subCategory = 0;
+  // OG m_nCurSortType (OnChangedSortType @0x481810): 0=priority, 1=price desc, 2=SN
+  private _sortType = 0;
   private _nxCredit = 0;
   private _nxPrepaid = 0;
   private _maplePoints = 0;
@@ -189,6 +201,13 @@ export class CashShopStage extends Stage {
   private _confirmBuyVisible = false;
   private _confirmBuyItem: CashCommodity | null = null;
   private _confirmBuyPaymentType = 0; // 0=NX Credit, 1=Maple Point, 2=Prepaid NX
+
+  // ── Generic Yes/No confirm (OG: CUtilDlg::YesNo, e.g. ProcessBuy's
+  //    one-a-day / mesobag gate for sn/100000==210 || sn==5640000) ──
+  private _yesNoVisible = false;
+  private _yesNoMessage = '';
+  private _yesNoCallback: (() => void) | null = null;
+  private _yesNoConfirmed = false;
 
   // ── Character preview ──
   private _charLook: CharLook | null = null;
@@ -231,6 +250,8 @@ export class CashShopStage extends Stage {
   private _cashInventoryItems: { sn: number; itemId: number; count: number }[] = [];
   private _wishlist: number[] = new Array(10).fill(0);
   private _giftRecords = new Uint8Array(0);
+  // OG: client-owned CS_COMMODITY table from Etc.wz/Commodity.img + Category.img
+  private _commTable: CashCommodityTable | null = null;
 
   // ── Dialog states (OG: CConfirmPurchaseDlg / CUINameChangeDlg / etc) ──
   private _nameChangeVisible = false;
@@ -270,6 +291,15 @@ export class CashShopStage extends Stage {
   private _bg: WzSprite | null = null;
   private _bgList: WzSprite | null = null;
   private _tabSprites: (WzSprite | null)[] = new Array(TAB_COUNT).fill(null);
+  // NX coin icons (OG CashItem/0..3, PrepaidCashItem/0) drawn next to price rows
+  private _cashCoinIcons: (WzSprite | null)[] = [null, null, null, null];
+  private _prepaidCoinIcon: WzSprite | null = null;
+  // OG Init @0x484920 picks the background canvas by job family
+  // (StringPool 0x53E/0x53F/0x540/0x1970/0x1A72/0x1A73 → Base/backgrnd..backgrnd5)
+  private _bgVariants: (WzSprite | null)[] = [];
+  private _bgSprite: Sprite | null = null;
+  // PicturePlate/NoItem — shown when the current page has no items
+  private _noItemImage: WzSprite | null = null;
 
   // Character preview backgrounds — 3 variants by job category
   // OG: Preview/0 = normal job, Preview/1 = Cygnus Knights, Preview/2 = Aran/Evan
@@ -296,6 +326,8 @@ export class CashShopStage extends Stage {
   private _btBuyOver: WzSprite | null = null;
   private _btGift: WzSprite | null = null;
   private _btGiftOver: WzSprite | null = null;
+  private _btWish: WzSprite | null = null;
+  private _btWishOver: WzSprite | null = null;
 
   // Locker buttons
   private _btRebate: WzSprite | null = null;
@@ -405,6 +437,10 @@ export class CashShopStage extends Stage {
         this._itemWz = game.wz.item ?? await open('Item');
         this._baseWz = game.wz.base ?? await open('Base');
         this._itemInfo = new ItemInfoService(this._charWz, this._itemWz);
+        // OG: CWvsContext::LoadCommodity — client-side CS_COMMODITY table
+        const etc = game.wz.etc ?? await WzPackage.OpenBaseAsync(dir, 'Etc');
+        this._commTable = await CashCommodityTable.LoadAsync(etc);
+        if (this._modifiedCommodities.length > 0) this._rebuildCommodities();
         for (const commodity of this._commodities) commodity.name = this._getItemName(commodity.itemId);
         for (const item of this._lockerItems) item.name = this._getItemName(item.itemId);
         this._tryBuildCharacterPreview();
@@ -442,6 +478,10 @@ export class CashShopStage extends Stage {
 
   private _requestInitialData(): void {
     if (!this.game) return;
+    // OG Init @0x484920: CSoundMan::PlayBGM(StringPool 1290) — the cash shop
+    // loop lives at Sound.wz/BgmUI.img/ShopBgm.
+    const shopBgm = this.game.wz.sound?.GetItem('BgmUI.img/ShopBgm');
+    if (shopBgm instanceof WzSound) this.game.audioPlayer.PlayLoop(shopBgm.AudioBytes);
     // OG: CCashShop constructor calls QueryCash + LoadLocker + LoadGift + LoadWish
     this.game.session.send(GameSender.CashShopQueryCash());
     this.game.session.send(GameSender.CashShopLoadLocker());
@@ -511,6 +551,7 @@ export class CashShopStage extends Stage {
       this._playerGender = args.characterData?.characterStat?.gender ?? 0;
       this._playerFame = args.characterData?.characterStat?.pop ?? 0;
       this._characterData = args.characterData ?? null;
+      this._selectBackground();
 
       // Build character preview from character data
       const stat = args.characterData?.characterStat;
@@ -546,57 +587,188 @@ export class CashShopStage extends Stage {
 
       // Build commodity list from modified data, excluding not-for-sale items
       this._modifiedCommodities = args.modifiedCommodities;
-      this._commodities = [];
-      const categoryCounters: Record<number, number> = {};
-      for (let i = 0; i < args.modifiedCommodities.length; i++) {
-        const m = args.modifiedCommodities[i];
-        const sn = m.sn ?? i;
-
-        // Skip items that are not for sale
-        if (this._notSaleSNs.has(sn)) continue;
-
-        const itemId = m.data?.itemId ?? 0;
-
-        // Determine category from itemId prefix
-        const category = this._getCategoryFromItemId(itemId);
-
-        // Look up discount rate for this category + category-specific index
-        const catIdx = categoryCounters[category] ?? 0;
-        const discountRate = this._getDiscountRate(category, catIdx);
-        categoryCounters[category] = catIdx + 1;
-
-        this._commodities.push({
-          sn,
-          itemId,
-          count: m.data?.count ?? 1,
-          name: this._getItemName(itemId),
-          price: m.data?.price ?? 0,
-          priority: m.data?.priority ?? i,
-          period: m.data?.period ?? 0,
-          bonus: m.data?.bonus ?? false,
-          reqPop: m.data?.reqPop ?? 0,
-          category,
-          categorySub: 0,
-          discountRate,
-          onSale: m.data?.onSale !== false,
-          gender: m.data?.gender ?? 0,
-          onSaleFlag: 0,
-          classField: m.data?.classField ?? 0,
-          reqLevel: m.data?.reqLevel ?? 0,
-          forPremiumUser: m.data?.forPremiumUser ?? false,
-          limit: m.data?.limit ?? 0,
-          maplePoint: m.data?.maplePoint ?? 0,
-          meso: m.data?.meso ?? 0,
-          pbCash: m.data?.pbCash ?? 0,
-          pbPoint: m.data?.pbPoint ?? 0,
-          pbGift: m.data?.pbGift ?? 0,
-          packageSnList: m.data?.packageSnList ?? [],
-          stockState: this._stockStates.get(sn) ?? 0,
-          limitState: this._getLimitGoodsState(sn),
-        });
-      }
-      this._commodities.sort((a, b) => a.priority - b.priority || a.sn - b.sn);
+      this._rebuildCommodities();
     };
+  }
+
+  /** OG model: the client owns the full CS_COMMODITY table (Etc.wz/
+   *  Commodity.img) and the server's SetCashShop modifies entries on top of it.
+   *  When the WZ table is loaded we start from its base data; otherwise we
+   *  degrade to server-data-only (legacy behavior). */
+  private _rebuildCommodities(): void {
+    this._commodities = [];
+    const categoryCounters: Record<number, number> = {};
+    const push = (
+      sn: number,
+      d: {
+        itemId?: number; count?: number; price?: number; bonus?: boolean;
+        priority?: number; period?: number; reqPop?: number; reqLevel?: number;
+        maplePoint?: number; meso?: number; forPremiumUser?: boolean;
+        gender?: number; onSale?: boolean; classField?: number; limit?: number;
+        pbCash?: number; pbPoint?: number; pbGift?: number;
+        packageSnList?: number[];
+      },
+      idx: number,
+    ) => {
+      if (this._notSaleSNs.has(sn)) return;
+      const itemId = d.itemId ?? 0;
+      const category = this._getCategoryFromItemId(itemId);
+      const catIdx = categoryCounters[category] ?? 0;
+      const discountRate = this._getDiscountRate(category, catIdx);
+      categoryCounters[category] = catIdx + 1;
+      this._commodities.push({
+        sn,
+        itemId,
+        count: d.count ?? 1,
+        name: this._getItemName(itemId),
+        price: d.price ?? 0,
+        priority: d.priority ?? idx,
+        period: d.period ?? 0,
+        bonus: d.bonus ?? false,
+        reqPop: d.reqPop ?? 0,
+        category,
+        categorySub: 0,
+        discountRate,
+        onSale: d.onSale !== false,
+        gender: d.gender ?? 0,
+        onSaleFlag: 0,
+        classField: d.classField ?? 0,
+        reqLevel: d.reqLevel ?? 0,
+        forPremiumUser: d.forPremiumUser ?? false,
+        limit: d.limit ?? 0,
+        maplePoint: d.maplePoint ?? 0,
+        meso: d.meso ?? 0,
+        pbCash: d.pbCash ?? 0,
+        pbPoint: d.pbPoint ?? 0,
+        pbGift: d.pbGift ?? 0,
+        packageSnList: d.packageSnList ?? [],
+        stockState: this._stockStates.get(sn) ?? 0,
+        limitState: this._getLimitGoodsState(sn),
+      });
+    };
+
+    let i = 0;
+    for (const m of this._modifiedCommodities) {
+      const sn = m.sn ?? i;
+      const base = this._commTable?.Get(sn);
+      if (base) {
+        // OG: WZ base entry with server modification overlaid
+        push(sn, {
+          itemId: m.data?.itemId ?? base.itemId,
+          count: m.data?.count ?? base.count,
+          price: m.data?.price ?? base.price,
+          bonus: m.data?.bonus ?? base.bonus,
+          priority: m.data?.priority ?? base.priority,
+          period: m.data?.period ?? base.period,
+          reqPop: m.data?.reqPop ?? base.reqPop,
+          reqLevel: m.data?.reqLevel ?? base.reqLevel,
+          maplePoint: m.data?.maplePoint ?? base.maplePoint,
+          meso: m.data?.meso ?? base.meso,
+          forPremiumUser: m.data?.forPremiumUser ?? base.forPremiumUser,
+          gender: m.data?.gender ?? base.gender,
+          onSale: m.data?.onSale ?? base.onSale,
+          classField: m.data?.classField ?? base.classField,
+          limit: m.data?.limit ?? base.limit,
+          packageSnList: m.data?.packageSnList,
+        }, i);
+      } else {
+        push(sn, m.data ?? {}, i);
+      }
+      i++;
+    }
+    // Include unmodified WZ commodities that the server didn't mention
+    if (this._commTable && this._commTable.BySn.size > 0) {
+      for (const [sn, base] of this._commTable.BySn) {
+        if (this._modifiedCommodities.some((m) => (m.sn ?? -1) === sn)) continue;
+        if (!base.onSale) continue;
+        push(sn, base, i++);
+      }
+    }
+    this._commodities.sort((a, b) => a.priority - b.priority || a.sn - b.sn);
+
+    // OG CCashShop::LoadData @0x492EA0 — a commodity's category comes from its
+    // SN digits: category = sn/10000000 % 10, categorySub = sn/100000 % 100.
+    for (const c of this._commodities) {
+      c.category = Math.floor(c.sn / 10000000) % 10;
+      c.categorySub = Math.floor(c.sn / 100000) % 100;
+    }
+    this._applySortType();
+    if (this._commTable) this._applyCategoryRows();
+  }
+
+  /** OG CCashShop::LoadData @0x492EA0 row model: commodities whose
+   *  (category, categorySub) maps to a Category.img row are grouped in
+   *  Category.img order (nStart/nCount), and every ON-SALE commodity in the
+   *  [80000000..89999999] window is removed and re-inserted at a RANDOM
+   *  position inside a random non-empty row. Runs only when the client-side
+   *  Commodity table is loaded and every SN maps to a row (OG throws otherwise). */
+  private _applyCategoryRows(): void {
+    const cats = this._commTable?.Categories ?? [];
+    if (cats.length === 0) return;
+    const rowIndex = new Map<string, number>();
+    cats.forEach((r, i) => rowIndex.set(`${r.category}_${r.categorySub}`, i));
+
+    const isRandomWindow = (c: CashCommodity) => c.sn >= 80000000 && c.sn <= 89999999;
+    for (const c of this._commodities) {
+      if (isRandomWindow(c)) continue;
+      if (!rowIndex.has(`${c.category}_${c.categorySub}`)) return; // OG: throw
+    }
+
+    const main = this._commodities.filter((c) => !isRandomWindow(c));
+    const cmp = (a: CashCommodity, b: CashCommodity) =>
+      a.priority - b.priority || a.sn - b.sn;
+    // Group in Category.img order; within a row keep the current sort.
+    main.sort((a, b) =>
+      (rowIndex.get(`${a.category}_${a.categorySub}`) ?? 1 << 30)
+        - (rowIndex.get(`${b.category}_${b.categorySub}`) ?? 1 << 30) || cmp(a, b));
+
+    // Random distribution of the 80M-SN on-sale window into non-empty rows.
+    const randoms = this._commodities.filter((c) => isRandomWindow(c) && c.onSale);
+    for (const c of randoms) {
+      // Collect row boundaries present in `main` with count > 0
+      const bounds: { start: number; len: number }[] = [];
+      for (let i = 0; i < main.length;) {
+        const k = `${main[i].category}_${main[i].categorySub}`;
+        let j = i;
+        while (j < main.length && `${main[j].category}_${main[j].categorySub}` === k) j++;
+        bounds.push({ start: i, len: j - i });
+        i = j;
+      }
+      if (bounds.length === 0) { main.push(c); continue; }
+      const row = bounds[Math.floor(Math.random() * bounds.length)];
+      main.splice(row.start + Math.floor(Math.random() * (row.len + 1)), 0, c);
+    }
+    // Off-sale random-window items stay appended (OG leaves them out of rows).
+    for (const c of this._commodities) {
+      if (isRandomWindow(c) && !c.onSale) main.push(c);
+    }
+    this._commodities = main;
+  }
+
+  /** OG CCashShop::OnChangedSortType @0x481810 — per-category-row sort of the
+   *  ON-SALE entries: 0 = priority ascending, 1 = price descending, 2 = SN
+   *  ascending. Off-sale entries keep their positions (OG skips them). */
+  SetSortType(sortType: number): void {
+    this._sortType = Math.max(0, Math.min(2, sortType));
+    this._applySortType();
+  }
+
+  private _applySortType(): void {
+    const rowKey = (c: CashCommodity) => c.category * 1000 + c.categorySub;
+    const cmp = (a: CashCommodity, b: CashCommodity): number => {
+      switch (this._sortType) {
+        case 1: return b.price - a.price;            // price, most expensive first
+        case 2: return a.sn - b.sn;                  // SN ascending
+        default: return a.priority - b.priority || a.sn - b.sn; // priority asc
+      }
+    };
+    // Stable per-row sort; rows ordered by their Category.img appearance.
+    this._commodities.sort((a, b) => {
+      const ra = rowKey(a);
+      const rb = rowKey(b);
+      if (ra !== rb) return ra - rb;
+      return cmp(a, b);
+    });
   }
 
   private _unwireHandlers(): void {
@@ -660,8 +832,29 @@ export class CashShopStage extends Stage {
   private _buildStaticLayer(): void {
     this._staticRoot.removeChildren().forEach(child => child.destroy());
     if (!this._bg) return;
-    const sprite = this._bg.ToPixi();
-    this._staticRoot.addChild(sprite);
+    this._bgSprite = this._bg.ToPixi();
+    this._staticRoot.addChild(this._bgSprite);
+  }
+
+  /** OG Init @0x484920 — background canvas by job family:
+   *  Cygnus(job/1000==1)→backgrnd1, Aran(/100==21‖2000)→backgrnd4,
+   *  Evan(/100==22‖2001)→backgrnd5, Legendary(/1000==3)→backgrnd3, else backgrnd. */
+  private _selectBackground(): void {
+    const job = this._playerJob;
+    let idx = 0;
+    if (Math.floor(job / 1000) === 1) idx = 1;
+    else if (Math.floor(job / 100) === 21 || job === 2000) idx = 4;
+    else if (Math.floor(job / 100) === 22 || job === 2001) idx = 5;
+    else if (Math.floor(job / 1000) === 3) idx = 3;
+    const variant = this._bgVariants[idx];
+    if (!variant || !this._loader) return;
+    const old = this._bgSprite;
+    this._bgSprite = variant.ToPixi();
+    this._staticRoot.addChildAt(this._bgSprite, 0);
+    if (old && old !== this._bgSprite) {
+      old.removeFromParent();
+      old.destroy();
+    }
   }
 
   private _getSalePrice(item: CashCommodity): number {
@@ -671,6 +864,10 @@ export class CashShopStage extends Stage {
   private _isCommodityUsable(item: CashCommodity): boolean {
     if (item.reqLevel > 0 && this._playerLevel < item.reqLevel) return false;
     if (item.reqPop > 0 && this._playerFame < item.reqPop) return false;
+    // OG IsUsableItemCheckFirst @0x486820 rule 1: Evan-only dragon boxes
+    // (5620006/5620007/5620008) — non-Evan characters get SP 0x162A.
+    const isEvan = Math.floor(this._playerJob / 100) === 22 || this._playerJob === 2001;
+    if (!isEvan && (item.itemId === 5620006 || item.itemId === 5620007 || item.itemId === 5620008)) return false;
     if (item.gender !== 0 && item.gender !== 2 && item.gender !== this._playerGender) return false;
     if (item.classField !== 0) {
       const jobClass = Math.floor(this._playerJob / 100);
@@ -738,6 +935,93 @@ export class CashShopStage extends Stage {
     return true;
   }
 
+  /** OG CCSWnd_List::SetPlateNo @0x4C9B40 — per-plate button availability.
+   *  OG creates 3 buttons per plate — Buy (id 3i+2000), Gift (3i+2001) and a
+   *  third (3i+2002) — then disables each by the rule table below. The TS
+   *  plate renders Buy+Gift: buy follows every rule that disables OG's [0],
+   *  gift every rule that disables OG's [1]. Stock/limit-exhausted entries
+   *  stay VISIBLE (OG ChangePage keeps them in the list); only their buttons
+   *  are disabled. */
+  /** OG CCSWnd_List::SetPlateNo @0x4C9B40 — per-plate button availability.
+   *  OG creates 3 buttons per plate — Buy (id 3i+2000), Gift (3i+2001) and
+   *  Wish (3i+2002; OnSetWish / OnRemoveWish on category 9, see
+   *  OnButtonClicked @0x4C71D0 case 2) — then disables each by rule groups:
+   *  [Buy,Wish] = gender + level gates; [Buy,Gift] = premium/stock/off-sale;
+   *  [Gift,Wish] = free / random-window / one-a-day / limit(2|3);
+   *  [Gift] = rings and non-giftable coupons. */
+  _plateButtons(item: CashCommodity): { buy: boolean; gift: boolean; wish: boolean } {
+    let buy = true;
+    let gift = true;
+    let wish = true;
+    const noBuyPair = () => { buy = false; wish = false; };  // [0]+[2]
+    const noBoth = () => { buy = false; gift = false; };      // [0]+[1]
+    const noGiftPair = () => { gift = false; wish = false; }; // [1]+[2]
+    const noGift = () => { gift = false; };                   // [1]
+
+    // Sold-out stock / exhausted limit goods → Buy+Gift off ([0]+[1])
+    if (!this._isSaleAvailable(item) || item.stockState === 1 || item.limitState === 1) noBoth();
+    // Premium-only items for non-premium characters → Buy+Gift off
+    if (!this._isPremium && item.forPremiumUser) noBoth();
+    // Off-sale → Buy+Gift off
+    if (!item.onSale) noBoth();
+
+    // Gender mismatch → Buy+Wish off. GetCommodityGender != -1/2/self.
+    if (!(item.gender === -1 || item.gender === 2 || item.gender === this._playerGender)) noBuyPair();
+    // Level/account-gated categories → Buy+Wish off
+    const cat10k = Math.floor(item.itemId / 10000);
+    const newAccount = false; // OG CWvsContext::IsNewAccount — not tracked client-side
+    if (cat10k === 507 && this._playerLevel <= 10) noBuyPair(); // megaphones
+    if ((cat10k === 514 || cat10k === 503) && (this._playerLevel <= 15 || newAccount)) noBuyPair();
+    if (cat10k === 504 && this._playerLevel < 7) noBuyPair();
+    if (cat10k === 539 && (this._playerLevel <= 10 || newAccount)) noBuyPair(); // name-change family
+    if (cat10k === 520 && this._playerLevel <= 15) noBuyPair(); // pet-name tags
+    if (item.itemId === 5200009 || item.itemId === 5200010) noBuyPair();
+
+    // Non-giftable coupons → Gift off ([1] only)
+    const id100 = Math.floor(item.itemId / 100);
+    if ((id100 === 11120 && item.itemId !== 1112000)
+      || (id100 === 11128 && item.itemId % 10 <= 2)) noGift(); // couple/friendship rings
+    if (item.itemId === 5400000 || item.itemId === 5401000) noGift(); // name change / world transfer
+    if (item.itemId === 5220012 || item.itemId === 5222000
+      || item.itemId === 5220016 || item.itemId === 5220017 || item.itemId === 5220018) noGift();
+    const cat1k = Math.floor(item.itemId / 1000);
+    if (Math.floor(item.itemId / 10000) === 911 || cat1k === 5430
+      || item.itemId === 5431000 || item.itemId === 5432000) noGift(); // slot increase
+    if (Math.floor(item.itemId / 10000) === 555) noGift(); // equip slot extension
+
+    // Free / random-window / one-a-day / purchase-limited → Gift+Wish off ([1]+[2])
+    if (item.price === 0) noGiftPair();
+    if (item.sn >= 80000000 && item.sn <= 89999999) noGiftPair();
+    if (Math.floor(item.sn / 100000) === 210 || item.sn === 5640000) noGiftPair();
+    if (item.limit === 2 || item.limit === 3) noGiftPair();
+
+    return { buy, gift, wish };
+  }
+
+  /** OG CCashShop::GetCashPurchaseRecord @0x482450 — purchase state for a
+   *  limit(2|3) commodity. Unknown SNs default to PURCHASED (hidden) while a
+   *  lazy RequestCashPurchaseRecord @0x4823C0 (sub-action 0x2C) is in flight;
+   *  OnCashItemResPurchaseRecord @0x495B50 fills the map and refreshes. */
+  private _getPurchaseRecord(key: number): boolean {
+    if (key !== 0) {
+      const rec = this._purchaseRecords.get(key);
+      if (rec === undefined) {
+        this._requestPurchaseRecord(key);
+        return true;
+      }
+      return rec;
+    }
+    if (this._purchaseRecordGlobal === -1) this._requestPurchaseRecord(0);
+    return this._purchaseRecordGlobal !== 0;
+  }
+
+  private _requestPurchaseRecord(key: number): void {
+    if (!this.game?.session.isConnected) return;
+    if (this._purchaseRecordRequested.has(key)) return; // OG re-requests per query; we guard
+    this._purchaseRecordRequested.add(key);
+    this.game.session.send(GameSender.CashShopPurchaseRecord(key));
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // Rendering — OG-faithful layout
   // ═══════════════════════════════════════════════════════════════════════════
@@ -766,6 +1050,7 @@ export class CashShopStage extends Stage {
 
     this._drawCharacterPreview();
     this._drawTabBar();
+    this._drawSubCategoryBar();
     if (this._activeTab === 8 && this._oneADayItemSN > 0) this._drawOneADay();
     else this._drawItemGrid();
     this._drawBestPanel();
@@ -775,6 +1060,7 @@ export class CashShopStage extends Stage {
     this._drawSearchButton();
     this._drawStatusMessage();
     if (this._giftVisible) this._drawGiftDialog();
+    if (this._yesNoVisible) this._drawYesNoDialog();
     if (this._confirmBuyVisible) this._drawConfirmBuy();
     if (this._activeDialog === 'nameChange') this._drawNameChangeDialog();
     if (this._activeDialog === 'worldTransfer') this._drawWorldTransferDialog();
@@ -848,6 +1134,11 @@ export class CashShopStage extends Stage {
   // The NX labels are baked into Base/backgrnd; only the gold values are drawn,
   // right-aligned at x = 220 - valueWidth, at y = 9 (NexonCash), 23 (PrepaidNX),
   // 38 (MaplePoint) — all relative to the status window.
+  /** OG format_integer(v, 1): thousands-grouped decimal string. */
+  private _formatInteger(v: number): string {
+    return Math.max(0, Math.floor(v)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
   private _drawStatusBar(): void {
     // Background — use WZ sprite if available
     if (this._bgStatus) {
@@ -862,16 +1153,17 @@ export class CashShopStage extends Stage {
     }
 
     // Values — right-aligned at x = 220 - width, y = 9/23/38 (OG order).
-    // Note: order is NexonCash(9), PrepaidNXCash(23), MaplePoint(38).
-    const values: Array<[number, number, string]> = [
-      [this._nxCredit, 9, 'NexonCash'],
-      [this._nxPrepaid, 23, 'PrepaidNXCash'],
-      [this._maplePoints, 38, 'MaplePoint'],
+    // OG: format_integer(v, groupThousands) then DrawTextA right-aligned;
+    // NexonCash/Prepaid use FONT_NO_BLACK, MaplePoint uses FONT_NO_RED.
+    const values: Array<[number, number, string, number]> = [
+      [this._nxCredit, 9, 'NexonCash', COL_TEXT_WHITE],
+      [this._nxPrepaid, 23, 'PrepaidNXCash', COL_TEXT_WHITE],
+      [this._maplePoints, 38, 'MaplePoint', 0xE84C4C],
     ];
-    for (const [amount, dy, _label] of values) {
-      const s = String(amount);
+    for (const [amount, dy, _label, color] of values) {
+      const s = this._formatInteger(amount);
       const w = s.length * 7; // monospace 11px ≈ 7px/char
-      this._addText(s, STATUS_X + 220 - w, STATUS_Y + dy, COL_TEXT_GOLD, 11);
+      this._addText(s, STATUS_X + 220 - w, STATUS_Y + dy, color, 11);
     }
 
     // OG button IDs: 1000=Charge, 1001=Check, 1002=Coupon, 1003=Exit
@@ -919,6 +1211,12 @@ export class CashShopStage extends Stage {
     const items = this._searchResults ?? this._getCurrentPageItems();
     const offset = this._page * PLATES_PER_PAGE;
 
+    // OG: PicturePlate/NoItem — empty page placeholder (406×242)
+    if (items.length === 0 && !this._searchResults && this._noItemImage) {
+      this._drawWzSprite(this._noItemImage, LIST_X + 3, LIST_Y + 94);
+      return;
+    }
+
     for (let row = 0; row < PLATE_ROWS; row++) {
       for (let col = 0; col < PLATE_COLS; col++) {
         const plateIdx = row * PLATE_COLS + col;
@@ -956,9 +1254,15 @@ export class CashShopStage extends Stage {
           // Item name (OG: DrawTextA at rect.left+82, rect.top+6)
           this._addText(item.name.slice(0, 14), px + 82, py + 6, COL_TEXT_WHITE, 11);
 
-          // Price (OG: DrawTextA at rect.left+78, rect.top+32)
+          // Price (OG: coin icon + digits at rect.left+78, rect.top+32;
+          // the NX coin sprite (CashItem/0) sits left of the digits)
           const price = this._getSalePrice(item);
-          this._addText(`${price} NX`, px + 78, py + 32, COL_TEXT_GOLD, 11);
+          if (this._cashCoinIcons[0]) {
+            this._drawWzSprite(this._cashCoinIcons[0]!, px + 78, py + 31);
+            this._addText(`${this._formatInteger(price)}`, px + 94, py + 32, COL_TEXT_GOLD, 11);
+          } else {
+            this._addText(`${price} NX`, px + 78, py + 32, COL_TEXT_GOLD, 11);
+          }
 
           // Discount badge — use WZ digit sprites if available
           if (item.discountRate > 0) {
@@ -983,23 +1287,39 @@ export class CashShopStage extends Stage {
             this._addText(`${item.price}`, px + 124, py + 48, 0x888888, 9);
           }
 
-          // Buy button (OG: CSList/BtBuy — 4 states)
+          // Buy/Gift buttons (OG: CSList/BtBuy + BtGift — 4 states each;
+          // SetPlateNo @0x4C9B40 disables them per commodity, drawn dimmed)
+          const btns = this._plateButtons(item);
           const buyX = px + PLATE_W - 40;
           const buyY = py + 52;
-          const buyHovered = this._hoveredBtn === `buy_${plateIdx}`;
+          const buyHovered = btns.buy && this._hoveredBtn === `buy_${plateIdx}`;
           const buySprite = buyHovered ? (this._btBuyOver ?? this._btBuy) : this._btBuy;
           if (buySprite) {
-            this._drawWzSprite(buySprite, buyX, buyY);
+            const sp = this._drawWzSprite(buySprite, buyX, buyY);
+            if (!btns.buy) (sp as Sprite).alpha = 0.35;
           }
 
-          // Gift button (OG: CSList/BtGift — 4 states)
+          // Gift button
           const giftX = px + PLATE_W - 40;
           const giftY = py + 26;
-          const giftHovered = this._hoveredBtn === `gift_${plateIdx}`;
+          const giftHovered = btns.gift && this._hoveredBtn === `gift_${plateIdx}`;
           const giftSprite = giftHovered ? (this._btGiftOver ?? this._btGift) : this._btGift;
           if (giftSprite) {
-            this._drawWzSprite(giftSprite, giftX, giftY);
+            const sp = this._drawWzSprite(giftSprite, giftX, giftY);
+            if (!btns.gift) (sp as Sprite).alpha = 0.35;
           }
+
+          // Wish toggle button (OG third plate button, id 3i+2002 —
+          // OnSetWish / OnRemoveWish via OnButtonClicked @0x4C71D0 case 2)
+          const inWish = this._wishlist.includes(item.sn);
+          const wishHovered = btns.wish && this._hoveredBtn === `wish_${plateIdx}`;
+          this._drawWishButton(
+            px + PLATE_W - 40,
+            py,
+            wishHovered,
+            !btns.wish,
+            inWish,
+          );
 
           // Effect badges (OG: CSEffect — hot/new/sale)
           if (item.discountRate > 0 && this._effectSale) {
@@ -1028,6 +1348,24 @@ export class CashShopStage extends Stage {
     // Next button
     this._g.rect(pageCenterX + 20, pageY, 50, 20).fill({ color: this._page < totalPages - 1 ? COL_TAB_ACTIVE : COL_TAB_INACTIVE });
     this._addText('Next >', pageCenterX + 26, pageY + 4, COL_TEXT_WHITE, 10);
+  }
+
+  /** Third plate button — wishlist add/remove toggle. WZ sprite when
+   *  available, else a small labeled box ("Wish" / "Del", the OG
+   *  StringPool 1265/1266 label pair). */
+  private _drawWishButton(x: number, y: number, hovered: boolean, disabled: boolean, inWish: boolean): void {
+    const sprite = hovered ? (this._btWishOver ?? this._btWish) : this._btWish;
+    if (sprite) {
+      const sp = this._drawWzSprite(sprite, x, y + 2);
+      sp.alpha = disabled ? 0.35 : 1;
+      return;
+    }
+    const w = 36;
+    const h = 16;
+    this._g.rect(x, y, w, h)
+      .fill({ color: disabled ? COL_TAB_INACTIVE : hovered ? 0x3A4A78 : COL_TAB_ACTIVE });
+    this._g.rect(x, y, w, h).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
+    this._addText(inWish ? 'Del' : 'Wish', x + 6, y + 2, disabled ? COL_TEXT_DIM : COL_TEXT_WHITE, 9);
   }
 
   // ── One-a-Day panel (CCSWnd_OneADay) — CENTER, replaces item grid on tab 9 ──
@@ -1660,11 +1998,70 @@ export class CashShopStage extends Stage {
     this._addText('Cancel', dlgX + dlgW - 116, dlgY + dlgH - 33, COL_TEXT_WHITE, 12);
   }
 
+  /** OG CCashShop::GoTo @0x47E6F0 / CCSWnd_Best::GoToCommoditySN @0x4C6DC0 —
+   *  jump to the tab + page that holds the given commodity SN and focus it. */
+  GoToCommoditySN(sn: number): void {
+    const comm = this._commodities.find(c => c.sn === sn);
+    if (!comm) return;
+    if (comm.category >= 1 && comm.category <= 8) this._activeTab = comm.category;
+    this._page = 0;
+    this._selectedPlate = -1;
+    const inTab = this._getCurrentPageItems().findIndex(c => c.sn === sn);
+    if (inTab >= 0) {
+      this._page = Math.floor(inTab / PLATES_PER_PAGE);
+      this._selectedPlate = inTab % PLATES_PER_PAGE;
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // Input handling
   // ═══════════════════════════════════════════════════════════════════════════
 
+  /** OG CCashShop::OnSetWish @0x4837D0 — add SN to the first empty wishlist
+   *  slot and send the full 10-slot list. */
+  AddToWish(sn: number): void {
+    const slot = this._wishlist.indexOf(0);
+    if (slot < 0) { this._statusMessage = 'Wishlist is full.'; return; }
+    if (this._wishlist.includes(sn)) { this._statusMessage = 'Already on your wishlist.'; return; }
+    this._wishlist[slot] = sn;
+    this.game?.session.send(GameSender.CashShopSetWish(this._wishlist.slice()));
+    const item = this._commodities.find(c => c.sn === sn);
+    this._statusMessage = `Wishlist: added ${item ? item.name : sn}`;
+  }
+
+  /** OG CCashShop::OnRemoveWish @0x483960 — clear the slot holding sn. */
+  RemoveWish(sn: number): void {
+    const slot = this._wishlist.indexOf(sn);
+    if (slot < 0) return;
+    this._wishlist[slot] = 0;
+    this.game?.session.send(GameSender.CashShopSetWish(this._wishlist.slice()));
+    this._statusMessage = 'Wishlist: item removed.';
+  }
+
   onKeyPress(key: string): void {
+    // OG CCashShop::OnKey @0x47F7C0 — VK_CAPS(20) toggles user preview control
+    if (key === 'CapsLock') {
+      this._previewEnabled = !this._previewEnabled;
+      return;
+    }
+    // OG OnSetWish @0x4837D0 / OnRemoveWish @0x483960 — W adds the selected
+    // commodity to the first empty wishlist slot, Shift+W removes it.
+    if (key === 'w' || key === 'W') {
+      const selected = this._getCurrentPageItems()[this._page * PLATES_PER_PAGE + this._selectedPlate];
+      if (selected) {
+        if (key === 'W') this.RemoveWish(selected.sn);
+        else this.AddToWish(selected.sn);
+      }
+      return;
+    }
+    // Yes/No modal (OG: CUtilDlg::YesNo) — Enter confirms, Escape cancels
+    if (this._yesNoVisible) {
+      this._yesNoVisible = false;
+      const cb = this._yesNoCallback;
+      this._yesNoCallback = null;
+      if (key === 'Enter') cb?.();
+      return;
+    }
     if (this._couponVisible) {
       if (key === 'Escape') {
         this._couponVisible = false;
@@ -1939,6 +2336,27 @@ export class CashShopStage extends Stage {
       return;
     }
 
+    if (this._yesNoVisible && this._handleYesNoClick(lx, ly)) return;
+    // Best panel — OG CCSWnd_Best::OnMouseButton: clicking an entry jumps to it
+    if (lx >= BEST_X && lx < BEST_X + BEST_W && ly >= BEST_Y && ly < BEST_Y + BEST_H) {
+      const best = this._bestItems[Math.floor((ly - BEST_Y) / BEST_STEP)];
+      if (best) { this.GoToCommoditySN(best.sn); return; }
+    }
+    // Locker cells — OG OnRebateLockerItem @0x485840: clicking a locker item
+    // requests its meso rebate.
+    if (lx >= LOCKER_X && lx < LOCKER_X + LOCKER_W && ly >= LOCKER_Y && ly < LOCKER_Y + LOCKER_H) {
+      const col = Math.floor((lx - (LOCKER_X + 21)) / LOCKER_COL_STEP);
+      const row = Math.floor((ly - (LOCKER_Y + 30)) / LOCKER_COL_STEP);
+      if (col >= 0 && col < LOCKER_COLS && row >= 0 && row < LOCKER_ROWS) {
+        const idx = this._lockerScroll * LOCKER_COLS + row * LOCKER_COLS + col;
+        const item = this._lockerItems[idx];
+        if (item) {
+          this.game?.session.send(GameSender.CashShopRebate(item.sn));
+          this._statusMessage = `Rebate requested for ${item.name}.`;
+          return;
+        }
+      }
+    }
     if (this._activeTab === 8 && this._oneADayItemSN > 0 && this._handleOneADayClick(lx, ly)) return;
     if (this._inventoryScrollbar?.handleMouseButton(lx - INV_X, ly - INV_Y - 160, down)) return;
     if (this._lockerScrollbar?.handleMouseButton(lx - this._getLockerScrollbarX(), ly - 229, down)) return;
@@ -2164,6 +2582,19 @@ export class CashShopStage extends Stage {
       }
     }
 
+    // Sub-category strip (OG ChangeSubCategory @0x4C6530)
+    const subs = this._subRows();
+    if (subs.length > 0 && ly >= TAB_Y + TAB_H - 14 && ly < TAB_Y + TAB_H) {
+      const step = Math.floor(LIST_W / subs.length);
+      if (lx >= LIST_X && lx < LIST_X + LIST_W) {
+        const i = Math.min(subs.length - 1, Math.floor((lx - LIST_X) / step));
+        this._subCategory = subs[i].categorySub;
+        this._page = 0;
+        this._selectedPlate = -1;
+        return;
+      }
+    }
+
     // One-a-Day plate clicks (tab 9)
     if (this._activeTab === 8 && this._oneADayItemSN > 0) {
       // Today's item "Free" buy button
@@ -2215,13 +2646,34 @@ export class CashShopStage extends Stage {
           const absIdx = this._page * PLATES_PER_PAGE + plateIdx;
           if (absIdx < items.length) {
             this._selectedPlate = plateIdx;
-            // Buy button click (bottom-right of plate)
-            if (lx >= px + PLATE_W - 40 && ly >= py + 50) {
-              this._buyItem(items[absIdx]);
+            const btns = this._plateButtons(items[absIdx]);
+            // Wish toggle click (OG third button, id 3i+2002 — top-right of plate)
+            if (lx >= px + PLATE_W - 40 && lx < px + PLATE_W && ly >= py && ly < py + 20) {
+              if (btns.wish) {
+                if (this._wishlist.includes(items[absIdx].sn)) {
+                  this.RemoveWish(items[absIdx].sn);
+                } else {
+                  this.AddToWish(items[absIdx].sn);
+                }
+              } else {
+                this._statusMessage = 'This item cannot be added to your wish list.';
+              }
+            }
+            // Buy button click (bottom-right of plate) — disabled plates ignore
+            else if (lx >= px + PLATE_W - 40 && ly >= py + 50) {
+              if (btns.buy) {
+                this._buyItem(items[absIdx]);
+              } else {
+                this._statusMessage = 'This item cannot be purchased.';
+              }
             }
             // Gift button click (top-right of plate)
             else if (lx >= px + PLATE_W - 40 && ly >= py + 24 && ly < py + 46) {
-              this._onGiftClick(items[absIdx]);
+              if (btns.gift) {
+                this._onGiftClick(items[absIdx]);
+              } else {
+                this._statusMessage = 'This item cannot be gifted.';
+              }
             }
           }
           return;
@@ -2490,6 +2942,20 @@ export class CashShopStage extends Stage {
     // Debounce: ignore if a buy is already in-flight
     if (this._buyPending) return;
 
+    // OG ProcessBuy: one-a-day / mesobag commodities ask a YesNo confirm first
+    // (StringPool 0x15C4) before any further routing.
+    if (Math.floor(item.sn / 100000) === 210 || item.sn === 5640000) {
+      if (this._yesNoConfirmed) {
+        this._yesNoConfirmed = false;
+      } else {
+        this._showYesNo('Buy this item? It can only be purchased once per day.', () => {
+          this._yesNoConfirmed = true;
+          this._buyItem(item);
+        });
+        return;
+      }
+    }
+
     // Check authorization (OG: m_bCashShopAuthorized)
     if (!this._cashShopAuthorized) {
       this._statusMessage = 'Not authorized for Cash Shop.';
@@ -2545,6 +3011,67 @@ export class CashShopStage extends Stage {
     // Show confirmation dialog (OG: CConfirmPurchaseDlg)
     this._confirmBuyItem = commodity;
     this._confirmBuyVisible = true;
+  }
+
+  /** OG: CUtilDlg::YesNo — modal confirm with a callback. */
+  private _showYesNo(message: string, onYes: () => void): void {
+    this._yesNoVisible = true;
+    this._yesNoMessage = message;
+    this._yesNoCallback = onYes;
+  }
+
+  private _drawYesNoDialog(): void {
+    if (!this._yesNoVisible) return;
+    // Semi-transparent overlay
+    this._g.rect(0, 0, CS_W, CS_H).fill({ color: 0x000000, alpha: 0.5 });
+    const dlgW = 266;
+    const dlgH = 124;
+    const dlgX = Math.floor((CS_W - dlgW) / 2);
+    const dlgY = Math.floor((CS_H - dlgH) / 2);
+    if (this._confirmNotice) this._drawWzSprite(this._confirmNotice, dlgX, dlgY);
+    this._addText('Confirm', dlgX + 110, dlgY + 10, COL_TEXT_GOLD, 14);
+    // Word-wrap the message at ~34 chars per line (11px font)
+    const words = this._yesNoMessage.split(' ');
+    let line = '';
+    let lineY = dlgY + 40;
+    for (const w of words) {
+      if ((line + ' ' + w).trim().length > 34) {
+        this._addText(line, dlgX + 20, lineY, COL_TEXT_WHITE, 11);
+        line = w;
+        lineY += 16;
+      } else {
+        line = (line + ' ' + w).trim();
+      }
+    }
+    if (line) this._addText(line, dlgX + 20, lineY, COL_TEXT_WHITE, 11);
+    // Yes / No buttons — same row as the buy-confirm dialog's OK/Cancel
+    const okY = dlgY + dlgH - 37;
+    if (this._confirmOk) this._drawWzSprite(this._confirmOk, dlgX + 157, okY);
+    if (this._confirmNo) this._drawWzSprite(this._confirmNo, dlgX + 207, okY);
+  }
+
+  /** Click hit-test for the Yes/No dialog. Returns true when consumed. */
+  private _handleYesNoClick(lx: number, ly: number): boolean {
+    if (!this._yesNoVisible) return false;
+    const dlgW = 266;
+    const dlgH = 124;
+    const dlgX = Math.floor((CS_W - dlgW) / 2);
+    const dlgY = Math.floor((CS_H - dlgH) / 2);
+    const okY = dlgY + dlgH - 37;
+    // OK/Cancel sprites are 60×24-ish; use the drawn anchor rects
+    if (lx >= dlgX + 157 && lx < dlgX + 217 && ly >= okY && ly < okY + 28) {
+      this._yesNoVisible = false;
+      const cb = this._yesNoCallback;
+      this._yesNoCallback = null;
+      cb?.();
+      return true;
+    }
+    if (lx >= dlgX + 207 && lx < dlgX + 267 && ly >= okY && ly < okY + 28) {
+      this._yesNoVisible = false;
+      this._yesNoCallback = null;
+      return true;
+    }
+    return true; // modal — swallow clicks elsewhere
   }
 
   private _onGiftClick(item: CashCommodity): void {
@@ -2684,27 +3211,32 @@ export class CashShopStage extends Stage {
   private _processBuy(item: CashCommodity): void {
     const { itemId, sn } = item;
 
-    // Couple ring items (itemId/10000 == 910) → sub-action 18
-    if (Math.floor(itemId / 10000) === 910) {
+    // OG ProcessBuy routing order (0x4936B0):
+    // couple ring → package(910) → SN 80000000-89999999 normal → friendship →
+    // charslot → character sale → equipslot ext → slot inc → name change →
+    // transfer world → default OnBuy.
+
+    // Couple rings: itemId/100 == 11120 && itemId != 1112000 → OnBuyCouple
+    if (Math.floor(itemId / 100) === 11120 && itemId !== 1112000) {
       this._coupleNameItem = item;
       this._coupleNameValue = '';
       this._activeDialog = 'coupleName';
       return;
     }
 
-    // Package items (have packageSnList) → sub-action 19
-    if (this._isPackage(sn)) {
+    // Package boxes: itemId/10000 == 910 → OnBuyPackage
+    if (Math.floor(itemId / 10000) === 910) {
       this.game?.session.send(GameSender.CashShopBuyPackage([sn]));
       return;
     }
 
-    // Normal items in SN range [80000000..] → sub-action 21
-    if (sn >= 80000000) {
+    // Normal items in SN range [80000000..89999999] → OnBuyNormal
+    if (sn >= 80000000 && sn <= 89999999) {
       this.game?.session.send(GameSender.CashShopBuyNormal(1, [sn]));
       return;
     }
 
-    // Friendship equip items (itemId/10000 == 193) → sub-action 22
+    // Friendship equip: itemId/100 == 11128 && itemId % 10 <= 2 → OnBuyFriendship
     if (this._isFriendshipEquip(itemId)) {
       this._friendNameItem = item;
       this._friendNameValue = '';
@@ -2712,13 +3244,13 @@ export class CashShopStage extends Stage {
       return;
     }
 
-    // Character slot increment (itemId == 5000047) → sub-action 12
+    // Character slot increment: itemId/1000 == 5430 → OnIncCharacterSlotCount
     if (this._isCharSlotInc(itemId)) {
       this.game?.session.send(GameSender.CashShopIncCharSlotCount());
       return;
     }
 
-    // Character sale → opens character sale dialog
+    // Character sale items: 5431000 / 5432000 → OnBuyCharacter
     if (this._isCharSale(itemId)) {
       // OG: CUICharacterSaleDlg — opens a separate dialog for character purchase
       // For now, send the buy request directly (server handles the dialog flow)
@@ -2726,7 +3258,7 @@ export class CashShopStage extends Stage {
       return;
     }
 
-    // Equip slot extension (itemId/10000 == 506) → sub-action 14
+    // Equip slot extension: itemId/10000 == 555 → OnEnableEquipSlotExt
     if (this._isEquipSlotExt(itemId)) {
       this._equipSlotExtItem = item;
       this._equipSlotExtBodyPart = 0;
@@ -2734,7 +3266,8 @@ export class CashShopStage extends Stage {
       return;
     }
 
-    // Slot increment (itemId/10000 == 504) → sub-action 10
+    // Slot increment: itemId/10000 == 911 || itemId/1000 == 5430 ||
+    // itemId == 5431000 || itemId == 5432000 → OnBuySlotInc
     if (this._isSlotInc(itemId)) {
       // Determine inventory type from item subcategory
       const invType = Math.floor(itemId / 1000) % 10;
@@ -2742,16 +3275,16 @@ export class CashShopStage extends Stage {
       return;
     }
 
-    // Name change item (itemId == 5390000)
-    if (itemId === 5390000) {
+    // Name change item (itemId == 5400000) → OnBuyNameChange
+    if (itemId === 5400000) {
       this._nameChangeItem = item;
       this._nameChangeNewName = '';
       this._activeDialog = 'nameChange';
       return;
     }
 
-    // World transfer item (itemId == 5390088)
-    if (itemId === 5390088) {
+    // World transfer item (itemId == 5401000) → OnBuyTransferWorldItem
+    if (itemId === 5401000) {
       this._worldTransferItem = item;
       this._worldTransferSelected = -1;
       this._activeDialog = 'worldTransfer';
@@ -2786,30 +3319,33 @@ export class CashShopStage extends Stage {
     return !!(comm?.data?.packageSnList && comm.data.packageSnList.length > 0);
   }
 
-  /** Friendship equip items: itemId/10000 == 193. */
+  /** Friendship equip: itemId/100 == 11128 && itemId % 10 <= 2 (OG is_friendship_equip_item). */
   private _isFriendshipEquip(itemId: number): boolean {
-    return Math.floor(itemId / 10000) === 193;
+    return Math.floor(itemId / 100) === 11128 && itemId % 10 <= 2;
   }
 
-  /** Character slot increment: itemId == 5000047. */
+  /** Character slot increment: itemId/1000 == 5430 (OG is_charslot_inc_item). */
   private _isCharSlotInc(itemId: number): boolean {
-    return itemId === 5000047;
+    return Math.floor(itemId / 1000) === 5430;
   }
 
-  /** Character sale items. */
+  /** Character sale items: 5431000 / 5432000 (OG is_character_sale_item). */
   private _isCharSale(itemId: number): boolean {
-    // Character sale items are in the 5000051 range
-    return itemId === 5000051 || itemId === 5000052;
+    return itemId === 5431000 || itemId === 5432000;
   }
 
-  /** Equip slot extension: itemId/10000 == 506. */
+  /** Equip slot extension: itemId/10000 == 555 (OG is_equipslot_ext_item). */
   private _isEquipSlotExt(itemId: number): boolean {
-    return Math.floor(itemId / 10000) === 506;
+    return Math.floor(itemId / 10000) === 555;
   }
 
-  /** Slot increment: itemId/10000 == 504. */
+  /** Slot increment (OG is_slot_inc_item): itemId/10000 == 911 ||
+   *  itemId/1000 == 5430 || itemId == 5431000 || itemId == 5432000. */
   private _isSlotInc(itemId: number): boolean {
-    return Math.floor(itemId / 10000) === 504;
+    return Math.floor(itemId / 10000) === 911
+      || Math.floor(itemId / 1000) === 5430
+      || itemId === 5431000
+      || itemId === 5432000;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -2903,9 +3439,17 @@ export class CashShopStage extends Stage {
         this._appendCashItem(args.itemBytes);
         this._statusMessage = 'Free item claimed!';
         break;
-      case 0xAF: // PurchaseRecordResult
-        this._statusMessage = args.available ? 'Item available for purchase' : 'Item not available';
+      case 0xAF: { // PurchaseRecordResult (OG OnCashItemResPurchaseRecord @0x495B50)
+        const key = args.key as number;
+        const purchased = args.available as boolean;
+        if (key !== 0) {
+          this._purchaseRecords.set(key, purchased);
+          if (purchased) this._purchaseRecordGlobal = 1;
+        } else {
+          this._purchaseRecordGlobal = purchased ? 1 : 0;
+        }
         break;
+      }
       case 0xB3: // NameChangeDone
         this._buyPending = false;
         this._statusMessage = 'Name change complete!';
@@ -3044,18 +3588,74 @@ export class CashShopStage extends Stage {
 
   private _getCurrentPageItems(): CashCommodity[] {
     if (this._searchResults) return this._searchResults;
-    return this._commodities.filter(c => {
-      if (!c.onSale || !this._isSaleAvailable(c)) return false;
+    // OG CCSWnd_List::ChangePage @0x4CFC70 — category 1 sub 2 is forced empty.
+    if (this._activeTab === 1 && this._subCategory === 2) {
+      return [];
+    }
+    // Tab 0 (New) and Tab 8 (Popular) show all items
+    const filterByTab = this._activeTab !== 0 && this._activeTab !== 8;
+    const subs = this._commTable?.Categories.filter(r => r.category === this._activeTab) ?? [];
+    const out: CashCommodity[] = [];
+    let rowKey = -1;
+    let rowDead = false;
+    for (const c of this._commodities) {
+      // OG LoadData @0x492EA0: category = sn/10000000 % 10,
+      // categorySub = sn/100000 % 100 — filter by the tab's category.
+      if (filterByTab && c.category !== this._activeTab) continue;
+      const k = c.category * 1000 + c.categorySub;
+      if (k !== rowKey) { rowKey = k; rowDead = false; }
+      // OG scans a category row only until its first OFF-SALE entry (break).
+      if (!c.onSale) rowDead = true;
+      if (rowDead) continue;
+      // OG ChangePage @0x4CFC70: already-purchased limit(2|3) goods are
+      // hidden — limit 2 via the global record (key 0), limit 3 per SN.
+      if (c.limit === 2 || c.limit === 3) {
+        if (this._getPurchaseRecord(c.limit === 2 ? 0 : c.sn)) continue;
+      }
+      // Stock/limit-exhausted entries stay visible (buttons disabled, see
+      // _plateButtons); zero-goods time windows still hide them (OG folds
+      // those windows into the sale flags in LoadData).
+      if (!this._zeroWindowOpen(c)) continue;
+      // Sub-category bar (OG ChangeCategorySub @0x4C98F0): when the WZ
+      // Category table is loaded, filter by the selected sub-row.
+      if (subs.length > 0 && c.categorySub !== this._subCategory) continue;
+      out.push(c);
+    }
+    return out;
+  }
 
-      // Tab 0 (New/Best) and Tab 8 (Popular) show all items
-      if (this._activeTab === 0 || this._activeTab === 8) return true;
+  /** Zero-goods event window check (the visibility half of _isSaleAvailable). */
+  private _zeroWindowOpen(item: CashCommodity): boolean {
+    const zero = this._zeroGoods.find(entry => item.sn >= entry.startSN && item.sn <= entry.endSN);
+    if (zero && !this._saleTimeMatches(zero.condition, zero.dateStart, zero.dateEnd, zero.hourStart, zero.hourEnd, zero.weekdays)) return false;
+    return true;
+  }
 
-      // Tab 9 (One-a-Day) — filter by one-a-day flag (placeholder)
-      if (this._activeTab === 8) return false;
+  /** Sub-category rows for the active tab (Category.img names). */
+  private _subRows(): { category: number; categorySub: number; name: string }[] {
+    return this._commTable?.Categories.filter(r => r.category === this._activeTab) ?? [];
+  }
 
-      // Tab 1-7 filter by category
-      return c.category === this._activeTab;
-    });
+  /** OG CCSWnd_Tab::ChangeSubCategory @0x4C6530 — the sub-category strip. */
+  private _drawSubCategoryBar(): void {
+    const subs = this._subRows();
+    if (subs.length === 0) return;
+    const step = Math.floor(LIST_W / subs.length);
+    for (let i = 0; i < subs.length; i++) {
+      const x = LIST_X + i * step;
+      const selected = subs[i].categorySub === this._subCategory;
+      this._addText(
+        subs[i].name.slice(0, 8),
+        x + 2,
+        TAB_Y + TAB_H - 12,
+        selected ? COL_TEXT_GOLD : COL_TEXT_DIM,
+        9,
+      );
+      if (selected) {
+        this._g.rect(x + 1, TAB_Y + TAB_H - 14, step - 4, 14)
+          .stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
+      }
+    }
   }
 
   private _getTotalPages(): number {
@@ -3096,11 +3696,12 @@ export class CashShopStage extends Stage {
     return sp;
   }
 
-  private _drawWzSprite(sprite: WzSprite, x: number, y: number): void {
+  private _drawWzSprite(sprite: WzSprite, x: number, y: number): Sprite {
     const s = sprite.ToPixi();
     s.position.set(x, y);
     this._root.addChild(s);
     this._dynamicIcons.push(s);
+    return s;
   }
 
   private _loadAssets(): void {
@@ -3165,8 +3766,11 @@ export class CashShopStage extends Stage {
     this._oneADayBuy = tryLoadOneADay('CSOneADay/BtBuy/normal');
     this._oneADayGift = tryLoadOneADay('CSOneADay/BtGift/normal');
 
-    // Background — OG: Base/backgrnd (800×600)
+    // Background — OG: Base/backgrnd..backgrnd5 (job variants, see _selectBackground)
     this._bg = tryLoad('Base/backgrnd');
+    this._bgVariants[0] = this._bg;
+    for (let i = 1; i <= 5; i++) this._bgVariants[i] = tryLoad(`Base/backgrnd${i}`);
+    this._noItemImage = tryLoad('PicturePlate/NoItem');
 
     // Character preview backgrounds — OG: Base/Preview/0,1,2
     // Preview/0 = normal job, Preview/1 = Cygnus Knights, Preview/2 = Aran/Evan
@@ -3200,6 +3804,9 @@ export class CashShopStage extends Stage {
     this._btBuyOver = tryLoad('CSList/BtBuy/mouseOver');
     this._btGift = tryLoad('CSList/BtGift/normal');
     this._btGiftOver = tryLoad('CSList/BtGift/mouseOver');
+    // Third plate button (wishlist toggle — StringPool 1265/1266 in SetPlateNo)
+    this._btWish = tryLoad('CSList/BtWish/normal') ?? tryLoad('CSList/BtWishList/normal');
+    this._btWishOver = tryLoad('CSList/BtWish/mouseOver') ?? tryLoad('CSList/BtWishList/mouseOver');
 
     this._btSearch = tryLoad('CSItemSearch/BtSearch/normal');
     this._btSearchBuy = tryLoad('CSItemSearch/BtBuy/normal');
@@ -3229,6 +3836,13 @@ export class CashShopStage extends Stage {
     this._discountBonus = tryLoad('CSDiscount/bonus');
     this._discountLine = tryLoad('CSDiscount/Line');
     this._discountTotal = tryLoad('CSDiscount/total');
+
+    // NX coin icons on price rows (OG: CashItem/0..3 next to the price digits)
+    this._cashCoinIcons[0] = tryLoad('CashItem/0');
+    this._cashCoinIcons[1] = tryLoad('CashItem/1');
+    this._cashCoinIcons[2] = tryLoad('CashItem/2');
+    this._cashCoinIcons[3] = tryLoad('CashItem/3');
+    this._prepaidCoinIcon = tryLoad('PrepaidCashItem/0');
 
     // These panels are part of Base/backgrnd in v95. There are no separate
     // CSLocker/CSInventory/CSStatus/CSBest background canvases.
