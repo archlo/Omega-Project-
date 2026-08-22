@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CashShopStage } from '../../src/stages/CashShopStage.js';
+import { CashShopStage, LOCKER_X, LIST_X, LIST_Y, PLATE_H, PLATE_W } from '../../src/stages/CashShopStage.js';
 import { CashShopDecoder } from '../../src/net/packet/CashShopDecoder.js';
 
 describe('CashShopStage', () => {
@@ -92,7 +92,7 @@ describe('CashShopStage', () => {
     expect(nxc.x).toBe(254 + 220 - 42);
   });
 
-  it('status buttons render at y offset +13 per CCSWnd_Status::OnCreate', () => {
+  it('status buttons render at OG offsets (+13; Exit at +15 per CCSWnd_Status::OnCreate)', () => {
     (globalThis as any).window ??= {};
     const stage = new CashShopStage(null) as any;
     stage._clearDynamic = () => { stage._dynamicTexts = []; };
@@ -104,8 +104,10 @@ describe('CashShopStage', () => {
     stage._btExit = { ToPixi: () => ({}) };
     stage._drawStatusBar();
 
-    // OG CreateCtrl_2 y=13 relative to status window (y=530) → 543.
-    expect(drawn.filter((d) => d.y === 543).length).toBe(4);
+    // OG CreateCtrl_2 y=13 relative to status window (y=530) → 543;
+    // BtExit (id 1003) sits at y offset +15 → 545.
+    expect(drawn.filter((d) => d.y === 543).length).toBe(3);
+    expect(drawn.find((d) => d.x === 632)?.y).toBe(545);
     // x positions 248/289/330/378 relative to status window (x=254).
     expect(drawn.map((d) => d.x)).toEqual([502, 543, 584, 632]);
   });
@@ -128,6 +130,62 @@ describe('CashShopStage', () => {
     expect(name.y).toBe(95 + 2 + 6);
     expect(price.x).toBe(275 + 78);
     expect(price.y).toBe(95 + 2 + 32);
+  });
+
+  it('GetPlateRect uses a 206x81 pitch with an 81-high plate', () => {
+    const stage = new CashShopStage(null) as any;
+    expect(stage._getPlateRect(0)).toEqual({ left: LIST_X, top: LIST_Y + 2 });
+    expect(stage._getPlateRect(1)).toEqual({ left: LIST_X + 206, top: LIST_Y + 2 });
+    expect(stage._getPlateRect(3)).toEqual({ left: LIST_X + 206, top: LIST_Y + 81 + 2 });
+    expect(PLATE_W).toBe(200);
+    expect(PLATE_H).toBe(81);
+  });
+
+  it('locker window sits at x=-1 below the character preview', () => {
+    expect(LOCKER_X).toBe(-1);
+  });
+
+  it('mouse wheel cycles pages over the item list, wrapping modulo (OG OnMouseWheel)', () => {
+    (globalThis as any).window ??= {};
+    const stage = new CashShopStage(null) as any;
+    const items = Array.from({ length: 25 }, (_, i) => ({ sn: i, itemId: 1702000 }));
+    stage._getCurrentPageItems = () => items; // 25 items → 3 pages
+    stage.onMouseWheel(LIST_X + 100, LIST_Y + 100, 120);
+    expect(stage._page).toBe(1);
+    stage.onMouseWheel(LIST_X + 100, LIST_Y + 100, -120);
+    expect(stage._page).toBe(0);
+    // wraps at both bounds (modulo cycling)
+    stage.onMouseWheel(LIST_X + 100, LIST_Y + 100, -120);
+    expect(stage._page).toBe(2);
+    stage.onMouseWheel(LIST_X + 100, LIST_Y + 100, 120);
+    stage.onMouseWheel(LIST_X + 100, LIST_Y + 100, 120);
+    expect(stage._page).toBe(1);
+    // wheel outside the list area is ignored
+    stage.onMouseWheel(50, 50, 120);
+    expect(stage._page).toBe(1);
+  });
+
+  it('one-a-day prev-items grid uses the 2-column main-list plate geometry', () => {
+    const { stage } = (() => {
+      const s = new CashShopStage(null) as any;
+      s.game = { session: { send: () => {} } };
+      return { stage: s };
+    })();
+    stage._activeTab = 1; // OG: OneADay lives on category 1 sub-category 2
+    stage._subCategory = 2;
+    stage._oneADayActive = true;
+    stage._oneADayItemSN = 1;
+    stage._commodities = [];
+    stage._oneADayPrevItems = [
+      { sn: 11, date: 0 }, { sn: 12, date: 0 },
+      { sn: 13, date: 0 }, { sn: 14, date: 0 },
+    ];
+    // Cell index 3 → col 1 / row 1: left=LIST_X+206+2, top=LIST_Y+81+2
+    stage.onMouseButton(LIST_X + 206 + 2 + 10, LIST_Y + 81 + 2 + 10, true, 0);
+    expect(stage._oneADaySelected).toBe(3);
+    // Just outside plate 1's right edge → no selection change
+    stage.onMouseButton(LIST_X + 206 + 2 + PLATE_W + 5, LIST_Y + 81 + 2 + 10, true, 0);
+    expect(stage._oneADaySelected).toBe(3);
   });
 });
 
@@ -474,6 +532,338 @@ describe('CashShopStage ProcessBuy routing (OG CCashShop::ProcessBuy @0x4936B0)'
       stage.RemoveWish = (sn: number) => { removed = sn; };
       stage.onMouseButton(275 + 206 + 199, 95 + 2 + 10, true, 0);
       expect(removed).toBe(30000002);
+    });
+
+    it('gifting a package (itemId/10000==910) sends the package-gift sub-action 33', () => {
+      const stage = makeGatedStage();
+      const sent: any[] = [];
+      stage.game.session.send = (pkt: any) => sent.push(pkt);
+      stage._giftItem = comm({ sn: 30000001, itemId: 9100000 });
+      stage._giftReceiver = 'MapleFriend';
+      stage._executeGift();
+      expect(sent.length).toBe(1);
+      // after the 2-byte opcode header comes the sub-action byte (33)
+      const body: Uint8Array = sent[0]._buffer;
+      expect(body[2]).toBe(33);
+    });
+
+    it('gifting a normal item keeps the bulk-gift sub-action 4', () => {
+      const stage = makeGatedStage();
+      const calls: string[] = [];
+      stage.game.session.send = (pkt: any) => { calls.push(String(pkt)); };
+      stage._giftItem = comm({ sn: 30000001 });
+      stage._giftReceiver = 'MapleFriend';
+      stage._executeGift();
+      expect(calls.length).toBe(1);
+    });
+
+    it('shortcut-help button opens on cat-8/sub-0 and Escape closes the modal', () => {
+      const stage = makeGatedStage();
+      stage._activeTab = 8;
+      stage._subCategory = 0;
+      // click the shortcut button at list-relative (150,380)
+      expect(stage._handleShortcutHelpClick(LIST_X + 160, LIST_Y + 390)).toBe(true);
+      expect(stage._shortcutHelpVisible).toBe(true);
+      // modal swallows other clicks; close button at dialog-relative (130,328)
+      expect(stage._handleShortcutHelpClick(LIST_X, LIST_Y)).toBe(true);
+      const cx = Math.floor((800 - 260) / 2) + 130;
+      const cy = Math.floor((600 - 356) / 2) + 328;
+      expect(stage._handleShortcutHelpClick(cx + 5, cy + 5)).toBe(true);
+      expect(stage._shortcutHelpVisible).toBe(false);
+      // inactive on other tabs
+      stage._activeTab = 3;
+      expect(stage._handleShortcutHelpClick(LIST_X + 160, LIST_Y + 390)).toBe(false);
+    });
+
+    describe('tab switching (OG OnChangedCategory @0x47E560)', () => {
+      it('SetCategory resets sub, page, plate and search state', () => {
+        const stage = makeGatedStage();
+        stage._activeTab = 3;
+        stage._subCategory = 5;
+        stage._page = 2;
+        stage._selectedPlate = 4;
+        stage._searchResults = [comm()];
+        stage.SetCategory(6);
+        expect(stage._activeTab).toBe(6);
+        expect(stage._subCategory).toBe(0);
+        expect(stage._page).toBe(0);
+        expect(stage._selectedPlate).toBe(-1);
+        expect(stage._searchResults).toBeNull();
+      });
+
+      it('number keys map to categories 1-8 directly (OG VK 1..9); initial tab is 1', () => {
+        const stage = makeGatedStage();
+        expect(stage._activeTab).toBe(1); // OG Init m_nCurCategory=1
+        stage.onKeyPress('3');
+        expect(stage._activeTab).toBe(3);
+        expect(stage._subCategory).toBe(0);
+        stage.onKeyPress('8');
+        expect(stage._activeTab).toBe(8);
+      });
+
+      it('PageUp/PageDown cycle pages with modulo wrap', () => {
+        const stage = makeGatedStage();
+        const items = Array.from({ length: 25 }, (_, i) => ({ sn: i }));
+        stage._getCurrentPageItems = () => items as any; // 3 pages
+        stage.onKeyPress('PageDown');
+        expect(stage._page).toBe(1);
+        stage.onKeyPress('PageUp');
+        expect(stage._page).toBe(0);
+        stage.onKeyPress('PageUp');
+        expect(stage._page).toBe(2); // wraps to last
+        stage.onKeyPress('PageDown');
+        expect(stage._page).toBe(0);
+      });
+
+      it('one-a-day window opens on category 1 sub-category 2 only (OG m_bIsOneADay)', () => {
+        const stage = makeGatedStage();
+        stage.SetCategory(1);
+        expect(stage._oneADayActive).toBe(false);
+        stage._setSubCategory(2);
+        expect(stage._oneADayActive).toBe(true);
+        stage.SetCategory(3); // any other category tears it down
+        expect(stage._oneADayActive).toBe(false);
+        // key '9' reaches the wishlist page too
+        stage.onKeyPress('9');
+        expect(stage._activeTab).toBe(9);
+      });
+
+      it('category 9 renders the wishlist as plates', () => {
+        const stage = makeGatedStage();
+        stage._activeTab = 9;
+        stage._wishlist = [30000001, 0, 30000002, 0, 0, 0, 0, 0, 0, 0];
+        stage._commodities = [comm({ sn: 30000001 }), comm({ sn: 30000002 })];
+        const page = stage._getCurrentPageItems();
+        expect(page.map((c: any) => c.sn)).toEqual([30000001, 30000002]);
+        // wish toggle on the wishlist page removes the entry
+        let removed: number | null = null;
+        stage.RemoveWish = (sn: number) => { removed = sn; };
+        stage.onMouseButton(LIST_X + PLATE_W - 40 + 10, LIST_Y + 2 + 10, true, 0);
+        expect(removed).toBe(30000001);
+      });
+
+      it('search results become virtual category 10 and cancel returns to category 1', () => {
+        const stage = makeGatedStage();
+        stage._activeTab = 1;
+        stage._searchActive = true;
+        stage._searchQuery = 'cape';
+        stage._commodities = [comm({ name: 'Red Cape' }), comm({ name: 'Blue Shoe' })];
+        stage.onKeyPress('Enter'); // executes the search
+        expect(stage._activeTab).toBe(10);
+        expect(stage._getCurrentPageItems().map((c: any) => c.name)).toEqual(['Red Cape']);
+        // re-open the search field, then Escape leaves the results view
+        stage._searchActive = true;
+        stage.onKeyPress('Escape');
+        expect(stage._activeTab).toBe(1);
+        expect(stage._searchResults).toBeNull();
+      });
+
+      it('arrow keys move plate focus on the 2-column grid (OG OnKeyRet)', () => {
+        const stage = makeGatedStage();
+        const items = Array.from({ length: 10 }, (_, i) => comm({ sn: 30000000 + i }));
+        stage._activeTab = 3;
+        stage._commodities = items;
+        stage._focusedPlate = 0;
+        stage.onKeyPress('ArrowDown');
+        expect(stage._focusedPlate).toBe(2); // down one row
+        stage.onKeyPress('ArrowRight');
+        expect(stage._focusedPlate).toBe(3); // left col → right col
+        stage.onKeyPress('ArrowUp');
+        expect(stage._focusedPlate).toBe(1);
+        stage.onKeyPress('ArrowUp');
+        expect(stage._focusedPlate).toBe(9); // wraps to bottom row
+      });
+
+      it('Enter wears the focused item and enters button mode; Esc exits', () => {
+        const stage = makeGatedStage();
+        stage._initialLook = {
+          gender: 0, skin: 0, face: 20000, hair: 30000,
+          hairEquip: new Map(), unseenEquip: new Map(), weaponStickerId: 0, petIds: [0, 0, 0],
+        };
+        stage._charLook = { SetAvatar: () => {}, RebuildDisplay: () => {} };
+        stage._activeTab = 3;
+        stage._commodities = [comm({ sn: 30000001, itemId: 1070000 })];
+        stage._page = 0;
+        stage._focusedPlate = 0;
+        stage._buttonFocus = -1;
+        stage.onKeyPress('Enter');
+        expect(stage._wearInfo.get(7)?.itemId).toBe(1070000);
+        expect(stage._buttonFocus).toBe(0);
+        stage.onKeyPress('ArrowRight'); // cycle to Gift
+        expect(stage._buttonFocus).toBe(1);
+        stage.onKeyPress('Escape');
+        expect(stage._buttonFocus).toBe(-1);
+      });
+
+      it('search price band filters results (CSItemSearch/Price model)', () => {
+        const stage = makeGatedStage();
+        stage._searchActive = true;
+        stage._searchQuery = 'cape';
+        stage._searchPriceBands = [{ low: 0, high: 1000 }, { low: 1000, high: 5000 }];
+        stage._searchBandIndex = 0; // 0..1000
+        stage._commodities = [
+          comm({ name: 'Red Cape', price: 500, discountRate: 0 }),
+          comm({ name: 'Blue Cape', price: 3000, discountRate: 0 }),
+        ];
+        stage._executeSearch();
+        expect(stage._activeTab).toBe(10);
+        expect(stage._getCurrentPageItems().map((c: any) => c.name)).toEqual(['Red Cape']);
+        // switching bands re-filters on the next search
+        stage._searchActive = true;
+        stage._cycleSearchBand(1); // → band 1
+        expect(stage._searchBandIndex).toBe(1);
+        stage._executeSearch();
+        expect(stage._getCurrentPageItems().map((c: any) => c.name)).toEqual(['Blue Cape']);
+      });
+
+      it('coupon dialog modal: OK sends the coupon, Cancel clears', () => {
+        const stage = makeGatedStage();
+        const sent: string[] = [];
+        stage.game.session.send = (pkt: any) => sent.push(String(pkt));
+        stage._couponVisible = true;
+        stage._couponValue = 'GEMS123';
+        // outside clicks are swallowed by the modal
+        expect(stage._handleCouponClick(10, 10)).toBe(true);
+        expect(stage._couponVisible).toBe(true);
+        // OK button (dialog-relative 40..104 in the bottom row)
+        const r = stage._couponRect();
+        stage._handleCouponClick(r.x + 50, r.y + r.h - 16);
+        expect(sent.length).toBe(1);
+        expect(stage._couponVisible).toBe(false);
+      });
+
+    it('one-a-day direct buy releases the pending gate when a dialog opens', () => {
+      const stage = makeGatedStage();
+      stage._buyPending = false;
+      // _processBuy that routes to a dialog must not leave the gate stuck
+      stage._processBuy({ itemId: 1112001, sn: 4 });
+      expect(stage._activeDialog).toBe('coupleName');
+      stage._activeDialog = 'none';
+    });
+
+    it('gift dialog state buttons: Guild→2, Buddy→1, Hide→0 (CUISendGifts)', () => {
+      const stage = makeGatedStage();
+      stage._activeTab = 3;
+      stage._commodities = [comm({ sn: 30000001 })];
+      // open the dialog via the Gift button on plate 0
+      stage.onMouseButton(LIST_X + PLATE_W - 40 + 10, LIST_Y + 2 + 35, true, 0);
+      expect(stage._giftVisible).toBe(true);
+      expect(stage._giftState).toBe(0); // manual entry default
+      const dlgX = Math.floor((800 - 473) / 2);
+      const dlgY = Math.floor((600 - 169) / 2);
+      const btnY = dlgY + 139;
+      stage.onMouseButton(dlgX + 70, btnY + 8, true, 0);   // Guild
+      expect(stage._giftState).toBe(2);
+      stage.onMouseButton(dlgX + 120, btnY + 8, true, 0);  // Buddy
+      expect(stage._giftState).toBe(1);
+      // buddy list renders names and click-selects into the receiver field
+      stage.buddyNames = ['Alpha', 'Beta'];
+      stage.onMouseButton(dlgX + 350, dlgY + 48, true, 0); // first list row
+      expect(stage._giftListSelected).toBe(0);
+      expect(stage._giftReceiver).toBe('Alpha');
+      stage.onMouseButton(dlgX + 445, btnY + 8, true, 0);  // Hide → manual
+      expect(stage._giftState).toBe(0);
+    });
+
+    it('gift receiver must be 4-12 chars (OG SetRet @0x79A4C0)', () => {
+      const stage = makeGatedStage();
+      let sent = 0;
+      stage.game.session.send = () => { sent++; };
+      stage._giftItem = comm({ sn: 30000001 });
+      stage._giftReceiver = 'Ab';
+      stage._executeGift();
+      expect(sent).toBe(0);
+      expect(stage._statusMessage).toContain('4-12');
+      stage._giftReceiver = 'ValidName';
+      stage._executeGift();
+      expect(sent).toBe(1);
+    });
+    });
+
+    describe('character preview try-on (CCSWnd_Char OnWear @0x4C5A60)', () => {
+      function makePreviewStage() {
+        const stage = makeGatedStage();
+        stage._initialLook = {
+          gender: 0, skin: 0, face: 20000, hair: 30000,
+          hairEquip: new Map([[1, 1000000], [5, 1040000], [10, 1302000]]),
+          unseenEquip: new Map(), weaponStickerId: 0, petIds: [0, 0, 0],
+        };
+        stage._charLook = { SetAvatar: () => {}, RebuildDisplay: () => {} };
+        return stage;
+      }
+
+      it('body part table maps equip ranges (OG get_bodypart_from_item)', () => {
+        const stage = makeGatedStage();
+        expect(stage._bodyPartFromItem(1002357)).toBe(1);  // hat
+        expect(stage._bodyPartFromItem(1050000)).toBe(5);  // overall
+        expect(stage._bodyPartFromItem(1070000)).toBe(7);  // shoes
+        expect(stage._bodyPartFromItem(1092000)).toBe(10); // weapon
+        expect(stage._bodyPartFromItem(1112000)).toBe(12); // ring
+        expect(stage._bodyPartFromItem(1702000)).toBe(-1); // cash weapon → sticker path
+      });
+
+      it('wearing a commodity overlays the slot; clicking again toggles off', () => {
+        const stage = makePreviewStage();
+        const applied: any[] = [];
+        stage._charLook.SetAvatar = (look: any) => { applied.push(look); };
+        stage.WearCommodity(comm({ sn: 30000001, itemId: 1070000 })); // shoes
+        expect(stage._wearInfo.get(7)?.itemId).toBe(1070000);
+        expect(applied[applied.length - 1].hairEquip.get(7)).toBe(1070000);
+        // base look preserved underneath
+        expect(applied[applied.length - 1].hairEquip.get(1)).toBe(1000000);
+        stage.WearCommodity(comm({ sn: 30000001, itemId: 1070000 }));
+        expect(stage._wearInfo.has(7)).toBe(false);
+      });
+
+      it('overall/pants exclusivity: wearing an overall clears pants and vice versa', () => {
+        const stage = makePreviewStage();
+        stage.WearCommodity(comm({ itemId: 1060000 })); // pants → slot 6
+        expect(stage._wearInfo.get(6)?.itemId).toBe(1060000);
+        stage.WearCommodity(comm({ itemId: 1050000 })); // overall → slot 5, clears 6
+        expect(stage._wearInfo.get(5)?.itemId).toBe(1050000);
+        expect(stage._wearInfo.has(6)).toBe(false);
+        stage.WearCommodity(comm({ itemId: 1060001 })); // pants clears overall
+        expect(stage._wearInfo.has(5)).toBe(false);
+        expect(stage._wearInfo.get(6)?.itemId).toBe(1060001);
+      });
+
+      it('cash weapons ride the sticker slot (bp 11 → weaponStickerId)', () => {
+        const stage = makePreviewStage();
+        let applied: any = null;
+        stage._charLook.SetAvatar = (look: any) => { applied = look; };
+        stage.WearCommodity(comm({ itemId: 1702000 })); // /100000==17 → sticker
+        expect(stage._wearInfo.get(11)?.itemId).toBe(1702000);
+        expect(applied.weaponStickerId).toBe(1702000);
+      });
+
+      it('gender mismatch rejects try-on', () => {
+        const stage = makePreviewStage();
+        stage._playerGender = 0; // male
+        stage.WearCommodity(comm({ itemId: 1070000, gender: 1 }));
+        expect(stage._wearInfo.size).toBe(0);
+      });
+
+      it('TakeOff/Default clear the overlay; BuyAvatar sends one packet per worn slot', () => {
+        const stage = makePreviewStage();
+        stage.WearCommodity(comm({ sn: 30000001, itemId: 1070000 }));
+        stage.WearCommodity(comm({ sn: 30000002, itemId: 1080000 }));
+        expect(stage._wearInfo.size).toBe(2);
+        const sent: number[] = [];
+        stage.game.session.send = (pkt: any) => sent.push(pkt);
+        stage._onBuyAvatar();
+        expect(sent.length).toBe(2);
+        stage._onTakeOffAvatar();
+        expect(stage._wearInfo.size).toBe(0);
+      });
+
+      it('plate selection wears the commodity on the preview', () => {
+        const stage = makePreviewStage();
+        stage._activeTab = 3;
+        stage._commodities = [comm({ sn: 30000001, itemId: 1070000 })];
+        stage.onMouseButton(275 + 50, 95 + 2 + 40, true, 0); // plate body
+        expect(stage._selectedPlate).toBe(0);
+        expect(stage._wearInfo.get(7)?.itemId).toBe(1070000);
+      });
     });
   });
 });

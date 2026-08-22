@@ -201,6 +201,7 @@ export class EquipInventory extends GamePanel implements DragTarget {
   private _petIndex = 0;
   private _petCount = 1;
   private _petShown = false;
+  private _underLayer = new Container();
   private _petSlideX = 0;
   private _petSlideTargetX = 0;
   private _petConsumeItemId = 0;
@@ -309,6 +310,22 @@ export class EquipInventory extends GamePanel implements DragTarget {
         this._petBg = this._loadSprite(opts.loader, petProp.Get('backgrnd'));
         this._petBg2 = this._loadSprite(opts.loader, petProp.Get('backgrnd2'));
         this._petBg3 = this._loadSprite(opts.loader, petProp.Get('backgrnd3'));
+      }      // Fallback probes: the whole-panel canvases under UIWindow.img/Equip
+      // (pet 151x186 / DragonEquip 143x173 / MechanicEquip 143x173).
+      if (opts.loader) {
+        const loadSingle = (imgPath: string, name: string): WzSprite | null => {
+          if (!opts.loader) return null;
+          const node = opts.uiWz?.GetItem(`${imgPath}/${name}`);
+          if (node instanceof WzCanvas) return this._loadSprite(opts.loader, node);
+          if (node instanceof WzProperty) {
+            const sub = node.Get('0');
+            if (sub instanceof WzCanvas) return this._loadSprite(opts.loader, sub);
+          }
+          return null;
+        };
+        if (!this._petBg) this._petBg = loadSingle('UIWindow.img/Equip', 'pet');
+        if (!this._dragonBg) this._dragonBg = loadSingle('UIWindow.img/Equip', 'DragonEquip');
+        if (!this._mechanicBg) this._mechanicBg = loadSingle('UIWindow.img/Equip', 'MechanicEquip');
       }
       // OG: CUIPetEquip::OnCreate loads m_pImgFontNumber from StringPool(0x50E).
       // This is the "number" property under the equip WZ path, containing digit canvases "0"-"9".
@@ -324,6 +341,10 @@ export class EquipInventory extends GamePanel implements DragTarget {
     }
     this._wzBg = this._wzNormalBg;
 
+    // Sliding sub-panels (pet/dragon/mechanic) live here � beneath the
+    // equip window's own art so they emerge from behind while sliding out.
+    this._underLayer = new Container();
+    this._root.addChild(this._underLayer);
     this._bg = new Graphics();
     if (!this._wzBg) this._rebuildBg();
     this._root.addChild(this._bg);
@@ -467,6 +488,9 @@ export class EquipInventory extends GamePanel implements DragTarget {
     }
     if (this._gradeFrame) this._root.addChild(this._gradeFrame);
     this._root.addChild(this._effectLayer);
+    // Keep the sliding sub-panels (pet/dragon/mechanic) BOTTOM-MOST so the
+    // equip window's own art covers them until they slide out from behind.
+    if (this._underLayer) this._root.addChildAt(this._underLayer, 0);
   }
 
   equip(slotKey: string, itemName: string, itemId = 0, grade = 0): void {
@@ -910,23 +934,25 @@ export class EquipInventory extends GamePanel implements DragTarget {
     return true;
   }
 
-  // OG: Dynamic SetSlotDisable conditions from CUIEquip::Draw.
-  // These override the basic "empty slot" disable and apply based on character state.
+  // OG: Dynamic SetSlotDisable conditions from CUIEquip::Draw @0x7AA560.
+  private _itemIdAtBodyPart(bp: number): number {
+    const s = SLOTS.find((s) => s.bodyPart === bp);
+    return s ? this._equipped.get(s.key)?.itemId ?? 0 : 0;
+  }
+
   private _isSlotDynamicallyDisabled(bodyPart: number): boolean {
     const job = this._jobId;
     const sub = this._subJob;
-    // Condition 1: Shield slot 10 disabled if pet class (nJob/100000==14) and no pet equipped
-    if (bodyPart === 10 && Math.floor(job / 100000) === 14) {
-      // If no pet equipped in any pet slot, disable shield
-      let petEquipped = false;
-      for (const ps of PET_SLOTS) {
-        if (this._equipped.has(ps.key)) { petEquipped = true; break; }
-      }
-      if (!petEquipped) return true;
+    // Condition 1 (Draw): two-handed weapon (/100000==14 → ids 1400000-1499999:
+    // 2H swords, pole arms, bows, crossbows, knuckles, guns) disables the SHIELD slot.
+    if (bodyPart === 11) {
+      const weaponId = this._itemIdAtBodyPart(10);
+      if (weaponId !== 0 && Math.floor(weaponId / 100000) === 14) return true;
     }
-    // Condition 2: Bottom slot 6 disabled if Aran (nJob/10000==105) and no pants equipped
-    if (bodyPart === 6 && Math.floor(job / 10000) === 105) {
-      if (!this._equipped.has('Bottom')) return true;
+    // Condition 2 (Draw): wearing an OVERALL (/10000==105) with no pants disables the pants slot.
+    if (bodyPart === 6) {
+      const topId = this._itemIdAtBodyPart(5);
+      if (topId !== 0 && Math.floor(topId / 10000) === 105) return true;
     }
     // Condition 3: Slots 18/19/20 disabled if no novice skill 1004
     if ((bodyPart === 18 || bodyPart === 19 || bodyPart === 20) && !this._hasNoviceSkill1004) {
@@ -1102,7 +1128,9 @@ export class EquipInventory extends GamePanel implements DragTarget {
 
     this._petPanel = panel;
     // OG: CUIPetEquip is a child of CUIEquip — moves with it when dragged
-    this._root.addChild(panel);
+    // Kept BELOW the equip window's own art so it emerges from behind
+    // while sliding out to x=183.
+    this._underLayer.addChild(panel);
   }
 
   private _updatePetPanel(_dt: number): void {
@@ -1110,7 +1138,8 @@ export class EquipInventory extends GamePanel implements DragTarget {
     // Slide animation — panel is child of equip, so x is relative to equip origin
     if (this._petSlideX !== this._petSlideTargetX) {
       const diff = this._petSlideTargetX - this._petSlideX;
-      const step = Math.sign(diff) * Math.min(Math.abs(diff), 12 * (_dt / 16.67));
+      // _dt is SECONDS � cross the 183px gap in ~0.3s
+      const step = Math.sign(diff) * Math.min(Math.abs(diff), 600 * _dt);
       this._petSlideX += step;
       if (Math.abs(this._petSlideTargetX - this._petSlideX) < 1) {
         this._petSlideX = this._petSlideTargetX;
@@ -1229,7 +1258,9 @@ export class EquipInventory extends GamePanel implements DragTarget {
 
     this._dragonPanel = panel;
     // OG: CUIDragonEquip is a child of CUIEquip — moves with it when dragged
-    this._root.addChild(panel);
+    // Kept BELOW the equip window's own art so it emerges from behind
+    // while sliding out to x=183.
+    this._underLayer.addChild(panel);
   }
 
   private _updateDragonPanel(_dt: number): void {
@@ -1237,7 +1268,8 @@ export class EquipInventory extends GamePanel implements DragTarget {
     // Slide animation — panel is child of equip, so x is relative to equip origin
     if (this._dragonSlideX !== this._dragonSlideTargetX) {
       const diff = this._dragonSlideTargetX - this._dragonSlideX;
-      const step = Math.sign(diff) * Math.min(Math.abs(diff), 12 * (_dt / 16.67));
+      // _dt is SECONDS � cross the 183px gap in ~0.3s
+      const step = Math.sign(diff) * Math.min(Math.abs(diff), 600 * _dt);
       this._dragonSlideX += step;
       if (Math.abs(this._dragonSlideTargetX - this._dragonSlideX) < 1) {
         this._dragonSlideX = this._dragonSlideTargetX;
@@ -1332,7 +1364,9 @@ export class EquipInventory extends GamePanel implements DragTarget {
 
     this._mechanicPanel = panel;
     // OG: CUIMechanicEquip is a child of CUIEquip — moves with it when dragged
-    this._root.addChild(panel);
+    // Kept BELOW the equip window's own art so it emerges from behind
+    // while sliding out to x=183.
+    this._underLayer.addChild(panel);
   }
 
   private _updateMechanicPanel(_dt: number): void {
@@ -1340,7 +1374,8 @@ export class EquipInventory extends GamePanel implements DragTarget {
     // Slide animation — panel is child of equip, so x is relative to equip origin
     if (this._mechanicSlideX !== this._mechanicSlideTargetX) {
       const diff = this._mechanicSlideTargetX - this._mechanicSlideX;
-      const step = Math.sign(diff) * Math.min(Math.abs(diff), 12 * (_dt / 16.67));
+      // _dt is SECONDS � cross the 183px gap in ~0.3s
+      const step = Math.sign(diff) * Math.min(Math.abs(diff), 600 * _dt);
       this._mechanicSlideX += step;
       if (Math.abs(this._mechanicSlideTargetX - this._mechanicSlideX) < 1) {
         this._mechanicSlideX = this._mechanicSlideTargetX;

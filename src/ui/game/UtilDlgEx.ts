@@ -1001,30 +1001,42 @@ export class UtilDlgEx extends GamePanel {
   // ─── Input ──────────────────────────────────────────────────────────────
   // ─── Input (OG: Layout_INPUT 0x97b1a0) ────────────────────────────────
   private _buildInputContent(multiLine: boolean): void {
-    // OG: uses CCtrlEdit/CCtrlMLEdit with WZ background from UtilDlgEx/edit
-    const label = new Text({
-      text: multiLine ? 'Text:' : 'Amount:',
-      style: this._fonts[5],
-    });
-    label.x = this.m_ctLeft;
-    label.y = this.m_ctTop;
-    this._contentLayer.addChild(label);
+    // OG: CCtrlEdit with WZ background from UtilDlgEx/edit (nested
+    // edit/{normal,disabled,...}/0 canvases). The dialog's message text is
+    // rendered above the field; input text is BLACK on the white edit box.
+    let y = this.m_ctTop;
+    for (let i = 0; i < this._lines.length; i++) {
+      const line = this._lines[i];
+      if (line.nType === 0 || line.nType === 4) {
+        const t = new Text({ text: line.sText, style: this._fonts[Math.min(line.pFont, 11)] });
+        t.x = this.m_ctLeft + line.nLeft;
+        t.y = y + (line.nTop || 0);
+        this._contentLayer.addChild(t);
+      }
+      y += line.nHeight || 18;
+    }
 
     const inputW = this.m_wndWidth - this.m_ctLeft - 8 - (multiLine ? 40 : 20);
     const inputH = multiLine ? (this.m_nInputLine || 3) * 18 : 20;
 
-    // Try loading WZ input background
+    // WZ edit background — the node is a property holding state subtrees
     let loadedWz = false;
     if (this._uiWz && this._loader) {
       const dlgProp = this._uiWz.GetItem('UIWindow2.img/UtilDlgEx');
       if (dlgProp instanceof WzProperty) {
         const editNode = dlgProp.Get(multiLine ? 'edit2' : 'edit');
-        if (editNode instanceof WzCanvas) {
-          const sprite = this._loader.Load(editNode);
+        const resolve = (n: unknown): unknown => {
+          if (!(n instanceof WzProperty)) return n;
+          return n.Get('0') ?? n.Get('normal') ?? null;
+        };
+        let canvas: unknown = resolve(editNode);
+        if (canvas instanceof WzProperty) canvas = resolve(canvas);
+        if (canvas instanceof WzCanvas) {
+          const sprite = this._loader.Load(canvas);
           if (sprite) {
             const s = sprite.ToPixi();
             s.x = this.m_ctLeft;
-            s.y = this.m_ctTop + 20;
+            s.y = y + 6;
             this._contentLayer.addChild(s);
             loadedWz = true;
           }
@@ -1032,30 +1044,31 @@ export class UtilDlgEx extends GamePanel {
       }
     }
 
-    // Fallback: generic input background
+    // Fallback: white input box with black border (OG edit is white/black)
     if (!loadedWz) {
       const inputBg = new Graphics();
-      inputBg.rect(0, 0, inputW, inputH).fill({ color: 0x10121C });
-      inputBg.rect(0, 0, inputW, inputH).stroke({ color: 0x505570, width: 1 });
+      inputBg.rect(0, 0, inputW, inputH).fill({ color: 0xFFFFFF });
+      inputBg.rect(0, 0, inputW, inputH).stroke({ color: 0x000000, width: 1 });
       inputBg.x = this.m_ctLeft;
-      inputBg.y = this.m_ctTop + 20;
+      inputBg.y = y + 6;
       this._contentLayer.addChild(inputBg);
     }
 
+    const inputStyle = new TextStyle({ fill: '#000000', fontSize: 12, fontFamily: 'Arial' });
     this._inputValue = this.m_sInputDefault;
     this._inputText = new Text({
       text: this.m_bInputStr_Passwd ? '*'.repeat(this._inputValue.length) : this._inputValue,
-      style: this._fonts[5],
+      style: inputStyle,
     });
     this._inputText.x = this.m_ctLeft + 4;
-    this._inputText.y = this.m_ctTop + 24;
+    this._inputText.y = y + 10;
     this._contentLayer.addChild(this._inputText);
 
-    // Cursor indicator
+    // Cursor indicator — black caret on the white field
     this._inputCursor = new Graphics();
-    this._inputCursor.rect(0, 0, 1, 14).fill({ color: 0xCCCCEE });
-    this._inputCursor.x = this.m_ctLeft + 4;
-    this._inputCursor.y = this.m_ctTop + 24;
+    this._inputCursor.rect(0, 0, 1, 14).fill({ color: 0x000000 });
+    this._inputCursor.x = this.m_ctLeft + 4 + this._inputText.width;
+    this._inputCursor.y = y + 10;
     this._inputCursor.visible = true;
     this._contentLayer.addChild(this._inputCursor);
   }

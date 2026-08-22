@@ -131,6 +131,7 @@ export class ItemInventory extends GamePanel implements DragTarget {
   private _newTabOther: AnimatedSprite | null = null;
   private _newTabCurrent: AnimatedSprite | null = null;
   private _newInventory: AnimatedSprite | null = null;
+  private _mesoDigits: Sprite[] = [];
   private _loader: WzTextureLoader | null = null;
   private _uiWz: WzPackage | null = null;
   private _releaseEffectNode: unknown = null;
@@ -288,6 +289,8 @@ export class ItemInventory extends GamePanel implements DragTarget {
 
     this._titleText = new Text({ text: 'Items - Equip', style: _titleStyle });
     this._titleText.x = 20; this._titleText.y = 5;
+    // OG bakes the title into backgrnd � only show the Text in the no-WZ fallback
+    this._titleText.visible = !this._wzBg1;
     this._root.addChild(this._titleText);
 
     for (let i = 0; i < 5; i++) {
@@ -408,6 +411,8 @@ export class ItemInventory extends GamePanel implements DragTarget {
 
     this._titleText = new Text({ text: `Items - ${TAB_NAMES[this._activeTab]}`, style: _titleStyle });
     this._titleText.x = 20; this._titleText.y = 5;
+    // OG bakes the title into backgrnd — only show the Text in the no-WZ fallback
+    this._titleText.visible = !this._wzBg1;
     this._root.addChild(this._titleText);
 
     for (let i = 0; i < 5; i++) {
@@ -489,7 +494,9 @@ export class ItemInventory extends GamePanel implements DragTarget {
     const bg1 = this._extended ? this._wzFullBg1 : this._wzBg1;
     const bg2 = this._extended ? this._wzFullBg2 : this._wzBg2;
     const bg3 = this._extended ? this._wzFullBg3 : this._wzBg3;
-    if (!bg1) { this._rebuildBg(); return; }
+    if (!bg1) { this._rebuildBg(); if (this._titleText) this._titleText.visible = true; return; }
+    // OG: the window title is baked into the backgrnd canvas — no drawn text
+    if (this._titleText) this._titleText.visible = false;
     // Remove fallback Graphics — WZ layers replace it
     if (this._bg.parent) this._bg.parent.removeChild(this._bg);
     // Layer 1: panel frame (bottom)

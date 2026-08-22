@@ -50,6 +50,42 @@ describe('MiniMap top-left position + render robustness', () => {
   });
 });
 
+describe('MiniMap title clipping + collapsed strip cap', () => {
+  it('long map names are truncated to fit the available strip width', () => {
+    const mm = new MiniMap(new WzTextureLoader(), null, null) as any;
+    mm._mapName = 'The Side Door That Leads To The Deep Cave of Ellinia';
+    mm._mode = 2;
+    const win = { x: 4, y: 4, width: 160, height: 18 };
+    mm._content.removeChildren();
+    mm._drawTitle(win, 64, 18);
+    const texts = mm._content.children.filter((c: any) => c.text !== undefined);
+    expect(texts.length).toBeGreaterThan(0);
+    const drawn = texts[0].text as string;
+    expect(drawn.length).toBeLessThan(mm._mapName.length);
+    expect((mm as any)._measureText(drawn)).toBeLessThanOrEqual(
+      win.width - (64 - 8) - (mm as any)._buttonsWidth() - 6,
+    );
+  });
+
+  it('collapsed strip width is capped regardless of name length', () => {
+    const mm = new MiniMap(new WzTextureLoader(), null, null) as any;
+    mm._mapName = 'An Extremely Long Map Name That Would Stretch The Strip Forever';
+    mm._mode = 2;
+    const r = mm._winRect();
+    expect(r.width).toBeLessThanOrEqual(180);
+  });
+
+  it('short names render untruncated in collapsed mode', () => {
+    const mm = new MiniMap(new WzTextureLoader(), null, null) as any;
+    mm._mapName = 'Henesys';
+    mm._mode = 2;
+    mm._content.removeChildren();
+    mm._drawTitle({ x: 4, y: 4, width: 160, height: 18 }, 64, 18);
+    const texts = mm._content.children.filter((c: any) => c.text !== undefined);
+    expect(texts[0].text).toBe('Henesys');
+  });
+});
+
 describe('MiniMap player-dot alignment (map-fits but simple huge mode)', () => {
   // map 10000-style: canvas authored at the field's native mag (4). Simple
   // type (MiniMapType 0) starts in huge mode where _mag2X = Mag-1 = 3 — the

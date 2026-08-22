@@ -1481,10 +1481,12 @@ export class GameStage extends Stage {
       this.stageDirector.push(new CashShopStage(this._uiWz));
     };
     this._item.onDropMoney = () => {
-      // OG: OnDropMoney shows CUtilDlgEx with type=2 (numeric input), max=min(money, 50000)
+      // OG OnDropMoney @0x7CBFD0: CUtilDlgEx type 2 (numeric input) with
+      // SetUtilDlgEx_INPUT_NO(10, 10, min(money,50000), 0, 10, 0);
+      // OK → SendDropMoneyRequest(input).
       const maxMeso = Math.min(this._item?.getMeso() ?? 0, 50000);
       this._utilDlg?.SetUtilDlgEx(UtilDlgType.INPUT, 0, true, false);
-      this._utilDlg?.SetUtilDlgEx_INPUT_STR(String(maxMeso), 1, maxMeso, false, 0);
+      this._utilDlg?.SetUtilDlgEx_INPUT_NO(10, 10, maxMeso, 0, 10, false);
       this._utilDlg!.onResult = (r) => {
         if (r.type === 'ok') {
           const amount = this._utilDlg!.GetInputNo_Result();
@@ -6307,8 +6309,9 @@ this._localCharId = args.characterId ?? 0;
       if (pq.state === 2 && (!rec || rec.state !== 0)) return false;   // must be completed
       if (pq.state === 1 && (!rec || rec.state !== 1)) return false;   // must be in progress
     }
+    // _item may not exist yet — NPCs can enter before _initMenu builds panels
     for (const it of req.Items) {
-      if (it.count > 0 && this._item.countItem(it.id) < it.count) return false;
+      if (it.count > 0 && this._item?.countItem(it.id) < it.count) return false;
     }
     return true;
   }
@@ -6324,7 +6327,7 @@ this._localCharId = args.characterId ?? 0;
     if (req.LvMin > 0 && lv < req.LvMin) return false;
     if (req.LvMax > 0 && lv > req.LvMax) return false;
     for (const it of req.Items) {
-      if (it.count > 0 && this._item.countItem(it.id) < it.count) return false;
+      if (it.count > 0 && this._item?.countItem(it.id) < it.count) return false;
     }
     return true;
   }

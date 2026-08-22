@@ -8,6 +8,24 @@ function makeDialog(opts: any = {}): UtilDlgEx {
   return new UtilDlgEx(opts);
 }
 
+// Text.width measurement needs a canvas 2D context; provide the minimal shim.
+function installCanvasShim(): void {
+  if ((globalThis as any).__mapleclaudeCanvasShim) return;
+  (globalThis as any).__mapleclaudeCanvasShim = true;
+  class Fake2DContext {
+    measureText(text: string) {
+      const width = String(text).length * 8;
+      return { width, actualBoundingBoxAscent: 10, actualBoundingBoxDescent: 3 };
+    }
+  }
+  const makeCanvas = (): any => ({ getContext: () => new Fake2DContext(), width: 300, height: 100 });
+  (globalThis as any).CanvasRenderingContext2D ??= class {};
+  (globalThis as any).document ??= {
+    createElement: (tag: string) => (tag === 'canvas' ? makeCanvas() : {}),
+    createElementNS: (_ns: unknown, tag: string) => (tag === 'canvas' ? makeCanvas() : {}),
+  };
+}
+installCanvasShim();
 describe('UtilDlgEx layout (IDB-verified)', () => {
   it('uses the OG GetWndWidth values', () => {
     const d = makeDialog();

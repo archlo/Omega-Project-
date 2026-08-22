@@ -2376,11 +2376,15 @@ export class GameSender {
   }
 
   /** Sub-action 20: CCashShop::SendGiftPackageRequest — gift a package to a player. */
-  static CashShopGiftPackage(receiverName: string, sn: number): OutPacket {
+  /** Sub-action 33: CCashShop::OnGiftPackage @0x4907B0 — gift a package item
+   *  (itemId/10000 == 910) to one recipient. */
+  static CashShopGiftPackage(commoditySN: number, receiverName: string, giftMessage: string): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(20);
+    p.writeByte(33);
+    p.writeString(''); // SPW
+    p.writeInt(commoditySN);
     p.writeString(receiverName);
-    p.writeInt(sn);
+    p.writeString(giftMessage);
     return p;
   }
 

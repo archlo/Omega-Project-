@@ -13,6 +13,7 @@ import { CashShopDecoder } from '../net/packet/CashShopDecoder.js';
 import { WzSound } from '../wz/WzSound.js';
 import { CharLook } from '../character/CharLook.js';
 import { AvatarCodec } from '../net/handlers/AvatarCodec.js';
+import { AvatarLook } from '../domain/AvatarLook.js';
 import { ScrollBar } from '../ui/game/ScrollBar.js';
 import type { ModifiedCommodityEntry, SetCashShopArgs } from '../domain/CashShopData.js';
 import { CashCommodityTable } from '../domain/CashCommodityTable.js';
@@ -47,15 +48,15 @@ const TAB_COUNT = 9;
 
 // Item grid (CCSWnd_List) — center, 2 columns × 5 rows = 10 plates
 // OG: CreateWnd L=275, T=95, W=412, H=430
-const LIST_X = 275;
-const LIST_Y = 95;
+export const LIST_X = 275;
+export const LIST_Y = 95;
 const LIST_W = 412;
 const LIST_H = 430;
 // OG: GetPlateRect — column offset 0xCE=206, row offset 0x51=81
-const PLATE_W = 200;
-const PLATE_H = 80;
-const PLATE_COL_W = 206; // 0xCE
-const PLATE_ROW_H = 81;  // 0x51
+export const PLATE_W = 200;
+export const PLATE_H = 81;
+export const PLATE_COL_W = 206; // 0xCE
+export const PLATE_ROW_H = 81;  // 0x51
 const PLATE_COLS = 2;
 const PLATE_ROWS = 5;
 const PLATES_PER_PAGE = PLATE_COLS * PLATE_ROWS; // 10
@@ -82,12 +83,12 @@ const SEARCH_Y = 97;
 const SEARCH_W = 89;
 const SEARCH_H = 22;
 
-// Locker (CCSWnd_Locker) — centered below character preview
-// OG: CreateWnd L=-1 (centered), T=318, W=256, H=104
+// Locker (CCSWnd_Locker) — left column, below character preview
+// OG: CreateWnd L=-1, T=318, W=256, H=104
+export const LOCKER_X = -1;
 const LOCKER_W = 256;
 const LOCKER_H = 104;
 const LOCKER_Y = 318;
-const LOCKER_X = Math.floor((CS_W - LOCKER_W) / 2); // centered
 const LOCKER_CELL = 32;
 const LOCKER_COL_STEP = 35; // 0x23
 const LOCKER_COLS = 6;
@@ -99,10 +100,15 @@ const INV_X = 0;
 const INV_Y = 426;
 const INV_W = 246;
 const INV_H = 163;
-const INV_CELL = 35;
+const INV_CELL = 32;      // cells are 32x32 inside the 35px pitch
 const INV_COL_STEP = 35;
 const INV_COLS = 4;
 const INV_ROWS = 3;
+// Vertical tab control on the LEFT edge (args 4,17,28,156)
+const INV_TAB_X = 4;
+const INV_TAB_Y = 17;
+const INV_TAB_W = 28;
+const INV_TAB_H = 156;
 
 // Text colors used for server-backed values and OG text overlays.
 const COL_BG = 0x0E1226;
@@ -117,6 +123,8 @@ const COL_TEXT_WHITE = 0xFFFFFF;
 const COL_TEXT_DIM = 0xA0A5BE;
 const COL_TEXT_GOLD = 0xDCC868;
 const COL_TEXT_GREEN = 0x9FE0A0;
+// Red-violet price font for commodities in the [80000000..89999999] SN window
+const COL_PRICE_RANDOM = 0xCC44AA;
 const COL_SEPARATOR = 0x373C5F;
 
 interface CashCommodity {
@@ -175,7 +183,10 @@ export class CashShopStage extends Stage {
   private _zeroGoods: Array<{ startSN: number; endSN: number; eventSN: number; condition: number; dateStart: number; dateEnd: number; hourStart: number; hourEnd: number; weekdays: number[] }> = [];
 
   // ── UI state ──
-  private _activeTab = 0;
+  // OG CCashShop::Init @0x484920 — m_nCurCategory starts at 1
+  private _activeTab = 1;
+  // OG m_bIsOneADay — the OneADay window opens on category 1 / sub-category 2
+  private _oneADayActive = false;
   private _page = 0;
   // OG m_nCurCategorySub — sub-category within the active tab (Category.img row)
   private _subCategory = 0;
@@ -187,9 +198,19 @@ export class CashShopStage extends Stage {
   private _cashShopAuthorized = false;
   private _statusMessage = '';
   private _couponVisible = false;
+  // OG CCouponUseSelectDlg::OnCreate @0x48C810 — UIWindow2.img/Coupon chrome,
+  // edit field at (12,53) 200x15, BtOK/BtCancle buttons.
+  private _couponBg: WzSprite | null = null;
+  private _couponOk: WzSprite | null = null;
+  private _couponCancel: WzSprite | null = null;
+  // OG CCSWnd_List shortcut-help button (id 4000, list-relative (150,380),
+  // shown on category 8 sub 0) + its modal (close button at (130,328))
+  private _shortcutHelpVisible = false;
   private _couponValue = '';
   private _selectedPlate = -1;
   private _focusedPlate = -1;
+  // OG m_nButtonFocus — when ≥0 the plate's Buy/Gift/Wish buttons hold key focus
+  private _buttonFocus = -1;
   private _buyPending = false;
   private _playerLevel = 1;
   private _playerJob = 0;
@@ -211,6 +232,10 @@ export class CashShopStage extends Stage {
 
   // ── Character preview ──
   private _charLook: CharLook | null = null;
+  // OG CCSWnd_Char try-on state: m_avatarLookInitial (server look snapshot)
+  // and m_aWearInfo[60] — body part → tried-on {itemId, sn}.
+  private _initialLook: AvatarLook | null = null;
+  private _wearInfo = new Map<number, { itemId: number; sn: number }>();
   private _charWz: WzPackage | null = null;
   private _itemWz: WzPackage | null = null;
   private _baseWz: WzPackage | null = null;
@@ -232,6 +257,20 @@ export class CashShopStage extends Stage {
   private _giftReceiver = '';
   private _giftMessage = '';
   private _giftEditingField: 0 | 1 | 2 = 0; // 0=none, 1=receiver, 2=message
+  // OG CUISendGifts::SetState @0x79F030 — 0=manual entry, 1=buddy list, 2=guild
+  private _giftState: 0 | 1 | 2 = 0;
+  private _giftListSelected = -1;
+  /** Recipient name providers (wire from GameStage buddy/guild data). */
+  buddyNames: string[] = [];
+  guildNames: string[] = [];
+
+  /** OG CUISendGifts::OnButtonClicked — id1003→state1, id1004→state2,
+   *  id1005 (BtHide)→state0. */
+  private _setGiftState(state: 0 | 1 | 2): void {
+    if (this._giftState === state) return;
+    this._giftState = state;
+    this._giftListSelected = -1;
+  }
 
   // ── Inventory click state ──
   private _selectedInvCell = -1;
@@ -247,6 +286,7 @@ export class CashShopStage extends Stage {
   // ── Locker state ──
   private _lockerItems: { sn: number; itemId: number; name: string }[] = [];
   private _lockerScroll = 0;
+  private _selectedLockerCell = -1;
   private _cashInventoryItems: { sn: number; itemId: number; count: number }[] = [];
   private _wishlist: number[] = new Array(10).fill(0);
   private _giftRecords = new Uint8Array(0);
@@ -328,6 +368,7 @@ export class CashShopStage extends Stage {
   private _btGiftOver: WzSprite | null = null;
   private _btWish: WzSprite | null = null;
   private _btWishOver: WzSprite | null = null;
+  private _shortcutHelpBg: WzSprite | null = null;
 
   // Locker buttons
   private _btRebate: WzSprite | null = null;
@@ -341,6 +382,14 @@ export class CashShopStage extends Stage {
   // UI/OneADay.img/CSOneADay assets.
   private _oneADayBase: WzSprite | null = null;
   private _oneADayItemBox: WzSprite | null = null;
+  // OG OneADay big-plate canvas (SP 0x16A5) + countdown digit glyphs (SP 0x16A7)
+  private _oneADayPlateBig: WzSprite | null = null;
+  private _oneADayDigits: (WzSprite | null)[] = new Array(10).fill(null);
+  // OG keyFocus plate overlay (SP 0x4EA) for the keyboard-focused plate
+  private _plateStateFocus: WzSprite | null = null;
+  // Price-band table from UI/CashShop.img/CSItemSearch/Price ({i}: {0}=low {1}=high)
+  private _searchPriceBands: Array<{ low: number; high: number }> = [];
+  private _searchBandIndex = -1; // -1 = all
   private _oneADayBuy: WzSprite | null = null;
   private _oneADayGift: WzSprite | null = null;
 
@@ -357,6 +406,9 @@ export class CashShopStage extends Stage {
   private _effectHot: WzSprite | null = null;
   private _effectNew: WzSprite | null = null;
   private _effectSale: WzSprite | null = null;
+
+  // Optional Best-panel event banner (replaces entry index 4 when present)
+  private _bestEventBanner: WzSprite | null = null;
 
   // Discount digits 0-9 + bonus/line/arrow/backgrnd/total
   private _discountDigits: (WzSprite | null)[] = new Array(10).fill(null);
@@ -825,8 +877,117 @@ export class CashShopStage extends Stage {
       this._charLook = new CharLook(stat.skin);
       this._charLook.Load(this._charWz, this._itemWz, this._baseWz, this._loader);
     }
+    // OG m_avatarLookInitial — snapshot for try-on restore (OnTakeOff/OnDefaultAvatar)
+    this._initialLook = AvatarCodec.FromCharacterData(stat, data.equipped, data.equippedCash);
+    this._wearInfo.clear();
     this._charLook.SetAvatar(look);
     this._charLook.StartAction('stand1');
+  }
+
+  /** OG get_bodypart_from_item @0x46FBE0 — equip itemId → avatar body part. */
+  private _bodyPartFromItem(itemId: number): number {
+    const cat = Math.floor(itemId / 10000);
+    switch (cat) {
+      case 100: return 1;   // hat
+      case 101: return 2;   // face accessory
+      case 102: return 3;   // eye accessory
+      case 103: return 4;   // earrings
+      case 104:
+      case 105: return 5;   // top / overall
+      case 106: return 6;   // pants
+      case 107: return 7;   // shoes
+      case 108: return 8;   // gloves
+      case 110: return 9;   // cape
+      case 109:
+      case 119:
+      case 134: return 10;  // weapon
+      case 111: return 12;  // ring
+      case 112: return 17;  // pendant
+      case 113: return 50;  // belt
+      case 114: return 49;  // medal
+      case 115: return 51;  // shoulder
+      default: return -1;
+    }
+  }
+
+  /** OG CCSWnd_List::WearCommodity @0x4C85E0 → CCashShop::OnWear @0x4C5A60 —
+   *  dress the preview character in the commodity (toggle off when the same
+   *  item is clicked again). */
+  WearCommodity(comm: CashCommodity | null): void {
+    if (!comm || !this._initialLook || !this._charLook) return;
+    const itemId = comm.itemId;
+    if (itemId === 0) return;
+    // OG: cash weapon sticker (/100000==17) rides slot 11; /100000==16 rejected
+    const isWeaponSticker = Math.floor(itemId / 100000) === 17;
+    if (!isWeaponSticker && Math.floor(itemId / 100000) === 16) return;
+    const bp = isWeaponSticker ? 11 : this._bodyPartFromItem(itemId);
+    if (bp < 0) return;
+    // gender gate (GetCommodityGender != -1/2/self)
+    if (!(comm.gender === -1 || comm.gender === 2 || comm.gender === this._playerGender)) return;
+
+    // Toggle: same item worn again → take it off
+    const worn = this._wearInfo.get(bp);
+    if (worn && worn.itemId === itemId) {
+      this._wearInfo.delete(bp);
+    } else {
+      // Overall/pants exclusivity (wearing /10000==105 clears pants, and back)
+      if (bp === 5 && Math.floor(itemId / 10000) === 105) this._wearInfo.delete(6);
+      if (bp === 6) {
+        const top = this._wearInfo.get(5);
+        if (top && Math.floor(top.itemId / 10000) === 105) this._wearInfo.delete(5);
+      }
+      this._wearInfo.set(bp, { itemId, sn: comm.sn });
+    }
+    this._applyWearInfo();
+  }
+
+  /** Rebuild the preview look from the initial snapshot + try-on overlay. */
+  private _applyWearInfo(): void {
+    if (!this._initialLook || !this._charLook) return;
+    const look = new AvatarLook();
+    look.gender = this._initialLook.gender;
+    look.skin = this._initialLook.skin;
+    look.face = this._initialLook.face;
+    look.hair = this._initialLook.hair;
+    look.petIds = [...this._initialLook.petIds];
+    look.weaponStickerId = this._initialLook.weaponStickerId;
+    for (const [slot, id] of this._initialLook.hairEquip) look.hairEquip.set(slot, id);
+    for (const [bp, w] of this._wearInfo) {
+      if (bp === 11) {
+        look.weaponStickerId = w.itemId;
+      } else {
+        look.hairEquip.set(bp, w.itemId);
+      }
+    }
+    this._charLook.SetAvatar(look);
+    this._charLook.RebuildDisplay();
+  }
+
+  /** OG CCashShop::OnTakeOff — clear every tried-on item (no packet). */
+  private _onTakeOffAvatar(): void {
+    if (!this._initialLook || !this._charLook) return;
+    this._wearInfo.clear();
+    this._applyWearInfo();
+    this._statusMessage = 'Removed all items from your avatar.';
+  }
+
+  /** OG CCashShop::OnDefaultAvatar — restore the server-equipped look. */
+  private _onDefaultAvatar(): void {
+    this._onTakeOffAvatar();
+    this._statusMessage = 'Avatar restored to default.';
+  }
+
+  /** OG CCashShop::OnBuyAvatar @0x48D030 — buy every tried-on item that
+   *  differs from the initial look (one buy packet per changed slot). */
+  private _onBuyAvatar(): void {
+    if (!this.game) return;
+    if (!this._cashShopAuthorized) { this._statusMessage = 'Not authorized for Cash Shop.'; return; }
+    let count = 0;
+    for (const [, w] of this._wearInfo) {
+      this.game.session.send(GameSender.CashShopBuy(w.sn));
+      count++;
+    }
+    this._statusMessage = count > 0 ? `Buying ${count} avatar item(s)...` : 'No avatar items selected.';
   }
 
   private _buildStaticLayer(): void {
@@ -1051,13 +1212,15 @@ export class CashShopStage extends Stage {
     this._drawCharacterPreview();
     this._drawTabBar();
     this._drawSubCategoryBar();
-    if (this._activeTab === 8 && this._oneADayItemSN > 0) this._drawOneADay();
+    if (this._oneADayActive && this._oneADayItemSN > 0) this._drawOneADay();
     else this._drawItemGrid();
+    this._drawShortcutHelp();
     this._drawBestPanel();
     this._drawLockerPanel();
     this._drawInventoryPanel();
     this._drawStatusBar();
     this._drawSearchButton();
+    this._drawCouponDialog();
     this._drawStatusMessage();
     if (this._giftVisible) this._drawGiftDialog();
     if (this._yesNoVisible) this._drawYesNoDialog();
@@ -1103,19 +1266,26 @@ export class CashShopStage extends Stage {
       this._root.addChild(container);
     }
 
-    // PreviewOnOff toggle button
-    const toggleY = CHAR_Y + 4;
-    const toggleX = CHAR_X + CHAR_W - 36;
+    // PreviewOnOff toggle button — OG SetUserPreviewControl layers:
+    // UserCtrlOn at (130,120), UserCtrlOff at (119,17), char-window relative.
     const previewToggle = this._previewEnabled ? this._previewOn : this._previewOff;
-    if (previewToggle) this._drawWzSprite(previewToggle, toggleX, toggleY);
+    if (previewToggle) {
+      const tx = this._previewEnabled ? CHAR_X + 130 : CHAR_X + 119;
+      const ty = this._previewEnabled ? CHAR_Y + 120 : CHAR_Y + 17;
+      this._drawWzSprite(previewToggle, tx, ty);
+    }
 
     const avatarButtons = [
-      [this._btBuyAvatar, 17],
-      [this._btDefaultAvatar, 101],
-      [this._btTakeoffAvatar, 187],
+      [this._btBuyAvatar, 17, 83, 'btBuyAvatar'],
+      [this._btDefaultAvatar, 101, 83, 'btDefaultAvatar'],
+      [this._btTakeoffAvatar, 187, 55, 'btTakeoffAvatar'],
     ] as const;
-    for (const [sprite, x] of avatarButtons) {
+    for (const [sprite, x, w, hoverKey] of avatarButtons) {
       if (sprite) this._drawWzSprite(sprite, CHAR_X + x, CHAR_Y + 237);
+      // OG CCtrlButton mouseOver highlight
+      if (this._hoveredBtn === hoverKey) {
+        this._g.rect(CHAR_X + x, CHAR_Y + 236, w, 20).stroke({ color: COL_TEXT_GOLD, width: 1 });
+      }
     }
   }
 
@@ -1183,12 +1353,13 @@ export class CashShopStage extends Stage {
       }
     }
 
-    // Exit button
+    // Exit button (BtExit id 1003 sits at y offset +15)
     const exitX = STATUS_X + 378;
+    const exitY = STATUS_Y + 15;
     const exitHovered = this._hoveredBtn === 'exit';
     const exitSprite = exitHovered ? (this._btExitOver ?? this._btExit) : this._btExit;
     if (exitSprite) {
-      this._drawWzSprite(exitSprite, exitX, btnY);
+      this._drawWzSprite(exitSprite, exitX, exitY);
     }
   }
 
@@ -1198,18 +1369,36 @@ export class CashShopStage extends Stage {
   // Each tab has a pre-rendered WZ canvas from CSTab/Tab/1-9
   private _drawTabBar(): void {
     // Each CSTab/Tab/N canvas is the complete 508x78 selector for category N.
-    // The OG client draws one canvas, not nine overlaid tab fragments.
-    const tabSprite = this._tabSprites[this._activeTab];
-    if (tabSprite) this._drawWzSprite(tabSprite, TAB_X, TAB_Y);
+    // The OG client draws one canvas blit at (2,0) inside the tab window,
+    // not nine overlaid tab fragments. Canvas index map (CCSWnd_Tab::Draw):
+    // category 8 and 10 → canvas 1, category 9 → canvas 9, else category+1.
+    let idx: number;
+    if (this._activeTab === 8 || this._activeTab === 10) idx = 0;
+    else if (this._activeTab === 9) idx = 8;
+    else idx = this._activeTab;
+    const tabSprite = this._tabSprites[idx];
+    if (tabSprite) this._drawWzSprite(tabSprite, TAB_X + 2, TAB_Y);
   }
 
   // ── Item grid (CCSWnd_List) — CENTER, 2 columns × 5 rows ──
   // OG: L=275, T=95, W=412, H=430
   // 10 PICTURE_PLATE entries with (nX, nY, sUOL)
   // Each plate: 64×64 item icon area + name + price
+  /** OG CCSWnd_List::GetPlateRect(n): left=206*(n%2), top=81*(n/2)+2;
+   *  plate is 200x81 (pitch 206x81, 2 cols × 5 rows). */
+  _getPlateRect(n: number): { left: number; top: number } {
+    return {
+      left: LIST_X + PLATE_COL_W * (n % PLATE_COLS),
+      top: LIST_Y + PLATE_ROW_H * Math.floor(n / PLATE_COLS) + 2,
+    };
+  }
+
   private _drawItemGrid(): void {
     const items = this._searchResults ?? this._getCurrentPageItems();
     const offset = this._page * PLATES_PER_PAGE;
+
+    // OG: white background strip behind the plates
+    this._g.rect(LIST_X, LIST_Y, LIST_W, 410).fill({ color: 0xFFFFFF });
 
     // OG: PicturePlate/NoItem — empty page placeholder (406×242)
     if (items.length === 0 && !this._searchResults && this._noItemImage) {
@@ -1238,7 +1427,7 @@ export class CashShopStage extends Stage {
 
           // Keyboard focus indicator — dotted border around focused plate
           if (isFocused && !isSelected) {
-            this._g.rect(px + 2, py + 2, PLATE_W - 4, PLATE_H - 4)
+            this._g.rect(px + 1, py + 4, PLATE_W - 4, PLATE_H - 4)
               .stroke({ color: COL_TEXT_GOLD, width: 1 });
           }
 
@@ -1254,37 +1443,29 @@ export class CashShopStage extends Stage {
           // Item name (OG: DrawTextA at rect.left+82, rect.top+6)
           this._addText(item.name.slice(0, 14), px + 82, py + 6, COL_TEXT_WHITE, 11);
 
-          // Price (OG: coin icon + digits at rect.left+78, rect.top+32;
-          // the NX coin sprite (CashItem/0) sits left of the digits)
+          // Price (OG: comma-formatted digits plus a TEXT currency suffix —
+          // no coin sprite in v95). Red-violet font inside the random SN window.
           const price = this._getSalePrice(item);
-          if (this._cashCoinIcons[0]) {
-            this._drawWzSprite(this._cashCoinIcons[0]!, px + 78, py + 31);
-            this._addText(`${this._formatInteger(price)}`, px + 94, py + 32, COL_TEXT_GOLD, 11);
-          } else {
-            this._addText(`${price} NX`, px + 78, py + 32, COL_TEXT_GOLD, 11);
-          }
+          const currency = item.maplePoint > 0 ? ' MP' : ' NX';
+          const countSuffix = (item.count ?? 1) > 1 ? ` x${item.count}` : '';
+          const priceColor = (item.sn >= 80000000 && item.sn <= 89999999)
+            ? COL_PRICE_RANDOM
+            : COL_TEXT_GOLD;
+          this._addText(`${this._formatInteger(price)}${currency}${countSuffix}`, px + 78, py + 32, priceColor, 11);
 
-          // Discount badge — use WZ digit sprites if available
+          // Discount badge — base glyph at (left+44, top+64), digit children
+          // step +5px each
           if (item.discountRate > 0) {
             if (this._discountBg) {
-              this._drawWzSprite(this._discountBg, px + 70, py + 46);
+              this._drawWzSprite(this._discountBg, px + 44, py + 64);
             }
-            // Draw discount percentage using digit sprites
-            const rateStr = `-${item.discountRate}%`;
-            let dx = px + 74;
-            for (let ci = 0; ci < rateStr.length; ci++) {
-              const ch = rateStr[ci];
-              if (ch >= '0' && ch <= '9') {
-                const digit = this._discountDigits[parseInt(ch)];
-                if (digit) {
-                  this._drawWzSprite(digit, dx, py + 47);
-                  dx += digit.width;
-                  continue;
-                }
-              }
-              dx += 7;
+            let dx = px + 44;
+            for (const ch of String(item.discountRate)) {
+              const di = ch.charCodeAt(0) - 48;
+              const digit = di >= 0 && di <= 9 ? this._discountDigits[di] : null;
+              if (digit) this._drawWzSprite(digit, dx, py + 64);
+              dx += 5;
             }
-            this._addText(`${item.price}`, px + 124, py + 48, 0x888888, 9);
           }
 
           // Buy/Gift buttons (OG: CSList/BtBuy + BtGift — 4 states each;
@@ -1321,33 +1502,22 @@ export class CashShopStage extends Stage {
             inWish,
           );
 
-          // Effect badges (OG: CSEffect — hot/new/sale)
-          if (item.discountRate > 0 && this._effectSale) {
-            this._drawWzSprite(this._effectSale, px + 2, py + 2);
-          } else if (this._effectHot) {
-            this._drawWzSprite(this._effectHot, px + 2, py + 2);
-          } else if (this._effectNew) {
-            this._drawWzSprite(this._effectNew, px + 2, py + 2);
+          // Effect badges (OG: CSEffect — hot/new/sale). X offset by class;
+          // skipped for category 9 or limited goods.
+          if (!(item.category === 9 || item.limit !== 0)) {
+            const badgeXTable: Record<number, number> = { 0: 17, 1: 2, 2: 17, 3: 9 };
+            const bx = px + (badgeXTable[item.classField] ?? 17);
+            if (item.discountRate > 0 && this._effectSale) {
+              this._drawWzSprite(this._effectSale, bx, py + 2);
+            } else if (this._effectHot) {
+              this._drawWzSprite(this._effectHot, bx, py + 2);
+            } else if (this._effectNew) {
+              this._drawWzSprite(this._effectNew, bx, py + 2);
+            }
           }
         }
       }
     }
-
-    // Pagination — below item grid
-    const totalPages = this._getTotalPages();
-    const pageY = LIST_Y + LIST_H - 24;
-    const pageCenterX = LIST_X + LIST_W / 2;
-
-    // Prev button
-    this._g.rect(pageCenterX - 60, pageY, 50, 20).fill({ color: this._page > 0 ? COL_TAB_ACTIVE : COL_TAB_INACTIVE });
-    this._addText('< Prev', pageCenterX - 54, pageY + 4, COL_TEXT_WHITE, 10);
-
-    // Page indicator
-    this._addText(`${this._page + 1}/${totalPages}`, pageCenterX - 10, pageY + 4, COL_TEXT_DIM, 10);
-
-    // Next button
-    this._g.rect(pageCenterX + 20, pageY, 50, 20).fill({ color: this._page < totalPages - 1 ? COL_TAB_ACTIVE : COL_TAB_INACTIVE });
-    this._addText('Next >', pageCenterX + 26, pageY + 4, COL_TEXT_WHITE, 10);
   }
 
   /** Third plate button — wishlist add/remove toggle. WZ sprite when
@@ -1369,9 +1539,10 @@ export class CashShopStage extends Stage {
   }
 
   // ── One-a-Day panel (CCSWnd_OneADay) — CENTER, replaces item grid on tab 9 ──
-  // OG: CCSWnd_OneADay (2944 bytes) — 3 columns × 4 rows of plates
-  // Plate states: normal, big (selected), key-focus, no-item
-  // 10 number digit canvases, countdown timer, state machine
+  // Today's big plate is LIST-relative (4,93)-(398,158); the previous-items
+  // grid reuses the main list plate geometry (206x81 pitch, 200x80 plates);
+  // action buttons at (165,202) and (246,202); countdown digits at
+  // x=145/182 (hh), 232/269 (mm), 319/356 (ss), y=264.
   private _drawOneADay(): void {
     // Panel background — same area as item grid
     if (this._oneADayBase) this._drawWzSprite(this._oneADayBase, LIST_X + 3, LIST_Y + 3);
@@ -1379,13 +1550,12 @@ export class CashShopStage extends Stage {
     // Title
     this._addText('One-a-Day', LIST_X + 140, LIST_Y + 8, COL_TEXT_GOLD, 13);
 
-    // ── Today's item (large plate at top) ──
-    const todayX = LIST_X + 10;
-    const todayY = LIST_Y + 28;
-    const todayW = LIST_W - 20;
-    const todayH = 100;
+    // ── Today's item (large plate, LIST-relative 4,93 394x65) ──
+    const todayX = LIST_X + 4;
+    const todayY = LIST_Y + 93;
 
-      if (this._oneADayItemBox) this._drawWzSprite(this._oneADayItemBox, todayX, todayY);
+    const todayPlate = this._oneADayPlateBig ?? this._oneADayItemBox;
+    if (todayPlate) this._drawWzSprite(todayPlate, todayX, todayY);
 
     this._addText('Today\'s Item', todayX + 8, todayY + 4, COL_TEXT_DIM, 10);
 
@@ -1397,52 +1567,48 @@ export class CashShopStage extends Stage {
         const icon = this._icons?.LoadIcon(comm.itemId);
         if (icon) {
           const sp = this._createIcon(icon);
-          sp.position.set(todayX + 50, todayY + 50);
-          sp.scale.set(icon.Width > 64 ? 64 / icon.Width : 1);
+          sp.position.set(todayX + 50, todayY + 32);
+          sp.scale.set(icon.Width > 48 ? 48 / icon.Width : 1);
         }
         // Item name + price
-        this._addText(comm.name, todayX + 80, todayY + 30, COL_TEXT_WHITE, 12);
-        this._addText(`${comm.price} NX`, todayX + 80, todayY + 48, COL_TEXT_GOLD, 11);
-
-        const buyX = todayX + todayW - 80;
-        const buyY = todayY + 65;
-        if (this._oneADayBuy) this._drawWzSprite(this._oneADayBuy, buyX, buyY);
-        if (this._oneADayGift) this._drawWzSprite(this._oneADayGift, buyX, buyY - 22);
+        this._addText(comm.name, todayX + 80, todayY + 16, COL_TEXT_WHITE, 12);
+        this._addText(`${this._formatInteger(comm.price)} NX`, todayX + 80, todayY + 34, COL_TEXT_GOLD, 11);
       } else {
         // SN exists but commodity not loaded yet
-        this._addText(`Item SN: ${this._oneADayItemSN}`, todayX + 80, todayY + 40, COL_TEXT_DIM, 11);
+        this._addText(`Item SN: ${this._oneADayItemSN}`, todayX + 80, todayY + 24, COL_TEXT_DIM, 11);
       }
     } else {
-      this._addText('No item available today.', todayX + 80, todayY + 40, COL_TEXT_DIM, 11);
+      this._addText('No item available today.', todayX + 80, todayY + 24, COL_TEXT_DIM, 11);
     }
 
-    // ── Previous items grid (3 columns × 3 rows) ──
-    const gridStartY = todayY + todayH + 10;
-    const gridCols = 3;
-    const gridRows = 3;
-    const gridPlateW = 120;
-    const gridPlateH = 80;
-    const gridColStep = gridPlateW + 14;
-    const gridRowStep = gridPlateH + 10;
-    const gridMaxPlates = gridCols * gridRows;
+    // ── Action buttons — list-relative (165,202) and (246,202) ──
+    const btnY = LIST_Y + 202;
+    if (this._oneADayBuy) this._drawWzSprite(this._oneADayBuy, LIST_X + 165, btnY);
+    if (this._oneADayGift) this._drawWzSprite(this._oneADayGift, LIST_X + 246, btnY);
 
-    this._addText('Previous Items', LIST_X + 10, gridStartY - 2, COL_TEXT_DIM, 10);
+    // ── Previous items grid — same plate geometry as the main list ──
+    this._addText('Previous Items', LIST_X + 4, LIST_Y + 170, COL_TEXT_DIM, 10);
 
-    for (let i = 0; i < gridMaxPlates; i++) {
-      const col = i % gridCols;
-      const row = Math.floor(i / gridCols);
-      const px = LIST_X + 10 + col * gridColStep;
-      const py = gridStartY + 14 + row * gridRowStep;
+    for (let i = 0; i < PLATES_PER_PAGE; i++) {
+      const px = LIST_X + PLATE_COL_W * (i % PLATE_COLS) + 2;
+      const py = LIST_Y + PLATE_ROW_H * Math.floor(i / PLATE_COLS) + 2;
 
       if (i < this._oneADayPrevItems.length) {
         const prev = this._oneADayPrevItems[i];
         const isSelected = i === this._oneADaySelected;
 
-        // Plate background
-        this._g.rect(px, py, gridPlateW, gridPlateH)
-          .fill({ color: isSelected ? 0x1E2845 : COL_PLATE });
-        this._g.rect(px, py, gridPlateW, gridPlateH)
-          .stroke({ color: isSelected ? COL_TAB_BORDER_ACTIVE : COL_PLATE_BORDER, width: isSelected ? 2 : 1 });
+        // Plate background — OG uses the CSList/Base plate canvas
+        if (this._bgList) this._drawWzSprite(this._bgList, px, py);
+        else {
+          this._g.rect(px, py, PLATE_W, PLATE_H)
+            .fill({ color: isSelected ? 0x1E2845 : COL_PLATE });
+          this._g.rect(px, py, PLATE_W, PLATE_H)
+            .stroke({ color: isSelected ? COL_TAB_BORDER_ACTIVE : COL_PLATE_BORDER, width: isSelected ? 2 : 1 });
+        }
+        if (isSelected) {
+          this._g.rect(px + 1, py + 1, PLATE_W - 2, PLATE_H - 2)
+            .stroke({ color: COL_TEXT_GOLD, width: 2 });
+        }
 
         // Look up commodity
         const comm = this._commodities.find(c => c.sn === prev.sn);
@@ -1450,34 +1616,48 @@ export class CashShopStage extends Stage {
           const icon = this._icons?.LoadIcon(comm.itemId);
           if (icon) {
             const sp = this._createIcon(icon);
-            sp.position.set(px + gridPlateW / 2, py + 30);
+            sp.position.set(px + 7, py + 73);
             sp.scale.set(icon.Width > 40 ? 40 / icon.Width : 0.6);
           }
-          this._addText(comm.name.slice(0, 12), px + 4, py + 55, COL_TEXT_WHITE, 8);
+          this._addText(comm.name.slice(0, 14), px + 82, py + 6, COL_TEXT_WHITE, 9);
         } else {
-          this._addText(`SN: ${prev.sn}`, px + 4, py + 30, COL_TEXT_DIM, 9);
+          this._addText(`SN: ${prev.sn}`, px + 82, py + 20, COL_TEXT_DIM, 9);
         }
 
         // Date label
         if (prev.date > 0) {
           const d = new Date(prev.date * 1000);
           const dateStr = `${d.getMonth() + 1}/${d.getDate()}`;
-          this._addText(dateStr, px + gridPlateW - 36, py + 4, COL_TEXT_DIM, 8);
+          this._addText(dateStr, px + PLATE_W - 36, py + 4, COL_TEXT_DIM, 8);
         }
       } else {
         // Empty plate
-        this._g.rect(px, py, gridPlateW, gridPlateH)
+        this._g.rect(px, py, PLATE_W, PLATE_H)
           .fill({ color: 0x0E112A, alpha: 0.5 });
-        this._g.rect(px, py, gridPlateW, gridPlateH)
+        this._g.rect(px, py, PLATE_W, PLATE_H)
           .stroke({ color: COL_PLATE_BORDER, width: 1 });
       }
     }
 
-    // ── Countdown timer at bottom ──
-    const timerY = LIST_Y + LIST_H - 28;
-    const { hours, minutes, seconds } = this._oneADayTimer;
-    const timerStr = `Next item in: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    this._addText(timerStr, LIST_X + 10, timerY, COL_TEXT_GREEN, 11);
+    // ── Countdown digits — hh at x=145/182, mm at x=232/269, ss at x=319/356,
+    // y=264 (list-relative). OG draws SP 0x16A7 digit glyph canvases; fall back
+    // to Text when the glyphs are unavailable.
+    const timerY = LIST_Y + 264;
+    const drawDigitPair = (value: number, x0: number, x1: number): void => {
+      const tens = Math.floor(value / 10) % 10;
+      const ones = value % 10;
+      const t = this._oneADayDigits[tens];
+      const o = this._oneADayDigits[ones];
+      if (t && o) {
+        this._drawWzSprite(t, LIST_X + x0, timerY);
+        this._drawWzSprite(o, LIST_X + x1, timerY);
+      } else {
+        this._addText(String(value).padStart(2, '0'), LIST_X + x0, timerY, COL_TEXT_GREEN, 11);
+      }
+    };
+    drawDigitPair(this._oneADayTimer.hours % 100, 145, 182);
+    drawDigitPair(this._oneADayTimer.minutes % 100, 232, 269);
+    drawDigitPair(this._oneADayTimer.seconds % 100, 319, 356);
   }
 
   // ── Best items (CCSWnd_Best) — RIGHT COLUMN ──
@@ -1496,6 +1676,12 @@ export class CashShopStage extends Stage {
       const itemTop = i * BEST_STEP; // relative to panel top
       const by = BEST_Y + itemTop;
 
+      // Optional event banner replaces entry index 4 when present
+      if (i === 4 && this._bestEventBanner) {
+        this._drawWzSprite(this._bestEventBanner, BEST_X + 6, BEST_Y + 276);
+        continue;
+      }
+
       if (i < this._bestItems.length) {
         const best = this._bestItems[i];
         const comm = this._commodities.find(c => c.sn === best.sn);
@@ -1509,11 +1695,11 @@ export class CashShopStage extends Stage {
             const scale = Math.min(1, 40 / Math.max(icon.Width, icon.Height));
             sp.scale.set(scale);
           }
-          // OG Draw: name at (8, itemTop+36), font FONT_BASIC_BLACK
-          this._addText(comm.name.slice(0, 10), BEST_X + 8, by + 36, COL_TEXT_WHITE, 8);
-          // OG Draw: price at (8, itemTop+53), font FONT_BASIC_WHITE
+          // OG Draw: name at (8, itemTop+36), black font
+          this._addText(comm.name.slice(0, 10), BEST_X + 8, by + 36, 0x000000, 8);
+          // OG Draw: price at (8, itemTop+53), WHITE font
           const price = this._getSalePrice(comm);
-          this._addText(`${price} NX`, BEST_X + 8, by + 53, COL_TEXT_GOLD, 8);
+          this._addText(`${this._formatInteger(price)} NX`, BEST_X + 8, by + 53, COL_TEXT_WHITE, 8);
         }
       }
     }
@@ -1527,6 +1713,16 @@ export class CashShopStage extends Stage {
   //   job/1000==3 (Legendary): X=9
   //   else (Normal): X=0
   // Scrollbar at (X, 229), size 29×67, nWheelRange=208
+  /** Cell-selection highlight: translucent fill plus 4 thin edge bars. */
+  private _drawCellSelection(x: number, y: number, w: number, h: number): void {
+    const color = 0x10B0FF;
+    this._g.rect(x, y, w, h).fill({ color, alpha: 0.2 });
+    this._g.rect(x, y, w, 1).fill({ color });
+    this._g.rect(x, y + h - 1, w, 1).fill({ color });
+    this._g.rect(x, y, 1, h).fill({ color });
+    this._g.rect(x + w - 1, y, 1, h).fill({ color });
+  }
+
   private _drawLockerPanel(): void {
     if (this._bgLocker) {
       this._drawWzSprite(this._bgLocker, LOCKER_X, LOCKER_Y);
@@ -1537,8 +1733,12 @@ export class CashShopStage extends Stage {
     for (let row = 0; row < LOCKER_ROWS; row++) {
       for (let col = 0; col < LOCKER_COLS; col++) {
         const idx = startIdx + row * LOCKER_COLS + col;
-         const cx = LOCKER_X + 21 + col * LOCKER_COL_STEP;
-         const cy = LOCKER_Y + 30 + row * LOCKER_COL_STEP;
+        const cx = LOCKER_X + 21 + col * LOCKER_COL_STEP;
+        const cy = LOCKER_Y + 30 + row * LOCKER_COL_STEP;
+
+        if (idx === this._selectedLockerCell) {
+          this._drawCellSelection(cx, cy, LOCKER_CELL, LOCKER_CELL);
+        }
 
         if (idx < this._lockerItems.length) {
           const item = this._lockerItems[idx];
@@ -1583,18 +1783,17 @@ export class CashShopStage extends Stage {
     }
     this._addText('Inventory', INV_X + 80, INV_Y + 4, COL_TEXT_GOLD, 11);
 
-    // OG: Inventory tab selector (equip/use/setup/etc) — horizontal tabs
-    // For now, show the current tab type
+    // OG: vertical tab control on the LEFT edge (args 4,17,28,156)
     const tabNames = ['Equip', 'Use', 'Setup', 'Etc', 'Cash'];
-    const tabX = INV_X + 4;
-    const tabY = INV_Y + 28;
-    const tabW = Math.floor(156 / tabNames.length);
+    const tabX = INV_X + INV_TAB_X;
+    const tabY = INV_Y + INV_TAB_Y;
+    const tabH = Math.floor(INV_TAB_H / tabNames.length);
     for (let i = 0; i < tabNames.length; i++) {
-      const tx = tabX + i * tabW;
+      const ty = tabY + i * tabH;
       const isActive = i === this._invItemTI;
-      this._g.rect(tx, tabY, tabW, 14).fill({ color: isActive ? COL_TAB_ACTIVE : COL_TAB_INACTIVE });
-      this._g.rect(tx, tabY, tabW, 14).stroke({ color: isActive ? COL_TAB_BORDER_ACTIVE : COL_PLATE_BORDER, width: 1 });
-      this._addText(tabNames[i], tx + 2, tabY + 1, isActive ? COL_TEXT_WHITE : COL_TEXT_DIM, 8);
+      this._g.rect(tabX, ty, INV_TAB_W, tabH).fill({ color: isActive ? COL_TAB_ACTIVE : COL_TAB_INACTIVE });
+      this._g.rect(tabX, ty, INV_TAB_W, tabH).stroke({ color: isActive ? COL_TAB_BORDER_ACTIVE : COL_PLATE_BORDER, width: 1 });
+      this._addText(tabNames[i].slice(0, 3), tabX + 2, ty + 4, isActive ? COL_TEXT_WHITE : COL_TEXT_DIM, 8);
     }
 
     const expansionButtons = [
@@ -1653,7 +1852,8 @@ export class CashShopStage extends Stage {
       }
     }
     if (this._btRebate) this._drawWzSprite(this._btRebate, LOCKER_X + 160, LOCKER_Y + 82);
-    this._inventoryScrollbar?.setRange(Math.max(0, items.length - 12) + 1);
+    // OG scroll range = ceil(slotCount / 4) + 1
+    this._inventoryScrollbar?.setRange(Math.ceil(items.length / INV_COLS) + 1);
   }
 
   /** Get items for the current inventory tab from CharacterData */
@@ -1726,12 +1926,189 @@ export class CashShopStage extends Stage {
 
       if (this._btSearchBuy) this._drawWzSprite(this._btSearchBuy, SEARCH_X - 6, overlayY + 20);
       if (this._btSearchCancel) this._drawWzSprite(this._btSearchCancel, SEARCH_X + 38, overlayY + 20);
+      // mouseOver highlight for the fallback buttons
+      if (this._hoveredBtn === 'searchFind') {
+        this._g.rect(SEARCH_X - 6, overlayY + 19, 40, 18).stroke({ color: COL_TEXT_GOLD, width: 1 });
+      } else if (this._hoveredBtn === 'searchCancel') {
+        this._g.rect(SEARCH_X + 38, overlayY + 19, 40, 18).stroke({ color: COL_TEXT_GOLD, width: 1 });
+      }
+
+      // Price-band selector (OG CItemSearchDlg combo id 2000 at (103,52) 140x16;
+      // bands from CSItemSearch/Price, index 0 = "all")
+      if (this._searchPriceBands.length > 0) {
+        const bandY = overlayY + 38;
+        this._g.rect(SEARCH_X - 10, bandY - 3, 100, 14).fill({ color: 0x10142A });
+        this._g.rect(SEARCH_X - 10, bandY - 3, 100, 14).stroke({ color: COL_PLATE_BORDER, width: 1 });
+        const label = this._searchBandIndex < 0
+          ? 'All prices'
+          : `${this._formatInteger(this._searchPriceBands[this._searchBandIndex].low)}~${this._formatInteger(this._searchPriceBands[this._searchBandIndex].high)}`;
+        this._addText(label, SEARCH_X - 6, bandY, COL_TEXT_WHITE, 9);
+        this._addText('<', SEARCH_X + 92, bandY, COL_TEXT_GOLD, 9);
+        this._addText('>', SEARCH_X + 102, bandY, COL_TEXT_GOLD, 9);
+      }
 
       // Result count
       if (this._searchResults) {
-        this._addText(`${this._searchResults.length} found`, SEARCH_X - 6, overlayY + 40, COL_TEXT_GREEN, 9);
+        this._addText(`${this._searchResults.length} found`, SEARCH_X - 6, overlayY + 56, COL_TEXT_GREEN, 9);
       }
     }
+  }
+
+  /** Cycle the price-band selection (< / > arrows under the search field).
+   *  Index range is -1 (= all prices) .. bands.length-1. */
+  private _cycleSearchBand(dir: number): void {
+    const n = this._searchPriceBands.length;
+    if (n === 0) return;
+    const shifted = this._searchBandIndex + 1; // 0..n
+    this._searchBandIndex = ((shifted + dir) % (n + 1) + n + 1) % (n + 1) - 1;
+  }
+
+  /** OG CCouponUseSelectDlg — centered coupon input dialog (224x100). */
+  private _couponRect(): { x: number; y: number; w: number; h: number } {
+    const w = this._couponBg ? this._couponBg.width : 224;
+    const h = this._couponBg ? this._couponBg.height : 100;
+    return { x: Math.floor((CS_W - w) / 2), y: Math.floor((CS_H - h) / 2), w, h };
+  }
+
+  private _drawCouponDialog(): void {
+    if (!this._couponVisible) return;
+    this._g.rect(0, 0, CS_W, CS_H).fill({ color: 0x000000, alpha: 0.5 });
+    const r = this._couponRect();
+    if (this._couponBg) {
+      this._drawWzSprite(this._couponBg, r.x, r.y);
+    } else {
+      this._g.rect(r.x, r.y, r.w, r.h).fill({ color: COL_PANEL });
+      this._g.rect(r.x, r.y, r.w, r.h).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 2 });
+      this._addText('Coupon', r.x + 80, r.y + 10, COL_TEXT_GOLD, 12);
+    }
+    // Input field at dialog-relative (12,53) 200x15
+    const fx = r.x + 12;
+    const fy = r.y + 53;
+    this._g.rect(fx, fy, 200, 15).fill({ color: 0xFFFFFF });
+    this._g.rect(fx, fy, 200, 15).stroke({ color: COL_PLATE_BORDER, width: 1 });
+    this._addText(this._couponValue + '_', fx + 4, fy + 2, 0x111111, 10);
+    // Buttons — bottom row inside the window
+    const by = r.y + r.h - 26;
+    if (this._couponOk) {
+      this._drawWzSprite(this._couponOk, r.x + 40, by);
+      if (this._hoveredBtn === 'couponOk') {
+        this._g.rect(r.x + 38, by - 2, this._couponOk.width + 4, this._couponOk.height + 4)
+          .stroke({ color: COL_TEXT_GOLD, width: 1 });
+      }
+    } else {
+      this._g.rect(r.x + 40, by, 64, 18).fill({ color: COL_TAB_ACTIVE });
+      this._g.rect(r.x + 40, by, 64, 18).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
+      this._addText('OK', r.x + 60, by + 3, COL_TEXT_WHITE, 10);
+    }
+    if (this._couponCancel) {
+      this._drawWzSprite(this._couponCancel, r.x + 120, by);
+      if (this._hoveredBtn === 'couponCancel') {
+        this._g.rect(r.x + 118, by - 2, this._couponCancel.width + 4, this._couponCancel.height + 4)
+          .stroke({ color: COL_TEXT_GOLD, width: 1 });
+      }
+    } else {
+      this._g.rect(r.x + 120, by, 64, 18).fill({ color: 0x3C1A1A });
+      this._g.rect(r.x + 120, by, 64, 18).stroke({ color: 0x8B4444, width: 1 });
+      this._addText('Cancel', r.x + 134, by + 3, COL_TEXT_WHITE, 10);
+    }
+  }
+
+  /** Returns true when the click was consumed by the coupon modal. */
+  private _handleCouponClick(lx: number, ly: number): boolean {
+    if (!this._couponVisible) return false;
+    const r = this._couponRect();
+    const by = r.y + r.h - 26;
+    const okHit = lx >= r.x + 40 && lx < r.x + (this._couponOk ? 40 + this._couponOk.width : 104) && ly >= by && ly < by + 20;
+    const cancelHit = lx >= r.x + 120 && lx < r.x + (this._couponCancel ? 120 + this._couponCancel.width : 184) && ly >= by && ly < by + 20;
+    if (okHit) {
+      if (this._couponValue.length > 0) this.game?.session.send(GameSender.CashShopUseCoupon(this._couponValue));
+      this._couponVisible = false;
+      return true;
+    }
+    if (cancelHit) {
+      this._couponVisible = false;
+      this._couponValue = '';
+      return true;
+    }
+    return true; // modal swallows all other clicks (typing goes through onKeyPress)
+  }
+
+  /** OG CItemSearchDlg::GetResult @0x4C8860 → CCSWnd_ItemSearch::OnButtonClicked
+   *  @0x4CD640 — client-side filter by name substring + price band, then show
+   *  the results as virtual category 10. */
+  private _executeSearch(): void {
+    const q = this._searchQuery.toLowerCase();
+    if (q.length > 0) {
+      let results = this._commodities.filter(c =>
+        c.onSale && c.name.toLowerCase().includes(q),
+      );
+      const band = this._searchPriceBands[this._searchBandIndex];
+      if (band) {
+        results = results.filter(c => {
+          const price = this._getSalePrice(c);
+          return price >= band.low && price <= band.high;
+        });
+      }
+      this._searchResults = results;
+      this._activeTab = 10; // keep the results (SetCategory would clear)
+      this._setSubCategory(0);
+      this._page = 0;
+      this._selectedPlate = -1;
+      this._statusMessage = `Found ${results.length} items`;
+    } else {
+      this._searchResults = null;
+    }
+    this._searchActive = false;
+  }
+
+  /** OG CCSWnd_List::SetPlateNo — shortcut-help button (id 4000) at
+   *  list-relative (150,380), created only on category 8 sub 0. */
+  private _drawShortcutHelp(): void {
+    if (this._activeTab !== 8 || this._subCategory !== 0) return;
+    if (this._shortcutHelpVisible) {
+      // Modal — WZ resource (StringPool UOL) when available, else a panel.
+      this._g.rect(0, 0, CS_W, CS_H).fill({ color: 0x000000, alpha: 0.5 });
+      const w = 260;
+      const h = 356;
+      const x = Math.floor((CS_W - w) / 2);
+      const y = Math.floor((CS_H - h) / 2);
+      if (this._shortcutHelpBg) {
+        this._drawWzSprite(this._shortcutHelpBg, x, y);
+      } else {
+        this._g.rect(x, y, w, h).fill({ color: COL_PANEL });
+        this._g.rect(x, y, w, h).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 2 });
+        this._addText('Shortcut Help', x + 70, y + 12, COL_TEXT_GOLD, 13);
+        this._addText('Wheel / PgUp-PgDn: change page', x + 24, y + 60, COL_TEXT_WHITE, 11);
+        this._addText('Arrows: move plate focus', x + 24, y + 90, COL_TEXT_WHITE, 11);
+        this._addText('Enter: wear selected item', x + 24, y + 120, COL_TEXT_WHITE, 11);
+      }
+      // Close button at (130,328), dialog-relative
+      this._g.rect(x + 130, y + 328, 56, 20).fill({ color: COL_TAB_ACTIVE });
+      this._g.rect(x + 130, y + 328, 56, 20).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
+      this._addText('Close', x + 140, y + 332, COL_TEXT_WHITE, 10);
+      return;
+    }
+    this._g.rect(LIST_X + 150, LIST_Y + 380, 60, 20).fill({ color: COL_TAB_ACTIVE });
+    this._g.rect(LIST_X + 150, LIST_Y + 380, 60, 20).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
+    this._addText('Shortcuts', LIST_X + 156, LIST_Y + 384, COL_TEXT_WHITE, 10);
+  }
+
+  private _handleShortcutHelpClick(lx: number, ly: number): boolean {
+    if (this._activeTab !== 8 || this._subCategory !== 0) return false;
+    if (this._shortcutHelpVisible) {
+      const x = Math.floor((CS_W - 260) / 2);
+      const y = Math.floor((CS_H - 356) / 2);
+      if (lx >= x + 130 && lx < x + 186 && ly >= y + 328 && ly < y + 348) {
+        this._shortcutHelpVisible = false;
+        return true;
+      }
+      return true; // modal swallows all clicks
+    }
+    if (lx >= LIST_X + 150 && lx < LIST_X + 210 && ly >= LIST_Y + 380 && ly < LIST_Y + 400) {
+      this._shortcutHelpVisible = true;
+      return true;
+    }
+    return false;
   }
 
   // ── Status message ──
@@ -1752,7 +2129,7 @@ export class CashShopStage extends Stage {
     // Semi-transparent overlay
     this._g.rect(0, 0, CS_W, CS_H).fill({ color: 0x000000, alpha: 0.5 });
 
-    // Dialog box centered
+    // Dialog box centered — OG CUISendGifts (buttons at y139, Hide at x439)
     const dlgW = 473;
     const dlgH = 169;
     const dlgX = Math.floor((CS_W - dlgW) / 2);
@@ -1767,43 +2144,69 @@ export class CashShopStage extends Stage {
     this._addText('Gift Item', dlgX + 160, dlgY + 12, COL_TEXT_GOLD, 14);
 
     // Item name and price
-    this._addText(`Item: ${this._giftItem.name}`, dlgX + 20, dlgY + 44, COL_TEXT_WHITE, 11);
+    this._addText(`Item: ${this._giftItem.name}`, dlgX + 20, dlgY + 30, COL_TEXT_WHITE, 11);
     const price = this._getSalePrice(this._giftItem);
-    this._addText(`Price: ${price} NX`, dlgX + 20, dlgY + 64, COL_TEXT_GOLD, 11);
+    this._addText(`Price: ${price} NX`, dlgX + 20, dlgY + 44, COL_TEXT_GOLD, 11);
 
-    // Receiver name field
-    this._addText('To:', dlgX + 20, dlgY + 96, COL_TEXT_WHITE, 11);
-    const recvX = dlgX + 80;
-    const recvY = dlgY + 90;
-    const fieldW = dlgW - 100;
-    const fieldH = 20;
-    this._g.rect(recvX, recvY, fieldW, fieldH).fill({ color: 0x0A0E1A });
-    this._g.rect(recvX, recvY, fieldW, fieldH).stroke({ color: this._giftEditingField === 1 ? COL_TAB_BORDER_ACTIVE : COL_PLATE_BORDER, width: 1 });
-    const recvDisplay = this._giftReceiver + (this._giftEditingField === 1 ? '_' : '');
-    this._addText(recvDisplay || 'Type receiver name...', recvX + 4, recvY + 4, this._giftReceiver ? COL_TEXT_WHITE : COL_TEXT_DIM, 11);
+    // Receiver name field — OG edit id1000 at (84,52) 122x13
+    this._addText('To:', dlgX + 26, dlgY + 53, COL_TEXT_WHITE, 10);
+    const recvX = dlgX + 84;
+    const recvY = dlgY + 52;
+    this._g.rect(recvX, recvY, 122, 13).fill({ color: 0xFFFFFF });
+    this._g.rect(recvX, recvY, 122, 13).stroke({ color: this._giftEditingField === 1 ? COL_TAB_BORDER_ACTIVE : COL_PLATE_BORDER, width: 1 });
+    this._addText(this._giftReceiver + (this._giftEditingField === 1 ? '_' : ''), recvX + 3, recvY + 2, 0x111111, 9);
 
-    // Message field
-    this._addText('Message:', dlgX + 20, dlgY + 128, COL_TEXT_WHITE, 11);
-    const msgX = dlgX + 100;
-    const msgY = dlgY + 122;
-    const msgH = 40;
-    this._g.rect(msgX, msgY, fieldW - 20, msgH).fill({ color: 0x0A0E1A });
-    this._g.rect(msgX, msgY, fieldW - 20, msgH).stroke({ color: this._giftEditingField === 2 ? COL_TAB_BORDER_ACTIVE : COL_PLATE_BORDER, width: 1 });
-    const msgDisplay = this._giftMessage + (this._giftEditingField === 2 ? '_' : '');
-    this._addText(msgDisplay || 'Type a message...', msgX + 4, msgY + 4, this._giftMessage ? COL_TEXT_WHITE : COL_TEXT_DIM, 11);
+    // Message field — OG edits id1001/1002 at (26,76)/(26,92) 210x13
+    this._g.rect(dlgX + 26, dlgY + 76, 210, 13).fill({ color: 0xFFFFFF });
+    this._g.rect(dlgX + 26, dlgY + 76, 210, 13).stroke({ color: this._giftEditingField === 2 ? COL_TAB_BORDER_ACTIVE : COL_PLATE_BORDER, width: 1 });
+    this._addText(this._giftMessage + (this._giftEditingField === 2 ? '_' : ''), dlgX + 29, dlgY + 78, 0x111111, 9);
 
-    // OK button
-    const okX = dlgX + dlgW - 180;
-    const okY = dlgY + dlgH - 36;
-    this._g.rect(okX, okY, 80, 24).fill({ color: COL_TAB_ACTIVE });
-    this._g.rect(okX, okY, 80, 24).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
-    this._addText('OK', okX + 30, okY + 5, COL_TEXT_WHITE, 11);
+    // Recipient list panel (buddy/guild mode) — OG list layer at (336,54),
+    // "None" placeholder when empty
+    if (this._giftState !== 0) {
+      const names = this._giftState === 1 ? this.buddyNames : this.guildNames;
+      this._g.rect(dlgX + 300, dlgY + 40, 150, 90).fill({ color: 0x10142A });
+      this._g.rect(dlgX + 300, dlgY + 40, 150, 90).stroke({ color: COL_PLATE_BORDER, width: 1 });
+      if (names.length === 0) {
+        this._addText('None', dlgX + 337, dlgY + 56, COL_TEXT_DIM, 10);
+      } else {
+        for (let i = 0; i < names.length && i < 6; i++) {
+          const ny = dlgY + 46 + i * 14;
+          const sel = i === this._giftListSelected;
+          if (sel) this._g.rect(dlgX + 302, ny - 2, 146, 13).fill({ color: COL_TAB_ACTIVE });
+          this._addText(names[i], dlgX + 306, ny, sel ? COL_TEXT_GOLD : COL_TEXT_WHITE, 10);
+        }
+      }
+    }
 
-    // Cancel button
-    const cancelX = dlgX + dlgW - 90;
-    this._g.rect(cancelX, okY, 80, 24).fill({ color: 0x3C1A1A });
-    this._g.rect(cancelX, okY, 80, 24).stroke({ color: 0x8B4444, width: 1 });
-    this._addText('Cancel', cancelX + 20, okY + 5, COL_TEXT_WHITE, 11);
+    // Button row y139 — OG ids: Guild(1004) x56, Buddy(1003) x110,
+    // OK(168), Cancel(210), Hide(1005) x439 only in list modes
+    const btnY = dlgY + 139;
+    if (this._btGiftGuild) this._drawWzSprite(this._btGiftGuild, dlgX + 56, btnY);
+    else {
+      this._g.rect(dlgX + 56, btnY, 48, 18).fill({ color: COL_TAB_ACTIVE });
+      this._addText('Guild', dlgX + 62, btnY + 4, COL_TEXT_WHITE, 9);
+    }
+    if (this._btGiftBuddy) this._drawWzSprite(this._btGiftBuddy, dlgX + 110, btnY);
+    else {
+      this._g.rect(dlgX + 110, btnY, 48, 18).fill({ color: COL_TAB_ACTIVE });
+      this._addText('Buddy', dlgX + 116, btnY + 4, COL_TEXT_WHITE, 9);
+    }
+    if (this._btGiftHide && this._giftState !== 0) {
+      this._drawWzSprite(this._btGiftHide, dlgX + 439, btnY);
+    } else if (this._giftState !== 0) {
+      this._g.rect(dlgX + 439, btnY, 28, 18).fill({ color: 0x3C1A1A });
+      this._addText('X', dlgX + 450, btnY + 4, COL_TEXT_WHITE, 9);
+    }
+    const okX = dlgX + 168;
+    this._g.rect(okX, btnY, 36, 18).fill({ color: COL_TAB_ACTIVE });
+    this._g.rect(okX, btnY, 36, 18).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
+    this._addText('OK', okX + 11, btnY + 4, COL_TEXT_WHITE, 9);
+
+    const cancelX = dlgX + 210;
+    this._g.rect(cancelX, btnY, 48, 18).fill({ color: 0x3C1A1A });
+    this._g.rect(cancelX, btnY, 48, 18).stroke({ color: 0x8B4444, width: 1 });
+    this._addText('Cancel', cancelX + 7, btnY + 4, COL_TEXT_WHITE, 9);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1998,14 +2401,37 @@ export class CashShopStage extends Stage {
     this._addText('Cancel', dlgX + dlgW - 116, dlgY + dlgH - 33, COL_TEXT_WHITE, 12);
   }
 
+  /** OG CCashShop::OnChangedCategory @0x47E560 — category switch resets the
+   *  sub-category to 0, page to 0, plate focus, and tears the OneADay window
+   *  down; entering the virtual category 10 keeps the search results. */
+  SetCategory(category: number): void {
+    this._activeTab = category;
+    this._setSubCategory(0);
+    this._page = 0;
+    this._selectedPlate = -1;
+    if (category !== 10) this._searchResults = null;
+  }
+
+  private _setSubCategory(sub: number): void {
+    this._subCategory = sub;
+    // OG OnChangedCategorySub @0x47DBF0: cat1/sub2 opens the OneADay window,
+    // anything else tears it down.
+    this._oneADayActive = this._activeTab === 1 && sub === 2;
+    this._page = 0;
+    this._selectedPlate = -1;
+  }
+
   /** OG CCashShop::GoTo @0x47E6F0 / CCSWnd_Best::GoToCommoditySN @0x4C6DC0 —
    *  jump to the tab + page that holds the given commodity SN and focus it. */
   GoToCommoditySN(sn: number): void {
     const comm = this._commodities.find(c => c.sn === sn);
     if (!comm) return;
-    if (comm.category >= 1 && comm.category <= 8) this._activeTab = comm.category;
-    this._page = 0;
-    this._selectedPlate = -1;
+    if (comm.category >= 1 && comm.category <= 8) {
+      this.SetCategory(comm.category);
+    } else {
+      this._page = 0;
+      this._selectedPlate = -1;
+    }
     const inTab = this._getCurrentPageItems().findIndex(c => c.sn === sn);
     if (inTab >= 0) {
       this._page = Math.floor(inTab / PLATES_PER_PAGE);
@@ -2038,6 +2464,20 @@ export class CashShopStage extends Stage {
     this._statusMessage = 'Wishlist: item removed.';
   }
 
+  /** Mouse wheel over the item list cycles pages (OG CCSWnd_List — there are
+   *  no prev/next buttons in v95). Wheel down = next page, up = previous;
+   *  clamped to the valid page range. */
+  onMouseWheel(x: number, y: number, deltaY: number): void {
+    const lx = x - this._root.x;
+    if (this._oneADayActive) return;
+    // OG CCSWnd_List::OnMouseWheel @0x4C6550 — modulo cycling, not clamping.
+    if (lx < LIST_X || lx >= LIST_X + LIST_W || y < LIST_Y || y >= LIST_Y + LIST_H) return;
+    const totalPages = this._getTotalPages();
+    const dir = deltaY > 0 ? 1 : -1;
+    this._page = ((this._page + dir) % totalPages + totalPages) % totalPages;
+    this._selectedPlate = -1;
+  }
+
   onKeyPress(key: string): void {
     // OG CCashShop::OnKey @0x47F7C0 — VK_CAPS(20) toggles user preview control
     if (key === 'CapsLock') {
@@ -2060,6 +2500,10 @@ export class CashShopStage extends Stage {
       const cb = this._yesNoCallback;
       this._yesNoCallback = null;
       if (key === 'Enter') cb?.();
+      return;
+    }
+    if (this._shortcutHelpVisible) {
+      if (key === 'Escape') this._shortcutHelpVisible = false;
       return;
     }
     if (this._couponVisible) {
@@ -2209,23 +2653,13 @@ export class CashShopStage extends Stage {
       if (key === 'Escape') {
         this._searchActive = false;
         this._searchQuery = '';
-        this._searchResults = null;
+        this.SetCategory(1); // leave the results view
         return;
       }
       if (key === 'Enter') {
-        // Execute search — filter commodities by name
-        const q = this._searchQuery.toLowerCase();
-        if (q.length > 0) {
-          this._searchResults = this._commodities.filter(c =>
-            c.onSale && c.name.toLowerCase().includes(q),
-          );
-          this._page = 0;
-          this._selectedPlate = -1;
-          this._statusMessage = `Found ${this._searchResults.length} items`;
-        } else {
-          this._searchResults = null;
-        }
-        this._searchActive = false;
+        // Execute search — filter commodities by name + price band, then show
+        // the results as OG's virtual category 10.
+        this._executeSearch();
         return;
       }
       if (key === 'Backspace') {
@@ -2238,15 +2672,80 @@ export class CashShopStage extends Stage {
       return;
     }
 
-    if (key === 'Escape') { this._exit(); return; }
-    // OG: CCSWnd_Tab — keys 1-9 switch tabs
+    if (key === 'Escape') {
+      // OG OnKeyRet: in plate/button focus mode Esc backs out instead of exiting
+      if (this._buttonFocus >= 0) { this._buttonFocus = -1; return; }
+      this._exit();
+      return;
+    }
+    // OG: CCSWnd_Tab OnKeyRet — keys 1-9 switch to categories 1-9
     const num = parseInt(key);
     if (num >= 1 && num <= 9) {
-      this._activeTab = num - 1;
-      this._page = 0;
-      this._selectedPlate = -1;
-      this._searchResults = null;
+      if (this._activeTab !== num) this.SetCategory(num);
       return;
+    }
+    // OG CCSWnd_List::OnKeyRet — PageUp/PageDown cycle pages (modulo)
+    const totalPages = this._getTotalPages();
+    if (key === 'PageUp') { this._page = ((this._page - 1) % totalPages + totalPages) % totalPages; this._selectedPlate = -1; return; }
+    if (key === 'PageDown') { this._page = (this._page + 1) % totalPages; this._selectedPlate = -1; return; }
+
+    // OG CCSWnd_List::OnKeyRet @0x4C9460 — plate-grid keyboard navigation:
+    // arrows move focus on the 2-column grid, Enter wears the focused item
+    // and enters button-focus mode (Left/Right cycles Buy→Gift→Wish).
+    if (!this._oneADayActive) {
+      const pageItems = this._getCurrentPageItems();
+      const count = Math.min(PLATES_PER_PAGE, pageItems.length - this._page * PLATES_PER_PAGE);
+      if (count > 0) {
+        if (this._buttonFocus >= 0) {
+          const item = this._focusedPlate >= 0 ? pageItems[this._page * PLATES_PER_PAGE + this._focusedPlate] : null;
+          const btns = item ? this._plateButtons(item) : { buy: false, gift: false, wish: false };
+          if (key === 'Escape') { this._buttonFocus = -1; return; }
+          if (key === 'ArrowLeft') { this._buttonFocus = (this._buttonFocus + 2) % 3; return; }
+          if (key === 'ArrowRight') { this._buttonFocus = (this._buttonFocus + 1) % 3; return; }
+          if (key === 'Enter' && item) {
+            if (this._buttonFocus === 0 && btns.buy) this._buyItem(item);
+            else if (this._buttonFocus === 1 && btns.gift) this._onGiftClick(item);
+            else if (this._buttonFocus === 2 && btns.wish) {
+              if (this._wishlist.includes(item.sn)) this.RemoveWish(item.sn);
+              else this.AddToWish(item.sn);
+            }
+            return;
+          }
+        } else {
+          let f = this._focusedPlate;
+          switch (key) {
+            case 'ArrowLeft':
+              f = f % 2 !== 0 ? f - 1 : f + 1;
+              if (f >= count) f = count - 1;
+              break;
+            case 'ArrowRight':
+              if (f === count - 1) f = 2 * Math.floor(f / 2);
+              else f = f % 2 !== 0 ? f - 1 : f + 1;
+              break;
+            case 'ArrowUp':
+              f -= 2;
+              if (f < 0) f += 2 * Math.floor(count / 2);
+              if (f >= count) f -= 2;
+              break;
+            case 'ArrowDown':
+              f = count - f > 2 ? f + 2 : f % 2;
+              break;
+            case 'Enter':
+              if (f >= 0 && f < count) {
+                this.WearCommodity(pageItems[this._page * PLATES_PER_PAGE + f]);
+                this._buttonFocus = 0;
+              }
+              return;
+            default:
+              return;
+          }
+          if (f !== this._focusedPlate && f >= 0 && f < count) {
+            this._focusedPlate = f;
+            this._selectedPlate = -1;
+          }
+          return;
+        }
+      }
     }
     if (key === 'ArrowLeft' && this._page > 0) { this._page--; this._selectedPlate = -1; }
     if (key === 'ArrowRight') {
@@ -2292,19 +2791,19 @@ export class CashShopStage extends Stage {
       else if (lx >= STATUS_X + 378 && lx < STATUS_X + 546) this._hoveredBtn = 'exit';
     }
 
-    // Inventory tab hover
-    const tabNames = ['Equip', 'Use', 'Setup', 'Etc', 'Cash'];
-    const tabW = Math.floor(156 / tabNames.length);
-    for (let i = 0; i < tabNames.length; i++) {
-      const tx = INV_X + 4 + i * tabW;
-      if (lx >= tx && lx < tx + tabW && ly >= INV_Y + 28 && ly < INV_Y + 42) {
+    // Inventory vertical tab hover
+    const invTabNames = ['Equip', 'Use', 'Setup', 'Etc', 'Cash'];
+    const invTabH = Math.floor(INV_TAB_H / invTabNames.length);
+    for (let i = 0; i < invTabNames.length; i++) {
+      const ty = INV_Y + INV_TAB_Y + i * invTabH;
+      if (lx >= INV_X + INV_TAB_X && lx < INV_X + INV_TAB_X + INV_TAB_W && ly >= ty && ly < ty + invTabH) {
         this._hoveredBtn = `invTab_${i}`;
         break;
       }
     }
 
-    // Buy/Gift buttons on plates
-    if (this._activeTab !== 8) {
+    // Buy/Gift/Wish buttons on plates (OG: CCtrlButton mouseOver states)
+    if (!this._oneADayActive && !this._shortcutHelpVisible) {
       const items = this._getCurrentPageItems();
       const offset = this._page * PLATES_PER_PAGE;
       for (let row = 0; row < PLATE_ROWS; row++) {
@@ -2314,15 +2813,30 @@ export class CashShopStage extends Stage {
           if (absIdx >= items.length) continue;
           const px = LIST_X + col * PLATE_COL_W;
           const py = LIST_Y + row * PLATE_ROW_H + 2;
-          const buyX = px + PLATE_W - 40;
-          const buyY = py + 52;
-          const giftY = py + 26;
-          if (lx >= buyX && lx < buyX + 35 && ly >= buyY && ly < buyY + 20) {
-            this._hoveredBtn = `buy_${plateIdx}`;
-          } else if (lx >= buyX && lx < buyX + 35 && ly >= giftY && ly < giftY + 20) {
-            this._hoveredBtn = `gift_${plateIdx}`;
+          const bx = px + PLATE_W - 40;
+          // Same rects as the click handler: wish y0..20, gift y24..48, buy y50+
+          if (lx >= bx && lx < bx + 40) {
+            if (ly >= py + 50 && ly < py + PLATE_H) this._hoveredBtn = `buy_${plateIdx}`;
+            else if (ly >= py + 24 && ly < py + 48) this._hoveredBtn = `gift_${plateIdx}`;
+            else if (ly >= py && ly < py + 20) this._hoveredBtn = `wish_${plateIdx}`;
           }
         }
+      }
+    }
+
+    // Avatar control buttons (OG ids 1000-1002, y=237 row)
+    if (ly >= CHAR_Y + 237 && ly < CHAR_Y + 256) {
+      if (lx >= CHAR_X + 17 && lx < CHAR_X + 100) this._hoveredBtn = 'btBuyAvatar';
+      else if (lx >= CHAR_X + 101 && lx < CHAR_X + 184) this._hoveredBtn = 'btDefaultAvatar';
+      else if (lx >= CHAR_X + 187 && lx < CHAR_X + 242) this._hoveredBtn = 'btTakeoffAvatar';
+    }
+
+    // Search overlay Find/Cancel
+    if (this._searchActive) {
+      const oY = SEARCH_Y + SEARCH_H + 4;
+      if (ly >= oY + 20 && ly < oY + 36) {
+        if (lx >= SEARCH_X - 6 && lx < SEARCH_X + 34) this._hoveredBtn = 'searchFind';
+        else if (lx >= SEARCH_X + 38 && lx < SEARCH_X + 78) this._hoveredBtn = 'searchCancel';
       }
     }
   }
@@ -2336,28 +2850,26 @@ export class CashShopStage extends Stage {
       return;
     }
 
+    if (this._couponVisible && this._handleCouponClick(lx, ly)) return;
     if (this._yesNoVisible && this._handleYesNoClick(lx, ly)) return;
+    // Shortcut-help button / modal (OG id 4000, category 8 sub 0 only)
+    if (this._handleShortcutHelpClick(lx, ly)) return;
     // Best panel — OG CCSWnd_Best::OnMouseButton: clicking an entry jumps to it
     if (lx >= BEST_X && lx < BEST_X + BEST_W && ly >= BEST_Y && ly < BEST_Y + BEST_H) {
       const best = this._bestItems[Math.floor((ly - BEST_Y) / BEST_STEP)];
       if (best) { this.GoToCommoditySN(best.sn); return; }
     }
-    // Locker cells — OG OnRebateLockerItem @0x485840: clicking a locker item
-    // requests its meso rebate.
+    // Locker cells — OG CCSWnd_Locker::OnMouseButton: clicking selects the
+    // cell (rebate goes through the BtRebate button below).
     if (lx >= LOCKER_X && lx < LOCKER_X + LOCKER_W && ly >= LOCKER_Y && ly < LOCKER_Y + LOCKER_H) {
       const col = Math.floor((lx - (LOCKER_X + 21)) / LOCKER_COL_STEP);
       const row = Math.floor((ly - (LOCKER_Y + 30)) / LOCKER_COL_STEP);
       if (col >= 0 && col < LOCKER_COLS && row >= 0 && row < LOCKER_ROWS) {
         const idx = this._lockerScroll * LOCKER_COLS + row * LOCKER_COLS + col;
-        const item = this._lockerItems[idx];
-        if (item) {
-          this.game?.session.send(GameSender.CashShopRebate(item.sn));
-          this._statusMessage = `Rebate requested for ${item.name}.`;
-          return;
-        }
+        this._selectedLockerCell = idx;
       }
     }
-    if (this._activeTab === 8 && this._oneADayItemSN > 0 && this._handleOneADayClick(lx, ly)) return;
+    if (this._oneADayActive && this._handleOneADayClick(lx, ly)) return;
     if (this._inventoryScrollbar?.handleMouseButton(lx - INV_X, ly - INV_Y - 160, down)) return;
     if (this._lockerScrollbar?.handleMouseButton(lx - this._getLockerScrollbarX(), ly - 229, down)) return;
 
@@ -2398,38 +2910,51 @@ export class CashShopStage extends Stage {
         return;
       }
 
-      // Receiver field click
-      const recvX = dlgX + 80;
-      const recvY = dlgY + 90;
-      const fieldW = dlgW - 100;
-      if (lx >= recvX && lx < recvX + fieldW && ly >= recvY && ly < recvY + 20) {
+      // Receiver field click — OG edit at (84,52) 122x13
+      const recvX = dlgX + 84;
+      const recvY = dlgY + 52;
+      if (lx >= recvX && lx < recvX + 122 && ly >= recvY && ly < recvY + 13) {
         this._giftEditingField = 1;
         return;
       }
 
-      // Message field click
-      const msgX = dlgX + 100;
-      const msgY = dlgY + 122;
-      if (lx >= msgX && lx < msgX + fieldW - 20 && ly >= msgY && ly < msgY + 40) {
+      // Message field click — OG edit at (26,76) 210x13
+      const msgX = dlgX + 26;
+      const msgY = dlgY + 76;
+      if (lx >= msgX && lx < msgX + 210 && ly >= msgY && ly < msgY + 13) {
         this._giftEditingField = 2;
         return;
       }
 
-      // OK button click
-      const okX = dlgX + dlgW - 180;
-      const okY = dlgY + dlgH - 36;
-      if (lx >= okX && lx < okX + 80 && ly >= okY && ly < okY + 24) {
-        this._executeGift();
-        return;
+      // Recipient list clicks (buddy/guild mode)
+      if (this._giftState !== 0) {
+        const names = this._giftState === 1 ? this.buddyNames : this.guildNames;
+        for (let i = 0; i < names.length && i < 6; i++) {
+          const ny = dlgY + 46 + i * 14;
+          if (lx >= dlgX + 300 && lx < dlgX + 450 && ly >= ny - 2 && ly < ny + 11) {
+            this._giftListSelected = i;
+            this._giftReceiver = names[i];
+            return;
+          }
+        }
       }
 
-      // Cancel button click
-      const cancelX = dlgX + dlgW - 90;
-      if (lx >= cancelX && lx < cancelX + 80 && ly >= okY && ly < okY + 24) {
-        this._giftVisible = false;
-        this._giftItem = null;
-        this._giftEditingField = 0;
-        return;
+      // Button row y139 — Guild(56) Buddy(110) OK(168) Cancel(210) Hide(439)
+      const btnY = dlgY + 139;
+      if (ly >= btnY && ly < btnY + 18) {
+        if (lx >= dlgX + 56 && lx < dlgX + 104) { this._setGiftState(2); return; }
+        if (lx >= dlgX + 110 && lx < dlgX + 158) { this._setGiftState(1); return; }
+        if (lx >= dlgX + 168 && lx < dlgX + 204) { this._executeGift(); return; }
+        if (lx >= dlgX + 210 && lx < dlgX + 258) {
+          this._giftVisible = false;
+          this._giftItem = null;
+          this._giftEditingField = 0;
+          return;
+        }
+        if (this._giftState !== 0 && lx >= dlgX + 439 && lx < dlgX + 467) {
+          this._setGiftState(0); // OG BtHide id1005 → back to manual entry
+          return;
+        }
       }
 
       // Click elsewhere in dialog → consume (don't propagate)
@@ -2494,10 +3019,10 @@ export class CashShopStage extends Stage {
 
     if (this._activeDialog !== 'none' && this._handleActiveDialogClick(lx, ly)) return;
 
-    // Exit button (OG: CCSWnd_Status nId=1003 — in status bar at bottom)
+    // Exit button (OG: CCSWnd_Status nId=1003, at y offset +15)
     const exitX = STATUS_X + 378;
-    const exitY = STATUS_Y;
-    if (lx >= exitX && lx < exitX + 168 && ly >= exitY && ly < exitY + 49) {
+    const exitY = STATUS_Y + 15;
+    if (lx >= exitX && lx < exitX + 168 && ly >= exitY && ly < STATUS_Y + STATUS_H) {
       this._exit();
       return;
     }
@@ -2518,26 +3043,21 @@ export class CashShopStage extends Stage {
 
       // Find button click
       if (lx >= SEARCH_X - 6 && lx < SEARCH_X + 34 && ly >= overlayY + 20 && ly < overlayY + 36) {
-        const q = this._searchQuery.toLowerCase();
-        if (q.length > 0) {
-          this._searchResults = this._commodities.filter(c =>
-            c.onSale && c.name.toLowerCase().includes(q),
-          );
-          this._page = 0;
-          this._selectedPlate = -1;
-          this._statusMessage = `Found ${this._searchResults.length} items`;
-        } else {
-          this._searchResults = null;
-        }
-        this._searchActive = false;
+        this._executeSearch();
         return;
+      }
+
+      // Price-band selector arrows
+      if (ly >= overlayY + 38 && ly < overlayY + 52) {
+        if (lx >= SEARCH_X + 90 && lx < SEARCH_X + 101) { this._cycleSearchBand(-1); return; }
+        if (lx >= SEARCH_X + 101 && lx < SEARCH_X + 112) { this._cycleSearchBand(1); return; }
       }
 
       // Cancel button click
       if (lx >= SEARCH_X + 38 && lx < SEARCH_X + 78 && ly >= overlayY + 20 && ly < overlayY + 36) {
         this._searchActive = false;
         this._searchQuery = '';
-        this._searchResults = null;
+        this.SetCategory(1); // leave the results view
         return;
       }
 
@@ -2545,94 +3065,52 @@ export class CashShopStage extends Stage {
       if (lx < SEARCH_X - 10 || lx >= SEARCH_X + SEARCH_W + 10 || ly < overlayY - 4 || ly >= overlayY + 76) {
         this._searchActive = false;
         this._searchQuery = '';
-        this._searchResults = null;
+        this.SetCategory(1); // leave the results view
       }
     }
 
-    // CCSWnd_Char avatar controls (IDs 1000-1002).
+    // CCSWnd_Char avatar controls (OG ids 1000-1002).
     if (ly >= CHAR_Y + 237 && ly < CHAR_Y + 256) {
       if (lx >= CHAR_X + 17 && lx < CHAR_X + 100) {
-        this._statusMessage = 'Avatar purchase selected.';
+        this._onBuyAvatar();
         return;
       }
       if (lx >= CHAR_X + 101 && lx < CHAR_X + 184) {
-        this._statusMessage = 'Default avatar selected.';
+        this._onDefaultAvatar();
         return;
       }
       if (lx >= CHAR_X + 187 && lx < CHAR_X + 242) {
-        this._statusMessage = 'Avatar take-off selected.';
+        this._onTakeOffAvatar();
         return;
       }
     }
-    if (lx >= CHAR_X + CHAR_W - 36 && lx < CHAR_X + CHAR_W && ly >= CHAR_Y + 4 && ly < CHAR_Y + 27) {
+    // OG OnMouseButton@CCSWnd_Char — clicking the char window toggles preview
+    if (lx >= CHAR_X && lx < CHAR_X + CHAR_W && ly >= CHAR_Y && ly < CHAR_Y + 237) {
       this._previewEnabled = !this._previewEnabled;
       return;
     }
 
-    // Tab clicks (OG: CCSWnd_Tab — HORIZONTAL CCtrlSelector)
+    // Tab clicks — the 9 strip slots map to categories 1..9
+    // (OG CCSWnd_Tab::GetTabIndex → OnChangedCategory(idx)).
     const tabItemW = Math.floor(TAB_W / TAB_COUNT);
     for (let i = 0; i < TAB_COUNT; i++) {
       const tx = TAB_X + i * tabItemW;
       if (lx >= tx && lx < tx + tabItemW && ly >= TAB_Y && ly < TAB_Y + TAB_H) {
-        this._activeTab = i;
-        this._page = 0;
-        this._selectedPlate = -1;
-        this._searchResults = null;
+        const cat = i + 1;
+        if (this._activeTab !== cat) this.SetCategory(cat);
         return;
       }
     }
 
-    // Sub-category strip (OG ChangeSubCategory @0x4C6530)
+    // Sub-category strip inside the tab canvas (OG ChangeSubCategory @0x4C6530)
     const subs = this._subRows();
-    if (subs.length > 0 && ly >= TAB_Y + TAB_H - 14 && ly < TAB_Y + TAB_H) {
-      const step = Math.floor(LIST_W / subs.length);
-      if (lx >= LIST_X && lx < LIST_X + LIST_W) {
-        const i = Math.min(subs.length - 1, Math.floor((lx - LIST_X) / step));
-        this._subCategory = subs[i].categorySub;
-        this._page = 0;
-        this._selectedPlate = -1;
+    if (subs.length > 0 && ly >= TAB_Y + 59 && ly < TAB_Y + 73) {
+      const step = Math.floor(485 / subs.length);
+      if (lx >= TAB_X + 8 && lx < TAB_X + 8 + 485) {
+        const i = Math.min(subs.length - 1, Math.floor((lx - (TAB_X + 8)) / step));
+        if (this._subCategory !== subs[i].categorySub) this._setSubCategory(subs[i].categorySub);
         return;
       }
-    }
-
-    // One-a-Day plate clicks (tab 9)
-    if (this._activeTab === 8 && this._oneADayItemSN > 0) {
-      // Today's item "Free" buy button
-      const todayX = LIST_X + 10;
-      const todayY = LIST_Y + 28;
-      const todayW = LIST_W - 20;
-      const todayH = 100;
-      const buyX = todayX + todayW - 80;
-      const buyY = todayY + 65;
-      if (lx >= buyX && lx < buyX + 70 && ly >= buyY && ly < buyY + 24) {
-        if (this._oneADayItemSN > 0) {
-          // OG: one-a-day items use CashShopFreeCashItem (sub-action 23), not CashShopBuy (sub-action 3)
-          this.game?.session.send(GameSender.CashShopFreeCashItem(this._oneADayItemSN));
-          this._statusMessage = 'Claiming free one-a-day item...';
-        }
-        return;
-      }
-
-      // Previous items grid clicks
-      const gridStartY = todayY + todayH + 10 + 14;
-      const gridCols = 3;
-      const gridPlateW = 120;
-      const gridPlateH = 80;
-      const gridColStep = gridPlateW + 14;
-      const gridRowStep = gridPlateH + 10;
-      for (let i = 0; i < 9; i++) {
-        const col = i % gridCols;
-        const row = Math.floor(i / gridCols);
-        const px = LIST_X + 10 + col * gridColStep;
-        const py = gridStartY + row * gridRowStep;
-        if (lx >= px && lx < px + gridPlateW && ly >= py && ly < py + gridPlateH) {
-          if (i < this._oneADayPrevItems.length) {
-            this._oneADaySelected = i;
-          }
-          return;
-        }
-      }
-      return;
     }
 
     // Plate clicks (OG: CCSWnd_List::OnMouseButton)
@@ -2646,6 +3124,8 @@ export class CashShopStage extends Stage {
           const absIdx = this._page * PLATES_PER_PAGE + plateIdx;
           if (absIdx < items.length) {
             this._selectedPlate = plateIdx;
+            // OG: selecting a plate tries the commodity on the preview avatar
+            this.WearCommodity(items[absIdx]);
             const btns = this._plateButtons(items[absIdx]);
             // Wish toggle click (OG third button, id 3i+2002 — top-right of plate)
             if (lx >= px + PLATE_W - 40 && lx < px + PLATE_W && ly >= py && ly < py + 20) {
@@ -2691,11 +3171,7 @@ export class CashShopStage extends Stage {
           if (comm) {
             // Find which tab this item's category belongs to
             const cat = comm.category;
-            const tabIdx = cat >= 1 && cat <= 7 ? cat : 0;
-            this._activeTab = tabIdx;
-            this._page = 0;
-            this._selectedPlate = -1;
-            this._searchResults = null;
+            this.SetCategory(cat >= 1 && cat <= 8 ? cat : 1);
             // Find the item's position in the grid
             const pageItems = this._getCurrentPageItems();
             const idx = pageItems.findIndex(c => c.sn === comm.sn);
@@ -2709,22 +3185,6 @@ export class CashShopStage extends Stage {
       }
     }
 
-    // Pagination clicks — below item grid
-    const pageY = LIST_Y + LIST_H - 24;
-    const pageCenterX = LIST_X + LIST_W / 2;
-    if (ly >= pageY && ly < pageY + 20) {
-      if (lx >= pageCenterX - 60 && lx < pageCenterX - 10 && this._page > 0) {
-        this._page--;
-        this._selectedPlate = -1;
-        return;
-      }
-      if (lx >= pageCenterX + 20 && lx < pageCenterX + 70) {
-        const maxP = this._getTotalPages() - 1;
-        if (this._page < maxP) { this._page++; this._selectedPlate = -1; }
-        return;
-      }
-    }
-
     // Locker cell clicks (OG: CCSWnd_Locker — MoveLtoS)
     for (let row = 0; row < LOCKER_ROWS; row++) {
       for (let col = 0; col < LOCKER_COLS; col++) {
@@ -2732,6 +3192,7 @@ export class CashShopStage extends Stage {
          const cy = LOCKER_Y + 30 + row * LOCKER_COL_STEP;
         if (lx >= cx && lx < cx + LOCKER_CELL && ly >= cy && ly < cy + LOCKER_CELL) {
           const idx = this._lockerScroll * LOCKER_COLS + row * LOCKER_COLS + col;
+          this._selectedLockerCell = idx;
           if (idx < this._lockerItems.length) {
             const item = this._lockerItems[idx];
             // OG: SendMoveLtoSRequest (sub-action 6)
@@ -2777,8 +3238,15 @@ export class CashShopStage extends Stage {
     }
 
     if (lx >= LOCKER_X + 160 && lx < LOCKER_X + 246 && ly >= LOCKER_Y + 82 && ly < LOCKER_Y + 101) {
-      const item = this._lockerItems[this._lockerScroll * LOCKER_COLS];
-      if (item) this.game?.session.send(GameSender.CashShopRebate(item.sn));
+      // OG: rebate the SELECTED locker item (falls back to the first visible)
+      const idx = this._selectedLockerCell >= 0
+        ? this._selectedLockerCell
+        : this._lockerScroll * LOCKER_COLS;
+      const item = this._lockerItems[idx];
+      if (item) {
+        this.game?.session.send(GameSender.CashShopRebate(item.sn));
+        this._statusMessage = `Rebate requested for ${item.name}.`;
+      }
       return;
     }
 
@@ -2805,12 +3273,12 @@ export class CashShopStage extends Stage {
       }
     }
 
-    // Inventory tab clicks (OG: CCSWnd_Inventory tab control)
-    const tabNames = ['Equip', 'Use', 'Setup', 'Etc', 'Cash'];
-    const tabW = Math.floor(156 / tabNames.length);
-    for (let i = 0; i < tabNames.length; i++) {
-      const tx = INV_X + 4 + i * tabW;
-      if (lx >= tx && lx < tx + tabW && ly >= INV_Y + 28 && ly < INV_Y + 42) {
+    // Inventory vertical tab clicks (OG: CCSWnd_Inventory tab control, args 4,17,28,156)
+    const invTabNames = ['Equip', 'Use', 'Setup', 'Etc', 'Cash'];
+    const invTabH = Math.floor(INV_TAB_H / invTabNames.length);
+    for (let i = 0; i < invTabNames.length; i++) {
+      const ty = INV_Y + INV_TAB_Y + i * invTabH;
+      if (lx >= INV_X + INV_TAB_X && lx < INV_X + INV_TAB_X + INV_TAB_W && ly >= ty && ly < ty + invTabH) {
         this._invItemTI = i;
         this._invFirstPosition = 0;
         this._selectedInvCell = -1;
@@ -2884,37 +3352,28 @@ export class CashShopStage extends Stage {
       return true;
     }
 
-    const todayX = LIST_X + 10;
-    const todayY = LIST_Y + 28;
-    const todayW = LIST_W - 20;
-    if (this._oneADayMode === 0) {
-      const buyY = todayY + 65;
-      if (lx >= todayX + todayW - 80 && lx < todayX + todayW - 10 && ly >= buyY && ly < buyY + 24) {
-        const item = this._commodities.find(c => c.sn === this._oneADayItemSN);
-        if (item) {
-          this._buyPending = true;
-          this._processBuy(item);
-          this._statusMessage = `Buying ${item.name}...`;
-        }
-        return true;
+    // Today's action buttons — list-relative (165,202) and (246,202)
+    const btnY = LIST_Y + 202;
+    if (lx >= LIST_X + 165 && lx < LIST_X + 165 + 70 && ly >= btnY && ly < btnY + 24) {
+      const item = this._commodities.find(c => c.sn === this._oneADayItemSN);
+      if (item) {
+        this._buyPending = true;
+        this._processBuy(item);
+        this._statusMessage = `Buying ${item.name}...`;
       }
-      if (lx >= todayX + todayW - 80 && lx < todayX + todayW - 10 && ly >= buyY - 22 && ly < buyY - 4) {
-        const item = this._commodities.find(c => c.sn === this._oneADayItemSN);
-        if (item) this._onGiftClick(item);
-        return true;
-      }
-      return lx >= LIST_X && lx < LIST_X + LIST_W && ly >= LIST_Y && ly < LIST_Y + LIST_H;
+      return true;
+    }
+    if (lx >= LIST_X + 246 && lx < LIST_X + 246 + 70 && ly >= btnY && ly < btnY + 24) {
+      const item = this._commodities.find(c => c.sn === this._oneADayItemSN);
+      if (item) this._onGiftClick(item);
+      return true;
     }
 
-    const gridStartY = todayY + 100 + 10 + 14;
-    const gridPlateW = 120;
-    const gridPlateH = 80;
-    for (let i = 0; i < 10; i++) {
-      const col = i % 3;
-      const row = Math.floor(i / 3);
-      const px = LIST_X + 10 + col * (gridPlateW + 14);
-      const py = gridStartY + row * (gridPlateH + 10);
-      if (lx >= px && lx < px + gridPlateW && ly >= py && ly < py + gridPlateH) {
+    // Previous items grid — same plate geometry as the main list
+    for (let i = 0; i < PLATES_PER_PAGE; i++) {
+      const px = LIST_X + PLATE_COL_W * (i % PLATE_COLS) + 2;
+      const py = LIST_Y + PLATE_ROW_H * Math.floor(i / PLATE_COLS) + 2;
+      if (lx >= px && lx < px + PLATE_W && ly >= py && ly < py + PLATE_H) {
         if (i < this._oneADayPrevItems.length) {
           this._oneADaySelected = i;
           const previous = this._oneADayPrevItems[i];
@@ -2922,6 +3381,8 @@ export class CashShopStage extends Stage {
           if (item) {
             this._buyPending = true;
             this._processBuy(item);
+            // If ProcessBuy opened a dialog instead of sending, release the gate
+            if (this._activeDialog !== 'none' || this._yesNoVisible) this._buyPending = false;
             this._statusMessage = `Buying ${item.name}...`;
           }
         }
@@ -3104,28 +3565,37 @@ export class CashShopStage extends Stage {
     this._giftVisible = true;
     this._giftReceiver = '';
     this._giftMessage = '';
+    this._giftState = 0;
+    this._giftListSelected = -1;
     this._giftEditingField = 1;
   }
 
   private _executeGift(): void {
     if (!this._giftItem || !this.game) return;
 
-    // Validate receiver name
-    if (this._giftReceiver.length === 0) {
-      this._statusMessage = 'Please enter a receiver name.';
+    // Validate receiver name — OG SetRet @0x79A4C0 requires 4..12 chars
+    const receiver = this._giftReceiver.trim();
+    if (receiver.length < 4 || receiver.length > 12) {
+      this._statusMessage = 'Enter a character name (4-12 letters).';
       return;
     }
 
-    // Send the gift packet (sub-action 4)
-    this.game.session.send(GameSender.CashShopSendGift(
-      '',             // SPW (empty — not required for v95 client)
-      this._giftItem.sn,
-      false,          // requestBuyOneADay
-      this._giftReceiver,
-      this._giftMessage,
-    ));
+    const item = this._giftItem;
+    if (Math.floor(item.itemId / 10000) === 910) {
+      // OG OnGiftPackage @0x4907B0 — packages gift via their own sub-action
+      this.game.session.send(GameSender.CashShopGiftPackage(item.sn, receiver, this._giftMessage));
+    } else {
+      // OG SendGiftsPacket @0x487B60 (sub-action 4)
+      this.game.session.send(GameSender.CashShopSendGift(
+        '',             // SPW (empty — not required for v95 client)
+        item.sn,
+        false,          // requestBuyOneADay
+        receiver,
+        this._giftMessage,
+      ));
+    }
 
-    this._statusMessage = `Gifting ${this._giftItem.name} to ${this._giftReceiver}...`;
+    this._statusMessage = `Gifting ${item.name} to ${receiver}...`;
 
     // Dismiss dialog
     this._giftVisible = false;
@@ -3587,13 +4057,19 @@ export class CashShopStage extends Stage {
   // ═══════════════════════════════════════════════════════════════════════════
 
   private _getCurrentPageItems(): CashCommodity[] {
-    if (this._searchResults) return this._searchResults;
+    // OG ChangePage @0x4CFC70 case 10 — search results pages (10 per page).
+    if (this._activeTab === 10) return this._searchResults ?? [];
+    // OG ChangePage @0x4CFC70 case 9 — the wishlist rendered as plates.
+    if (this._activeTab === 9) {
+      return this._wishlist
+        .filter(sn => sn !== 0)
+        .map(sn => this._commodities.find(c => c.sn === sn))
+        .filter((c): c is CashCommodity => !!c);
+    }
     // OG CCSWnd_List::ChangePage @0x4CFC70 — category 1 sub 2 is forced empty.
     if (this._activeTab === 1 && this._subCategory === 2) {
       return [];
     }
-    // Tab 0 (New) and Tab 8 (Popular) show all items
-    const filterByTab = this._activeTab !== 0 && this._activeTab !== 8;
     const subs = this._commTable?.Categories.filter(r => r.category === this._activeTab) ?? [];
     const out: CashCommodity[] = [];
     let rowKey = -1;
@@ -3601,7 +4077,7 @@ export class CashShopStage extends Stage {
     for (const c of this._commodities) {
       // OG LoadData @0x492EA0: category = sn/10000000 % 10,
       // categorySub = sn/100000 % 100 — filter by the tab's category.
-      if (filterByTab && c.category !== this._activeTab) continue;
+      if (c.category !== this._activeTab) continue;
       const k = c.category * 1000 + c.categorySub;
       if (k !== rowKey) { rowKey = k; rowDead = false; }
       // OG scans a category row only until its first OFF-SALE entry (break).
@@ -3636,23 +4112,26 @@ export class CashShopStage extends Stage {
     return this._commTable?.Categories.filter(r => r.category === this._activeTab) ?? [];
   }
 
-  /** OG CCSWnd_Tab::ChangeSubCategory @0x4C6530 — the sub-category strip. */
+  /** OG CCSWnd_Tab::ChangeSubCategory @0x4C6530 — the sub-category strip sits
+   *  near the bottom of the 508×78 tab canvas (control args 8,59,485). */
   private _drawSubCategoryBar(): void {
     const subs = this._subRows();
     if (subs.length === 0) return;
-    const step = Math.floor(LIST_W / subs.length);
+    const stripX = TAB_X + 8;
+    const stripY = TAB_Y + 59;
+    const step = Math.floor(485 / subs.length);
     for (let i = 0; i < subs.length; i++) {
-      const x = LIST_X + i * step;
+      const x = stripX + i * step;
       const selected = subs[i].categorySub === this._subCategory;
       this._addText(
         subs[i].name.slice(0, 8),
         x + 2,
-        TAB_Y + TAB_H - 12,
+        stripY + 2,
         selected ? COL_TEXT_GOLD : COL_TEXT_DIM,
         9,
       );
       if (selected) {
-        this._g.rect(x + 1, TAB_Y + TAB_H - 14, step - 4, 14)
+        this._g.rect(x + 1, stripY, step - 4, 14)
           .stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
       }
     }
@@ -3807,6 +4286,45 @@ export class CashShopStage extends Stage {
     // Third plate button (wishlist toggle — StringPool 1265/1266 in SetPlateNo)
     this._btWish = tryLoad('CSList/BtWish/normal') ?? tryLoad('CSList/BtWishList/normal');
     this._btWishOver = tryLoad('CSList/BtWish/mouseOver') ?? tryLoad('CSList/BtWishList/mouseOver');
+    // Shortcut-help modal background (StringPool UOL in SetPlateNo)
+    this._shortcutHelpBg = tryLoad('CSShortcutHelp/backgrnd') ?? tryLoad('CSShortcut/0');
+
+    // Selected/keyboard-focused plate skin (SP 0x4E9 normal / 0x4EA keyFocus)
+    this._plateStateFocus = tryLoad('CSList/KeyFocus')
+      ?? tryLoad('CSList/keyFocus')
+      ?? tryLoad('CSList/Focus');
+
+    // Coupon dialog chrome (OG literal UOLs UIWindow2.img/Coupon/*)
+    this._couponBg = tryLoadImage('UIWindow2.img', 'Coupon/backgrnd');
+    this._couponOk = tryLoadImage('UIWindow2.img', 'Coupon/BtOK/normal');
+    this._couponCancel = tryLoadImage('UIWindow2.img', 'Coupon/BtCancle/normal');
+
+    // OneADay big plate + countdown digit glyphs (children "0".."9")
+    this._oneADayPlateBig = tryLoadOneADay('PlateBig');
+    for (let d = 0; d < 10; d++) {
+      this._oneADayDigits[d] = tryLoadOneADay(`Num/${d}`)
+        ?? tryLoadOneADay(`CountDown/${d}`)
+        ?? tryLoadOneADay(`Number/${d}`);
+    }
+
+    // Price-band table (CCSWnd_ItemSearch::OnCreate @0x4C8980): each child of
+    // CSItemSearch/Price holds {0}=lower, {1}=upper bound.
+    this._searchPriceBands = [];
+    try {
+      const priceNode: any = (rootItems['CSItemSearch'] as any)?.Items?.['Price'];
+      const children = priceNode?.Items as Record<string, any> | undefined;
+      if (children) {
+        for (const key of Object.keys(children).sort((a, b) => Number(a) - Number(b))) {
+          const child = children[key];
+          const low = child?.Get?.('0');
+          const high = child?.Get?.('1');
+          const toNum = (v: unknown) => typeof v === 'bigint' ? Number(v) : typeof v === 'number' ? v : null;
+          const lo = toNum(low);
+          const hi = toNum(high);
+          if (lo !== null && hi !== null) this._searchPriceBands.push({ low: lo, high: hi });
+        }
+      }
+    } catch { this._searchPriceBands = []; }
 
     this._btSearch = tryLoad('CSItemSearch/BtSearch/normal');
     this._btSearchBuy = tryLoad('CSItemSearch/BtBuy/normal');
@@ -3827,6 +4345,9 @@ export class CashShopStage extends Stage {
     this._effectHot = tryLoad('CSEffect/hot/0');
     this._effectNew = tryLoad('CSEffect/new/0');
     this._effectSale = tryLoad('CSEffect/sale/0');
+
+    // Best-panel event banner (optional — skipped silently when missing)
+    this._bestEventBanner = tryLoad('CS3thEvent/0');
 
     // Discount digits 0-9 + bonus/line/backgrnd/total
     for (let i = 0; i <= 9; i++) {
