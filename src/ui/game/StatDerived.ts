@@ -69,14 +69,18 @@ export function computeDerived(s: StatInputs): DerivedStats {
   // stat in OG — a real vestigial/bug case, preserved as-observed rather
   // than "fixed", per the Thirty-eighth pass's note.
   const attack = s.weaponType === 39 ? 1 : (magic ? s.matk : s.watk);
-  const mastery = Math.max(0, Math.min(s.mastery, 0.95));
   let max = Math.floor((tertiary + secondary + 4 * primary) / 100 * (attack * k) + 0.5);
-  let min = Math.floor((tertiary + secondary + 4 * primary * 0.9 * mastery) / 100 * (attack * k) + 0.5);
+  // OG: adjust_ramdom_damage (0x726690) — effective mastery =
+  // min(0.95, nMastery/100 + GetMsateryConstByWT(nWT)); min = floor(max * eff + 0.5).
+  // This is the SAME min-damage math MeleeDamage.calcDamageRange uses for live
+  // attacks, so the ability panel's range always matches what hits for.
+  const effective = getEffectiveMastery(s.mastery, s.weaponType);
+  const min = Math.floor(max * effective + 0.5);
   // OG: CUIStatDetail::Draw (0x8625F0) clamps the displayed damage range to
   // [1, 999999] — same floor as the live damage aggregates (PDamage/MDamage).
   // An unarmed/low-ATK character therefore shows at minimum "1~1", not "0~0".
   max = Math.max(1, Math.min(max, DamageMax));
-  min = Math.max(1, Math.min(min, max));
+  const minDamage = Math.max(1, Math.min(min, max));
 
   // BasicStat::CalcBasePACC (0x721b60): floor(dex * 1.2 + luk * 1.0).
   // BasicStat::CalcBasePDD (0x721a40): floor(str*1.2 + dex*0.5 + luk*0.5 + int*0.4).
@@ -92,7 +96,7 @@ export function computeDerived(s: StatInputs): DerivedStats {
   // Critical rate: base 5% + SharpEyes bonus + weapon option critical prob
   const criticalPercent = Math.min(100, 5 + s.sharpEyesCritRate);
 
-  return { minDamage: min, maxDamage: max, accuracy: acc, avoidability: eva, pdd: basePdd + s.pddBonus, mdd: baseMdd + s.mddBonus, criticalPercent, speed, jump };
+  return { minDamage: minDamage, maxDamage: max, accuracy: acc, avoidability: eva, pdd: basePdd + s.pddBonus, mdd: baseMdd + s.mddBonus, criticalPercent, speed, jump };
 }
 
 export function resolvePrimarySecondary(s: StatInputs): [number, number, boolean] {

@@ -1331,6 +1331,8 @@ export class GameStage extends Stage {
     this.uiRoot.addChild(this._quickSlots.container);
     this._quickSlots.Relayout(this.game.pixiApp.screen.width, this.game.pixiApp.screen.height);
     this._statDetailInfo = new StatDetailInfo(this._loader, uiWz, font, () => this.game.wz.string ?? null);
+    // OG CUIStatDetail::OnCreate — detail/BtHpUp (id 0x3E8) raises MaxHP.
+    this._statDetailInfo.onHpUp = () => { this.game.session.send(GameSender.UserAbilityUp(MapleStat.MaxHp)); };
     this._trunk = new Trunk(this._loader, uiWz, font);
     this._trunk.OnWithdraw = (invType, position) => {
       this.game.session.send(GameSender.TrunkWithdraw(invType, position));
@@ -6089,9 +6091,13 @@ this._localCharId = args.characterId ?? 0;
       // holds the per-instance GW_ItemSlotEquip bonuses; fall back to the
       // template attr when the instance stats aren't present.
       const weaponStats = this._equipStats.get(11);
-      const watk = weaponStats?.incPad ?? attr?.IncPad ?? 0;
-      const matk = weaponStats?.incMad ?? attr?.IncMad ?? 0;
-      const dmgRange = calcDamageRange(this._job, wt, watk, matk, this._stats.str, this._stats.dex, this._stats.intStat, this._stats.luk, 0);
+      const watk = this._statDetailInfo?.Inputs.watk ?? weaponStats?.incPad ?? attr?.IncPad ?? 0;
+      const matk = this._statDetailInfo?.Inputs.matk ?? weaponStats?.incMad ?? attr?.IncMad ?? 0;
+      // OG: the panel's damage range (CUIStatDetail) and live PDamage consume
+      // the same PAD aggregate — all equips + buffs — and the same mastery
+      // (adjust_ramdom_damage), so attacks roll inside the displayed range.
+      const mastery = this._statDetailInfo?.Inputs.mastery ?? this._masteryFromSkills;
+      const dmgRange = calcDamageRange(this._job, wt, watk, matk, this._stats.str, this._stats.dex, this._stats.intStat, this._stats.luk, mastery);
       // OG: CalcDamage::CalcAccR (0x724CE0) — client rolls hit/miss per mob.
       // Player ACC = floor(dex * 1.2 + luk * 1.0) + equip/buff accBonus.
       const playerBaseAcc = Math.floor(this._stats.dex * 1.2 + this._stats.luk * 1.0);
@@ -6100,9 +6106,23 @@ this._localCharId = args.characterId ?? 0;
       const mobLevel = closest._info?.Level ?? 1;
       const hitRate = calcHitRate(playerTotalAcc, mobEva, this._stats.level, mobLevel);
       const hit = Math.random() * 100 < hitRate;
-      const dmg = hit
+      // OG CalcDamage::PDamage (0x730130): crit chance roll per damage line,
+      // then crit DAMAGE is a roll in [param+20(+niCDr), param'+50] ADDED as
+      // a percentage — `damage += preCrit * roll/100` — NOT a flat ×1.5.
+      // param' = SharpEyes low byte when active, else the crit skill's
+      // LevelData.damage (_criticalDamageParam, wired in _syncStatDetailInputs).
+      const critRate = this._statDetailInfo?.getCriticalProp?.() ?? 0;
+      const isCrit = hit && Math.random() * 100 < critRate;
+      let dmg = hit
         ? dmgRange.min + Math.floor(Math.random() * (dmgRange.max - dmgRange.min + 1))
         : 0;
+      if (isCrit && dmg > 0) {
+        const param = this._statDetailInfo?._criticalDamageParam ?? 0;
+        const cdMax = param + 50;
+        const cdMin = Math.min(param + CUserLocal.weaponCritDamage + 20, cdMax);
+        const rollPct = cdMin + Math.floor(Math.random() * (cdMax - cdMin + 1));
+        dmg = Math.max(1, Math.min(999999, Math.floor(dmg * (100 + rollPct) / 100)));
+      }
       targets.push(new MeleeTarget(closest.MobId, [dmg], closest.Position.x, closest.Position.y, 0));
       // OG: weapon attack sound via sSfx from Character.wz → Sound.wz/Weapon.img/{sSfx}/Attack
       this._playWeaponAttackSound(weaponId);
@@ -6111,7 +6131,7 @@ this._localCharId = args.characterId ?? 0;
         this._mobSounds?.PlayDamage(closest.TemplateId);
         // Damage number is server-authoritative — the mobDamaged echo
         // (OnMobDamaged) renders the WZ-digit number.
-        this._battleRecord?.AddDamage(dmg, false, false);
+        this._battleRecord?.AddDamage(dmg, isCrit, false);
         this._skill.setDamageMeterSummary(this._battleRecord?.getDamageMeterSummary() ?? null);
         const ctl = this._mobCtl.get(closest.MobId);
         ctl?.OnDamagedByPlayer();
@@ -7274,6 +7294,23 @@ this._localCharId = args.characterId ?? 0;
       }
     }
 
+    // OG GetCriticalProp (0x861E2C..0x861F8E): a SECOND ApplyWeaponOption pass
+    // runs on the katana (slot 10) when itemId/10000 == 134, accumulated into
+    // the weapon pass results (dual-blade blade + katana both feed niCr etc).
+    const katanaSlot = [...this._equip.equippedSlots()].find((s) => s.bodyPart === 10);
+    if (katanaSlot && Math.floor(katanaSlot.itemId / 10000) === 134) {
+      const ks = this._equipStats.get(10);
+      if (ks) {
+        const kattr = this._itemIcons?.LoadAttr(katanaSlot.itemId);
+        const klvl = ks.level > 0 ? ks.level : (kattr?.ReqLevel ?? 0);
+        CUserLocal.applyWeaponOption(
+          ks.option1, ks.option2, ks.option3, klvl,
+          (id) => this._itemOptionLoader?.loadItemOption(id) ?? null,
+          true,
+        );
+      }
+    }
+
     // Apply rate percentage bonuses to watk/matk/pdd/mdd (from item options)
     if (ratePctWatk !== 0) watk += Math.floor(watk * ratePctWatk / 100);
     if (ratePctMatk !== 0) matk += Math.floor(matk * ratePctMatk / 100);
@@ -7346,6 +7383,36 @@ this._localCharId = args.characterId ?? 0;
     inp.shadowPartnerDamageRate = sec.getShadowPartnerDamageRate();
     inp.hyperBodyHpMul = sec.getHyperBodyHpMultiplier();
     inp.hyperBodyMpMul = sec.getHyperBodyMpMultiplier();
+    // OG GetCriticalProp inputs — the detail panel's critical % row renders
+    // getCriticalProp(), which reads these wired fields.
+    this._statDetailInfo._weaponOptionCritical = CUserLocal.weaponCritProb;
+    // packed CTS value: critRate = value >> 8 (getCriticalProp does the shift)
+    this._statDetailInfo._sharpEyesCrit = sec.buff.sharpEyes;
+    this._statDetailInfo._skillCriticalProp = this._computeBaseCriticalProp();
+    this._statDetailInfo._comboAbilityCritical = this._computeComboAbilityCritical();
+    this._statDetailInfo._evanCritical =
+      (Math.floor((this._job / 100) % 10) === 22 || this._job === 2001)
+        ? this._skillLevelValue(22140000, 'prop')
+        : 0;
+    // OG PDamage: the crit-damage ceiling base is packed SharpEyes' LOW byte
+    // (criticaldamageMax) while Sharp Eyes is up, else the critical skill's
+    // LevelData.damage (get_critical_skill_level's pnParam out-param).
+    const baseCritId = this._baseCriticalSkillId();
+    this._statDetailInfo._criticalDamageParam = sec.buff.sharpEyes !== 0
+      ? (sec.buff.sharpEyes & 0xFF)
+      : (baseCritId !== 0 ? this._skillLevelValue(baseCritId, 'damage') : 0);
+    // ThornsEffect / Craft / SwallowCritical ride the same temp-stat wire.
+    this._statDetailInfo._thornsEffect = sec.buff.thornsEffect;
+    this._statDetailInfo._swallowCritical = sec.buff.swallowCritical;
+    this._statDetailInfo.craftValue = sec.buff.craft;
+    // OG Draw decomposition rows: the buff is the delta component of
+    // StringPool 1979 "base + delta = total"; Inputs hold the totals.
+    this._statDetailInfo.buffPad = sec.getBuffPAD();
+    this._statDetailInfo.buffMad = sec.getBuffMAD();
+    this._statDetailInfo.buffPdd = sec.getBuffPDD();
+    this._statDetailInfo.buffMdd = sec.getBuffMDD();
+    this._statDetailInfo.buffAcc = sec.getBuffACC();
+    this._statDetailInfo.buffEva = sec.getBuffEVA();
     this._stats?.SetDerivedStats(watk, Math.max(pddBonus, mddBonus), inp.speed, inp.jump);
     // OG CUserLocal::SetShoeAttr: mount/morph templates override the normal
     // stat speed and jump, while shoe dFs controls acceleration/friction.
@@ -7601,6 +7668,71 @@ this._localCharId = args.characterId ?? 0;
       if (typeof m === 'number') total += m;
     }
     return total;
+  }
+
+  /** WZ `Skill.wz/<job>.img/skill/<id>/level/<lv>` node for a learned skill. */
+  private _skillLevelNode(skillId: number, level: number): WzProperty | null {
+    const skillWz = this._skillWz;
+    if (!skillWz) return null;
+    const job = Math.floor(skillId / 10000);
+    const node = (skillWz.GetItem(`${String(job).padStart(3, '0')}.img/skill/${String(skillId).padStart(7, '0')}`)
+      ?? skillWz.GetItem(`${job}.img/skill/${skillId}`)) as WzProperty | null;
+    if (!node) return null;
+    const lv = node.Get(`level/${level}`);
+    return lv instanceof WzProperty ? lv : null;
+  }
+
+  /** Sum of `<field>` across the learned skills listed (single-value lookup). */
+  private _skillLevelValue(skillId: number, field: string): number {
+    const rec = (this._skillRecords ?? []).find((r) => r.skillId === skillId && r.level > 0);
+    if (!rec) return 0;
+    const lv = this._skillLevelNode(skillId, rec.level);
+    const v = lv?.Get(field);
+    return typeof v === 'number' ? v : 0;
+  }
+
+  // OG get_critical_skill_level (0x70A240), fully decompiled:
+  // - job/1000 == 3 → skill 30000022 (race-3 critical)
+  // - WT 45|46 (bow/xbow) → cygnus(job/1000==1) ? 13000000 : 3000001 Critical Shot
+  // - WT 47 (claw)       → cygnus ? 14100001 : 4100001 Critical Throw
+  // - WT 48 (knuckle)    → 15110000 Critical Punch
+  // - other weapon types / unarmed → no base critical
+  private _baseCriticalSkillId(): number {
+    if (Math.floor(this._job / 1000) === 3) return 30000022;
+    const weaponId = this._equip.equippedWeaponItemId;
+    const wt = weaponId !== null ? getWeaponType(weaponId) : 0;
+    const cygnus = Math.floor(this._job / 1000) === 1;
+    switch (wt) {
+      case 45: case 46: return cygnus ? 13000000 : 3000001;
+      case 47: return cygnus ? 14100001 : 4100001;
+      case 48: return 15110000;
+      default: return 0;
+    }
+  }
+
+  // prop = SKILLLEVELDATA.prop of the learned critical skill's current level.
+  private _computeBaseCriticalProp(): number {
+    const id = this._baseCriticalSkillId();
+    return id !== 0 ? this._skillLevelValue(id, 'prop') : 0;
+  }
+
+  // OG GetCriticalProp combo-ability block: with ComboAbilityBuff active,
+  // look up skill 21110000 (20000018 for race job 2000), X = min(LevelData.X,
+  // comboValue/10), crit contribution = clamp(X * LevelData.Y, 0, 100).
+  private _computeComboAbilityCritical(): number {
+    const sec = this.game.fieldHandlers.secondaryStat;
+    const comboVal = typeof sec.getAranCombo === 'function' ? sec.getAranCombo() : 0;
+    if (!(comboVal > 0)) return 0;
+    const skillId = this._job === 2000 ? 20000018 : 21110000;
+    const rec = (this._skillRecords ?? []).find((r) => r.skillId === skillId && r.level > 0);
+    if (!rec) return 0;
+    const lv = this._skillLevelNode(skillId, rec.level);
+    if (!lv) return 0;
+    const xRaw = lv.Get('x');
+    const yRaw = lv.Get('y');
+    if (typeof xRaw !== 'number' || typeof yRaw !== 'number') return 0;
+    const x = Math.min(xRaw, Math.floor(comboVal / 10));
+    return Math.min(100, Math.max(0, x * yRaw));
   }
 
   private _onTemporaryStatSet(entries: { skillId: number; value: number; seconds: number }[]): void {
@@ -8455,18 +8587,32 @@ this._localCharId = args.characterId ?? 0;
   }
 }
 
+// v95 CharacterTemporaryStat names by bit position (server enum order).
 const SecondaryStatNames = [
   'PAD', 'PDD', 'MAD', 'MDD', 'ACC', 'EVA', 'Craft', 'Speed',
   'Jump', 'MagicGuard', 'DarkSight', 'Booster', 'PowerGuard', 'MaxHP',
   'MaxMP', 'Invincible', 'SoulArrow', 'Stun', 'Poison', 'Seal',
-  'Darkness', 'Combo', 'Charge', 'DragonBlood', 'HolySymbol', 'MesoUp',
+  'Darkness', 'ComboCounter', 'WeaponCharge', 'DragonBlood', 'HolySymbol', 'MesoUp',
   'ShadowPartner', 'PickPocket', 'MesoGuard', 'Thaw', 'Weakness', 'Curse',
   'Slow', 'Morph', 'Regen', 'BasicStatUp', 'Stance', 'SharpEyes',
-  'ManaReflection', 'Attract', 'NoBulletConsume', 'Infinity', 'AdvancedBless',
-  'Illusion', 'BerserkFury', 'DivineBody', 'Spark', 'FinalAttack',
-  'WindWalk', 'AranCombo', 'ComboDrain', 'ComboBarrier', 'BodyPressure',
-  'SmartKnockback', 'RepeatEffect', 'ExpBuffRate', 'StopPortion', 'StopMotion',
-  'Fear', 'EvanSlow', 'MagicShield', 'MagicResistance', 'SoulStone', 'Flying',
+  'ManaReflection', 'Attract', 'SpiritJavelin', 'Infinity', 'Holyshield',
+  'HamString', 'Blind', 'Concentration', 'BanMap', 'MaxLevelBuff',
+  'MesoUpByItem', 'Ghost', 'Barrier', 'ReverseInput', 'ItemUpByItem',
+  'RespectPImmune', 'RespectMImmune', 'DefenseAtt', 'DefenseState',
+  'IncEffectHPPotion', 'IncEffectMPPotion', 'DojangBerserk', 'DojangInvincible',
+  'Spark', 'DojangShield', 'SoulMasterFinal', 'WindBreakerFinal', 'ElementalReset',
+  'WindWalk', 'EventRate', 'ComboAbilityBuff', 'ComboDrain', 'ComboBarrier',
+  'BodyPressure', 'SmartKnockback', 'RepeatEffect', 'ExpBuffRate',
+  'StopPortion', 'StopMotion', 'Fear', 'EvanSlow', 'MagicShield',
+  'MagicResistance', 'SoulStone', 'Flying', 'Frozen', 'AssistCharge',
+  'Enrage', 'SuddenDeath', 'NotDamaged', 'FinalCut', 'ThornsEffect',
+  'SwallowAttackDamage', 'MorewildDamageUp', 'Mine', 'EMHP', 'EMMP',
+  'EPAD', 'EPDD', 'EMDD', 'Guard', 'SafetyDamage', 'SafetyAbsorb',
+  'Cyclone', 'SwallowCritical', 'SwallowMaxMP', 'SwallowDefence', 'SwallowEvasion',
+  'Conversion', 'Revive', 'Sneak', 'Mechanic', 'Aura', 'DarkAura',
+  'BlueAura', 'YellowAura', 'SuperBody', 'MorewildMaxHP', 'Dice', 'BlessingArmor',
+  'DamR', 'TeleportMasteryOn', 'CombatOrders', 'Beholder', 'EnergyCharged',
+  'Dash_Speed', 'Dash_Jump', 'RideVehicle', 'PartyBooster', 'GuidedBullet',
 ];
 
 const MobStatNames = [

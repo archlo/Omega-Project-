@@ -67,10 +67,10 @@ const STRPOOL_AUTO1_TOOLTIP = 1989;
 const STRPOOL_AUTO2_TOOLTIP = 1990;
 const STRPOOL_TOOLTIP_HELPER = 1993;
 
-const _labelStyle = new TextStyle({ fill: '#000', fontSize: 10, fontFamily: 'monospace', stroke: { color: '#888', width: 1 } });
-const _valueStyle = new TextStyle({ fill: '#000', fontSize: 10, fontFamily: 'monospace', stroke: { color: '#888', width: 1 } });
-const _apStyle = new TextStyle({ fill: '#8B6914', fontSize: 10, fontFamily: 'monospace', stroke: { color: '#888', width: 1 } });
-const _redStyle = new TextStyle({ fill: '#CC0000', fontSize: 10, fontFamily: 'monospace', stroke: { color: '#888', width: 1 } });
+const _labelStyle = new TextStyle({ fill: '#000', fontSize: 10, fontFamily: 'monospace' });
+const _valueStyle = new TextStyle({ fill: '#000', fontSize: 10, fontFamily: 'monospace' });
+const _apStyle = new TextStyle({ fill: '#8B6914', fontSize: 10, fontFamily: 'monospace' });
+const _redStyle = new TextStyle({ fill: '#CC0000', fontSize: 10, fontFamily: 'monospace' });
 
 // OG class: CUIStat (3008 bytes, inherits CUIWnd)
 // All coordinates and behavior from IDA decompilation of v95 client.
@@ -107,7 +107,6 @@ export class StatsInfo extends GamePanel {
   // All positions, StringPool IDs, and directions from IDA decompilation
   private _tipLayers: Container[] = [];
 
-  private _bg: Graphics;
   private _wzBg: WzSprite | null = null;
   private _wzBg2: WzSprite | null = null;
   private _wzBg3: WzSprite | null = null;
@@ -197,7 +196,9 @@ export class StatsInfo extends GamePanel {
     // (UI/Basic.img/BtClose3) at (150, 6).
     this.createCloseButton(loader, ui, 5, PANEL_W, { x: 150, y: 6 });
 
-    // OG: CUIWnd::OnCreate loads 3 background layers from UIWindow2.img/Stat/main
+    // OG: CUIWnd::OnCreate loads 3 background layers from UIWindow2.img/Stat/main.
+    // No custom fallback: without the WZ canvases the window renders nothing
+    // (authentic rule — never hand-draw the panel).
     const stat = ui?.GetItem('UIWindow2.img/Stat/main') as WzProperty | null;
     if (stat) {
       this._wzBg = this._loadWzSprite(loader, stat, 'backgrnd');
@@ -209,7 +210,9 @@ export class StatsInfo extends GamePanel {
       this._wzCover1 = this._loadWzSprite(loader, stat, 'cover1');
     }
 
-    this._bg = new Graphics();
+    // OG MakeBalloonTip: balloon 9-slice from Login.img/WorldNotice/Balloon
+    this._loadBalloonPieces(loader, ui);
+
     if (this._wzBg) {
       // OG: 3 background layers at z=-1, z=0, z=1 (backgrnd, backgrnd2, backgrnd3)
       const bg1 = this._wzBg.ToPixi();
@@ -236,9 +239,6 @@ export class StatsInfo extends GamePanel {
         this._root.addChild(c1);
         this._coverSprites.push(c1);
       }
-    } else {
-      this._rebuildBg();
-      this._root.addChild(this._bg);
     }
 
     // Content layer — ensures all text/buttons render ON TOP of backgrounds
@@ -909,95 +909,120 @@ export class StatsInfo extends GamePanel {
     }
   }
 
-  // OG: MakeBalloonTip — creates a balloon tip layer at (nX, nY) with direction nDir
-  // nDir=1: tail down-left, nDir=2: tail up, nDir=3: tail up-right
-  private _createBalloonTip(index: number, nX: number, nY: number, nDir: number, lines: string[], font: TextStyle): void {
+  // OG: UIHelper::MakeBalloonTip @0x7C9780 + make_balloon @0x95DE30.
+  // Balloon 9-slice from UI/Login.img/WorldNotice/Balloon (StringPool 0xC9D):
+  // corners nw/ne/sw/se (9x9), edges n/s (1x9) and w/e (9x1), center c (1x1);
+  // arrow piece per direction (StringPool 1450-1453).
+  private _balloonPieces: Record<string, WzSprite | null> = {};
+
+  private _loadBalloonPieces(loader: WzTextureLoader, ui: WzPackage | null): void {
+    const root = ui?.GetItem('Login.img/WorldNotice/Balloon');
+    if (!(root instanceof WzProperty)) return;
+    const pieces = ['nw', 'n', 'ne', 'e', 'w', 'c', 'sw', 's', 'se',
+      'nwArrow', 'neArrow', 'seArrow', 'swArrow',
+      'nwlArrow', 'nelArrow', 'swlArrow', 'selArrow'];
+    for (const p of pieces) {
+      const c = root.Get(p);
+      this._balloonPieces[p] = c instanceof WzCanvas ? loader.Load(c) : null;
+    }
+  }
+
+  private _balloonSprite(name: string): Sprite | null {
+    const s = this._balloonPieces[name];
+    if (!s?.Texture) return null;
+    // Plain sprite with anchor 0 — position comes from the slice layout,
+    // not the WZ origin (the OG Copy calls are origin-adjusted already).
+    return new Sprite(s.Texture);
+  }
+
+  private _createBalloonTip(index: number, nX: number, nY: number, nDir: number, lines: string[], _font: TextStyle): void {
+    if (!this._balloonPieces['c']?.Texture) return; // no WZ assets → draw nothing
+
+    const measure = new Text({ text: lines.length ? lines[0] : '', style: _valueStyle });
+    let maxW = 0;
+    for (const l of lines) {
+      measure.text = l;
+      if (measure.width > maxW) maxW = measure.width;
+    }
+    const tipW = Math.ceil(maxW) + 20;
+    const tipH = lines.length * 15 + 20;
+
+    // OG direction table (MakeBalloonTip switch on nDir)
+    let px: number, py: number, ox: number, oy: number, arrow: string, ax: number, ay: number;
+    switch (nDir) {
+      case 0: px = nX - tipW - 23; py = nY; ox = 0; oy = 23; arrow = 'nelArrow'; ax = tipW - 8; ay = 0; break;
+      case 1: px = nX - tipW - 23; py = nY - tipH - 23; ox = 0; oy = 0; arrow = 'selArrow'; ax = tipW - 8; ay = lines.length * 15 + 4; break;
+      case 2: px = nX; py = nY - tipH - 23; ox = 23; oy = 0; arrow = 'swlArrow'; ax = 0; ay = lines.length * 15 + 4; break;
+      default: px = nX; py = nY; ox = 23; oy = 23; arrow = 'nwlArrow'; ax = 0; ay = 0; break;
+    }
+
     const tip = new Container();
+    tip.position.set(px, py);
 
-    // Balloon background — rounded rect with border
-    const bg = new Graphics();
-    const w = 160;
-    const h = 30 + lines.length * 14;
-    bg.roundRect(0, 0, w, h, 6).fill({ color: '#0C0C16', alpha: 220 / 255 });
-    bg.roundRect(0, 0, w, h, 6).stroke({ color: '#46465A', width: 1 });
-    tip.addChild(bg);
+    const put = (name: string, x: number, y: number, w?: number, h?: number): void => {
+      const s = this._balloonSprite(name);
+      if (!s) return;
+      s.position.set(x, y);
+      if (w !== undefined) s.width = w;
+      if (h !== undefined) s.height = h;
+      tip.addChild(s);
+    };
+    const innerW = Math.max(0, tipW - 18);
+    const innerH = Math.max(0, tipH - 18);
+    // 9-slice at (ox, oy)
+    put('nw', ox, oy, 9, 9);
+    put('n', ox + 9, oy, innerW, 9);
+    put('ne', ox + 9 + innerW, oy, 9, 9);
+    put('w', ox, oy + 9, 9, innerH);
+    put('c', ox + 9, oy + 9, innerW, innerH);
+    put('e', ox + 9 + innerW, oy + 9, 9, innerH);
+    put('sw', ox, oy + 9 + innerH, 9, 9);
+    put('s', ox + 9, oy + 9 + innerH, innerW, 9);
+    put('se', ox + 9 + innerW, oy + 9 + innerH, 9, 9);
+    // Arrow
+    put(arrow, ox + ax, oy + ay);
 
-    // Tail/pointer triangle based on direction
-    const tail = new Graphics();
-    if (nDir === 2) {
-      // Tail points up — triangle at top center
-      tail.moveTo(w / 2 - 6, 0);
-      tail.lineTo(w / 2 + 6, 0);
-      tail.lineTo(w / 2, -8);
-      tail.closePath();
-    } else if (nDir === 1) {
-      // Tail points down-left
-      tail.moveTo(0, h);
-      tail.lineTo(12, h);
-      tail.lineTo(0, h + 8);
-      tail.closePath();
-    } else if (nDir === 3) {
-      // Tail points up-right
-      tail.moveTo(w - 12, 0);
-      tail.lineTo(w, 0);
-      tail.lineTo(w, -8);
-      tail.closePath();
-    }
-    tail.fill({ color: '#0C0C16', alpha: 220 / 255 });
-    tail.stroke({ color: '#46465A', width: 1 });
-    tip.addChild(tail);
-
-    // Text lines
+    // Text rows — centered, black (Balloon clr node = 0xFF000000), +15 step
+    const textStyle = new TextStyle({ fill: '#000000', fontSize: _font.fontSize as number ?? 9, fontFamily: _font.fontFamily });
     for (let i = 0; i < lines.length; i++) {
-      const text = new Text({ text: lines[i], style: font });
-      text.x = 5;
-      text.y = 5 + i * 14;
-      tip.addChild(text);
+      const t = new Text({ text: lines[i], style: textStyle });
+      t.x = ox + tipW / 2 - t.width / 2;
+      t.y = oy + 10 + i * 15;
+      tip.addChild(t);
     }
 
-    // Position at (nX, nY) relative to stat window
-    tip.x = nX;
-    tip.y = nY;
     this._root.addChild(tip);
     this._tipLayers[index] = tip;
   }
 
-  // OG: StringPool::GetString — resolves StringPool ID to text
-  // Loads from String.wz at runtime via StringPoolService
+  // OG: StringPool::GetString — resolves StringPool ID to text.
+  // Fallback values below are DECRYPTED from the v95 client's embedded
+  // ms_aString table (StringPool::Key XOR stream), not invented.
   private _getStringPoolText(id: number): string {
-    // Try loading from StringPoolService first
     if (this._stringPool) {
       const text = this._stringPool.getString(id);
       if (text) return text;
     }
 
-    // Fallback text for common StringPool IDs (when String.wz not available)
-    // Verified from CUISysOpt-era StringPool knowledge + job tip structure.
     const fallbacks: Record<number, string> = {
-      0x14BA: 'Tip: Use AP to raise',
-      0x14BB: 'your STR for melee attacks.',
-      0x14BC: 'your INT for magic attacks.',
-      0x14BD: 'your DEX for ranged attacks.',
-      0x14BE: 'your DEX/LUK for criticals.',
-      0x14BF: 'your STR/DEX for weapons.',
-      0x14C0: 'Tip: Pirates can use',
-      0x14C1: 'your STR/DEX for weapons.',
-      0x14C2: 'your STR for combo attacks.',
-      0x14C3: 'your INT for dragon magic.',
-      0x14C4: 'your DEX for elemental arrows.',
-      0x14C5: 'your LUK for card attacks.',
-      0x14C6: 'AP can be used to raise',
-      0x14C7: 'your stats or HP/MP.',
-      0x1A45: 'Click the + button to add.',
-      0x1A46: 'Click the + button to add.',
-      0x1A47: 'Click the + button to add.',
+      0x14BA: 'You can raise the desired stat by clicking the arrow next to it.',
+      0x14BB: 'The most important stat for a Warrior is STR.',
+      0x14BC: 'The most important stat for a Magician is INT.',
+      0x14BD: 'The most important stat for a Bowman is DEX.',
+      0x14BE: 'The most important stat for a Thief is LUK.',
+      0x14BF: 'The most important stat for a knuckle using Pirate is STR.',
+      0x14C0: 'The most important stat for a gun using Pirate is DEX.',
+      0x14C1: 'The most important stat for a Dawn Warrior is STR.',
+      0x14C2: 'The most important stat for a Blaze Wizard is INT.',
+      0x14C3: 'The most important stat for a Wind Archer is DEX.',
+      0x14C4: 'The most important stat for a Night Walker is LUK.',
+      0x14C5: 'The most important stat for a Thunder Breaker is STR.',
+      0x14C6: 'If you click the auto-assign button, the AP will be',
+      0x14C7: 'distributed automatically as needed.',
+      0x1A45: 'In addition, a bit of DEX is needed.',
+      0x1A46: 'In addition, a bit of LUK is needed.',
+      0x1A47: 'In addition, a bit of STR is needed.',
     };
     return fallbacks[id] ?? `StringPool(${id})`;
-  }
-
-  private _rebuildBg(): void {
-    this._bg.clear();
-    this._bg.rect(0, 0, PANEL_W, PANEL_H).fill({ color: '#0C0C16', alpha: 235 / 255 });
-    this._bg.rect(0, 0, PANEL_W, PANEL_H).stroke({ color: '#46465A', width: 1 });
   }
 }

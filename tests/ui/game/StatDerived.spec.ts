@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeDerived, defaultStatInputs } from '../../../src/ui/game/StatDerived.js';
+import { calcDamageRange } from '../../../src/net/packet/MeleeDamage.js';
 
 // TODO_AUDIT.md Seventieth pass: BasicStat::CalcBasePACC/CalcBasePDD/CalcBaseMDD
 // (decompile 0x721b60/0x721a40/0x721ad0) — real formulas, confirmed wrong
@@ -109,5 +110,30 @@ describe('computeDerived minimum damage clamp (OG [1, 999999])', () => {
     const s = { ...defaultStatInputs(), jobId: 100, str: 9999, dex: 9999, weaponType: 31, watk: 99999, mastery: 1 };
     const d = computeDerived(s);
     expect(d.maxDamage).toBeLessThanOrEqual(999999);
+  });
+});
+
+// OG: adjust_ramdom_damage (0x726690) — min = floor(max * min(0.95,
+// mastery/100 + GetMsateryConstByWT(nWT)) + 0.5). The panel's range and
+// MeleeDamage.calcDamageRange (used by live attacks) must agree exactly.
+describe('computeDerived min damage matches the live attack math', () => {
+  it('min = floor(max * effectiveMastery + 0.5) with the per-WT mastery const', () => {
+    const s = { ...defaultStatInputs(), jobId: 100, str: 100, dex: 50, weaponType: 31, watk: 200, mastery: 20 };
+    const d = computeDerived(s);
+    // effective = min(0.95, 0.2 + 0.2) = 0.4
+    expect(d.minDamage).toBe(Math.floor(d.maxDamage * 0.4 + 0.5));
+  });
+
+  it('agrees 1:1 with MeleeDamage.calcDamageRange across branches', () => {
+    const cases: Array<[number, number]> = [
+      [100, 31], [400, 33], [500, 48], [300, 45], [200, 38], [0, 30],
+    ];
+    for (const [jobId, wt] of cases) {
+      const s = { ...defaultStatInputs(), jobId, str: 80 + jobId % 7, dex: 40, luk: 25, int: 30, weaponType: wt, watk: 120, matk: 90, mastery: 19 };
+      const d = computeDerived(s);
+      const r = calcDamageRange(jobId, wt, s.watk, s.matk, s.str, s.dex, s.int, s.luk, s.mastery);
+      expect(d.minDamage).toBe(r.min);
+      expect(d.maxDamage).toBe(r.max);
+    }
   });
 });

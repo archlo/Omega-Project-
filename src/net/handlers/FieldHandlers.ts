@@ -5250,72 +5250,24 @@ export class FieldHandlers {
   }
 
   private handleUserSetTemporaryStat(p: InPacket): void {
+    // OG CUserRemote::OnSetTemporaryStat → SecondaryStat::DecodeForRemote
+    // (0x72B7B0): 16-byte UINT128 flag, REMOTE_DECODE_ORDER per-stat variable
+    // data, 2 trailing defense bytes, then two-state entries (15 bytes each).
+    // NOTE: unlike the LOCAL packet there is no swallow-group byte, Dice
+    // block or BlessingArmor int here.
     try {
       const charId = p.readInt();
-      const maskLo = p.readLong();
-      const maskHi = p.readLong();
-
-      // Count total set bits across both 64-bit halves
-      const totalBits = countBits64(maskLo) + countBits64(maskHi);
-
-      // Read common entries: each set bit carries (value: short, skillId: int, seconds: int)
-      const rawEntries: { bit: number; value: number; skillId: number; seconds: number }[] = [];
-      for (let i = 0; i < totalBits; i++) {
-        rawEntries.push({
-          bit: i,
-          value: p.readShort(),
-          skillId: p.readInt(),
-          seconds: p.readInt(),
-        });
-      }
-
-      // Map entry index → actual bit position (lowest set bit first)
-      const buffs: TempStatBuff[] = [];
-      let entryIdx = 0;
-      for (let word = 0; word < 2; word++) {
-        let bits = word === 0 ? maskLo : maskHi;
-        let bitPos = BigInt(word * 64);
-        while (bits) {
-          const lowest = bits & -bits;
-          const bit = bitPos + BigInt(Math.clz32(Number(lowest)) ^ 31);
-          if (entryIdx < rawEntries.length) {
-            rawEntries[entryIdx].bit = Number(bit);
-            buffs.push(rawEntries[entryIdx]);
-          }
-          entryIdx++;
-          bits &= bits - 1n;
-        }
-      }
-
-      // Phase 4: Special-case inline data AFTER the common loop
-      // CTS_DICE (bit 85) → 22 extra ints
-      let diceInfo: number[] = [];
-      if (isBitSet(maskLo, maskHi, 85n)) {
-        for (let j = 0; j < 22; j++) diceInfo.push(p.readInt());
-      }
-      // CTS_SWALLOW_BUFF (bit 98) → 1 extra int
-      let swallowBuffTime = 0;
-      if (isBitSet(maskLo, maskHi, 98n)) {
-        swallowBuffTime = p.readInt();
-      }
-      // CTS_BLESSING_ARMOR (bit 78) → 1 extra int
-      let blessingArmorIncPAD = 0;
-      if (isBitSet(maskLo, maskHi, 78n)) {
-        blessingArmorIncPAD = p.readInt();
-      }
-
-      // Phase 5: Unconditional trailing bytes
-      let defenseAtt = 0;
-      let defenseState = 0;
-      if (p.remaining >= 2) {
-        defenseAtt = p.readByte();
-        defenseState = p.readByte();
-      }
-
+      const res = SecondaryStat.decodeRemote(p);
       this.onUserSetTemporaryStat?.({
-        charId, maskLo, maskHi, buffs,
-        defenseAtt, defenseState,
-        diceInfo, swallowBuffTime, blessingArmorIncPAD,
+        charId,
+        maskLo: res.maskLo,
+        maskHi: res.maskHi,
+        buffs: res.entries,
+        defenseAtt: res.defenseAtt,
+        defenseState: res.defenseState,
+        diceInfo: [],
+        swallowBuffTime: 0,
+        blessingArmorIncPAD: 0,
       });
     } catch { /* malformed */ }
   }
@@ -5645,14 +5597,3 @@ function countBits(x: number): number {
   return c;
 }
 
-function countBits64(x: bigint): number {
-  let c = 0;
-  let v = x;
-  while (v) { c += Number(v & 1n); v >>= 1n; }
-  return c;
-}
-
-function isBitSet(lo: bigint, hi: bigint, bit: bigint): boolean {
-  if (bit < 64n) return (lo & (1n << bit)) !== 0n;
-  return (hi & (1n << (bit - 64n))) !== 0n;
-}

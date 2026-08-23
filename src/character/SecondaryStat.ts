@@ -7,135 +7,160 @@ function popcount64(x: bigint): number {
   return c;
 }
 
-// CharacterTemporaryStat bit positions — must match TempStatMask enum in Enums.ts.
-const CTS_STR              = 0n;
-const CTS_DEX              = 1n;
-const CTS_INT              = 2n;
-const CTS_LUK              = 3n;
-const CTS_PAD              = 4n;   // Physical ATK
-const CTS_MAD              = 5n;   // Magical ATK
-const CTS_PDD              = 6n;   // Physical DEF
-const CTS_MDD              = 7n;   // Magical DEF
-const CTS_ACC              = 8n;
-const CTS_EVA              = 9n;
-const CTS_SPEED            = 10n;
-const CTS_JUMP             = 11n;
-const CTS_MAGIC_ATK        = 12n;
-const CTS_MAGIC_DEF        = 13n;
-const CTS_MAGIC_GUARD      = 15n;
-const CTS_DARK_SIGHT       = 16n;
-const CTS_BOOSTER          = 17n;
-const CTS_POWER_GUARD      = 18n;
-const CTS_MAX_HP           = 19n;
-const CTS_MAX_MP           = 20n;
-const CTS_INVINCIBLE       = 21n;
-const CTS_SOUL_ARROW       = 22n;
-const CTS_STUN             = 23n;
-const CTS_POISON           = 24n;
-const CTS_SEAL             = 25n;
-const CTS_DARKNESS         = 26n;
-const CTS_COMBO            = 27n;
-const CTS_CHARGE           = 28n;
-const CTS_DRAGON_BLOOD     = 29n;
-const CTS_HOLY_SYMBOL      = 30n;
-const CTS_MESO_UP          = 31n;
-const CTS_SHADOW_PARTNER   = 32n;
-const CTS_PICK_POCKET      = 33n;
-const CTS_MESO_GUARD       = 34n;
-const CTS_THAW             = 35n;
-const CTS_WEAKNESS         = 36n;
-const CTS_CURSE            = 37n;
-const CTS_SLOW             = 38n;
-const CTS_MORPH            = 39n;
-const CTS_REGEN            = 40n;
-const CTS_BASIC_STAT_UP    = 41n;  // Maple Warrior %
-const CTS_STANCE           = 42n;
-const CTS_SHARP_EYES       = 43n;
-const CTS_MANA_REFLECTION  = 44n;
-const CTS_ATTRACT          = 45n;  // Taunt
-const CTS_NO_BULLET_CONSUME = 46n;
-const CTS_INFINITY         = 47n;
-const CTS_ADVANCED_BLESS   = 48n;
-const CTS_ILLUSION         = 49n;
-const CTS_BERSERK_FURY     = 50n;
-const CTS_DIVINE_BODY      = 51n;
-const CTS_SPARK            = 52n;
-const CTS_FINAL_ATTACK     = 53n;
-const CTS_WIND_WALK        = 54n;
-const CTS_ARAN_COMBO       = 55n;
-const CTS_COMBO_DRAIN      = 56n;
-const CTS_COMBO_BARRIER    = 57n;
-const CTS_BODY_PRESSURE    = 58n;
-const CTS_SMART_KNOCKBACK  = 59n;
-const CTS_REPEAT_EFFECT    = 60n;
-const CTS_EXP_BUFF_RATE    = 61n;
-const CTS_STOP_PORTION     = 62n;
-const CTS_STOP_MOTION      = 63n;
-const CTS_FEAR             = 64n;
-const CTS_EVAN_SLOW        = 65n;
-const CTS_MAGIC_SHIELD      = 66n;
-const CTS_MAGIC_RESISTANCE  = 67n;
-const CTS_SOUL_STONE       = 68n;
-const CTS_FLYING           = 69n;
-const CTS_FROZEN           = 70n;
-const CTS_ELEMENT_LIGHT    = 71n;
-const CTS_ELEMENT_DARK     = 72n;
-const CTS_ELEMENT_FIRE     = 73n;
-const CTS_ELEMENT_ICE      = 74n;
-const CTS_ADD_ATTACK_COUNT = 75n;
-const CTS_ADD_ATTACK_X     = 76n;
-const CTS_CRUSH_ITEM_ENCHANT = 77n;
-const CTS_BLESSING_ARMOR   = 78n;  // inline: 1 extra int
-const CTS_DAMR             = 79n;
-const CTS_TELEPORT_MASTERY = 80n;
-const CTS_COMBAT_ORDERS    = 81n;
-const CTS_BEHOLDER         = 82n;
-const CTS_ADD_BUFF_ITEM_ID = 83n;
-const CTS_HYPER_BODY       = 84n;
-const CTS_DICE             = 85n;  // inline: 22 extra ints
-const CTS_RUSH             = 86n;
-const CTS_WEB              = 87n;
-const CTS_ELEMENTAL_CHARGE = 88n;
-const CTS_VENOM            = 89n;
-const CTS_DARK_ATOMIC      = 90n;
-const CTS_BOMB_ARROW       = 91n;
-const CTS_SUDDEN_DEATH     = 92n;
-const CTS_BOARDING         = 93n;
-const CTS_ADDITIONAL_PMP   = 94n;
-const CTS_ARAN_WHIRLWIND   = 95n;
-const CTS_MAGNET           = 96n;
-const CTS_FLASH_BANG       = 97n;
-const CTS_SWALLOW_BUFF     = 98n;  // inline: 1 extra int
-const CTS_HIT_TELEPORT     = 99n;
-const CTS_MORE_WILD_BUFF   = 100n;
-const CTS_HIDE             = 101n;
-const CTS_CYGNUS_FLAME     = 102n;
-const CTS_STR_BUFF         = 103n;
-const CTS_DEX_BUFF         = 104n;
-const CTS_INT_BUFF         = 105n;
-const CTS_LUK_BUFF         = 106n;
-const CTS_ATTACK_COUNT     = 107n;
-const CTS_BUFF_IMMUNE      = 108n;
-const CTS_SKILL_FIXED      = 109n;
-const CTS_ARAN_BIND        = 110n;
-const CTS_NOT_DAMAGED      = 111n;
-const CTS_FINAL_CUT        = 112n;
-const CTS_DAMAGE_UP        = 113n;
-const CTS_HYPER_BODY_DEF   = 114n;
-const CTS_HYPER_BODY_HP    = 115n;
-const CTS_HYPER_BODY_MP    = 116n;
-const CTS_ELEMENTAL_CHARGE2 = 117n;
-const CTS_BARRIER          = 118n;
-const CTS_GUIDED_BULLET    = 119n;
-const CTS_UNDEAD           = 120n;
-const CTS_RIDE_VEHICLE     = 121n;
+// CharacterTemporaryStat bit positions — v95 wire layout matching the server's
+// CharacterTemporaryStat enum (henesys port) and OG DecodeForLocal. Entry order
+// is NOT ascending bit order (see LOCAL_ENTRY_ORDER below).
+const CTS_PAD                = 0n;
+const CTS_PDD                = 1n;
+const CTS_MAD                = 2n;
+const CTS_MDD                = 3n;
+const CTS_ACC                = 4n;
+const CTS_EVA                = 5n;
+const CTS_CRAFT              = 6n;
+const CTS_SPEED              = 7n;
+const CTS_JUMP               = 8n;
+const CTS_MAGIC_GUARD        = 9n;
+const CTS_DARK_SIGHT         = 10n;
+const CTS_BOOSTER            = 11n;
+const CTS_POWER_GUARD        = 12n;
+const CTS_MAX_HP             = 13n;
+const CTS_MAX_MP             = 14n;
+const CTS_INVINCIBLE         = 15n;
+const CTS_SOUL_ARROW         = 16n;
+const CTS_STUN               = 17n;
+const CTS_POISON             = 18n;
+const CTS_SEAL               = 19n;
+const CTS_DARKNESS           = 20n;
+const CTS_COMBO              = 21n;   // ComboCounter
+const CTS_CHARGE             = 22n;   // WeaponCharge
+const CTS_DRAGON_BLOOD       = 23n;
+const CTS_HOLY_SYMBOL        = 24n;
+const CTS_MESO_UP            = 25n;
+const CTS_SHADOW_PARTNER     = 26n;
+const CTS_PICK_POCKET        = 27n;
+const CTS_MESO_GUARD         = 28n;
+const CTS_THAW               = 29n;
+const CTS_WEAKNESS           = 30n;
+const CTS_CURSE              = 31n;
+const CTS_SLOW               = 32n;
+const CTS_MORPH              = 33n;
+const CTS_REGEN              = 34n;
+const CTS_BASIC_STAT_UP      = 35n;   // Maple Warrior %
+const CTS_STANCE             = 36n;
+const CTS_SHARP_EYES         = 37n;
+const CTS_MANA_REFLECTION    = 38n;
+const CTS_ATTRACT            = 39n;
+const CTS_INFINITY           = 41n;
+const CTS_BARRIER            = 50n;
+const CTS_SPARK              = 61n;
+const CTS_WIND_WALK          = 66n;
+const CTS_ARAN_COMBO         = 68n;   // ComboAbilityBuff
+const CTS_COMBO_DRAIN        = 69n;
+const CTS_COMBO_BARRIER      = 70n;
+const CTS_BODY_PRESSURE      = 71n;
+const CTS_SMART_KNOCKBACK    = 72n;
+const CTS_REPEAT_EFFECT      = 73n;
+const CTS_EXP_BUFF_RATE      = 74n;
+const CTS_STOP_PORTION       = 75n;
+const CTS_STOP_MOTION        = 76n;
+const CTS_FEAR               = 77n;
+const CTS_EVAN_SLOW          = 78n;
+const CTS_MAGIC_SHIELD       = 79n;
+const CTS_MAGIC_RESISTANCE   = 80n;
+const CTS_SOUL_STONE         = 81n;
+const CTS_FLYING             = 82n;
+const CTS_FROZEN             = 83n;
+const CTS_SUDDEN_DEATH       = 86n;
+const CTS_NOT_DAMAGED        = 87n;
+const CTS_FINAL_CUT          = 88n;
+const CTS_THORNS_EFFECT      = 89n;
+const CTS_SWALLOW_CRITICAL   = 102n;
+const CTS_DICE               = 116n;  // inline: 22 extra ints
+const CTS_BLESSING_ARMOR     = 117n;  // inline: 1 extra int
+const CTS_DAMR               = 118n;
+const CTS_TELEPORT_MASTERY   = 119n;
+const CTS_COMBAT_ORDERS      = 120n;
+const CTS_BEHOLDER           = 121n;
+const CTS_RIDE_VEHICLE       = 125n;  // also written again in the two-state tail
+const CTS_GUIDED_BULLET      = 127n;  // also written again in the two-state tail
 
-// Bits that require extra inline data reads after the common loop.
-// [bitPosition, extraReadCount]
-const INLINE_DATA_BITS: [bigint, number][] = [
-  [CTS_DICE,           22],  // aDiceInfo[22] — 22 ints
-  [CTS_SWALLOW_BUFF,    1],  // tSwallowBuffTime — 1 int
-  [CTS_BLESSING_ARMOR,  1],  // nBlessingArmorIncPAD — 1 int
+// Swallow-buff group (jaguar): one shared trailing byte when any is set.
+const SWALLOW_GROUP_BITS = [90n, 102n, 103n, 104n, 105n];
+
+// Two-state tail stats: byte+int+int+int+short each.
+const TWO_STATE_ORDER: Array<[bigint, keyof BuffStatValues | null]> = [
+  [CTS_RIDE_VEHICLE, 'rideVehicle'],
+  [126n, null],                    // PartyBooster
+  [CTS_GUIDED_BULLET, 'guidedBullet'],
+];
+
+/**
+ * LOCAL_ENCODE_ORDER mirror — the exact entry sequence of the v95 local
+ * TemporaryStatSet body (NOT ascending bit order: EMHP/EMMP/EPAD/EPDD/EMDD sit
+ * between Jump and MagicGuard). `null` field = read the 10-byte entry, discard.
+ */
+const LOCAL_ENTRY_ORDER: Array<[bigint, keyof BuffStatValues | null]> = [
+  [CTS_PAD, 'pad'], [CTS_PDD, 'pdd'], [CTS_MAD, 'mad'], [CTS_MDD, 'mdd'],
+  [CTS_ACC, 'acc'], [CTS_EVA, 'eva'], [CTS_CRAFT, 'craft'],
+  [CTS_SPEED, 'speed'], [CTS_JUMP, 'jump'],
+  [93n, null], [94n, null], [95n, null], [96n, null], [97n, null],
+  [CTS_MAGIC_GUARD, 'magicGuard'], [CTS_DARK_SIGHT, 'darkSight'],
+  [CTS_BOOSTER, 'booster'], [CTS_POWER_GUARD, 'powerGuard'],
+  [98n, null], [99n, null], [100n, null],
+  [CTS_MAX_HP, 'maxHp'], [CTS_MAX_MP, 'maxMp'],
+  [CTS_INVINCIBLE, 'invincible'], [CTS_SOUL_ARROW, 'soulArrow'],
+  [CTS_STUN, 'stun'], [CTS_POISON, 'poison'], [CTS_SEAL, 'seal'], [CTS_DARKNESS, 'darkness'],
+  [CTS_COMBO, 'combo'], [CTS_CHARGE, 'charge'], [CTS_DRAGON_BLOOD, 'dragonBlood'],
+  [CTS_HOLY_SYMBOL, 'holySymbol'], [CTS_MESO_UP, 'mesoUp'],
+  [CTS_SHADOW_PARTNER, 'shadowPartner'], [CTS_PICK_POCKET, 'pickPocket'],
+  [CTS_MESO_GUARD, 'mesoGuard'], [CTS_THAW, 'thaw'], [CTS_WEAKNESS, 'weakness'],
+  [CTS_CURSE, 'curse'], [CTS_SLOW, 'slow'], [CTS_MORPH, 'morph'],
+  [49n, null],
+  [CTS_REGEN, 'regen'], [CTS_BASIC_STAT_UP, 'basicStatUp'], [CTS_STANCE, 'stance'],
+  [CTS_SHARP_EYES, 'sharpEyes'], [CTS_MANA_REFLECTION, 'manaReflection'],
+  [CTS_ATTRACT, 'attract'], [40n, null],
+  [CTS_INFINITY, 'infinity'],
+  [42n, null], [43n, null], [44n, null], [45n, null], [46n, null],
+  [47n, null],
+  [CTS_BARRIER, 'barrier'],
+  [51n, null], [48n, null], [52n, null],
+  [53n, null], [54n, null],
+  [55n, null], [56n, null],
+  [59n, null], [60n, null],
+  [CTS_SPARK, 'spark'],
+  [63n, null], [64n, null], [65n, null],
+  [CTS_WIND_WALK, 'windWalk'],
+  [67n, null],
+  [CTS_ARAN_COMBO, 'aranCombo'], [CTS_COMBO_DRAIN, 'comboDrain'],
+  [CTS_COMBO_BARRIER, 'comboBarrier'], [CTS_BODY_PRESSURE, 'bodyPressure'],
+  [CTS_SMART_KNOCKBACK, 'smartKnockback'], [CTS_REPEAT_EFFECT, 'repeatEffect'],
+  [CTS_EXP_BUFF_RATE, 'expBuffRate'],
+  [57n, null], [58n, null],
+  [CTS_STOP_PORTION, 'stopPortion'], [CTS_STOP_MOTION, 'stopMotion'],
+  [CTS_FEAR, 'fear'], [CTS_EVAN_SLOW, 'evanSlow'],
+  [CTS_MAGIC_SHIELD, 'magicShield'], [CTS_MAGIC_RESISTANCE, 'magicResistance'],
+  [CTS_SOUL_STONE, 'soulStone'], [CTS_FLYING, 'flying'], [CTS_FROZEN, 'frozen'],
+  [84n, null], [85n, null],
+  [CTS_SUDDEN_DEATH, 'suddenDeath'], [CTS_NOT_DAMAGED, 'notDamaged'],
+  [CTS_FINAL_CUT, 'finalCut'], [CTS_THORNS_EFFECT, 'thornsEffect'],
+  [90n, null],
+  [91n, null], [92n, null],
+  [101n, null],
+  [CTS_SWALLOW_CRITICAL, 'swallowCritical'],
+  [103n, null], [104n, null], [105n, null],
+  [106n, null], [107n, null], [108n, null],
+  [109n, null],
+  [110n, null], [111n, null], [112n, null], [113n, null],
+  [114n, null], [115n, null],
+  [CTS_DICE, 'dice'], [CTS_BLESSING_ARMOR, 'blessingArmor'],
+  [CTS_DAMR, 'damR'], [CTS_TELEPORT_MASTERY, 'teleportMastery'],
+  [CTS_COMBAT_ORDERS, 'combatOrders'], [CTS_BEHOLDER, 'beholder'],
+  [129n, null],
+  // Two-state stats also encoded as normal entries in this loop (the server
+  // writes them here AND again in the two-state tail).
+  [122n, null], [123n, null], [124n, null],
+  [CTS_RIDE_VEHICLE, 'rideVehicle'], [126n, null],
+  [CTS_GUIDED_BULLET, 'guidedBullet'],
 ];
 
 /**
@@ -143,21 +168,16 @@ const INLINE_DATA_BITS: [bigint, number][] = [
  * Only populated when the corresponding bit is set in the TemporaryStatSet mask.
  */
 export interface BuffStatValues {
-  // Common stats (bits 0-13)
-  str: number;
-  dex: number;
-  int: number;
-  luk: number;
-  pad: number;   // Physical ATK
-  mad: number;   // Magical ATK
-  pdd: number;   // Physical DEF
-  mdd: number;   // Magical DEF
+  // Common stats
+  pad: number;   // Physical ATK (buff)
+  pdd: number;
+  mad: number;
+  mdd: number;
   acc: number;
   eva: number;
+  craft: number;
   speed: number;
   jump: number;
-  magicAtk: number;
-  magicDef: number;
 
   // Skill-specific
   magicGuard: number;
@@ -267,14 +287,14 @@ export interface BuffStatValues {
   undead: number;
   rideVehicle: number;
   dice: number;
+  thornsEffect: number;
+  swallowCritical: number;
 }
 
 function defaultBuffValues(): BuffStatValues {
   return {
-    str: 0, dex: 0, int: 0, luk: 0,
-    pad: 0, mad: 0, pdd: 0, mdd: 0,
-    acc: 0, eva: 0, speed: 0, jump: 0,
-    magicAtk: 0, magicDef: 0,
+    pad: 0, pdd: 0, mad: 0, mdd: 0,
+    acc: 0, eva: 0, craft: 0, speed: 0, jump: 0,
     magicGuard: 0, darkSight: 0, booster: 0, powerGuard: 0,
     maxHp: 0, maxMp: 0, invincible: 0, soulArrow: 0,
     stun: 0, poison: 0, seal: 0, darkness: 0,
@@ -302,136 +322,9 @@ function defaultBuffValues(): BuffStatValues {
     notDamaged: 0, finalCut: 0, damageUp: 0, hyperBodyDef: 0,
     hyperBodyHp: 0, hyperBodyMp: 0, elementCharge2: 0,
     barrier: 0, guidedBullet: 0, undead: 0, rideVehicle: 0,
-    dice: 0,
+    dice: 0, thornsEffect: 0, swallowCritical: 0,
   };
 }
-
-/** Map bit position to BuffStatValues field name. */
-const BIT_TO_FIELD: Record<number, keyof BuffStatValues> = {
-  // Common stats (bits 0-13)
-  [Number(CTS_STR)]:            'str',
-  [Number(CTS_DEX)]:            'dex',
-  [Number(CTS_INT)]:            'int',
-  [Number(CTS_LUK)]:            'luk',
-  [Number(CTS_PAD)]:            'pad',
-  [Number(CTS_MAD)]:            'mad',
-  [Number(CTS_PDD)]:            'pdd',
-  [Number(CTS_MDD)]:            'mdd',
-  [Number(CTS_ACC)]:            'acc',
-  [Number(CTS_EVA)]:            'eva',
-  [Number(CTS_SPEED)]:          'speed',
-  [Number(CTS_JUMP)]:           'jump',
-  [Number(CTS_MAGIC_ATK)]:      'magicAtk',
-  [Number(CTS_MAGIC_DEF)]:      'magicDef',
-  // Skill-specific (bits 15-121)
-  [Number(CTS_MAGIC_GUARD)]:    'magicGuard',
-  [Number(CTS_DARK_SIGHT)]:     'darkSight',
-  [Number(CTS_BOOSTER)]:        'booster',
-  [Number(CTS_POWER_GUARD)]:    'powerGuard',
-  [Number(CTS_MAX_HP)]:         'maxHp',
-  [Number(CTS_MAX_MP)]:         'maxMp',
-  [Number(CTS_INVINCIBLE)]:     'invincible',
-  [Number(CTS_SOUL_ARROW)]:     'soulArrow',
-  [Number(CTS_STUN)]:           'stun',
-  [Number(CTS_POISON)]:         'poison',
-  [Number(CTS_SEAL)]:           'seal',
-  [Number(CTS_DARKNESS)]:       'darkness',
-  [Number(CTS_COMBO)]:          'combo',
-  [Number(CTS_CHARGE)]:         'charge',
-  [Number(CTS_DRAGON_BLOOD)]:   'dragonBlood',
-  [Number(CTS_HOLY_SYMBOL)]:    'holySymbol',
-  [Number(CTS_MESO_UP)]:        'mesoUp',
-  [Number(CTS_SHADOW_PARTNER)]: 'shadowPartner',
-  [Number(CTS_PICK_POCKET)]:    'pickPocket',
-  [Number(CTS_MESO_GUARD)]:     'mesoGuard',
-  [Number(CTS_THAW)]:           'thaw',
-  [Number(CTS_WEAKNESS)]:       'weakness',
-  [Number(CTS_CURSE)]:          'curse',
-  [Number(CTS_SLOW)]:           'slow',
-  [Number(CTS_MORPH)]:          'morph',
-  [Number(CTS_REGEN)]:          'regen',
-  [Number(CTS_BASIC_STAT_UP)]:  'basicStatUp',
-  [Number(CTS_STANCE)]:         'stance',
-  [Number(CTS_SHARP_EYES)]:     'sharpEyes',
-  [Number(CTS_MANA_REFLECTION)]: 'manaReflection',
-  [Number(CTS_ATTRACT)]:        'attract',
-  [Number(CTS_NO_BULLET_CONSUME)]: 'noBulletConsume',
-  [Number(CTS_INFINITY)]:       'infinity',
-  [Number(CTS_ADVANCED_BLESS)]: 'advancedBless',
-  [Number(CTS_ILLUSION)]:       'illusion',
-  [Number(CTS_BERSERK_FURY)]:   'berserkFury',
-  [Number(CTS_DIVINE_BODY)]:    'divineBody',
-  [Number(CTS_SPARK)]:          'spark',
-  [Number(CTS_FINAL_ATTACK)]:   'finalAttack',
-  [Number(CTS_WIND_WALK)]:      'windWalk',
-  [Number(CTS_ARAN_COMBO)]:     'aranCombo',
-  [Number(CTS_COMBO_DRAIN)]:    'comboDrain',
-  [Number(CTS_COMBO_BARRIER)]:  'comboBarrier',
-  [Number(CTS_BODY_PRESSURE)]:  'bodyPressure',
-  [Number(CTS_SMART_KNOCKBACK)]: 'smartKnockback',
-  [Number(CTS_REPEAT_EFFECT)]:  'repeatEffect',
-  [Number(CTS_EXP_BUFF_RATE)]:  'expBuffRate',
-  [Number(CTS_STOP_PORTION)]:   'stopPortion',
-  [Number(CTS_STOP_MOTION)]:    'stopMotion',
-  [Number(CTS_FEAR)]:           'fear',
-  [Number(CTS_EVAN_SLOW)]:      'evanSlow',
-  [Number(CTS_MAGIC_SHIELD)]:   'magicShield',
-  [Number(CTS_MAGIC_RESISTANCE)]: 'magicResistance',
-  [Number(CTS_SOUL_STONE)]:     'soulStone',
-  [Number(CTS_FLYING)]:         'flying',
-  [Number(CTS_FROZEN)]:         'frozen',
-  [Number(CTS_ELEMENT_LIGHT)]:  'elementLight',
-  [Number(CTS_ELEMENT_DARK)]:   'elementDark',
-  [Number(CTS_ELEMENT_FIRE)]:   'elementFire',
-  [Number(CTS_ELEMENT_ICE)]:    'elementIce',
-  [Number(CTS_ADD_ATTACK_COUNT)]: 'addAttackCount',
-  [Number(CTS_ADD_ATTACK_X)]:   'addAttackX',
-  [Number(CTS_CRUSH_ITEM_ENCHANT)]: 'crushItemEnchant',
-  [Number(CTS_BLESSING_ARMOR)]: 'blessingArmor',
-  [Number(CTS_DAMR)]:           'damR',
-  [Number(CTS_TELEPORT_MASTERY)]: 'teleportMastery',
-  [Number(CTS_COMBAT_ORDERS)]:  'combatOrders',
-  [Number(CTS_BEHOLDER)]:       'beholder',
-  [Number(CTS_ADD_BUFF_ITEM_ID)]: 'addBuffItemId',
-  [Number(CTS_HYPER_BODY)]:     'hyperBody',
-  [Number(CTS_DICE)]:           'dice',
-  [Number(CTS_RUSH)]:           'rush',
-  [Number(CTS_WEB)]:            'web',
-  [Number(CTS_ELEMENTAL_CHARGE)]: 'elementalCharge',
-  [Number(CTS_VENOM)]:          'venom',
-  [Number(CTS_DARK_ATOMIC)]:    'darkAtomic',
-  [Number(CTS_BOMB_ARROW)]:     'bombArrow',
-  [Number(CTS_SUDDEN_DEATH)]:   'suddenDeath',
-  [Number(CTS_BOARDING)]:       'boarding',
-  [Number(CTS_ADDITIONAL_PMP)]: 'additionalPmp',
-  [Number(CTS_ARAN_WHIRLWIND)]: 'aranWhirlwind',
-  [Number(CTS_MAGNET)]:         'magnet',
-  [Number(CTS_FLASH_BANG)]:     'flashBang',
-  [Number(CTS_SWALLOW_BUFF)]:   'swallowBuff',
-  [Number(CTS_HIT_TELEPORT)]:   'hitTeleport',
-  [Number(CTS_MORE_WILD_BUFF)]: 'moreWildBuff',
-  [Number(CTS_HIDE)]:           'hide',
-  [Number(CTS_CYGNUS_FLAME)]:   'cygnusFlame',
-  [Number(CTS_STR_BUFF)]:       'strBuff',
-  [Number(CTS_DEX_BUFF)]:       'dexBuff',
-  [Number(CTS_INT_BUFF)]:       'intBuff',
-  [Number(CTS_LUK_BUFF)]:       'lukBuff',
-  [Number(CTS_ATTACK_COUNT)]:   'attackCount',
-  [Number(CTS_BUFF_IMMUNE)]:    'buffImmune',
-  [Number(CTS_SKILL_FIXED)]:    'skillFixed',
-  [Number(CTS_ARAN_BIND)]:      'aranBind',
-  [Number(CTS_NOT_DAMAGED)]:    'notDamaged',
-  [Number(CTS_FINAL_CUT)]:      'finalCut',
-  [Number(CTS_DAMAGE_UP)]:      'damageUp',
-  [Number(CTS_HYPER_BODY_DEF)]: 'hyperBodyDef',
-  [Number(CTS_HYPER_BODY_HP)]:  'hyperBodyHp',
-  [Number(CTS_HYPER_BODY_MP)]:  'hyperBodyMp',
-  [Number(CTS_ELEMENTAL_CHARGE2)]: 'elementCharge2',
-  [Number(CTS_BARRIER)]:        'barrier',
-  [Number(CTS_GUIDED_BULLET)]:  'guidedBullet',
-  [Number(CTS_UNDEAD)]:         'undead',
-  [Number(CTS_RIDE_VEHICLE)]:   'rideVehicle',
-};
 
 /** Per-entry decoded from the packet: value + skillId + seconds. */
 interface RawEntry {
@@ -509,8 +402,8 @@ export class SecondaryStat {
 
   // ── Combat stat contribution getters ──
 
-  /** Total physical ATK buff (equipment PAD + buff PAD). */
-  getBuffPAD(): number { return this._buff.pad + this._buff.magicAtk; }
+  /** Total physical ATK buff. */
+  getBuffPAD(): number { return this._buff.pad; }
 
   /** Total magical ATK buff. */
   getBuffMAD(): number { return this._buff.mad; }
@@ -539,8 +432,11 @@ export class SecondaryStat {
   /** Holy Symbol EXP rate bonus (0-100%). */
   getHolySymbolExpRate(): number { return this._buff.holySymbol; }
 
-  /** Sharp Eyes critical rate bonus (0-100%). */
-  getSharpEyesCritRate(): number { return this._buff.sharpEyes; }
+  /** Sharp Eyes critical rate bonus (0-100%). The CTS value is packed as
+   *  (critRate << 8) | critDamageMax (server SkillProcessor encodes
+   *  `(x<<8)+criticaldamageMax`); OG GetCriticalProp reads `fuse(nSharpEyes) >> 8`
+   *  clamped [0,100]. */
+  getSharpEyesCritRate(): number { return Math.min(100, Math.max(0, this._buff.sharpEyes >> 8)); }
 
   /** Stance dodge probability (0-100%). */
   getStanceRate(): number { return this._buff.stance; }
@@ -590,15 +486,15 @@ export class SecondaryStat {
   getHyperBodyMpMultiplier(): number { return this._buff.hyperBodyMp; }
 
   /**
-   * Decode a TemporaryStatSet packet body (128-bit mask + per-stat data).
-   *
-   * Based on SecondaryStat::DecodeForLocal (0x7350e0).
-   *
-   * The packet format:
-   *   1. 128-bit mask (2x readLong) — which stats are set
-   *   2. For each set bit (lowest to highest): (value: short, skillId: int, seconds: int)
-   *   3. Special-case trailing data for certain bits (Dice, SwallowBuff, BlessingArmor)
-   *   4. Unconditional trailing: DefenseAtt (byte), DefenseState (byte)
+   * Decode a TemporaryStatSet packet body — mirrors the server's
+   * SecondaryStat.encodeForLocal (port of OG DecodeForLocal):
+   *   1. 128-bit mask (16 raw bytes)
+   *   2. LOCAL_ENCODE_ORDER entries for set stats: (value: short, skillId: int, seconds: int)
+   *   3. Unconditional: DefenseAtt (byte), DefenseState (byte)
+   *   4. Swallow-buff group byte (seconds/1000) when any swallow stat is set
+   *   5. Dice (22 ints) / BlessingArmor (1 int) inline data when set
+   *   6. Two-state tail [RideVehicle, PartyBooster, GuidedBullet]:
+   *      (expire: byte, nOption: int, rOption: int, tOption: int, secondValue: short)
    */
   decode(p: InPacket): void {
     this.clear();
@@ -607,69 +503,56 @@ export class SecondaryStat {
     const maskHi = p.readLong();
     const mask = [maskLo, maskHi]; // mask[0]=lo, mask[1]=hi
 
-    const totalBits = popcount64(maskLo) + popcount64(maskHi);
-
-    // Phase 1: Read all common entries (short, int, int) in bit order.
+    // Phase 2: entries appear in LOCAL_ENCODE_ORDER sequence, only for set stats.
     this._rawEntries = [];
-    for (let i = 0; i < totalBits; i++) {
+    for (const [bit, fieldName] of LOCAL_ENTRY_ORDER) {
+      if (!this._isBitSet(mask, bit)) continue;
       const value = p.readShort();
       const skillId = p.readInt();
       const seconds = p.readInt();
-      this._rawEntries.push({ bit: i, value, skillId, seconds });
-    }
-
-    // Phase 2: Compute bit positions to map entry index → bit position.
-    // Entries are ordered from lowest set bit to highest.
-    let entryIdx = 0;
-    for (let word = 0; word < 2; word++) {
-      let bits = mask[word];
-      let bitPos = BigInt(word * 64);
-      while (bits) {
-        const lowest = bits & -bits;
-        const bit = bitPos + BigInt(Math.clz32(Number(lowest)) ^ 31);
-        if (entryIdx < this._rawEntries.length) {
-          this._rawEntries[entryIdx].bit = Number(bit);
-        }
-        entryIdx++;
-        bits &= bits - 1n;
-      }
-    }
-
-    // Phase 3: Populate per-stat fields from decoded entries.
-    for (const entry of this._rawEntries) {
-      const fieldName = BIT_TO_FIELD[entry.bit];
+      const bitNum = Number(bit);
+      this._rawEntries.push({ bit: bitNum, value, skillId, seconds });
       if (fieldName && fieldName in this._buff) {
-        (this._buff as any)[fieldName] = entry.value;
+        (this._buff as any)[fieldName] = value;
       }
-      // Also store in skillId map for backward compat
-      this._stats.set(entry.skillId, { value: entry.value, seconds: entry.seconds });
+      this._stats.set(skillId, { value, seconds });
     }
 
-    // Phase 4: Read special-case inline data AFTER the common loop.
-    // These bits carry extra data that the common loop skipped over.
-    for (const [bitPos, extraCount] of INLINE_DATA_BITS) {
-      if (!this._isBitSet(mask, bitPos)) continue;
-      if (bitPos === CTS_DICE) {
-        this._diceInfo = [];
-        for (let j = 0; j < extraCount; j++) {
-          this._diceInfo.push(p.readInt());
-        }
-      } else if (bitPos === CTS_SWALLOW_BUFF) {
-        this._swallowBuffTime = p.readInt();
-      } else if (bitPos === CTS_BLESSING_ARMOR) {
-        this._blessingArmorIncPAD = p.readInt();
+    // Phase 3: unconditional DefenseAtt + DefenseState bytes.
+    this._defenseAtt = p.readByte();
+    this._defenseState = p.readByte();
+
+    // Phase 4: swallow-buff group — one shared byte when any swallow stat is set.
+    for (const bit of SWALLOW_GROUP_BITS) {
+      if (this._isBitSet(mask, bit)) {
+        this._swallowBuffTime = p.readByte();
+        break;
       }
     }
 
-    // Phase 5: Unconditional trailing bytes — DefenseAtt, DefenseState.
-    if (p.remaining >= 2) {
-      this._defenseAtt = p.readByte();
-      this._defenseState = p.readByte();
+    // Phase 5: inline data.
+    if (this._isBitSet(mask, CTS_DICE)) {
+      this._diceInfo = [];
+      for (let j = 0; j < 22; j++) {
+        this._diceInfo.push(p.readInt());
+      }
+    }
+    if (this._isBitSet(mask, CTS_BLESSING_ARMOR)) {
+      this._blessingArmorIncPAD = p.readInt();
     }
 
-    // Phase 6: aTemporaryStat[0..6] virtual dispatch (bits 122-128).
-    // Each set virtual bit triggers TemporaryStatBase::DecodeForClient.
-    // Not yet implemented — these are rare in v95.
+    // Phase 6: two-state tail.
+    for (const [bit, fieldName] of TWO_STATE_ORDER) {
+      if (!this._isBitSet(mask, bit)) continue;
+      p.readByte();               // expire mode (EXPIRE_BASED_ON_LAST_UPDATED_TIME)
+      const nOption = p.readInt();
+      p.readInt();                // rOption
+      p.readInt();                // tOption
+      p.readShort();              // secondValue
+      if (fieldName && fieldName in this._buff) {
+        (this._buff as any)[fieldName] = nOption;
+      }
+    }
   }
 
   private _isBitSet(mask: bigint[], bit: bigint): boolean {
@@ -732,6 +615,104 @@ export class SecondaryStat {
     [113, 4],  // YellowAura → Decode4
     [117, 0],  // BlessingArmor → flag only
   ];
+
+  /**
+   * Per-stat layout of the REMOTE temporary-stat payload (OG
+   * DecodeForRemote 0x72B7B0 — same sequence the server's
+   * encodeForRemoteWithFlag writes). kind: 'n1'/'n2'/'n4' = nOption byte/
+   * short/int, 'r4' = rOption int (the skillId/reason), 'si' = Poison
+   * short+int pair, 'flag' = no payload bytes.
+   */
+  private static readonly REMOTE_DECODE_ORDER: readonly [number, string][] = [
+    [7, 'n1'],    // Speed
+    [21, 'n1'],   // ComboCounter
+    [22, 'r4'],   // WeaponCharge
+    [17, 'r4'],   // Stun
+    [20, 'r4'],   // Darkness
+    [19, 'r4'],   // Seal
+    [30, 'r4'],   // Weakness
+    [31, 'r4'],   // Curse
+    [18, 'si'],   // Poison → short nOption + int rOption
+    [26, 'r4'],   // ShadowPartner
+    [10, 'flag'], // DarkSight
+    [16, 'flag'], // SoulArrow
+    [33, 'n2'],   // Morph
+    [49, 'n2'],   // Ghost
+    [39, 'r4'],   // Attract
+    [40, 'n4'],   // SpiritJavelin
+    [46, 'r4'],   // BanMap
+    [50, 'r4'],   // Barrier
+    [62, 'r4'],   // DojangShield
+    [51, 'r4'],   // ReverseInput
+    [53, 'n4'],   // RespectPImmune
+    [54, 'n4'],   // RespectMImmune
+    [55, 'n4'],   // DefenseAtt
+    [56, 'n4'],   // DefenseState
+    [59, 'flag'], // DojangBerserk
+    [60, 'flag'], // DojangInvincible
+    [66, 'flag'], // WindWalk
+    [73, 'r4'],   // RepeatEffect
+    [75, 'r4'],   // StopPortion
+    [76, 'r4'],   // StopMotion
+    [77, 'r4'],   // Fear
+    [79, 'n4'],   // MagicShield
+    [82, 'flag'], // Flying
+    [83, 'r4'],   // Frozen
+    [86, 'r4'],   // SuddenDeath
+    [88, 'r4'],   // FinalCut
+    [101, 'n1'],  // Cyclone
+    [108, 'flag'],// Sneak
+    [91, 'flag'], // MorewildDamageUp
+    [109, 'r4'],  // Mechanic
+    [111, 'r4'],  // DarkAura
+    [112, 'r4'],  // BlueAura
+    [113, 'r4'],  // YellowAura
+    [117, 'flag'],// BlessingArmor
+  ];
+
+  /** Remote-decode result: raw per-stat entries plus the trailing bytes. */
+  static decodeRemote(p: InPacket): {
+    maskLo: bigint; maskHi: bigint;
+    entries: RawEntry[];
+    defenseAtt: number; defenseState: number;
+  } {
+    const maskLo = p.readLong();
+    const maskHi = p.readLong();
+    const mask = [maskLo, maskHi];
+    const isSet = (bit: number): boolean =>
+      bit < 64 ? (maskLo & (1n << BigInt(bit))) !== 0n
+               : (maskHi & (1n << BigInt(bit - 64))) !== 0n;
+
+    const entries: RawEntry[] = [];
+    for (const [bit, kind] of SecondaryStat.REMOTE_DECODE_ORDER) {
+      if (!isSet(bit)) continue;
+      let nOption = 0;
+      let skillId = 0;
+      switch (kind) {
+        case 'n1': nOption = p.readByte(); break;
+        case 'n2': nOption = p.readShort(); break;
+        case 'n4': nOption = p.readInt(); break;
+        case 'r4': skillId = p.readInt(); nOption = 1; break;
+        case 'si': nOption = p.readShort(); skillId = p.readInt(); break;
+        case 'flag': nOption = 1; break;
+      }
+      entries.push({ bit, value: nOption, skillId, seconds: 0 });
+    }
+
+    // Trailing bytes: DefenseAtt_Elem (byte) + DefenseState_Stat (byte)
+    const defenseAtt = p.readByte();
+    const defenseState = p.readByte();
+
+    // Two-state entries: bits 122..128, each 15 bytes when set
+    // (Decode1 + Decode4 + Decode4 + Decode4 + Decode2 = 15)
+    for (let i = 0; i < 7; i++) {
+      if (isSet(122 + i)) {
+        p.skip(15);
+      }
+    }
+
+    return { maskLo, maskHi, entries, defenseAtt, defenseState };
+  }
 
   /**
    * Skip the remote secondary stat payload from an InPacket.

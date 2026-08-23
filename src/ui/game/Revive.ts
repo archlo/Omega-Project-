@@ -189,18 +189,22 @@ export class Revive extends GamePanel {
 
   private static _probeAssets(ui: WzPackage | null, kind: ReviveKind): { backgrnd: WzCanvas | null; btYes: WzProperty | null; btCancel: WzProperty | null } {
     if (ui === null) return { backgrnd: null, btYes: null, btCancel: null };
-    // OG: CUIRevive::OnCreate — UIWindow2.img/Notice/<0..4> + btOK/btCancle
+    // OG: CUIRevive::OnCreate — UIWindow2.img/Notice/<0..4> + btOK/btCancle.
+    // Notice/<n> IS the background canvas; the buttons are siblings under Notice/.
     // kind 'town' -> Notice/0, 'soulStone' -> Notice/2, 'wheelOfDestiny' -> Notice/4
     const noticeIndex = kind === 'soulStone' ? 2 : kind === 'wheelOfDestiny' ? 4 : 0;
-    const root = ui.GetItem(`UIWindow2.img/Notice/${noticeIndex}`);
-    if (!(root instanceof WzProperty)) return { backgrnd: null, btYes: null, btCancel: null };
-    const bg = root.Get('0');
-    const bt = (root.Get('btOK') as WzProperty) ?? (root.Get('btYes') as WzProperty) ?? null;
-    const btCancel = root.Get('btCancle') as WzProperty ?? null; // OG uses "btCancle" (typo in original)
-    return {
-      backgrnd: bg instanceof WzCanvas ? bg : null,
-      btYes: bt instanceof WzProperty ? bt : null,
-      btCancel: btCancel instanceof WzProperty ? btCancel : null,
-    };
+    const bgNode = ui.GetItem(`UIWindow2.img/Notice/${noticeIndex}`);
+    const root = ui.GetItem('UIWindow2.img/Notice');
+    const backgrnd = bgNode instanceof WzCanvas ? bgNode : null;
+    let btYes: WzProperty | null = null;
+    let btCancel: WzProperty | null = null;
+    if (root instanceof WzProperty) {
+      const ok = root.Get('btOK');
+      btYes = ok instanceof WzProperty ? ok : null;
+      // OG uses "btCancle" (typo in original)
+      const cancel = root.Get('btCancle');
+      btCancel = cancel instanceof WzProperty ? cancel : null;
+    }
+    return { backgrnd, btYes, btCancel };
   }
 }

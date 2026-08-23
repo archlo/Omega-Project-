@@ -650,6 +650,7 @@ describe('FieldHandlers', () => {
     p.writeLong(0x03n); p.writeLong(0n);
     p.writeShort(100); p.writeInt(2000000); p.writeInt(30);
     p.writeShort(50); p.writeInt(2000001); p.writeInt(60);
+    p.writeByte(0); p.writeByte(0); // DefenseAtt + DefenseState (unconditional tail)
     dispatchPayload(router, OutHeader.TemporaryStatSet, p.toArray());
     expect(args).toHaveLength(1);
     expect(args[0]).toHaveLength(2);
@@ -668,6 +669,31 @@ describe('FieldHandlers', () => {
     p.writeLong(0xFFn); p.writeLong(0n);
     dispatchPayload(router, OutHeader.TemporaryStatReset, p.toArray());
     expect(masks).toEqual([0xFF]);
+  });
+
+  it('UserSetTemporaryStat decodes the remote DecodeForRemote layout', () => {
+    // OG CUserRemote::OnSetTemporaryStat → DecodeForRemote: charId, 16-byte
+    // flag, REMOTE_DECODE_ORDER per-stat variable data, 2 defense bytes.
+    const args: any[] = [];
+    handlers.onUserSetTemporaryStat = (a) => args.push(a as any);
+    const p = OutPacket.Raw();
+    p.writeInt(777); // charId
+    // bits: 7 (Speed), 10 (DarkSight), 17 (Stun), 33 (Morph)
+    p.writeLong(0x80n | 0x400n | 0x20000n | (1n << 33n)); p.writeLong(0n);
+    // entries in REMOTE_DECODE_ORDER sequence — Speed first
+    p.writeByte(140);            // Speed nOption (byte)
+    // DarkSight is flag-only: no payload
+    p.writeInt(1211003);         // Stun rOption = skillId
+    p.writeShort(5);             // Morph nOption (short)
+    p.writeByte(0); p.writeByte(0); // DefenseAtt + DefenseState
+    dispatchPayload(router, OutHeader.UserSetTemporaryStat, p.toArray());
+    expect(args).toHaveLength(1);
+    expect(args[0].charId).toBe(777);
+    const byBit = new Map(args[0].buffs.map((b: any) => [b.bit, b]));
+    expect(byBit.get(7).value).toBe(140);      // Speed magnitude
+    expect(byBit.get(10).value).toBe(1);       // flag-only
+    expect(byBit.get(17).skillId).toBe(1211003); // Stun carries the skill id
+    expect(byBit.get(33).value).toBe(5);       // Morph short
   });
 
   it('FuncKeyMappedInit fires with 89 entries', () => {

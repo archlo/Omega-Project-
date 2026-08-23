@@ -83,6 +83,9 @@ export class Button {
   get position() { return this.container.position; }
   set position(v: { x: number; y: number }) { this.container.position.set(v.x, v.y); }
 
+  /** True when WZ state sprites loaded (no Graphics fallback). */
+  get hasWzSprite(): boolean { return this._normal !== null; }
+
   /** OG: CCtrlButton::LoadToolTip — attach a hover tooltip title/desc. */
   setToolTip(title: string, desc: string): void {
     this.toolTipTitle = title;

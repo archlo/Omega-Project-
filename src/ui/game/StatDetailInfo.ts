@@ -16,18 +16,19 @@ import { ToolTipHelper } from './ToolTipHelper.js';
 // All text at X=74, 18px vertical spacing (Draw @ 0x8625F0)
 const COL_VALUE = 74;
 
-// OG Draw rows (from disassembly of 0x8625F0):
-// Y=15:  Damage Range — StringPool 1980 "%d~%d"
-// Y=33:  Critical % — StringPool 1981 "%d"
-// Y=51:  PDD (base+buff) — StringPool 1979 "%d + %d = %d"
+// OG Draw rows (CUIStatDetail::Draw @0x8625F0 — full decompile):
+// Y=15:  Damage Range — StringPool 1980 "%d~%d" (2 args)
+// Y=33:  Critical % — StringPool 1981 "%d", GetCriticalProp(); RED font when
+//        SharpEyes/Thorns/ComboAbility/jaguar/passive-crit-buff active
+// Y=51:  PDD (base+buff) — StringPool 1979 3-arg when delta != 0
 // Y=69:  MDD (base+buff) — StringPool 1979
 // Y=87:  ACC (base+buff) — StringPool 1979
-// Y=105: ACC delta (secondary stat comparison) — StringPool 1979
+// Y=105: ACC recomputed (identical args — OG draws it twice)
 // Y=123: EVA (base+buff) — StringPool 1979
-// Y=141: EVA delta (secondary stat comparison) — StringPool 1979
-// Y=159: Speed buff value — StringPool 1979 (complex)
-// Y=177: Jump — StringPool 1981 (clamped [80, 123])
-// Y=195: Speed — StringPool 1981 (clamped [70, 190])
+// Y=141: EVA recomputed (identical args)
+// Y=159: Craft (nCraft decomposition) — StringPool 1979
+// Y=177: Speed — StringPool 1981, min(speedCap=140, GetSpeed)
+// Y=195: Jump — StringPool 1981, clamp ≤ 123
 const ROW_Y = [15, 33, 51, 69, 87, 105, 123, 141, 159, 177, 195] as const;
 
 // OG StringPool IDs used in Draw:
@@ -71,25 +72,16 @@ export class StatDetailInfo extends GamePanel {
   private _bg: WzSprite | null;
   private _bg2: WzSprite | null;
   private _bg3: WzSprite | null;
-  private _btHpUp: Button | null;
+  private _btHpUp: Button | null = null;
   private _bgSprite: Sprite | null = null;
   private _bg2Sprite: Sprite | null = null;
   private _bg3Sprite: Sprite | null = null;
   private _statTexts: Text[] = [];
 
-  // OG: buff amounts per stat (from GetPasssiveSkillBuffing)
-  // These are computed from secondary stats + passive skills
-  buffStr = 0; buffDex = 0; buffInt = 0; buffLuk = 0;
+  // OG: buff amounts per stat — the delta component of the StringPool 1979
+  // decomposition rows. Wired from SecondaryStat in GameStage._syncStatDetailInputs.
   buffPad = 0; buffMad = 0; buffPdd = 0; buffMdd = 0;
   buffAcc = 0; buffEva = 0;
-
-  // OG: secondary stat values for delta comparison rows
-  // These come from SecondaryStat offsets in the Draw function
-  secPdd = 0; secPddBuff = 0;
-  secMdd = 0; secMddBuff = 0;
-  secAcc = 0; secAccBuff = 0;
-  secEva = 0; secEvaBuff = 0;
-  secSpeed = 0; secSpeedBuff = 0;
 
   // OG: CUIStatDetail::OnCreate @0x8623B0 — CToolTipHelper::LoadToolTip(StringPool 1978)
   // → ToolTipHelp.img/Game/UIWnd/StatDetail; OnMouseMove @0x861450 → CheckAndShow(..., null).
@@ -109,10 +101,18 @@ export class StatDetailInfo extends GamePanel {
 
     const detail = ui?.GetItem('UIWindow2.img/Stat/detail');
     const detailProp = detail instanceof WzProperty ? detail : null;
+    // OG CUIStatDetail::OnCreate @0x8623B0: SetBackgrnd(detail/backgrnd, bMulti=1)
+    // → loads the backgrnd layer series (backgrnd + backgrnd2 content layer).
     this._bg = detailProp?.Get('backgrnd') instanceof WzCanvas ? loader.Load(detailProp!.Get('backgrnd') as WzCanvas) : null;
     this._bg2 = detailProp?.Get('backgrnd2') instanceof WzCanvas ? loader.Load(detailProp!.Get('backgrnd2') as WzCanvas) : null;
-    this._bg3 = detailProp?.Get('backgrnd3') instanceof WzCanvas ? loader.Load(detailProp!.Get('backgrnd3') as WzCanvas) : null;
-    this._btHpUp = detailProp?.Get('BtHpUp') instanceof WzProperty ? new Button('HP Up') : null;
+    this._bg3 = null;
+    // OG: AddButton("UI/UIWindow2.img/Stat/detail/BtHpUp", id 0x3E8, 0, 0) —
+    // the canvas origin (-150,-218) places it at (150,218).
+    if (detailProp?.Get('BtHpUp') instanceof WzProperty) {
+      this._btHpUp = Button.fromWz(loader, detailProp.Get('BtHpUp') as WzProperty);
+      this._btHpUp.onClick = () => this.onHpUp?.();
+      this._root.addChild(this._btHpUp.container);
+    }
     // OG: CUIWnd close button
     this.createCloseButton(null, null, 1, 184);
   }
@@ -156,63 +156,55 @@ export class StatDetailInfo extends GamePanel {
       return t;
     };
 
-    // OG: Format a stat with optional buff — StringPool 1979 "%d + %d = %d"
-    // When delta == 0: just itoa(base)
-    // When delta != 0: Format(sFormat, "%d + %d = %d", delta, base, base+delta)
-    const fmtBuff = (base: number, buff: number): { text: string; color: number } => {
-      const total = base + buff;
+    // OG: Format a stat with buff — StringPool 1979 "%d + %d = %d".
+    // delta == 0 → plain itoa(total); delta != 0 → red when positive, blue
+    // when negative. `total` is the full aggregate (Inputs already includes
+    // the buff); base = total - buff recovers OG's displayed decomposition.
+    const fmtBuff = (total: number, buff: number): { text: string; color: number } => {
+      const base = total - buff;
       if (buff === 0) return { text: `${total}`, color: COLOR_NORMAL };
       const color = buff > 0 ? COLOR_RED : COLOR_BLUE;
       return { text: `${base} + ${buff} = ${total}`, color };
     };
 
     // Row 0 (Y=15): Damage Range — StringPool 1980 "%d~%d"
-    makeText(0, `${d.minDamage}~${d.maxDamage}`, COLOR_NORMAL);
+    // RED when a passive/buff ATK source is active, per OG's diff>0 rule.
+    const dmgColor = this.buffPad > 0 || this.buffMad > 0 ? COLOR_RED : COLOR_NORMAL;
+    makeText(0, `${d.minDamage}~${d.maxDamage}`, dmgColor);
 
-    // Row 1 (Y=33): Critical % — StringPool 1981 "%d"
-    makeText(1, `${d.criticalPercent}`, COLOR_NORMAL);
+    // Row 1 (Y=33): Critical % — StringPool 1981 "%d", GetCriticalProp().
+    // RED when any buff-crit source is active (SharpEyes/Thorns/Combo/passive).
+    const critColor = this._sharpEyesCrit !== 0 || this._thornsEffect !== 0 ||
+      this._comboAbilityCritical !== 0 || this._passiveSkillCritical !== 0
+      ? COLOR_RED : COLOR_NORMAL;
+    makeText(1, `${this.getCriticalProp()}`, critColor);
 
-    // Row 2 (Y=51): PDD (base+buff) — StringPool 1979
+    // Rows 2-7 (Y=51..141): PDD / MDD / ACC / ACC(recomputed) / EVA / EVA(recomputed)
+    // — StringPool 1979 with the buff as the delta component.
     const pdd = fmtBuff(this.Inputs.pddBonus, this.buffPdd);
     makeText(2, pdd.text, pdd.color);
-
-    // Row 3 (Y=69): MDD (base+buff) — StringPool 1979
     const mdd = fmtBuff(this.Inputs.mddBonus, this.buffMdd);
     makeText(3, mdd.text, mdd.color);
-
-    // Row 4 (Y=87): ACC (base+buff) — StringPool 1979
     const acc = fmtBuff(this.Inputs.accBonus, this.buffAcc);
     makeText(4, acc.text, acc.color);
-
-    // Row 5 (Y=105): ACC delta (secondary stat comparison) — StringPool 1979
-    const accDelta = fmtBuff(this.secAcc, this.secAccBuff);
-    makeText(5, accDelta.text, accDelta.color);
-
-    // Row 6 (Y=123): EVA (base+buff) — StringPool 1979
+    makeText(5, acc.text, acc.color);   // OG draws the identical value twice
     const eva = fmtBuff(this.Inputs.evaBonus, this.buffEva);
     makeText(6, eva.text, eva.color);
+    makeText(7, eva.text, eva.color);   // OG draws the identical value twice
 
-    // Row 7 (Y=141): EVA delta (secondary stat comparison) — StringPool 1979
-    const evaDelta = fmtBuff(this.secEva, this.secEvaBuff);
-    makeText(7, evaDelta.text, evaDelta.color);
+    // Row 8 (Y=159): Craft — nCraft decomposition, SP1979 when non-zero.
+    makeText(8, `${this.craftValue}`, COLOR_NORMAL);
 
-    // Row 8 (Y=159): Speed buff value — StringPool 1979 (complex)
-    // OG: checks taming mob template, morph bonuses, mechanic vehicle
-    const speedBuff = fmtBuff(this.secSpeed, this.secSpeedBuff);
-    makeText(8, speedBuff.text, speedBuff.color);
+    // Row 9 (Y=177): Speed — StringPool 1981, min(cap=140, GetSpeed)
+    makeText(9, `${Math.min(140, d.speed)}`, COLOR_NORMAL);
 
-    // Row 9 (Y=177): Jump — StringPool 1981, clamped [80, 123]
-    const jump = Math.max(80, Math.min(123, d.jump));
-    makeText(9, `${jump}`, COLOR_NORMAL);
-
-    // Row 10 (Y=195): Speed — StringPool 1981, clamped [70, 190]
-    const speed = Math.max(70, Math.min(190, d.speed));
-    makeText(10, `${speed}`, COLOR_NORMAL);
+    // Row 10 (Y=195): Jump — StringPool 1981, clamp ≤ 123
+    makeText(10, `${Math.min(123, d.jump)}`, COLOR_NORMAL);
   }
 
   handleMouseButton(x: number, y: number, down: boolean): boolean {
     if (!this.isVisible) return false;
-    if (this._btHpUp?.handleMouseButton(x, y, down) === true) return true;
+    if (this._btHpUp?.handleMouseButton(x - this._root.x, y - this._root.y, down) === true) return true;
     const px = this.container.position.x;
     const py = this.container.position.y;
     const pw = this._bg?.Width ?? 178;
@@ -239,68 +231,66 @@ export class StatDetailInfo extends GamePanel {
   // 4. ThornsEffect buff (nThornsEffect >> 8)
   // 5. ComboAbilityBuff (with skill level lookup for 21110000 or 20000018)
   // 6. PassiveSkillData critical bonus
-  // 7. WildHunterJaguarVehicle (skill 33001001)
+  // 7. WildHunterJaguarVehicle (skill 33001001) — post-v95 class, never in v95
   // 8. Evan skill 22140000 (job/100==22 || job==2001)
+  // Each component is clamped [0,100]; OG returns the raw sum unclamped.
   getCriticalProp(): number {
     const s = this.Inputs;
-    // Base critical from skill (get_critical_skill_level)
-    let crit = this._getSkillCritical(s.jobId) + 5;
+    // Base critical from skill (get_critical_skill_level) + the constant 5
+    let crit = Math.min(100, Math.max(0, this._skillCriticalProp)) + 5;
 
-    // Weapon item option critical (ApplyWeaponOption)
-    crit += this._weaponOptionCritical;
+    // Weapon item option critical (ApplyWeaponOption, weapon + katana passes)
+    crit += Math.min(100, Math.max(0, this._weaponOptionCritical));
 
-    // SharpEyes buff: nSharpEyes >> 8, clamped [0, 100]
-    const sharpEyes = Math.max(0, Math.min(100, this._sharpEyesCrit >> 8));
-    crit += sharpEyes;
-
-    // ThornsEffect: nThornsEffect >> 8, clamped [0, 100]
-    const thorns = Math.max(0, Math.min(100, this._thornsEffect >> 8));
-    if (thorns > sharpEyes) crit += thorns - sharpEyes;
+    // SharpEyes / ThornsEffect: value >> 8 each clamped [0,100], take the MAX
+    const sharpEyes = Math.min(100, Math.max(0, this._sharpEyesCrit >> 8));
+    const thorns = Math.min(100, Math.max(0, this._thornsEffect >> 8));
+    crit += Math.max(sharpEyes, thorns);
 
     // ComboAbilityBuff: skill level lookup
     const comboCrit = this._getComboAbilityCritical(s.jobId);
-    crit += comboCrit;
+    if (comboCrit > 0) crit += Math.min(100, comboCrit);
 
-    // PassiveSkillData critical bonus
-    crit += this._passiveSkillCritical;
+    // SwallowCritical (jaguar) — added raw, no clamp in OG
+    crit += this._swallowCritical;
 
-    // WildHunterJaguarVehicle (skill 33001001)
-    if (this._isWildHunterJaguar) {
-      crit += this._jaguarCritical;
-    }
+    // PassiveSkillData critical bonus (not tracked client-side — stays 0)
+    crit += Math.min(100, Math.max(0, this._passiveSkillCritical));
 
-    // Evan skill 22140000
-    const jobCat = Math.floor((s.jobId / 100) % 10);
-    if (jobCat === 22 || s.jobId === 2001) {
+    // Evan skill 22140000 prop
+    if (Math.floor((s.jobId / 100) % 10) === 22 || s.jobId === 2001) {
       crit += this._evanCritical;
     }
 
-    return Math.max(0, Math.min(100, crit));
+    return crit;
   }
 
-  // OG: get_critical_skill_level — returns base critical prop from skill
-  private _getSkillCritical(jobId: number): number {
-    // Simplified: returns 0 if no critical skill learned
-    // Full OG checks job-specific critical skills
-    return this._skillCriticalProp;
-  }
+  // OG: get_critical_skill_level — base critical prop from the job's critical
+  // skill (e.g. Critical Shot). GameStage computes it from the live skill
+  // records and stores it in _skillCriticalProp; 0 when none is learned.
 
-  private _getComboAbilityCritical(jobId: number): number {
-    // OG: checks ComboAbilityBuff stacks, looks up skill 21110000 or 20000018
-    // Returns critical bonus based on combo count
-    return this._comboAbilityCritical;
-  }
-
-  // Settable from GameStage to wire real data
+  // Settable/computed from GameStage to wire real data
   _weaponOptionCritical = 0;
   _sharpEyesCrit = 0;
   _thornsEffect = 0;
   _comboAbilityCritical = 0;
   _passiveSkillCritical = 0;
-  _isWildHunterJaguar = false;
-  _jaguarCritical = 0;
   _evanCritical = 0;
   _skillCriticalProp = 0;
+  // OG PDamage crit-damage ceiling base: packed SharpEyes low byte when
+  // Sharp Eyes is active, else the critical skill's LevelData.damage.
+  _criticalDamageParam = 0;
+  _swallowCritical = 0;
+  /** Craft row value (nCraft aggregate carried on the temp-stat wire). */
+  craftValue = 0;
+  // OG CUIStatDetail::OnCreate — detail/BtHpUp (id 0x3E8) raises MaxHP.
+  onHpUp: (() => void) | null = null;
+
+  // OG: ComboAbilityBuff stacks → skill 21110000 (20000018 for race job 2000)
+  // level data X/Y: X = min(LevelData.X, comboValue/10), crit += clamp(X*Y, 0, 100).
+  private _getComboAbilityCritical(_jobId: number): number {
+    return this._comboAbilityCritical;
+  }
 }
 
 // ── OG: GetIdealStatUp (0x73DDB0) ────────────────────────────────

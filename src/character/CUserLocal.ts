@@ -124,17 +124,27 @@ export function setComboCounter(count: number): void {
 
 /** OG CUserLocal::ApplyWeaponOption — computes weapon ItemOption combat modifiers.
  *  Reads weapon's 3 ItemOption slots and accumulates niCr, niCDr, niDAMr (split
- *  by nBoss), and nIgnoreTargetDEF from the highest tier <= itemLevel. */
+ *  by nBoss), and nIgnoreTargetDEF from the highest tier <= itemLevel.
+ *  `accumulateIntoExisting` keeps the current module values as the base —
+ *  OG GetCriticalProp runs ApplyWeaponOption twice (weapon slot 11, then the
+ *  katana slot 10 when itemId/10000==134) and sums both passes. */
 export function applyWeaponOption(
   option1: number, option2: number, option3: number,
   itemLevel: number,
   loadItemOption: (id: number) => { aLevelData: { nLevel: number; niCr: number; niCDr: number; niDAMr: number; nBoss: number; nIgnoreTargetDEF: number }[] } | null,
+  accumulateIntoExisting = false,
 ): void {
-  weaponCritProb = 0;
-  weaponCritDamage = 0;
-  weaponDAMr = 0;
-  weaponBossDAMr = 0;
-  weaponIgnoreTargetDEF = 0;
+  const base = accumulateIntoExisting
+    ? {
+        cr: weaponCritProb, cdr: weaponCritDamage, damr: weaponDAMr,
+        boss: weaponBossDAMr, idef: weaponIgnoreTargetDEF,
+      }
+    : { cr: 0, cdr: 0, damr: 0, boss: 0, idef: 0 };
+  weaponCritProb = base.cr;
+  weaponCritDamage = base.cdr;
+  weaponDAMr = base.damr;
+  weaponBossDAMr = base.boss;
+  weaponIgnoreTargetDEF = base.idef;
 
   for (const optId of [option1, option2, option3]) {
     if (optId <= 0) continue;
