@@ -42,5 +42,13 @@ describe('CashShopStage WZ asset resolution (real UI.nx)', () => {
     // Character preview backgrounds (3 job variants)
     expect(stage._previewBgs).toHaveLength(3);
     expect(stage._previewBgs.every((p: any) => p !== null)).toBe(true);
+
+    // CCSWnd_Inventory vertical tab canvases (Base/Tab2/{Enable,Disable}/0..4)
+    expect(stage._invTabSelected).toHaveLength(5);
+    expect(stage._invTabSelected.every((s: any) => s !== null)).toBe(true);
+    expect(stage._invTabNormal).toHaveLength(5);
+    expect(stage._invTabNormal.every((s: any) => s !== null)).toBe(true);
+    // first tab canvas fits the 28px-wide vertical strip
+    expect(stage._invTabSelected[0].Width).toBeLessThanOrEqual(28);
   });
 });

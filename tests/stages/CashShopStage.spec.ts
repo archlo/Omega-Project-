@@ -749,16 +749,20 @@ describe('CashShopStage ProcessBuy routing (OG CCashShop::ProcessBuy @0x4936B0)'
       stage.onMouseButton(LIST_X + PLATE_W - 40 + 10, LIST_Y + 2 + 35, true, 0);
       expect(stage._giftVisible).toBe(true);
       expect(stage._giftState).toBe(0); // manual entry default
-      const dlgX = Math.floor((800 - 473) / 2);
+      // OG SetLayer @0x787BE0: state 0 → 266-wide backgrnd, list modes widen
+      // to 473 (backgrnd1); height always 169. Dialog re-centers on widening.
+      let dlgX = Math.floor((800 - 266) / 2);
       const dlgY = Math.floor((600 - 169) / 2);
       const btnY = dlgY + 139;
       stage.onMouseButton(dlgX + 70, btnY + 8, true, 0);   // Guild
       expect(stage._giftState).toBe(2);
+      dlgX = Math.floor((800 - 473) / 2);
       stage.onMouseButton(dlgX + 120, btnY + 8, true, 0);  // Buddy
       expect(stage._giftState).toBe(1);
       // buddy list renders names and click-selects into the receiver field
+      // (OG Draw rows: x283..436, first row y=55..71)
       stage.buddyNames = ['Alpha', 'Beta'];
-      stage.onMouseButton(dlgX + 350, dlgY + 48, true, 0); // first list row
+      stage.onMouseButton(dlgX + 350, dlgY + 60, true, 0); // first list row
       expect(stage._giftListSelected).toBe(0);
       expect(stage._giftReceiver).toBe('Alpha');
       stage.onMouseButton(dlgX + 445, btnY + 8, true, 0);  // Hide → manual

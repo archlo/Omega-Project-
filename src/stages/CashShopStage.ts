@@ -110,6 +110,12 @@ const INV_TAB_Y = 17;
 const INV_TAB_W = 28;
 const INV_TAB_H = 156;
 
+// CCSWnd_Inventory::Draw @0x4BE710 DrawRectangle colors (0xAARRGGBB)
+const INV_ITEM_AREA = 0xFFFFFF;                       // white rect (0,52,160x212)
+const INV_VEIL_NONCASH = 0x723C0026 >>> 0;            // dim veil over non-cash items
+const INV_SEL_FILL = 0x400EB5CC >>> 0;                // selected-cell translucent fill
+const INV_SEL_EDGE = 0xAA000ACC;                      // selected-cell 2px edge bars
+
 // Text colors used for server-backed values and OG text overlays.
 const COL_BG = 0x0E1226;
 const COL_PANEL = 0x10142A;
@@ -302,6 +308,8 @@ export class CashShopStage extends Stage {
   private _worldTransferItem: CashCommodity | null = null;
   private _worldTransferNames: string[] = [];
   private _worldTransferSelected = -1;
+  // CCtrlComboBox dropdown state for the OG world-selection combo id1003.
+  private _worldTransferDropdownOpen = false;
 
   private _coupleNameVisible = false;
   private _coupleNameItem: CashCommodity | null = null;
@@ -346,10 +354,34 @@ export class CashShopStage extends Stage {
   private _previewBgs: (WzSprite | null)[] = [null, null, null];
   private _previewOn: WzSprite | null = null;
   private _previewOff: WzSprite | null = null;
+  // OG CCSWnd_Char tab ctrl id1004 at (141,11) w=115 — 3 tabs switching the
+  // preview background (Base/Tab/{Enable,Disable}/0..2). -1 = auto by job.
+  private _previewTab = -1;
+  private _tabEnable: (WzSprite | null)[] = [null, null, null];
+  private _tabDisable: (WzSprite | null)[] = [null, null, null];
   private _previewEnabled = true;
   private _btBuyAvatar: WzSprite | null = null;
   private _btDefaultAvatar: WzSprite | null = null;
   private _btTakeoffAvatar: WzSprite | null = null;
+  // Measured once from CSChar/BtTakeoffAvatar/normal (55x19) so the click rect
+  // tracks the actual sprite width instead of a hardcoded clamp.
+  private _btTakeoffW = 55;
+
+  // ── CCSWnd_Char chat edit (OG OnCreate @0x4C4590: CCtrlEdit id1003 at
+  //    (50,214) 182x15; Enter → CChatBalloon above the avatar ~5s → EndChat) ──
+  private _csChatFocused = false;
+  private _csChatValue = '';
+  private _csChatMsg = '';
+  private _csChatMsgAge = 0;
+  private _csChatText: Text | null = null;
+
+  // OG m_pImgFontNumber — WZ digit font (Basic.img/ItemNo "0"-"9") used by
+  // CUIItem::Draw for inventory quantity digits.
+  private _invDigits: (WzSprite | null)[] = new Array(10).fill(null);
+
+  // CCSWnd_Inventory vertical tab canvases (CCtrlTab AddItem_Canvas(selected, normal))
+  private _invTabSelected: (WzSprite | null)[] = new Array(5).fill(null);
+  private _invTabNormal: (WzSprite | null)[] = new Array(5).fill(null);
 
   // Status bar buttons — 4 states each
   private _btCharge: WzSprite | null = null;
@@ -369,6 +401,11 @@ export class CashShopStage extends Stage {
   private _btWish: WzSprite | null = null;
   private _btWishOver: WzSprite | null = null;
   private _shortcutHelpBg: WzSprite | null = null;
+  private _btShortcut: WzSprite | null = null;
+  private _btShortcutOver: WzSprite | null = null;
+  private _btShortcutClose: WzSprite | null = null;
+  private _btShortcutCloseOver: WzSprite | null = null;
+  private _btShortcutCloseHover = false;
 
   // Locker buttons
   private _btRebate: WzSprite | null = null;
@@ -436,11 +473,14 @@ export class CashShopStage extends Stage {
   private _bgNameChange: WzSprite | null = null;
   private _bgTransferWorld: WzSprite | null = null;
   private _bgNameChangeNotice: WzSprite | null = null;
-  private _bgTransferWorldNotice: WzSprite | null = null;
   private _btNameCheck: WzSprite | null = null;
   private _confirmNotice: WzSprite | null = null;
   private _confirmOk: WzSprite | null = null;
   private _confirmNo: WzSprite | null = null;
+  // UtilDlgEx/BtClose (SP 0x1A71) — CUITransferWorldSelectDlg BtClose id1002
+  private _btDlgClose: WzSprite | null = null;
+  // Basic.img/CheckBox/0..3 — CCtrlCheckBox glyphs for the payment rows
+  private _confirmCheckBox: (WzSprite | null)[] = [null, null, null, null];
 
   // Hover state tracking
   private _hoveredBtn: string | null = null;
@@ -465,11 +505,15 @@ export class CashShopStage extends Stage {
     this._icons = new ItemIconLoader(this._loader, game.wz.character, game.wz.item);
     this._loadAssets();
     this._buildStaticLayer();
-    this._inventoryScrollbar = new ScrollBar(INV_X, INV_Y + 160, 102, pos => {
+    // OG CCSWnd_Inventory: ScrollBar id1001 at window-local (160, 54), h=102
+    const invPos = this._invScrollbarPos();
+    this._inventoryScrollbar = new ScrollBar(invPos.x, invPos.y, 102, pos => {
       this._invFirstPosition = pos;
     }, { loader: this._loader, uiWz: this._ui });
     this._root.addChild(this._inventoryScrollbar.container);
-    this._lockerScrollbar = new ScrollBar(0, 229, 67, pos => {
+    // OG CCSWnd_Locker: scrollbar right of the 6-col grid, top aligned with cells
+    const lockerPos = this._lockerScrollbarPos();
+    this._lockerScrollbar = new ScrollBar(lockerPos.x, lockerPos.y, 67, pos => {
       this._lockerScroll = pos;
     }, { loader: this._loader, uiWz: this._ui });
     this._root.addChild(this._lockerScrollbar.container);
@@ -509,6 +553,8 @@ export class CashShopStage extends Stage {
   onExit(): void {
     this._unwireHandlers();
     this._charLook?.container.removeFromParent();
+    this._csChatText?.destroy();
+    this._csChatText = null;
     this._clearDynamic();
     for (const s of this._dynamicIcons) s.destroy();
     this._dynamicIcons = [];
@@ -1213,6 +1259,7 @@ export class CashShopStage extends Stage {
 
     this._clearDynamic();
     this._g.clear();
+    this._updateCharChatBalloon(_dt);
 
     this._drawCharacterPreview();
     this._drawTabBar();
@@ -1256,34 +1303,48 @@ export class CashShopStage extends Stage {
   // CCSWnd_Char::OnCreate creates outfit category tabs and scrollbar
   private _drawCharacterPreview(): void {
     // Select preview background by job category
-    const previewIdx = this._getPreviewIndex();
+    const previewIdx = this._previewTab >= 0 ? this._previewTab : this._getPreviewIndex();
     const previewBg = this._previewBgs[previewIdx];
 
+    // OG CCSWnd_Char::OnCreate @0x4C4590 — background layer at (24,40), 212x165
     if (previewBg) {
-      this._drawWzSprite(previewBg, CHAR_X, CHAR_Y);
+      this._drawWzSprite(previewBg, CHAR_X + 24, CHAR_Y + 40);
+    }
+
+    // Tab ctrl id1004 at (141,11) w=115 — 3 tabs switching the preview bg.
+    for (let i = 0; i < 3; i++) {
+      const spr = i === previewIdx ? this._tabEnable[i] : this._tabDisable[i];
+      if (spr) this._drawWzSprite(spr, CHAR_X + 141 + i * 38, CHAR_Y + 11);
     }
 
     if (this._charLook && this._previewEnabled) {
       this._charLook.Update(1 / 60, { x: 0, y: 0 }, false, false);
       this._charLook.RebuildDisplay();
       const container = this._charLook.container;
-      container.position.set(CHAR_X + CHAR_W / 2, CHAR_Y + CHAR_H - 30);
+      // Character stands centered in the (24,40)+(212x165) preview box,
+      // feet on its ground line (~y=203).
+      container.position.set(CHAR_X + 130, CHAR_Y + 203);
       this._root.addChild(container);
     }
 
     // PreviewOnOff toggle button — OG SetUserPreviewControl layers:
-    // UserCtrlOn at (130,120), UserCtrlOff at (119,17), char-window relative.
+    // PreviewOnOff toggle — Off is a 33x23 button at (119,17); On is a big
+    // 230x226 overlay centered on the preview box at (24,40)+(212x165).
     const previewToggle = this._previewEnabled ? this._previewOn : this._previewOff;
     if (previewToggle) {
-      const tx = this._previewEnabled ? CHAR_X + 130 : CHAR_X + 119;
-      const ty = this._previewEnabled ? CHAR_Y + 120 : CHAR_Y + 17;
+      const tx = this._previewEnabled
+        ? CHAR_X + Math.floor((CHAR_W - previewToggle.width) / 2)
+        : CHAR_X + 119;
+      const ty = this._previewEnabled
+        ? CHAR_Y + 40 + Math.floor((165 - previewToggle.height) / 2)
+        : CHAR_Y + 17;
       this._drawWzSprite(previewToggle, tx, ty);
     }
 
     const avatarButtons = [
       [this._btBuyAvatar, 17, 83, 'btBuyAvatar'],
-      [this._btDefaultAvatar, 101, 83, 'btDefaultAvatar'],
-      [this._btTakeoffAvatar, 187, 55, 'btTakeoffAvatar'],
+      [this._btDefaultAvatar, 101, 84, 'btDefaultAvatar'],
+      [this._btTakeoffAvatar, 187, this._btTakeoffW, 'btTakeoffAvatar'],
     ] as const;
     for (const [sprite, x, w, hoverKey] of avatarButtons) {
       if (sprite) this._drawWzSprite(sprite, CHAR_X + x, CHAR_Y + 237);
@@ -1292,6 +1353,52 @@ export class CashShopStage extends Stage {
         this._g.rect(CHAR_X + x, CHAR_Y + 236, w, 20).stroke({ color: COL_TEXT_GOLD, width: 1 });
       }
     }
+
+    // OG CCSWnd_Char::OnCreate @0x4C4590 — CCtrlEdit id1003 at (50,214) 182x15
+    // (below the preview box, above the avatar buttons). White box; black text +
+    // caret while focused, gray hint otherwise.
+    const chatX = CHAR_X + 50;
+    const chatY = CHAR_Y + 214;
+    this._g.rect(chatX, chatY, 182, 15).fill({ color: 0xFFFFFF });
+    this._g.rect(chatX, chatY, 182, 15).stroke({
+      color: this._csChatFocused ? COL_TAB_BORDER_ACTIVE : COL_PLATE_BORDER,
+      width: this._csChatFocused ? 2 : 1,
+    });
+    if (this._csChatFocused) {
+      this._addText(this._csChatValue + '_', chatX + 4, chatY + 2, 0x000000, 10);
+    } else if (this._csChatValue.length > 0) {
+      this._addText(this._csChatValue, chatX + 4, chatY + 2, 0x606060, 10);
+    }
+  }
+
+  /** Floating chat message above the preview character (fades out over ~5s). */
+  private _updateCharChatBalloon(_dt: number): void {
+    if (this._csChatMsg.length === 0) {
+      if (this._csChatText) {
+        this._csChatText.destroy();
+        this._csChatText = null;
+      }
+      return;
+    }
+    this._csChatMsgAge += _dt;
+    const alpha = Math.max(0, 1 - this._csChatMsgAge / 5000);
+    if (alpha <= 0) {
+      this._csChatMsg = '';
+      this._csChatText?.destroy();
+      this._csChatText = null;
+      return;
+    }
+    if (!this._csChatText) {
+      this._csChatText = new Text({
+        text: '',
+        style: new TextStyle({ fill: 0xFFFFFF, fontSize: 11, fontFamily: 'monospace' }),
+      });
+      this._root.addChild(this._csChatText);
+    }
+    this._csChatText.text = this._csChatMsg;
+    this._csChatText.alpha = alpha;
+    // Above the preview character head, centered on the preview box
+    this._csChatText.position.set(CHAR_X + 130 - this._csChatText.width / 2, CHAR_Y + 30);
   }
 
   /** OG: determines Preview canvas index from job category. */
@@ -1552,17 +1659,12 @@ export class CashShopStage extends Stage {
     // Panel background — same area as item grid
     if (this._oneADayBase) this._drawWzSprite(this._oneADayBase, LIST_X + 3, LIST_Y + 3);
 
-    // Title
-    this._addText('One-a-Day', LIST_X + 140, LIST_Y + 8, COL_TEXT_GOLD, 13);
-
     // ── Today's item (large plate, LIST-relative 4,93 394x65) ──
     const todayX = LIST_X + 4;
     const todayY = LIST_Y + 93;
 
     const todayPlate = this._oneADayPlateBig ?? this._oneADayItemBox;
     if (todayPlate) this._drawWzSprite(todayPlate, todayX, todayY);
-
-    this._addText('Today\'s Item', todayX + 8, todayY + 4, COL_TEXT_DIM, 10);
 
     if (this._oneADayItemSN > 0) {
       // Look up commodity by SN
@@ -1592,8 +1694,6 @@ export class CashShopStage extends Stage {
     if (this._oneADayGift) this._drawWzSprite(this._oneADayGift, LIST_X + 246, btnY);
 
     // ── Previous items grid — same plate geometry as the main list ──
-    this._addText('Previous Items', LIST_X + 4, LIST_Y + 170, COL_TEXT_DIM, 10);
-
     for (let i = 0; i < PLATES_PER_PAGE; i++) {
       const px = LIST_X + PLATE_COL_W * (i % PLATE_COLS) + 2;
       const py = LIST_Y + PLATE_ROW_H * Math.floor(i / PLATE_COLS) + 2;
@@ -1712,12 +1812,7 @@ export class CashShopStage extends Stage {
 
   // ── Locker (CCSWnd_Locker) — CENTERED BELOW PREVIEW ──
   // OG: L=-1 (centered), T=318, W=256, H=104
-  // OG CCSWnd_Locker::OnCreate: scrollbar X is job-dependent
-  //   job/1000==1 (Cygnus): X=5
-  //   job/100==21 || job==2000 (Aran): X=6
-  //   job/1000==3 (Legendary): X=9
-  //   else (Normal): X=0
-  // Scrollbar at (X, 229), size 29×67, nWheelRange=208
+  // Scrollbar: right of the 6-column grid, top aligned with the cells, h=67
   /** Cell-selection highlight: translucent fill plus 4 thin edge bars. */
   private _drawCellSelection(x: number, y: number, w: number, h: number): void {
     const color = 0x10B0FF;
@@ -1732,7 +1827,6 @@ export class CashShopStage extends Stage {
     if (this._bgLocker) {
       this._drawWzSprite(this._bgLocker, LOCKER_X, LOCKER_Y);
     }
-    this._addText('Cash Locker', LOCKER_X + 80, LOCKER_Y + 4, COL_TEXT_GOLD, 11);
 
     const startIdx = this._lockerScroll * LOCKER_COLS;
     for (let row = 0; row < LOCKER_ROWS; row++) {
@@ -1757,48 +1851,63 @@ export class CashShopStage extends Stage {
       }
     }
 
-    // OG scrollbar: job-dependent X position, at Y=229 (relative to panel), size 29×67
-    const scrollbarX = this._getLockerScrollbarX();
+    // OG scrollbar position (see _lockerScrollbarPos)
     const maxScroll = Math.max(0, Math.ceil(Math.max(0, this._lockerItems.length - LOCKER_COLS * LOCKER_ROWS) / LOCKER_COLS));
     if (this._lockerScrollbar) {
-      this._lockerScrollbar.container.x = scrollbarX;
       this._lockerScrollbar.setRange(maxScroll + 1);
     }
   }
 
-  /** OG CCSWnd_Locker::OnCreate — job-dependent scrollbar X position */
-  private _getLockerScrollbarX(): number {
-    const job = this._playerJob;
-    if (Math.floor(job / 1000) === 1) return 5;  // Cygnus Knights
-    if (Math.floor(job / 100) === 21 || job === 2000) return 6;  // Aran
-    if (Math.floor(job / 1000) === 3) return 9;  // Legendary (Aran/Evan job families)
-    return 0;  // Normal
+  /** OG CCSWnd_Inventory ScrollBar id1001 — window-local (160, 54), h=102. */
+  private _invScrollbarPos(): { x: number; y: number } {
+    return { x: INV_X + 160, y: INV_Y + 54 };
+  }
+
+  /** OG CCSWnd_Locker scrollbar — right of the cell grid, top aligned with cells, h=67. */
+  private _lockerScrollbarPos(): { x: number; y: number } {
+    return { x: LOCKER_X + 232, y: LOCKER_Y + 30 };
   }
 
   // ── Inventory (CCSWnd_Inventory) — BOTTOM LEFT ──
   // OG: L=0, T=426, W=246, H=163
-  // CCSWnd_Inventory::Draw iterates CharacterData::aaItemSlot[m_nItemTI]
-  // starting from m_nFirstPosition, renders item icons via CItemInfo::DrawItemIconForSlot
-  // Non-equip items (TI==2,3,4) show quantity via draw_number_by_image
-  // Non-cash items get a semi-transparent overlay (color 0x724320F6)
-  // Selected item gets highlight border (color 0x4010B0FF)
+  // Draw @0x4BE710: white item area rect (0,52,160x212), then for each visible
+  // slot [m_nFirstPosition .. min(+12, count)): DrawItemIconForSlot at
+  // GetItemSlotRect (35c+22, 55+35r) 32x32; quantity digits (TI 2|3|4 or cash
+  // consume/etc items) via draw_number_by_image with m_pImgFontNumber;
+  // non-cash items get the 0x723C0026 veil; selected cell gets the
+  // 0x400EB5CC fill + four 0xAA000ACC 2px edge bars.
   private _drawInventoryPanel(): void {
     if (this._bgInventory) {
       this._drawWzSprite(this._bgInventory, INV_X, INV_Y);
     }
-    this._addText('Inventory', INV_X + 80, INV_Y + 4, COL_TEXT_GOLD, 11);
 
-    // OG: vertical tab control on the LEFT edge (args 4,17,28,156)
-    const tabNames = ['Equip', 'Use', 'Setup', 'Etc', 'Cash'];
+    // OG: white item area (window-local 0,52 — 160x212), clipped by the window
+    this._g.rect(INV_X, INV_Y + 52, 160, Math.min(212, INV_H - 52)).fill({ color: INV_ITEM_AREA });
+
+    // OG: vertical tab control id1000 on the LEFT edge (args 4,17,28,156).
+    // CCtrlTab::AddItem_Canvas(selected[i], normal[i]) i=0..4 — canvases from
+    // CashShop.img/Base/Tab2/{Enable,Disable} (fallback UIWindow.img/Item/Tab).
     const tabX = INV_X + INV_TAB_X;
     const tabY = INV_Y + INV_TAB_Y;
-    const tabH = Math.floor(INV_TAB_H / tabNames.length);
-    for (let i = 0; i < tabNames.length; i++) {
+    const tabH = Math.floor(INV_TAB_H / 5);
+    for (let i = 0; i < 5; i++) {
       const ty = tabY + i * tabH;
       const isActive = i === this._invItemTI;
-      this._g.rect(tabX, ty, INV_TAB_W, tabH).fill({ color: isActive ? COL_TAB_ACTIVE : COL_TAB_INACTIVE });
-      this._g.rect(tabX, ty, INV_TAB_W, tabH).stroke({ color: isActive ? COL_TAB_BORDER_ACTIVE : COL_PLATE_BORDER, width: 1 });
-      this._addText(tabNames[i].slice(0, 3), tabX + 2, ty + 4, isActive ? COL_TEXT_WHITE : COL_TEXT_DIM, 8);
+      const sprite = isActive ? this._invTabSelected[i] : this._invTabNormal[i];
+      if (sprite) {
+        this._drawWzSprite(
+          sprite,
+          tabX + Math.floor((INV_TAB_W - sprite.width) / 2),
+          ty + Math.floor((tabH - sprite.height) / 2),
+        );
+      } else {
+        const isHover = this._hoveredBtn === `invTab_${i}`;
+        this._g.rect(tabX, ty, INV_TAB_W, tabH).fill({ color: isActive || isHover ? COL_TAB_ACTIVE : COL_TAB_INACTIVE });
+        this._g.rect(tabX, ty, INV_TAB_W, tabH).stroke({
+          color: isActive ? COL_TEXT_GOLD : isHover ? COL_TAB_BORDER_ACTIVE : COL_PLATE_BORDER,
+          width: 1,
+        });
+      }
     }
 
     const expansionButtons = [
@@ -1812,7 +1921,8 @@ export class CashShopStage extends Stage {
       if (sprite) this._drawWzSprite(sprite, INV_X + x, INV_Y + y);
     }
 
-    // 4×3 grid of 35×35 cells — render actual items from CharacterData
+    // 4×3 grid of cells at GetItemSlotRect origin (35c+22, 55+35r), 32×32,
+    // visible slots [FirstPosition .. FirstPosition+12)
     const items = this._getInvItems();
     const startIdx = this._invFirstPosition;
 
@@ -1820,45 +1930,73 @@ export class CashShopStage extends Stage {
       for (let col = 0; col < INV_COLS; col++) {
         const cellIdx = row * INV_COLS + col;
         const slotIdx = startIdx + cellIdx;
-         const cx = INV_X + 22 + col * INV_COL_STEP;
-         const cy = INV_Y + 55 + row * INV_COL_STEP;
+        const cx = INV_X + 22 + col * INV_COL_STEP;
+        const cy = INV_Y + 55 + row * INV_COL_STEP;
         const isSelected = cellIdx === this._selectedInvCell;
+        const item = slotIdx < items.length ? items[slotIdx] : undefined;
 
-        // Cell background
-        this._g.rect(cx, cy, INV_CELL, INV_CELL).fill({ color: isSelected ? 0x1E2845 : COL_PLATE });
-        this._g.rect(cx, cy, INV_CELL, INV_CELL).stroke({ color: isSelected ? COL_TAB_BORDER_ACTIVE : COL_PLATE_BORDER, width: isSelected ? 2 : 1 });
-
-        // Draw item if available
-        if (slotIdx < items.length) {
-          const item = items[slotIdx];
-          if (item && item.itemId > 0) {
-            const icon = this._icons?.LoadIcon(item.itemId);
-            if (icon) {
-              const sp = this._createIcon(icon);
-              sp.position.set(cx + INV_CELL / 2, cy + INV_CELL / 2);
-              const scale = Math.min(1, (INV_CELL - 4) / Math.max(icon.Width, icon.Height));
-              sp.scale.set(scale);
-            }
-            // Show quantity for non-equip items (TI 1-4)
-            if (this._invItemTI >= 1 && item.count > 1) {
-              this._addText(String(item.count), cx + 20, cy + 24, COL_TEXT_WHITE, 8);
-            }
-            // OG: non-cash items get a semi-transparent overlay
-            if (this._invItemTI !== 4 && item.itemId >= 2000000 && item.itemId < 6000000) {
-              this._g.rect(cx, cy, INV_CELL, INV_CELL).fill({ color: 0x724320F6 });
-            }
-          }
+        if (!item || !(item.itemId > 0)) {
+          // Empty cell keeps a subtle fill over the white item area
+          this._g.rect(cx, cy, INV_CELL, INV_CELL).fill({ color: COL_PLATE, alpha: 0.35 });
+          continue;
         }
 
-        // Selected item highlight border (OG: color 0x4010B0FF)
+        // Item icon centered in the 32x32 cell, capped at cell size
+        const icon = this._icons?.LoadIcon(item.itemId);
+        if (icon && icon.Width > 0 && icon.Height > 0) {
+          const sp = this._createIcon(icon);
+          const scale = Math.min(1, INV_CELL / Math.max(icon.Width, icon.Height));
+          sp.anchor.set(0, 0);
+          sp.scale.set(scale);
+          sp.position.set(
+            cx + (INV_CELL - icon.Width * scale) / 2 + icon.OriginX * scale,
+            cy + (INV_CELL - icon.Height * scale) / 2 + icon.OriginY * scale,
+          );
+        }
+        // Quantity digits (OG draw_number_by_image, m_pImgFontNumber) — bottom-left of the cell
+        if (this._invItemTI >= 1 && item.count > 1) {
+          const qtyStr = String(Math.min(item.count, 9999));
+          let dx = cx + 1;
+          let drewDigits = true;
+          for (let d = 0; d < qtyStr.length; d++) {
+            const digit = this._invDigits[parseInt(qtyStr[d], 10)];
+            if (!digit) { drewDigits = false; break; }
+            this._drawWzSprite(digit, dx, cy + INV_CELL - digit.height - 1);
+            dx += digit.width;
+          }
+          if (!drewDigits) {
+            this._addText(qtyStr, cx + 2, cy + INV_CELL - 11, COL_TEXT_WHITE, 8);
+          }
+        }
+        // OG: non-cash items get the dim veil (0x723C0026)
+        if (!this._isCashInvItem(item)) {
+          const veil = this._argbColor(INV_VEIL_NONCASH);
+          this._g.rect(cx, cy, INV_CELL, INV_CELL).fill(veil);
+        }
+        // Selected cell: translucent fill + four 2px edge bars (OG colors)
         if (isSelected) {
-          this._g.rect(cx, cy, INV_CELL, INV_CELL).stroke({ color: 0x4010B0FF, width: 2 });
+          this._g.rect(cx, cy, INV_CELL, INV_CELL).fill(this._argbColor(INV_SEL_FILL));
+          const edge = this._argbColor(INV_SEL_EDGE);
+          this._g.rect(cx, cy - 1, INV_CELL, 2).fill(edge);
+          this._g.rect(cx, cy + INV_CELL - 1, INV_CELL, 2).fill(edge);
+          this._g.rect(cx - 1, cy, 2, INV_CELL).fill(edge);
+          this._g.rect(cx + INV_CELL - 1, cy, 2, INV_CELL).fill(edge);
         }
       }
     }
     if (this._btRebate) this._drawWzSprite(this._btRebate, LOCKER_X + 160, LOCKER_Y + 82);
     // OG scroll range = ceil(slotCount / 4) + 1
     this._inventoryScrollbar?.setRange(Math.ceil(items.length / INV_COLS) + 1);
+  }
+
+  /** Splits a 0xAARRGGBB constant into a pixi fill ({ color, alpha }). */
+  private _argbColor(argb: number): { color: number; alpha: number } {
+    return { color: argb & 0xffffff, alpha: (argb >>> 24) / 255 };
+  }
+
+  /** OG CItemInfo::IsCashItem proxy — cash-tab items and SN-carrying items. */
+  private _isCashInvItem(item: { itemId: number; count: number; cashSN: number }): boolean {
+    return item.cashSN > 0 || this._invItemTI === 4;
   }
 
   /** Get items for the current inventory tab from CharacterData */
@@ -2067,14 +2205,15 @@ export class CashShopStage extends Stage {
   }
 
   /** OG CCSWnd_List::SetPlateNo — shortcut-help button (id 4000) at
-   *  list-relative (150,380), created only on category 8 sub 0. */
+   *  list-relative (150,380), created only on category 8 sub 0.
+   *  WZ: CashShop.img/PicturePlate/BtShortcut (95x18, normal/mouseOver). */
   private _drawShortcutHelp(): void {
     if (this._activeTab !== 8 || this._subCategory !== 0) return;
     if (this._shortcutHelpVisible) {
-      // Modal — WZ resource (StringPool UOL) when available, else a panel.
+      // Modal — OG draws the PicturePlate/ShortcutHelp canvas (322x359).
       this._g.rect(0, 0, CS_W, CS_H).fill({ color: 0x000000, alpha: 0.5 });
-      const w = 260;
-      const h = 356;
+      const w = 322;
+      const h = 359;
       const x = Math.floor((CS_W - w) / 2);
       const y = Math.floor((CS_H - h) / 2);
       if (this._shortcutHelpBg) {
@@ -2082,34 +2221,38 @@ export class CashShopStage extends Stage {
       } else {
         this._g.rect(x, y, w, h).fill({ color: COL_PANEL });
         this._g.rect(x, y, w, h).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 2 });
-        this._addText('Shortcut Help', x + 70, y + 12, COL_TEXT_GOLD, 13);
-        this._addText('Wheel / PgUp-PgDn: change page', x + 24, y + 60, COL_TEXT_WHITE, 11);
-        this._addText('Arrows: move plate focus', x + 24, y + 90, COL_TEXT_WHITE, 11);
-        this._addText('Enter: wear selected item', x + 24, y + 120, COL_TEXT_WHITE, 11);
       }
-      // Close button at (130,328), dialog-relative
-      this._g.rect(x + 130, y + 328, 56, 20).fill({ color: COL_TAB_ACTIVE });
-      this._g.rect(x + 130, y + 328, 56, 20).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
-      this._addText('Close', x + 140, y + 332, COL_TEXT_WHITE, 10);
+      // Close button at (130,328), dialog-relative — WZ BtClose sprite (65x18)
+      if (this._btShortcutClose) {
+        this._drawWzSprite(this._btShortcutCloseHover ? this._btShortcutCloseOver ?? this._btShortcutClose : this._btShortcutClose, x + 130, y + 328);
+      } else {
+        this._g.rect(x + 130, y + 328, 65, 18).fill({ color: COL_TAB_ACTIVE });
+        this._g.rect(x + 130, y + 328, 65, 18).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
+      }
       return;
     }
-    this._g.rect(LIST_X + 150, LIST_Y + 380, 60, 20).fill({ color: COL_TAB_ACTIVE });
-    this._g.rect(LIST_X + 150, LIST_Y + 380, 60, 20).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
-    this._addText('Shortcuts', LIST_X + 156, LIST_Y + 384, COL_TEXT_WHITE, 10);
+    // Shortcut button — WZ BtShortcut sprite (95x18), hover swaps to mouseOver
+    if (this._btShortcut) {
+      const hovered = this._hoveredBtn === 'shortcut';
+      this._drawWzSprite(hovered ? this._btShortcutOver ?? this._btShortcut : this._btShortcut, LIST_X + 150, LIST_Y + 380);
+    } else {
+      this._g.rect(LIST_X + 150, LIST_Y + 380, 95, 18).fill({ color: COL_TAB_ACTIVE });
+      this._g.rect(LIST_X + 150, LIST_Y + 380, 95, 18).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
+    }
   }
 
   private _handleShortcutHelpClick(lx: number, ly: number): boolean {
     if (this._activeTab !== 8 || this._subCategory !== 0) return false;
     if (this._shortcutHelpVisible) {
-      const x = Math.floor((CS_W - 260) / 2);
-      const y = Math.floor((CS_H - 356) / 2);
-      if (lx >= x + 130 && lx < x + 186 && ly >= y + 328 && ly < y + 348) {
+      const x = Math.floor((CS_W - 322) / 2);
+      const y = Math.floor((CS_H - 359) / 2);
+      if (lx >= x + 130 && lx < x + 195 && ly >= y + 328 && ly < y + 346) {
         this._shortcutHelpVisible = false;
         return true;
       }
       return true; // modal swallows all clicks
     }
-    if (lx >= LIST_X + 150 && lx < LIST_X + 210 && ly >= LIST_Y + 380 && ly < LIST_Y + 400) {
+    if (lx >= LIST_X + 150 && lx < LIST_X + 245 && ly >= LIST_Y + 380 && ly < LIST_Y + 398) {
       this._shortcutHelpVisible = true;
       return true;
     }
@@ -2125,8 +2268,22 @@ export class CashShopStage extends Stage {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // Gift Dialog
+  // Gift Dialog (OG CUISendGifts — SetLayer @0x787BE0 / SetCtrl @0x7881A0 /
+  // Draw @0x7892E0)
   // ═══════════════════════════════════════════════════════════════════════════
+
+  /** OG SetLayer @0x787BE0: state 0 → StringPool 4901 backgrnd (266x169),
+   *  states 1/2 → StringPool 4902 backgrnd1 (473x169); height always 169. */
+  private _giftDialogSize(): { w: number; h: number } {
+    const bg = this._giftState !== 0 ? this._bgGiftWide : this._bgGift;
+    if (bg && bg.width > 0) return { w: bg.width, h: bg.height };
+    return this._giftState !== 0 ? { w: 473, h: 169 } : { w: 266, h: 169 };
+  }
+
+  private _giftDialogRect(): { x: number; y: number; w: number; h: number } {
+    const { w, h } = this._giftDialogSize();
+    return { x: Math.floor((CS_W - w) / 2), y: Math.floor((CS_H - h) / 2), w, h };
+  }
 
   private _drawGiftDialog(): void {
     if (!this._giftItem) return;
@@ -2134,89 +2291,112 @@ export class CashShopStage extends Stage {
     // Semi-transparent overlay
     this._g.rect(0, 0, CS_W, CS_H).fill({ color: 0x000000, alpha: 0.5 });
 
-    // Dialog box centered — OG CUISendGifts (buttons at y139, Hide at x439)
-    const dlgW = 473;
-    const dlgH = 169;
-    const dlgX = Math.floor((CS_W - dlgW) / 2);
-    const dlgY = Math.floor((CS_H - dlgH) / 2);
+    const dlg = this._giftDialogRect();
+    const dlgX = dlg.x;
+    const dlgY = dlg.y;
 
-    // Dialog background — use WZ if available
-    if (this._bgGift) {
-      this._drawWzSprite(this._bgGiftWide ?? this._bgGift, dlgX, dlgY);
+    // Background — narrow in manual-entry mode, wide in buddy/guild modes
+    if (this._giftState !== 0 && this._bgGiftWide) {
+      this._drawWzSprite(this._bgGiftWide, dlgX, dlgY);
+    } else if (this._giftState === 0 && this._bgGift) {
+      this._drawWzSprite(this._bgGift, dlgX, dlgY);
+    } else {
+      // Graphics last resort
+      this._g.rect(dlgX, dlgY, dlg.w, dlg.h).fill({ color: 0x1A1E33 });
+      this._g.rect(dlgX, dlgY, dlg.w, dlg.h).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
     }
 
-    // Title
-    this._addText('Gift Item', dlgX + 160, dlgY + 12, COL_TEXT_GOLD, 14);
-
-    // Item name and price
-    this._addText(`Item: ${this._giftItem.name}`, dlgX + 20, dlgY + 30, COL_TEXT_WHITE, 11);
+    // Dynamic values (item name + price) — allowed as Text
+    this._addText(this._giftItem.name, dlgX + 20, dlgY + 28, COL_TEXT_WHITE, 11);
     const price = this._getSalePrice(this._giftItem);
-    this._addText(`Price: ${price} NX`, dlgX + 20, dlgY + 44, COL_TEXT_GOLD, 11);
+    this._addText(`${price} NX`, dlgX + 20, dlgY + 42, COL_TEXT_GOLD, 11);
 
-    // Receiver name field — OG edit id1000 at (84,52) 122x13
-    this._addText('To:', dlgX + 26, dlgY + 53, COL_TEXT_WHITE, 10);
+    // Receiver edit id1000 at (84,52) 122x13 — white box, black text
     const recvX = dlgX + 84;
     const recvY = dlgY + 52;
     this._g.rect(recvX, recvY, 122, 13).fill({ color: 0xFFFFFF });
     this._g.rect(recvX, recvY, 122, 13).stroke({ color: this._giftEditingField === 1 ? COL_TAB_BORDER_ACTIVE : COL_PLATE_BORDER, width: 1 });
     this._addText(this._giftReceiver + (this._giftEditingField === 1 ? '_' : ''), recvX + 3, recvY + 2, 0x111111, 9);
 
-    // Message field — OG edits id1001/1002 at (26,76)/(26,92) 210x13
+    // Message edit id1001 at (26,76) 210x13
     this._g.rect(dlgX + 26, dlgY + 76, 210, 13).fill({ color: 0xFFFFFF });
     this._g.rect(dlgX + 26, dlgY + 76, 210, 13).stroke({ color: this._giftEditingField === 2 ? COL_TAB_BORDER_ACTIVE : COL_PLATE_BORDER, width: 1 });
     this._addText(this._giftMessage + (this._giftEditingField === 2 ? '_' : ''), dlgX + 29, dlgY + 78, 0x111111, 9);
 
-    // Recipient list panel (buddy/guild mode) — OG list layer at (336,54),
-    // "None" placeholder when empty
+    // Recipient list (OG Draw @0x7892E0): names at x=293 from y=55, pitch 18,
+    // selection bar Copy(283, y-2, 153, 18); hit rects (283,y-2)-(436,y+16).
+    // "None" placeholder at layer(336,54)+text(1,1) when the list is empty.
     if (this._giftState !== 0) {
       const names = this._giftState === 1 ? this.buddyNames : this.guildNames;
-      this._g.rect(dlgX + 300, dlgY + 40, 150, 90).fill({ color: 0x10142A });
-      this._g.rect(dlgX + 300, dlgY + 40, 150, 90).stroke({ color: COL_PLATE_BORDER, width: 1 });
       if (names.length === 0) {
-        this._addText('None', dlgX + 337, dlgY + 56, COL_TEXT_DIM, 10);
+        this._addText('None', dlgX + 337, dlgY + 55, 0x111111, 10);
       } else {
-        for (let i = 0; i < names.length && i < 6; i++) {
-          const ny = dlgY + 46 + i * 14;
+        for (let i = 0; i < names.length; i++) {
+          const ny = dlgY + 55 + i * 18;
+          if (ny + 16 > dlgY + 139) break; // rows stop above the button row
           const sel = i === this._giftListSelected;
-          if (sel) this._g.rect(dlgX + 302, ny - 2, 146, 13).fill({ color: COL_TAB_ACTIVE });
-          this._addText(names[i], dlgX + 306, ny, sel ? COL_TEXT_GOLD : COL_TEXT_WHITE, 10);
+          if (sel) {
+            this._g.rect(dlgX + 283, ny - 2, 153, 18).fill({ color: COL_TAB_ACTIVE, alpha: 0.85 });
+          }
+          this._addText(names[i], dlgX + 293, ny, sel ? COL_TEXT_WHITE : 0x111111, 10);
         }
       }
     }
 
-    // Button row y139 — OG ids: Guild(1004) x56, Buddy(1003) x110,
-    // OK(168), Cancel(210), Hide(1005) x439 only in list modes
+    // Button row — OG SetCtrl ids: Guild(1004)@(56,139), Buddy(1003)@(110,139),
+    // OK(1 SP0x512)@(168,139), Cancel(2 SP0x513)@(210,139) — all 40x16/53x18 WZ
+    // canvases; Hide(1005)@(439,139) only when state != 0.
     const btnY = dlgY + 139;
     if (this._btGiftGuild) this._drawWzSprite(this._btGiftGuild, dlgX + 56, btnY);
     else {
-      this._g.rect(dlgX + 56, btnY, 48, 18).fill({ color: COL_TAB_ACTIVE });
+      this._g.rect(dlgX + 56, btnY, 53, 18).fill({ color: COL_TAB_ACTIVE });
       this._addText('Guild', dlgX + 62, btnY + 4, COL_TEXT_WHITE, 9);
     }
     if (this._btGiftBuddy) this._drawWzSprite(this._btGiftBuddy, dlgX + 110, btnY);
     else {
-      this._g.rect(dlgX + 110, btnY, 48, 18).fill({ color: COL_TAB_ACTIVE });
+      this._g.rect(dlgX + 110, btnY, 53, 18).fill({ color: COL_TAB_ACTIVE });
       this._addText('Buddy', dlgX + 116, btnY + 4, COL_TEXT_WHITE, 9);
     }
-    if (this._btGiftHide && this._giftState !== 0) {
-      this._drawWzSprite(this._btGiftHide, dlgX + 439, btnY);
-    } else if (this._giftState !== 0) {
-      this._g.rect(dlgX + 439, btnY, 28, 18).fill({ color: 0x3C1A1A });
-      this._addText('X', dlgX + 450, btnY + 4, COL_TEXT_WHITE, 9);
+    if (this._giftState !== 0) {
+      if (this._btGiftHide) this._drawWzSprite(this._btGiftHide, dlgX + 439, btnY);
+      else {
+        this._g.rect(dlgX + 439, btnY, 17, 16).fill({ color: 0x3C1A1A });
+        this._addText('X', dlgX + 444, btnY + 4, COL_TEXT_WHITE, 9);
+      }
     }
-    const okX = dlgX + 168;
-    this._g.rect(okX, btnY, 36, 18).fill({ color: COL_TAB_ACTIVE });
-    this._g.rect(okX, btnY, 36, 18).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
-    this._addText('OK', okX + 11, btnY + 4, COL_TEXT_WHITE, 9);
+    this._drawDlgButtonPair(dlgX + 168, btnY);
+  }
 
-    const cancelX = dlgX + 210;
-    this._g.rect(cancelX, btnY, 48, 18).fill({ color: 0x3C1A1A });
-    this._g.rect(cancelX, btnY, 48, 18).stroke({ color: 0x8B4444, width: 1 });
-    this._addText('Cancel', cancelX + 7, btnY + 4, COL_TEXT_WHITE, 9);
+  /** OK/Cancel pair — UtilDlgEx BtOK/BtNo (SP 0x512/0x513) 40x16 WZ canvases,
+   *  shared by CUISendGift(s), CConfirmPurchaseDlg and CUITransferWorldSelectDlg.
+   *  Graphics fallback only when the WZ assets are unavailable. */
+  private _drawDlgButtonPair(x: number, y: number): void {
+    if (this._confirmOk) {
+      this._drawWzSprite(this._confirmOk, x, y);
+    } else {
+      this._g.rect(x, y, 40, 16).fill({ color: COL_TAB_ACTIVE });
+      this._g.rect(x, y, 40, 16).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
+      this._addText('OK', x + 12, y + 3, COL_TEXT_WHITE, 9);
+    }
+    if (this._confirmNo) {
+      this._drawWzSprite(this._confirmNo, x + 50, y);
+    } else {
+      this._g.rect(x + 50, y, 40, 16).fill({ color: 0x3C1A1A });
+      this._g.rect(x + 50, y, 40, 16).stroke({ color: 0x8B4444, width: 1 });
+      this._addText('Cancel', x + 55, y + 3, COL_TEXT_WHITE, 9);
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // Confirm Purchase Dialog (OG: CConfirmPurchaseDlg)
+  // Confirm Purchase Dialog (OG CConfirmPurchaseDlg — OnCreate @0x48ACC0,
+  // Draw @0x48B6A0; UtilDlgEx/notice 305x157 base)
   // ═══════════════════════════════════════════════════════════════════════════
+
+  private _confirmBuyRect(): { x: number; y: number; w: number; h: number } {
+    const w = this._confirmNotice && this._confirmNotice.width > 0 ? this._confirmNotice.width : 305;
+    const h = this._confirmNotice && this._confirmNotice.height > 0 ? this._confirmNotice.height : 157;
+    return { x: Math.floor((CS_W - w) / 2), y: Math.floor((CS_H - h) / 2), w, h };
+  }
 
   private _drawConfirmBuy(): void {
     if (!this._confirmBuyItem) return;
@@ -2227,183 +2407,221 @@ export class CashShopStage extends Stage {
     // Semi-transparent overlay
     this._g.rect(0, 0, CS_W, CS_H).fill({ color: 0x000000, alpha: 0.5 });
 
-    // Dialog box centered
-    const dlgW = 305;
-    const dlgH = 157;
-    const dlgX = Math.floor((CS_W - dlgW) / 2);
-    const dlgY = Math.floor((CS_H - dlgH) / 2);
+    // Dialog box — sized to the actual WZ notice canvas
+    const dlg = this._confirmBuyRect();
+    const dlgX = dlg.x;
+    const dlgY = dlg.y;
 
-    if (this._confirmNotice) this._drawWzSprite(this._confirmNotice, dlgX, dlgY);
+    if (this._confirmNotice) {
+      this._drawWzSprite(this._confirmNotice, dlgX, dlgY);
+    } else {
+      this._g.rect(dlgX, dlgY, dlg.w, dlg.h).fill({ color: 0x1A1E33 });
+      this._g.rect(dlgX, dlgY, dlg.w, dlg.h).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
+    }
 
-    // Title
-    this._addText('Confirm Purchase', dlgX + 100, dlgY + 10, COL_TEXT_GOLD, 14);
+    // Item row (OG Draw @0x48B6A0): icon bottom-right at (21, nY+14),
+    // name at (63, nY-16), price line at (63, nY) — first row nY=43.
+    const nY = dlgY + 43;
+    const icon = this._icons?.LoadIcon(commodity.itemId);
+    if (icon && icon.Width > 0) {
+      const s = this._createIcon(icon);
+      s.position.set(dlgX + 21 - icon.Width, nY + 14 - icon.Height);
+    }
+    this._addText(commodity.name, dlgX + 63, nY - 16, COL_TEXT_WHITE, 11);
+    this._addText(`${price} NX`, dlgX + 63, nY, COL_TEXT_WHITE, 11);
 
-    // Item name
-    this._addText(`Item: ${commodity.name}`, dlgX + 20, dlgY + 40, COL_TEXT_WHITE, 11);
-
-    // Price
-    this._addText(`Price: ${price} NX`, dlgX + 20, dlgY + 58, COL_TEXT_GOLD, 11);
-
-    // Separator line
-    this._g.moveTo(dlgX + 20, dlgY + 76).lineTo(dlgX + dlgW - 20, dlgY + 76).stroke({ color: COL_SEPARATOR, width: 1 });
-
-    // Payment type buttons
+    // Payment checkboxes (OG OnCreate): MaplePoint(1000)@(25,h-95),
+    // PrePaidCash(1001)@(25,h-80), NexonCash(1002)@(25,h-65); CCtrlCheckBox
+    // draws its Basic.img/CheckBox glyph at (x+2,y+1).
     const acceptsMaplePoint = commodity.limit !== 2;
-    const payX = dlgX + 30;
-    const payW = dlgW - 60;
-    const payH = 15;
-    const payStartY = dlgY + 58;
-    const payStep = 15;
-
-    const payLabels = ['NX Credit', 'Maple Point', 'Prepaid NX'];
     const payAvail = [
       price <= this._nxCredit,                                                // NX Credit
       acceptsMaplePoint && price <= this._maplePoints,                        // Maple Point
       price <= this._nxPrepaid,                                               // Prepaid NX
     ];
     const payBalances = [this._nxCredit, this._maplePoints, this._nxPrepaid];
+    const payLabels = ['NX Credit', 'Maple Point', 'Prepaid NX'];
+    const payRowsY = [dlg.h - 95, dlg.h - 80, dlg.h - 65];
 
     for (let i = 0; i < 3; i++) {
-      const py = payStartY + i * payStep;
+      const py = dlgY + payRowsY[i];
       const isSelected = i === this._confirmBuyPaymentType;
       const isAvail = payAvail[i];
-
-      // Button background
-      const bgColor = !isAvail ? 0x1A1010 : isSelected ? 0x1E3A2A : 0x16192C;
-      const borderColor = !isAvail ? 0x3A2020 : isSelected ? 0x4A8A4A : COL_PLATE_BORDER;
-      this._g.rect(payX, py, payW, payH).fill({ color: bgColor });
-      this._g.rect(payX, py, payW, payH).stroke({ color: borderColor, width: isSelected ? 2 : 1 });
-
-      // Radio indicator
-      const radioX = payX + 6;
-      const radioY = py + 5;
-      this._g.circle(radioX, radioY, 4).stroke({ color: isAvail ? COL_TEXT_WHITE : 0x666666, width: 1 });
-      if (isSelected) {
-        this._g.circle(radioX, radioY, 2).fill({ color: isAvail ? COL_TEXT_GREEN : 0x666666 });
+      const state = !isAvail ? (isSelected ? 3 : 2) : isSelected ? 1 : 0;
+      const glyph = this._confirmCheckBox[state] ?? this._confirmCheckBox[isSelected ? 1 : 0];
+      if (glyph) {
+        this._drawWzSprite(glyph, dlgX + 25 + 2, py + 1);
+      } else {
+        this._g.rect(dlgX + 27, py + 1, 11, 11).fill({ color: isSelected ? COL_TAB_ACTIVE : 0xFFFFFF });
+        this._g.rect(dlgX + 27, py + 1, 11, 11).stroke({ color: COL_PLATE_BORDER, width: 1 });
       }
-
-      // Label
-      const textColor = !isAvail ? 0x666666 : isSelected ? COL_TEXT_GREEN : COL_TEXT_WHITE;
-      this._addText(payLabels[i], payX + 14, py + 2, textColor, 9);
-
-      // Balance display on right side
-      this._addText(`${payBalances[i]}`, payX + payW - 60, py + 2, isAvail ? COL_TEXT_DIM : 0x555555, 9);
+      const labelColor = !isAvail ? 0x666666 : COL_TEXT_WHITE;
+      this._addText(payLabels[i], dlgX + 42, py + 1, labelColor, 10);
+      this._addText(`${payBalances[i]}`, dlgX + 160, py + 1, isAvail ? COL_TEXT_DIM : 0x555555, 9);
     }
 
-    // OK button
-    const okX = dlgX + 40;
-    const okY = dlgY + dlgH - 37;
-    if (this._confirmOk) this._drawWzSprite(this._confirmOk, dlgX + 157, okY);
-
-    // Cancel button
-    if (this._confirmNo) this._drawWzSprite(this._confirmNo, dlgX + 207, okY);
+    // OK/Cancel — OG OnCreate @0x48ACC0: BtOK id1 SP0x512 @(157,h-37),
+    // BtCancel id2 SP0x513 @(207,h-37)
+    this._drawDlgButtonPair(dlgX + 157, dlgY + dlg.h - 37);
   }
 
-  // ── Name Change Dialog (OG: CUINameChangeDlg) ──
+  // ── Shared dialog helpers ────────────────────────────────────────────────
+
+  /** Rect for the small notice-based dialogs (UtilDlgEx/notice 305x157). */
+  private _noticeRect(): { x: number; y: number; w: number; h: number } {
+    return this._confirmBuyRect();
+  }
+
+  /** Centered rect for whichever modal is active — sized to its WZ background
+   *  canvas when loaded, Graphics-era fallback dims otherwise. */
+  private _activeDialogRect(): { x: number; y: number; w: number; h: number } {
+    const sz = (s: WzSprite | null, fw: number, fh: number) => ({
+      w: s && s.width > 0 ? s.width : fw,
+      h: s && s.height > 0 ? s.height : fh,
+    });
+    let size = { w: 305, h: 157 };
+    switch (this._activeDialog) {
+      case 'nameChange': size = sz(this._bgNameChange, 266, 124); break;
+      case 'worldTransfer': size = sz(this._bgTransferWorld, 209, 101); break;
+      default: size = sz(this._confirmNotice, 305, 157); break;
+    }
+    const { w, h } = size;
+    return { x: Math.floor((CS_W - w) / 2), y: Math.floor((CS_H - h) / 2), w, h };
+  }
+
+  /** Draw a WZ background or a Graphics fallback panel. */
+  private _drawDialogBg(sprite: WzSprite | null, r: { x: number; y: number; w: number; h: number }): void {
+    if (sprite && sprite.width > 0) {
+      this._drawWzSprite(sprite, r.x, r.y);
+    } else {
+      this._g.rect(r.x, r.y, r.w, r.h).fill({ color: 0x1A1E33 });
+      this._g.rect(r.x, r.y, r.w, r.h).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
+    }
+  }
+
+  /** White CCtrlEdit-style input box (nBackColor=-1, black text) with the
+   *  typed dynamic value; focusedField selects the highlight color. */
+  private _drawEditBox(x: number, y: number, w: number, h: number, value: string, focused: boolean): void {
+    this._g.rect(x, y, w, h).fill({ color: 0xFFFFFF });
+    this._g.rect(x, y, w, h).stroke({ color: focused ? COL_TAB_BORDER_ACTIVE : COL_PLATE_BORDER, width: 1 });
+    this._addText(value + (focused ? '_' : ''), x + 3, y + 2, 0x111111, 9);
+  }
+
+  // ── Name Change Dialog (CSChangeName/Base/backgrnd 266x124 + BtCheck) ──
   private _drawNameChangeDialog(): void {
-    const dlgW = 266; const dlgH = 124;
-    const dlgX = (CS_W - dlgW) / 2; const dlgY = (CS_H - dlgH) / 2;
-    if (this._bgNameChange) this._drawWzSprite(this._bgNameChange, dlgX, dlgY);
-    this._addText('Name Change', dlgX + 100, dlgY + 10, COL_TEXT_GOLD, 14);
-    this._addText('Enter new name:', dlgX + 20, dlgY + 40, COL_TEXT_WHITE, 11);
-    // Input field
-    this._g.rect(dlgX + 20, dlgY + 60, dlgW - 40, 24).fill({ color: 0x0A0E1A });
-    this._g.rect(dlgX + 20, dlgY + 60, dlgW - 40, 24).stroke({ color: COL_SEPARATOR, width: 1 });
-    this._addText(this._nameChangeNewName + '_', dlgX + 26, dlgY + 66, COL_TEXT_WHITE, 12);
-    // OK/Cancel
-    this._g.rect(dlgX + 40, dlgY + dlgH - 40, 100, 28).fill({ color: COL_TAB_ACTIVE });
-    this._g.rect(dlgX + 40, dlgY + dlgH - 40, 100, 28).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
-    this._addText('OK', dlgX + 76, dlgY + dlgH - 33, COL_TEXT_WHITE, 12);
-    this._g.rect(dlgX + dlgW - 140, dlgY + dlgH - 40, 100, 28).fill({ color: 0x3C1A1A });
-    this._g.rect(dlgX + dlgW - 140, dlgY + dlgH - 40, 100, 28).stroke({ color: 0x8B4444, width: 1 });
-    this._addText('Cancel', dlgX + dlgW - 116, dlgY + dlgH - 33, COL_TEXT_WHITE, 12);
+    this._g.rect(0, 0, CS_W, CS_H).fill({ color: 0x000000, alpha: 0.5 });
+    const dlg = this._activeDialogRect();
+    this._drawDialogBg(this._bgNameChange, dlg);
+    // Input field — white edit box centered above the button row
+    this._drawEditBox(dlg.x + 28, dlg.y + 52, dlg.w - 56, 15, this._nameChangeNewName, true);
+    // BtCheck (39x17) + BtNo (40x16) bottom row
+    const by = dlg.y + dlg.h - 26;
+    if (this._btNameCheck) this._drawWzSprite(this._btNameCheck, dlg.x + 90, by);
+    else {
+      this._g.rect(dlg.x + 90, by, 39, 17).fill({ color: COL_TAB_ACTIVE });
+      this._addText('OK', dlg.x + 100, by + 4, COL_TEXT_WHITE, 9);
+    }
+    if (this._confirmNo) this._drawWzSprite(this._confirmNo, dlg.x + 135, by);
+    else {
+      this._g.rect(dlg.x + 135, by, 40, 16).fill({ color: 0x3C1A1A });
+      this._addText('No', dlg.x + 148, by + 3, COL_TEXT_WHITE, 9);
+    }
   }
 
-  // ── World Transfer Dialog (OG: CUIWorldTransferDlg) ──
+  // ── World Transfer Dialog (OG CUITransferWorldSelectDlg::OnCreate @0x79D750:
+  //    CSTransferWorld/Base/backgrnd 209x101; char name @ (105,33); world
+  //    combo id1003 @(103,50) 100x17; BtOK id1000 SP0x512 @(107,77);
+  //    BtCancel id1001 SP0x513 @(156,77); BtClose id1002 SP0x1A71 @(190,6)) ──
   private _drawWorldTransferDialog(): void {
-    const dlgW = this._worldTransferNames.length > 0 ? 406 : 209;
-    const dlgH = this._worldTransferNames.length > 0 ? 424 : 101;
-    const dlgX = (CS_W - dlgW) / 2; const dlgY = (CS_H - dlgH) / 2;
-    const background = this._worldTransferNames.length > 0 ? this._bgTransferWorldNotice : this._bgTransferWorld;
-    if (background) this._drawWzSprite(background, dlgX, dlgY);
-    this._addText('World Transfer', dlgX + 90, dlgY + 10, COL_TEXT_GOLD, 14);
-    this._addText('Select target world:', dlgX + 20, dlgY + 40, COL_TEXT_WHITE, 11);
-    for (let i = 0; i < this._worldTransferNames.length; i++) {
-      const wy = dlgY + 60 + i * 22;
-      const isSelected = i === this._worldTransferSelected;
-      this._g.rect(dlgX + 20, wy, dlgW - 40, 20).fill({ color: isSelected ? COL_TAB_ACTIVE : 0x0A0E1A });
-      this._g.rect(dlgX + 20, wy, dlgW - 40, 20).stroke({ color: isSelected ? COL_TAB_BORDER_ACTIVE : COL_SEPARATOR, width: 1 });
-      this._addText(this._worldTransferNames[i], dlgX + 30, wy + 4, isSelected ? COL_TEXT_GREEN : COL_TEXT_WHITE, 11);
+    this._g.rect(0, 0, CS_W, CS_H).fill({ color: 0x000000, alpha: 0.5 });
+    const dlg = this._activeDialogRect();
+    this._drawDialogBg(this._bgTransferWorld, dlg);
+
+    // Character name (dynamic) — FONT_BASIC_BLACK at (105,33), maxW 95
+    const nm: string = this._characterData?.characterStat?.name ?? '';
+    this._addText(nm.length > 10 ? `${nm.slice(0, 10)}..` : nm, dlg.x + 105, dlg.y + 33, 0x111111, 10);
+
+    // World-selection combo (only when there are worlds to pick)
+    if (this._worldTransferNames.length > 0) {
+      const cx = dlg.x + 103;
+      const cy = dlg.y + 50;
+      const selectedName = this._worldTransferSelected >= 0 ? this._worldTransferNames[this._worldTransferSelected] : '';
+      // Closed combo box — CCtrlComboBox colors #EEE / #999, black text
+      this._g.rect(cx, cy, 100, 17).fill({ color: 0xEEEEEE });
+      this._g.rect(cx, cy, 100, 17).stroke({ color: 0x999999, width: 1 });
+      this._addText(selectedName, cx + 7, cy + 3, 0x111111, 10);
+      // Dropdown rows (open state) — selected row uses the focused #A5A198
+      if (this._worldTransferDropdownOpen) {
+        for (let i = 0; i < this._worldTransferNames.length; i++) {
+          const ry = cy + 17 + i * 17;
+          this._g.rect(cx, ry, 100, 17).fill({ color: i === this._worldTransferSelected ? 0xA5A198 : 0xEEEEEE });
+          this._g.rect(cx, ry, 100, 17).stroke({ color: 0x999999, width: 1 });
+          this._addText(this._worldTransferNames[i], cx + 7, ry + 3, 0x111111, 10);
+        }
+      }
     }
-    this._g.rect(dlgX + 40, dlgY + dlgH - 40, 100, 28).fill({ color: COL_TAB_ACTIVE });
-    this._g.rect(dlgX + 40, dlgY + dlgH - 40, 100, 28).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
-    this._addText('OK', dlgX + 76, dlgY + dlgH - 33, COL_TEXT_WHITE, 12);
-    this._g.rect(dlgX + dlgW - 140, dlgY + dlgH - 40, 100, 28).fill({ color: 0x3C1A1A });
-    this._g.rect(dlgX + dlgW - 140, dlgY + dlgH - 40, 100, 28).stroke({ color: 0x8B4444, width: 1 });
-    this._addText('Cancel', dlgX + dlgW - 116, dlgY + dlgH - 33, COL_TEXT_WHITE, 12);
+
+    // BtClose id1002 @(190,6)
+    if (this._btDlgClose) {
+      this._drawWzSprite(this._btDlgClose, dlg.x + 190, dlg.y + 6);
+    } else {
+      this._g.rect(dlg.x + 190, dlg.y + 6, 13, 13).fill({ color: 0x3C1A1A });
+      this._addText('X', dlg.x + 193, dlg.y + 8, COL_TEXT_WHITE, 8);
+    }
+
+    // BtOK id1000 @(107,77) / BtCancel id1001 @(156,77) — SP 0x512/0x513
+    this._drawDlgButtonPairExact(dlg.x + 107, dlg.y + 77, dlg.x + 156, dlg.y + 77);
   }
 
-  // ── Couple Name Dialog (OG: CUICoupleNameDlg) ──
+  /** OK/Cancel pair with independent positions (world-transfer layout). */
+  private _drawDlgButtonPairExact(okX: number, okY: number, noX: number, noY: number): void {
+    if (this._confirmOk) this._drawWzSprite(this._confirmOk, okX, okY);
+    else {
+      this._g.rect(okX, okY, 40, 16).fill({ color: COL_TAB_ACTIVE });
+      this._addText('OK', okX + 12, okY + 3, COL_TEXT_WHITE, 9);
+    }
+    if (this._confirmNo) this._drawWzSprite(this._confirmNo, noX, noY);
+    else {
+      this._g.rect(noX, noY, 40, 16).fill({ color: 0x3C1A1A });
+      this._addText('No', noX + 13, noY + 3, COL_TEXT_WHITE, 9);
+    }
+  }
+
+  // ── Couple Name Dialog (UtilDlgEx notice base — partner name entry) ──
   private _drawCoupleNameDialog(): void {
-    const dlgW = 300; const dlgH = 160;
-    const dlgX = (CS_W - dlgW) / 2; const dlgY = (CS_H - dlgH) / 2;
-    this._g.rect(dlgX, dlgY, dlgW, dlgH).fill({ color: 0x10142A });
-    this._g.rect(dlgX, dlgY, dlgW, dlgH).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 2 });
-    this._addText('Couple Ring', dlgX + 100, dlgY + 10, COL_TEXT_GOLD, 14);
-    this._addText('Partner name:', dlgX + 20, dlgY + 40, COL_TEXT_WHITE, 11);
-    this._g.rect(dlgX + 20, dlgY + 60, dlgW - 40, 24).fill({ color: 0x0A0E1A });
-    this._g.rect(dlgX + 20, dlgY + 60, dlgW - 40, 24).stroke({ color: COL_SEPARATOR, width: 1 });
-    this._addText(this._coupleNameValue + '_', dlgX + 26, dlgY + 66, COL_TEXT_WHITE, 12);
-    this._g.rect(dlgX + 40, dlgY + dlgH - 40, 100, 28).fill({ color: COL_TAB_ACTIVE });
-    this._g.rect(dlgX + 40, dlgY + dlgH - 40, 100, 28).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
-    this._addText('OK', dlgX + 76, dlgY + dlgH - 33, COL_TEXT_WHITE, 12);
-    this._g.rect(dlgX + dlgW - 140, dlgY + dlgH - 40, 100, 28).fill({ color: 0x3C1A1A });
-    this._g.rect(dlgX + dlgW - 140, dlgY + dlgH - 40, 100, 28).stroke({ color: 0x8B4444, width: 1 });
-    this._addText('Cancel', dlgX + dlgW - 116, dlgY + dlgH - 33, COL_TEXT_WHITE, 12);
+    this._g.rect(0, 0, CS_W, CS_H).fill({ color: 0x000000, alpha: 0.5 });
+    const dlg = this._activeDialogRect();
+    this._drawDialogBg(this._confirmNotice, dlg);
+    this._drawEditBox(dlg.x + 48, dlg.y + 62, dlg.w - 96, 15, this._coupleNameValue, true);
+    this._drawDlgButtonPair(dlg.x + 157, dlg.y + dlg.h - 37);
   }
 
-  // ── Friend Name Dialog (OG: CUIFriendNameDlg) ──
+  // ── Friend Name Dialog (UtilDlgEx notice base — friend name entry) ──
   private _drawFriendNameDialog(): void {
-    const dlgW = 300; const dlgH = 160;
-    const dlgX = (CS_W - dlgW) / 2; const dlgY = (CS_H - dlgH) / 2;
-    this._g.rect(dlgX, dlgY, dlgW, dlgH).fill({ color: 0x10142A });
-    this._g.rect(dlgX, dlgY, dlgW, dlgH).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 2 });
-    this._addText('Friendship Ring', dlgX + 80, dlgY + 10, COL_TEXT_GOLD, 14);
-    this._addText('Friend name:', dlgX + 20, dlgY + 40, COL_TEXT_WHITE, 11);
-    this._g.rect(dlgX + 20, dlgY + 60, dlgW - 40, 24).fill({ color: 0x0A0E1A });
-    this._g.rect(dlgX + 20, dlgY + 60, dlgW - 40, 24).stroke({ color: COL_SEPARATOR, width: 1 });
-    this._addText(this._friendNameValue + '_', dlgX + 26, dlgY + 66, COL_TEXT_WHITE, 12);
-    this._g.rect(dlgX + 40, dlgY + dlgH - 40, 100, 28).fill({ color: COL_TAB_ACTIVE });
-    this._g.rect(dlgX + 40, dlgY + dlgH - 40, 100, 28).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
-    this._addText('OK', dlgX + 76, dlgY + dlgH - 33, COL_TEXT_WHITE, 12);
-    this._g.rect(dlgX + dlgW - 140, dlgY + dlgH - 40, 100, 28).fill({ color: 0x3C1A1A });
-    this._g.rect(dlgX + dlgW - 140, dlgY + dlgH - 40, 100, 28).stroke({ color: 0x8B4444, width: 1 });
-    this._addText('Cancel', dlgX + dlgW - 116, dlgY + dlgH - 33, COL_TEXT_WHITE, 12);
+    this._g.rect(0, 0, CS_W, CS_H).fill({ color: 0x000000, alpha: 0.5 });
+    const dlg = this._activeDialogRect();
+    this._drawDialogBg(this._confirmNotice, dlg);
+    this._drawEditBox(dlg.x + 48, dlg.y + 62, dlg.w - 96, 15, this._friendNameValue, true);
+    this._drawDlgButtonPair(dlg.x + 157, dlg.y + dlg.h - 37);
   }
 
-  // ── Equip Slot Extension Dialog (OG: body-part picker) ──
+  // ── Equip Slot Extension Dialog (body-part picker on the notice base) ──
+  private static readonly _EQUIP_EXT_PARTS = ['Hat', 'Face', 'Top', 'Bottom', 'Shoes', 'Weapon', 'Shield', 'Cape'];
+
   private _drawEquipSlotExtDialog(): void {
-    const dlgW = 300; const dlgH = 200;
-    const dlgX = (CS_W - dlgW) / 2; const dlgY = (CS_H - dlgH) / 2;
-    this._g.rect(dlgX, dlgY, dlgW, dlgH).fill({ color: 0x10142A });
-    this._g.rect(dlgX, dlgY, dlgW, dlgH).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 2 });
-    this._addText('Equip Slot Extension', dlgX + 70, dlgY + 10, COL_TEXT_GOLD, 14);
-    this._addText('Select equipment slot:', dlgX + 20, dlgY + 40, COL_TEXT_WHITE, 11);
-    const parts = ['Hat', 'Face', 'Top', 'Bottom', 'Shoes', 'Weapon', 'Shield', 'Cape'];
+    this._g.rect(0, 0, CS_W, CS_H).fill({ color: 0x000000, alpha: 0.5 });
+    const dlg = this._activeDialogRect();
+    this._drawDialogBg(this._confirmNotice, dlg);
+    const parts = CashShopStage._EQUIP_EXT_PARTS;
     for (let i = 0; i < parts.length; i++) {
-      const bx = dlgX + 20 + (i % 4) * 70;
-      const by = dlgY + 60 + Math.floor(i / 4) * 28;
+      const bx = dlg.x + 25 + (i % 4) * 64;
+      const by = dlg.y + 48 + Math.floor(i / 4) * 20;
       const isSelected = i === this._equipSlotExtBodyPart;
-      this._g.rect(bx, by, 65, 24).fill({ color: isSelected ? COL_TAB_ACTIVE : 0x0A0E1A });
-      this._g.rect(bx, by, 65, 24).stroke({ color: isSelected ? COL_TAB_BORDER_ACTIVE : COL_SEPARATOR, width: 1 });
-      this._addText(parts[i], bx + 8, by + 6, isSelected ? COL_TEXT_GREEN : COL_TEXT_WHITE, 10);
+      this._g.rect(bx, by, 60, 16).fill({ color: isSelected ? 0xEEEEEE : 0xFFFFFF });
+      this._g.rect(bx, by, 60, 16).stroke({ color: isSelected ? 0x999999 : COL_PLATE_BORDER, width: 1 });
+      this._addText(parts[i], bx + 6, by + 3, isSelected ? 0x111111 : COL_TEXT_WHITE, 10);
     }
-    this._g.rect(dlgX + 40, dlgY + dlgH - 40, 100, 28).fill({ color: COL_TAB_ACTIVE });
-    this._g.rect(dlgX + 40, dlgY + dlgH - 40, 100, 28).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
-    this._addText('OK', dlgX + 76, dlgY + dlgH - 33, COL_TEXT_WHITE, 12);
-    this._g.rect(dlgX + dlgW - 140, dlgY + dlgH - 40, 100, 28).fill({ color: 0x3C1A1A });
-    this._g.rect(dlgX + dlgW - 140, dlgY + dlgH - 40, 100, 28).stroke({ color: 0x8B4444, width: 1 });
-    this._addText('Cancel', dlgX + dlgW - 116, dlgY + dlgH - 33, COL_TEXT_WHITE, 12);
+    this._drawDlgButtonPair(dlg.x + 157, dlg.y + dlg.h - 37);
   }
 
   /** OG CCashShop::OnChangedCategory @0x47E560 — category switch resets the
@@ -2484,6 +2702,26 @@ export class CashShopStage extends Stage {
   }
 
   onKeyPress(key: string): void {
+    // OG CCSWnd_Char chat edit id1003 — StartChat captures keys until
+    // Enter (show balloon ~5s) or Escape (clear + unfocus).
+    if (this._csChatFocused) {
+      if (key === 'Enter') {
+        if (this._csChatValue.trim().length > 0) {
+          this._csChatMsg = this._csChatValue;
+          this._csChatMsgAge = 0;
+        }
+        this._csChatValue = '';
+        this._csChatFocused = false;
+      } else if (key === 'Escape') {
+        this._csChatValue = '';
+        this._csChatFocused = false;
+      } else if (key === 'Backspace') {
+        this._csChatValue = this._csChatValue.slice(0, -1);
+      } else if (key.length === 1 && this._csChatValue.length < 40) {
+        this._csChatValue += key;
+      }
+      return;
+    }
     // OG CCashShop::OnKey @0x47F7C0 — VK_CAPS(20) toggles user preview control
     if (key === 'CapsLock') {
       this._previewEnabled = !this._previewEnabled;
@@ -2781,8 +3019,10 @@ export class CashShopStage extends Stage {
   onMouseMove(x: number, y: number): void {
     const lx = x - this._root.x;
     const ly = y;
-    this._inventoryScrollbar?.handleMouseMove(lx - INV_X, ly - INV_Y - 160);
-    this._lockerScrollbar?.handleMouseMove(lx - this._getLockerScrollbarX(), ly - 229);
+    const invPos = this._invScrollbarPos();
+    const lockerPos = this._lockerScrollbarPos();
+    this._inventoryScrollbar?.handleMouseMove(lx - invPos.x, ly - invPos.y);
+    this._lockerScrollbar?.handleMouseMove(lx - lockerPos.x, ly - lockerPos.y);
 
     // Track hover state for buttons (OG: mouseOver state)
     this._hoveredBtn = null;
@@ -2832,8 +3072,8 @@ export class CashShopStage extends Stage {
     // Avatar control buttons (OG ids 1000-1002, y=237 row)
     if (ly >= CHAR_Y + 237 && ly < CHAR_Y + 256) {
       if (lx >= CHAR_X + 17 && lx < CHAR_X + 100) this._hoveredBtn = 'btBuyAvatar';
-      else if (lx >= CHAR_X + 101 && lx < CHAR_X + 184) this._hoveredBtn = 'btDefaultAvatar';
-      else if (lx >= CHAR_X + 187 && lx < CHAR_X + 242) this._hoveredBtn = 'btTakeoffAvatar';
+      else if (lx >= CHAR_X + 101 && lx < CHAR_X + 185) this._hoveredBtn = 'btDefaultAvatar';
+      else if (lx >= CHAR_X + 187 && lx < CHAR_X + 187 + this._btTakeoffW) this._hoveredBtn = 'btTakeoffAvatar';
     }
 
     // Search overlay Find/Cancel
@@ -2844,16 +3084,33 @@ export class CashShopStage extends Stage {
         else if (lx >= SEARCH_X + 38 && lx < SEARCH_X + 78) this._hoveredBtn = 'searchCancel';
       }
     }
+
+    // Shortcut-help button (OG id 4000) — mouseOver state
+    if (this._activeTab === 8 && this._subCategory === 0) {
+      if (this._shortcutHelpVisible) {
+        const hx = Math.floor((CS_W - 322) / 2);
+        const hy = Math.floor((CS_H - 359) / 2);
+        this._btShortcutCloseHover = lx >= hx + 130 && lx < hx + 195 && ly >= hy + 328 && ly < hy + 346;
+      } else if (lx >= LIST_X + 150 && lx < LIST_X + 245 && ly >= LIST_Y + 380 && ly < LIST_Y + 398) {
+        this._hoveredBtn = 'shortcut';
+      }
+    }
   }
 
   onMouseButton(x: number, y: number, down: boolean, _button: MouseButton): void {
     const lx = x - this._root.x;
     const ly = y;
     if (!down) {
-      this._inventoryScrollbar?.handleMouseButton(lx - INV_X, ly - INV_Y - 160, false);
-      this._lockerScrollbar?.handleMouseButton(lx - this._getLockerScrollbarX(), ly - 229, false);
+      const invPos = this._invScrollbarPos();
+      const lockerPos = this._lockerScrollbarPos();
+      this._inventoryScrollbar?.handleMouseButton(lx - invPos.x, ly - invPos.y, false);
+      this._lockerScrollbar?.handleMouseButton(lx - lockerPos.x, ly - lockerPos.y, false);
       return;
     }
+
+    // Clicking anywhere unfocuses the char-preview chat edit; clicking inside
+    // its rect re-focuses it further below (OG CCtrlEdit StartChat flow).
+    this._csChatFocused = false;
 
     if (this._couponVisible && this._handleCouponClick(lx, ly)) return;
     if (this._yesNoVisible && this._handleYesNoClick(lx, ly)) return;
@@ -2875,8 +3132,10 @@ export class CashShopStage extends Stage {
       }
     }
     if (this._oneADayActive && this._handleOneADayClick(lx, ly)) return;
-    if (this._inventoryScrollbar?.handleMouseButton(lx - INV_X, ly - INV_Y - 160, down)) return;
-    if (this._lockerScrollbar?.handleMouseButton(lx - this._getLockerScrollbarX(), ly - 229, down)) return;
+    const invPos = this._invScrollbarPos();
+    const lockerPos = this._lockerScrollbarPos();
+    if (this._inventoryScrollbar?.handleMouseButton(lx - invPos.x, ly - invPos.y, down)) return;
+    if (this._lockerScrollbar?.handleMouseButton(lx - lockerPos.x, ly - lockerPos.y, down)) return;
 
     if (ly >= STATUS_Y && ly < STATUS_Y + 49) {
       if (lx >= STATUS_X + 248 && lx < STATUS_X + 289) {
@@ -2902,10 +3161,11 @@ export class CashShopStage extends Stage {
 
     // Gift dialog click handling
     if (this._giftVisible) {
-      const dlgW = 473;
-      const dlgH = 169;
-      const dlgX = Math.floor((CS_W - dlgW) / 2);
-      const dlgY = Math.floor((CS_H - dlgH) / 2);
+      const g = this._giftDialogRect();
+      const dlgW = g.w;
+      const dlgH = g.h;
+      const dlgX = g.x;
+      const dlgY = g.y;
 
       // Click outside dialog → dismiss
       if (lx < dlgX || lx >= dlgX + dlgW || ly < dlgY || ly >= dlgY + dlgH) {
@@ -2931,12 +3191,14 @@ export class CashShopStage extends Stage {
         return;
       }
 
-      // Recipient list clicks (buddy/guild mode)
+      // Recipient list clicks — OG Draw hit rects (283,y-2)-(436,y+16),
+      // rows from y=55 pitch 18
       if (this._giftState !== 0) {
         const names = this._giftState === 1 ? this.buddyNames : this.guildNames;
-        for (let i = 0; i < names.length && i < 6; i++) {
-          const ny = dlgY + 46 + i * 14;
-          if (lx >= dlgX + 300 && lx < dlgX + 450 && ly >= ny - 2 && ly < ny + 11) {
+        for (let i = 0; i < names.length; i++) {
+          const ny = dlgY + 55 + i * 18;
+          if (ny + 16 > dlgY + 139) break;
+          if (lx >= dlgX + 283 && lx < dlgX + 436 && ly >= ny - 2 && ly < ny + 16) {
             this._giftListSelected = i;
             this._giftReceiver = names[i];
             return;
@@ -2944,19 +3206,20 @@ export class CashShopStage extends Stage {
         }
       }
 
-      // Button row y139 — Guild(56) Buddy(110) OK(168) Cancel(210) Hide(439)
+      // Button row y139 — Guild(56..109) Buddy(110..163) OK(168,40)
+      // Cancel(210,40) Hide(439,17 only in list modes)
       const btnY = dlgY + 139;
       if (ly >= btnY && ly < btnY + 18) {
-        if (lx >= dlgX + 56 && lx < dlgX + 104) { this._setGiftState(2); return; }
-        if (lx >= dlgX + 110 && lx < dlgX + 158) { this._setGiftState(1); return; }
-        if (lx >= dlgX + 168 && lx < dlgX + 204) { this._executeGift(); return; }
-        if (lx >= dlgX + 210 && lx < dlgX + 258) {
+        if (lx >= dlgX + 56 && lx < dlgX + 109) { this._setGiftState(2); return; }
+        if (lx >= dlgX + 110 && lx < dlgX + 163) { this._setGiftState(1); return; }
+        if (lx >= dlgX + 168 && lx < dlgX + 208) { this._executeGift(); return; }
+        if (lx >= dlgX + 210 && lx < dlgX + 250) {
           this._giftVisible = false;
           this._giftItem = null;
           this._giftEditingField = 0;
           return;
         }
-        if (this._giftState !== 0 && lx >= dlgX + 439 && lx < dlgX + 467) {
+        if (this._giftState !== 0 && lx >= dlgX + 439 && lx < dlgX + 456) {
           this._setGiftState(0); // OG BtHide id1005 → back to manual entry
           return;
         }
@@ -2968,10 +3231,11 @@ export class CashShopStage extends Stage {
 
     // Confirm buy dialog click handling
     if (this._confirmBuyVisible && this._confirmBuyItem) {
-      const dlgW = 305;
-      const dlgH = 157;
-      const dlgX = Math.floor((CS_W - dlgW) / 2);
-      const dlgY = Math.floor((CS_H - dlgH) / 2);
+      const cb = this._confirmBuyRect();
+      const dlgW = cb.w;
+      const dlgH = cb.h;
+      const dlgX = cb.x;
+      const dlgY = cb.y;
 
       // Click outside dialog → dismiss
       if (lx < dlgX || lx >= dlgX + dlgW || ly < dlgY || ly >= dlgY + dlgH) {
@@ -2980,12 +3244,7 @@ export class CashShopStage extends Stage {
         return;
       }
 
-      // Payment type buttons (3 buttons stacked, each 280×24, starting at dlgY+84)
-      const payX = dlgX + 30;
-      const payW = dlgW - 60;
-      const payH = 15;
-      const payStartY = dlgY + 58;
-      const payStep = 15;
+      // Payment checkbox rows (OG OnCreate: (25,h-95/h-80/h-65), 14px tall)
       const comm = this._confirmBuyItem;
       const price = comm ? this._getSalePrice(comm) : 0;
       const payAvail = [
@@ -2993,16 +3252,17 @@ export class CashShopStage extends Stage {
         this._maplePoints >= price && (comm?.onSaleFlag ?? 0) !== 2,
         this._nxPrepaid >= price,
       ];
+      const payRowsY = [dlgH - 95, dlgH - 80, dlgH - 65];
       for (let i = 0; i < 3; i++) {
-        const py = payStartY + i * payStep;
-        if (lx >= payX && lx < payX + payW && ly >= py && ly < py + payH) {
+        const py = dlgY + payRowsY[i];
+        if (lx >= dlgX + 25 && lx < dlgX + 25 + 230 && ly >= py && ly < py + 14) {
           if (!payAvail[i]) return; // Don't select unavailable types
           this._confirmBuyPaymentType = i;
           return;
         }
       }
 
-      // OK button (bottom-left area)
+      // OK button — BtOK id1 @(157,h-37) 40x16
       const okX = dlgX + 157;
       const okY = dlgY + dlgH - 37;
       if (lx >= okX && lx < okX + 40 && ly >= okY && ly < okY + 16) {
@@ -3010,9 +3270,9 @@ export class CashShopStage extends Stage {
         return;
       }
 
-      // Cancel button (bottom-right area)
+      // Cancel button — BtCancel id2 @(207,h-37) 40x16
       const cancelX = dlgX + 207;
-      if (lx >= cancelX && lx < cancelX + 57 && ly >= okY && ly < okY + 16) {
+      if (lx >= cancelX && lx < cancelX + 40 && ly >= okY && ly < okY + 16) {
         this._confirmBuyVisible = false;
         this._confirmBuyItem = null;
         return;
@@ -3021,6 +3281,7 @@ export class CashShopStage extends Stage {
       // Click elsewhere in dialog → consume
       return;
     }
+
 
     if (this._activeDialog !== 'none' && this._handleActiveDialogClick(lx, ly)) return;
 
@@ -3074,20 +3335,33 @@ export class CashShopStage extends Stage {
       }
     }
 
+    // CCSWnd_Char chat edit id1003 at (50,214) 182x15 — click focuses it
+    if (lx >= CHAR_X + 50 && lx < CHAR_X + 50 + 182 && ly >= CHAR_Y + 214 && ly < CHAR_Y + 214 + 15) {
+      this._csChatFocused = true;
+      return;
+    }
+
     // CCSWnd_Char avatar controls (OG ids 1000-1002).
     if (ly >= CHAR_Y + 237 && ly < CHAR_Y + 256) {
       if (lx >= CHAR_X + 17 && lx < CHAR_X + 100) {
         this._onBuyAvatar();
         return;
       }
-      if (lx >= CHAR_X + 101 && lx < CHAR_X + 184) {
+      if (lx >= CHAR_X + 101 && lx < CHAR_X + 185) {
         this._onDefaultAvatar();
         return;
       }
-      if (lx >= CHAR_X + 187 && lx < CHAR_X + 242) {
+      if (lx >= CHAR_X + 187 && lx < CHAR_X + 187 + this._btTakeoffW) {
         this._onTakeOffAvatar();
         return;
       }
+    }
+    // Char-preview tabs (OG tab ctrl id1004 at (141,11)) — take priority
+    // over the window-wide preview toggle.
+    if (lx >= CHAR_X + 141 && lx < CHAR_X + 141 + 3 * 38 && ly >= CHAR_Y + 11 && ly < CHAR_Y + 36) {
+      const idx = Math.min(2, Math.floor((lx - (CHAR_X + 141)) / 38));
+      this._previewTab = idx;
+      return;
     }
     // OG OnMouseButton@CCSWnd_Char — clicking the char window toggles preview
     if (lx >= CHAR_X && lx < CHAR_X + CHAR_W && ly >= CHAR_Y && ly < CHAR_Y + 237) {
@@ -3293,52 +3567,90 @@ export class CashShopStage extends Stage {
   }
 
   private _handleActiveDialogClick(lx: number, ly: number): boolean {
-    let dlgW = 300;
-    let dlgH = 160;
-    if (this._activeDialog === 'nameChange') { dlgW = 266; dlgH = 124; }
-    else if (this._activeDialog === 'worldTransfer') {
-      dlgW = this._worldTransferNames.length > 0 ? 406 : 209;
-      dlgH = this._worldTransferNames.length > 0 ? 424 : 101;
-    } else if (this._activeDialog === 'equipSlotExt') dlgH = 200;
-
-    const dlgX = Math.floor((CS_W - dlgW) / 2);
-    const dlgY = Math.floor((CS_H - dlgH) / 2);
-    if (lx < dlgX || lx >= dlgX + dlgW || ly < dlgY || ly >= dlgY + dlgH) {
+    const dlg = this._activeDialogRect();
+    const { dlgX, dlgY } = { dlgX: dlg.x, dlgY: dlg.y };
+    if (lx < dlgX || lx >= dlgX + dlg.w || ly < dlgY || ly >= dlgY + dlg.h) {
       this._activeDialog = 'none';
+      this._worldTransferDropdownOpen = false;
       return true;
     }
 
-    if (this._activeDialog === 'worldTransfer' && this._worldTransferNames.length > 0) {
-      for (let i = 0; i < this._worldTransferNames.length; i++) {
-        const y = dlgY + 60 + i * 22;
-        if (ly >= y && ly < y + 20) {
-          this._worldTransferSelected = i;
+    if (this._activeDialog === 'worldTransfer') {
+      // BtClose id1002 @(190,6)
+      if (lx >= dlgX + 190 && lx < dlgX + 204 && ly >= dlgY + 6 && ly < dlgY + 20) {
+        this._activeDialog = 'none';
+        this._worldTransferDropdownOpen = false;
+        return true;
+      }
+      if (this._worldTransferNames.length > 0) {
+        // World combo id1003 @(103,50) 100x17 — click toggles the dropdown,
+        // dropdown rows select (CCtrlComboBox behavior)
+        const cx = dlgX + 103;
+        const cy = dlgY + 50;
+        if (this._worldTransferDropdownOpen) {
+          for (let i = 0; i < this._worldTransferNames.length; i++) {
+            const ry = cy + 17 + i * 17;
+            if (lx >= cx && lx < cx + 100 && ly >= ry && ly < ry + 17) {
+              this._worldTransferSelected = i;
+              this._worldTransferDropdownOpen = false;
+              return true;
+            }
+          }
+        }
+        if (lx >= cx && lx < cx + 100 && ly >= cy && ly < cy + 17) {
+          this._worldTransferDropdownOpen = !this._worldTransferDropdownOpen;
           return true;
         }
       }
+      // BtOK id1000 @(107,77) / BtCancel id1001 @(156,77)
+      if (ly >= dlgY + 77 && ly < dlgY + 93) {
+        if (lx >= dlgX + 107 && lx < dlgX + 147) { this._confirmWorldTransfer(); return true; }
+        if (lx >= dlgX + 156 && lx < dlgX + 196) {
+          this._activeDialog = 'none';
+          this._buyPending = false;
+          return true;
+        }
+      }
+      return true;
     }
-    if (this._activeDialog === 'equipSlotExt' && ly >= dlgY + 60 && ly < dlgY + 116) {
-      const col = Math.floor((lx - dlgX - 20) / 70);
-      const row = Math.floor((ly - dlgY - 60) / 28);
-      if (col >= 0 && col < 4 && row >= 0 && row < 2) {
+
+    if (this._activeDialog === 'equipSlotExt') {
+      // Body-part cells: x=25+(i%4)*64, y=48+floor(i/4)*20, 60x16
+      const col = Math.floor((lx - dlgX - 25) / 64);
+      const row = Math.floor((ly - dlgY - 48) / 20);
+      const inCol = lx - (dlgX + 25 + col * 64) < 60;
+      if (col >= 0 && col < 4 && row >= 0 && row < 2 && inCol) {
         this._equipSlotExtBodyPart = row * 4 + col;
         return true;
       }
     }
 
-    const okY = dlgY + dlgH - 40;
-    if (ly >= okY && ly < okY + 28) {
-      if (lx >= dlgX + 40 && lx < dlgX + 140) {
+    // Button rows — nameChange uses BtCheck/BtNo @(90/135, h-26); the notice
+    // dialogs use the shared OK/Cancel pair @(157/207, h-37)
+    if (this._activeDialog === 'nameChange') {
+      const by = dlgY + dlg.h - 26;
+      if (ly >= by && ly < by + 17) {
+        if (lx >= dlgX + 90 && lx < dlgX + 129) { this._confirmNameChange(); return true; }
+        if (lx >= dlgX + 135 && lx < dlgX + 175) {
+          this._activeDialog = 'none';
+          this._buyPending = false;
+          return true;
+        }
+      }
+      return true;
+    }
+
+    const okY = dlgY + dlg.h - 37;
+    if (ly >= okY && ly < okY + 16) {
+      if (lx >= dlgX + 157 && lx < dlgX + 197) {
         switch (this._activeDialog) {
-          case 'nameChange': this._confirmNameChange(); break;
-          case 'worldTransfer': this._confirmWorldTransfer(); break;
           case 'coupleName': this._confirmCoupleName(); break;
           case 'friendName': this._confirmFriendName(); break;
           case 'equipSlotExt': this._confirmEquipSlotExt(); break;
         }
         return true;
       }
-      if (lx >= dlgX + dlgW - 140 && lx < dlgX + dlgW - 40) {
+      if (lx >= dlgX + 207 && lx < dlgX + 247) {
         this._activeDialog = 'none';
         this._buyPending = false;
         return true;
@@ -3490,13 +3802,16 @@ export class CashShopStage extends Stage {
     if (!this._yesNoVisible) return;
     // Semi-transparent overlay
     this._g.rect(0, 0, CS_W, CS_H).fill({ color: 0x000000, alpha: 0.5 });
-    const dlgW = 266;
-    const dlgH = 124;
-    const dlgX = Math.floor((CS_W - dlgW) / 2);
-    const dlgY = Math.floor((CS_H - dlgH) / 2);
+    const dlg = this._confirmBuyRect();
+    const dlgX = dlg.x;
+    const dlgY = dlg.y;
     if (this._confirmNotice) this._drawWzSprite(this._confirmNotice, dlgX, dlgY);
-    this._addText('Confirm', dlgX + 110, dlgY + 10, COL_TEXT_GOLD, 14);
-    // Word-wrap the message at ~34 chars per line (11px font)
+    else {
+      this._g.rect(dlgX, dlgY, dlg.w, dlg.h).fill({ color: 0x1A1E33 });
+      this._g.rect(dlgX, dlgY, dlg.w, dlg.h).stroke({ color: COL_TAB_BORDER_ACTIVE, width: 1 });
+    }
+    // Word-wrap the message at ~34 chars per line (11px font), centered on the
+    // dialog like OG CConfirmPurchaseDlg message lines
     const words = this._yesNoMessage.split(' ');
     let line = '';
     let lineY = dlgY + 40;
@@ -3510,29 +3825,24 @@ export class CashShopStage extends Stage {
       }
     }
     if (line) this._addText(line, dlgX + 20, lineY, COL_TEXT_WHITE, 11);
-    // Yes / No buttons — same row as the buy-confirm dialog's OK/Cancel
-    const okY = dlgY + dlgH - 37;
-    if (this._confirmOk) this._drawWzSprite(this._confirmOk, dlgX + 157, okY);
-    if (this._confirmNo) this._drawWzSprite(this._confirmNo, dlgX + 207, okY);
+    // Yes / No buttons — OG SP 0x512/0x513 row @(157,h-37)/(207,h-37)
+    this._drawDlgButtonPair(dlgX + 157, dlgY + dlg.h - 37);
   }
 
   /** Click hit-test for the Yes/No dialog. Returns true when consumed. */
   private _handleYesNoClick(lx: number, ly: number): boolean {
     if (!this._yesNoVisible) return false;
-    const dlgW = 266;
-    const dlgH = 124;
-    const dlgX = Math.floor((CS_W - dlgW) / 2);
-    const dlgY = Math.floor((CS_H - dlgH) / 2);
-    const okY = dlgY + dlgH - 37;
-    // OK/Cancel sprites are 60×24-ish; use the drawn anchor rects
-    if (lx >= dlgX + 157 && lx < dlgX + 217 && ly >= okY && ly < okY + 28) {
+    const dlg = this._confirmBuyRect();
+    const okY = dlg.y + dlg.h - 37;
+    // BtOK/BtNo are 40x16
+    if (lx >= dlg.x + 157 && lx < dlg.x + 197 && ly >= okY && ly < okY + 16) {
       this._yesNoVisible = false;
       const cb = this._yesNoCallback;
       this._yesNoCallback = null;
       cb?.();
       return true;
     }
-    if (lx >= dlgX + 207 && lx < dlgX + 267 && ly >= okY && ly < okY + 28) {
+    if (lx >= dlg.x + 207 && lx < dlg.x + 247 && ly >= okY && ly < okY + 16) {
       this._yesNoVisible = false;
       this._yesNoCallback = null;
       return true;
@@ -4262,11 +4572,24 @@ export class CashShopStage extends Stage {
       this._previewBgs[i] = tryLoad(`Base/Preview/${i}`);
     }
     // PreviewOnOff toggle button — NX wraps canvas inside sub-node
-    this._previewOn = tryLoad('Base/PreviewOnOff/On/0');
-    this._previewOff = tryLoad('Base/PreviewOnOff/Off/0');
+  this._previewOn = tryLoad('Base/PreviewOnOff/On/0');
+  this._previewOff = tryLoad('Base/PreviewOnOff/Off/0');
+  // Char-preview tabs (Base/Tab/{Enable,Disable}/0..2)
+  for (let i = 0; i < 3; i++) {
+    this._tabEnable[i] = tryLoad(`Base/Tab/Enable/${i}`);
+    this._tabDisable[i] = tryLoad(`Base/Tab/Disable/${i}`);
+  }
     this._btBuyAvatar = tryLoad('CSChar/BtBuyAvatar/normal');
     this._btDefaultAvatar = tryLoad('CSChar/BtDefaultAvatar/normal');
     this._btTakeoffAvatar = tryLoad('CSChar/BtTakeoffAvatar/normal');
+    if (this._btTakeoffAvatar && this._btTakeoffAvatar.width > 0) {
+      this._btTakeoffW = this._btTakeoffAvatar.width;
+    }
+
+    // Quantity digit font for the cash-shop inventory grid (Basic.img/ItemNo)
+    for (let i = 0; i < 10; i++) {
+      this._invDigits[i] = tryLoadImage('Basic.img', `ItemNo/${i}`);
+    }
 
     // Tab sprites: CSTab/Tab/1 through CSTab/Tab/9.
     for (let i = 0; i < TAB_COUNT; i++) {
@@ -4291,8 +4614,13 @@ export class CashShopStage extends Stage {
     // Third plate button (wishlist toggle — StringPool 1265/1266 in SetPlateNo)
     this._btWish = tryLoad('CSList/BtWish/normal') ?? tryLoad('CSList/BtWishList/normal');
     this._btWishOver = tryLoad('CSList/BtWish/mouseOver') ?? tryLoad('CSList/BtWishList/mouseOver');
-    // Shortcut-help modal background (StringPool UOL in SetPlateNo)
-    this._shortcutHelpBg = tryLoad('CSShortcutHelp/backgrnd') ?? tryLoad('CSShortcut/0');
+    // Shortcut-help modal + button (OG: PicturePlate/ShortcutHelp canvas,
+    // BtShortcut id-4000 button, BtClose close button)
+    this._shortcutHelpBg = tryLoad('PicturePlate/ShortcutHelp');
+    this._btShortcut = tryLoad('PicturePlate/BtShortcut/normal');
+    this._btShortcutOver = tryLoad('PicturePlate/BtShortcut/mouseOver');
+    this._btShortcutClose = tryLoad('PicturePlate/BtClose/normal');
+    this._btShortcutCloseOver = tryLoad('PicturePlate/BtClose/mouseOver');
 
     // Selected/keyboard-focused plate skin (SP 0x4E9 normal / 0x4EA keyFocus)
     this._plateStateFocus = tryLoad('CSList/KeyFocus')
@@ -4341,6 +4669,15 @@ export class CashShopStage extends Stage {
     this._btExInstall = tryLoad('CSInventory/BtExInstall/normal');
     this._btExEtc = tryLoad('CSInventory/BtExEtc/normal');
     this._btExTrunk = tryLoad('CSInventory/BtExTrunk/normal');
+    // CCSWnd_Inventory::OnCreate @0x4C34F0 — CCtrlTab AddItem_Canvas(selected[i],
+    // normal[i]) i=0..4. Tab canvases: CashShop.img/Base/Tab2/{Enable,Disable}
+    // (fallback UIWindow.img/Item/Tab/{enabled,disabled}).
+    for (let i = 0; i < 5; i++) {
+      this._invTabSelected[i] = tryLoad(`Base/Tab2/Enable/${i}`)
+        ?? tryLoadImage('UIWindow.img', `Item/Tab/enabled/${i}`);
+      this._invTabNormal[i] = tryLoad(`Base/Tab2/Disable/${i}`)
+        ?? tryLoadImage('UIWindow.img', `Item/Tab/disabled/${i}`);
+    }
     this._btRebate = tryLoad('CSLocker/BtRebate/normal');
 
     // List background (200×80 plate canvas)
@@ -4384,10 +4721,16 @@ export class CashShopStage extends Stage {
     this._bgNameChange = tryLoad('CSChangeName/Base/backgrnd');
     this._bgNameChangeNotice = tryLoad('CSChangeName/Base/backgrndnotice');
     this._bgTransferWorld = tryLoad('CSTransferWorld/Base/backgrnd');
-    this._bgTransferWorldNotice = tryLoad('CSTransferWorld/Base/backgrndnotice');
     this._btNameCheck = tryLoad('CSChangeName/BtCheck/normal');
     this._confirmNotice = tryLoadImage('UIWindow2.img', 'UtilDlgEx/notice');
     this._confirmOk = tryLoadImage('UIWindow2.img', 'UtilDlgEx/BtOK/normal');
     this._confirmNo = tryLoadImage('UIWindow2.img', 'UtilDlgEx/BtNo/normal');
+    // SP 0x1A71 close button (CUITransferWorldSelectDlg BtClose id1002)
+    this._btDlgClose = tryLoadImage('UIWindow2.img', 'UtilDlgEx/BtClose/normal');
+    // CCtrlCheckBox glyphs (CConfirmPurchaseDlg payment rows, SysOpt-style):
+    // Basic.img/CheckBox/0..3 = unchecked / checked / disabled-unchecked / disabled-checked
+    for (let i = 0; i < 4; i++) {
+      this._confirmCheckBox[i] = tryLoadImage('Basic.img', `CheckBox/${i}`);
+    }
   }
 }
