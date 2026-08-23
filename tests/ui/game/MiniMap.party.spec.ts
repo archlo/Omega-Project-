@@ -50,29 +50,27 @@ describe('MiniMap top-left position + render robustness', () => {
   });
 });
 
-describe('MiniMap title clipping + collapsed strip cap', () => {
-  it('long map names are truncated to fit the available strip width', () => {
+describe('MiniMap title (OG SetLayer @0x8011A0 — no clipping)', () => {
+  it('long map names draw UNTRUNCATED on the collapsed strip', () => {
     const mm = new MiniMap(new WzTextureLoader(), null, null) as any;
     mm._mapName = 'The Side Door That Leads To The Deep Cave of Ellinia';
     mm._mode = 2;
-    const win = { x: 4, y: 4, width: 160, height: 18 };
+    const win = { x: 4, y: 4, width: 400, height: 18 };
     mm._content.removeChildren();
     mm._drawTitle(win, 64, 18);
     const texts = mm._content.children.filter((c: any) => c.text !== undefined);
     expect(texts.length).toBeGreaterThan(0);
-    const drawn = texts[0].text as string;
-    expect(drawn.length).toBeLessThan(mm._mapName.length);
-    expect((mm as any)._measureText(drawn)).toBeLessThanOrEqual(
-      win.width - (64 - 8) - (mm as any)._buttonsWidth() - 6,
-    );
+    // The full name is drawn verbatim — OG never truncates the title.
+    expect(texts[0].text).toBe(mm._mapName);
   });
 
-  it('collapsed strip width is capped regardless of name length', () => {
+  it('collapsed strip width GROWS with the title (no cap)', () => {
     const mm = new MiniMap(new WzTextureLoader(), null, null) as any;
     mm._mapName = 'An Extremely Long Map Name That Would Stretch The Strip Forever';
     mm._mode = 2;
     const r = mm._winRect();
-    expect(r.width).toBeLessThanOrEqual(180);
+    expect(r.width).toBeGreaterThan(180);
+    expect(r.height).toBe(20);
   });
 
   it('short names render untruncated in collapsed mode', () => {

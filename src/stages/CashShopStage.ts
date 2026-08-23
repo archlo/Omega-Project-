@@ -475,10 +475,15 @@ export class CashShopStage extends Stage {
     this._root.addChild(this._lockerScrollbar.container);
     this._wireHandlers(game);
     this._requestInitialData();
-    this.mapRoot.addChild(this._root);
-    this.mapRoot.addChildAt(this._staticRoot, this.mapRoot.children.length - 1);
-    this._root.x = Math.floor((this._prevW - CS_W) / 2);
-    this._staticRoot.x = this._root.x;
+    // OG: the cash shop is frame-space UI (800x600) — render into uiRoot,
+    // NOT the camera-transformed world container, or clicks (frame coords)
+    // land away from the visuals.
+    this.uiRoot.addChild(this._staticRoot);
+    this.uiRoot.addChild(this._root);
+    // Mouse coords arrive as 800x600 FRAME coords (_canvasToFrame) � the OG
+    // shop fills the whole frame, so no manual horizontal centering.
+    this._root.x = 0;
+    this._staticRoot.x = 0;
 
     // Load WZ packages for character rendering
     const dir = game.wzDir ?? '/wz_client';
@@ -1236,7 +1241,7 @@ export class CashShopStage extends Stage {
 
   onResize(windowW: number, _windowH: number): void {
     this._prevW = windowW;
-    this._root.x = Math.floor((windowW - CS_W) / 2);
+    this._root.x = 0;
     this._staticRoot.x = this._root.x;
   }
 
@@ -2788,7 +2793,7 @@ export class CashShopStage extends Stage {
       if (lx >= STATUS_X + 248 && lx < STATUS_X + 289) this._hoveredBtn = 'charge';
       else if (lx >= STATUS_X + 289 && lx < STATUS_X + 330) this._hoveredBtn = 'check';
       else if (lx >= STATUS_X + 330 && lx < STATUS_X + 371) this._hoveredBtn = 'coupon';
-      else if (lx >= STATUS_X + 378 && lx < STATUS_X + 546) this._hoveredBtn = 'exit';
+      else if (lx >= STATUS_X + 378 && lx < STATUS_X + 418) this._hoveredBtn = 'exit';
     }
 
     // Inventory vertical tab hover
@@ -2889,7 +2894,7 @@ export class CashShopStage extends Stage {
         this._couponValue = '';
         return;
       }
-      if (lx >= STATUS_X + 378 && lx < STATUS_X + 546) {
+      if (lx >= STATUS_X + 378 && lx < STATUS_X + 418) {
         this._exit();
         return;
       }
@@ -3022,7 +3027,7 @@ export class CashShopStage extends Stage {
     // Exit button (OG: CCSWnd_Status nId=1003, at y offset +15)
     const exitX = STATUS_X + 378;
     const exitY = STATUS_Y + 15;
-    if (lx >= exitX && lx < exitX + 168 && ly >= exitY && ly < STATUS_Y + STATUS_H) {
+    if (lx >= exitX && lx < exitX + 40 && ly >= exitY && ly < exitY + 16) {
       this._exit();
       return;
     }
