@@ -174,12 +174,14 @@ export class OtherCharLook {
     this._charLook?.PlayOneTimeAction('hit1');
   }
 
-  // OG: CUser::OnSetDead — a remote character whose HP hits 0 plays the dead
-  // action and stays dead until they leave/re-enter the field.
+  // Legacy dead flag. OG CUserRemote has NO death visual: OnReceiveHP
+  // (0x953F50) only updates the party HP gauge, and CUser::OnSetDead's
+  // tomb flow is reached solely from CUserLocal::OnSetDead. Nothing in the
+  // v95 client sets this on a remote character anymore.
   private _isDead = false;
   get IsDead(): boolean { return this._isDead; }
 
-  /** Play a one-shot body action (e.g. 'dead' on remote death). */
+  /** Play a one-shot body action. */
   PlayOneTimeAction(actionKey: string): void {
     if (actionKey === 'dead') this._isDead = true;
     this._charLook?.PlayOneTimeAction(actionKey);

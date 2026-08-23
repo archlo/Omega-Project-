@@ -472,6 +472,8 @@ export class GameStage extends Stage {
   protected _comboCount = 0;
   private _pendingBridle: { slot: number; id: number } | null = null;
   protected _isPlayerDead = false;
+  /** OG death alpha tween: ms since death, -1 when not running (OnSetDead 1250ms fade). */
+  protected _deathFadeMs = -1;
   // OG: CWvsContext::Update — CUIRevive opens exactly 2200ms after death
   // (UI_OpenRevive stamps m_tReviveDialog; Update checks now - m_tReviveDialog > 2200).
   protected _reviveDialogClockMs = -1;
@@ -2782,6 +2784,11 @@ this._dmgNumbers?.Update(dt);
     this._projectiles.Update(dt);
     this._buffVisual.Update(dt);
     this._tombstone?.Update(dt);
+    // OG death alpha: corpse hidden at death, fades back in over 1250ms.
+    if (this._isPlayerDead && this._deathFadeMs >= 0 && this._player) {
+      this._deathFadeMs = Math.min(1250, this._deathFadeMs + dt * 1000);
+      this._player.container.alpha = this._deathFadeMs / 1250;
+    }
     this._comboDisplay.update(dt);
     this._updateKeyDownBar();
     this._updateFieldFx(dt);
@@ -3570,9 +3577,7 @@ this._dmgNumbers?.Update(dt);
     fh.onUserMove = (args) => {
       const other = this._otherChars.get(args.charId);
       if (!other) return;
-      // A dead remote character stays dead (their move packets only arrive while
-      // alive or to reposition the corpse — never to resurrect them in-place).
-      if (other.IsDead) return;
+      if (other.IsDead) return; // legacy dead-flag (no longer set — OG remotes have no death visual)
       if (args.movePath) other.SetMovePath(args.movePath);
       else other.Position = { x: args.x, y: args.y };
       if (args.facingLeft !== undefined) other.SetFacing(args.facingLeft);
@@ -4601,13 +4606,12 @@ this._dmgNumbers?.Update(dt);
       const pos = other?.HeadPosition ?? other?.Position;
       if (pos && curHP > 0) this._dmgNumbers?.Add(curHP, pos.x, pos.y - 10, DamageKind.HealHp);
       if (other) {
+        // OG CUserRemote::OnReceiveHP (0x953F50): updates the HP gauge data
+        // ONLY — no dead action, no stance change, no tombstone. The v95
+        // client shows nothing when a remote character dies (the death
+        // animation/tomb flow in CUser::OnSetDead is local-only; only
+        // CUserLocal::OnSetDead calls it).
         other.SetHpRatio(curHP, maxHP);
-        // OG CUser::OnSetDead @0x8E4250 — a remote character whose HP hits 0
-        // plays the dead action and stays dead until they leave the field.
-        if (curHP <= 0 && !other.IsDead) {
-          other.PlayOneTimeAction('dead');
-          other.SetStance(Stance.Dead);
-        }
       }
     };
     fh.onUserGuildNameChanged = ({ charId, guildName }) => {
@@ -7480,12 +7484,46 @@ this._localCharId = args.characterId ?? 0;
   // this client opens once the tombstone-fall finishes landing). All death
   // triggers funnel through here so the state stays consistent.
   private _applyLocalDeath(): void {
-    if (this._isPlayerDead) return;
+    if (this._isPlayerDead || !this._physics) return;
     this._isPlayerDead = true;
-    this._physics?.SetDead(true);
+    this._physics.SetDead(true);
     this._player?.PlayOneTimeAction('dead');
-    // OG: tombstone spawns at PLAYER position, not mob position
-    if (this._physics) this._tombstone?.Spawn({ x: this._physics.Position.x, y: this._physics.Position.y });
+    // OG CUser::OnSetDead @0x8E4250 — the tomb/revive point is clamped to the
+    // foothold underneath (x, y-20); when that ground is far below (>80px),
+    // the x±15 neighbours are probed and whichever lands closer wins.
+    let sx = Math.round(this._physics.Position.x);
+    let sy = Math.round(this._physics.Position.y);
+    const field = this._field;
+    if (field) {
+      const cy1 = field.GetFootholdBelow(sx, sy - 20)?.YAt(sx) ?? null;
+      if (cy1 !== null) {
+        if (sy + 80 < cy1) {
+          const cy2 = field.GetFootholdBelow(sx + 15, sy - 20)?.YAt(sx + 15) ?? null;
+          if (cy2 !== null && sy + 80 < cy2) {
+            const cy3 = field.GetFootholdBelow(sx - 15, sy - 20)?.YAt(sx - 15) ?? null;
+            if (cy3 !== null && sy + 80 < cy3) {
+              sx -= 15;
+              sy = cy3;
+            } else {
+              sx += 15;
+              sy = cy2;
+            }
+          } else {
+            sy = cy1;
+          }
+        } else {
+          sy = cy1;
+        }
+      }
+    }
+    this._tombstone?.Spawn({ x: sx, y: sy });
+    // OG CUser::OnSetDead: the OverFace/UnderFace body layers' alpha is set to
+    // 0 instantly and animated back to 255 over currentTime+1250ms — the
+    // corpse hides during the tomb drop and fades back in beneath it. The
+    // chat-balloon additional layer is removed too (RemoveAdditionalLayer).
+    if (this._player) this._player.container.alpha = 0;
+    this._deathFadeMs = 0;
+    this._chatBalloon?.Clear(this._localCharId);
     // OG: UI_OpenRevive stamps m_tReviveDialog = get_update_time(); CWvsContext::Update
     // opens CUIRevive once now - m_tReviveDialog > 2200.
     this._reviveDialogClockMs = 0;
@@ -7495,6 +7533,8 @@ this._localCharId = args.characterId ?? 0;
   private _applyLocalRevive(): void {
     this._isPlayerDead = false;
     this._reviveDialogClockMs = -1;
+    this._deathFadeMs = -1;
+    if (this._player) this._player.container.alpha = 1;
     this._physics?.SetDead(false);
     this._tombstone?.Reset();
   }
