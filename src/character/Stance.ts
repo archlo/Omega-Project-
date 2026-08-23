@@ -33,46 +33,71 @@ export function StanceToWzKey(s: Stance): string {
   }
 }
 
-/** Inverse of StanceMoveAction's stance-index table â€” decodes a MoveElement's
-    `moveAction` byte (low nibble = stance index, bit 4 = facing-left) back
-    into a Stance + facing. The dead action is a separate m_nMoveAction value,
-    not a move-path stance nibble â€” remote death is driven by UserReceiveHP. */
+/** Inverse of StanceMoveAction — decodes a MoveElement's `moveAction` byte
+    into a Stance + facing. v95 wire layout (CUser::OnResolveMoveAction
+    @0x8E5800 returns `(2 * nMoveAction) | dir`; CAvatar::MoveAction2RawAction
+    @0x45FA30 reads dir = nMA & 1, idx = nMA >> 1):
+    bit 0 = facing-left, bits 1+ = move index:
+    1 walk · 2/4 stand variants · 3 fall · 5 jump · 6 swim/fly-idle ·
+    7 ladder · 8 rope · 9 fly · 10 chair/sit · 12 prone · 19 dash · 20 booster. */
 export function MoveActionToStance(moveAction: number): { stance: Stance; facingLeft: boolean } {
-  const facingLeft = ((moveAction >> 4) & 1) !== 0;
-  const stIdx = moveAction & 0x0F;
+  const facingLeft = (moveAction & 1) !== 0;
+  const idx = moveAction >>> 1;
   const stance = (() => {
-    switch (stIdx) {
-      case 0: return Stance.Stand1;
-      case 1: return Stance.Stand2;
-      case 2: return Stance.Walk1;
-      case 3: return Stance.Walk2;
-      case 5: return Stance.Jump;
-      case 6: return Stance.Ladder;
-      case 7: return Stance.Rope;
-      case 8: return Stance.Alert;
-      case 12: return Stance.Prone;
-      case 15: return Stance.Sit;
-      default: return Stance.Stand1;
+    switch (idx) {
+      case 1:
+      case 19:
+      case 20:
+        return Stance.Walk1;
+      case 2:
+      case 4:
+        return Stance.Stand1;
+      case 3:
+        return Stance.Walk2; // airborne/fall branch
+      case 5:
+        return Stance.Jump;
+      case 6:
+      case 9:
+        return Stance.Fly;
+      case 7:
+        return Stance.Ladder;
+      case 8:
+        return Stance.Rope;
+      case 10:
+        return Stance.Sit;
+      case 12:
+        return Stance.Prone;
+      default:
+        return Stance.Stand1;
     }
   })();
   return { stance, facingLeft };
 }
 
 export function StanceMoveAction(s: Stance, facingLeft: boolean): number {
-  const stIdx = (() => {
+  const idx = (() => {
     switch (s) {
-      case Stance.Stand1: return 0;
-      case Stance.Stand2: return 1;
-      case Stance.Walk1: return 2;
-      case Stance.Walk2: return 3;
-      case Stance.Jump: return 5;
-      case Stance.Ladder: return 6;
-      case Stance.Rope: return 7;
-      case Stance.Alert: return 8;
-      case Stance.Prone: return 12;
-      case Stance.Sit: return 15;
-      default: return 0;
+      case Stance.Stand1:
+      case Stance.Stand2:
+        return 2;
+      case Stance.Walk1:
+      case Stance.Walk2:
+        return 1;
+      case Stance.Jump:
+        return 5;
+      case Stance.Ladder:
+        return 7;
+      case Stance.Rope:
+        return 8;
+      case Stance.Fly:
+        return 9;
+      case Stance.Prone:
+        return 12;
+      case Stance.Sit:
+        return 10;
+      default:
+        return 2;
     }
   })();
-  return ((facingLeft ? 1 : 0) << 4) | (stIdx & 0x0F);
+  return (facingLeft ? 1 : 0) | (idx << 1);
 }

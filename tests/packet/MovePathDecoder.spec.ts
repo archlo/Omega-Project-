@@ -98,8 +98,21 @@ describe('DecodeMovePath', () => {
 });
 
 describe('MoveActionToStance', () => {
-  it('inverts StanceMoveAction for every stance it can produce', () => {
-    for (const stance of [Stance.Stand1, Stance.Stand2, Stance.Walk1, Stance.Walk2, Stance.Jump, Stance.Alert, Stance.Prone, Stance.Sit]) {
+  it('decodes v95 wire bytes: bit0 = facing, bits1+ = move index', () => {
+    for (const facingLeft of [true, false]) {
+      const leftBit = facingLeft ? 1 : 0;
+      expect(MoveActionToStance((1 << 1) | leftBit).stance).toBe(Stance.Walk1);
+      expect(MoveActionToStance((2 << 1) | leftBit).stance).toBe(Stance.Stand1);
+      expect(MoveActionToStance((5 << 1) | leftBit).stance).toBe(Stance.Jump);
+      expect(MoveActionToStance((7 << 1) | leftBit).stance).toBe(Stance.Ladder);
+      expect(MoveActionToStance((8 << 1) | leftBit).stance).toBe(Stance.Rope);
+      expect(MoveActionToStance((10 << 1) | leftBit).stance).toBe(Stance.Sit);
+      expect(MoveActionToStance((12 << 1) | leftBit).stance).toBe(Stance.Prone);
+    }
+  });
+
+  it('round-trips stances that keep a distinct wire index', () => {
+    for (const stance of [Stance.Jump, Stance.Fly, Stance.Ladder, Stance.Rope, Stance.Prone, Stance.Sit]) {
       for (const facingLeft of [true, false]) {
         const byte = StanceMoveAction(stance, facingLeft);
         const back = MoveActionToStance(byte);

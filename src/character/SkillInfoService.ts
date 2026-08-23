@@ -2,6 +2,7 @@ import type { WzPackage } from '../wz/WzPackage.js';
 import { WzProperty } from '../wz/WzProperty.js';
 import { WzCanvas } from '../wz/WzCanvas.js';
 import { WzImage } from '../wz/WzImage.js';
+import { WzVector } from '../wz/WzVector.js';
 
 export class SkillInfo {
   // --- Core fields ---
@@ -241,6 +242,58 @@ export class SkillInfoService {
     }
     this._cache.set(skillId, info);
     return info;
+  }
+
+  /**
+   * OG SKILLENTRY::GetLevelData — attack-relevant level data for a skill at a
+   * given level. Prefers the `common` node (SkillInfo.Common); skills without
+   * one use their per-level `level/<n>` node (damage/mobCount/attackCount).
+   * Returns null when the skill deals no attack damage (buff/movement skills).
+   */
+  AttackDataAt(skillId: number, level: number): { damage: number; mobCount: number; attackCount: number } | null {
+    const info = this.Get(skillId);
+    const fromCommon = info?.Common;
+    if (fromCommon && (fromCommon.Damage > 0 || fromCommon.AttackCount > 0)) {
+      return { damage: fromCommon.Damage, mobCount: Math.max(1, fromCommon.MobCount), attackCount: Math.max(1, fromCommon.AttackCount) };
+    }
+    // per-level fallback straight from Skill.wz
+    const wz = this._skillWz();
+    if (!wz) return null;
+    try {
+      const node = SkillInfoService._skillNode(wz, skillId);
+      if (!node) return null;
+      const lv = node.Get(`level/${level}`) as WzProperty | undefined;
+      if (!(lv instanceof WzProperty)) return null;
+      const num = (k: string): number => {
+        const v = lv.Get(k);
+        return typeof v === 'number' ? v : typeof v === 'bigint' ? Number(v) : 0;
+      };
+      const damage = num('damage');
+      if (damage <= 0) return null;
+      return {
+        damage,
+        mobCount: Math.max(1, num('mobCount')),
+        attackCount: Math.max(1, num('attackCount')),
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  /** OG `level/<lv>/lt` + `rb` — the skill's hit rect relative to the caster. */
+  AttackRectAt(skillId: number, level: number): { left: number; top: number; right: number; bottom: number } | null {
+    try {
+      const wz = this._skillWz();
+      if (!wz) return null;
+      const node = SkillInfoService._skillNode(wz, skillId);
+      if (!node) return null;
+      const lt = node.Get(`level/${level}/lt`);
+      const rb = node.Get(`level/${level}/rb`);
+      if (!(lt instanceof WzVector) || !(rb instanceof WzVector)) return null;
+      return { left: lt.X, top: lt.Y, right: rb.X, bottom: rb.Y };
+    } catch {
+      return null;
+    }
   }
 
   EnumerateSkillIds(root: number): number[] {

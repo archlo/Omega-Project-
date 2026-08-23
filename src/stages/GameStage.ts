@@ -53,6 +53,7 @@ import { OutPacket } from '../net/packet/OutPacket.js';
 import { InHeader } from '../net/packet/OpCodes.js';
 import { Portal } from '../map/Portal.js';
 import { MeleeAttackEncoder, MeleeTarget } from '../net/packet/MeleeAttackEncoder.js';
+import { MagicAttackEncoder, MagicAttackTarget } from '../net/packet/MagicAttackEncoder.js';
 import { getWeaponType, calcDamageRange, calcHitRate } from '../net/packet/MeleeDamage.js';
 import { PlayerController } from '../character/PlayerController.js';
 import { CharacterStat } from '../domain/CharacterStat.js';
@@ -483,6 +484,18 @@ export class GameStage extends Stage {
   private _lastUnequipTime = 0;
   // OG: CWvsContext::SendEmotionChange @0x9f9320 — 2000ms cooldown
   private _lastEmotionTime = 0;
+  // OG SendEmotionChange @0x9f9320: morphed characters are blocked entirely
+  // (AddChatMorphedMsg); emotion must be <= 0x17; 2000ms cooldown; then
+  // CAvatar::SetEmotion applies the local face change and the packet goes out.
+  private _sendEmotionChange(emotion: number, byItemOption = false): void {
+    if (this._player && this._player.morphTemplateId !== 0) return;
+    const now = Date.now();
+    if (now - this._lastEmotionTime < 2000) return;
+    if (emotion <= 0 || emotion > 0x17) return;
+    this._lastEmotionTime = now;
+    this.game.session.send(GameSender.UserEmotion(emotion, -1, byItemOption));
+    this._player?.SetEmotion(emotion);
+  }
   private _isRidingTamingMob = false;
   protected _mobNameOf: (id: number) => string = () => '';
   protected _itemNameOf: (id: number) => string = () => '';
@@ -2387,13 +2400,7 @@ export class GameStage extends Stage {
       this._notice?.show('Item Info', `${name} (${itemId})`);
     };
     this._chatBar.onEmotion = (emotion) => {
-      // OG: SendEmotionChange @0x9f9320 — 2000ms cooldown + local face change
-      const now = Date.now();
-      if (now - this._lastEmotionTime < 2000) return;
-      if (emotion > 0x17) return; // max emotion ID (23)
-      this._lastEmotionTime = now;
-      this.game.session.send(GameSender.UserEmotion(emotion));
-      this._player?.SetEmotion(emotion); // optimistic local face change
+      this._sendEmotionChange(emotion);
     };
 
     this._skill.onDragStart = (payload, texture, x, y) => { this._dragController.beginDrag(payload, texture, x, y); };
@@ -2422,6 +2429,9 @@ export class GameStage extends Stage {
       const effect = cast?.Effect ?? cast?.Effect0;
       if (effect) this._skillEffects?.PlayAtCaster(effect, this._localCharId, this._physics?.FacingLeft ?? true);
       if (cast?.Screen) this._skillEffects?.PlayFullScreen(cast.Screen);
+      // OG CUserLocal::DoAttack — attack skills execute the hit client-side
+      // (damage roll + attack packet with skillId); buff skills just cast.
+      this._trySkillAttack(skillId, slv);
     };
     this._skill.onSkillGuide = (grade) => {
       // OG: CUISkill::OpenSkillGuide — grade 1-4 from button IDs 3001-3004
@@ -2898,12 +2908,7 @@ this._dmgNumbers?.Update(dt);
     for (let i = 1; i <= 7; i++) {
       const action = KeyAction[`Emotion${i}` as keyof typeof KeyAction] as KeyAction;
       if (this._keyConfig.isActionDown((k) => k === key, action)) {
-        // OG: SendEmotionChange @0x9f9320 — 2000ms cooldown
-        const now = Date.now();
-        if (now - this._lastEmotionTime < 2000) return true;
-        this._lastEmotionTime = now;
-        this.game.session.send(GameSender.UserEmotion(i));
-        this._player?.SetEmotion(i);
+        this._sendEmotionChange(i);
         return true;
       }
     }
@@ -3482,12 +3487,15 @@ this._dmgNumbers?.Update(dt);
       if (!other) return;
       other.SetEmotion(args.emotion);
     };
-    // OG: CUser::OnRandomEmotion (0x8e34b0) — itemId → random emotion from AreaBuffItem
+    // OG: CUser::OnRandomEmotion (0x8e34b0) — itemId → weighted random emotion
+    // from the AreaBuffItem table → SendEmotionChange(emotion, 0, -1). The
+    // per-item emotion/prop table isn't wired client-side, so fall back to a
+    // uniform pick over the valid 1..23 range; SendEmotionChange still applies
+    // its morph/cooldown gates.
     fh.onUserRandomEmotion = (itemId: number) => {
-      // AreaBuffItem emotion list not yet wired; pick a random emotion 1-7
-      const randomEmotion = 1 + Math.floor(Math.random() * 7);
-      this._player?.SetEmotion(randomEmotion);
-      this.game.session.send(GameSender.UserEmotion(randomEmotion));
+      void itemId;
+      const randomEmotion = 1 + Math.floor(Math.random() * 0x17);
+      this._sendEmotionChange(randomEmotion);
     };
     fh.onUserSetActivePortableChair = (args) => {
       if (args.charId === 0) return;
@@ -6154,6 +6162,127 @@ this._localCharId = args.characterId ?? 0;
     // weapon afterimage UOL, and SFX UOL from the weapon's character entry.
     // The afterimage is drawn as a fading trail behind the weapon swing.
     this._registerAfterimage(pos, facingLeft, attackAction);
+  }
+
+  /**
+   * OG CUserLocal::DoAttack with a skill — the client executes the skill hit
+   * itself (CalcDamage rolls are client-authoritative; the server validates
+   * skill ownership/seal/morph in AttackHandler.handleAttack) and sends the
+   * attack packet carrying the skillId. Buff/movement skills (no `damage`
+   * level data) return without attacking.
+   */
+  private _trySkillAttack(skillId: number, slv: number): void {
+    if (!this._physics || !this._skillService) return;
+    const data = this._skillService.AttackDataAt(skillId, slv);
+    if (!data || data.damage <= 0) return;
+
+    const pos = this._physics.Position;
+    const facingLeft = this._physics.FacingLeft;
+
+    // Hit rect: OG reads `level/<lv>/lt`+`rb` relative to the caster; fall
+    // back to the melee reach box when the skill has none.
+    let minX: number, maxX: number, minY: number, maxY: number;
+    const rect = this._skillService.AttackRectAt(skillId, slv);
+    if (rect) {
+      minX = pos.x + Math.min(rect.left, rect.right);
+      maxX = pos.x + Math.max(rect.left, rect.right);
+      minY = pos.y + rect.top;
+      maxY = pos.y + rect.bottom;
+    } else {
+      minX = facingLeft ? pos.x - GameStage.MeleeReachX : pos.x;
+      maxX = facingLeft ? pos.x : pos.x + GameStage.MeleeReachX;
+      minY = pos.y - GameStage.MeleeReachY * 2;
+      maxY = pos.y + GameStage.MeleeReachY;
+    }
+
+    // Up to mobCount closest living mobs inside the rect.
+    const candidates: Array<{ mob: MobLook; d: number }> = [];
+    for (const mob of this._mobs.values()) {
+      if (mob.IsDead) continue;
+      const mp = mob.Position;
+      if (mp.x < minX || mp.x > maxX || mp.y < minY || mp.y > maxY) continue;
+      const dx = pos.x - mp.x, dy = pos.y - mp.y;
+      candidates.push({ mob, d: dx * dx + dy * dy });
+    }
+    candidates.sort((a, b) => a.d - b.d);
+
+    if (candidates.length === 0) return;
+
+    // Damage range from the panel inputs × the skill's damage%, crit per line.
+    const inp = this._statDetailInfo?.Inputs;
+    const weaponId = this._equip.equippedWeaponItemId;
+    const wt = weaponId !== null ? getWeaponType(weaponId) : 0;
+    const magic = Math.floor((this._job / 100) % 10) === 2;
+    const dmgRange = calcDamageRange(
+      this._job, wt,
+      inp?.watk ?? 0, inp?.matk ?? 0,
+      this._stats.str, this._stats.dex, this._stats.intStat, this._stats.luk,
+      inp?.mastery ?? this._masteryFromSkills,
+    );
+    const critRate = this._statDetailInfo?.getCriticalProp?.() ?? 0;
+
+    const targets: MeleeTarget[] = [];
+    for (const { mob } of candidates.slice(0, data.mobCount)) {
+      const damages: number[] = [];
+      for (let line = 0; line < data.attackCount; line++) {
+        let dmg = dmgRange.min + Math.floor(Math.random() * (dmgRange.max - dmgRange.min + 1));
+        dmg = Math.floor(dmg * data.damage / 100);
+        if (Math.random() * 100 < critRate) {
+          const param = this._statDetailInfo?._criticalDamageParam ?? 0;
+          const cdMax = param + 50;
+          const cdMin = Math.min(param + CUserLocal.weaponCritDamage + 20, cdMax);
+          const rollPct = cdMin + Math.floor(Math.random() * (cdMax - cdMin + 1));
+          dmg = Math.max(1, Math.min(999999, Math.floor(dmg * (100 + rollPct) / 100)));
+        }
+        damages.push(Math.max(1, Math.min(999999, dmg)));
+      }
+      targets.push(new MeleeTarget(mob.MobId, damages, mob.Position.x, mob.Position.y, 0));
+    }
+
+    // Magic jobs send UserMagicAttack; everyone else UserMeleeAttack.
+    const castAction = this._skillService.GetCastInfo(skillId)?.Actions[0] ?? 'swingO1';
+    const actionAndDir = (facingLeft ? 0x8000 : 0x0000) | AttackAction.CodeFor(castAction);
+    if (magic) {
+      const magicTargets = targets.map((t) => new MagicAttackTarget(t.mobId, t.damage, t.hitX, t.hitY));
+      const blob = MagicAttackEncoder.Encode(this._fieldKey, actionAndDir, 6, pos.x, pos.y, magicTargets, data.attackCount);
+      this.game.session.sendRaw(blob);
+    } else {
+      const blob = MeleeAttackEncoder.Encode(
+        this._fieldKey, actionAndDir, 6, pos.x, pos.y, targets, data.attackCount, 0, { skillId });
+      this.game.session.sendRaw(blob);
+    }
+
+    // OG: ranged/magic skills fly the skill's `ball` node from the muzzle to
+    // the first target (same treatment _onUserAttack gives remote attacks).
+    if (magic || castAction === 'shoot' || this._skillService.GetCastInfo(skillId)?.Ball) {
+      const firstMob = this._mobs.get(targets[0].mobId);
+      if (firstMob) {
+        const cast2 = this._skillService.GetCastInfo(skillId);
+        const ballNode = cast2?.Ball ?? null;
+        let ballFrames: AnimFrame[] | undefined;
+        if (ballNode) {
+          const f = loadFrameSequence(this._loader, ballNode);
+          if (f.length > 0) ballFrames = f;
+        }
+        const muzzle = this._player?.MuzzlePosition ?? { x: pos.x, y: pos.y - 40 };
+        this._projectiles.Spawn(muzzle.x, muzzle.y, firstMob.Position.x, firstMob.Position.y - 40, undefined, ballFrames, true);
+      }
+    }
+
+    // OG play_skill_sound(skillId, "attack1") + the per-mob `hit` splash when
+    // the skill connects (same as the remote-attack pipeline).
+    this._playSkillSound(skillId, 'attack1');
+    for (const t of targets) {
+      const mob = this._mobs.get(t.mobId);
+      if (mob) {
+        mob.ShowHitEffect();
+        this._playSkillHit(skillId, mob.Position.x, mob.Position.y - 40);
+        this._mobSounds?.PlayDamage(mob.TemplateId);
+        const ctl = this._mobCtl.get(t.mobId);
+        ctl?.OnDamagedByPlayer();
+        ctl?.ApplyHitKnockback(mob.Position.x >= pos.x ? 25 : -25);
+      }
+    }
   }
 
   // OG: CUserLocal::RegisterAfterimage (0x902d90) — stores afterimage data
