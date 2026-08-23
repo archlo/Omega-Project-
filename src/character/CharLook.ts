@@ -2,6 +2,7 @@ import { Container, Graphics, Text } from 'pixi.js';
 import { Stance, StanceToWzKey } from './Stance.js';
 import { WzTextureLoader } from '../render/WzTextureLoader.js';
 import { WzPackage } from '../wz/WzPackage.js';
+import type { WzSprite } from '../render/WzSprite.js';
 import { AvatarLook } from '../domain/AvatarLook.js';
 import { CharacterRenderer, AvatarAnchors } from './CharacterRenderer.js';
 import { AttackAction } from './AttackAction.js';
@@ -44,6 +45,9 @@ export class CharLook {
    *  used by OtherCharLook, which renders its own tags on the wrapper). */
   charName = '';
   private _nameTag: Text | null = null;
+  /** NameTag.img/10 w/c/e plate (wired via SetNameTagPieces). */
+  private _nameTagWce: { w: WzSprite; c: WzSprite; e: WzSprite; clr: number } | null = null;
+  private _nameTagGroup: Container | null = null;
   private static readonly NameTagY = 10; // padding below the feet
 
   constructor(skinId = 0) {
@@ -317,6 +321,36 @@ export class CharLook {
       if (this._nameTag) { this._nameTag.destroy(); this._nameTag = null; }
       return;
     }
+    // Authentic NameTag.img/10 plate when pieces were provided (GameStage
+    // wires them after LoadSprites); fallback to plain yellow text.
+    const set = this._nameTagWce;
+    if (set?.w && set.c && set.e) {
+      if (this._nameTag) { this._nameTag.destroy(); this._nameTag = null; }
+      if (this._nameTagGroup) { this._nameTagGroup.destroy({ children: true }); this._nameTagGroup = null; }
+
+      const measure = new Text({ text: this.charName, style: { fontSize: 11, fontFamily: 'Arial' } });
+      const innerW = Math.max(set.c.Width, Math.ceil(measure.width) + 8);
+      const totalW = set.w.Width + innerW + set.e.Width;
+
+      const plate = new Container();
+      const ws = set.w.ToPixi();
+      ws.position.set(-totalW / 2, CharLook.NameTagY - set.w.Height);
+      const cs = set.c.ToPixi();
+      cs.position.set(-totalW / 2 + set.w.Width, CharLook.NameTagY - set.c.Height);
+      cs.width = innerW;
+      const es = set.e.ToPixi();
+      es.position.set(totalW / 2 - set.e.Width, CharLook.NameTagY - set.e.Height);
+      const clr = (set.clr >>> 0) & 0xFFFFFF;
+      const t = new Text({ text: this.charName, style: { fontSize: 11, fill: clr === 0xFFFFFF ? 0xFFFFFF : clr, fontFamily: 'Arial' } });
+      t.anchor.set(0, 0);
+      t.position.set(-measure.width / 2, CharLook.NameTagY - set.c.Height + 5);
+      t.scale.x = this.container.scale.x;
+      plate.addChild(ws, cs, es, t);
+      plate.scale.x = this.container.scale.x;
+      this._nameTagGroup = plate;
+      this.container.addChild(plate);
+      return;
+    }
     if (!this._nameTag) {
       this._nameTag = new Text({ text: '', style: { fontSize: 11, fill: 0xffe664, stroke: '#000000' } });
       this._nameTag.anchor.set(0.5, 1);
@@ -327,6 +361,13 @@ export class CharLook {
     // container.scale.x flips the whole avatar (±1); re-apply it so the
     // name text reads normally (scale.x * scale.x = 1) instead of mirroring.
     this._nameTag.scale.x = this.container.scale.x;
+  }
+
+  /** Wires the authentic NameTag.img/10 w/c/e plate (call once after
+   *  loading UI.nx; passing null reverts to the text fallback). */
+  SetNameTagPieces(w: WzSprite | null, c: WzSprite | null, e: WzSprite | null, clr = -1): void {
+    this._nameTagWce = (w && c && e) ? { w, c, e, clr } : null;
+    this._updateNameTag();
   }
 
   private _addPlaceholder(): void {

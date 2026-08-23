@@ -92,6 +92,8 @@ export class CharSelectStage extends Stage {
   private _rankUp: WzSprite | null = null;
   private _rankDown: WzSprite | null = null;
   private _rankSame: WzSprite | null = null;
+  /** Login.img/CharSelect/nameTag/<variant>/<piece> — [variant][piece]. */
+  private _nameTagPieces: (WzSprite | null)[][] = [[null, null, null], [null, null, null]];
 
   private _btSelect: Button | null = null;
   private _btNew: Button | null = null;
@@ -379,6 +381,13 @@ export class CharSelectStage extends Stage {
     }
 
     this._charEmpty = this._loadCanvas('Login.img/CharSelect/character/1/0');
+    // OG CUICharSelect::Draw — per-character name plate from the WZ 3-piece
+    // nameTag (left/mid/right); variant 0 = normal, 1 = selected slot.
+    for (const v of [0, 1]) {
+      for (const p of [0, 1, 2]) {
+        this._nameTagPieces[v][p] = this._loadCanvas(`Login.img/CharSelect/nameTag/${v}/${p}`);
+      }
+    }
     this._charInfo = this._loadCanvas('Login.img/CharSelect/charInfo1');
     this._charInfoNoRank = this._loadCanvas('Login.img/CharSelect/charInfo');
     this._rankUp = this._loadCanvas('Login.img/CharSelect/icon/up/0') ?? this._loadCanvas('Login.img/CharSelect/icon/up');
@@ -884,15 +893,31 @@ export class CharSelectStage extends Stage {
       const style = { fontSize: 11, fill: 0xFFFFFF as number, fontFamily: 'Arial' };
       const t = new Text({ text: name, style });
       const textW = t.width;
-      const tagW = Math.max(58, textW + 16);
-      const tagX = pos.x - tagW / 2;
+      // OG name plate: WZ nameTag 3-piece (left/mid stretched/right), variant
+      // 1 on the selected slot, 0 otherwise. No custom rect.
+      const variant = isSelected ? 1 : 0;
+      const pieces = this._nameTagPieces[variant];
+      const left = pieces[0], mid = pieces[1], right = pieces[2];
       const tagY = pos.y + 4;
+      if (left && mid && right) {
+        const tagW = Math.max(left.Width + right.Width, textW + 16);
+        const innerW = tagW - left.Width - right.Width;
+        const tagX = pos.x - tagW / 2;
 
-      const gfx = new Graphics();
-      gfx.rect(tagX, tagY, tagW, 15).fill({ color: 0x000000, alpha: isSelected ? 0.8 : 0.59 });
+        const ls = left.ToPixi();
+        ls.position.set(tagX, tagY);
+        const ms = mid.ToPixi();
+        ms.position.set(tagX + left.Width, tagY);
+        ms.width = innerW;
+        const rs = right.ToPixi();
+        rs.position.set(tagX + left.Width + innerW, tagY);
+
+        this._nameContainer.addChild(ls);
+        this._nameContainer.addChild(ms);
+        this._nameContainer.addChild(rs);
+      }
+
       t.position.set(pos.x - textW / 2, tagY + 2);
-
-      this._nameContainer.addChild(gfx);
       this._nameContainer.addChild(t);
     }
   }

@@ -26,11 +26,12 @@ const DIGIT_GAP = 6;
 // derived from the panel/button canvas sizes (362x219 backgrnd, 76x34 / 75x34
 // buttons) rather than ported from a known-good source.
 const PANEL_CENTER = { x: 400, y: 300 };
-const DIGITS_LOCAL = { x: 100, y: 145 };
-const TEXT_LOCAL = { x: 70, y: 30 };
-const BTN_ROW_Y_LOCAL = 179;
-const BT_NO_X_LOCAL = 40;
-const BT_LOGIN_X_LOCAL = 246;
+const EDIT_LOCAL = { x: 130, y: 103 };
+const TEXT_LOCAL = { x: 119, y: 21 };
+// OG CPinCodeDlg::OnCreate type-0 (check) button row at y=150.
+const BTN_ROW_Y_LOCAL = 150;
+const BT_NO_X_LOCAL = 107;
+const BT_YES_X_LOCAL = 196;
 
 /**
  * v95 PIN entry stage — shown when CheckPasswordResult sets skipPinCode=false.
@@ -183,7 +184,7 @@ export class PinStage extends Stage {
       this._panelContainer.addChild(this._textSprite);
     }
 
-    this._loginBtn = this._makeButton('BtLogin', signTopLeft, { x: BT_LOGIN_X_LOCAL, y: BTN_ROW_Y_LOCAL }, () => {
+    this._loginBtn = this._makeButton('BtYes', signTopLeft, { x: BT_YES_X_LOCAL, y: BTN_ROW_Y_LOCAL }, () => {
       if (this._digits.length === PIN_DIGITS && !this._submitting) this._submitPin();
     });
     this._noBtn = this._makeButton('BtNo', signTopLeft, { x: BT_NO_X_LOCAL, y: BTN_ROW_Y_LOCAL }, () => this._cancel());
@@ -192,11 +193,13 @@ export class PinStage extends Stage {
   }
 
   private _layoutDigitCells(): void {
+    // OG CPinCodeDlg type-0 has no visible edit control — typed digits render
+    // as masked text at the OG edit position (130,103) panel-local, no box.
+    const bx = PANEL_CENTER.x - 362 / 2 + EDIT_LOCAL.x;
+    const by = PANEL_CENTER.y - 219 / 2 + EDIT_LOCAL.y;
     for (let i = 0; i < PIN_DIGITS; i++) {
-      const x = DIGITS_LOCAL.x + i * (DIGIT_CELL_W + DIGIT_GAP) + (PANEL_CENTER.x - 362 / 2);
-      const y = DIGITS_LOCAL.y + (PANEL_CENTER.y - 219 / 2);
-      this._cells[i].position.set(x, y);
-      this._cellTexts[i].position.set(x + DIGIT_CELL_W / 2, y + DIGIT_CELL_H / 2);
+      this._cells[i].visible = false;
+      this._cellTexts[i].position.set(bx + i * 14, by);
     }
   }
 
@@ -337,14 +340,12 @@ export class PinStage extends Stage {
   }
 
   private _refresh(): void {
+    // OG masks PIN entry (CCtrlEdit bPasswd=1) — masked glyphs only, no boxes.
     for (let i = 0; i < PIN_DIGITS; i++) {
       const filled = i < this._digits.length;
       const active = i === this._digits.length;
       this._cellTexts[i].text = filled ? '●' : (active ? '_' : '');
-      this._cells[i].clear();
-      this._cells[i].roundRect(0, 0, DIGIT_CELL_W, DIGIT_CELL_H, 4).fill({ color: filled ? 0x1A1C2E : 0x222444 });
-      this._cells[i].roundRect(0, 0, DIGIT_CELL_W, DIGIT_CELL_H, 4)
-        .stroke({ width: 1, color: filled || active ? 0x88CCFF : 0x3C4164 });
     }
   }
 }
+

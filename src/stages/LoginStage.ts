@@ -67,6 +67,8 @@ export class LoginStage extends Stage {
   private readonly _allButtons: Button[] = [];
   private _loginWait: LoginWaitOverlay | null = null;
   private _errorNotice: LoginNoticeOverlay | null = null;
+  /** ToS license dialog overlay (Login.img/TOS) while awaiting accept/deny. */
+  private _tosOverlay: Container | null = null;
 
   private _mapContainer = new Container();
   private _panelContainer = new Container();
@@ -118,6 +120,18 @@ export class LoginStage extends Stage {
     }
 
     this.game.loginHandlers.onCheckPasswordResult = (args) => this.onCheckPasswordResult(args);
+    this.game.loginHandlers.onConfirmEulaResult = (args) => {
+      // OG CLogin::OnConfirmEULAResult — the ack re-triggers CheckPassword.
+      if (this._tosOverlay) this._closeTosDialog();
+      if (args.accepted && !this._connecting) {
+        this._connecting = true;
+        this._loginWait?.setVisible(true);
+        this.game.session.send(LoginSender.CheckPassword(
+          this._idField?.text ?? '', this._pwField?.text ?? '',
+          new Uint8Array(16),
+        ));
+      }
+    };
     this.game.loginHandlers.onAccountInfoResult = (args) => this.onAccountInfoResult(args);
     this.game.loginHandlers.onWorldListComplete = (_worlds) => this.onWorldListComplete();
     this.game.session.onHandshakeReceived = (info) => this.onHandshake(info);
@@ -149,10 +163,15 @@ export class LoginStage extends Stage {
 
   onExit(): void {
     this.game.loginHandlers.onCheckPasswordResult = null;
+    this.game.loginHandlers.onConfirmEulaResult = null;
     this.game.loginHandlers.onAccountInfoResult = null;
     this.game.loginHandlers.onWorldListComplete = null;
     this.game.session.onHandshakeReceived = null;
     this.game.session.onDisconnected = null;
+    if (this._tosOverlay) {
+      this._tosOverlay.destroy({ children: true });
+      this._tosOverlay = null;
+    }
     this._loader.Dispose();
     super.onExit();
   }
@@ -436,18 +455,25 @@ export class LoginStage extends Stage {
     this._loginWait?.setVisible(false);
 
     if (!args.success) {
+      // Server sends the short failure shape with reason 2 when ToS is not
+      // yet accepted (OG nGradeCode=2) — show the license dialog; accept
+      // replies CONFIRM_EULA(7) and CONFIRM_EULA_RESULT re-triggers login.
+      if (args.resultCode === 2 || args.blockReason === 2) {
+        this._connecting = false;
+        this._showTosDialog();
+        return;
+      }
       this._errorNotice?.show(this._loginErrorMessage(args.resultCode));
       this._connecting = false;
       this.game.session.disconnectAsync();
       return;
     }
     if (args.eulaRequired) {
-      this._errorNotice?.show(
-        'EULA required. Please accept the End User License Agreement.'
-        + '\nClose the notice and try again after accepting.',
-      );
+      // OG: blockReason 2 = ToS not accepted — show the license dialog
+      // (Login.img/TOS) and reply CONFIRM_EULA(7); the CONFIRM_EULA_RESULT
+      // ack re-triggers CheckPassword.
       this._connecting = false;
-      this.game.session.disconnectAsync();
+      this._showTosDialog();
       return;
     }
     if (args.skipPinCode === false) {
@@ -501,10 +527,51 @@ export class LoginStage extends Stage {
       default: return `Login failed (error ${code}).`;
     }
   }
+  // OG: ToS-not-accepted gate (CheckPasswordResult nGradeCode=2) � show the
+  // license canvas (Login.img/TOS, origin-centered) with Accept/Deny
+  // (Basic.img/BtYes2/BtNo2). Accept replies CONFIRM_EULA(7); the
+  // CONFIRM_EULA_RESULT ack re-triggers CheckPassword.
+
+  // OG: ToS-not-accepted gate (CheckPasswordResult nGradeCode=2) � show the
+  // license canvas (Login.img/TOS, origin-centered) with Accept/Deny
+  // (Basic.img/BtYes2/BtNo2). Accept replies CONFIRM_EULA(7); the
+  // CONFIRM_EULA_RESULT ack re-triggers CheckPassword.
+  private _showTosDialog(): void {
+    const overlay = new Container();
+    const tos = this._loadCanvas('Login.img/TOS/0');
+    if (tos) {
+      const s = tos.ToPixi();
+      s.position.set(400, 300);
+      overlay.addChild(s);
+    }
+
+    let btnY = 300 + (tos ? tos.Height / 2 : 213) - 20;
+    const make = (name: string, x: number, onClick: () => void): Button => {
+      const root = this._ui.GetItem(`Basic.img/${name}`);
+      const b = Button.fromWz(this._loader!, root instanceof WzProperty ? root : null, name);
+      b.onClick = onClick;
+      b.container.position.set(x, btnY);
+      overlay.addChild(b.container);
+      return b;
+    };
+    make(`BtYes2`, 400 - 50, () => {
+      this.game.session.send(LoginSender.ConfirmEULA(true));
+      this._closeTosDialog();
+    });
+    make(`BtNo2`, 400 + 4, () => {
+      this.game.session.send(LoginSender.ConfirmEULA(false));
+      this._closeTosDialog();
+    });
+
+    this.uiRoot.addChild(overlay);
+    this._tosOverlay = overlay;
+  }
+
+  private _closeTosDialog(): void {
+    if (this._tosOverlay) {
+      this._tosOverlay.destroy({ children: true });
+      this._tosOverlay = null;
+    }
+  }
 }
 
-function _fmtBytes(n: number): string {
-  if (n < 1024) return `${n} B`;
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
-  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
-}

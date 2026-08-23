@@ -9,7 +9,7 @@ export class LoginSender {
     p.writeString(password);
     p.writeBytes(machineId);
     p.writeInt(0);
-    p.writeByte(2);
+    p.writeByte(2); // nGender (0 = male; ToS gate currently disabled)
     p.writeByte(0);
     p.writeByte(0);
     p.writeBytes(new Uint8Array(4));
@@ -20,8 +20,6 @@ export class LoginSender {
     return OutPacket.Of(InHeader.WorldInfoRequest);
   }
 
-  // Post-auth world-list request used by the OG login flow after
-  // CheckPasswordResult / PIN handling (decompile/5DC600.c).
   static WorldRequest(): OutPacket {
     return OutPacket.Of(InHeader.WorldRequest);
   }

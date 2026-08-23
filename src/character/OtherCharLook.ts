@@ -4,6 +4,7 @@ import { WzTextureLoader } from '../render/WzTextureLoader.js';
 import type { WzPackage } from '../wz/WzPackage.js';
 import { WzProperty } from '../wz/WzProperty.js';
 import { WzCanvas } from '../wz/WzCanvas.js';
+import { WzSprite } from '../render/WzSprite.js';
 import { CharLook } from './CharLook.js';
 import { Stance } from './Stance.js';
 import type { TempStatBuff } from '../net/handlers/PacketArgs.js';
@@ -78,6 +79,12 @@ export class OtherCharLook {
   private _nameTagSprite: Sprite | null = null;
   private _guildText: Text | null = null;
   private _medalText: Text | null = null;
+  /** NameTag.img 3-piece plates keyed by tagType/100 (10=name, 14=guild, 16=medal). */
+  private _nameTagWce = new Map<number, { w: WzSprite | null; c: WzSprite | null; e: WzSprite | null; clr: number }>();
+  /** Guild mark canvases cached per (bgId,color)/(markId,color). */
+  private _guildMarkCache = new Map<string, WzSprite | null>();
+  /** Rebuilt-every-draw name plate group (name tag only). */
+  private _nameTagGroup: Container | null = null;
   private _placeholderGfx: Graphics | null = null;
   private _badgeContainer: Container | null = null;
   private _adBoardBg: Graphics | null = null;
@@ -138,6 +145,30 @@ export class OtherCharLook {
           if (wzSprite) {
             this._nameTagPlate = wzSprite.ToPixi();
           }
+        }
+      }
+    }
+
+    // OG CLife::MakeNameTag — authentic 3-piece plates from UI/NameTag.img,
+    // keyed by tagType/100: 10 = character name (1000), 14 = guild (1004),
+    // 16 = medal (1006). Each piece carries its own origin; `clr` is the
+    // text color.
+    if (baseWz) {
+      const nameTagRoot = baseWz.GetItem('NameTag.img');
+      if (nameTagRoot instanceof WzProperty) {
+        for (const key of [10, 14, 16]) {
+          const node = nameTagRoot.Get(String(key));
+          if (!(node instanceof WzProperty)) continue;
+          const pieces: Array<WzSprite | null> = [];
+          let clr = -1;
+          const clrNode = node.Get('clr');
+          if (typeof clrNode === 'number') clr = clrNode;
+          else if (typeof clrNode === 'bigint') clr = Number(clrNode);
+          for (const p of ['w', 'c', 'e']) {
+            const c = node.Get(p);
+            pieces.push(c instanceof WzCanvas ? loader.Load(c) : null);
+          }
+          this._nameTagWce.set(key, { w: pieces[0], c: pieces[1], e: pieces[2], clr });
         }
       }
     }
@@ -409,60 +440,19 @@ export class OtherCharLook {
     }
 
     // ── Name tags (OG CUser::DrawNameTags → CLife::MakeNameTag) ──
-    // The character name plate sits BELOW the feet (v95 white plate under
-    // the character, like NPCs); the HP gauge stays above the head (-105).
-    // Tag 1: Character name (tagType 1000) — just the name (m_sCharacterName),
-    // no level prefix (the OG draws only the name on a white plate).
+    // Three tags stacked below the feet: name (1000), guild (1004, with
+    // guild mark), medal (1006). Plates are the NameTag.img 3-piece
+    // (w/c/e) sets; text color comes from each set's `clr` node.
     const nameTagY = 10;
-    const tag = this.Name ?? '';
-    if (this._nameTagPlate) {
-      // OG: plate is 121x23, bar (109x19) at (6,3), text centered at y=5 from plate top
-      if (!this._nameText) {
-        this._nameText = new Text({ text: tag, style: { fontSize: 11, fill: 0xFFFFFF, stroke: { color: '#000000', width: 2 } } });
-        this._nameText.anchor.set(0.5, 0);
-      } else {
-        this._nameText.text = tag;
-      }
-      // Position text on the plate: plate top at nameTagY - 23 (since anchor is bottom), text at plate top + 5
-      const plateY = nameTagY - 23;
-      this._nameText.y = plateY + 5;
-      this._nameText.x = 0; // centered on plate
-      this._nameText.scale.x = this.container.scale.x; // counter-flip for avatar flip
+    this._drawWcePlate(10, this.Name ?? '', nameTagY);
 
-      if (!this._nameTagSprite) {
-        this._nameTagSprite = new Sprite(this._nameTagPlate.texture);
-        this._nameTagSprite.anchor.set(0.5, 1);
-        this.container.addChild(this._nameTagSprite);
-      }
-      this._nameTagSprite.texture = this._nameTagPlate.texture;
-      this._nameTagSprite.y = nameTagY;
-      this._nameTagSprite.scale.x = this.container.scale.x;
-
-      this.container.addChild(this._nameText);
-    } else {
-      // Fallback: plain text with yellow fill (old behavior)
-      if (!this._nameText) {
-        this._nameText = new Text({ text: tag, style: { fontSize: 11, fill: 0xffe664, stroke: '#000000' } });
-        this._nameText.anchor.set(0.5, 1);
-        this._nameText.y = nameTagY;
-      } else {
-        this._nameText.text = tag;
-      }
-      this.container.addChild(this._nameText);
-    }
-
-    // Tag 2: Guild name (tagType 1004) — below character name
+    // Tag 2: Guild name (tagType 1004) — below character name; OG draws the
+    // guild mark on the plate when the character has one.
     const displayGuild = this._teamName || this._guildName;
     if (displayGuild) {
       const guildTagY = nameTagY + 13;
-      if (!this._guildText) {
-        this._guildText = new Text({ text: displayGuild, style: { fontSize: 10, fill: 0xa0a0ff, stroke: '#000000' } });
-        this._guildText.anchor.set(0.5, 1);
-        this._guildText.y = guildTagY;
-      } else {
-        this._guildText.text = displayGuild;
-      }
-      this.container.addChild(this._guildText);
+      const markSprites = this._loadGuildMarkSprites();
+      this._drawWcePlate(14, displayGuild, guildTagY, markSprites);
     }
 
     // Tag 3: Medal name (tagType 1006) — below guild name; OG uses the real
@@ -470,18 +460,111 @@ export class OtherCharLook {
     if (this._medalItemId > 0) {
       const medalTagY = nameTagY + (displayGuild ? 25 : 13);
       const medalName = this.itemNameOf?.(this._medalItemId) || `Medal[${this._medalItemId}]`;
-      if (!this._medalText) {
-        this._medalText = new Text({ text: medalName, style: { fontSize: 10, fill: 0xffc94a, stroke: '#000000' } });
-        this._medalText.anchor.set(0.5, 1);
-        this._medalText.y = medalTagY;
-      } else {
-        this._medalText.text = medalName;
-      }
-      this.container.addChild(this._medalText);
+      this._drawWcePlate(16, medalName, medalTagY);
     }
 
     this._drawBadges();
     this._drawADBoard();
+  }
+
+  /** Builds a NameTag.img w/c/e plate with centered text at (0, y). The
+      middle piece stretches to fit the text. Returns the consumed width. */
+  private _drawWcePlate(typeKey: number, text: string, y: number, mark?: { bg: Sprite | null; markImg: Sprite | null }): void {
+    const set = this._nameTagWce.get(typeKey);
+    if (!set?.w || !set.c || !set.e) {
+      // Fallback: plain yellow text (old behavior) when WZ pieces missing.
+      let t = this._guildText;
+      if (typeKey === 10) t = this._nameText;
+      if (!t) {
+        t = new Text({ text, style: { fontSize: 11, fill: 0xffe664, stroke: '#000000' } });
+        t.anchor.set(0.5, 1);
+        t.y = y;
+        if (typeKey === 10) this._nameText = t;
+        else this._guildText = t;
+      } else {
+        t.text = text;
+        t.y = y;
+      }
+      this.container.addChild(t);
+      return;
+    }
+
+    const measure = new Text({ text, style: { fontSize: 11, fontFamily: 'Arial' } });
+    const textW = measure.width;
+    const innerW = Math.max(set.c.Width, Math.ceil(textW) + (mark ? 20 : 8));
+    const totalW = set.w.Width + innerW + set.e.Height * 0 + set.e.Width;
+
+    const clr = (set.clr >>> 0) & 0xFFFFFF;
+    const style = { fontSize: 11, fill: clr === 0xFFFFFF ? 0xFFFFFF : (clr), fontFamily: 'Arial' };
+    let t: Text;
+    if (typeKey === 10 && this._nameText) {
+      t = this._nameText;
+      t.text = text;
+      (t as any).style = style;
+    } else {
+      t = new Text({ text, style });
+    }
+    t.anchor.set(0, 0);
+    t.scale.x = this.container.scale.x;
+
+    const build = (): Container => {
+      const plate = new Container();
+      const ws = set.w!.ToPixi();
+      ws.position.set(-totalW / 2, y - set.w!.Height);
+      const cs = set.c!.ToPixi();
+      cs.position.set(-totalW / 2 + set.w!.Width, y - set.c!.Height);
+      cs.width = innerW;
+      const es = set.e!.ToPixi();
+      es.position.set(totalW / 2 - set.e!.Width, y - set.e!.Height);
+      plate.addChild(ws, cs, es);
+      t.position.set(-textW / 2, y - set.c!.Height + 5);
+      plate.addChild(t);
+      if (mark?.bg) {
+        mark.bg.position.set(-totalW / 2 + set.w!.Width + 2, y - set.c!.Height + 3);
+        plate.addChild(mark.bg);
+        if (mark.markImg) {
+          mark.markImg.position.set(mark.bg.position.x + 1, mark.bg.position.y + 1);
+          plate.addChild(mark.markImg);
+        }
+      }
+      return plate;
+    };
+
+    if (typeKey === 10) {
+      // Rebuild the name plate each draw (cheap — few sprites).
+      if (this._nameTagGroup) {
+        this._nameTagGroup.destroy({ children: true });
+      }
+      this._nameTagGroup = build();
+      this._nameTagGroup.scale.x = this.container.scale.x;
+      this.container.addChild(this._nameTagGroup);
+    } else {
+      const g = build();
+      g.scale.x = this.container.scale.x;
+      this.container.addChild(g);
+    }
+  }
+
+  /** Loads GuildMark.img BackGround/Mark canvases for this character's
+   *  guild-mark ints (cached per id pair). Returns nulls when unset. */
+  private _loadGuildMarkSprites(): { bg: Sprite | null; markImg: Sprite | null } {
+    if (!this._baseWz || this._guildMarkBg <= 0 || this._guildMark <= 0) {
+      return { bg: null, markImg: null };
+    }
+    const cacheKey = `${this._guildMarkBg}/${this._guildMarkBgColor}/${this._guildMark}/${this._guildMarkColor}`;
+    if (this._guildMarkCache.has(cacheKey)) {
+      const cached = this._guildMarkCache.get(cacheKey)!;
+      return { bg: cached ? cached.ToPixi() : null, markImg: null };
+    }
+    const pad = (n: number): string => n.toString().padStart(8, '0');
+    let bgSprite: WzSprite | null = null;
+    try {
+      const node = this._baseWz!.GetItem(`GuildMark.img/BackGround/${pad(this._guildMarkBg)}/${this._guildMarkBgColor}`);
+      if (node instanceof WzCanvas && this._loader) bgSprite = this._loader.Load(node);
+    } catch { /* missing canvas */ }
+    this._guildMarkCache.set(cacheKey, bgSprite);
+    void cacheKey;
+    return { bg: bgSprite ? bgSprite.ToPixi() : null, markImg: null };
   }
 
   /** OG CUser::DrawGauge — renders the 52×10 HP gauge bar.
