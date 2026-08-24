@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
+﻿import { Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
 import { WzSprite } from '../../render/WzSprite.js';
 import { WzTextureLoader } from '../../render/WzTextureLoader.js';
 import { WzPackage } from '../../wz/WzPackage.js';
@@ -66,7 +66,7 @@ interface InfoLine {
   color?: number;
   // OG CLineInfo (DrawInfo align 1001): the stat rows are drawn as a dot at
   // (10, y+2), a label Text in m_nType's font at x=16, and a value Text in
-  // m_nSubType's font at x = labelWidth + 16. Populated by PrintValue →
+  // m_nSubType's font at x = labelWidth + 16. Populated by PrintValue â†’
   // AddInfoEx(0x15, 0x17, label, value, bUseDot=1, nAlign=1001).
   label?: string;
   value?: string;
@@ -117,7 +117,7 @@ export interface BundleTooltipOptions {
   sCharacterName?: string;      // Character name for gift/wedding
   nGiftFrom?: number;           // Gift sender character ID
   nPetSlot?: number;            // Pet slot index for pet items
-  /** Marriage partner display name — SP 4237 format for ring ids 4031357–4031364. */
+  /** Marriage partner display name â€” SP 4237 format for ring ids 4031357â€“4031364. */
   partnerText?: string;
 }
 
@@ -130,7 +130,7 @@ export interface RingTooltipOptions {
   partnerText?: string;
 }
 
-// OG class: CUIToolTip — the single shared tooltip renderer
+// OG class: CUIToolTip â€” the single shared tooltip renderer
 // Handles equip/consumable/pet/skill/ring/macro tooltips
 export class ItemTooltip {
   private _font: BuiltInFont;
@@ -198,7 +198,7 @@ this._descOf = descOf;
     this._pLevel = level; this._pStr = str; this._pDex = dex; this._pInt = intt; this._pLuk = luk; this._pJob = job;
   }
 
-// OG: Master draw dispatcher — routes to equip vs consumable vs pet
+// OG: Master draw dispatcher â€” routes to equip vs consumable vs pet
   Draw(itemId: number, name: string, grade: number, _quantity: number,
     mouseX: number, mouseY: number, viewW: number, viewH: number,
     equippedSetCount: number = 0,
@@ -278,7 +278,7 @@ this._descOf = descOf;
     return text.length * (size * 0.6);
   }
 
-  // OG: BlitAt — create sprite from WzSprite and add to parent
+  // OG: BlitAt â€” create sprite from WzSprite and add to parent
   // Tracks sprites for cleanup on next draw
   private _blitAt(sprite: any, x: number, y: number): void {
     if (!sprite) return;
@@ -289,7 +289,7 @@ this._descOf = descOf;
     this._blitSprites.push(sp);
   }
 
-  // OG: Full equip tooltip — SetToolTip_Equip flow
+  // OG: Full equip tooltip â€” SetToolTip_Equip flow
   private _drawEquip(itemId: number, name: string, grade: number, attr: ItemAttr | null,
     mouseX: number, mouseY: number, viewW: number, viewH: number, equippedSetCount = 0,
     equipStats?: { incStr: number; incDex: number; incInt: number; incLuk: number; incPad: number; incMad: number; incPdd: number; incMdd: number; incMhp: number; incMmp: number; incAcc: number; incEva: number; incSpeed: number; incJump: number; ruc: number; cuc: number; option1: number; option2: number; option3: number }): void {
@@ -338,7 +338,7 @@ this._descOf = descOf;
     }
     this._blitSprites = [];
 
-    // OG: Background only — no border (transparent border per MakeLayer)
+    // OG: Background only â€” no border (transparent border per MakeLayer)
     this._g.rect(0, 0, w, h).fill({ color: BgColor, alpha: this._bgAlpha });
 
     // OG: Protection border (4px colored border on ALL sides based on protection type)
@@ -354,18 +354,18 @@ this._descOf = descOf;
 this._root.x = gx;
     this._root.y = gy;
 
-    // OG: Item name — DrawItemTitle @0x88ccb0 (equip branch): the name is drawn
+    // OG: Item name â€” DrawItemTitle @0x88ccb0 (equip branch): the name is drawn
     // centered at (w - titleW - descW)/2 with the desc (StringPool 0xC35)
     // right after it, both at yName. Name uses font 3 (HL_ORANGE), desc uses font 1 (HL_WHITE).
     // DrawTextItemName separately draws the dot at (10, yName+5) and the
     // trade-option desc at (18, yName).
-    // OG: GetItemName @0x8899B0 — gender-locked equips can get a "Male"/"Female"
+    // OG: GetItemName @0x8899B0 â€” gender-locked equips can get a "Male"/"Female"
     // prefix; the color comes from the rarity grade, not GetItemName's quality.
     const gItem = this._toolTip.getItemName(itemId, name, {
       protected: attr?.ProtectionType !== undefined && attr.ProtectionType > 0,
     });
     const displayName = gItem.name;
-    // OG: GetItemName returns the lType used to color DrawItemTitle — the name
+    // OG: GetItemName returns the lType used to color DrawItemTitle â€” the name
     // is drawn in that font's color (HL_WHITE/HL_ORANGE/quality-based).
     const nameColor = ToolTip.getFontColor(gItem.lType);
     
@@ -385,7 +385,7 @@ this._root.x = gx;
 
     let ti = titleDesc ? 2 : 1;
 
-    // OG: Cash item label (StringPool 5897) — shown after name when item is cash
+    // OG: Cash item label (StringPool 5897) â€” shown after name when item is cash
     if (attr?.Cash) {
       this._txt(ti, nameX + nameW + 6, yName, 'Cash', ToolTip.getFontColor(FONT_TYPES.HL_GREEN2), 9);
       ti++;
@@ -407,9 +407,9 @@ this._root.x = gx;
     // OG: Dot line below name
     for (let d = 4; d < w - 4; d += 6) this._dot(d, yName + lh + 4);
 
-    // OG: Item icon (68x68) — DrawItemIcon: 68x68 rect fill 0xA0FFFFFF at (10, y), then icon at (12, y+66)
+    // OG: Item icon (68x68) â€” DrawItemIcon: 68x68 rect fill 0xA0FFFFFF at (10, y), then icon at (12, y+66)
     const icon = this._itemIcon(itemId);
-    // OG: DrawItemIcon backdrop — 68x68 rect fill 0xA0FFFFFF (semi-transparent white)
+    // OG: DrawItemIcon backdrop â€” 68x68 rect fill 0xA0FFFFFF (semi-transparent white)
     this._g.rect(IconX, yBlock, IconSize, IconSize).fill({ color: 0xFFFFFF, alpha: 0xa0 / 255 });
     if (icon?.NewSprite) {
       // WzSprite.NewSprite carries the WZ origin. DrawItemIcon receives the
@@ -436,7 +436,7 @@ this._root.x = gx;
       this._iconSprite.visible = false;
     }
 
-    // OG: Requirement rows (Level/STR/DEX/INT/LUK/POP) — DrawTextEquip_Req:
+    // OG: Requirement rows (Level/STR/DEX/INT/LUK/POP) â€” DrawTextEquip_Req:
     // all 6 rows always draw. Label at (94, iconTop+12*nNo); then either the
     // requirement digits (left edge 94+12*4+2 = 144, spacing 1) or, for the
     // POP row only when POP req == 0, the "none" glyph (StringPool 0x1AC4)
@@ -464,7 +464,7 @@ this._root.x = gx;
       }
 
       if (val <= 0) {
-        // OG: bNone — only the POP row renders the "none" glyph (m_pNumberCan);
+        // OG: bNone â€” only the POP row renders the "none" glyph (m_pNumberCan);
         // the other rows still draw a Can-style '0' digit.
         if (isPop) {
           const none = this._assets.Get('Can/none');
@@ -489,35 +489,37 @@ this._root.x = gx;
     // OG: Inner outline before job strip
     this._g.rect(2, jobY - 8, w - 4, 1).fill({ color: InnerOutlineC, alpha: InnerOutlineA });
 
-    // OG: Job requirement strip — DrawItemReqJob blits at y+141 → iconTop+109
-    if (attr?.ReqJob) {
+    // OG: Job requirement strip â€” DrawItemReqJob blits at y+141 â†’ iconTop+109
+    // OG: Job requirement strip - DrawItemReqJob @0x880FC0 draws ALL 6 labels
+    // unconditionally at x={10,52,92,132,171,197}, y+141 (iconTop+109).
+    // Grey rules: beginner greys when nrJob > 0 (a specific job is required);
+    // each class greys when its bit is clear; nrJob == 0 lights everything.
+    {
       const jobNames = ['beginner', 'warrior', 'magician', 'bowman', 'thief', 'pirate'];
       const jobXPositions = [10, 52, 92, 132, 171, 197];
+      const nrJob = attr?.ReqJob ?? 0;
       for (let i = 0; i < 6; i++) {
-        const bit = 1 << i;
-        const greyed = (attr.ReqJob & bit) === 0;
+        const greyed = i === 0 ? nrJob > 0 : nrJob !== 0 && (nrJob & (1 << i)) === 0;
         const sprite = this._assets.JobLabel(jobNames[i], greyed);
         if (sprite) {
           this._blitAt(sprite, jobXPositions[i], jobY);
         }
       }
-      ti++;
     }
-
-    // OG: Growth rows — labels (itemLEV/itemEXP) drawn for every equip, plus
+    // OG: Growth rows â€” labels (itemLEV/itemEXP) drawn for every equip, plus
     // max/level-percent (growth items) or "none" glyphs. Row base = iconTop+72.
     if (attr) {
       this._drawGrowthItem(yBlock + 72, attr, this._isGrowthItem(itemId));
     }
 
-    // OG: Durability bar — Can|Cannot/durability at (94, iconTop+96), number
+    // OG: Durability bar â€” Can|Cannot/durability at (94, iconTop+96), number
     // (percent 100*cur/max) left-aligned at x=161, '%' suffix at 2*(3*digits+81).
     // OG guard: max durability > 0 (v7->nDurability), not the current value.
     if (attr && (attr.DurabilityMax ?? 0) > 0) {
       this._drawDurabilityBar(yBlock + 96, attr);
     }
 
-    // OG: Info lines (stat bonuses) — DrawInfo align-1001: dot at (10, y+2),
+    // OG: Info lines (stat bonuses) â€” DrawInfo align-1001: dot at (10, y+2),
     // label in main font at x=16, value in sub font at x = labelWidth + 16.
     for (let il = 0; il < info.length; il++) {
       const lineY = yInfo + il * (lh - 2);
@@ -653,7 +655,7 @@ this._root.x = gx;
     return ti;
   }
 
-  // OG: Pet tooltip — SetToolTip_Pet / DrawPetTooltip flow
+  // OG: Pet tooltip â€” SetToolTip_Pet / DrawPetTooltip flow
   // Separate from bundle tooltip; does NOT show invented pet stats/skills
   private _drawPet(itemId: number, name: string, attr: ItemAttr | null,
     mouseX: number, mouseY: number, viewW: number, viewH: number,
@@ -695,7 +697,7 @@ this._root.x = gx;
     );
   }
 
-  // OG: Full consumable tooltip — SetToolTip_Bundle flow
+  // OG: Full consumable tooltip â€” SetToolTip_Bundle flow
   // OG signature: (x, y, nItemID, ft, bProtected, nPeriod, sDonator, sTitle, nOriginalPrice, nPrice,
   //                goodsInfo, pe, bCashShop, nNpcShopTimeLimitedItemPeriod, nCommodityID,
   //                nITCSalePrice, ftITCDateExpired, sOrderComment, pii, itcToolTip)
@@ -742,7 +744,7 @@ this._root.x = gx;
     const marriageStr = opts.nMarriage ? 'Wedding Gift' : '';
     const giftFromStr = opts.nGiftFrom ? `From: ${opts.sCharacterName ?? `Char ${opts.nGiftFrom}`}` : '';
 
-    // OG: Marriage ring names (ids 4031357–4031364) — SP 4237 format with
+    // OG: Marriage ring names (ids 4031357â€“4031364) â€” SP 4237 format with
     // bride/groom names from lMarriageRecord. Rendered centered, font 14,
     // +19px per row before the expiry line.
     const isMarriageRing = itemId >= 4031357 && itemId <= 4031364;
@@ -762,7 +764,7 @@ this._root.x = gx;
     const itcStr = itcPrice > 0 ? `ITC Price: ${itcPrice.toLocaleString()} mesos` : '';
     const itcH = itcStr ? 38 : 0;
 
-    // OG: ITC expiry — DrawITCSaleInfo formats the remaining sale period as
+    // OG: ITC expiry â€” DrawITCSaleInfo formats the remaining sale period as
     // StringPool 4774 ("%d days %d hours") from ftITCDateExpired.
     const itcExpiryStr = opts.ftITCDateExpired ? this._toolTip.getItcPeriod(opts.ftITCDateExpired) : '';
     const itcExpiryH = itcExpiryStr ? lh + 4 : 0;
@@ -814,7 +816,7 @@ this._blitSprites = [];
     this._root.x = x;
     this._root.y = y;
 
-    // OG: Background only — no border (transparent border per MakeLayer)
+    // OG: Background only â€” no border (transparent border per MakeLayer)
     this._g.rect(0, 0, w, h).fill({ color: 0x0E395A, alpha: 204 / 255 });
 
     // OG: Item name and trade metadata. The strings are supplied preformatted;
@@ -828,7 +830,7 @@ let ti = 1;
     const tradeColor = ToolTip.getFontColor(FONT_TYPES.GEN_ORANGE);
     if (tradeOption) { this._txtWithFont(ti++, 0, 31, tradeOption, tradeColor, tradeFont); }
     if (tradeOptionEx) { this._txtWithFont(ti++, 0, tradeOption ? 50 : 31, tradeOptionEx, tradeColor, tradeFont); }
-    // OG: Marriage ring names (SP 4237, font 14) — centered row after trade flags.
+    // OG: Marriage ring names (SP 4237, font 14) â€” centered row after trade flags.
     if (isMarriageRing && partnerText) {
       const marriageFont = this._toolTip.getFontByType(FONT_TYPES.GEN_ORANGE);
       const marriageColor = ToolTip.getFontColor(FONT_TYPES.GEN_ORANGE);
@@ -918,11 +920,11 @@ if (orderCommentStr) { this._txt(ti++, 4, yCursor, orderCommentStr, DescColor, 9
   }
 
   // OG: DrawToolTip_Equip growth rows (rows base y = iconTop+72).
-  // itemLEV label at (94, y), itemEXP at (94, y+12) — always drawn with the
+  // itemLEV label at (94, y), itemEXP at (94, y+12) â€” always drawn with the
   // GrowthEnabled (growth item) or GrowthDisabled variant. Right side:
-  //   growth + level<max → level digits (148,y), EXP% digits (148,y+12), '%' (161,y+12)
-  //   growth + level==max → "max" glyph at (148,y) and (148,y+12)
-  //   not growth          → GrowthDisabled "none" glyph, bottom-right anchored at (148,y)
+  //   growth + level<max â†’ level digits (148,y), EXP% digits (148,y+12), '%' (161,y+12)
+  //   growth + level==max â†’ "max" glyph at (148,y) and (148,y+12)
+  //   not growth          â†’ GrowthDisabled "none" glyph, bottom-right anchored at (148,y)
   private _drawGrowthItem(y: number, attr: ItemAttr, isGrowth: boolean): void {
     // OG: percent = clamp(int(100*curEXP/nextEXP), 0, 99); the port reads it
     // off attr as expPct when present (0 otherwise).
@@ -985,8 +987,8 @@ if (orderCommentStr) { this._txt(ti++, 4, yCursor, orderCommentStr, DescColor, 9
     }
   }
 
-  // OG: Build stat bonus info lines — uses actual equip stats when available.
-  // Stat rows mirror OG PrintValue → AddInfoEx(0x15, 0x17, label, value, 1, 1001)
+  // OG: Build stat bonus info lines â€” uses actual equip stats when available.
+  // Stat rows mirror OG PrintValue â†’ AddInfoEx(0x15, 0x17, label, value, 1, 1001)
   // and DrawInfo's align-1001 layout: dot + label (font 0x15/21) + value
   // (font 0x17/23) at labelWidth + 16. Header/single lines use text-only.
   private _buildInfoLines(_itemId: number, attr: ItemAttr | null, equippedSetCount = 0,
@@ -994,7 +996,7 @@ if (orderCommentStr) { this._txt(ti++, 4, yCursor, orderCommentStr, DescColor, 9
     const lines: InfoLine[] = [];
     if (attr === null) return lines;
      const push = (text: string, color = InfoColor) => lines.push({ kind: InfoKind.Text, sprite: null, text, color });
-    // OG: stat row → label (STAN_PRP 21) + value (STAN_NUM 23), dot prefix.
+    // OG: stat row â†’ label (STAN_PRP 21) + value (STAN_NUM 23), dot prefix.
     const addStat = (label: string, v: number, type: 0 | 1 | 2): void => {
       if (v <= 0) return;
       const value = type === 0 ? `+${v}` : type === 2 ? `${v}%` : `${v}`;
@@ -1118,7 +1120,7 @@ if (orderCommentStr) { this._txt(ti++, 4, yCursor, orderCommentStr, DescColor, 9
   }
 
   // Legacy: caller-supplied rarity grade color. The active equip-name path now
-  // colors through getItemName().lType → getFontColor (OG CalcEquipItemQuality),
+  // colors through getItemName().lType â†’ getFontColor (OG CalcEquipItemQuality),
   // so this is kept only for backward-compatible callers that pass a grade.
   private static _gradeColor(g: number): number {
     switch (g) {
@@ -1130,7 +1132,7 @@ if (orderCommentStr) { this._txt(ti++, 4, yCursor, orderCommentStr, DescColor, 9
     }
   }
 
-// OG: SetToolTip_Skill @ 0x8a2500 — skill tooltip with level info and required skills
+// OG: SetToolTip_Skill @ 0x8a2500 â€” skill tooltip with level info and required skills
   // Context-dependent sections are supplied as preformatted strings. The original
   // client gets these from StringPool/context state, so this layer must not guess
   // their localization or values.
@@ -1217,7 +1219,7 @@ if (orderCommentStr) { this._txt(ti++, 4, yCursor, orderCommentStr, DescColor, 9
 this._root.x = x;
     this._root.y = y;
 
-    // OG: Background only — no border (transparent border per MakeLayer)
+    // OG: Background only â€” no border (transparent border per MakeLayer)
     this._g.rect(0, 0, w, h).fill({ color: BgColor, alpha: this._bgAlpha });
 
     const gx = x, gy = y;
@@ -1339,7 +1341,7 @@ this._iconSprite.visible = false;
     this._root.visible = true;
   }
 
-  // OG: SetToolTip_Pet @ 0x898700 — pet tooltip with death/donator/expiry
+  // OG: SetToolTip_Pet @ 0x898700 â€” pet tooltip with death/donator/expiry
   // IDA: tooltip type=6, width=290, dead icon canvas at (10,33), death text font 22,
   //      MakingLimitInfo, DrawDiscount_Info, DrawLimitInfo
   DrawPetTooltip(
@@ -1370,7 +1372,7 @@ this._iconSprite.visible = false;
     // OG: Discount height (35 if prices differ)
     const discountH = (nOriginalPrice > 0 && nOriginalPrice !== nPrice) ? 35 : 0;
 
-    // OG: MakingLimitInfo — build limit info strings from goodsInfo. Limit rows
+    // OG: MakingLimitInfo â€” build limit info strings from goodsInfo. Limit rows
     // are bottom-anchored by DrawLimitInfo and do not increase m_nHeight.
     const limitTexts = this._toolTip.makingLimitInfo(goodsInfo ?? null);
 
@@ -1404,7 +1406,7 @@ this._iconSprite.visible = false;
     this._root.x = x;
     this._root.y = y;
 
-    // OG: Background only — no border (transparent border per MakeLayer)
+    // OG: Background only â€” no border (transparent border per MakeLayer)
     this._g.rect(0, 0, w, h).fill({ color: BgColor, alpha: this._bgAlpha });
 
     let ti = 0;
@@ -1508,7 +1510,7 @@ this._iconSprite.visible = false;
     this._root.visible = true;
   }
 
-  // OG: SetToolTip_Ring @ 0x8a3460 — ring tooltip with partner/friend/spouse
+  // OG: SetToolTip_Ring @ 0x8a3460 â€” ring tooltip with partner/friend/spouse
   // Loads ring image from WZ (StringPool 0xAD3), handles couple/friend/marriage records
   DrawRingTooltip(
     ringName: string, description: string,
@@ -1614,7 +1616,7 @@ this._iconSprite.visible = false;
     this._root.visible = true;
   }
 
-  // OG: SetToolTip_MacroSysSkill @ 0x89e1f0 — macro system skill tooltip
+  // OG: SetToolTip_MacroSysSkill @ 0x89e1f0 â€” macro system skill tooltip
   DrawMacroSysSkillTooltip(
     macroName: string, skills: Array<{ name: string; desc: string }>,
     mouseX: number, mouseY: number, viewW: number, viewH: number,
@@ -1669,7 +1671,7 @@ this._iconSprite.visible = false;
     this._root.visible = true;
   }
 
-  // OG: SetToolTip_SlotInc @ 0x89d5f0 — slot increase tooltip
+  // OG: SetToolTip_SlotInc @ 0x89d5f0 â€” slot increase tooltip
   DrawSlotIncTooltip(
     itemName: string, description: string, category: string,
     slotIncrease: number, slotType: 'equip' | 'use' | 'setup' | 'etc',
@@ -1734,7 +1736,7 @@ this._iconSprite.visible = false;
     this._root.visible = true;
   }
 
-  // OG: SetToolTip_EquipExt @ 0x89dcf0 — equipment extension tooltip
+  // OG: SetToolTip_EquipExt @ 0x89dcf0 â€” equipment extension tooltip
   DrawEquipExtTooltip(
     itemName: string, isExpired: boolean, expiryStr: string,
     mouseX: number, mouseY: number, viewW: number, viewH: number,
@@ -1779,7 +1781,7 @@ this._iconSprite.visible = false;
     this._root.visible = true;
   }
 
-  // OG: SetToolTip_String2 — multi-param string tooltip
+  // OG: SetToolTip_String2 â€” multi-param string tooltip
   DrawString2Tooltip(
     lines: Array<{ text: string; color: number; size?: number }>,
     mouseX: number, mouseY: number, viewW: number, viewH: number,
@@ -1814,7 +1816,7 @@ this._iconSprite.visible = false;
     this._root.visible = true;
   }
 
-  // OG: SetToolTip_String_MultiLine — multi-line string tooltip
+  // OG: SetToolTip_String_MultiLine â€” multi-line string tooltip
   DrawStringMultiLineTooltip(
     text: string, fontType: number,
     mouseX: number, mouseY: number, viewW: number, viewH: number,
