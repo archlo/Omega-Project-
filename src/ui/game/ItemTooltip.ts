@@ -1292,9 +1292,13 @@ this._root.x = x;
       yCursor += lh;
       for (const req of reqSkills) {
         if (req.icon) {
+          // NEVER take ownership of a caller-owned Sprite: _blitSprites entries
+          // are destroy()ed on the next tooltip redraw, which would kill e.g.
+          // SkillBook's live row icon. Clone instead.
           const icon = req.skillId
             ? this._assets.LoadCanvas(this._itemInfo?.GetSkillIconCanvas(req.skillId) ?? null)?.NewSprite()
-            : (req.icon as WzSprite).NewSprite?.() ?? (req.icon instanceof Sprite && req.icon.position ? req.icon : null);
+            : (req.icon as WzSprite).NewSprite?.()
+              ?? (req.icon instanceof Sprite ? new Sprite(req.icon.texture) : null);
           if (icon && icon.position) {
             icon.x = 10;
             icon.y = yCursor;
@@ -1318,11 +1322,14 @@ this._root.x = x;
       yCursor += lh + 4;
     }
 
-this._iconSprite.visible = false;
+    this._iconSprite.visible = false;
     const exactSkillIcon = this._assets.LoadCanvas(this._itemInfo?.GetSkillIconCanvas(skillId) ?? null);
+    // Clone caller-owned Sprites (e.g. SkillBook's live row icon) — a raw
+    // reference here would get destroy()ed by the _blitSprites cleanup below
+    // on the next redraw and leave the source panel with a dead sprite.
     let icon = exactSkillIcon?.NewSprite()
       ?? ((skillData?.icon as WzSprite | null)?.NewSprite?.() ?? null)
-      ?? (skillData?.icon instanceof Sprite && skillData.icon.position ? skillData.icon as Sprite : null)
+      ?? (skillData?.icon instanceof Sprite ? new Sprite(skillData.icon.texture) : null)
       ?? (skillData?.icon ? this._assets.LoadCanvas(skillData.icon as any)?.NewSprite() : null);
     if (icon && icon.position) {
       icon.x = 10;
@@ -1586,10 +1593,13 @@ this._iconSprite.visible = false;
     const imageY = contentTop;
     if (ringImage) {
       if (ringImage instanceof Sprite) {
-        ringImage.x = 10;
-        ringImage.y = imageY;
-        this._root.addChild(ringImage);
-        this._blitSprites.push(ringImage);
+        // Clone — _blitSprites entries are destroy()ed on redraw; never take
+        // ownership of a caller-owned sprite.
+        const clone = new Sprite(ringImage.texture);
+        clone.x = 10;
+        clone.y = imageY;
+        this._root.addChild(clone);
+        this._blitSprites.push(clone);
       } else {
         this._blitAt(ringImage, 10, imageY);
       }

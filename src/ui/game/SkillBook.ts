@@ -26,9 +26,9 @@ const SP_TEXT_Y = 256; // SP count drawn at y=256
 const BOOK_ICON_Y = 55; // Book icon at (15, 55)
 const BOOK_NAME_Y = 65; // Book name centered at y=65 (or split at 55/69 if wide)
 
-// Tab control: (8, 10), 154×20
+// Tab control: (8, 10), 154×20 — drawn 20px lower per user preference
 const TAB_X = 8;
-const TAB_Y = 10;
+const TAB_Y = 30;
 const TAB_W = 154;
 const TAB_H = 20;
 // OG: each tab slot is 30px + 1px spacing (30*5 + 4 = 154). Aran guide buttons
@@ -1125,10 +1125,11 @@ export class SkillBook extends GamePanel {
     for (const record of records) ids.add(record.skillId);
 
     const rows: SkillRow[] = [];
+    let invisibleSkipped = 0;
     for (const skillId of Array.from(ids).sort((a, b) => a - b)) {
       const record = byId.get(skillId);
       const info = this.skillService?.Get(skillId);
-      if (info?.Invisible) continue;
+      if (info?.Invisible) { invisibleSkipped++; continue; }
       const level = record?.level ?? 0;
       const maxLevel = Math.max(1, info?.MaxLevel ?? record?.masterLevel ?? 1);
       rows.push(new SkillRow(
@@ -1141,6 +1142,7 @@ export class SkillBook extends GamePanel {
       ));
     }
 
+    console.log(`[Skills] setSkillRecords: job=${this.characterJob} records=${records.length} roots=[${roots.join(',')}] enumerated=${ids.size} invisibleSkipped=${invisibleSkipped} rows=${rows.length} service=${this.skillService ? 'yes' : 'NULL'}`);
     this.setSkills(rows);
   }
 
@@ -1385,9 +1387,23 @@ export class SkillBook extends GamePanel {
 
         // OG Draw: Skill icon at (12, nTop-17) via p->apCanvas[v54 + v75]
         // v54 = state != 0, v75 = hover && v54 → Icon0/Icon1/Icon2.
-        const rowIcon = this._rowIcons[i];
+        let rowIcon = this._rowIcons[i];
         const info = this.skillService?.Get(sk.id);
       if (rowIcon) {
+          // Defensive: a destroyed sprite throws on any property store.
+          // Recreate it in place rather than crash the whole draw pass
+          // (root cause of destroyed row icons — tooltip taking ownership —
+          // was fixed; this keeps a stale reference from killing the frame).
+          if (rowIcon.destroyed) {
+            const idx = rowIcon.parent ? rowIcon.parent.getChildIndex(rowIcon) : -1;
+            const fresh = new Sprite();
+            fresh.width = 32;
+            fresh.height = 32;
+            this._rowIcons[i] = fresh;
+            if (idx >= 0) this._root.addChildAt(fresh, idx);
+            else this._root.addChild(fresh);
+            rowIcon = fresh;
+          }
           rowIcon.texture = Texture.EMPTY;
           const iconCanvas = reqsMet
             ? (isHovered ? (info?.Icon2 ?? info?.Icon1 ?? info?.Icon0) : (info?.Icon1 ?? info?.Icon0 ?? info?.Icon))
@@ -1789,7 +1805,9 @@ export class SkillBook extends GamePanel {
            info ? {
              // SkillInfoService currently provides these fields directly.
               masterLevel: info.DefaultMasterLev > 0 ? info.DefaultMasterLev : undefined,
-              icon: this._rowIcons[this._hoverIndex] ?? undefined,
+               // Pass a clone, never the live row icon — tooltip internals
+               // may take ownership of the sprite it is given.
+               icon: this._cloneRowIcon(this._hoverIndex),
               linkedCharName: linkedSkill && this.linkedCharacter ? this.linkedCharacter : undefined,
               wildHunterValues: wildHunterSkill ? this.wildHunterMobNames : undefined,
               isSwallowBuff: swallowSkill && this.swallowBuffType !== 0,
@@ -1806,6 +1824,14 @@ export class SkillBook extends GamePanel {
     } else if (this._tooltip) {
       this._tooltip.Hide();
     }
+  }
+
+  /** Clone a row icon into a standalone Sprite so consumers (tooltips, drag
+   *  ghosts) can never destroy the panel's own display object. */
+  private _cloneRowIcon(index: number): Sprite | undefined {
+    const src = this._rowIcons[index];
+    if (!src || src.destroyed || !src.texture || src.texture === Texture.EMPTY) return undefined;
+    return new Sprite(src.texture);
   }
 
   // OG: Clear hover when mouse leaves the panel

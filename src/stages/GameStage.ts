@@ -1262,12 +1262,12 @@ export class GameStage extends Stage {
         this._skill.characterJob = this._pendingStat.job;
         this._skill.characterLevel = this._pendingStat.level;
         this._skill.characterHp = this._pendingStat.hp;
+        // Seed the job book from WZ roots even when the deferred SetField
+        // carried zero skill records (OG builds tabs from the job alone).
+        this._onSkillRecordResult(this._pendingSkillRecords ?? []);
+        this._pendingSkillRecords = null;
         this._pendingStat = null;
       }
-      if (this._pendingSkillRecords && this._skill) {
-       this._onSkillRecordResult(this._pendingSkillRecords);
-       this._pendingSkillRecords = null;
-     }
      this._skillGuide = new SkillGuide(this._loader, uiWz);
     this._panels.push(this._skillGuide);
     this._keyConfig = new KeyConfig(this._loader, uiWz, font);
@@ -1929,6 +1929,11 @@ export class GameStage extends Stage {
     if (equipTipContainer) this.uiRoot.addChild(equipTipContainer);
     const itemTipContainer = this._item.tooltipContainer;
     if (itemTipContainer) this.uiRoot.addChild(itemTipContainer);
+    // Skill tooltips render into their own top-level container — without
+    // adding it here the tooltip draws into a parentless container and never
+    // appears on screen.
+    const skillTipContainer = this._skill.tooltipContainer;
+    if (skillTipContainer) this.uiRoot.addChild(skillTipContainer);
 
     this._statusBar.onInfo = () => { if (this._charInfo) this._charInfo.isVisible = !this._charInfo.isVisible; };
     this._statusBar.onEquip = () => {
@@ -4978,11 +4983,14 @@ this._localCharId = args.characterId ?? 0;
     // ChangeSkillRecordResult would. Stash for _initMenu when SkillBook isn't
     // constructed yet (mirrors _pendingStat).
     if (args.skillRecords) {
+      console.log(`[Skills] SetField carried ${args.skillRecords.length} records; skillPanel=${this._skill ? 'ready' : 'NOT YET (deferring to _initMenu)'}`);
       if (this._skill) {
         this._onSkillRecordResult(args.skillRecords);
       } else {
         this._pendingSkillRecords = args.skillRecords;
       }
+    } else {
+      console.log('[Skills] SetField carried NO skill records — server did not send them or CharacterData desynced before SKILLRECORD');
     }
     this._isFieldTransferring = false;
     // Revive warp (server sends SetField with isRevive) â€” clear the local death
@@ -6632,6 +6640,11 @@ this._localCharId = args.characterId ?? 0;
       this._skill.characterJob = stat.job;
       this._skill.characterLevel = stat.level;
       this._skill.characterHp = stat.hp;
+      // OG: CUISkill::SetSkillRootList derives the tab/book structure from the
+      // JOB alone (Skill.wz roots); server records only overlay learned
+      // levels. Seed the full job book here so the window shows skills from
+      // the beginning even when the server carries zero records.
+      this._onSkillRecordResult(this._skillRecords);
     }
     if (this._equip) this._equip.setJobId(stat.job, stat.level, stat.subJob);
     if (this._charInfo) {
@@ -7892,7 +7905,9 @@ this._localCharId = args.characterId ?? 0;
       const id = r.skillId;
       return (id === 1004 || id === 20001004 || id === 20011004 || id === 20021004 || id === 20031004) && r.level > 0;
     });
-    this._equip.setHasNoviceSkill1004(hasNovice);
+    // _equip may not exist yet when the job book is seeded from _initMenu
+    // (equip panel is constructed later in that function).
+    this._equip?.setHasNoviceSkill1004(hasNovice);
     this._skill.skillService = this._skillService;
     this._skill.textureLoader = this._loader;
     // CUISkill builds rows from the WZ skill roots and overlays the live
