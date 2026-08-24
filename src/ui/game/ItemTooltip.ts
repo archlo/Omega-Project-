@@ -39,6 +39,16 @@ const JobX = [10, 52, 92, 132, 171, 197];
 const EquipWidth = 236; // OG: SetBasicInfo width for equip tooltips
 const BundleWidth = 290; // OG: SetBasicInfo width for bundle tooltips
 const SkillWidth = 320; // OG: SetBasicInfo width for skill tooltips
+const SetItemWidth = 236; // OG: SetToolTip_SetItem SetBasicInfo(1, 236, 0, 0)
+const SetItemRowStep = 16; // OG: item rows and effect lines step nHeight += 16
+
+// OG: SetToolTip_SetItem @0x8A4090 data. `items` carry per-member equipped
+// state so worn members render GEN_WHITE and missing ones GEN_GRAY2.
+export interface SetItemPanelData {
+  name: string;
+  effects: Array<{ threshold: number; effect: Record<string, number> }>;
+  items?: Array<{ itemId: number; equipped: boolean }>;
+}
 const IconX = 10;
 const IconSize = 68;
 const ReqLabelX = 94;
@@ -129,7 +139,7 @@ export class ItemTooltip {
   private _itemInfo: ItemInfoService | null;
   private _strings: StringPoolService | null;
   private _descOf: ((itemId: number) => string | null) | null;
-  private _setItemOf: ((itemId: number) => { name: string; effects: Array<{ threshold: number; effect: Record<string, number> }> } | null) | null;
+  private _setItemOf: ((itemId: number) => SetItemPanelData | null) | null;
   private _mobNameOf: ((mobId: number) => string | null) | null;
   private _pLevel = 0; private _pStr = 0; private _pDex = 0; private _pInt = 0; private _pLuk = 0;
   private _pJob = 0;
@@ -150,7 +160,7 @@ export class ItemTooltip {
 
   constructor(font: BuiltInFont, icons: ItemIconLoader, assets: TooltipAssets,
     descOf: ((itemId: number) => string | null) | null = null,
-    setItemOf: ((itemId: number) => { name: string; effects: Array<{ threshold: number; effect: Record<string, number> }> } | null) | null = null,
+    setItemOf: ((itemId: number) => SetItemPanelData | null) | null = null,
     optionOf: ((optionId: number, level: number) => EquipOptionLevel | null) | null = null,
     itemInfo: ItemInfoService | null = null,
     strings: StringPoolService | null = null,
@@ -171,7 +181,8 @@ this._descOf = descOf;
     this._root.addChild(this._g);
     this._iconSprite = new Sprite();
     this._root.addChild(this._iconSprite);
-    for (let i = 0; i < 128; i++) {
+    // 128 base texts + headroom for the set-item side panel (members + effects)
+    for (let i = 0; i < 224; i++) {
       const t = new Text({ text: '', style: this._font.style });
       t.visible = false;
       this._root.addChild(t);
@@ -291,7 +302,11 @@ this._descOf = descOf;
 
     // OG: Layout calculation from SetToolTip_Equip
     // DrawTextItemName draws the dot canvas at (10, y+5) and name text at (18, y)
-    const yName = 10;
+    // OG: enhancement stars (pNumberStar local, secure byte GW_ItemSlotEquip
+    // +0x10B = iuc) push the name row down one 16px band; each star is 13px wide.
+    const starCount = attr?.StarForce ?? 0;
+    const starDy = starCount > 0 ? 16 : 0;
+    const yName = 10 + starDy;
     const yDot1 = yName + lh + 3;
     // OG: iconTop = y + 32 (from SetToolTip_Equip @0x8A5670)
     const yBlock = yName + 32; // 42
@@ -376,10 +391,14 @@ this._root.x = gx;
       ti++;
     }
 
-    // OG: Star force display for enhanced items
-    if (attr?.StarForce !== undefined && attr.StarForce > 0) {
-      this._txt(ti, 4, yName + lh + 6, `★ ${attr.StarForce}`, ToolTip.getFontColor(FONT_TYPES.HL_GREEN2), 9);
-      ti++;
+    // OG: enhancement stars - SetToolTip_Equip loads the 13x13 star canvas from
+    // StringPool 0x806/0x807 = UI/UIWindow.img/ToolTip/Equip/Star/Star and blits
+    // one per enhancement count (count x 13 width in the disasm).
+    if (starCount > 0) {
+      const star = this._assets.Get('Star/Star');
+      for (let sIdx = 0; sIdx < starCount; sIdx++) {
+        this._blitAt(star, 10 + sIdx * 13, 6);
+      }
     }
 
     // OG: Inner outline below name
@@ -536,7 +555,102 @@ this._root.x = gx;
     this._txt(ti, 4, yId, `ID: ${itemId}`, IdColor, 9);
     ti++;
 
+    // OG: AddToolTip_SetItem @0x8A4D10 draws a second window beside this one.
+    ti = this._drawSetItemPanel(itemId, w, x, viewW, ti);
     this._root.visible = true;
+  }
+
+  // OG: get_item_category_name / get_weapon_category_name fallbacks.
+  private _categoryNameOf(itemId: number): string {
+    const cat = Math.floor(itemId / 10000);
+    const weaponCategories: Record<number, string> = {
+      130: 'Sword', 131: 'Axe', 132: 'Blunt Weapon', 133: 'Dagger',
+      137: 'Polearm', 138: 'Staff', 139: 'Bow', 140: 'Crossbow',
+      141: 'Claw', 143: 'Knuckle', 144: 'Gun', 145: 'Shield',
+      146: 'Cape', 148: 'Ring',
+    };
+    const itemCategories: Record<number, string> = {
+      100: 'Cap', 104: 'Coat', 105: 'Longcoat', 106: 'Pants',
+      107: 'Shoes', 108: 'Glove', 109: 'Shield',
+    };
+    return weaponCategories[cat] ?? itemCategories[cat] ?? '';
+  }
+
+  private _truncateToWidth(text: string, font: TextStyle, maxW: number): string {
+    if (this._measureText(text, font) <= maxW) return text;
+    let s = text;
+    while (s.length > 1 && this._measureText(s + '...', font) > maxW) s = s.slice(0, -1);
+    return s + '...';
+  }
+
+  // OG: SetToolTip_SetItem @0x8A4090 - the set-item window rendered to the side
+  // of the equip tooltip by AddToolTip_SetItem. Layout:
+  //   width 236; set name centered at y=10 in GEN_GREEN;
+  //   member rows from y=35 stepping 16 - "(Category)" right-aligned GEN_GRAY2,
+  //   name left GEN_WHITE (worn) / GEN_GRAY2 (missing), truncated to fit;
+  //   then effect tiers: "<N> Set Effect" header (GEN_GREEN when active) and
+  //   one line per positive stat, GEN_WHITE active / GEN_GRAY2 inactive.
+  private _drawSetItemPanel(itemId: number, mainW: number, mainX: number, viewW: number, tiStart: number): number {
+    const data = this._setItemOf?.(itemId);
+    if (!data || !data.items || data.items.length === 0) return tiStart;
+    let ti = tiStart;
+
+    const fontTitle = this._toolTip.getFontByType(FONT_TYPES.GEN_GREEN);
+    const fontWorn = this._toolTip.getFontByType(FONT_TYPES.GEN_WHITE);
+    const fontUnworn = this._toolTip.getFontByType(FONT_TYPES.GEN_GRAY2);
+
+    // Panel placement: right of the main window per AddToolTip_SetItem; flip
+    // to the left side when it would overflow the screen.
+    const px = mainX + mainW + SetItemWidth > viewW ? -SetItemWidth : mainW;
+
+    let y = 35;
+    for (const member of data.items) {
+      const cat = this._categoryNameOf(member.itemId);
+      const catText = cat ? `(${cat})` : '';
+      const nameFont = member.equipped ? fontWorn : fontUnworn;
+      const catW = catText ? this._measureText(catText, fontUnworn) : 0;
+      const name = this._truncateToWidth(this._itemInfo?.GetItemName(member.itemId) ?? `${member.itemId}`, nameFont, SetItemWidth - catW - 20);
+      this._txtWithFont(ti++, px, y, name,
+        ToolTip.getFontColor(member.equipped ? FONT_TYPES.GEN_WHITE : FONT_TYPES.GEN_GRAY2), nameFont);
+      if (catText) {
+        this._txtWithFont(ti++, px + SetItemWidth - catW - 20, y, catText,
+          ToolTip.getFontColor(FONT_TYPES.GEN_GRAY2), fontUnworn);
+      }
+      y += SetItemRowStep;
+    }
+
+    // Separator dots between members and effects
+    const sepY = y + 4;
+    for (let d = 6; d < SetItemWidth - 6; d += 6) this._dot(px + d, sepY);
+    y = sepY + 10;
+
+    for (const tier of data.effects) {
+      if (!tier.effect || Object.keys(tier.effect).length === 0) continue;
+      const wornCount = data.items.filter((m) => m.equipped).length;
+      const active = wornCount >= tier.threshold;
+      this._txtWithFont(ti++, px + 10, y, `${tier.threshold} Set Effect`,
+        ToolTip.getFontColor(active ? FONT_TYPES.GEN_GREEN : FONT_TYPES.GEN_GRAY2),
+        active ? fontTitle : fontUnworn);
+      y += SetItemRowStep;
+      const e = tier.effect as Record<string, number>;
+      const statRows: Array<[string, number]> = [
+        ['STR', e.incSTR ?? 0], ['DEX', e.incDEX ?? 0], ['INT', e.incINT ?? 0], ['LUK', e.incLUK ?? 0],
+        ['MaxHP', e.incMHP ?? 0], ['MaxMP', e.incMMP ?? 0], ['W.Attack', e.incPAD ?? 0], ['M.Attack', e.incMAD ?? 0],
+        ['W.Defense', e.incPDD ?? 0], ['M.Defense', e.incMDD ?? 0], ['Accuracy', e.incACC ?? 0], ['Avoidability', e.incEVA ?? 0],
+        ['Craft', e.incCraft ?? 0], ['Speed', e.incSpeed ?? 0], ['Jump', e.incJump ?? 0], ['Knockback', e.nKnockback ?? 0],
+      ];
+      for (const [label, value] of statRows) {
+        if (value <= 0) continue;
+        this._txtWithFont(ti++, px + 16, y, `${label} +${value}`,
+          ToolTip.getFontColor(active ? FONT_TYPES.GEN_WHITE : FONT_TYPES.GEN_GRAY2),
+          active ? fontWorn : fontUnworn);
+        y += SetItemRowStep;
+      }
+    }
+
+    // Panel background painted into _g (below the text pool children).
+    this._g.rect(px, 0, SetItemWidth, y + 8).fill({ color: BgColor, alpha: this._bgAlpha });
+    return ti;
   }
 
   // OG: Pet tooltip — SetToolTip_Pet / DrawPetTooltip flow
@@ -975,27 +1089,9 @@ if (orderCommentStr) { this._txt(ti++, 4, yCursor, orderCommentStr, DescColor, 9
         for (const [label, value, type] of optionRows) addStat(label, value, type);
       }
 
-     // OG: SetToolTip_SetItem appends its rows after SetToolTip_Equip_Basic
-     const setItem = this._setItemOf?.( _itemId );
-     if (setItem) {
-        push(setItem.name, InfoColor);
-        for (const tier of setItem.effects) {
-          if (tier.threshold <= 0) continue;
-          const active = equippedSetCount >= tier.threshold;
-          const tierColor = active ? ToolTip.getFontColor(FONT_TYPES.HL_SPECIAL) : ToolTip.getFontColor(FONT_TYPES.GEN_GRAY);
-          push(`${tier.threshold} Set`, tierColor);
-         const e = tier.effect;
-         const rows: Array<[string, number]> = [
-           ['STR:', e.incSTR ?? 0], ['DEX:', e.incDEX ?? 0], ['INT:', e.incINT ?? 0], ['LUK:', e.incLUK ?? 0],
-           ['MHP:', e.incMHP ?? 0], ['MMP:', e.incMMP ?? 0], ['PAD:', e.incPAD ?? 0], ['MAD:', e.incMAD ?? 0],
-           ['PDD:', e.incPDD ?? 0], ['MDD:', e.incMDD ?? 0], ['ACC:', e.incACC ?? 0], ['EVA:', e.incEVA ?? 0],
-           ['Craft:', e.incCraft ?? 0], ['Speed:', e.incSpeed ?? 0], ['Jump:', e.incJump ?? 0], ['Knockback:', e.nKnockback ?? 0],
-         ];
-          for (const [label, value] of rows) if (value > 0) push(`${label} +${value}`, tierColor);
-       }
-     } else if (attr.SetItemId > 0) {
-       push(`Set Item: ${equippedSetCount} piece${equippedSetCount === 1 ? '' : 's'} equipped`);
-     }
+     // OG: set-item info is NOT part of the equip tooltip body. SetToolTip_Equip
+     // calls AddToolTip_SetItem (@0x8A4D10) which renders a SEPARATE window to
+     // the right of the equip tooltip - see _drawSetItemPanel.
 
     // OG: RUC (StringPool 0x2AD) is the last Equip_Basic row; scroll hammers are a client extra
      // RUC is remaining upgrade slots. Prefer the instance value even when
