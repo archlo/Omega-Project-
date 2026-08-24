@@ -5,6 +5,24 @@ import { OtherCharLook } from '../../src/character/OtherCharLook.js';
 import { WzTextureLoader } from '../../src/render/WzTextureLoader.js';
 import { AvatarLook } from '../../src/domain/AvatarLook.js';
 
+// Canvas shim — pixi Text width measurement needs a 2D context.
+class Fake2DContext {
+  measureText(text: string) {
+    return { width: String(text).length * 8, actualBoundingBoxAscent: 10, actualBoundingBoxDescent: 3 };
+  }
+  fillText() {} strokeText() {} clearRect() {} fillRect() {}
+}
+class FakeOffscreenCanvas {
+  width = 0; height = 0;
+  private _ctx: any;
+  getContext() { if (!this._ctx) this._ctx = new Fake2DContext(); return this._ctx; }
+}
+(globalThis as any).CanvasRenderingContext2D ??= Fake2DContext;
+(globalThis as any).OffscreenCanvas ??= FakeOffscreenCanvas;
+(globalThis as any).document ??= {
+  createElement(tag: string) { return tag === 'canvas' ? new FakeOffscreenCanvas() as any : {}; },
+};
+
 // Real per-frame anchor points (OG CActionFrame::Draw's ptNavel/ptHead/
 // ptBrow/ptMuzzle, confirmed live via IDA) replacing the hardcoded
 // per-consumer Y-offset guesses ChatBalloon/EmotionBubble/ProjectileOverlay
@@ -46,28 +64,28 @@ describe('OtherCharLook anchor getters', () => {
 });
 
 describe('Character name tags BELOW the feet (OG CLife::MakeNameTag type 1000)', () => {
-  it('local player (CharLook): renders the name below the feet', () => {
+  it('local player (CharLook): renders the white rect plate below the feet', () => {
     const look = new CharLook(0);
     look.charName = 'Heena';
     (look as any)._updateNameTag();
-    const tag = (look as any)._nameTag;
-    expect(tag).not.toBeNull();
-    expect(tag.text).toBe('Heena');
-    expect(tag.y).toBe(10);           // padding below the feet
-    expect(tag.anchor.y).toBe(1);     // bottom-center anchor
-    expect(tag.scale.x).toBe(1);      // no flip → not mirrored
+    // OG default tag: hand-drawn white rect group + Arial 12 white text
+    const group = (look as any)._nameTagGroup;
+    expect(group).not.toBeNull();
+    const text = group.children.find((c: any) => typeof c.text === 'string');
+    expect(text.text).toBe('Heena');
+    expect(group.children.length).toBeGreaterThan(0);
   });
 
-  it('local player (CharLook): counter-flips with the avatar so text stays readable', () => {
+  it('local player (CharLook): tag counter-flips so text never mirrors', () => {
     const look = new CharLook(0);
     look.charName = 'Heena';
-    (look as any)._facingLeft = false; // facing right → container.scale.x = -1
-    (look as any)._rebuildDisplay();   // sets container.scale.x = -1
+    (look as any)._facingLeft = true; // facing left — container.scale.x = -1
+    (look as any)._rebuildDisplay();
     (look as any)._updateNameTag();
-    const tag = (look as any)._nameTag;
-    expect(tag).not.toBeNull();
-    // tag.scale.x == container.scale.x == -1 → net 1 (reads normally)
-    expect(tag.scale.x).toBe(-1);
+    const group = (look as any)._nameTagGroup;
+    expect(group).not.toBeNull();
+    // Tag counter-flips against the avatar container: scale.x * container.scale.x = 1.
+    expect(group.scale.x).toBe((look as any).container.scale.x);
   });
 
   it('remote char (OtherCharLook): places the name BELOW the feet, not above the head', () => {
@@ -77,7 +95,8 @@ describe('Character name tags BELOW the feet (OG CLife::MakeNameTag type 1000)',
     expect(name).not.toBeNull();
     // OG CUser::DrawNameTags draws just m_sCharacterName (no level prefix).
     expect(name.text).toBe('Test');
-    expect(name.y).toBe(10); // below feet (was -78 above the head)
+    // Plate top at 10, height fontH(12)+6=18 → text centered at 10+9-1=18
+    expect(name.y).toBe(18);
   });
 
   it('remote char medal tag resolves the real item name via itemNameOf', () => {

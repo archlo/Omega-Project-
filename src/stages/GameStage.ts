@@ -3,6 +3,7 @@ import { Stage, MouseButton } from '../app/Stage.js';
 import { MapleClaudeGame } from '../MapleClaudeGame.js';
 import { WzPackage } from '../wz/WzPackage.js';
 import { WzProperty } from '../wz/WzProperty.js';
+import { WzCanvas } from '../wz/WzCanvas.js';
 import { GameCamera } from '../map/GameCamera.js';
 import { FieldScene } from '../map/FieldScene.js';
 import { CharLook } from '../character/CharLook.js';

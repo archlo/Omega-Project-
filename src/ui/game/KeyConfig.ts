@@ -881,6 +881,9 @@ private _layoutButtons(): void {
     const id = action as number;
     if (id >= 0 && id < 30) return { type: FuncKeyType.Menu, id };
     if (id >= 50 && id <= 54) return { type: FuncKeyType.BasicAction, id };
+    // Emotion1..7 (55..61) live on the default map as Menu-type entries on
+    // the F1-F7 scancodes (59..65) — see DefIndex/DefId tails.
+    if (id >= 55 && id <= 61) return { type: FuncKeyType.Menu, id };
     return null;
   }
 

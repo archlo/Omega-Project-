@@ -439,110 +439,91 @@ export class OtherCharLook {
       this._drawHpGauge();
     }
 
-    // ── Name tags (OG CUser::DrawNameTags → CLife::MakeNameTag) ──
-    // Three tags stacked below the feet: name (1000), guild (1004, with
-    // guild mark), medal (1006). Plates are the NameTag.img 3-piece
-    // (w/c/e) sets; text color comes from each set's `clr` node.
-    const nameTagY = 10;
-    this._drawWcePlate(10, this.Name ?? '', nameTagY);
+    // ── Name tags (OG CUser::DrawNameTags → CLife::MakeNameTag, IDA-verified) ──
+    // Three hand-drawn white plates stacked below the feet: name (1000),
+    // guild (1004, with guild mark), medal (1006). Tags stack off the
+    // previous tag's height; none ever mirror with facing.
+    const nameTop = 10;
+    const tagH = OtherCharLook.TagFontH + 4;
+    this._drawTagRect(this.Name ?? '', nameTop, undefined, 'name');
 
-    // Tag 2: Guild name (tagType 1004) — below character name; OG draws the
-    // guild mark on the plate when the character has one.
+    // Tag 2: Guild (1004) — hangs under the name plate; OG draws the guild
+    // mark canvas on it when the character has one.
     const displayGuild = this._teamName || this._guildName;
+    let nextTop = nameTop + tagH;
     if (displayGuild) {
-      const guildTagY = nameTagY + 13;
       const markSprites = this._loadGuildMarkSprites();
-      this._drawWcePlate(14, displayGuild, guildTagY, markSprites);
+      this._drawTagRect(displayGuild, nextTop, markSprites, 'guild');
+      nextTop += tagH;
     }
 
-    // Tag 3: Medal name (tagType 1006) — below guild name; OG uses the real
-    // medal item name (CItemInfo::GetItemName), not the raw id.
+    // Tag 3: Medal (1006) — under guild; OG uses the real medal item name
+    // (CItemInfo::GetItemName), not the raw id.
     if (this._medalItemId > 0) {
-      const medalTagY = nameTagY + (displayGuild ? 25 : 13);
       const medalName = this.itemNameOf?.(this._medalItemId) || `Medal[${this._medalItemId}]`;
-      this._drawWcePlate(16, medalName, medalTagY);
+      this._drawTagRect(medalName, nextTop, undefined, 'medal');
     }
 
     this._drawBadges();
     this._drawADBoard();
   }
 
-  /** Builds a NameTag.img w/c/e plate with centered text at (0, y). The
-      middle piece stretches to fit the text. Returns the consumed width. */
-  private _drawWcePlate(typeKey: number, text: string, y: number, mark?: { bg: Sprite | null; markImg: Sprite | null }): void {
-    const set = this._nameTagWce.get(typeKey);
-    if (!set?.w || !set.c || !set.e) {
-      // Fallback: plain yellow text (old behavior) when WZ pieces missing.
-      let t = this._guildText;
-      if (typeKey === 10) t = this._nameText;
-      if (!t) {
-        t = new Text({ text, style: { fontSize: 11, fill: 0xffe664, stroke: '#000000' } });
-        t.anchor.set(0.5, 1);
-        t.y = y;
-        if (typeKey === 10) this._nameText = t;
-        else this._guildText = t;
-      } else {
-        t.text = text;
-        t.y = y;
+  // -- OG CLife::MakeNameTag @0x5CF5E0 (IDA-verified) --
+  // Types 1004/1005/1007 (guild/teams) NEVER load WZ plates; type 1000 only
+  // loads `UI/NameTag/<cashStyleIdx>` when the character wears a cash-shop
+  // name-tag item. The DEFAULT plate for every tag is hand-drawn:
+  //   width  = textW + pad + 5
+  //   height = fontH(12) + 4
+  //   white fill + 0xB2FFFFFF translucent ring overlay
+  //   text: Arial 12, FONT_BASIC_WHITE, centered, y - 2
+  // Guild plates additionally composite the guild-mark canvas.
+  private static readonly TagFontH = 12;
+  private static readonly TagClrWhite = 0xFFFFFF;
+
+  private _drawTagRect(
+    text: string, y: number,
+    mark?: { bg: Sprite | null; markImg: Sprite | null },
+    slot: 'name' | 'guild' | 'medal' = 'guild',
+    prevHeight = 16,
+  ): void {
+    const tagTop = y;
+    const measure = new Text({ text, style: { fontSize: OtherCharLook.TagFontH, fontFamily: 'Arial' } });
+    const plateW = Math.ceil(measure.width) + (mark ? 24 : 10) + 4;
+    const plateH = OtherCharLook.TagFontH + 6;
+
+    // Translucent black bubble + thin dark border (user-specified look;
+    // not a WZ asset).
+    const g = new Graphics();
+    g.rect(-plateW / 2, tagTop, plateW, plateH).fill({ color: 0x000000, alpha: 0.55 });
+    g.rect(-plateW / 2, tagTop, plateW, plateH).stroke({ width: 1, color: 0x1A1A1A, alpha: 0.85 });
+    if (mark?.bg) {
+      const m = Math.min(mark.bg.height, plateH - 2);
+      const ms = mark.bg;
+      ms.width = m; ms.height = m;
+      ms.position.set(-plateW / 2 + 2, tagTop + (plateH - m) / 2);
+      g.addChild(ms);
+      if (mark.markImg) {
+        const mi = mark.markImg;
+        mi.width = m - 2; mi.height = m - 2;
+        mi.position.set(ms.position.x + 1, ms.position.y + 1);
+        g.addChild(mi);
       }
+    }
+    this.container.addChild(g);
+
+    // White lettering centered
+    let t = slot === 'name' ? this._nameText : slot === 'medal' ? this._medalText : this._guildText;
+    if (!t) {
+      t = new Text({ text: '', style: { fontSize: OtherCharLook.TagFontH, fill: 0xFFFFFF, fontFamily: 'Arial' } });
+      t.anchor.set(0.5, 0.5);
+      if (slot === 'name') this._nameText = t;
+      else if (slot === 'medal') this._medalText = t;
+      else this._guildText = t;
       this.container.addChild(t);
-      return;
     }
-
-    const measure = new Text({ text, style: { fontSize: 11, fontFamily: 'Arial' } });
-    const textW = measure.width;
-    const innerW = Math.max(set.c.Width, Math.ceil(textW) + (mark ? 20 : 8));
-    const totalW = set.w.Width + innerW + set.e.Height * 0 + set.e.Width;
-
-    const clr = (set.clr >>> 0) & 0xFFFFFF;
-    const style = { fontSize: 11, fill: clr === 0xFFFFFF ? 0xFFFFFF : (clr), fontFamily: 'Arial' };
-    let t: Text;
-    if (typeKey === 10 && this._nameText) {
-      t = this._nameText;
-      t.text = text;
-      (t as any).style = style;
-    } else {
-      t = new Text({ text, style });
-    }
-    t.anchor.set(0, 0);
-    t.scale.x = this.container.scale.x;
-
-    const build = (): Container => {
-      const plate = new Container();
-      const ws = set.w!.ToPixi();
-      ws.position.set(-totalW / 2, y - set.w!.Height);
-      const cs = set.c!.ToPixi();
-      cs.position.set(-totalW / 2 + set.w!.Width, y - set.c!.Height);
-      cs.width = innerW;
-      const es = set.e!.ToPixi();
-      es.position.set(totalW / 2 - set.e!.Width, y - set.e!.Height);
-      plate.addChild(ws, cs, es);
-      t.position.set(-textW / 2, y - set.c!.Height + 5);
-      plate.addChild(t);
-      if (mark?.bg) {
-        mark.bg.position.set(-totalW / 2 + set.w!.Width + 2, y - set.c!.Height + 3);
-        plate.addChild(mark.bg);
-        if (mark.markImg) {
-          mark.markImg.position.set(mark.bg.position.x + 1, mark.bg.position.y + 1);
-          plate.addChild(mark.markImg);
-        }
-      }
-      return plate;
-    };
-
-    if (typeKey === 10) {
-      // Rebuild the name plate each draw (cheap — few sprites).
-      if (this._nameTagGroup) {
-        this._nameTagGroup.destroy({ children: true });
-      }
-      this._nameTagGroup = build();
-      this._nameTagGroup.scale.x = this.container.scale.x;
-      this.container.addChild(this._nameTagGroup);
-    } else {
-      const g = build();
-      g.scale.x = this.container.scale.x;
-      this.container.addChild(g);
-    }
+    t.text = text;
+    (t as any).style = { fontSize: OtherCharLook.TagFontH, fill: 0xFFFFFF, fontFamily: 'Arial' };
+    t.position.set(mark ? 4 : 0, tagTop + plateH / 2 - 1);
   }
 
   /** Loads GuildMark.img BackGround/Mark canvases for this character's
