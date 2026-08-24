@@ -1,11 +1,11 @@
-import { Container, Graphics, Text, TextStyle } from 'pixi.js';
+﻿import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import { WzSprite } from '../../render/WzSprite.js';
 import { WzTextureLoader } from '../../render/WzTextureLoader.js';
 import { WzProperty } from '../../wz/WzProperty.js';
 import { WzCanvas } from '../../wz/WzCanvas.js';
 import { TooltipAssets } from './TooltipAssets.js';
 
-// OG class: CUIToolTip (2632 bytes, standalone — no base class)
+// OG class: CUIToolTip (2632 bytes, standalone â€” no base class)
 // All coordinates, font types, and layout from IDA decompilation.
 
 // OG: CLineInfo structure (36 bytes per entry, 32+32 entries)
@@ -21,10 +21,10 @@ interface LineInfo {
   useDotImage: boolean;
 }
 
-// OG: Font type mapping (GetFontByType @ 0x881d40) — verified from the IDB switch.
+// OG: Font type mapping (GetFontByType @ 0x881d40) â€” verified from the IDB switch.
 // NOTE: the switch has 25 reachable cases and SKIPS HL_Green / Gen_Gold (those
 // members are created in the ctor but never returned by GetFontByType). The IDs
-// here match the switch EXACTLY — an off-by-one here miscolors every tooltip.
+// here match the switch EXACTLY â€” an off-by-one here miscolors every tooltip.
 const FONT_TYPES = {
   HL_WHITE: 1,
   HL_GOLD: 2,
@@ -53,8 +53,8 @@ const FONT_TYPES = {
   SKILL_DSC: 25,
 } as const;
 
-// OG: Font colors from constructor @0x8839c0 — verified via IWzFont::Create
-// color args (0xAARRGGBB → RGB only here; alpha is always 0xFF).
+// OG: Font colors from constructor @0x8839c0 â€” verified via IWzFont::Create
+// color args (0xAARRGGBB â†’ RGB only here; alpha is always 0xFF).
 const FONT_COLORS: Record<number, number> = {
   [FONT_TYPES.HL_WHITE]: 0xFFFFFF,
   [FONT_TYPES.HL_GOLD]: 0xFDF514,
@@ -83,7 +83,7 @@ const FONT_COLORS: Record<number, number> = {
   [FONT_TYPES.SKILL_DSC]: 0xFFFFFF,
 };
 
-// OG: Font sizes from constructor @0x8839c0 — size arg of each IWzFont::Create.
+// OG: Font sizes from constructor @0x8839c0 â€” size arg of each IWzFont::Create.
 const FONT_SIZES: Record<number, number> = {
   [FONT_TYPES.HL_WHITE]: 12,
   [FONT_TYPES.HL_GOLD]: 12,
@@ -131,7 +131,7 @@ const ITEM_ICON_BG_COLOR = 0xA0000000;
 // OG: Default padding
 const PADDING = 4;
 
-// OG: MakeLayer background color (ARGB) — 0xCC0E395A = alpha 0xCC (0.8), RGB 0x0E395A
+// OG: MakeLayer background color (ARGB) â€” 0xCC0E395A = alpha 0xCC (0.8), RGB 0x0E395A
 const MAKE_LAYER_BG = 0xCC0E395A;
 const MAKE_LAYER_BG_RGB = MAKE_LAYER_BG & 0xFFFFFF;      // 0x0E395A
 const MAKE_LAYER_BG_ALPHA = (MAKE_LAYER_BG >>> 24) / 255; // 0xCC / 255 = 0.8
@@ -212,7 +212,7 @@ export class ToolTip {
     this._lineSeparated = lineSeparate;
   }
 
-  // OG: MakeLayer @ 0x8814b0 — creates positioned tooltip layer
+  // OG: MakeLayer @ 0x8814b0 â€” creates positioned tooltip layer
   makeLayer(left: number, top: number, doubleOutline: boolean, color: number = 0): void {
     this._lastX = left;
     this._lastY = top;
@@ -224,20 +224,34 @@ export class ToolTip {
     this._container.visible = true;
   }
 
-  // OG: InitCanvas @ 0x880960 — uses ARGB color param (default MAKE_LAYER_BG)
-  // Background only, no border/stroke (transparent border per OG)
   private _initCanvas(doubleOutline: boolean, color: number): void {
     this._bg.clear();
 
+    // OG: InitCanvas @0x880960 - fill ARGB uColor (callers pass 0xCC0E395A),
+    // white 1x1 pixel at each corner, and when bDoubleOutline a white 1px
+    // inner frame: left(1,2,1,h-4) right(w-2,2,1,h-4) top(2,1,w-4,1) bottom(2,h-2,w-4,1).
     const argb = color || MAKE_LAYER_BG;
     const rgb = argb & 0xFFFFFF;
     const alpha = (argb >>> 24) / 255;
+    const w = this._width;
+    const h = this._height;
 
-    // Fill background with correct ARGB — no corner pixels, no outline, no stroke
-    this._bg.rect(0, 0, this._width, this._height).fill({ color: rgb, alpha });
+    this._bg.rect(0, 0, w, h).fill({ color: rgb, alpha });
+
+    this._bg.rect(0, 0, 1, 1).fill({ color: 0xFFFFFF });
+    this._bg.rect(w - 1, 0, 1, 1).fill({ color: 0xFFFFFF });
+    this._bg.rect(0, h - 1, 1, 1).fill({ color: 0xFFFFFF });
+    this._bg.rect(w - 1, h - 1, 1, 1).fill({ color: 0xFFFFFF });
+
+    if (doubleOutline && w > 4 && h > 4) {
+      this._bg.rect(1, 2, 1, h - 4).fill({ color: 0xFFFFFF });
+      this._bg.rect(w - 2, 2, 1, h - 4).fill({ color: 0xFFFFFF });
+      this._bg.rect(2, 1, w - 4, 1).fill({ color: 0xFFFFFF });
+      this._bg.rect(2, h - 2, w - 4, 1).fill({ color: 0xFFFFFF });
+    }
   }
 
-  // OG: GetFontByType @ 0x881d40 — maps type ID to font
+  // OG: GetFontByType @ 0x881d40 â€” maps type ID to font
   getFontByType(type: number): TextStyle {
     return this._fonts.get(type) ?? this._fonts.get(FONT_TYPES.GEN_WHITE)!;
   }
@@ -250,7 +264,7 @@ export class ToolTip {
     return FONT_SIZES[type] ?? 11;
   }
 
-  // OG: SetToolTip_String @ 0x887140 — simple string tooltip
+  // OG: SetToolTip_String @ 0x887140 â€” simple string tooltip
   setToolTipString(x: number, y: number, text: string): void {
     const font = this.getFontByType(FONT_TYPES.GEN_WHITE);
     const textWidth = this._measureText(text, font);
@@ -263,7 +277,7 @@ export class ToolTip {
     this.drawTextLeft(PADDING, text, font);
   }
 
-  // OG: SetToolTip_String2 @ 0x8953B0 — title + word-wrapped desc tooltip.
+  // OG: SetToolTip_String2 @ 0x8953B0 â€” title + word-wrapped desc tooltip.
   // Title centered in font type 1 (HL_WHITE); desc word-wrapped below in font
   // type 10 (HL_SPECIAL). Width defaults to 270 (or 135 for object tooltips).
   setToolTipString2(x: number, y: number, title: string, desc: string, bObjectToolTip = 0, maxW = 0): void {
@@ -343,7 +357,7 @@ export class ToolTip {
     this._texts.push(t);
   }
 
-  // OG: DrawTextItemName @ 0x88ca40 — draw item name with dot prefix
+  // OG: DrawTextItemName @ 0x88ca40 â€” draw item name with dot prefix
   drawTextItemName(y: number, text: string, font: TextStyle): void {
     const dot = new Graphics();
     dot.circle(PADDING + 3, y + 5, 2).fill({ color: 0xFFFFFF });
@@ -356,14 +370,14 @@ export class ToolTip {
     this._texts.push(t);
   }
 
-  // OG: DrawItemIcon @ 0x882050 — draw 68x68 item icon with bg
+  // OG: DrawItemIcon @ 0x882050 â€” draw 68x68 item icon with bg
   drawItemIcon(x: number, y: number): void {
     const bg = new Graphics();
     bg.rect(x, y, ITEM_ICON_SIZE, ITEM_ICON_SIZE).fill({ color: ITEM_ICON_BG_COLOR });
     this._container.addChild(bg);
   }
 
-  // OG: DrawCanvasIcon @ 0x882200 — blit WZ canvas at position with alpha
+  // OG: DrawCanvasIcon @ 0x882200 â€” blit WZ canvas at position with alpha
   drawCanvasIcon(x: number, y: number, wzSprite: WzSprite | null): void {
     if (!wzSprite) return;
     const sprite = wzSprite.NewSprite();
@@ -372,7 +386,7 @@ export class ToolTip {
     this._container.addChild(sprite);
   }
 
-  // OG: AddInfo @ 0x89e620 — add info line
+  // OG: AddInfo @ 0x89e620 â€” add info line
   addInfo(text: string, type: number = FONT_TYPES.GEN_WHITE, align: number = 0, fontType?: number): void {
     if (this._lineNo >= 32) return;
     const useType = fontType ?? type;
@@ -390,7 +404,7 @@ export class ToolTip {
     this._lineNo++;
   }
 
-  // OG: AddInfoEx @ 0x88bac0 — add info with extra context
+  // OG: AddInfoEx @ 0x88bac0 â€” add info with extra context
   addInfoEx(mainType: number, subType: number, mainText: string, subText: string, align: number = 0, fontOverride?: number): void {
     if (this._lineNo >= 32) return;
     const useType = fontOverride ?? mainType;
@@ -408,7 +422,7 @@ export class ToolTip {
     this._lineNo++;
   }
 
-  // OG: AddOptionInfo @ 0x88bda0 — add option line with sub-type
+  // OG: AddOptionInfo @ 0x88bda0 â€” add option line with sub-type
   addOptionInfo(type: number, text: string, subType: number): void {
     if (this._optionLineNo >= 32) return;
     this._optionLines[this._optionLineNo] = {
@@ -425,7 +439,7 @@ export class ToolTip {
     this._optionLineNo++;
   }
 
-  // OG: DrawInfo @ 0x89e8b0 — draw all info lines
+  // OG: DrawInfo @ 0x89e8b0 â€” draw all info lines
   drawInfo(startY: number = PADDING): void {
     let y = startY;
 
@@ -504,7 +518,7 @@ export class ToolTip {
     }
   }
 
-  // OG: DrawTextSepartedLine @ 0x894a40 — word-wrap multi-line text, returns rendered height
+  // OG: DrawTextSepartedLine @ 0x894a40 â€” word-wrap multi-line text, returns rendered height
   drawTextSepartedLine(x1: number, x2: number, y: number, text: string, fontType: number, maxH: number = 9999): number {
     if (!text || this._lineSeparated < 0) return 0;
 
@@ -550,7 +564,7 @@ export class ToolTip {
     return lineCount * 14;
   }
 
-  // OG: DrawItemTitle @ 0x88ccb0 — two-part centered title (name + desc)
+  // OG: DrawItemTitle @ 0x88ccb0 â€” two-part centered title (name + desc)
   // Equip branch: name (GetFontByType(3)) drawn first at (w - titleW - descW)/2,
   // desc (StringPool 0xC35, GetFontByType(1)) right after it.
   // Non-equip branch: desc (StringPool 0xC36, GetFontByType(10)) first, name
@@ -597,7 +611,7 @@ export class ToolTip {
     return 14;
   }
 
-  // OG: DrawTextEquip_Req @ 0x88d710 — equip requirement row with Can/Cannot label
+  // OG: DrawTextEquip_Req @ 0x88d710 â€” equip requirement row with Can/Cannot label
   drawTextEquipReq(x: number, y: number, label: string, value: number, met: boolean, fontType: number = FONT_TYPES.STAN_PRP): number {
     if (value <= 0) return 0;
 
@@ -626,7 +640,7 @@ export class ToolTip {
     return 12; // row height
   }
 
-  // OG: DrawTextEquip_Req_Level @ 0x88dab0 — level requirement row
+  // OG: DrawTextEquip_Req_Level @ 0x88dab0 â€” level requirement row
   drawTextEquipReqLevel(x: number, y: number, level: number, met: boolean): number {
     if (level <= 0) return 0;
 
@@ -649,7 +663,7 @@ export class ToolTip {
     return 12;
   }
 
-  // OG: PrintValue @ 0x891230 — stat value with type-based formatting
+  // OG: PrintValue @ 0x891230 â€” stat value with type-based formatting
   // type 0: +value (StringPool 6028/6029)
   // type 1: value (plain signed)
   // type 2: value% (percentage)
@@ -684,7 +698,7 @@ export class ToolTip {
     return 12;
   }
 
-  // OG: DrawItemReqJob @ 0x880fc0 — job requirement strip (6 job icons)
+  // OG: DrawItemReqJob @ 0x880fc0 â€” job requirement strip (6 job icons)
   drawItemReqJob(x: number, y: number, jobId: number): number {
     const jobNames = ['beginner', 'warrior', 'magician', 'bowman', 'thief', 'pirate'];
     const jobX = [10, 52, 92, 132, 171, 197];
@@ -706,7 +720,7 @@ export class ToolTip {
     return drawn ? 16 : 0;
   }
 
-  // OG: DrawReqSkill @ 0x88b320 — required skills display
+  // OG: DrawReqSkill @ 0x88b320 â€” required skills display
   // Draws skill icon (34x34 bg + icon), skill name (font type 25), required level (StringPool 0x801)
   // Each skill row is 34px tall, starting at y offset from bottom
   drawReqSkill(x: number, y: number, skills: Array<{ name: string; level: number; icon?: any }>): number {
@@ -730,7 +744,7 @@ export class ToolTip {
       bg.rect(x, y, 34, 34).fill({ color: 0x000000, alpha: 0.5 });
       this._container.addChild(bg);
 
-      // OG: Skill icon at (x+11-cx, y) — centered horizontally
+      // OG: Skill icon at (x+11-cx, y) â€” centered horizontally
       if (skill.icon) {
         const iconSprite = skill.icon.ToPixi?.() ?? skill.icon;
         if (iconSprite) {
@@ -760,7 +774,7 @@ export class ToolTip {
     return y - (skills.length * 34 + 14); // return height of skill section
   }
 
-  // OG: DrawOptionInfo @ 0x88bf80 — draw all option lines
+  // OG: DrawOptionInfo @ 0x88bf80 â€” draw all option lines
   drawOptionInfo(): number {
     let y = this._height;
     for (let i = 0; i < this._optionLineNo; i++) {
@@ -784,7 +798,7 @@ export class ToolTip {
     return y - this._height;
   }
 
-  // OG: DrawDiscount_Info @ 0x88dec0 — discount price display
+  // OG: DrawDiscount_Info @ 0x88dec0 â€” discount price display
   drawDiscountInfo(y: number, originalPrice: number, currentPrice: number): number {
     if (originalPrice <= 0 || originalPrice === currentPrice) return 0;
 
@@ -800,7 +814,7 @@ export class ToolTip {
     return 16;
   }
 
-  // OG: DrawLimitInfo @ 0x888be0 — limited goods info
+  // OG: DrawLimitInfo @ 0x888be0 â€” limited goods info
   drawLimitInfo(y: number, limitTexts: string[]): number {
     if (limitTexts.length === 0) return 0;
 
@@ -833,7 +847,7 @@ export class ToolTip {
     return 16;
   }
 
-  // OG: DrawDiscount_Rate @ 0x889d80 — discount rate display with digit sprites
+  // OG: DrawDiscount_Rate @ 0x889d80 â€” discount rate display with digit sprites
   // Loads WZ discount number images (0-9) from StringPool 0xB74 (2932)
   // Renders: [start_bracket][hundreds][tens][ones][end_bracket]
   // Discount rate = 100 * (original - discount) / original
@@ -905,11 +919,11 @@ export class ToolTip {
     return 16;
   }
 
-  // OG: GetItemName @ 0x8899b0 — resolve equip item display name + font type.
+  // OG: GetItemName @ 0x8899b0 â€” resolve equip item display name + font type.
   // gender prefix (StringPool 0x3C2/0x3C3) is appended for gender-locked equips;
   // protected items use a bolded name (lType 3); CalcEquipItemQuality overrides
-  // the color lType: -1→4(HL_GRAY), 1→5(HL_BLUE), 2→6(HL_VIOLET), 3→2(HL_GOLD),
-  // 4→8(HL_GREEN2), 5→9(HL_EXCELLENT). IDs match GetFontByType @0x881D40.
+  // the color lType: -1â†’4(HL_GRAY), 1â†’5(HL_BLUE), 2â†’6(HL_VIOLET), 3â†’2(HL_GOLD),
+  // 4â†’8(HL_GREEN2), 5â†’9(HL_EXCELLENT). IDs match GetFontByType @0x881D40.
   // The StringPool format strings (0x828/0x829/0x1A19/0x1A1A) are the name +
   // gender/protect decorations; the caller already resolved the base name, so
   // this returns the resolved name + the lType used to color DrawItemTitle.
@@ -931,7 +945,7 @@ export class ToolTip {
     return { name: decorated, lType };
   }
 
-  /** OG: get_gender_from_id @ 0x46f6d0 — gender lock from item id.
+  /** OG: get_gender_from_id @ 0x46f6d0 â€” gender lock from item id.
    *  Returns 0 = male-only, 1 = female-only, 2 = unisex. */
   static getGenderFromId(itemId: number): number {
     if (Math.floor(itemId / 1_000_000) !== 1) return 2;
@@ -942,7 +956,7 @@ export class ToolTip {
     }
   }
 
-  // OG: GetItemExpireDate @ 0x889310 — format expiry date
+  // OG: GetItemExpireDate @ 0x889310 â€” format expiry date
   getItemExpireDate(ft: { low: number; high: number } | null): string {
     if (!ft || (ft.low === 0 && ft.high === 0)) return '';
 
@@ -954,7 +968,7 @@ export class ToolTip {
     return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
   }
 
-  // OG: DrawITCSaleInfo @ 0x88e6a0 — ITC sale period remaining until the expiry
+  // OG: DrawITCSaleInfo @ 0x88e6a0 â€” ITC sale period remaining until the expiry
   // date. The client subtracts "now" from ftITCExpiredDate (0x861C46800 = 1 day
   // in 100ns units, 0x23C34600 = 1 hour) and formats StringPool 4774 with the
   // whole-day and remainder-hour counts, e.g. "%d days %d hours".
@@ -973,7 +987,7 @@ export class ToolTip {
     return 'Expiring soon';
   }
 
-  // OG: SetToolTip_SetItem_Basic @ 0x8a14b0 — set item tier data population
+  // OG: SetToolTip_SetItem_Basic @ 0x8a14b0 â€” set item tier data population
   // Iterates 60 tiers, calls AddInfo for each stat with font type 10 (equipped) or 12 (unequipped)
   // StringPool IDs: 6753=STR, 6705=DEX, 6722=INT, 6730=LUK, 6719=MaxHP, 6733=MaxMP,
   // 674=PAD, 675=MAD, 676=PDD, 677=MDD, 678=ACC, 679=EVA, 680=Craft, 681=Speed, 682=Jump, 684=Knockback
@@ -1050,7 +1064,7 @@ export class ToolTip {
     return this._lineNo;
   }
 
-  // OG: SetToolTip_ItemOption @ 0x891c80 — item option/potential display
+  // OG: SetToolTip_ItemOption @ 0x891c80 â€” item option/potential display
   // Large switch on option ID, maps to stat fields + StringPool format strings
   // Duration options (901-905) use StringPool 5822-5826 with nProb + nTime
   setToolTipItemOption(
@@ -1138,7 +1152,7 @@ export class ToolTip {
     }
   }
 
-  // OG: MakePreviewPetNameTag @ 0x8873b0 — pet name tag preview
+  // OG: MakePreviewPetNameTag @ 0x8873b0 â€” pet name tag preview
   // StringPool 0x542 (1346): path format for pet template "Pet/%d.img/info"
   // StringPool 1444: left canvas key, 1445: right canvas key, 1443: center tile key
   // StringPool 1454: font size key, 1455: font face name key
@@ -1165,9 +1179,9 @@ export class ToolTip {
     }
 
     // OG: Get 3 canvas images from property using StringPool keys
-    // StringPool 1444 → left canvas (w)
-    // StringPool 1445 → right canvas (c)
-    // StringPool 1443 → center tile canvas (e)
+    // StringPool 1444 â†’ left canvas (w)
+    // StringPool 1445 â†’ right canvas (c)
+    // StringPool 1443 â†’ center tile canvas (e)
     const leftNode = prop.Get('1444') ?? prop.Get('left');
     const rightNode = prop.Get('1445') ?? prop.Get('right');
     const centerNode = prop.Get('1443') ?? prop.Get('center');
@@ -1236,7 +1250,7 @@ export class ToolTip {
     return centerH;
   }
 
-  // OG: GetPetDeadDate @ 0x889540 — check pet death/expiry status
+  // OG: GetPetDeadDate @ 0x889540 â€” check pet death/expiry status
   // Reads 'life' property from CItemInfo::GetItemInfo via StringPool 0x781 (1921)
   // Uses _ZtlSecureFuse for secure stat reading
   // StringPool 693="Lv.%d", 694="%dh %dm remaining", 695=dead text, 696="%d/%d/%d %d:00"
@@ -1286,14 +1300,14 @@ export class ToolTip {
         const lv = typeof lvProp === 'number' ? lvProp : 0;
         return { dead: false, deathStr: `Lv.${lv}`, remainLife: 0 };
       } else {
-        // OG: StringPool 1919 — permanent death text
+        // OG: StringPool 1919 â€” permanent death text
         return { dead: true, deathStr: 'This pet has permanently died.', remainLife: 0 };
       }
     }
 
     // !bShowLife path
     if (petData.isDead) {
-      // OG: StringPool 695 — dead text
+      // OG: StringPool 695 â€” dead text
       return { dead: true, deathStr: 'This pet is dead.', remainLife: 0 };
     }
 
@@ -1302,7 +1316,7 @@ export class ToolTip {
     const deadVal = typeof deadProp === 'number' ? deadProp : 0;
 
     if (deadVal !== 0) {
-      // OG: StringPool 1919 — permanent death text
+      // OG: StringPool 1919 â€” permanent death text
       return { dead: true, deathStr: 'This pet has permanently died.', remainLife: 0 };
     }
 
@@ -1311,7 +1325,7 @@ export class ToolTip {
       const ms = (dateDead!.high * 0x100000000 + dateDead!.low) / 10000 - 11644473600000;
       const d = new Date(ms);
       if (!isNaN(d.getTime())) {
-        // OG: StringPool 696 format — month/day/year hour:00
+        // OG: StringPool 696 format â€” month/day/year hour:00
         return {
           dead: false,
           deathStr: `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()} ${d.getHours()}:00`,
@@ -1323,7 +1337,7 @@ export class ToolTip {
     return { dead: false, deathStr: '', remainLife: 0 };
   }
 
-  // OG: MakingLimitInfo @ 0x888370 — build limit info strings from CS_LIMITGOODS
+  // OG: MakingLimitInfo @ 0x888370 â€” build limit info strings from CS_LIMITGOODS
   // Parses dwConditionFlag for date range (flag 2), weekday schedule (flag 4),
   // hour range (flag 8), stock count (flag 1)
   makingLimitInfo(goodsInfo: {
@@ -1386,7 +1400,7 @@ export class ToolTip {
       // StringPool 0xEA4 format
       result.push(`Remaining: ${goodsInfo.nRemainCount ?? 0}`);
     } else {
-      // StringPool 0xEA5 — unlimited
+      // StringPool 0xEA5 â€” unlimited
       result.push(`Stock: ${goodsInfo.nOriginCount ?? 0}`);
     }
 
@@ -1400,7 +1414,7 @@ export class ToolTip {
     return result;
   }
 
-  // OG: ShowItemToolTip @ 0x8a9300 — master dispatcher
+  // OG: ShowItemToolTip @ 0x8a9300 â€” master dispatcher
   // Routes to SetToolTip_Equip (type 4), SetToolTip_Bundle (type 5), SetToolTip_Pet (type 6)
   // Extracts nPeriod, sDonator, nOriginalPrice, nPrice from ItemToolTipParam/CS_COMMODITY
   showItemToolTip(
@@ -1442,13 +1456,13 @@ export class ToolTip {
     const sOrderComment = params?.sOrderComment ?? '';
 
     if (itemType === TOOLTIP_TYPE.EQUIP) {
-      // OG: SetToolTip_Equip — equip tooltip (handled by ItemTooltip._drawEquip)
+      // OG: SetToolTip_Equip â€” equip tooltip (handled by ItemTooltip._drawEquip)
       this.setBasicInfo(TOOLTIP_TYPE.EQUIP, 236, 200, 0);
     } else if (itemType === TOOLTIP_TYPE.BUNDLE) {
-      // OG: SetToolTip_Bundle — consumable/bundle tooltip
+      // OG: SetToolTip_Bundle â€” consumable/bundle tooltip
       this.setBasicInfo(TOOLTIP_TYPE.BUNDLE, 290, 200, 0);
     } else if (itemType === TOOLTIP_TYPE.PET) {
-      // OG: SetToolTip_Pet — pet tooltip
+      // OG: SetToolTip_Pet â€” pet tooltip
       this.setBasicInfo(TOOLTIP_TYPE.PET, 290, 200, 0);
     } else {
       // OG: Normal tooltip fallback
@@ -1498,7 +1512,7 @@ export class ToolTip {
     return FONT_SIZES[type] ?? 11;
   }
 
-  // OG: DrawITCSaleInfo @ 0x88e6a0 — ITC (Item Trading Center) sale information display
+  // OG: DrawITCSaleInfo @ 0x88e6a0 â€” ITC (Item Trading Center) sale information display
   // Renders: divider line, "ITC Sale" header, order comment, ITC price, expiry date, stock info
   // StringPool: 0x12D5="ITC Sale", 4784=format for item count
   // eITCToolTip enum: 0=normal, 1=extended, 2=package
@@ -1579,7 +1593,26 @@ export class ToolTip {
   }
 
   private _measureText(text: string, font: TextStyle): number {
-    return text.length * 7; // rough estimate for monospace font
+    // OG uses IWzFont::CalcTextWidth. Use real canvas metrics when a DOM canvas
+    // is available (browser + shimmed tests); fall back to the 7px/char estimate.
+    const ctx = ToolTip._measureCtx();
+    if (ctx) {
+      ctx.font = `${font.fontWeight} ${font.fontSize}px ${font.fontFamily}`;
+      return Math.ceil(ctx.measureText(text).width);
+    }
+    return text.length * 7;
+  }
+
+  private static _canvasCtx: CanvasRenderingContext2D | null | undefined;
+  private static _measureCtx(): CanvasRenderingContext2D | null {
+    if (ToolTip._canvasCtx !== undefined) return ToolTip._canvasCtx;
+    try {
+      const c = document.createElement('canvas');
+      ToolTip._canvasCtx = c.getContext('2d');
+    } catch {
+      ToolTip._canvasCtx = null;
+    }
+    return ToolTip._canvasCtx;
   }
 
   private _emptyLine(): LineInfo {
@@ -1592,10 +1625,11 @@ export class ToolTip {
       const t = parseInt(type);
       const size = FONT_SIZES[t] ?? 11;
       const bold = t <= FONT_TYPES.HL_SPECIAL || t === FONT_TYPES.H_WHITE;
+      // OG face = StringPool 6693 (Arial) for HL/Gen/H fonts; SP 8 for STAN/SKILL.
       this._fonts.set(t, new TextStyle({
         fill: `#${color.toString(16).padStart(6, '0')}`,
         fontSize: size,
-        fontFamily: 'monospace',
+        fontFamily: 'Arial',
         fontWeight: bold ? 'bold' : 'normal',
       }));
     }

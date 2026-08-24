@@ -49,6 +49,15 @@ interface WorldMapSpot {
   desc: string;
   path: WzSprite | null;
   mapNo: number[];
+  // OG SetToolTip_WorldMap data — populated by GameStage from live field data
+  streetName?: string;
+  mapName?: string;
+  mapDesc?: string;
+  mobs?: Array<{ name: string; level: number }>;
+  npcs?: string[];
+  users?: string[];
+  questName?: string;   // quest-in-progress row (state 1)
+  questExtra?: string;  // secondary conditional row
 }
 
 /** A link to a sub-map (WMLink). */
@@ -81,6 +90,12 @@ export class WorldMap extends GamePanel {
   private _selectedSpotTT = -1; // m_nSelectedWMI_TT (tooltip only)
   private _selectedLink = -1;   // m_nSelectedLink
   private _questToggle = false;
+  /** npcPos0-3 animated quest markers from MapHelper.img/worldMap/npcPos<n>. */
+  private _npcPosFrames: WzSprite[][] = [[], [], [], []];
+  /** GameStage wires this: given a spot's mapNo list, returns the highest-priority
+   *  quest marker state (0=none, 1=available, 2=in-progress, 3=completed). */
+  questStateOfSpot: ((mapNo: number[]) => number) | null = null;
+  private _animClockMs = 0;
 
   // Map transfer list (from OpenMapTransfer)
   private _transferMapIds: number[] = [];
@@ -230,6 +245,21 @@ export class WorldMap extends GamePanel {
     for (let t = 0; t < 4; t++) {
       const node = this._mapWz.GetItem(`MapHelper.img/worldMap/mapImage/${t}`);
       if (node instanceof WzCanvas) this._markers[t] = this._loader.Load(node);
+    }
+    // OG: npcPos0-3 animated quest markers (7 frames each)
+    for (let t = 0; t < 4; t++) {
+      const frames: WzSprite[] = [];
+      const root = this._mapWz.GetItem(`MapHelper.img/worldMap/npcPos${t}`);
+      if (root instanceof WzProperty) {
+        for (let i = 0; i < 7; i++) {
+          const c = root.Get(String(i));
+          if (c instanceof WzCanvas) {
+            const s = this._loader!.Load(c);
+            if (s) frames.push(s);
+          }
+        }
+      }
+      this._npcPosFrames[t] = frames;
     }
   }
 
@@ -539,8 +569,9 @@ export class WorldMap extends GamePanel {
 
   // ── Drawing (OG: Draw 0x9BA060) ─────────────────────────────────────
 
-  update(_dt: number): void {
+  update(dt: number): void {
     if (!this.isVisible) return;
+    this._animClockMs += dt * 1000;
     this.draw();
   }
 
@@ -583,6 +614,23 @@ export class WorldMap extends GamePanel {
       s.x = spot.nX + BASE_X;
       s.y = spot.nY + BASE_Y;
       this._content.addChild(s);
+    }
+
+    // 3b. Quest markers — npcPos animated overlays when the quest toggle is on.
+    // State: 1=available(npcPos0), 2=in-progress(npcPos1), 3=completed(npcPos2).
+    if (this._questToggle && this.questStateOfSpot) {
+      const frameIdx = Math.floor(this._animClockMs / 500) % 7;
+      for (const spot of this._spots) {
+        const state = this.questStateOfSpot(spot.mapNo);
+        if (state <= 0 || state > 3) continue;
+        const frames = this._npcPosFrames[state - 1];
+        if (frames.length === 0) continue;
+        const s = frames[Math.min(frameIdx, frames.length - 1)].NewSprite();
+        s.anchor.set(0.5, 0.5);
+        s.x = spot.nX + BASE_X;
+        s.y = spot.nY + BASE_Y;
+        this._content.addChild(s);
+      }
     }
 
     // 4. Tail — selected link image, origin-anchored at the base origin
@@ -667,12 +715,24 @@ export class WorldMap extends GamePanel {
    * OG: CWorldMapDlg::OnMouseMove (0x9BAE40) — calls CheckSpotInfo +
    * CheckLinkInfo, then shows tooltip for the hovered spot or link.
    */
+  private _wmTip: Container | null = null;
+  private _wmTipX = -1;
+  private _wmTipY = -1;
+
   private _updateToolTip(rx: number, ry: number): void {
-    // Spot tooltip
+    // World-map spot tooltip (OG SetToolTip_WorldMap @0x896980)
     if (this._selectedSpotTT >= 0) {
       const spot = this._spots[this._selectedSpotTT];
-      if (spot && !spot.bNoToolTip && (spot.title || spot.desc)) {
-        this._toolTip.setToolTipString2(rx, ry + 20, spot.title, spot.desc);
+      if (spot && !spot.bNoToolTip) {
+        if (this._wmTipX !== rx || this._wmTipY !== ry) {
+          this._buildWorldMapToolTip(spot);
+          this._wmTipX = rx;
+          this._wmTipY = ry;
+        }
+        if (this._wmTip) {
+          this._wmTip.position.set(rx + 20, ry + 20);
+          this._content.addChild(this._wmTip);
+        }
         return;
       }
     }
@@ -681,10 +741,196 @@ export class WorldMap extends GamePanel {
       const link = this._links[this._selectedLink];
       if (link?.toolTip) {
         this._toolTip.setToolTipString2(rx, ry + 20, link.toolTip, '');
+        this._content.addChild(this._toolTip.container);
         return;
       }
     }
     this._toolTip.clearToolTip();
+    this._destroyWmTip();
+  }
+
+  private _destroyWmTip(): void {
+    if (this._wmTip) { this._wmTip.destroy({ children: true }); this._wmTip = null; }
+    this._wmTipX = -1;
+    this._wmTipY = -1;
+  }
+
+  /** OG SetToolTip_WorldMap @0x896980 — rich spot tooltip with title, desc,
+   *  quest state, mob list (name+level), NPC list, and user list. */
+  private _buildWorldMapToolTip(spot: WorldMapSpot): void {
+    this._destroyWmTip();
+    const tip = new Container();
+
+    const titleFont = { fontSize: 12, fill: 0xFFFFFF, fontFamily: 'Arial', fontWeight: 'bold' as const };
+    const descStyle = { fontSize: 10, fill: 0xC8C8C8, fontFamily: 'Arial', wordWrap: true, wordWrapWidth: 230 };
+    const rowFont = { fontSize: 10, fill: 0xFFFFFF, fontFamily: 'Arial' };
+    const questFont = { fontSize: 10, fill: 0xFFFF99, fontFamily: 'Arial' };
+    const sectionIconFont = { fontSize: 9, fill: 0xA0A0A0, fontFamily: 'Arial' };
+
+    // Title: OG SP 1837 Format(sStreetName, sMapName) or sStreetName alone
+    let titleText = spot.streetName || spot.title || '';
+    if (spot.mapName) {
+      titleText = spot.streetName ? `${spot.streetName} - ${spot.mapName}` : spot.mapName;
+    }
+
+    const desc = spot.desc ?? '';
+    const mobs = spot.mobs ?? [];
+    const npcs = spot.npcs ?? [];
+    const users = spot.users ?? [];
+    const questName = spot.questName ?? '';
+
+    // Measure width
+    const titleMeasure = new Text({ text: titleText, style: titleFont });
+    const baseWidth = desc ? 250 : 180;
+    let tipWidth = Math.max(baseWidth, Math.ceil(titleMeasure.width) + 20);
+    for (const m of mobs) {
+      const mw = new Text({ text: `${m.name} (Lv.${m.level})`, style: rowFont });
+      tipWidth = Math.max(tipWidth, mw.width + 35);
+    }
+    for (const n of npcs) {
+      const nw = new Text({ text: n, style: rowFont });
+      tipWidth = Math.max(tipWidth, nw.width + 35);
+    }
+    for (const u of users) {
+      const uw = new Text({ text: u, style: rowFont });
+      tipWidth = Math.max(tipWidth, uw.width + 35);
+    }
+    tipWidth = Math.min(Math.max(tipWidth, 140), 320);
+
+    // Build rows
+    const rows: Array<{ y: number; node: Container | Text; height: number }> = [];
+    let cy = 6;
+
+    // Title
+    const titleT = new Text({ text: titleText, style: titleFont });
+    titleT.x = (tipWidth - titleT.width) / 2;
+    titleT.y = cy;
+    rows.push({ y: cy, node: titleT, height: titleT.height + 4 });
+    cy += titleT.height + 4;
+
+    // Description (word-wrapped)
+    if (desc) {
+      const lines = this._wrapDesc(desc, tipWidth - 20);
+      for (const line of lines) {
+        const dt = new Text({ text: line, style: descStyle });
+        dt.x = 10;
+        dt.y = cy;
+        rows.push({ y: cy, node: dt, height: dt.height });
+        cy += dt.height;
+      }
+      cy += 6;
+    }
+
+    // Divider
+    const divider = new Graphics();
+    divider.rect(4, cy, tipWidth - 8, 1).fill({ color: 0x3C4164, alpha: 0.7 });
+    rows.push({ y: cy, node: divider, height: 1 });
+    cy += 5;
+
+    // Quest-in-progress row
+    if (questName) {
+      const qt = new Text({ text: `▶ ${questName}`, style: questFont });
+      qt.x = 25;
+      qt.y = cy;
+      rows.push({ y: cy, node: qt, height: qt.height + 4 });
+      cy += qt.height + 6;
+    }
+
+    // Mob section header + rows
+    if (mobs.length > 0) {
+      const mh = new Text({ text: 'Monsters', style: sectionIconFont });
+      mh.x = 10;
+      mh.y = cy;
+      rows.push({ y: cy, node: mh, height: mh.height + 2 });
+      cy += mh.height + 2;
+      for (const m of mobs) {
+        const mt = new Text({ text: `${m.name} (Lv.${m.level})`, style: { fontSize: 10, fill: 0xD0D0D0, fontFamily: 'Arial' } });
+        mt.x = 25;
+        mt.y = cy;
+        rows.push({ y: cy, node: mt, height: mt.height + 2 });
+        cy += mt.height + 2;
+      }
+      cy += 4;
+    }
+
+    // NPC section header + rows
+    if (npcs.length > 0) {
+      const nh = new Text({ text: 'NPCs', style: sectionIconFont });
+      nh.x = 10;
+      nh.y = cy;
+      rows.push({ y: cy, node: nh, height: nh.height + 2 });
+      cy += nh.height + 2;
+      for (const n of npcs) {
+        const nt = new Text({ text: n, style: { fontSize: 10, fill: 0xB0E0FF, fontFamily: 'Arial' } });
+        nt.x = 25;
+        nt.y = cy;
+        rows.push({ y: cy, node: nt, height: nt.height + 2 });
+        cy += nt.height + 2;
+      }
+      cy += 4;
+    }
+
+    // User section header + rows
+    if (users.length > 0) {
+      const uh = new Text({ text: `Users (${users.length})`, style: sectionIconFont });
+      uh.x = 10;
+      uh.y = cy;
+      rows.push({ y: cy, node: uh, height: uh.height + 2 });
+      cy += uh.height + 2;
+      for (const u of users) {
+        const ut = new Text({ text: u, style: { fontSize: 10, fill: 0x90D090, fontFamily: 'Arial' } });
+        ut.x = 25;
+        ut.y = cy;
+        rows.push({ y: cy, node: ut, height: ut.height + 2 });
+        cy += ut.height + 2;
+      }
+    }
+
+    // Background
+    const totalH = cy + 6;
+    const bg = new Graphics();
+    bg.rect(0, 0, tipWidth, totalH).fill({ color: 0x080A14, alpha: 235 / 255 });
+    bg.rect(0, 0, tipWidth, totalH).stroke({ width: 1, color: 0x3C4164, alpha: 0.9 });
+    tip.addChildAt(bg, 0);
+
+    // Add all rows
+    for (const row of rows) {
+      tip.addChild(row.node as any);
+    }
+
+    this._wmTip = tip;
+  }
+
+  /** Populate spot tooltip data from live field info. Call after openForField.
+   *  Only the loaded field's data is available; other spots keep title/desc. */
+  setSpotFieldData(fieldId: number, mobs: Array<{ name: string; level: number }>, npcs: string[], users: string[], streetName: string, mapName: string): void {
+    for (const spot of this._spots) {
+      if (!spot.mapNo.includes(fieldId)) continue;
+      spot.mobs = mobs;
+      spot.npcs = npcs;
+      spot.users = users;
+      spot.streetName = streetName;
+      spot.mapName = mapName;
+    }
+  }
+
+  private _wrapDesc(text: string, maxWidth: number): string[] {
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let current = '';
+    const probe = new Text({ text: '', style: { fontSize: 10, fontFamily: 'Arial' } });
+    for (const w of words) {
+      const test = current ? `${current} ${w}` : w;
+      probe.text = test;
+      if (probe.width > maxWidth && current) {
+        lines.push(current);
+        current = w;
+      } else {
+        current = test;
+      }
+    }
+    if (current) lines.push(current);
+    return lines.length > 0 ? lines : [''];
   }
 
   handleMouseButton(mx: number, my: number, down: boolean): boolean {

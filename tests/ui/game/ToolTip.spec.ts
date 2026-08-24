@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
+﻿import { describe, it, expect, vi } from 'vitest';
 import { ToolTip } from '../../../src/ui/game/ToolTip.js';
 
-// ── Mock font that avoids PixiJS Text (needs DOM) ───────────────────────────
+// â”€â”€ Mock font that avoids PixiJS Text (needs DOM) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function mockFont() {
   return {
     lineHeight: 15,
@@ -14,10 +14,10 @@ function makeToolTip() {
   return new ToolTip();
 }
 
-// ── ToolTip core ──────────────────────────────────────────────────────────────
+// â”€â”€ ToolTip core â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('ToolTip', () => {
-  // ── setBasicInfo / clearToolTip ────────────────────────────────────────────
+  // â”€â”€ setBasicInfo / clearToolTip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('setBasicInfo', () => {
     it('sets type, width, height, lineSeparated and clears state', () => {
@@ -53,7 +53,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── makeLayer ──────────────────────────────────────────────────────────────
+  // â”€â”€ makeLayer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('makeLayer', () => {
     it('positions the container at (left, top)', () => {
@@ -66,14 +66,14 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── getFontByType / getFontColor / getFontSize ─────────────────────────────
+  // â”€â”€ getFontByType / getFontColor / getFontSize â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('getFontByType', () => {
     it('returns a TextStyle for known type', () => {
       const tip = makeToolTip();
       const font = tip.getFontByType(1); // HL_WHITE
       expect(font).toBeDefined();
-      expect(font.fontFamily).toBe('monospace');
+      expect(font.fontFamily).toBe('Arial'); // OG face = StringPool 6693
     });
 
     it('falls back to GEN_WHITE for unknown type', () => {
@@ -111,7 +111,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── setToolTipString ───────────────────────────────────────────────────────
+  // â”€â”€ setToolTipString â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('setToolTipString', () => {
     it('sets tooltip type to NORMAL (1)', () => {
@@ -134,7 +134,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── drawTextLeft / drawTextRight / drawTextCenter ──────────────────────────
+  // â”€â”€ drawTextLeft / drawTextRight / drawTextCenter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('drawTextLeft', () => {
     it('adds a Text child at x=PADDING', () => {
@@ -166,7 +166,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── drawTextItemName ───────────────────────────────────────────────────────
+  // â”€â”€ drawTextItemName â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('drawTextItemName', () => {
     it('adds a dot graphic and a text child', () => {
@@ -178,10 +178,10 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── drawItemIcon — skipped due to ITEM_ICON_BG_COLOR 0xA0000000 PixiJS v8 bug ──
+  // â”€â”€ drawItemIcon â€” skipped due to ITEM_ICON_BG_COLOR 0xA0000000 PixiJS v8 bug â”€â”€
   // Pre-existing color format issue; not a test concern.
 
-  // ── addInfo / addInfoEx / addOptionInfo ────────────────────────────────────
+  // â”€â”€ addInfo / addInfoEx / addOptionInfo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('addInfo', () => {
     it('stores line info and increments line count', () => {
@@ -238,12 +238,12 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── drawInfo ───────────────────────────────────────────────────────────────
+  // â”€â”€ drawInfo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('drawInfo', () => {
     it('renders all added info lines', () => {
       const tip = makeToolTip();
-      tip.setBasicInfo(1, 200, 200, -1); // lineSeparated = -1 → no separator
+      tip.setBasicInfo(1, 200, 200, -1); // lineSeparated = -1 â†’ no separator
       tip.makeLayer(0, 0, false);
       tip.addInfo('Line 1', 1, 0);
       tip.addInfo('Line 2', 1, 0);
@@ -255,7 +255,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── drawOptionInfo ─────────────────────────────────────────────────────────
+  // â”€â”€ drawOptionInfo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('drawOptionInfo', () => {
     it('renders option lines below main info', () => {
@@ -270,7 +270,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── drawDiscountInfo ───────────────────────────────────────────────────────
+  // â”€â”€ drawDiscountInfo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('drawDiscountInfo', () => {
     it('returns 0 when originalPrice <= 0', () => {
@@ -291,7 +291,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── drawLimitInfo ──────────────────────────────────────────────────────────
+  // â”€â”€ drawLimitInfo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('drawLimitInfo', () => {
     it('returns 0 for empty array', () => {
@@ -306,7 +306,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── drawNpcShopLimitedItemInfo ─────────────────────────────────────────────
+  // â”€â”€ drawNpcShopLimitedItemInfo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('drawNpcShopLimitedItemInfo', () => {
     it('returns 0 for period <= 0', () => {
@@ -322,7 +322,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── getItemExpireDate ──────────────────────────────────────────────────────
+  // â”€â”€ getItemExpireDate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('getItemExpireDate', () => {
     it('returns empty string for null', () => {
@@ -337,7 +337,7 @@ describe('ToolTip', () => {
 
     it('formats a valid FILETIME (2020-12-31)', () => {
       const tip = makeToolTip();
-      // 2020-12-31 19:00 UTC → local varies
+      // 2020-12-31 19:00 UTC â†’ local varies
       const ms = 1609459200000 + 11644473600000;
       const low = ms * 10000 & 0xFFFFFFFF;
       const high = Math.floor(ms * 10000 / 0x100000000);
@@ -347,7 +347,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── getItcPeriod (OG DrawITCSaleInfo period format) ────────────────────────
+  // â”€â”€ getItcPeriod (OG DrawITCSaleInfo period format) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('getItcPeriod', () => {
     it('returns empty string for null / zero FILETIME', () => {
@@ -387,7 +387,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── printValue ─────────────────────────────────────────────────────────────
+  // â”€â”€ printValue â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('printValue', () => {
     it('returns 0 for zero value (type 0)', () => {
@@ -422,7 +422,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── drawItemReqJob ─────────────────────────────────────────────────────────
+  // â”€â”€ drawItemReqJob â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('drawItemReqJob', () => {
     it('returns 0 when no assets', () => {
@@ -443,7 +443,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── drawTextEquipReq ───────────────────────────────────────────────────────
+  // â”€â”€ drawTextEquipReq â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('drawTextEquipReq', () => {
     it('returns 0 for value <= 0', () => {
@@ -473,7 +473,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── drawReqSkill ───────────────────────────────────────────────────────────
+  // â”€â”€ drawReqSkill â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('drawReqSkill', () => {
     it('returns 0 for empty skills', () => {
@@ -498,7 +498,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── drawDiscountRate ───────────────────────────────────────────────────────
+  // â”€â”€ drawDiscountRate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('drawDiscountRate', () => {
     it('returns 0 for invalid prices', () => {
@@ -528,7 +528,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── drawITCSaleInfo ────────────────────────────────────────────────────────
+  // â”€â”€ drawITCSaleInfo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('drawITCSaleInfo', () => {
     it('draws divider and ITC Sale header when no data', () => {
@@ -548,7 +548,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── setToolTipSetItemBasic ─────────────────────────────────────────────────
+  // â”€â”€ setToolTipSetItemBasic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('setToolTipSetItemBasic', () => {
     it('returns line count for empty effects', () => {
@@ -581,7 +581,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── setToolTipItemOption ───────────────────────────────────────────────────
+  // â”€â”€ setToolTipItemOption â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('setToolTipItemOption', () => {
     it('handles simple stat options (id 1-14)', () => {
@@ -643,7 +643,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── getPetDeadDate ─────────────────────────────────────────────────────────
+  // â”€â”€ getPetDeadDate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('getPetDeadDate', () => {
     it('returns no death for null pet data', () => {
@@ -689,7 +689,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── makingLimitInfo ────────────────────────────────────────────────────────
+  // â”€â”€ makingLimitInfo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('makingLimitInfo', () => {
     it('returns empty array for null goodsInfo', () => {
@@ -749,7 +749,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── makePreviewPetNameTag ──────────────────────────────────────────────────
+  // â”€â”€ makePreviewPetNameTag â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('makePreviewPetNameTag', () => {
     it('draws name text as fallback without assets', () => {
@@ -761,7 +761,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── drawTextSepartedLine ───────────────────────────────────────────────────
+  // â”€â”€ drawTextSepartedLine â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('drawTextSepartedLine', () => {
     it('returns 0 for empty text', () => {
@@ -787,7 +787,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── drawItemTitle ──────────────────────────────────────────────────────────
+  // â”€â”€ drawItemTitle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('drawItemTitle', () => {
     it('returns 0 for empty title', () => {
@@ -834,7 +834,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── FONT_TYPES constant ────────────────────────────────────────────────────
+  // â”€â”€ FONT_TYPES constant â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('FONT_TYPES', () => {
     it('has expected type constants', () => {
@@ -845,7 +845,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── getGenderFromId (OG get_gender_from_id @ 0x46f6d0) ─────────────────────
+  // â”€â”€ getGenderFromId (OG get_gender_from_id @ 0x46f6d0) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('getGenderFromId', () => {
     it('returns 2 (unisex) for non-equip items', () => {
@@ -854,12 +854,12 @@ describe('ToolTip', () => {
     });
 
     it('returns 0 (male) when itemId/1000 % 10 == 0', () => {
-      // 1040000: 1040000/1000 = 1040, %10 = 0 → male-only
+      // 1040000: 1040000/1000 = 1040, %10 = 0 â†’ male-only
       expect(ToolTip.getGenderFromId(1040000)).toBe(0);
     });
 
     it('returns 1 (female) when itemId/1000 % 10 == 1', () => {
-      // 1041000: 1041000/1000 = 1041, %10 = 1 → female-only
+      // 1041000: 1041000/1000 = 1041, %10 = 1 â†’ female-only
       expect(ToolTip.getGenderFromId(1041000)).toBe(1);
     });
 
@@ -868,7 +868,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── getItemName (OG GetItemName @ 0x8899b0) ───────────────────────────────
+  // â”€â”€ getItemName (OG GetItemName @ 0x8899b0) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('getItemName', () => {
     it('returns the base name with HL_WHITE lType by default', () => {
@@ -910,7 +910,7 @@ describe('ToolTip', () => {
     });
   });
 
-  // ── TOOLTIP_TYPE constant ──────────────────────────────────────────────────
+  // â”€â”€ TOOLTIP_TYPE constant â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   describe('TOOLTIP_TYPE', () => {
     it('has expected type constants', () => {

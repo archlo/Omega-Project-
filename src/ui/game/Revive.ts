@@ -26,6 +26,8 @@ export class Revive extends GamePanel {
   private _btOk: Button;
   private _btCancel: Button | null = null;
   private _font: BuiltInFont | null;
+  private _uiWz: WzPackage | null;
+  private _loader: WzTextureLoader | null;
   private _viewW = 800;
   private _viewH = 600;
   private _alpha = 0;
@@ -36,6 +38,8 @@ export class Revive extends GamePanel {
   constructor(loader: WzTextureLoader, ui: WzPackage | null, font: BuiltInFont | null) {
     super();
     this._font = font;
+    this._uiWz = ui;
+    this._loader = loader;
     this.isVisible = false;
 
     // OG: CUIRevive::OnCreate @0x83CEA0 — the revive dialog background is
@@ -60,7 +64,9 @@ export class Revive extends GamePanel {
       this._root.addChild(this._message);
     }
     this._btOk = btYes !== null ? Button.fromWz(loader, btYes, 'OK') : new Button('OK');
-    this._btOk.onClick = () => this._acceptRevive(false);
+    // OG OnButtonClicked id 6 → Revive(premium): premium variants revive with
+    // the soul-stone buff / wheel item consumed (premium=true).
+    this._btOk.onClick = () => this._acceptRevive(this._kind !== 'town');
     this._root.addChild(this._btOk.container);
 
     // OG: btCancle button (id 7) — cancels the revive dialog without sending Revive
@@ -89,9 +95,34 @@ export class Revive extends GamePanel {
   }
 
   private _loadAssetsForKind(kind: ReviveKind): void {
-    // For now, we only probe 'town' (Notice/0). Premium variants (Notice/2, Notice/4)
-    // would be loaded here when implemented.
     this._kind = kind;
+    // OG CUIRevive::OnCreate @0x83CEA0: soulStone → Notice/4, wheelOfDestiny →
+    // Notice/2 (+ RequestUpgradeTombEffect), town → Notice/0. Premium variants
+    // get btOK (id 6) + btCancle (id 7); town gets btOK only.
+    if (kind === 'town' || !this._uiWz) return;
+    const noticeIdx = kind === 'soulStone' ? 4 : 2;
+    const root = this._uiWz.GetItem(`UIWindow2.img/Notice/${noticeIdx}`);
+    if (!(root instanceof WzProperty)) return;
+    const bg = root.Get('0');
+    if (bg instanceof WzCanvas && this._loader) {
+      const spr = this._loader.Load(bg);
+      if (spr && this._bgPixi) { this._root.removeChild(this._bgPixi); }
+      if (spr) {
+        if (this._fallbackBg) { this._fallbackBg.destroy(); this._fallbackBg = null; }
+        this._backgrnd = spr;
+        this._bgPixi = spr.ToPixi();
+        this._root.addChildAt(this._bgPixi, 0);
+      }
+    }
+    // Wire btCancle for premium variants (town has none).
+    if (!this._btCancel) {
+      const cancelRoot = this._uiWz.GetItem('UIWindow2.img/Notice/btCancle');
+      if (cancelRoot instanceof WzProperty) {
+        this._btCancel = Button.fromWz(this._loader!, cancelRoot, 'Cancel');
+        this._btCancel.onClick = () => this._cancelRevive();
+        this._root.addChild(this._btCancel.container);
+      }
+    }
   }
 
   private _acceptRevive(premium: boolean): void {
@@ -165,7 +196,7 @@ export class Revive extends GamePanel {
   onKeyPress(key: string): boolean {
     if (!this.isVisible) return false;
     if (key === 'Enter' || key === ' ' || key === 'y' || key === 'Y') {
-      this._acceptRevive(false);
+      this._acceptRevive(this._kind !== 'town');
     }
     if (key === 'Escape' || key === 'n' || key === 'N') {
       this._cancelRevive();

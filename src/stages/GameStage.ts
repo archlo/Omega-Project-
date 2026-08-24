@@ -1573,6 +1573,33 @@ export class GameStage extends Stage {
     this._worldMap.onTeleportToMap = (mapId) => {
       this.game.session.send(GameSender.MapTransferRequest(0, true, mapId));
     };
+    // OG ScoreLinkMap @0x9B83B0 — when the quest toggle is on, overlay npcPos
+    // quest markers on spots whose maps have available/in-progress quests.
+    // Uses questInfoService's NPC→quest index: a spot is marked when any of
+    // its mapNos hosts an NPC with an active (in-progress) or available
+    // (not yet started) quest for this character.
+    this._worldMap.questStateOfSpot = (mapNo: number[]): number => {
+      const svc = this.game.questInfoService;
+      if (!svc || this._questRecords.length === 0) return 0;
+      // NPC→map is only resolvable for the loaded field; other maps' life
+      // data isn't available client-side.
+      const fieldMapId = this._field?.LoadedMapId ?? -1;
+      if (!mapNo.includes(fieldMapId)) return 0;
+      let best = 0;
+      for (const rec of this._questRecords) {
+        if (rec.state > 2) continue;
+        const q = svc.Get(rec.questId);
+        if (!q) continue;
+        const startNpc = q.Start?.Npc ?? 0;
+        const completeNpc = q.Complete?.Npc ?? 0;
+        // The current field hosts one of these NPCs → quest activity here.
+        if ((startNpc > 0 || completeNpc > 0) && this._npcInField(startNpc, completeNpc)) {
+          const state = rec.state === 1 ? 2 : 1;
+          if (state > best) { best = state; break; }
+        }
+      }
+      return best;
+    };
     this._tournamentWindow = new TournamentWindow();
     this._ranking = new Ranking(this._loader, uiWz, font);
     this._monsterBook = new MonsterBook(this._loader, uiWz, font);
@@ -2929,7 +2956,23 @@ this._dmgNumbers?.Update(dt);
       this._worldMap.isVisible = false;
       return;
     }
-    this._worldMap.openForField(this._field?.LoadedMapId ?? 0);
+    const fieldId = this._field?.LoadedMapId ?? 0;
+    this._worldMap.openForField(fieldId);
+    // Populate spot tooltip data from the loaded field (OG SetToolTip_WorldMap
+    // reads mob/NPC/user lists from live field data).
+    if (this._field) {
+      const mobs = [...this._mobs.values()]
+        .filter(m => !m.IsDead)
+        .map(m => ({
+          name: this.game.nameService?.MobName(m.TemplateId) || m.TemplateId.toString(),
+          level: m._info?.Level ?? 0,
+        }));
+      const npcs = this._npcs.map(n => n.Name || `Npc${n.NpcId}`);
+      const users = [...this._otherChars.values()].map(c => c.Name);
+      const streetName = this.game.nameService?.MapStreetName(fieldId) ?? '';
+      const mapName = this.game.nameService?.MapShortName(fieldId) ?? '';
+      this._worldMap.setSpotFieldData(fieldId, mobs, npcs, users, streetName, mapName);
+    }
   }
 
   // OG: CUserLocal::HandleXKeyDown (decompile, 0x90f6d0) — TODO_AUDIT.md
@@ -6429,6 +6472,14 @@ this._localCharId = args.characterId ?? 0;
   }
 
   /** Resolve a quest id to its current state (0=available, 1=in-progress, 2=completed). */
+  /** True when the loaded field hosts an NPC with either template ID. */
+  private _npcInField(startNpc: number, completeNpc: number): boolean {
+    for (const n of this._npcs) {
+      if (n.NpcId === startNpc || n.NpcId === completeNpc) return true;
+    }
+    return false;
+  }
+
   private _questStateOf(id: number): number {
     return this._questStates.get(id) ?? 0;
   }
@@ -7669,13 +7720,25 @@ this._localCharId = args.characterId ?? 0;
     this._tombstone?.Reset();
   }
 
-  /** OG: CWvsContext::Update — open CUIRevive once 2200ms has elapsed since death. */
+  /** OG: CWvsContext::Update — open CUIRevive once 2200ms has elapsed since death.
+   *  Kind selection per CUIRevive::OnCreate @0x83CEA0:
+   *  1. SoulStone buff active (ss.soulStone > 0) → Notice/4, premium revive
+   *  2. Wheel of Destiny (item 5510000) in inventory → Notice/2, premium revive
+   *  3. Otherwise → Notice/0 plain town revive. */
   protected _updateReviveDialog(dtMs: number): void {
     if (this._reviveDialogClockMs < 0) return;
     this._reviveDialogClockMs += dtMs;
     if (this._reviveDialogClockMs >= 2200) {
       this._reviveDialogClockMs = -1;
-      this._revivePanel?.Open();
+      const soulStoneBuff = (this.game?.fieldHandlers.secondaryStat.buff as any)?.soulStone ?? 0;
+      const wheelCount = this._item?.countItem(5510000) ?? 0;
+      if (soulStoneBuff > 0) {
+        this._revivePanel?.Open('soulStone');
+      } else if (wheelCount > 0) {
+        this._revivePanel?.Open('wheelOfDestiny');
+      } else {
+        this._revivePanel?.Open();
+      }
     }
   }
 

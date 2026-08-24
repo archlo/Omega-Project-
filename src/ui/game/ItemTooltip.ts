@@ -107,6 +107,8 @@ export interface BundleTooltipOptions {
   sCharacterName?: string;      // Character name for gift/wedding
   nGiftFrom?: number;           // Gift sender character ID
   nPetSlot?: number;            // Pet slot index for pet items
+  /** Marriage partner display name — SP 4237 format for ring ids 4031357–4031364. */
+  partnerText?: string;
 }
 
 export interface RingTooltipOptions {
@@ -626,6 +628,13 @@ this._root.x = gx;
     const marriageStr = opts.nMarriage ? 'Wedding Gift' : '';
     const giftFromStr = opts.nGiftFrom ? `From: ${opts.sCharacterName ?? `Char ${opts.nGiftFrom}`}` : '';
 
+    // OG: Marriage ring names (ids 4031357–4031364) — SP 4237 format with
+    // bride/groom names from lMarriageRecord. Rendered centered, font 14,
+    // +19px per row before the expiry line.
+    const isMarriageRing = itemId >= 4031357 && itemId <= 4031364;
+    const partnerText = opts.partnerText ?? '';
+    const partnerH = isMarriageRing && partnerText ? 19 : 0;
+
     // OG: Discount rate display
     const origPrice = opts.nOriginalPrice ?? 0;
     const curPrice = opts.nPrice ?? 0;
@@ -674,7 +683,7 @@ this._root.x = gx;
     const extraH = protectedLine || periodStr || timeLimitedStr ? lh + 4 : 0;
     const missingParamsH = karmaH + newYearCardH + cashTitleH + limitGoodsH + marriageH + giftFromH;
     const h = 116 + cashDescOffset + descOverflow + (discountStr ? 35 : 0)
-      + itcH + itcExpiryH + orderCommentH + extraH + missingParamsH;
+      + itcH + itcExpiryH + orderCommentH + extraH + missingParamsH + partnerH;
 
     let x = mouseX + 16;
     let y = mouseY + 16;
@@ -705,6 +714,13 @@ let ti = 1;
     const tradeColor = ToolTip.getFontColor(FONT_TYPES.GEN_ORANGE);
     if (tradeOption) { this._txtWithFont(ti++, 0, 31, tradeOption, tradeColor, tradeFont); }
     if (tradeOptionEx) { this._txtWithFont(ti++, 0, tradeOption ? 50 : 31, tradeOptionEx, tradeColor, tradeFont); }
+    // OG: Marriage ring names (SP 4237, font 14) — centered row after trade flags.
+    if (isMarriageRing && partnerText) {
+      const marriageFont = this._toolTip.getFontByType(FONT_TYPES.GEN_ORANGE);
+      const marriageColor = ToolTip.getFontColor(FONT_TYPES.GEN_ORANGE);
+      const marriageY = (tradeOptionEx ? 50 : tradeOption ? 31 : 19) + 19;
+      this._txtWithFont(ti++, 0, marriageY, partnerText, marriageColor, marriageFont);
+    }
     // OG: Expiry uses font 22 (STAN_DSC) at 9px with dot blit, not H_WHITE at 10px
     const expiryFont = this._toolTip.getFontByType(FONT_TYPES.STAN_DSC);
     const expiryColor = ToolTip.getFontColor(FONT_TYPES.STAN_DSC);
