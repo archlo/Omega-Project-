@@ -538,10 +538,15 @@ export class CashShopStage extends Stage {
         this._itemWz = game.wz.item ?? await open('Item');
         this._baseWz = game.wz.base ?? await open('Base');
         this._itemInfo = new ItemInfoService(this._charWz, this._itemWz);
-        // OG: CWvsContext::LoadCommodity — client-side CS_COMMODITY table
+        // OG: CWvsContext::LoadCommodity — client-side CS_COMMODITY table.
+        // The table is the BASE data (OG CCashShop::CCashShop always calls
+        // LoadCommodity); the server's SetCashShop sale-info only MODIFIES
+        // entries on top. Build unconditionally — gating this on
+        // _modifiedCommodities left the grid empty whenever the server sent
+        // no/partial sale info (items never rendered on any page).
         const etc = game.wz.etc ?? await WzPackage.OpenBaseAsync(dir, 'Etc');
         this._commTable = await CashCommodityTable.LoadAsync(etc);
-        if (this._modifiedCommodities.length > 0) this._rebuildCommodities();
+        this._rebuildCommodities();
         for (const commodity of this._commodities) commodity.name = this._getItemName(commodity.itemId);
         for (const item of this._lockerItems) item.name = this._getItemName(item.itemId);
         this._tryBuildCharacterPreview();
@@ -551,6 +556,7 @@ export class CashShopStage extends Stage {
   }
 
   onExit(): void {
+    this._initialDataSent = false;
     this._unwireHandlers();
     this._charLook?.container.removeFromParent();
     this._csChatText?.destroy();
@@ -579,17 +585,18 @@ export class CashShopStage extends Stage {
   // Server data wiring
   // ═══════════════════════════════════════════════════════════════════════════
 
+  private _initialDataSent = false;
+
   private _requestInitialData(): void {
     if (!this.game) return;
     // OG Init @0x484920: CSoundMan::PlayBGM(StringPool 1290) — the cash shop
     // loop lives at Sound.wz/BgmUI.img/ShopBgm.
     const shopBgm = this.game.wz.sound?.GetItem('BgmUI.img/ShopBgm');
     if (shopBgm instanceof WzSound) this.game.audioPlayer.PlayLoop(shopBgm.AudioBytes);
-    // OG: CCashShop constructor calls QueryCash + LoadLocker + LoadGift + LoadWish
-    this.game.session.send(GameSender.CashShopQueryCash());
-    this.game.session.send(GameSender.CashShopLoadLocker());
-    this.game.session.send(GameSender.CashShopLoadGift());
-    this.game.session.send(GameSender.CashShopLoadWish());
+    // NOTE: QueryCash/LoadLocker/LoadGift/LoadWish are NOT sent here — at this
+    // point the session is still the CHANNEL connection (the shop migrate is
+    // async), so they'd be eaten by the channel. They are sent once the shop
+    // server's SetCashShop arrives — see the onSetCashShop wiring.
   }
 
   private _wireHandlers(game: MapleClaudeGame): void {
@@ -647,6 +654,17 @@ export class CashShopStage extends Stage {
     // Wire FieldHandlers.onSetCashShop to receive commodity data
     const fh = game.fieldHandlers;
     fh.onSetCashShop = (args: SetCashShopArgs) => {
+      // SetCashShop (143) only arrives from the SHOP server after a successful
+      // MIGRATE_IN — this is the signal that the session now reaches the shop.
+      // Send the initial data requests here (OG CCashShop ctor order).
+      if (!this._initialDataSent) {
+        this._initialDataSent = true;
+        const s = game.session;
+        s?.send(GameSender.CashShopQueryCash());
+        s?.send(GameSender.CashShopLoadLocker());
+        s?.send(GameSender.CashShopLoadGift());
+        s?.send(GameSender.CashShopLoadWish());
+      }
       // Store authorization state (OG: m_bCashShopAuthorized)
       this._cashShopAuthorized = args.cashShopAuthorized;
       this._playerLevel = args.highestCharacterLevelInAccount;
@@ -3371,10 +3389,14 @@ export class CashShopStage extends Stage {
 
     // Tab clicks — the 9 strip slots map to categories 1..9
     // (OG CCSWnd_Tab::GetTabIndex → OnChangedCategory(idx)).
+    // The WZ tab canvases blit at (+2, 0) and the clickable tab labels sit
+    // along the BOTTOM of the 78px canvas — restrict hits to that band so
+    // empty upper canvas area isn't clickable.
     const tabItemW = Math.floor(TAB_W / TAB_COUNT);
+    const tabHitTop = TAB_Y + TAB_H - 22;
     for (let i = 0; i < TAB_COUNT; i++) {
-      const tx = TAB_X + i * tabItemW;
-      if (lx >= tx && lx < tx + tabItemW && ly >= TAB_Y && ly < TAB_Y + TAB_H) {
+      const tx = TAB_X + 2 + i * tabItemW;
+      if (lx >= tx && lx < tx + tabItemW && ly >= tabHitTop && ly < TAB_Y + TAB_H) {
         const cat = i + 1;
         if (this._activeTab !== cat) this.SetCategory(cat);
         return;
