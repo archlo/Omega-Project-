@@ -128,6 +128,11 @@ export class FieldHandlers {
   onUserEnter: ((args: OtherCharEnterArgs) => void) | null = null;
   onUserLeave: ((charId: number) => void) | null = null;
   onUserMove: ((args: OtherCharMoveArgs) => void) | null = null;
+  // OG: the move wire byte collapses stand1/stand2 and walk1/walk2; the
+  // receiving client re-expands via the avatar's own weapon entry (CAvatar::
+  // MoveAction2RawAction @0x45FA30 reads m_nStandType/m_nWalkType). The stage
+  // supplies the remote character's equipped-weapon types here.
+  weaponTypesOf: ((charId: number) => { stand: number; walk: number } | null) | null = null;
   onUserAttack: ((args: UserAttackArgs) => void) | null = null;
   onUserEmotion: ((args: UserEmotionArgs) => void) | null = null;
   onUserEffect: ((args: UserEffectArgs) => void) | null = null;
@@ -532,6 +537,7 @@ export class FieldHandlers {
     this.onUserEnter = null;
     this.onUserLeave = null;
     this.onUserMove = null;
+    this.weaponTypesOf = null;
     this.onUserAttack = null;
     this.onUserEmotion = null;
     this.onUserEffect = null;
@@ -2044,7 +2050,8 @@ export class FieldHandlers {
       const x = last?.x ?? path.originX;
       const y = last?.y ?? path.originY;
       if (last) {
-        const { stance, facingLeft } = MoveActionToStance(last.moveAction);
+        const wt = this.weaponTypesOf?.(charId) ?? null;
+        const { stance, facingLeft } = MoveActionToStance(last.moveAction, wt?.stand ?? 1, wt?.walk ?? 1);
         this.onUserMove?.({ charId, x, y, stance, facingLeft, movePath: path });
       } else {
         this.onUserMove?.({ charId, x, y, movePath: path });

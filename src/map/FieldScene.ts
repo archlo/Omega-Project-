@@ -182,6 +182,10 @@ export class FieldScene {
 
     this._mapScene = new MapScene(this._mapWz, this._loader);
     this._mapScene.ParallaxEnabled = true;
+    // Obj layers are rendered by _loadLayers/_rebuildLayerContainers with the
+    // proper per-layer z model — MapScene's flat copy would double-draw every
+    // object behind all tiles.
+    this._mapScene.LoadObjects = false;
     try { this._mapScene.Load(root); } catch (ex) { console.warn('MapScene backdrop load failed', ex); }
 
     this._bgContainer.removeChildren();
@@ -434,14 +438,15 @@ export class FieldScene {
         bottom = Math.max(bottom, Math.max(fh.Y1, fh.Y2) + 10);
       }
     }
+    // OG clamps (intersects) the info VR rect INTO the foothold MBR —
+    // left = max(left, VRLeft+20), right = min(right, VRRight-4),
+    // top = max(top, VRTop+65), bottom = min(bottom, VRBottom) — it never
+    // replaces the MBR outright.
     if (this._info.VRLeft !== 0 || this._info.VRRight !== 0) {
-      this._bounds = {
-        left: this._info.VRLeft,
-        top: this._info.VRTop,
-        right: this._info.VRRight,
-        bottom: this._info.VRBottom,
-      };
-      return;
+      if (this._info.VRLeft + 20 > left) left = this._info.VRLeft + 20;
+      if (this._info.VRRight - 4 < right) right = this._info.VRRight - 4;
+      if (this._info.VRTop + 65 > top) top = this._info.VRTop + 65;
+      if (this._info.VRBottom !== 0 && this._info.VRBottom < bottom) bottom = this._info.VRBottom;
     }
     if (right <= left || bottom <= top) return;
     this._bounds = { left, top, right, bottom };
@@ -556,12 +561,17 @@ export class FieldScene {
           const u = (value.Get('u') as string) ?? '';
           const no = this._readInt(value, 'no');
 
-          // Try animated tile path: Tile/<tS>.img/<u>/ani/<no>
-          const animNode = this._mapWz?.GetItem(`Tile/${tileSet}.img/${u}/ani/${no}`);
-          const anim = this._loader.LoadAnimation(animNode ?? null);
-
-          // Fall back to static canvas
-          const canvas = anim === null ? this._mapWz?.GetItem(`Tile/${tileSet}.img/${u}/${no}`) : null;
+          // Animated tile: v95 keeps frame containers directly at
+          // Tile/<tS>.img/<u>/<no> (a property with numbered canvas children,
+          // e.g. DeepgrassySoil/bsc/0) — there is no ani/ subfolder in this
+          // WZ set. Fall back to the static canvas when it is one.
+          const direct = this._mapWz?.GetItem(`Tile/${tileSet}.img/${u}/${no}`);
+          const anim = direct instanceof WzProperty
+            ? this._loader.LoadAnimation(direct)
+            : (direct instanceof WzCanvas ? null : this._loader.LoadAnimation(this._mapWz?.GetItem(`Tile/${tileSet}.img/${u}/ani/${no}`) ?? null));
+          const canvas = anim === null
+            ? this._mapWz?.GetItem(`Tile/${tileSet}.img/${u}/${no}`)
+            : null;
           const wzSprite = canvas instanceof WzCanvas ? this._loader.Load(canvas) : null;
 
           // z from canvas.Property.z, fallback to tile zM
@@ -589,9 +599,9 @@ export class FieldScene {
           const node = this._mapWz?.GetItem(`Obj/${info.Os}.img/${info.L0}/${info.L1}/${info.L2}`);
           this._objLayers[layer].push({ info, sprite: this._loader.LoadAnimation(node) });
         }
-        // OG: objects within same layer sorted by Y position (vertical sort)
-        // so objects lower on screen draw in front of objects higher on screen
-        this._objLayers[layer].sort((a, b) => a.info.Y - b.info.Y);
+        // OG: objects within same layer sort by their z sub-key first, then
+        // by Y position (lower on screen draws in front).
+        this._objLayers[layer].sort((a, b) => a.info.Z - b.info.Z || a.info.Y - b.info.Y);
       }
     }
   }

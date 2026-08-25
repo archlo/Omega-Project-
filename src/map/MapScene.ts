@@ -34,6 +34,11 @@ export class MapScene {
    *  and alpha — they render as static decorations matching the original client's
    *  non-gameplay screens. */
   ParallaxEnabled = false;
+  /** When false, Load() skips the obj-layer pass. FieldScene renders objs in
+   *  their own per-layer containers; leaving both active drew every object
+   *  twice (the MapScene copy stuck behind ALL tiles). Login/select stages
+   *  keep the default true — they have no FieldScene below them. */
+  LoadObjects = true;
   // Real canvas size, kept in sync via SetCamera()'s screenW/screenH params.
   // Defaults to 800x600 only for the brief window between construction and
   // the first SetCamera() call (matches the previous hardcoded behavior for
@@ -96,6 +101,10 @@ export class MapScene {
 
     // Object layers 0-7. Skip Common/frame — the login frame is drawn as a
     // centred UI overlay by the stage, so the map-object copy would double it.
+    // FieldScene disables this pass (LoadObjects=false): it renders objs
+    // itself in their proper per-layer containers — leaving both active drew
+    // every object twice (once stuck behind ALL tiles here).
+    if (!this.LoadObjects) return;
     for (let layerIdx = 0; layerIdx < 8; layerIdx++) {
       const layer = mapRoot.Get(String(layerIdx));
       if (!(layer instanceof WzProperty)) continue;

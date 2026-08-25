@@ -559,6 +559,38 @@ describe('FieldHandlers', () => {
     expect(args).toEqual([54321]);
   });
 
+  // The server's Party.encode must produce exactly this byte layout:
+  // fixed 13-byte names (NOT maple-prefixed) and 5 town-portal ints per
+  // slot. This pins the decode to the layout the server now writes.
+  it('PartyResult Load(7) decodes the v95 PARTYDATA layout (fixed names + hp/maxHp)', () => {
+    const args: any[] = [];
+    handlers.onPartyLoad = (a) => args.push(a);
+    const p = OutPacket.Raw();
+    p.writeByte(7);   // LoadParty_Done
+    p.writeInt(42);   // partyId
+    for (let i = 0; i < 6; i++) p.writeInt(i === 0 ? 1001 : i === 1 ? 2002 : 0);
+    p.writeStringFixed('BossPerson', 13);
+    p.writeStringFixed('MemberTwo', 13);
+    for (let i = 0; i < 4; i++) p.writeStringFixed('', 13);
+    for (let i = 0; i < 6; i++) p.writeInt(i === 0 ? 200 : i === 1 ? 411 : 0);   // jobs
+    for (let i = 0; i < 6; i++) p.writeInt(i === 0 ? 33 : i === 1 ? 71 : 0);     // levels
+    for (let i = 0; i < 6; i++) p.writeInt(0);                                    // channels
+    p.writeInt(1001);                                                             // bossId
+    for (let i = 0; i < 6; i++) p.writeInt(i === 0 ? 100000000 : i === 1 ? 910000000 : 999999999);
+    for (let i = 0; i < 30; i++) p.writeInt(0);                                   // 6x5 town portals
+    for (let i = 0; i < 6; i++) p.writeInt(i === 0 ? 120 : i === 1 ? 3210 : 0);   // hp
+    for (let i = 0; i < 6; i++) p.writeInt(i === 0 ? 500 : i === 1 ? 4000 : 0);   // maxHp
+    p.writeInt(0); p.writeInt(0);                                                 // trailing
+    expect(() => dispatchPayload(router, OutHeader.PartyResult, p.toArray())).not.toThrow();
+    expect(args).toHaveLength(1);
+    expect(args[0].bossId).toBe(1001);
+    expect(args[0].members).toEqual([
+      { charId: 1001, name: 'BossPerson', job: 200, level: 33, channel: 0, hp: 120, maxHp: 500 },
+      { charId: 2002, name: 'MemberTwo', job: 411, level: 71, channel: 0, hp: 3210, maxHp: 4000 },
+    ]);
+  });
+
+
   it('PartyResult LevelJobChanged(39) decodes charId/level/job (decompile/A10AB0.c)', () => {
     const args: any[] = [];
     handlers.onPartyMemberStatChanged = (a) => args.push(a);

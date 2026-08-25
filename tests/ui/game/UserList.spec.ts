@@ -131,3 +131,49 @@ describe('UserList block tab', () => {
     expect(deleted).toBe('Annoying');
   });
 });
+
+// Community panel party tab - the data path the server PARTYDATA load feeds
+// (GameStage.onPartyLoad -> UserList.setParty).
+describe('UserList party tab', () => {
+  function openPartyTab(list: UserList): void {
+    list.isVisible = true;
+    (list as any)._tab.setTab(1); // Party tab = index 1
+    (list as any)._rebuild();
+  }
+
+  it('renders member rows with the leader marked', () => {
+    const list = new UserList();
+    openPartyTab(list);
+    list.setParty([
+      { charId: 1001, name: 'BossPerson', level: 33, job: 'Magician', isLeader: true },
+      { charId: 2002, name: 'MemberTwo', level: 71, job: 'Hermit', isLeader: false },
+    ]);
+    const texts = (list as any)._entries.map((t: any) => t.text);
+    expect(texts.some((t: string) => t.includes('BossPerson'))).toBe(true);
+    expect(texts.some((t: string) => t.includes('MemberTwo'))).toBe(true);
+    expect(texts.find((t: string) => t.includes('BossPerson'))).toContain('[L]');
+  });
+
+  it('setPartyBoss moves the leader marker', () => {
+    const list = new UserList();
+    openPartyTab(list);
+    list.setParty([
+      { charId: 1001, name: 'A', level: 10, job: 'Warrior', isLeader: true },
+      { charId: 2002, name: 'B', level: 20, job: 'Rogue', isLeader: false },
+    ]);
+    list.setPartyBoss(2002);
+    const texts = (list as any)._entries.map((t: any) => t.text);
+    expect(texts.find((t: string) => t.includes('B '))).toContain('[L]');
+    expect(texts.find((t: string) => t.includes('A '))).not.toContain('[L]');
+  });
+
+  it('updatePartyMemberStat refreshes level/job in place', () => {
+    const list = new UserList();
+    openPartyTab(list);
+    list.setParty([{ charId: 1001, name: 'A', level: 10, job: 'Warrior', isLeader: false }]);
+    list.updatePartyMemberStat(1001, 11, 'Fighter');
+    const row = (list as any)._entries.find((t: any) => /^A /.test(t.text));
+    expect(row.text).toContain('Fighter');
+    expect(row.text).toContain('Lv.11');
+  });
+});

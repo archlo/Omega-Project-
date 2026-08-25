@@ -212,8 +212,15 @@ export class CharLook {
       : [];
   }
 
-  UpdateFromPhysics(dt: number, stance: Stance, facingLeft: boolean): void {
+  // OG: CAvatar::Update @0x46C050 — for the ladder/rope actions (raw 45/46,
+  // plus ghost 129/130) the frame timer only runs while the avatar's Y
+  // position changed since last frame; otherwise `tCurFrameRemain = 0` pins
+  // the current frame. Mirrored as `climbMoving` on UpdateFromPhysics.
+  private _climbMoving = true;
+
+  UpdateFromPhysics(dt: number, stance: Stance, facingLeft: boolean, climbMoving = true): void {
     this._facingLeft = facingLeft;
+    this._climbMoving = climbMoving;
     this._tickOneTimeAction(dt);
     if (!this.IsPlayingOneTimeAction) this.StartAction(StanceToWzKey(stance));
     this._advanceEmotion(dt);
@@ -224,6 +231,7 @@ export class CharLook {
   Update(dt: number, pos: { x: number; y: number }, facingLeft: boolean, climbing: boolean): void {
     this.Position = { x: pos.x, y: pos.y };
     this._facingLeft = facingLeft;
+    this._climbMoving = climbing;
     this._tickOneTimeAction(dt);
     this._advanceEmotion(dt);
     if (this._renderer !== null) this._renderer.Update(dt);
@@ -260,6 +268,11 @@ export class CharLook {
 
   private _advanceFrame(dt: number): void {
     if (this._renderer === null || this._avatar === null) return;
+    // OG: CAvatar::Update — ladder/rope frames freeze while not moving.
+    if ((this._currentAction === 'ladder' || this._currentAction === 'rope') && !this._climbMoving) {
+      this._frameTimer = 0;
+      return;
+    }
     const frameCount = this._renderer.FrameCount(this._avatar, this._currentAction);
     if (frameCount <= 1) return;
     let delayMs = this._getFrameDelay(this._currentAction, this._frame);

@@ -351,6 +351,21 @@ export class GameSender {
     return p;
   }
 
+  /**
+   * OG CReactor::OnHit — client-side reactor hit from an attack.
+   * Wire order per kinoko FieldHandler::handleReactorHit:
+   * int(objectId) int(skillReactor?) int(hitOption) short(delay) int(skillId).
+   */
+  static HitReactor(reactorObjId: number, hitOption: number, delayMs: number, skillId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.UserHitReactor);
+    p.writeInt(reactorObjId);
+    p.writeInt(0); // skillReactor?
+    p.writeInt(hitOption);
+    p.writeShort(delayMs);
+    p.writeInt(skillId);
+    return p;
+  }
+
   static SkillUp(skillId: number): OutPacket {
     const p = OutPacket.Of(InHeader.UserSkillUpRequest);
     p.writeInt(0);

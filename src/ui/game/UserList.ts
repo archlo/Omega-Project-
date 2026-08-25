@@ -158,19 +158,24 @@ export class UserList extends GamePanel {
 
   private _clipboard = new ClipboardHelper();
 
-  constructor(loader?: WzTextureLoader, uiWz?: WzPackage | null) {
-    super();
-    this._root.visible = false;
-    this._root.x = 300;
-    this._root.y = 100;
-
-    // OG: CUIWnd::OnCreate loads backgrnd from UIWindow2.img/UserList/Main
+  /** OG CUIUserList::OnCreate — backgrnd from UIWindow2.img/UserList/Main
+   *  + the 6 tab canvases from Main/Tab/{enabled,disabled}. Callable after
+   *  construction (GameStage wires WZ packages asynchronously). */
+  initWzAssets(loader: WzTextureLoader, uiWz: WzPackage | null): void {
     const prop = uiWz?.GetItem('UIWindow2.img/UserList/Main');
     const bgNode = prop instanceof WzProperty ? prop.Get('backgrnd') : null;
-    this._wzBg = bgNode instanceof WzCanvas ? (loader ?? new WzTextureLoader()).Load(bgNode) : null;
+    this._wzBg = bgNode instanceof WzCanvas ? loader.Load(bgNode) : null;
+    if (this._wzBg) {
+      // Re-seat at index 0 (under content) if a previous sprite exists
+      const prev = this._wzBg.ToPixi();
+      prev.removeFromParent();
+      this._root.addChildAt(prev, 0);
+    }
 
-    // OG: Load tab WZ canvases from UserList/Main/Tab/enabled and Tab/disabled
-    if (loader && prop instanceof WzProperty) {
+    // OG: tab canvases from UserList/Main/Tab/enabled and Tab/disabled
+    this._tabEnabledCanvases.length = 0;
+    this._tabDisabledCanvases.length = 0;
+    if (prop instanceof WzProperty) {
       const tabProp = prop.Get('Tab');
       if (tabProp instanceof WzProperty) {
         const enabledProp = tabProp.Get('enabled');
@@ -193,10 +198,17 @@ export class UserList extends GamePanel {
         }
       }
     }
+  }
+
+  constructor(loader?: WzTextureLoader, uiWz?: WzPackage | null) {
+    super();
+    this._root.visible = false;
+    this._root.x = 300;
+    this._root.y = 100;
+    if (loader || uiWz) this.initWzAssets(loader ?? new WzTextureLoader(), uiWz ?? null);
 
     this._bg = new Graphics();
     this._root.addChild(this._bg);
-    if (this._wzBg) this._root.addChildAt(this._wzBg.ToPixi(), 0);
 
     this._titleText = new Text({ text: 'Community', style: _fontWhite });
     this._titleText.x = 8; this._titleText.y = 5;

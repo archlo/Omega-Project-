@@ -179,6 +179,11 @@ export class PlayerController {
   WeaponStand = 1;
   WeaponWalk = 1;
 
+  // While a melee one-time action (swing) plays, horizontal/jump/ladder input
+  // is suppressed so the character stays planted during the attack. Gravity
+  // and velocity decel still run.
+  InputLocked = false;
+
   // OG: CUserLocal::IsSit (decompile, `m_bSit`) — TODO_AUDIT.md
   // Seventy-sixth pass's chair/sitting finding. While sitting, movement
   // input is ignored (matching the OG behavior that initiates a sit only
@@ -452,12 +457,12 @@ onTakeFallDamage: ((damage: number) => void) | null = null;
       this._tickAnimAndFlush(dt, this._updateClimb(input, dt));
       return;
     }
-    if (this._tryGrabLadder(input)) {
+    if (!this.InputLocked && this._tryGrabLadder(input)) {
       this._tickAnimAndFlush(dt);
       return;
     }
 
-    const dir = (input.Left ? -1 : 0) + (input.Right ? 1 : 0);
+    const dir = this.InputLocked ? 0 : (input.Left ? -1 : 0) + (input.Right ? 1 : 0);
     if (dir !== 0) {
       this.FacingLeft = dir < 0;
     }
@@ -616,7 +621,7 @@ onTakeFallDamage: ((damage: number) => void) | null = null;
       }
     }
 
-    const jumpEdge = input.JumpPressed && !this._prevJump;
+    const jumpEdge = input.JumpPressed && !this._prevJump && !this.InputLocked;
     this._prevJump = input.JumpPressed;
 
     let downJumped = false;

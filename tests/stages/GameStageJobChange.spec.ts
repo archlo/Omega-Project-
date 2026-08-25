@@ -114,3 +114,85 @@ describe('GameStage job change (effect 10 + skill rebuild)', () => {
     expect(stage._skillEffects.PlayAtCaster).not.toHaveBeenCalled();
   });
 });
+
+// OG: CWvsContext::OnStatChanged renders the level-up pair locally
+// (Effect_General BasicEff.img/LevelUp + play_game_sound "LevelUp"), and
+// CUser::OnEffect case 0 renders the same pair for remote players — the
+// server excludes the leveling player from the UserEffect broadcast.
+describe('GameStage level-up / local job-change effects', () => {
+  function makeStage(): any {
+    const stage: any = Object.create(GameStage.prototype);
+    stage._job = 0;
+    stage._stats = {
+      hp: 100, maxHp: 100, mp: 50, maxMp: 50, level: 10, exp: 0,
+      str: 4, dex: 4, intStat: 4, luk: 4,
+      baseStr: 4, baseDex: 4, baseInt: 4, baseLuk: 4,
+      ap: 0, fame: 0, job: 'Beginner', jobId: 0, meso: 0,
+    };
+    stage._prevExp = -1;
+    stage._statusBar = { hp: 0, maxHp: 0, mp: 0, maxMp: 0, level: 0, exp: 0, nextExp: 0, jobName: '' } as any;
+    stage._skill = {
+      characterHp: 100, characterLevel: 10, sp: 0,
+      characterJob: 0, setExtendedSp: vi.fn(),
+      setSkillRecords: vi.fn(), setSwallowBuffType: vi.fn(),
+      setDamageMeterSummary: vi.fn(),
+    };
+    stage._charInfo = { job: '', fame: 0 } as any;
+    stage._equip = { SetPlayerStats: vi.fn(), setHasNoviceSkill1004: vi.fn() };
+    stage._item = { setMeso: vi.fn(), SetPlayerStats: vi.fn() };
+    stage._player = null;
+    stage._field = null;
+    stage._physics = null;
+    stage._dmgNumbers = null;
+    stage._dojangHud = { updatePlayerStats: vi.fn() };
+    stage._syncStatDetailInputs = vi.fn();
+    return stage;
+  }
+
+  it('UserEffect case 0 (LevelUp) plays BasicEff.img/LevelUp at a remote character + sound', () => {
+    const stage = makeStage();
+    const node = { fake: true };
+    stage._effectWz = { GetItem: (p: string) => (p === 'BasicEff.img/LevelUp' ? node : undefined) };
+    const sound = Object.create(WzSound.prototype) as WzSound;
+    (sound as any)._audioBytes = new Uint8Array([1, 2, 3]);
+    stage._mobSoundWz = { GetItem: (p: string) => (p === 'Game.img/LevelUp' ? sound : undefined) };
+    stage._otherChars = new Map([[9, { FacingLeft: true }]]);
+    stage._skillEffects = { PlayAtCaster: vi.fn() };
+    stage.game = { audioPlayer: { PlayEffect: vi.fn() } };
+
+    stage._onUserEffect({ charId: 9, effectType: 0, payload: new Uint8Array(0), isLocal: false });
+
+    expect(stage._skillEffects.PlayAtCaster).toHaveBeenCalledWith(node, 9, true);
+    expect(stage.game.audioPlayer.PlayEffect).toHaveBeenCalledWith(sound.AudioBytes);
+  });
+
+  it('a stat-changed JOB bump plays JobChanged locally (server excludes self)', () => {
+    const stage = makeStage();
+    stage._localCharId = 55;
+    stage._physics = { FacingLeft: false };
+    const node = { fake: true };
+    stage._effectWz = { GetItem: (p: string) => (p === 'BasicEff.img/JobChanged' ? node : undefined) };
+    const sound = Object.create(WzSound.prototype) as WzSound;
+    (sound as any)._audioBytes = new Uint8Array([4, 5]);
+    stage._mobSoundWz = { GetItem: (p: string) => (p === 'Game.img/JobChanged' ? sound : undefined) };
+    stage._skillEffects = { PlayAtCaster: vi.fn() };
+    stage.game = { audioPlayer: { PlayEffect: vi.fn() } };
+
+    stage._onStatChanged({ job: 100 });
+
+    expect(stage._skillEffects.PlayAtCaster).toHaveBeenCalledWith(node, 55, false);
+    expect(stage.game.audioPlayer.PlayEffect).toHaveBeenCalledWith(sound.AudioBytes);
+  });
+
+  it('an unchanged job does not replay JobChanged', () => {
+    const stage = makeStage();
+    stage._job = 100;
+    stage._skillEffects = { PlayAtCaster: vi.fn() };
+    stage.game = { audioPlayer: { PlayEffect: vi.fn() } };
+
+    stage._onStatChanged({ job: 100 });
+
+    expect(stage._skillEffects.PlayAtCaster).not.toHaveBeenCalled();
+    expect(stage.game.audioPlayer.PlayEffect).not.toHaveBeenCalled();
+  });
+});

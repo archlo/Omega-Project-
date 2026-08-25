@@ -9,18 +9,9 @@ import type { DecodedMovePath } from '../net/packet/MovePathDecoder.js';
 import type { Foothold } from '../map/Foothold.js';
 import { RemoteMoveReplay } from './RemoteMoveReplay.js';
 
-// Generic idle-chat greetings for NPCs with no WZ speak entries.
-// Sourced from OG StringPool (IDs 0x1A2F–0x1A36).
-const GENERIC_GREETINGS = [
-  'Hello, adventurer!',
-  'Welcome to our town!',
-  'How can I help you today?',
-  'Nice to see you around!',
-  'Take care out there!',
-  'Stay safe on your journey!',
-  'Need anything? Just ask!',
-  'Good to see you!',
-];
+/** One-time diagnostics: NPC templates with no img in Npc.nx. */
+const UNRESOLVABLE_TEMPLATES = new Set<number>();
+
 
 /** OG CNpc::SetQuestList (0x671980) m_nQuestState values. The number indexes
  * the WZ node UI/UIWindow2.img/QuestIcon/<state> directly (OG builds the
@@ -126,7 +117,15 @@ export class NpcLook {
     const strid = `${this.NpcId.toString().padStart(7, '0')}.img`;
     const item = npcWz.GetItem(strid);
     const npcRoot = item instanceof WzImage ? item.Root : null;
-    if (!npcRoot) return;
+    if (!npcRoot) {
+      // Diagnostics for "invisible NPC" reports: this template does not exist
+      // in Npc.nx (nothing can render). Warn once per template.
+      if (!UNRESOLVABLE_TEMPLATES.has(this.NpcId)) {
+        UNRESOLVABLE_TEMPLATES.add(this.NpcId);
+        console.warn(`[NpcLook] template ${strid} missing from Npc.nx — NPC cannot render`);
+      }
+      return;
+    }
 
     let resolvedRoot: WzProperty | null = npcRoot;
 
@@ -184,11 +183,13 @@ export class NpcLook {
       }
     }
 
-    // TODO_AUDIT.md Hundred-and-eighty-second pass: OG stores NPC speak
-    // entries as labels (n0/n1) under Npc.wz, then resolves them through
+    // OG: CNpcTemplate stores speak labels (n0/n1/...) under info/speak
+    // (root-level 'speak' is a rare legacy variant). Labels resolve through
     // StringPool(0x6AC) => String/Npc.img/<template>/<label> in
     // CNpcTemplate::GetChatMessageList (0x67B670).
-    const speakRoot = npcRoot.Get('speak');
+    const speakRoot = (npcRoot.Get('info') instanceof WzProperty && (npcRoot.Get('info') as WzProperty).Get('speak'))
+      ? (npcRoot.Get('info') as WzProperty).Get('speak')
+      : npcRoot.Get('speak');
     if (speakRoot instanceof WzProperty) {
       this._collectStrings(speakRoot, this._speak, textOf);
     }
@@ -216,10 +217,11 @@ this._loaded = this._anims.size > 0;
     if (this._speak.length > 0) {
       return this._speak[Math.floor(Math.random() * this._speak.length)];
     }
-    // OG fallback: NPCs with no WZ speak entries show a random generic greeting.
-    // These match common idle-chat phrases from the v95 StringPool (IDs 0x1A2F-0x1A36).
-    return GENERIC_GREETINGS[Math.floor(Math.random() * GENERIC_GREETINGS.length)];
+    return null;
   }
+
+  /** Number of resolved WZ speech lines (0 = no data; callers must not invent greetings). */
+  get SpeakLines(): number { return this._speak.length; }
 
   private _collectStrings(node: WzProperty, out: string[], textOf?: (npcId: number, key: string) => string | undefined): void {
     for (const v of Object.values(node.Items)) {

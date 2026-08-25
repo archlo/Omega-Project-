@@ -12,6 +12,7 @@ export enum Stance {
   Prone,
   ProneStab,
   Dead,
+  Fall,
 }
 
 export function StanceToWzKey(s: Stance): string {
@@ -29,18 +30,29 @@ export function StanceToWzKey(s: Stance): string {
     case Stance.Prone: return 'prone';
     case Stance.ProneStab: return 'proneStab';
     case Stance.Dead: return 'dead';
+    case Stance.Fall: return 'fall';
     default: return 'stand1';
   }
 }
 
-/** Inverse of StanceMoveAction — decodes a MoveElement's `moveAction` byte
+/** Inverse of StanceMoveAction â€” decodes a MoveElement's `moveAction` byte
     into a Stance + facing. v95 wire layout (CUser::OnResolveMoveAction
     @0x8E5800 returns `(2 * nMoveAction) | dir`; CAvatar::MoveAction2RawAction
     @0x45FA30 reads dir = nMA & 1, idx = nMA >> 1):
     bit 0 = facing-left, bits 1+ = move index:
-    1 walk · 2/4 stand variants · 3 fall · 5 jump · 6 swim/fly-idle ·
-    7 ladder · 8 rope · 9 fly · 10 chair/sit · 12 prone · 19 dash · 20 booster. */
-export function MoveActionToStance(moveAction: number): { stance: Stance; facingLeft: boolean } {
+    1 walk â†’ 2/4 stand variants â†’ 3 fall â†’ 5 jump â†’ 6 swim/fly-idle â†’
+    7 ladder â†’ 8 rope â†’ 9 fly â†’ 10 chair/sit â†’ 12 prone â†’ 19 dash â†’ 20 booster.
+    The wire COLLAPSES the stand/walk variants (idx 2 covers stand1+stand2,
+    idx 1 covers walk1+walk2) â€” the receiving client re-expands them via the
+    avatar's own weapon entry (OG MoveAction2RawAction: idx 1 â†’ `walkType != 1`
+    picks walk2, idx 2 â†’ `(standType != 1) + 2` picks stand2; CAvatar::
+    NotifyAvatarModified @0x46BB20 loads walk/stand from Character/<weapon>).
+    Pass weaponStand/weaponWalk from that character's equipped weapon. */
+export function MoveActionToStance(
+  moveAction: number,
+  weaponStand = 1,
+  weaponWalk = 1,
+): { stance: Stance; facingLeft: boolean } {
   const facingLeft = (moveAction & 1) !== 0;
   const idx = moveAction >>> 1;
   const stance = (() => {
@@ -48,12 +60,12 @@ export function MoveActionToStance(moveAction: number): { stance: Stance; facing
       case 1:
       case 19:
       case 20:
-        return Stance.Walk1;
+        return weaponWalk === 2 ? Stance.Walk2 : Stance.Walk1;
       case 2:
       case 4:
-        return Stance.Stand1;
+        return weaponStand === 2 ? Stance.Stand2 : Stance.Stand1;
       case 3:
-        return Stance.Walk2; // airborne/fall branch
+        return Stance.Fall;
       case 5:
         return Stance.Jump;
       case 6:

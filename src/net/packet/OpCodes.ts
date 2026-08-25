@@ -264,6 +264,9 @@ export enum InHeader {
   MobApplyCtrl              = 228,
   NpcMove                   = 241,
   DropPickUpRequest         = 246,
+  // OG CReactor::OnHit / OnTouch — client attack/touch on a field reactor.
+  // Server InHeader: REACTOR_HIT=249, REACTOR_TOUCH=250.
+  UserHitReactor            = 249,
 
   // OG: CUIRaiseWnd::SendPutItem / CUIRaisePieceWnd::SendPutItem (v95 IDA
   // dump, send_op=0x11d/0x11e) — pet-evolution "Raise" minigame.

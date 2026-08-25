@@ -2380,6 +2380,7 @@ export class GameStage extends Stage {
     };
     this._statusBar.onMTS = () => {}; // MTS no longer exists
     this._chatBar.initWzAssets(this._loader, uiWz);
+    this._userList.initWzAssets(this._loader, uiWz);
     this._statusBar.onChat = () => { this._chatBar.focus(); };
     this._statusBar.onGameOption = () => { this._quickSlotConfig && (this._quickSlotConfig.isVisible = !this._quickSlotConfig.isVisible); };
     this._statusBar.onJoyPad = () => {}; // Joypad config not implemented
@@ -2766,6 +2767,9 @@ export class GameStage extends Stage {
     for (const s of this._summons.values()) s.Update(dt);
     for (const tp of this._townPortals.values()) tp.Update(dt);
     for (const emp of this._employees.values()) emp.Update(dt);
+    // OG CReactor::Update — advance the reactor's state animation; without
+    // this tick the container was never rebuilt after Load (invisible).
+    for (const reactor of this._reactors.values()) reactor.Update(dt);
     for (const aa of this._affectedAreas.values()) aa.Update(dt);
     for (const og of this._openGates.values()) og.Update(dt);
 
@@ -6170,6 +6174,10 @@ this._localCharId = args.characterId ?? 0;
     const minY = pos.y - GameStage.MeleeReachY * 2;
     const maxY = pos.y + GameStage.MeleeReachY;
 
+    // OG CReactor::OnHit — a swing overlapping a reactor's body sends
+    // UserHitReactor; the server owns hitable/state rules.
+    this._hitReactorsInRect(minX, maxX, minY, maxY, 0);
+
     let closest: MobLook | null = null;
     let bestDist = Infinity;
     for (const mob of this._mobs.values()) {
@@ -6261,6 +6269,21 @@ this._localCharId = args.characterId ?? 0;
    * attack packet carrying the skillId. Buff/movement skills (no `damage`
    * level data) return without attacking.
    */
+  /** OG CReactor::OnHit — send UserHitReactor for every reactor whose body
+   *  box overlaps the attack rect. The server validates hitable/state/skill
+   *  gates (FieldHandler::handleReactorHit) and broadcasts the state change.
+   *  Body box approximated as ±25px wide, 50px tall above the base point —
+   *  the client does not track per-template WZ rects. */
+  private _hitReactorsInRect(minX: number, maxX: number, minY: number, maxY: number, skillId: number): void {
+    if (!this._reactors || this._reactors.size === 0) return;
+    for (const reactor of this._reactors.values()) {
+      const p = reactor.Position;
+      if (p.x + 25 < minX || p.x - 25 > maxX) continue;
+      if (p.y < minY || p.y - 50 > maxY) continue;
+      this.game.session.send(GameSender.HitReactor(reactor.ObjId, 0, 0, skillId));
+    }
+  }
+
   private _trySkillAttack(skillId: number, slv: number): void {
     if (!this._physics || !this._skillService) return;
     const data = this._skillService.AttackDataAt(skillId, slv);
@@ -6284,6 +6307,7 @@ this._localCharId = args.characterId ?? 0;
       minY = pos.y - GameStage.MeleeReachY * 2;
       maxY = pos.y + GameStage.MeleeReachY;
     }
+    this._hitReactorsInRect(minX, maxX, minY, maxY, skillId);
 
     // Up to mobCount closest living mobs inside the rect.
     const candidates: Array<{ mob: MobLook; d: number }> = [];
@@ -7852,19 +7876,11 @@ this._localCharId = args.characterId ?? 0;
       // OG: pet auto-speaking on level up (event 0)
       this._firePetEvent(0);
       // OG: level up effect and sound
+      // OG: CAnimationDisplayer::Effect_General (BasicEff.img/LevelUp) +
+      // play_game_sound "LevelUp" — same pair as CUser::OnEffect case 0,
+      // rendered locally since the server excludes self from that broadcast.
       if (args.level > prevLevel && this._physics) {
-        // OG: CAnimationDisplayer::Effect_General at the character.
-        // _loadLayer appends .img and expects a numbered sub-img, but BasicEff
-        // uses named children (LevelUp, JobChanged).  Load the node directly
-        // and route through PlayAtCaster, same pattern as job-change (case 10).
-        const effNode = this._effectWz?.GetItem('BasicEff.img/LevelUp');
-        if (effNode) this._skillEffects?.PlayAtCaster(effNode, this._localCharId, this._physics?.FacingLeft ?? true);
-        if (this.game.audioPlayer && this._mobSoundWz) {
-          const soundNode = this._mobSoundWz.GetItem('Game.img/LevelUp');
-          if (soundNode instanceof WzSound) {
-            this.game.audioPlayer.PlayEffect(soundNode.AudioBytes);
-          }
-        }
+        this._playStatEffect('BasicEff.img/LevelUp', 'Game.img/LevelUp');
       }
     }
     // TODO_AUDIT.md Sixty-fifth pass: real bug found while wiring CUISkill's
@@ -7899,6 +7915,10 @@ this._localCharId = args.characterId ?? 0;
       // resend skill records on job change (kinoko behavior), so rebuild the
       // SkillBook from the records we already hold with the new job.
       if (prevJob !== args.job && this._skillRecords) this._onSkillRecordResult(this._skillRecords);
+      // OG: CWvsContext::OnStatChanged dwFlag & JOB block — Effect_General
+      // BasicEff.img/JobChanged at the character + play_game_sound "JobChanged".
+      // The server excludes the advancing player from the UserEffect broadcast.
+      if (prevJob !== args.job) this._playStatEffect('BasicEff.img/JobChanged', 'Game.img/JobChanged');
     }
     // OG: CUIItem::Draw renders meso at y=268 from CharacterData.
     if (args.meso !== undefined) {
@@ -8583,19 +8603,36 @@ this._localCharId = args.characterId ?? 0;
     if (text) this._chatBalloon?.Set(npc.ObjId, text, 5, BalloonType.Npc);
   }
 
+  /** OG CAnimationDisplayer::Effect_General + play_game_sound pair used by
+   *  CUser::OnEffect cases 0/0xA and CWvsContext::OnStatChanged level/job blocks. */
+  private _playStatEffect(effectPath: string, soundName: string, args?: UserEffectArgs): void {
+    const charId = args ? (args.isLocal ? this._localCharId : args.charId) : this._localCharId;
+    const facingLeft = args
+      ? (args.isLocal ? (this._physics?.FacingLeft ?? true) : (this._otherChars.get(args.charId)?.FacingLeft ?? true))
+      : (this._physics?.FacingLeft ?? true);
+    const node = this._effectWz?.GetItem(effectPath);
+    if (node) this._skillEffects?.PlayAtCaster(node, charId, facingLeft);
+    if (this.game?.audioPlayer && this._mobSoundWz) {
+      const sound = this._mobSoundWz.GetItem(soundName);
+      if (sound instanceof WzSound) this.game.audioPlayer.PlayEffect(sound.AudioBytes);
+    }
+  }
+
   /** ponytail: when combo counter > 0, try indexed variant <wzPath>/<combo>
    *  first (OG Effect_SkillUse format-ID-986 loop). Falls back to base path
    *  if no such sub-node. Remote chars not tracked â€” only local combo. */
   private _onUserEffect(args: UserEffectArgs): void {
+    if (args.effectType === 0) {
+      // OG: CUser::OnEffect case 0 (LevelUp) — Effect_General BasicEff.img/LevelUp
+      // at the character + play_game_sound "LevelUp". The server excludes the
+      // leveling player; the local client renders its own via OnStatChanged.
+      this._playStatEffect('BasicEff.img/LevelUp', 'Game.img/LevelUp', args);
+      return;
+    }
     if (args.effectType === 10) {
       // OG: CUser::OnEffect case 0xA (JobChanged) â€” plays BasicEff.img/JobChanged
       // at the character (layer under face) + Sound/Game.img/JobChanged.
-      const node = this._effectWz?.GetItem('BasicEff.img/JobChanged');
-      const charId = args.isLocal ? this._localCharId : args.charId;
-      const facingLeft = args.isLocal ? (this._physics?.FacingLeft ?? true) : (this._otherChars.get(args.charId)?.FacingLeft ?? true);
-      if (node) this._skillEffects?.PlayAtCaster(node, charId, facingLeft);
-      const sound = this._mobSoundWz?.GetItem('Game.img/JobChanged');
-      if (sound instanceof WzSound) this.game.audioPlayer.PlayEffect(sound.AudioBytes);
+      this._playStatEffect('BasicEff.img/JobChanged', 'Game.img/JobChanged', args);
       return;
     }
     if (args.effectType !== 14 && args.effectType !== 20) return;
