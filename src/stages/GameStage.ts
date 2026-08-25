@@ -1,4 +1,4 @@
-import { Container, Graphics } from 'pixi.js';
+﻿import { Container, Graphics } from 'pixi.js';
 import { Stage, MouseButton } from '../app/Stage.js';
 import { MapleClaudeGame } from '../MapleClaudeGame.js';
 import { WzPackage } from '../wz/WzPackage.js';
@@ -7,7 +7,7 @@ import { WzCanvas } from '../wz/WzCanvas.js';
 import { GameCamera } from '../map/GameCamera.js';
 import { FieldScene } from '../map/FieldScene.js';
 import { CharLook } from '../character/CharLook.js';
-import { Stance } from '../character/Stance.js';
+import { Stance, MoveActionToStance } from '../character/Stance.js';
 import * as Avatar from '../character/Avatar.js';
 import { NextLevelExpTable } from '../character/NextLevelExpTable.js';
 import { NpcLook, NPC_QUEST_STATE } from '../character/NpcLook.js';
@@ -118,6 +118,7 @@ import { Messenger } from '../ui/game/Messenger.js';
 import { StatusMessenger } from '../ui/game/StatusMessenger.js';
 import { TipOfTheDay } from '../character/TipOfTheDay.js';
 import { UserList } from '../ui/game/UserList.js';
+import { GuildGradeWindow } from '../ui/game/GuildGradeWindow.js';
 import { GuildBBS } from '../ui/game/GuildBBS.js';
 import { FamilyWindow } from '../ui/game/FamilyWindow.js';
 import { ChannelSelect } from '../ui/game/ChannelSelect.js';
@@ -210,9 +211,9 @@ export class GameStage extends Stage {
   protected _otherChars = new Map<number, OtherCharLook>();
   /** ponytail: couple-chair pairs. Key=charId, value={itemId, pairCharId}.
    *  Proximity tracking works; overlay rendering (heart zone, per-character
-   *  effect) deferred â€” cosmetic, no gameplay impact. */
+   *  effect) deferred Ã¢â‚¬â€ cosmetic, no gameplay impact. */
   private _couplePairs = new Map<number, { itemId: number; pairCharId: number }>();
-  // OG: CUser::m_apPet[3] â€” index is petIdx (slot 0..2), holes allowed.
+  // OG: CUser::m_apPet[3] Ã¢â‚¬â€ index is petIdx (slot 0..2), holes allowed.
   protected _pets = new Map<number, (Pet | null)[]>();
   protected _dragons = new Map<number, DragonLook>();
   protected _drops: DropSprite[] = [];
@@ -229,7 +230,7 @@ export class GameStage extends Stage {
   /** couple-chair heart zone overlays: midpoint position + animation frames. */
   private _coupleHearts: { a: number; b: number; frames: AnimFrame[]; frameIndex: number; frameTimer: number; itemId: number }[] = [];
   private _coupleHeartLayer: Container = new Container();
-  // OG: couple-chair pairing change callback â€” fires when a pair forms or breaks.
+  // OG: couple-chair pairing change callback Ã¢â‚¬â€ fires when a pair forms or breaks.
   // Server applies stat bonuses via TemporaryStat packets upon pairing.
   onCoupleChairPairChanged: ((paired: boolean, charId: number, pairCharId: number, itemId: number) => void) | null = null;
   /** One-shot field effects (e.g. Summon.img animations at world positions). */
@@ -237,11 +238,11 @@ export class GameStage extends Stage {
   private _fieldFxLayer: Container = new Container();
   private _fearEffect = new FearEffect();
 
-  // OG: CField::RestoreForbiddenSkill/RestoreAllowedItem â€” field restrictions
+  // OG: CField::RestoreForbiddenSkill/RestoreAllowedItem Ã¢â‚¬â€ field restrictions
   private _forbiddenSkills: Set<number> | null = null;
   private _allowedItems: Set<number> | null = null;
 
-  // OG: CField_Dojang::CanUseSpecialArts â€” dojang special arts flag
+  // OG: CField_Dojang::CanUseSpecialArts Ã¢â‚¬â€ dojang special arts flag
   private _dojangSpecialArts = false;
   private _limitedView = new LimitedViewOverlay();
   private _comboCounter = 0;
@@ -252,7 +253,7 @@ export class GameStage extends Stage {
   // Mobs/NPCs/reactors were constructed, Update()d every tick, and tracked
   // in their respective maps, but nothing ever added their `.container` to
   // the scene graph or set its screen position from world position + camera
-  // â€” same "fully wired except the final addChild" gap pass 14 already found
+  // Ã¢â‚¬â€ same "fully wired except the final addChild" gap pass 14 already found
   // and fixed for EmotionBubble/TombstoneEffect/DamageNumber. Persistent
   // layer added to mapRoot once per field load (_onSetField), repopulated
   // every draw() call below.
@@ -264,7 +265,7 @@ export class GameStage extends Stage {
   private _pendingLocalBalloon: { text: string; at: number } | null = null;
   private _chatTab = 0;
   protected _miniMap!: MiniMap;
-  // OG: CUIMiniMap::InsertStalkee/RemoveStalkee â€” TODO_AUDIT.md
+  // OG: CUIMiniMap::InsertStalkee/RemoveStalkee Ã¢â‚¬â€ TODO_AUDIT.md
   // Sixty-ninth pass's `CUIMiniMap` finding. charId -> isLeader (from
   // PartyLoadArgs.bossId, the same boss-tracking data the UserList
   // party-panel crown indicator is still self-flagged as not using).
@@ -305,8 +306,9 @@ export class GameStage extends Stage {
   protected _gameMenu: GameMenu | null = null;
   protected _revivePanel: Revive | null = null;
   protected _userList = new UserList();
+  protected _guildGradeWin: GuildGradeWindow | null = null;
   protected _guildBBS = new GuildBBS();
-  // OG: CConfig::IsInBlackList â€” TODO_AUDIT.md Eighty-second pass's
+  // OG: CConfig::IsInBlackList Ã¢â‚¬â€ TODO_AUDIT.md Eighty-second pass's
   // `CTabBlackList` finding. Local-only ignore list, not server state.
   protected _blackList = new Set<string>();
   protected _statusMessenger = new StatusMessenger();
@@ -368,7 +370,7 @@ export class GameStage extends Stage {
   protected _channelSelect: ChannelSelect | null = null;
   protected _quickSlotConfig: QuickSlotConfig | null = null;
   protected _quickSlots: QuickSlotBar | null = null;
-  // TODO_AUDIT.md Ninety-seventh/Hundred-and-eighth passes â€” OG: IDraggable/
+  // TODO_AUDIT.md Ninety-seventh/Hundred-and-eighth passes Ã¢â‚¬â€ OG: IDraggable/
   // CWndMan::BeginDragDrop. Generic drag-and-drop, root-cause fix for the
   // several "dead wiring" bugs this client had (TryBindSkillAt, GuildCreate).
   protected _dragController = new DragController();
@@ -379,17 +381,17 @@ export class GameStage extends Stage {
 
   protected _panels: GamePanel[] = [];
   protected _fadePhase = 0;   // 0 idle, +1 fading to black, 2 hold, -1 fading in
-  // OG starts the in-game stage behind an opaque CInterStage (black) â€” the first
-  // SetField fades in from black, so the loginâ†’game swap never shows a half-built map.
+  // OG starts the in-game stage behind an opaque CInterStage (black) Ã¢â‚¬â€ the first
+  // SetField fades in from black, so the loginÃ¢â€ â€™game swap never shows a half-built map.
   protected _fadeAlpha = 1;   // 0 = clear .. 1 = opaque black
   protected _holdTimer = 0;   // seconds elapsed in hold-at-black phase
   protected _pendingField: SetFieldArgs | null = null;
-  // Rendered frames since the field was swapped in â€” the hold-at-black phase
+  // Rendered frames since the field was swapped in Ã¢â‚¬â€ the hold-at-black phase
   // waits for these so the fade-in never reveals a still-loading map.
   private _framesSinceSwap = 0;
   private _fadeOverlay = new Graphics();
   // OG: CAnimationDisplayer::RegisterFadeInOutAnimation entries driven by the
-  // FieldFadeInOut packet (scripted fades). Black overlay, alpha 0â†’nAlpha over
+  // FieldFadeInOut packet (scripted fades). Black overlay, alpha 0Ã¢â€ â€™nAlpha over
   // tFadeIn ms, hold tDelay ms, back to 0 over tFadeOut ms.
   private _fieldFades: {
     tFadeIn: number; tDelay: number; tFadeOut: number; nAlpha: number;
@@ -415,20 +417,20 @@ export class GameStage extends Stage {
   protected _hasPendingPartyInvite = false;
   protected _guildLoadSent = false;
   protected _friendLoadSent = false;
-  /** Pending stat data from SetField â€” applied after _initMenu creates the statusBar. */
+  /** Pending stat data from SetField Ã¢â‚¬â€ applied after _initMenu creates the statusBar. */
   private _pendingStat: CharacterStat | null = null;
-  /** Pending meso from SetField â€” applied after _initMenu creates the item panel. */
+  /** Pending meso from SetField Ã¢â‚¬â€ applied after _initMenu creates the item panel. */
   private _pendingMeso: number | null = null;
-  /** Pending equipped items from SetField â€” applied after _initMenu creates the equip panel. */
+  /** Pending equipped items from SetField Ã¢â‚¬â€ applied after _initMenu creates the equip panel. */
   private _pendingEquipped: { slot: number; item: any }[] | null = null;
   private _pendingEquippedCash: { slot: number; item: any }[] | null = null;
   private _pendingLinkedCharacter = '';
   // OG: CharacterData.skillRecords from SetField arrive before _initMenu builds
-  // SkillBook â€” stashed here and applied once the panel exists (see _initMenu).
+  // SkillBook Ã¢â‚¬â€ stashed here and applied once the panel exists (see _initMenu).
   private _pendingSkillRecords: { skillId: number; level: number; masterLevel?: number }[] | null = null;
   protected _skillService: SkillInfoService | null = null;
   protected _skillRecords: { skillId: number; level: number; masterLevel?: number }[] = [];
-  // OG: CUser::AFTERIMAGEINFO â€” attack trail visual effect.
+  // OG: CUser::AFTERIMAGEINFO Ã¢â‚¬â€ attack trail visual effect.
   // Registered after each attack, drawn as a fading afterimage sprite.
   private _afterimageInfo: {
     tStart: number; bLeft: boolean; nAction: number;
@@ -441,24 +443,24 @@ export class GameStage extends Stage {
   // ponytail: ForcedStat values stored separately (OG SetFrom Phase 7).
   // Reset on ForcedStatReset; fed into computeBasicStat during stat sync.
   protected _forcedStat: { str: number; dex: number; int: number; luk: number; speed: number; jump: number } = { str: 0, dex: 0, int: 0, luk: 0, speed: 0, jump: 0 };
-  // ponytail: ItemOptionLoader for option/socket WZ data â€” loaded from Item.nx
+  // ponytail: ItemOptionLoader for option/socket WZ data Ã¢â‚¬â€ loaded from Item.nx
   protected _itemOptionLoader: ItemOptionLoader | null = null;
-  // ponytail: per-body-part EquipStats from InventoryOperation â€” includes
+  // ponytail: per-body-part EquipStats from InventoryOperation Ã¢â‚¬â€ includes
   // per-instance stat lines (incStr etc.) and option/socket IDs for stat computation.
   protected _equipStats = new Map<number, EquipStats>();
-  // OG: mSkillRecordEx â€” per-skill equipment-provided level bonus (SkillLevel -
+  // OG: mSkillRecordEx Ã¢â‚¬â€ per-skill equipment-provided level bonus (SkillLevel -
   // PureSkillLevel), shown as the green "(+N)" in the skill window. Rebuilt from
   // equipped items' info/incSkill whenever equipment changes.
   protected _equipSkillBonus = new Map<number, number>();
   // (critical prob/damage, DAMr, BossDAMr, IgnoreTargetDEF). Computed from
   // the weapon's ItemOption level data during stat sync, cached for attack use.
-  // NOTE: actual fields moved to CUserLocal.ts â€” these are accessors for GameStage
+  // NOTE: actual fields moved to CUserLocal.ts Ã¢â‚¬â€ these are accessors for GameStage
   get weaponCritProb() { return CUserLocal.weaponCritProb; }
   get weaponCritDamage() { return CUserLocal.weaponCritDamage; }
   get weaponDAMr() { return CUserLocal.weaponDAMr; }
   get weaponBossDAMr() { return CUserLocal.weaponBossDAMr; }
   get weaponIgnoreTargetDEF() { return CUserLocal.weaponIgnoreTargetDEF; }
-  // TODO_AUDIT.md Hundred-and-nineteenth pass: MACROSYSDATA â€” populated by
+  // TODO_AUDIT.md Hundred-and-nineteenth pass: MACROSYSDATA Ã¢â‚¬â€ populated by
   // onMacroSysDataInit (opcode decoded in FieldHandlers.ts), consumed by
   // FuncKeyType.MacroSkill key dispatch and SkillMacro.Open.
   protected _macroSlots: MacroSlot[] = [];
@@ -470,6 +472,15 @@ export class GameStage extends Stage {
   protected _pendingQuestId = 0;
   protected _pendingQuestNpcId = 0;
   protected _attackCooldown = 0;
+  /** Attack key edge detector â€” OG HandleCtrlKeyDown fires on key-DOWN only. */
+  protected _attackWasDown = false;
+  /** True while a melee swing's one-time action plays (input lock window). */
+  protected _meleeSwingActive = false;
+  // OG: CWvsContext::TryRecovery @0x9D4020 idle-regen state (m_tRestForHP/
+  // MPDuration + the m_ptPosPrev stationary check).
+  private _recoveryPrevPos: { x: number; y: number } | null = null;
+  private _restForHpMs = 0;
+  private _restForMpMs = 0;
   protected _comboKeys = new SequencedKeyMan();
   protected _comboClockMs = 0;
   protected _comboCount = 0;
@@ -477,14 +488,14 @@ export class GameStage extends Stage {
   protected _isPlayerDead = false;
   /** OG death alpha tween: ms since death, -1 when not running (OnSetDead 1250ms fade). */
   protected _deathFadeMs = -1;
-  // OG: CWvsContext::Update â€” CUIRevive opens exactly 2200ms after death
+  // OG: CWvsContext::Update Ã¢â‚¬â€ CUIRevive opens exactly 2200ms after death
   // (UI_OpenRevive stamps m_tReviveDialog; Update checks now - m_tReviveDialog > 2200).
   protected _reviveDialogClockMs = -1;
   protected _fieldKey = 0;
   private _isFieldTransferring = false;
   private _townPortalStatus = '';
   private _lastUnequipTime = 0;
-  // OG: CWvsContext::SendEmotionChange @0x9f9320 â€” 2000ms cooldown
+  // OG: CWvsContext::SendEmotionChange @0x9f9320 Ã¢â‚¬â€ 2000ms cooldown
   private _lastEmotionTime = 0;
   // OG SendEmotionChange @0x9f9320: morphed characters are blocked entirely
   // (AddChatMorphedMsg); emotion must be <= 0x17; 2000ms cooldown; then
@@ -510,23 +521,23 @@ export class GameStage extends Stage {
     this._bg = new Graphics();
     this.uiRoot.addChild(this._bg);
 
-    // Severe, confirmed bug (FIXED) â€” this array used to also list
+    // Severe, confirmed bug (FIXED) Ã¢â‚¬â€ this array used to also list
     // `_statusBar`, `_miniMap`, `_equip`, `_item`, `_keyConfig`
     // (all declared with `!`, only ever assigned inside `_initMenu()`,
     // which doesn't run until the async `_loadWzAsync()` WZ load
     // completes) and `_questReward`/`_notice` (both `XXX | null = null`,
     // also only assigned inside `_initMenu()`). At the time THIS
     // constructor runs, all 7 of those fields are still `undefined`/`null`
-    // â€” pushing them here put 7 undefined/null entries into `_panels`.
+    // Ã¢â‚¬â€ pushing them here put 7 undefined/null entries into `_panels`.
     // `onEnter()` (called synchronously, long before `_initMenu()` ever
     // gets a chance to run) immediately does
     // `for (const p of this._panels) this.uiRoot.addChild(p.container)`,
-    // which would throw on the very first undefined/null entry â€” i.e. this
+    // which would throw on the very first undefined/null entry Ã¢â‚¬â€ i.e. this
     // stage could never have actually been entered without crashing. Only
     // the panels that ARE constructed inline as field initializers
     // (`_chatBar`, `_buffList`, `_skill`, `_stats`, `_quest`, `_optionMenu`,
     // `_charInfo`, `_npcTalk`, `_shop`, `_userList`, `_statusMessenger`) are
-    // real objects at this point â€” kept here. The other 7 are now pushed
+    // real objects at this point Ã¢â‚¬â€ kept here. The other 7 are now pushed
     // from `_initMenu()` instead, once they actually exist (matching the
     // already-correct pattern the other ~25 `_initMenu`-constructed panels
     // already use at the `this._panels.push(...)` call below).
@@ -540,7 +551,7 @@ export class GameStage extends Stage {
 
   // PixiJS v8's `Container.addChild(...children)` reads `children[0].parent`
   // even when called with zero args, so `addChild(...[])` (an overlay that
-  // rebuilt to no children â€” e.g. no projectiles at spawn) throws "parent of
+  // rebuilt to no children Ã¢â‚¬â€ e.g. no projectiles at spawn) throws "parent of
   // undefined". Only spread when there's something to add.
   private _moveChildren(target: Container, source: Container): void {
     const kids = source.removeChildren();
@@ -554,12 +565,12 @@ export class GameStage extends Stage {
 
     if (this._field && this._camera) {
       // OG: all entities (players, mobs, NPCs, drops) layered into field's
-      // 8 layer containers by foothold layer â€” mobs/NPCs no longer in a
+      // 8 layer containers by foothold layer Ã¢â‚¬â€ mobs/NPCs no longer in a
       // separate top-level _entityLayer.
       this._field.UpdateEntities(this._otherChars, this._player, this._drops,
         this._mobs.values(), this._npcs, w, h);
 
-      // Other entities (reactors, employees, summons, etc.) â€” still in
+      // Other entities (reactors, employees, summons, etc.) Ã¢â‚¬â€ still in
       // top-level _entityLayer for now (no Layer field yet).
       this._entityLayer.removeChildren();
       for (const reactor of this._reactors.values()) {
@@ -635,7 +646,7 @@ export class GameStage extends Stage {
         if (charId === this._localCharId && this._player) {
           // Anchor at the top of the avatar (HeadPosition) so the balloon
           // body sits ABOVE the entity with the arrow pointing down at the
-          // head â€” "on top" of the character/NPC. Fall back to ~60px above
+          // head Ã¢â‚¬â€ "on top" of the character/NPC. Fall back to ~60px above
           // the feet if the avatar hasn't produced a head anchor yet.
           const p = this._player.HeadPosition;
           const y = p.y === this._player.Position.y ? p.y - 60 : p.y;
@@ -736,7 +747,7 @@ export class GameStage extends Stage {
     this._revivePanel?.Relayout(800, 600);
     this._fearEffect.onResize(windowW, windowH);
     this._limitedView.onResize(windowW, windowH);
-    // OG: KeyDownBar/ComboDisplay â€” reposition on resize
+    // OG: KeyDownBar/ComboDisplay Ã¢â‚¬â€ reposition on resize
     this._keyDownBar.container.position.set(windowW / 2, windowH - 40);
     this._comboDisplay.container.position.set(windowW - 80, 60);
   }
@@ -768,10 +779,10 @@ export class GameStage extends Stage {
     for (let i = this._panels.length - 1; i >= 0; i--) {
       if (this._panels[i]?.isVisible && this._panels[i].onKeyPress(key)) return;
     }
-    // OG: CUIStatusBar::OnKey guards on m_pFocus == m_pEditChatInput â€” while
+    // OG: CUIStatusBar::OnKey guards on m_pFocus == m_pEditChatInput Ã¢â‚¬â€ while
     // the chat edit box is active it owns every key (Enter=send, Escape=end,
     // Tab=cycle target, letters=typing). While inactive, Enter activates it
-    // (StartChat) so the user can type. This is the missing 1:1 wiring â€” the
+    // (StartChat) so the user can type. This is the missing 1:1 wiring Ã¢â‚¬â€ the
     // ChatBar's onKeyPress was never routed from the stage.
     if (this._chatBar) {
       if (this._chatBar.isFocused) {
@@ -783,13 +794,13 @@ export class GameStage extends Stage {
     }
     // TODO_AUDIT.md Hundred-and-nineteenth pass: FuncKeyType.Skill (1) and
     // FuncKeyType.MacroSkill (8) dispatch. OG: CUserLocal::UseFuncKeyMapped
-    // (0x932e20) switch â€” case 1u calls UseSkill, case 8u calls
+    // (0x932e20) switch Ã¢â‚¬â€ case 1u calls UseSkill, case 8u calls
     // CMacroSysMan::DoActiveMacro(nID) which fires all non-zero slots in the
-    // macro at index nID (0â€“4). _keyConfig may be null before _loadWzAsync.
+    // macro at index nID (0Ã¢â‚¬â€œ4). _keyConfig may be null before _loadWzAsync.
     if (key === 'ArrowUp') {
-      // OG: CUserLocal::OnKey wParam==38 â†’ HandleUpKeyDown (0x919E50). The Up
+      // OG: CUserLocal::OnKey wParam==38 Ã¢â€ â€™ HandleUpKeyDown (0x919E50). The Up
       // key is what actually triggers a portal's field transfer (and the hidden
-      // portal / ladder-adjacent flows) â€” the proximity auto-touch in
+      // portal / ladder-adjacent flows) Ã¢â‚¬â€ the proximity auto-touch in
       // _checkPortalTouch only covers walk-into types (1-6,9).
       this._handleUpKeyDown();
     }
@@ -801,7 +812,7 @@ export class GameStage extends Stage {
       const slot = this._macroSlots[fk.id];
       if (slot) {
         if (slot.mute) {
-          console.debug(`Macro [${fk.id}] muted â€” skipping cosmetic feedback`);
+          console.debug(`Macro [${fk.id}] muted Ã¢â‚¬â€ skipping cosmetic feedback`);
         }
         for (const skillId of slot.skills) {
           if (skillId !== 0) {
@@ -812,14 +823,14 @@ export class GameStage extends Stage {
         }
       }
     } else if (fk.type === FuncKeyType.Menu) {
-      // OG: CUserLocal::UseFuncKeyMapped â€” Menu type dispatch
+      // OG: CUserLocal::UseFuncKeyMapped Ã¢â‚¬â€ Menu type dispatch
       this._executeMenuAction(fk.id);
     }
     // Fallback: Pickup/Sit/Tab shortcuts from handleKeyDown
     this.handleKeyDown(key);
   }
 
-  // OG: Menu ID â†’ UI panel toggle (from CFuncKeyMappedMan / UseFuncKeyMapped)
+  // OG: Menu ID Ã¢â€ â€™ UI panel toggle (from CFuncKeyMappedMan / UseFuncKeyMapped)
   private _executeMenuAction(menuId: number): void {
     switch (menuId) {
       case 0:
@@ -848,21 +859,21 @@ export class GameStage extends Stage {
       case 9: this._keyConfig.isVisible = !this._keyConfig.isVisible; break;   // KeyBindings
       case 10: this._chatBar?.focus(); break;                                  // Say
       case 11: this._chatBar?.focus(); break;                                  // Whisper
-      case 12: this._chatBar?.setChatTarget(2); this._chatBar?.focus(); break; // PartyChat â†’ party target
-      case 13: this._chatBar?.setChatTarget(3); this._chatBar?.focus(); break; // FriendsChat â†’ buddy target
+      case 12: this._chatBar?.setChatTarget(2); this._chatBar?.focus(); break; // PartyChat Ã¢â€ â€™ party target
+      case 13: this._chatBar?.setChatTarget(3); this._chatBar?.focus(); break; // FriendsChat Ã¢â€ â€™ buddy target
       case 14: if (this._gameMenu) this._gameMenu.isVisible = !this._gameMenu.isVisible; break; // Game Menu
       case 15: if (this._quickSlotConfig) this._quickSlotConfig.isVisible = !this._quickSlotConfig.isVisible; break; // QuickSlots
       case 16: this._chatBar?.toggleChat(); break;                            // ToggleChat
       case 17: this._chatBar?.focus(); break;                                  // Guild
-      case 18: this._chatBar?.setChatTarget(4); this._chatBar?.focus(); break; // GuildChat â†’ guild target
+      case 18: this._chatBar?.setChatTarget(4); this._chatBar?.focus(); break; // GuildChat Ã¢â€ â€™ guild target
       case 19: this._chatBar?.focus(); break;                                  // Party
       case 20: this._chatBar?.addLine('[Notifier] Not yet implemented.', 12); break; // Notifier
-      case 21: this._chatBar?.setChatTarget(7); this._chatBar?.focus(); break; // SpouseChat â†’ whisper target
+      case 21: this._chatBar?.setChatTarget(7); this._chatBar?.focus(); break; // SpouseChat Ã¢â€ â€™ whisper target
       case 22: if (this.game.session.isConnected) { this.game.session.send(GameSender.MigrateToCashShop()); this.stageDirector.push(new CashShopStage(this._uiWz)); } break; // CashShop
-      case 24: this._chatBar?.setChatTarget(5); this._chatBar?.focus(); break; // AllianceChat â†’ alliance target
-      case 25: break;                                                          // ManageLegion â€” no-op
+      case 24: this._chatBar?.setChatTarget(5); this._chatBar?.focus(); break; // AllianceChat Ã¢â€ â€™ alliance target
+      case 25: break;                                                          // ManageLegion Ã¢â‚¬â€ no-op
       case 26: if (this._familyWindow) this._familyWindow.isVisible = !this._familyWindow.isVisible; break; // Family
-      case 27: break;                                                          // BossParty â€” no-op
+      case 27: break;                                                          // BossParty Ã¢â‚¬â€ no-op
       case 29: this._chatBar?.focus(); break;                                  // ExpeditionChat
       case 44:
         if (this._charInfo) {
@@ -876,7 +887,7 @@ export class GameStage extends Stage {
     }
   }
 
-  // OG: CUIStatusBar::OnScreenshot (screenshot to file) â€” capture the game
+  // OG: CUIStatusBar::OnScreenshot (screenshot to file) Ã¢â‚¬â€ capture the game
   // canvas as a PNG and trigger a browser download.
   private _takeScreenshot(): void {
     const renderer = this.game.pixiApp.renderer;
@@ -916,8 +927,8 @@ export class GameStage extends Stage {
         const p = payload as ItemDragPayload;
         const invType = p.invType;
         // TODO_AUDIT.md item-drag-and-drop TODO (drop-to-field): a real inventory
-        // item (positive slotPos) released over the field â€” i.e. not over any
-        // visible panel â€” is dropped, matching CDraggableItem::OnDropped when the
+        // item (positive slotPos) released over the field Ã¢â‚¬â€ i.e. not over any
+        // visible panel Ã¢â‚¬â€ is dropped, matching CDraggableItem::OnDropped when the
         // drop point lies outside every UI window. Worn slots (negative slotPos)
         // keep the unequip fallback below instead.
         if (p.slotPos > 0 && !this._pointOverVisiblePanel(x, y)) {
@@ -946,19 +957,19 @@ export class GameStage extends Stage {
       return;
     }
     super.onMouseButton(x, y, down, _button);
-    // OG: CUIStatusBar::OnMouseButton (0x8803F0) â€” clicks land on the chat
+    // OG: CUIStatusBar::OnMouseButton (0x8803F0) Ã¢â‚¬â€ clicks land on the chat
     // bar FIRST (combo box opens the chat-target dropdown, edit click starts
     // typing, log click routes whisper/item-links). This must run BEFORE the
     // panel loop: the StatusBar's hit test swallows everything in its bar
     // rectangle (y >= viewH - 85), and the chat combo/edit sit inside that
-    // region â€” so the panel loop would otherwise steal every chat-bar click.
+    // region Ã¢â‚¬â€ so the panel loop would otherwise steal every chat-bar click.
     // The ChatBar's hit test returns false for outside clicks so panels and
     // world/entity handling below still receive them.
     if (this._chatBar?.handleMouseButton(x, y, down)) return;
     for (let i = this._panels.length - 1; i >= 0; i--) {
       const p = this._panels[i];
       if (!p?.isVisible) continue;
-      // Try window drag first â€” if the click is in the title bar, move the
+      // Try window drag first Ã¢â‚¬â€ if the click is in the title bar, move the
       // panel and consume the event before the panel's own handler sees it.
       const lx = x - p.container.x;
       const ly = y - p.container.y;
@@ -1039,7 +1050,7 @@ export class GameStage extends Stage {
     }
   }
 
-  // OG: CUserLocal::HandleRButtonClk â€” right-click on another player shows context menu
+  // OG: CUserLocal::HandleRButtonClk Ã¢â‚¬â€ right-click on another player shows context menu
   private _showPlayerContextMenu(target: OtherCharLook, screenX: number, screenY: number): void {
     // Dismiss any existing context menu
     this._dismissContextMenu();
@@ -1079,16 +1090,16 @@ export class GameStage extends Stage {
     this._player = new CharLook(0);
 
     for (const p of this._panels) if (p) this.uiRoot.addChild(p.container);
-    // OG: BuffList (CTemporaryStatView) is a fixed HUD, not a GamePanel â€” parent
+    // OG: BuffList (CTemporaryStatView) is a fixed HUD, not a GamePanel Ã¢â‚¬â€ parent
     // its row container so its icons render above the world but under tooltips.
     this.uiRoot.addChild(this._buffList.container);
     this.uiRoot.addChild(this._dojangHud.container);
     this.uiRoot.addChild(this._dragController.container);
 
     this._wireHandlers(game);
-    // `_wireNames` dereferences `_item`/`_skill`/`_quest`/â€¦ which are only
+    // `_wireNames` dereferences `_item`/`_skill`/`_quest`/Ã¢â‚¬Â¦ which are only
     // constructed later in `_initMenu` (async, via `_loadWzAsync`). Calling it
-    // here threw `this._item is undefined`, aborting the rest of onEnter â€” so
+    // here threw `this._item is undefined`, aborting the rest of onEnter Ã¢â‚¬â€ so
     // `_loadWzAsync` never ran, `_miniMap` never got built, and update() then
     // threw `_miniMap is undefined` every tick forever. Moved to run right
     // after `_initMenu` instead. (`_wireHandlers` only installs arrow-fn
@@ -1111,7 +1122,7 @@ export class GameStage extends Stage {
       this._mapWz = game.wz.map ?? await open('Map');
     } catch (ex) { console.warn('Failed to open Map.wz', ex); }
     try {
-      // Batch 1: core packages needed for gameplay â€” open in parallel
+      // Batch 1: core packages needed for gameplay Ã¢â‚¬â€ open in parallel
       const [mobWz, charWz, itemWz, baseWz, skillWz, uiWz, effectWz, npcWz] = await Promise.all([
         open('Mob'),
         game.wz.character ?? open('Character'),
@@ -1135,7 +1146,7 @@ export class GameStage extends Stage {
       this._mobSounds = new MobSoundService(this._mobSoundWz, game.audioPlayer);
       this._fieldSounds = new FieldSoundService(this._mobSoundWz, game.audioPlayer);
 
-      // Batch 2: less critical packages â€” open in parallel
+      // Batch 2: less critical packages Ã¢â‚¬â€ open in parallel
       const [reactorWz, tamingMobWz, morphWz, stringWz, questWz, etcWz] = await Promise.all([
         game.wz.reactor ?? open('Reactor'),
         game.wz.tamingMob ?? open('TamingMob'),
@@ -1153,12 +1164,12 @@ export class GameStage extends Stage {
       game.wz.etc = etcWz;
       this._tipOfTheDay.Load(game.wz.etc);
       // List has no `.nx` (only an undecryptable `.wz`); on the dev server a
-      // missing `.nx` returns index.html â†’ PKG4 error. Load best-effort so it
-      // can't abort menu init â€” `listService` is currently unread elsewhere.
+      // missing `.nx` returns index.html Ã¢â€ â€™ PKG4 error. Load best-effort so it
+      // can't abort menu init Ã¢â‚¬â€ `listService` is currently unread elsewhere.
       try {
         game.wz.list = await open('List');
         game.listService = new ListService(game.wz.list);
-      } catch (ex) { console.warn('List package unavailable â€” skipping ListService', ex); }
+      } catch (ex) { console.warn('List package unavailable Ã¢â‚¬â€ skipping ListService', ex); }
       this._skillService = new SkillInfoService(() => this._skillWz, () => game.wz.string ?? null);
     } catch (ex) { console.warn('Failed to open WZ files', ex); }
 
@@ -1185,14 +1196,14 @@ export class GameStage extends Stage {
       npc.LoadNames((npcId, key) => this.game.nameService.NpcText(npcId, key));
     }
 
-    // Retry BGM now that Sound.wz is loaded â€” _applyFieldChange may have
+    // Retry BGM now that Sound.wz is loaded Ã¢â‚¬â€ _applyFieldChange may have
     // fired before _mobSoundWz was available.
     if (this._field && this._field.Info.Bgm) {
       this._currentBgm = '';
       this._playMapBgm(this._field.Info.Bgm);
     }
 
-    // Retry minimap data â€” _applyFieldChange may have fired before
+    // Retry minimap data Ã¢â‚¬â€ _applyFieldChange may have fired before
     // _initMenu created _miniMap.
     if (this._field && this._miniMap) {
       const mapId = this._field.LoadedMapId;
@@ -1202,7 +1213,7 @@ export class GameStage extends Stage {
       this._miniMap.setPortals(
         Object.values(this._field.Portals).map((p) => ({ x: p.X, y: p.Y, type: p.Type })),
       );
-      // OG: m_nMiniMapType â€” read from field info (0=simple, 1=normal)
+      // OG: m_nMiniMapType Ã¢â‚¬â€ read from field info (0=simple, 1=normal)
       this._miniMap.setMiniMapType(this._field.Info.MiniMapType as 0 | 1);
       this._miniMap.onPlayerDotClick = () => this.game.session.send(GameSender.UserMiniMapClick());
       this._miniMap.setFootholds(this._field.Footholds);
@@ -1229,7 +1240,7 @@ export class GameStage extends Stage {
     // Apply pending stat data AFTER stats panel is created
     if (this._pendingStat) {
       this._applyStatToStatusBar(this._pendingStat);
-      // Don't null yet â€” _skill needs job/level/sp after it's created below
+      // Don't null yet Ã¢â‚¬â€ _skill needs job/level/sp after it's created below
     }
     this._skill = new SkillBook(this._loader, uiWz, font, this._itemIcons,
       (id) => this.game.nameService.ItemDesc(id) ?? null,
@@ -1315,7 +1326,7 @@ export class GameStage extends Stage {
 
     this._familyWindow = new FamilyWindow(this._loader, uiWz, font);
     this._familyWindow.onUsePrivilege = (idx) => { this.game.session.send(GameSender.UseFamilyPrivilege(idx)); };
-    // TODO_AUDIT.md Hundred-and-twenty-ninth pass: SetFamilyPrecept â€” deferred from Pass 102.
+    // TODO_AUDIT.md Hundred-and-twenty-ninth pass: SetFamilyPrecept Ã¢â‚¬â€ deferred from Pass 102.
     this._familyWindow.onSetPrecept = (text) => { this.game.session.send(GameSender.SetFamilyPrecept(text)); };
     this._channelSelect = new ChannelSelect({ loader: this._loader, uiWz });
     this._channelSelect.onChannelChange = (ch) => { this.game.session.send(GameSender.TransferChannel(ch)); };
@@ -1349,7 +1360,7 @@ export class GameStage extends Stage {
     this.uiRoot.addChild(this._quickSlots.container);
     this._quickSlots.Relayout(this.game.pixiApp.screen.width, this.game.pixiApp.screen.height);
     this._statDetailInfo = new StatDetailInfo(this._loader, uiWz, font, () => this.game.wz.string ?? null);
-    // OG CUIStatDetail::OnCreate â€” detail/BtHpUp (id 0x3E8) raises MaxHP.
+    // OG CUIStatDetail::OnCreate Ã¢â‚¬â€ detail/BtHpUp (id 0x3E8) raises MaxHP.
     this._statDetailInfo.onHpUp = () => { this.game.session.send(GameSender.UserAbilityUp(MapleStat.MaxHp)); };
     this._trunk = new Trunk(this._loader, uiWz, font);
     this._trunk.OnWithdraw = (invType, position) => {
@@ -1365,6 +1376,11 @@ export class GameStage extends Stage {
 
     this._messengerWin = new Messenger(this._loader, uiWz);
     this._messengerWin.onClosed = () => { this.game.session.send(GameSender.MessengerLeave()); };
+    // ProcessChat: local echo + packet 143/6; /invite â†’ SendInviteMsg.
+    this._messengerWin.onSubmit = (text) => { this.game.session.send(GameSender.MessengerChat(text)); };
+    this._messengerWin.onInvite = (name) => {
+      this.game.session.send(GameSender.MessengerInvite(name));
+    };
 
     this._equip = new EquipInventory({
       loader: this._loader,
@@ -1420,7 +1436,7 @@ export class GameStage extends Stage {
        itemInfo: this._itemInfo,
        strings: this._stringPool,
      });
-    // OG: CUIItem::Draw renders meso at y=268 â€” apply any money stashed before
+    // OG: CUIItem::Draw renders meso at y=268 Ã¢â‚¬â€ apply any money stashed before
     // the item panel was constructed (SetField can arrive before _initMenu).
     if (this._pendingMeso !== null) {
       this._item.setMeso(this._pendingMeso);
@@ -1454,11 +1470,11 @@ export class GameStage extends Stage {
     // such dialog is open to claim the drop (see onMouseButton's drag-end
     // handling).
     this._equip.onDragStart = (payload, texture, x, y) => { this._dragController.beginDrag(payload, texture, x, y); };
-    // OG: CDraggableItem::WearEquipItem â€” equip from inventory via drag-drop
+    // OG: CDraggableItem::WearEquipItem Ã¢â‚¬â€ equip from inventory via drag-drop
     this._equip.onEquipDrop = (invType, invSlot, bodyPart) => {
       this.game.session.send(GameSender.ChangeSlotPosition(invType, invSlot, -bodyPart, 1));
     };
-    // OG: CDraggableItem::GetOffEquipItem â€” unequip worn item to inventory
+    // OG: CDraggableItem::GetOffEquipItem Ã¢â‚¬â€ unequip worn item to inventory
     this._equip.onUnequipToInventory = (invType, bodyPart, invSlot) => {
       this.game.session.send(GameSender.ChangeSlotPosition(invType, -bodyPart, invSlot, 1));
     };
@@ -1467,11 +1483,11 @@ export class GameStage extends Stage {
       this.stageDirector.push(new CashShopStage(this._uiWz));
     };
     this._item.onDragStart = (payload, texture, x, y) => { this._dragController.beginDrag(payload, texture, x, y); };
-    // OG: CDraggableItem::GetOffEquipItem â€” accept worn equip dropped onto inventory
+    // OG: CDraggableItem::GetOffEquipItem Ã¢â‚¬â€ accept worn equip dropped onto inventory
     this._item.onUnequipToInventory = (invType, bodyPart, invSlot) => {
       this.game.session.send(GameSender.ChangeSlotPosition(invType, -bodyPart, invSlot, 1));
     };
-    // OG: CDraggableItem::MoveItemSlot â€” same-panel reorder via drag.
+    // OG: CDraggableItem::MoveItemSlot Ã¢â‚¬â€ same-panel reorder via drag.
     // Sends ChangeSlotPositionRequest(m_nItemTI, fromSlot, toSlot, -1).
     this._item.onMoveItemSlot = (invType, fromSlot, toSlot) => {
       this.game.session.send(GameSender.ChangeSlotPosition(invType, fromSlot, toSlot, -1));
@@ -1494,9 +1510,9 @@ export class GameStage extends Stage {
       }
       this._dispatchCashItem(item.slot, item.id, item.name);
     };
-    // OG: CUIItem::OnButtonClicked(0x7D7) â€” CashShop button sends
+    // OG: CUIItem::OnButtonClicked(0x7D7) Ã¢â‚¬â€ CashShop button sends
     // SendMigrateToShopRequest with subId based on m_nItemTI:
-    // tab 0(Equip)â†’50200093, tab 1(Use)â†’50200094, tab 2(Setup)â†’50200095
+    // tab 0(Equip)Ã¢â€ â€™50200093, tab 1(Use)Ã¢â€ â€™50200094, tab 2(Setup)Ã¢â€ â€™50200095
     this._item.onCashShop = (itemTI: number) => {
       if (this.game.session.isConnected) this.game.session.send(GameSender.MigrateToCashShop());
       this.stageDirector.push(new CashShopStage(this._uiWz));
@@ -1504,7 +1520,7 @@ export class GameStage extends Stage {
     this._item.onDropMoney = () => {
       // OG OnDropMoney @0x7CBFD0: CUtilDlgEx type 2 (numeric input) with
       // SetUtilDlgEx_INPUT_NO(10, 10, min(money,50000), 0, 10, 0);
-      // OK â†’ SendDropMoneyRequest(input).
+      // OK Ã¢â€ â€™ SendDropMoneyRequest(input).
       const maxMeso = Math.min(this._item?.getMeso() ?? 0, 50000);
       this._utilDlg?.SetUtilDlgEx(UtilDlgType.INPUT, 0, true, false);
       this._utilDlg?.SetUtilDlgEx_INPUT_NO(10, 10, maxMeso, 0, 10, false);
@@ -1523,11 +1539,11 @@ export class GameStage extends Stage {
     this._item.onSort = (invType) => {
       if (this.game.session.isConnected) this.game.session.send(GameSender.SortItemRequest(Date.now(), invType));
     };
-    // OG: CUIItem::ItemRelease â†’ CWvsContext::SendItemReleaseRequest(useSlot, equipSlot)
+    // OG: CUIItem::ItemRelease Ã¢â€ â€™ CWvsContext::SendItemReleaseRequest(useSlot, equipSlot)
     this._item.onItemRelease = (useSlot: number, equipSlot: number) => {
       if (this.game.session.isConnected) this.game.session.send(GameSender.ItemReleaseRequest(useSlot, equipSlot));
     };
-    // Shift+click: split stackable items â€” find first empty slot and move qty items there
+    // Shift+click: split stackable items Ã¢â‚¬â€ find first empty slot and move qty items there
     this._item.onSplitItem = (item, qty) => {
       if (!this.game.session.isConnected) return;
       const freeSlot = this._item.firstFreeSlot?.(item.tab) ?? 0;
@@ -1554,7 +1570,7 @@ export class GameStage extends Stage {
     this.uiRoot.addChild(this._fearEffect.container);
     this.uiRoot.addChild(this._limitedView.container);
     this.uiRoot.addChild(this._fieldSubgameHud.container);
-    // OG: KeyDownBar + ComboDisplay â€” fixed-position HUD overlays
+    // OG: KeyDownBar + ComboDisplay Ã¢â‚¬â€ fixed-position HUD overlays
     this._keyDownBar.container.position.set(
       this.game.pixiApp.screen.width / 2,
       this.game.pixiApp.screen.height - 40,
@@ -1567,7 +1583,7 @@ export class GameStage extends Stage {
     this.uiRoot.addChild(this._comboDisplay.container);
 
     this._tombstone = new TombstoneEffect(this._effectWz, this._mobSoundWz, this._loader, this.game.audioPlayer);
-    // OG: the revive prompt is NOT tied to the tombstone landing â€” CWvsContext::Update
+    // OG: the revive prompt is NOT tied to the tombstone landing Ã¢â‚¬â€ CWvsContext::Update
     // opens CUIRevive exactly 2200ms after death (see _reviveDialogClockMs in the
     // per-frame update).
 
@@ -1576,15 +1592,15 @@ export class GameStage extends Stage {
     this._worldMap.onTeleportToMap = (mapId) => {
       this.game.session.send(GameSender.MapTransferRequest(0, true, mapId));
     };
-    // OG ScoreLinkMap @0x9B83B0 â€” when the quest toggle is on, overlay npcPos
+    // OG ScoreLinkMap @0x9B83B0 Ã¢â‚¬â€ when the quest toggle is on, overlay npcPos
     // quest markers on spots whose maps have available/in-progress quests.
-    // Uses questInfoService's NPCâ†’quest index: a spot is marked when any of
+    // Uses questInfoService's NPCÃ¢â€ â€™quest index: a spot is marked when any of
     // its mapNos hosts an NPC with an active (in-progress) or available
     // (not yet started) quest for this character.
     this._worldMap.questStateOfSpot = (mapNo: number[]): number => {
       const svc = this.game.questInfoService;
       if (!svc || this._questRecords.length === 0) return 0;
-      // NPCâ†’map is only resolvable for the loaded field; other maps' life
+      // NPCÃ¢â€ â€™map is only resolvable for the loaded field; other maps' life
       // data isn't available client-side.
       const fieldMapId = this._field?.LoadedMapId ?? -1;
       if (!mapNo.includes(fieldMapId)) return 0;
@@ -1595,7 +1611,7 @@ export class GameStage extends Stage {
         if (!q) continue;
         const startNpc = q.Start?.Npc ?? 0;
         const completeNpc = q.Complete?.Npc ?? 0;
-        // The current field hosts one of these NPCs â†’ quest activity here.
+        // The current field hosts one of these NPCs Ã¢â€ â€™ quest activity here.
         if ((startNpc > 0 || completeNpc > 0) && this._npcInField(startNpc, completeNpc)) {
           const state = rec.state === 1 ? 2 : 1;
           if (state > best) { best = state; break; }
@@ -1611,12 +1627,12 @@ export class GameStage extends Stage {
     this._titleWindow = new TitleWindow(this._loader, uiWz, font);
     this._maker = new Maker(this._loader, uiWz, font);
     // OG: CUIItemMaker::RequestItemMake (decompile/7d58d0.c) sends opcode 125
-    // â€” confirmed real, but the payload shape branches on m_nRecipeClass
+    // Ã¢â‚¬â€ confirmed real, but the payload shape branches on m_nRecipeClass
     // (1/2: gem+catalyst slots, 3/4: disassemble item) and needs gem/
     // catalyst/disassemble-target state this panel doesn't model yet (it
     // only tracks a recipe id). Sending now would be a guessed/malformed
-    // packet, not a verified one â€” left log-only on purpose.
-    this._maker.OnStart = (_recipeId) => {}; // TODO_AUDIT.md Hundred-and-fifty-sixth pass: OG-confirmed blocked â€” payload branches on m_nRecipeClass, no-op until modeled
+    // packet, not a verified one Ã¢â‚¬â€ left log-only on purpose.
+    this._maker.OnStart = (_recipeId) => {}; // TODO_AUDIT.md Hundred-and-fifty-sixth pass: OG-confirmed blocked Ã¢â‚¬â€ payload branches on m_nRecipeClass, no-op until modeled
     this._adminShop = new AdminShop(this._loader, uiWz);
     this._adminShop.onReopen = (npcTemplateId) => {
       this._adminShopNpcTemplateId = npcTemplateId;
@@ -1696,14 +1712,14 @@ export class GameStage extends Stage {
     this._reset = new Reset(this._loader, uiWz, font);
     this._delivery = new Delivery(this._loader, uiWz, font);
     // OG: CUIQuestDelivery::OnButtonClicked (decompile/81f4e0.c) sends no
-    // packet at all on confirm â€” it resolves the target NPC locally and
+    // packet at all on confirm Ã¢â‚¬â€ it resolves the target NPC locally and
     // calls CUserLocal::TalkToNpc, i.e. this is an NPC-script-driven flow,
     // not a raw network send. Wiring it correctly means going through the
     // existing NPC-talk subsystem (NpcTalk.ts), not GameSender.
-    this._delivery.OnSendItem = (_slot) => {}; // TODO_AUDIT.md Hundred-and-fifty-sixth pass: OG-confirmed no packet â€” NPC-script-driven flow via TalkToNpc
+    this._delivery.OnSendItem = (_slot) => {}; // TODO_AUDIT.md Hundred-and-fifty-sixth pass: OG-confirmed no packet Ã¢â‚¬â€ NPC-script-driven flow via TalkToNpc
     this._claim = new Claim(this._loader, uiWz, font);
     // OG: CUIClaimPreNotice::OnButtonClicked (decompile/77f060.c) only calls
-    // SetRet â€” no packet send on confirm, it's a local pre-notice gate.
+    // SetRet Ã¢â‚¬â€ no packet send on confirm, it's a local pre-notice gate.
     this._claim.OnConfirm = () => {};
     this._questReward = new QuestReward(this._loader, uiWz, font);
     this._questReward.OnSelect = (rewardIndex, _itemId) => {
@@ -1723,23 +1739,23 @@ export class GameStage extends Stage {
     };
     this._enchantSkill = new EnchantSkill(this._loader, uiWz, font);
     // OG: CUIEnchantDlg (decompile/7a1b30.c ctor, 7a1200.c PutItem,
-    // 7a07a0.c OnButtonClicked) â€” traced the whole chain (ctor -> PutItem
+    // 7a07a0.c OnButtonClicked) Ã¢â‚¬â€ traced the whole chain (ctor -> PutItem
     // -> CUserLocal::DoEnchantSkill at 93a5c0.c -> caller 0x9445b0) and none
     // of it calls SendPacket; the real send happens further up that call
     // chain than this dump resolves. Left log-only rather than guess.
-    this._enchantSkill.OnEnchant = (_slot) => {}; // TODO_AUDIT.md Hundred-and-fifty-sixth pass: OG-confirmed blocked â€” real send site beyond this dump's resolve depth
+    this._enchantSkill.OnEnchant = (_slot) => {}; // TODO_AUDIT.md Hundred-and-fifty-sixth pass: OG-confirmed blocked Ã¢â‚¬â€ real send site beyond this dump's resolve depth
     this._miracleCube = new MiracleCube(this._loader, uiWz, font);
     // MiracleCube's OG UI class has no symbols in Maplestory95.exe.map at
-    // all (not even RTTI) â€” unlike GoldHammer/KarmaScissors it isn't a
+    // all (not even RTTI) Ã¢â‚¬â€ unlike GoldHammer/KarmaScissors it isn't a
     // confirmed ICF-fold of the CUIKarmaDlg family, and MiracleCube.ts
     // doesn't carry ScrollPos/TargetItemTI/TargetSlotPosition fields the
     // way GoldHammer/KarmaScissors/ItemProtector do. Left log-only.
-    this._miracleCube.OnConfirm = () => {}; // TODO_AUDIT.md Hundred-and-fifty-sixth pass: no OG symbols â€” send path unconfirmed
-    this._miracleCube.OnCancel = () => {}; // TODO_AUDIT.md Hundred-and-fifty-sixth pass: no OG symbols â€” send path unconfirmed
+    this._miracleCube.OnConfirm = () => {}; // TODO_AUDIT.md Hundred-and-fifty-sixth pass: no OG symbols Ã¢â‚¬â€ send path unconfirmed
+    this._miracleCube.OnCancel = () => {}; // TODO_AUDIT.md Hundred-and-fifty-sixth pass: no OG symbols Ã¢â‚¬â€ send path unconfirmed
     // OG: CUIItemUpgrade/CUIItemProtector/CUIKarmaDlg all share opcode 85
-    // (UserConsumeCashItemUseRequest) â€” see GameSender.ItemUpgradeApply's
+    // (UserConsumeCashItemUseRequest) Ã¢â‚¬â€ see GameSender.ItemUpgradeApply's
     // doc comment. The send path below is real; the open-trigger (which
-    // equip slot is the drop target) is not â€” no drag-drop wiring calls
+    // equip slot is the drop target) is not Ã¢â‚¬â€ no drag-drop wiring calls
     // `setTarget` yet, so these still only fire with whatever was last set.
     this._goldHammer = new GoldHammer(this._loader, uiWz, font);
     this._goldHammer.OnConfirm = () => {
@@ -1779,7 +1795,7 @@ export class GameStage extends Stage {
     this._repair.OnRepairAll = () => { this.game.session.send(GameSender.RepairDurabilityAll()); };
     this._repair.OnClosed = () => {};
     // TODO_AUDIT.md Hundred-and-seventeenth pass: CItemSpeakerDlg megaphone
-    // compose â€” sender confirmed (opcode 85 shape from 0x5c9e70 decompile).
+    // compose Ã¢â‚¬â€ sender confirmed (opcode 85 shape from 0x5c9e70 decompile).
     this._megaphoneCompose = new MegaphoneCompose();
     this._megaphoneCompose.OnSend = (invPos, itemId, message, isWhisper) => {
       this.game.session.send(GameSender.MegaphoneCompose(invPos, itemId, message, isWhisper));
@@ -1837,19 +1853,19 @@ export class GameStage extends Stage {
     this._chatBalloon = new ChatBalloonLayer(this._loader, uiWz, font);
     // First-login race: SetField can arrive before _initMenu creates the
     // balloon layer, leaving it unparented (invisible). If the field is
-    // already loaded, parent now — above the field container.
+    // already loaded, parent now â€” above the field container.
     if (this._pendingBalloonParent || this._field) {
       if (this._chatBalloon) this.mapRoot.addChild(this._chatBalloon.root);
       if (this._dmgNumbers) this.mapRoot.addChild(this._dmgNumbers.container);
       this._pendingBalloonParent = false;
     }
     // The chat balloon anchors via WorldToScreen (the map/camera viewport
-    // space that entities use), so it must live in the MAP layer â€” not the
+    // space that entities use), so it must live in the MAP layer Ã¢â‚¬â€ not the
     // scaled+centered UI frame. On any window other than exactly 800x600 the
     // frame transform diverges from the map, which made balloons drift away
     // from the character/NPC. It is parented into mapRoot in _onSetField AFTER
     // the field container (with the other map overlays) so it renders above
-    // the full-screen map background â€” parenting it here put it at z=0,
+    // the full-screen map background Ã¢â‚¬â€ parenting it here put it at z=0,
     // behind the field, making every bubble invisible.
 
     this.uiRoot.addChild(this._gameMenu.container);
@@ -1909,7 +1925,7 @@ export class GameStage extends Stage {
       this._quickSlots!, this._questDetail!,
       this._skill, this._stats, this._quest,
       // The 7 panels that used to be (incorrectly) listed in the
-      // constructor's `_panels` array before they existed â€” see the long
+      // constructor's `_panels` array before they existed Ã¢â‚¬â€ see the long
       // comment at that array's declaration. Pushed here, now that
       // `_statusBar`/`_miniMap`/`_equip`/`_item`/`_keyConfig` have all just
       // been constructed above and `_questReward`/`_notice` are constructed
@@ -1920,7 +1936,7 @@ export class GameStage extends Stage {
       this._statusBar, this._miniMap, this._equip, this._item, this._keyConfig,
       this._questReward!, this._notice!, this._antiMacroDialog!, this._questAlarm);
 
-    // Fixed-position HUDs â€” not draggable
+    // Fixed-position HUDs Ã¢â‚¬â€ not draggable
     for (const p of [this._statusBar, this._chatBar, this._clock, this._slideNotice, this._partyHPBar, this._killCountHud, this._massacreGaugeHud, this._questTimerHud, this._quickSlots!]) {
       p.draggable = false;
     }
@@ -1930,15 +1946,15 @@ export class GameStage extends Stage {
     for (const p of [this._statusBar, this._miniMap, this._equip, this._item, this._keyConfig, this._questReward!, this._notice!, this._antiMacroDialog!]) {
       if (p && !p.container.parent) this.uiRoot.addChild(p.container);
     }
-    // OG: ChatBar renders ON TOP of StatusBar â€” move to end of display list
+    // OG: ChatBar renders ON TOP of StatusBar Ã¢â‚¬â€ move to end of display list
     this.uiRoot.addChild(this._chatBar.container);
 
-    // OG: Tooltips render ON TOP of all panels â€” must be last in display list
+    // OG: Tooltips render ON TOP of all panels Ã¢â‚¬â€ must be last in display list
     const equipTipContainer = this._equip.tooltipContainer;
     if (equipTipContainer) this.uiRoot.addChild(equipTipContainer);
     const itemTipContainer = this._item.tooltipContainer;
     if (itemTipContainer) this.uiRoot.addChild(itemTipContainer);
-    // Skill tooltips render into their own top-level container — without
+    // Skill tooltips render into their own top-level container â€” without
     // adding it here the tooltip draws into a parentless container and never
     // appears on screen.
     const skillTipContainer = this._skill.tooltipContainer;
@@ -1962,10 +1978,10 @@ export class GameStage extends Stage {
       // Send* request. Order matches OG exactly.
       const category = Math.floor(item.id / 10000);
 
-      // OG: play_item_sound â€” play Sound.wz/Item.img/{itemId}/Use on use
+      // OG: play_item_sound Ã¢â‚¬â€ play Sound.wz/Item.img/{itemId}/Use on use
       this._playItemUseSound(item.id);
 
-      // Categories 207 (throwing stars) / 233 (bullets) â€” rechargeable, not lottery
+      // Categories 207 (throwing stars) / 233 (bullets) Ã¢â‚¬â€ rechargeable, not lottery
       // OG: no dedicated handler, falls through to generic UseItem
       if (category === 207 || category === 233) {
         this.game.session.send(GameSender.UseItem(item.slot, item.id));
@@ -1973,7 +1989,7 @@ export class GameStage extends Stage {
       }
 
       // is_state_change_item: categories 200,201,202,205,221,236,238,245
-      // â†’ SendStatChangeItemUseRequest (opcode 78, same as generic UseItem)
+      // Ã¢â€ â€™ SendStatChangeItemUseRequest (opcode 78, same as generic UseItem)
       if (category === 200 || category === 201 || category === 202 || category === 205
         || category === 221 || category === 236 || category === 238 || category === 245) {
         this.game.session.send(GameSender.UseItem(item.slot, item.id));
@@ -1981,10 +1997,10 @@ export class GameStage extends Stage {
       }
 
       // is_random_morph_item_other: category 221 && (itemId-2210000)/1000==2
-      // â†’ SendRandomMorphOtherRequest â€” falls through to UseItem in TS
+      // Ã¢â€ â€™ SendRandomMorphOtherRequest Ã¢â‚¬â€ falls through to UseItem in TS
 
       // is_antimacro_item: category 219
-      // â†’ SendAntiMacroItemUseRequest (opcode 115)
+      // Ã¢â€ â€™ SendAntiMacroItemUseRequest (opcode 115)
       if (category === 219) {
         const target = window.prompt('Enter player name to check for macros:') ?? '';
         if (target.length > 0) this.game.session.send(GameSender.AntiMacroItemUseRequest(target, item.slot, item.id));
@@ -1992,35 +2008,35 @@ export class GameStage extends Stage {
       }
 
       // is_portal_scroll_item: category 203
-      // â†’ SendPortalScrollUseRequest (opcode 92)
+      // Ã¢â€ â€™ SendPortalScrollUseRequest (opcode 92)
       if (category === 203) {
         this.game.session.send(GameSender.PortalScrollUseRequest(Date.now(), item.slot, item.id));
         return;
       }
 
       // is_mobsummon_item: category 210
-      // â†’ SendMobSummonItemUseRequest (opcode 81)
+      // Ã¢â€ â€™ SendMobSummonItemUseRequest (opcode 81)
       if (category === 210) {
         this.game.session.send(GameSender.MobSummonItemUseRequest(item.slot, item.id));
         return;
       }
 
-      // Cash pet food: is_cash_pet_food_item â€” category 524
-      // â†’ SendConsumeCashItemUseRequest (opcode 85)
+      // Cash pet food: is_cash_pet_food_item Ã¢â‚¬â€ category 524
+      // Ã¢â€ â€™ SendConsumeCashItemUseRequest (opcode 85)
       if (category === 524) {
         this.game.session.send(GameSender.ConsumeCashItemUseRequest(item.slot, item.id));
         return;
       }
 
       // is_pet_food_item: category 212
-      // â†’ SendPetFoodItemUseRequest (opcode 82)
+      // Ã¢â€ â€™ SendPetFoodItemUseRequest (opcode 82)
       if (category === 212) {
         this.game.session.send(GameSender.PetFoodItemUseRequest(item.slot, item.id));
         return;
       }
 
       // is_engagement_ring_box_item: category 224
-      // â†’ SendEngagementRequest (MarriageRequest)
+      // Ã¢â€ â€™ SendEngagementRequest (MarriageRequest)
       if (category === 224) {
         const target = window.prompt('Propose marriage to:') ?? '';
         if (target.length > 0) this.game.session.send(GameSender.MarriageRequest(target, item.id));
@@ -2028,15 +2044,15 @@ export class GameStage extends Stage {
       }
 
       // is_tamingmob_food_item: category 226
-      // â†’ SendTamingMobFoodItemUseRequest (opcode 83)
+      // Ã¢â€ â€™ SendTamingMobFoodItemUseRequest (opcode 83)
       if (category === 226) {
         this.game.session.send(GameSender.TamingMobFoodItemUseRequest(item.slot, item.id));
         return;
       }
 
       // is_bridle_item: category 227
-      // â†’ SendBridleItemUseRequest (opcode 87) â€” needs mob targeting
-      // OG: enters targeting mode, click mob â†’ SendBridleItemUseRequest(pos, itemId, mobTemplateId)
+      // Ã¢â€ â€™ SendBridleItemUseRequest (opcode 87) Ã¢â‚¬â€ needs mob targeting
+      // OG: enters targeting mode, click mob Ã¢â€ â€™ SendBridleItemUseRequest(pos, itemId, mobTemplateId)
       if (category === 227) {
         // Store pending bridle; mob click will complete the request
         this._pendingBridle = { slot: item.slot, id: item.id };
@@ -2045,8 +2061,8 @@ export class GameStage extends Stage {
       }
 
       // is_skill_learn_item: category 228
-      // â†’ SendSkillLearnItemUseRequest (opcode 88)
-      // OG also checks is_masterybook_item(itemId) â€” mastery books are sub-IDs
+      // Ã¢â€ â€™ SendSkillLearnItemUseRequest (opcode 88)
+      // OG also checks is_masterybook_item(itemId) Ã¢â‚¬â€ mastery books are sub-IDs
       // within category 228; exact sub-range not exposed in the IDA dump.
       if (category === 228) {
         this.game.session.send(GameSender.SkillLearnItemUseRequest(item.slot, item.id));
@@ -2054,21 +2070,21 @@ export class GameStage extends Stage {
       }
 
       // is_skill_reset_item: category 250
-      // â†’ SendSkillResetItemUseRequest (opcode 89)
+      // Ã¢â€ â€™ SendSkillResetItemUseRequest (opcode 89)
       if (category === 250) {
         this.game.session.send(GameSender.SkillResetItemUseRequest(item.slot, item.id));
         return;
       }
 
       // is_shopscanner_item: category 231
-      // â†’ SendShopScannerItemUseRequest (opcode 90)
+      // Ã¢â€ â€™ SendShopScannerItemUseRequest (opcode 90)
       if (category === 231) {
         this.game.session.send(GameSender.ShopScannerItemUseRequest(item.slot, item.id));
         return;
       }
 
       // is_maptransfer_item: category 232
-      // â†’ SendMapTransferItemUseRequest (opcode 91)
+      // Ã¢â€ â€™ SendMapTransferItemUseRequest (opcode 91)
       // OG: RunMapTransferItem reads item's desc node from WZ for map name/id.
       if (category === 232) {
         let mapName = '';
@@ -2096,48 +2112,48 @@ export class GameStage extends Stage {
       }
 
       // is_select_npc_item: category 545 or 239
-      // â†’ SendSelectNpcItemUseRequest (opcode 123)
+      // Ã¢â€ â€™ SendSelectNpcItemUseRequest (opcode 123)
       if (category === 545 || category === 239) {
         this.game.session.send(GameSender.SelectNpcItemUseRequest(item.slot, item.id));
         return;
       }
 
       // is_exp_up_item: category 237
-      // â†’ SendExpUpItemUseRequest (opcode 181)
+      // Ã¢â€ â€™ SendExpUpItemUseRequest (opcode 181)
       if (category === 237) {
         this.game.session.send(GameSender.ExpUpItemUseRequest(item.slot, item.id));
         return;
       }
 
       // is_script_run_item: category 243 || itemId == 3994225
-      // â†’ SendScriptRunItemRequest (opcode 84)
+      // Ã¢â€ â€™ SendScriptRunItemRequest (opcode 84)
       if (category === 243 || item.id === 3994225) {
         this.game.session.send(GameSender.ScriptRunItemUseRequest(item.slot, item.id));
         return;
       }
 
       // is_release_item: category 246
-      // â†’ ChangeTab(0) + SetTryToReleaseItem(1, slot) â€” handled in ItemInventory._handleSlotClick
+      // Ã¢â€ â€™ ChangeTab(0) + SetTryToReleaseItem(1, slot) Ã¢â‚¬â€ handled in ItemInventory._handleSlotClick
       if (category === 246) {
         // Already handled by the release flow in _handleSlotClick
         return;
       }
 
       // is_new_year_card_item_con: category 216
-      // â†’ SendNewYearCardUseRequest â€” opens CUINewYearCardSenderDlg (client-side)
+      // Ã¢â€ â€™ SendNewYearCardUseRequest Ã¢â‚¬â€ opens CUINewYearCardSenderDlg (client-side)
       if (category === 216) {
-        // Client-side dialog â€” no server packet needed at this point
+        // Client-side dialog Ã¢â‚¬â€ no server packet needed at this point
         return;
       }
 
       // Megaphone items: category 234
-      // â†’ Opens CItemSpeakerDlg
+      // Ã¢â€ â€™ Opens CItemSpeakerDlg
       if (category === 234) {
         this._megaphoneCompose?.Open(item.slot, item.id);
         return;
       }
 
-      // Scroll items (204xxxx / 205xxxx) â€” open upgrade dialog
+      // Scroll items (204xxxx / 205xxxx) Ã¢â‚¬â€ open upgrade dialog
       if (category === 204 || category === 205) {
         this._scrollDialog?.Open(item.id, item.name, item.slot);
         if (this._scrollDialog && this._itemIcons) {
@@ -2155,70 +2171,70 @@ export class GameStage extends Stage {
       const category = Math.floor(item.id / 10000);
 
       // is_minigame_item: category 408
-      // â†’ SendCreateMiniGameRequest (opcode 144 = MiniRoom)
+      // Ã¢â€ â€™ SendCreateMiniGameRequest (opcode 144 = MiniRoom)
       if (category === 408) {
-        // Opens a minigame â€” client-side UI action
+        // Opens a minigame Ã¢â‚¬â€ client-side UI action
         return;
       }
 
       // is_book_item: category 416
-      // â†’ OpenBook â€” creates CBookDlg singleton (client-side)
+      // Ã¢â€ â€™ OpenBook Ã¢â‚¬â€ creates CBookDlg singleton (client-side)
       if (category === 416) {
-        // Client-side dialog â€” no server packet needed
+        // Client-side dialog Ã¢â‚¬â€ no server packet needed
         return;
       }
 
       // is_invitation_bundle_item: itemId == 4031377 || itemId == 4031395
-      // â†’ SendSendInvitaionRequest (opcode 161, sub-action 5)
+      // Ã¢â€ â€™ SendSendInvitaionRequest (opcode 161, sub-action 5)
       if (item.id === 4031377 || item.id === 4031395) {
         // Opens marriage invitation dialog (client-side)
         return;
       }
 
       // is_invitation_guest_item: itemId == 4031406 || itemId == 4031407
-      // â†’ SendInvitationQuery (opcode 161, sub-action 6)
+      // Ã¢â€ â€™ SendInvitationQuery (opcode 161, sub-action 6)
       if (item.id === 4031406 || item.id === 4031407) {
         // Opens invitation query dialog (client-side)
         return;
       }
 
       // is_raise_item: itemId/1000 == 4220
-      // â†’ OpenRaise â€” opens CUIRaiseManager (client-side)
+      // Ã¢â€ â€™ OpenRaise Ã¢â‚¬â€ opens CUIRaiseManager (client-side)
       if (Math.floor(item.id / 1000) === 4220) {
         // Client-side UI action
         return;
       }
 
       // is_gachapon_box_item: category 428
-      // â†’ UseBoxGachaponItem (opcode 127)
+      // Ã¢â€ â€™ UseBoxGachaponItem (opcode 127)
       if (category === 428) {
         this.game.session.send(GameSender.UseBoxGachaponItem(item.slot, item.id));
         return;
       }
 
       // is_pigmy_egg: category 417
-      // â†’ Opens CUIIncubator (client-side dialog)
+      // Ã¢â€ â€™ Opens CUIIncubator (client-side dialog)
       if (category === 417) {
-        // Client-side dialog â€” needs incubator UI
+        // Client-side dialog Ã¢â‚¬â€ needs incubator UI
         return;
       }
 
       // is_non_cash_effect_item: category 429
-      // â†’ SendActiveEffectItemChange (opcode 57)
+      // Ã¢â€ â€™ SendActiveEffectItemChange (opcode 57)
       if (category === 429) {
         this.game.session.send(GameSender.ActiveEffectItemChange(item.id));
         return;
       }
 
       // is_new_year_card_item_etc: category 430
-      // â†’ ShowNewYearCard (client-side)
+      // Ã¢â€ â€™ ShowNewYearCard (client-side)
       if (category === 430) {
         // Client-side UI action
         return;
       }
 
       // is_ui_open_item: category 432
-      // â†’ SendUIOpenItemRequest (complex, client-side)
+      // Ã¢â€ â€™ SendUIOpenItemRequest (complex, client-side)
       if (category === 432) {
         // Client-side UI action
         return;
@@ -2233,21 +2249,21 @@ export class GameStage extends Stage {
       const category = Math.floor(item.id / 10000);
 
       // is_portable_chair_item: category 301
-      // â†’ SendSitOnPortableChairRequest (opcode 46)
+      // Ã¢â€ â€™ SendSitOnPortableChairRequest (opcode 46)
       if (category === 301) {
         this.game.session.send(GameSender.PortableChairSitRequest(item.id));
         return;
       }
 
       // Dragon ball box: itemId 3994200-3994208
-      // â†’ SendDragonBallBoxRequest (opcode 196)
+      // Ã¢â€ â€™ SendDragonBallBoxRequest (opcode 196)
       if (item.id >= 3994200 && item.id <= 3994208) {
         this.game.session.send(GameSender.DragonBallBoxRequest());
         return;
       }
 
       // is_script_run_item: category 243 || itemId == 3994225
-      // â†’ SendScriptRunItemRequest (opcode 84)
+      // Ã¢â€ â€™ SendScriptRunItemRequest (opcode 84)
       if (category === 243 || item.id === 3994225) {
         this.game.session.send(GameSender.ScriptRunItemUseRequest(item.slot, item.id));
         return;
@@ -2276,7 +2292,7 @@ export class GameStage extends Stage {
       }));
       this._skillMacro?.Open(macros.length > 0 ? macros : Array.from({ length: 5 }, (_, i) => ({ slot: i, skills: [0, 0, 0] })));
       // OG CUIMacroSys ctor @0x84c0d0: CUIMacroSys(this, skillAbsLeft+174,
-      // skillAbsTop) â€” hang off the skill window's right edge.
+      // skillAbsTop) Ã¢â‚¬â€ hang off the skill window's right edge.
       this._skillMacro?.anchorToSkill(this._skill.container.position.x, this._skill.container.position.y);
     };
     this._statusBar.onStats = () => {
@@ -2315,7 +2331,7 @@ export class GameStage extends Stage {
     this._userList.onGuildBoard = () => { this._guildBBS.Open(); };
     // TODO_AUDIT.md Second/Third passes: GuildJoin/Kick/Admin/Expel/Level
     // all existed in GameSender.ts with zero callers and no UI to trigger
-    // them â€” added Invite/Kick/Admin/Expel/Level buttons to UserList's
+    // them Ã¢â‚¬â€ added Invite/Kick/Admin/Expel/Level buttons to UserList's
     // Guild tab above, wired here the same way Party's Invite/Kick are.
     this._userList.onGuildInvite = (name) => {
       let target: OtherCharLook | null = null;
@@ -2327,13 +2343,27 @@ export class GameStage extends Stage {
     this._userList.onGuildAdmin = (charId, name) => { this.game.session.send(GameSender.GuildAdmin(charId, name)); };
     this._userList.onGuildExpel = (charId, name) => { this.game.session.send(GameSender.GuildExpel(charId, name)); };
     this._userList.onGuildLevel = (charId, level) => { this.game.session.send(GameSender.GuildLevel(charId, level)); };
+    // BtGradeUp/BtGradeDown (ids 2033/2034) â€” CTabGuild::OnGradeChange.
+    this._userList.onGuildGradeChange = (charId, up) => {
+      const member = this._userList.guildMemberIds.has(charId);
+      void member;
+      // Rank deltas are server-validated; reuse the level-change packet path.
+      const cur = this._guildRankOf(charId);
+      if (cur > 0) this.game.session.send(GameSender.GuildLevel(charId, Math.max(1, Math.min(5, cur + (up ? -1 : 1)))));
+    };
+    this._userList.onGuildSetNotice = () => {
+      // GuildRequestAction.SetNotice packet not present in this server build yet
+      this._statusMessenger.showLoot('[Guild] Notice editing needs server support');
+    };
+    this._userList.onGuildFindUser = (_name) => { this._findFriend?.container && (this._findFriend.isVisible = true); };
+    this._userList.onPartySearch = () => { this._partySearchDialog?.Open(); };
     this._guildBBS.onLoadList = (startIndex) => { this.game.session.send(GameSender.GuildBBSLoadList(startIndex)); };
     this._guildBBS.onViewEntry = (entryId) => { this.game.session.send(GameSender.GuildBBSViewEntry(entryId)); };
     this._guildBBS.onNewPost = (title, text) => { this.game.session.send(GameSender.GuildBBSRegister(title, text, 0, false)); };
     this._guildBBS.onDeleteEntry = (entryId) => { this.game.session.send(GameSender.GuildBBSDeleteEntry(entryId)); };
     this._guildBBS.onComment = (entryId, comment) => { this.game.session.send(GameSender.GuildBBSComment(entryId, comment)); };
     this._guildBBS.onCommentDelete = (entryId, sn) => { this.game.session.send(GameSender.GuildBBSCommentDelete(entryId, sn)); };
-    // TODO_AUDIT.md Ninety-second/Hundred-and-eighth passes â€” OG:
+    // TODO_AUDIT.md Ninety-second/Hundred-and-eighth passes Ã¢â‚¬â€ OG:
     // GuildRequestAction.Create. GameSender.GuildCreate existed with zero
     // callers; this was the missing UI wiring (preconditions like party
     // size/level are server-validated, same as PartyCreate above).
@@ -2341,9 +2371,9 @@ export class GameStage extends Stage {
     this._userList.onGuildCreate = (name) => { this.game.session.send(GameSender.GuildCreate(name)); };
     this._userList.onFriendAdd = (name) => { this.game.session.send(GameSender.FriendAdd(name)); };
     this._userList.onFriendDelete = (charId) => { this.game.session.send(GameSender.FriendDelete(charId)); };
-    // OG: CTabFriend::OnWhisper (0x8D4CC0) â€” whisper to selected friend
+    // OG: CTabFriend::OnWhisper (0x8D4CC0) Ã¢â‚¬â€ whisper to selected friend
     this._userList.onFriendWhisper = (name) => { this._chatBar?.setWhisperTarget(name); };
-    // OG: CTabFriend::OnGroupWhisper (0x8B7250) â€” whisper to all online friends
+    // OG: CTabFriend::OnGroupWhisper (0x8B7250) Ã¢â‚¬â€ whisper to all online friends
     this._userList.onGroupWhisper = (_groupName) => {
       const friendIds = [...this._userList.onlineFriendIds.keys()];
       if (friendIds.length > 0) {
@@ -2351,12 +2381,12 @@ export class GameStage extends Stage {
         if (msg) this.game.session.send(GameSender.GroupChat(ChatGroupType.Friend, friendIds, msg));
       }
     };
-    // OG: CTabFriend::ChangeBlockOption (0x8B7280) â€” block/unblock
+    // OG: CTabFriend::ChangeBlockOption (0x8B7280) Ã¢â‚¬â€ block/unblock
     this._userList.onFriendBlock = (charId, block) => { this.game.session.send(GameSender.FriendBlock(charId, block)); };
-    // OG: CTabFriend::OnFindFriendView (0x8B7270) â€” find friend
+    // OG: CTabFriend::OnFindFriendView (0x8B7270) Ã¢â‚¬â€ find friend
     this._userList.onFindFriend = () => { this._findFriend?.container && (this._findFriend.isVisible = true); };
     // Expedition UserList callbacks
-    this._userList.getExpeditionInviteName = () => window.prompt('Expedition invite â€” character name:') ?? '';
+    this._userList.getExpeditionInviteName = () => window.prompt('Expedition invite Ã¢â‚¬â€ character name:') ?? '';
     this._userList.onExpeditionCreate = () => { this.game.session.send(GameSender.ExpeditionCreate(0)); };
     this._userList.onExpeditionInvite = (name) => { this.game.session.send(GameSender.ExpeditionInvite(name)); };
     this._userList.onExpeditionKick = (charId) => { this.game.session.send(GameSender.ExpeditionKick(charId)); };
@@ -2381,6 +2411,26 @@ export class GameStage extends Stage {
     this._statusBar.onMTS = () => {}; // MTS no longer exists
     this._chatBar.initWzAssets(this._loader, uiWz);
     this._userList.initWzAssets(this._loader, uiWz);
+    this._guildGradeWin = new GuildGradeWindow(false, this._loader, uiWz);
+    if (!this._guildGradeWin.container.parent) this.uiRoot.addChild(this._guildGradeWin.container);
+    // CUIUserList::ToggleGuildInfo â€” spawn at the community window's right edge.
+    this._userList.onGuildInfoToggle = () => {
+      const w = this._guildGradeWin!;
+      w.isVisible = !w.isVisible;
+      if (w.isVisible) {
+        w.container.position.set(this._userList.container.x + 264, this._userList.container.y);
+      }
+    };
+    this._userList.onAllianceInfoToggle = () => {
+      const w = this._guildGradeWin!;
+      w.isVisible = !w.isVisible;
+      if (w.isVisible) {
+        w.container.position.set(this._userList.container.x + 264, this._userList.container.y);
+      }
+    };
+    this._guildGradeWin.onGradeNameChange = (gradeIndex, name) => {
+      void gradeIndex; void name; // SetGuildGradeName packet not wired server-side yet
+    };
     this._statusBar.onChat = () => { this._chatBar.focus(); };
     this._statusBar.onGameOption = () => { this._quickSlotConfig && (this._quickSlotConfig.isVisible = !this._quickSlotConfig.isVisible); };
     this._statusBar.onJoyPad = () => {}; // Joypad config not implemented
@@ -2397,7 +2447,7 @@ export class GameStage extends Stage {
     this._chatBar.onChatTargetChange = (target) => { this._chatTarget = target; };
     this._chatBar.onTabChange = (tab) => { this._chatTab = tab; };
     this._chatBar.onSendChat = (msg) => {
-      // OG: pet slang reaction â€” check if chat matches any pet's slang list
+      // OG: pet slang reaction Ã¢â‚¬â€ check if chat matches any pet's slang list
       if (!msg.startsWith('/')) {
         const localPets = this._pets.get(this._localCharId) ?? [];
         for (const pet of localPets) {
@@ -2409,14 +2459,14 @@ export class GameStage extends Stage {
       }
       // OG: route by chat target
       if (!msg.startsWith('/') && this._chatTarget === 'whisper') {
-        // OG: whisper target â†’ SendChatMsgWhisper via GameSender.Whisper
+        // OG: whisper target Ã¢â€ â€™ SendChatMsgWhisper via GameSender.Whisper
         const target = this._chatBar.getWhisperTarget();
         if (target) {
           this.game.session.send(GameSender.Whisper(target, msg));
           this._chatBar.addLine(`${target} : ${msg}`, 14, -1, true);
           const targetChar = [...this._otherChars.values()].find((c) => c.Name === target);
           // OG CUser::OnChat bDead = (m_nMoveAction & ~1) === 18. Remote chars
-      // don't retain a raw moveAction, only a stance â€” TODO: track it.
+      // don't retain a raw moveAction, only a stance Ã¢â‚¬â€ TODO: track it.
       if (targetChar) this._chatBalloon?.Set(targetChar.CharId, msg, 5, BalloonType.Player, 0, 1, false);
         }
         return;
@@ -2451,7 +2501,7 @@ export class GameStage extends Stage {
     this._skill.onDragStart = (payload, texture, x, y) => { this._dragController.beginDrag(payload, texture, x, y); };
     this._skill.onSkillUp = (_skillId) => { /* OG: UI refresh only; packet sent via onSendSkillUp */ };
     this._skill.onSkillUse = (skillId, slv) => {
-      // OG: CUserLocal::UseSkill / TryDoingNormalAttack gates â€” a sealed player
+      // OG: CUserLocal::UseSkill / TryDoingNormalAttack gates Ã¢â‚¬â€ a sealed player
       // cannot cast (seal blocks active skills; dispel is the exception), and
       // stunned/frozen players are immovable so casting is blocked by the
       // physics immovability already.
@@ -2465,7 +2515,7 @@ export class GameStage extends Stage {
       // OG's real per-skill action selection (SKILLENTRY::IsActionAppointed/
       // GetRandomAppointedAction in SendSkillUseRequest, decompile 0x93e930)
       // picks between several alternate "appointed actions" depending on
-      // ladder/rope state and a random roll â€” that selection table isn't in
+      // ladder/rope state and a random roll Ã¢â‚¬â€ that selection table isn't in
       // this dump. This plays the skill's first WZ-listed action instead,
       // which is correct for the common single-action case.
       const cast = this._skillService?.GetCastInfo(skillId);
@@ -2474,19 +2524,19 @@ export class GameStage extends Stage {
       const effect = cast?.Effect ?? cast?.Effect0;
       if (effect) this._skillEffects?.PlayAtCaster(effect, this._localCharId, this._physics?.FacingLeft ?? true);
       if (cast?.Screen) this._skillEffects?.PlayFullScreen(cast.Screen);
-      // OG CUserLocal::DoAttack â€” attack skills execute the hit client-side
+      // OG CUserLocal::DoAttack Ã¢â‚¬â€ attack skills execute the hit client-side
       // (damage roll + attack packet with skillId); buff skills just cast.
       this._trySkillAttack(skillId, slv);
     };
     this._skill.onSkillGuide = (grade) => {
-      // OG: CUISkill::OpenSkillGuide â€” grade 1-4 from button IDs 3001-3004
+      // OG: CUISkill::OpenSkillGuide Ã¢â‚¬â€ grade 1-4 from button IDs 3001-3004
       this._skillGuide?.open(grade, this._loader, this._uiWz);
     };
     this._skill.onSendSkillUp = (skillId) => {
       this.game.session.send(GameSender.SkillUp(skillId));
     };
     this._skill.nameOf = (id) => this.game.nameService?.SkillName(id) ?? `Skill ${id}`;
-    // OG: mSkillRecordEx â€” equipment-provided skill level bonuses shown as the
+    // OG: mSkillRecordEx Ã¢â‚¬â€ equipment-provided skill level bonuses shown as the
     // green "(+N)" in the skill window (SkillLevel - PureSkillLevel).
     this._skill.skillBonusOf = (skillId) => this._equipSkillBonus.get(skillId) ?? 0;
 
@@ -2497,7 +2547,7 @@ export class GameStage extends Stage {
     this._stats.onIntUp = () => { this.game.session.send(GameSender.UserAbilityUp(MapleStat.Int)); };
     this._stats.onLukUp = () => { this.game.session.send(GameSender.UserAbilityUp(MapleStat.Luk)); };
     this._stats.onAutoApUp = (mode) => { this._stats.autoApUp(mode); };
-    // OG: AutoApUp â†’ CUtilDlg::YesNo â†’ IDYES(6) â†’ SendAbilityUpRequest(ctx, &aStatUp)
+    // OG: AutoApUp Ã¢â€ â€™ CUtilDlg::YesNo Ã¢â€ â€™ IDYES(6) Ã¢â€ â€™ SendAbilityUpRequest(ctx, &aStatUp)
     this._stats.onAutoApConfirmRequest = (alloc) => {
       const dlg = this._utilDlg;
       if (!dlg) return;
@@ -2589,17 +2639,17 @@ export class GameStage extends Stage {
     // Real bug, fixed this pass (see `_onScriptMessage`'s Say/SayImage case
     // above for the full decompile citation): the msgType byte must echo
     // the real Say(0)/SayImage(1) type of the dialog being answered, not a
-    // hardcoded 0 â€” `_npcTalk.sayMsgType` now tracks the real value.
+    // hardcoded 0 Ã¢â‚¬â€ `_npcTalk.sayMsgType` now tracks the real value.
     this._npcTalk.onOk = () => { this.game.session.send(GameSender.ScriptAnswerNext(this._npcTalk.sayMsgType)); };
     this._npcTalk.onNext = () => { this.game.session.send(GameSender.ScriptAnswerNext(this._npcTalk.sayMsgType)); };
     // Real bug, fixed this pass: `onPrev` was a complete no-op (sent nothing
     // at all). `CScriptMan::OnSay` (decompile/6DC110.c) always sends opcode
     // 65 on dialog exit except for sentinel result 3 (dialog already
-    // destroyed) â€” the action byte is `v16==8193 ? 1 : -(v16!=0x2000)`,
+    // destroyed) Ã¢â‚¬â€ the action byte is `v16==8193 ? 1 : -(v16!=0x2000)`,
     // i.e. Next's button id (8193) -> 1 (Select), Prev's button id (0x2000)
     // -> 0, which is byte-identical to `ScriptAnswerAction.Cancel`. The real
     // client genuinely collapses "Prev" and "Cancel" to the same wire value
-    // for this dialog family â€” there is no distinct "go back a page" action
+    // for this dialog family Ã¢â‚¬â€ there is no distinct "go back a page" action
     // byte. Fixed to send that real value via `ScriptAnswerCancel` instead
     // of silently dropping the click (which previously left the server's
     // `CScriptMan` script-wait state never advanced when a player clicked
@@ -2643,7 +2693,7 @@ export class GameStage extends Stage {
     ActionMan.GetInstance().SweepCache();
 
     // `_keyConfig` is built asynchronously in `_initMenu` (via `_loadWzAsync`),
-    // but `_physics` is set the moment SetField arrives â€” which can beat the WZ
+    // but `_physics` is set the moment SetField arrives Ã¢â‚¬â€ which can beat the WZ
     // load. Gate the input/physics block on both so update() ticks harmlessly
     // until the panel exists (same async-race guard as `_miniMap` below).
     if (this._physics && this._keyConfig) {
@@ -2658,8 +2708,13 @@ export class GameStage extends Stage {
           Down: isDown('ArrowDown'),
           JumpPressed: this._keyConfig.isActionDown(isDown, KeyAction.Jump),
         };
+      // Release the melee-swing input lock once the one-time action finished.
+      if (this._meleeSwingActive && !this._player?.IsPlayingOneTimeAction) {
+        this._meleeSwingActive = false;
+        if (this._physics) this._physics.InputLocked = false;
+      }
       this._physics.Update(input, dt);
-      this._player?.UpdateFromPhysics(dt, this._physics.Stance, this._physics.FacingLeft);
+      this._player?.UpdateFromPhysics(dt, this._physics.Stance, this._physics.FacingLeft, this._physics.ClimbMoving);
       // CAvatar::GetOneTimeAction is the ladder gate's action source. CharLook
       // owns the animation timer; mirror its active/inactive state into the
       // physics controller after advancing the avatar.
@@ -2672,6 +2727,10 @@ export class GameStage extends Stage {
       if (movePath) this.game.session.send(GameSender.UserMove(this._fieldKey, movePath));
 
       this._checkPortalTouch();
+
+      // OG: CWvsContext::TryRecovery @0x9D4020 â€” idle HP/MP regen while the
+      // character stands still (see _updateIdleRecovery).
+      if (!this._isPlayerDead) this._updateIdleRecovery(dt * 1000);
 
       this._attackCooldown = Math.max(0, this._attackCooldown - dt);
       this._comboClockMs += dt * 1000;
@@ -2686,7 +2745,14 @@ export class GameStage extends Stage {
           this.game.session.send(GameSender.UseSkill(comboSkillId, slv, Date.now()));
         }
       }
-      if (!this._isPlayerDead && this._attackCooldown <= 0 && attackDown) {
+      // OG: CUserLocal::HandleCtrlKeyDown @0x9326B0 â€” a swing fires on the
+      // Ctrl KEY-DOWN event only (edge), gated by `get_update_time() -
+      // m_tLastCtrlDown >= 200` and TryDoingNormalAttack's own
+      // IsOnPlayingOneTimeAction gate. Holding the key does NOT machine-gun
+      // swings. attackPressed models the key-down edge.
+      const attackPressed = attackDown && !this._attackWasDown;
+      this._attackWasDown = attackDown;
+      if (!this._isPlayerDead && attackPressed && this._attackCooldown <= 0) {
         // OG: CUserLocal::TryDoingNormalAttack pre-conditions (decompile 0x9123ea)
         // 1. Not immovable (stun, sit, knockback, direction mode)
         // 2. Not on one-time action (attack animation already playing)
@@ -2701,7 +2767,7 @@ export class GameStage extends Stage {
           this._tryMeleeAttack();
         }
       }
-      // OG: CWvsContext::Update â€” open the revive dialog 2200ms after death.
+      // OG: CWvsContext::Update Ã¢â‚¬â€ open the revive dialog 2200ms after death.
       this._updateReviveDialog(dt * 1000);
     }
     this._camera.Update(dt);
@@ -2729,7 +2795,7 @@ export class GameStage extends Stage {
         }
       }
     }
-    // OG: pet auto-pickup â€” scan nearby drops every 500ms
+    // OG: pet auto-pickup Ã¢â‚¬â€ scan nearby drops every 500ms
     this._petPickupTimer += dt;
     if (this._petPickupTimer >= 0.5 && this._drops.length > 0) {
       this._petPickupTimer = 0;
@@ -2767,19 +2833,19 @@ export class GameStage extends Stage {
     for (const s of this._summons.values()) s.Update(dt);
     for (const tp of this._townPortals.values()) tp.Update(dt);
     for (const emp of this._employees.values()) emp.Update(dt);
-    // OG CReactor::Update — advance the reactor's state animation; without
+    // OG CReactor::Update â€” advance the reactor's state animation; without
     // this tick the container was never rebuilt after Load (invisible).
     for (const reactor of this._reactors.values()) reactor.Update(dt);
     for (const aa of this._affectedAreas.values()) aa.Update(dt);
     for (const og of this._openGates.values()) og.Update(dt);
 
-    // TODO_AUDIT.md Sixty-ninth pass: CUIMiniMap â€” playerWorldPos/party
+    // TODO_AUDIT.md Sixty-ninth pass: CUIMiniMap Ã¢â‚¬â€ playerWorldPos/party
     // tracking were both dead (never set from anywhere), so the minimap
     // always showed the player dot frozen at the canvas origin and never
     // showed party members at all, despite the `Party`/`PartyMaster`
     // marker sprites already being loaded. Other-player/NPC/portal
     // live-tracking (`setOtherPlayers`/`setNpcs`/`setPortals`) are ALSO
-    // dead the same way â€” found while fixing this, sized up but not
+    // dead the same way Ã¢â‚¬â€ found while fixing this, sized up but not
     // fixed this pass (bigger scope than the original party-only finding).
     // `_miniMap` is constructed asynchronously in `_initMenu` (via
     // `_loadWzAsync`); guard the whole block so update() ticks harmlessly
@@ -2796,11 +2862,11 @@ export class GameStage extends Stage {
     }
     // TODO_AUDIT.md Hundred-and-twenty-first pass: CUIMiniMap::Update reads
     // CUserPool (other players) every ~4 frames and CLifePool/CField for NPCs.
-    // We push all live other-chars and NPCs every frame â€” equivalent coverage.
+    // We push all live other-chars and NPCs every frame Ã¢â‚¬â€ equivalent coverage.
     this._miniMap.setOtherPlayers(
       Array.from(this._otherChars.values(), (c) => ({ x: c.Position.x, y: c.Position.y })),
     );
-    // OG: CUIMiniMap::Update reads CNpcPool â€” quest NPCs get StartNpc icon
+    // OG: CUIMiniMap::Update reads CNpcPool Ã¢â‚¬â€ quest NPCs get StartNpc icon
     this._miniMap.setNpcs(this._npcs.map((n) => ({ x: n.Position.x, y: n.Position.y, quest: n.QuestInfoVisible || n.QuestList.length > 0 })));
     // OG: CUIMiniMap::Update reads CEmployeePool for merchant icons
     this._miniMap.setMerchants(
@@ -2863,12 +2929,12 @@ this._dmgNumbers?.Update(dt);
     }
     for (const p of this._panels) { p?.update(dt); p?.updateDrag(); }
     // OG: CUIMacroSys ctor @0x84c0d0 anchors at (skillAbsLeft + 174, skillAbsTop)
-    // â€” the macro popup hangs off the skill window's right edge, so it must
+    // Ã¢â‚¬â€ the macro popup hangs off the skill window's right edge, so it must
     // follow the skill window as it is dragged.
     if (this._skillMacro?.isVisible && this._skill) {
       this._skillMacro.anchorToSkill(this._skill.container.position.x, this._skill.container.position.y);
     }
-    // OG: CTemporaryStatView::Update â€” slide the expiry clock for active buffs
+    // OG: CTemporaryStatView::Update Ã¢â‚¬â€ slide the expiry clock for active buffs
     this._buffList.update(dt);
     // OG: CUIStatDetail follows main stat panel position (CUIStat::OnMoveWnd
     // @0x861590: MoveWnd(absLeft+172, absTop+90)). Slide smoothly toward the
@@ -2893,7 +2959,7 @@ this._dmgNumbers?.Update(dt);
     this._miniMap?.update(dt);
     this._gameMenu?.update(dt);
     this._gameMenu?.draw();
-    // OG: DrawCombo / DrawKeyDownBar â€” updated every tick
+    // OG: DrawCombo / DrawKeyDownBar Ã¢â‚¬â€ updated every tick
     this._comboDisplay.update(dt);
     if (this._keyDownBar.isVisible) {
       // Hide key-down bar when no skill is being prepared or repeated
@@ -2935,12 +3001,12 @@ this._dmgNumbers?.Update(dt);
 
   handleKeyDown(key: string): boolean {
     if (key === 'Escape') {
-      // OG: CWvsContext::ProcessBasicUIKey â†’ TryCloseUI â†’ close open panels
+      // OG: CWvsContext::ProcessBasicUIKey Ã¢â€ â€™ TryCloseUI Ã¢â€ â€™ close open panels
       if (this._quitOverlay?.isVisible) { this._quitOverlay.isVisible = false; return true; }
       for (const p of [this._keyConfig, this._skill, this._equip, this._item, this._stats, this._charInfo, this._quest, this._optionMenu, this._quickSlotConfig, this._channelSelect, this._claim, this._ranking]) {
         if (p?.isVisible) { p.isVisible = false; return true; }
       }
-      // Nothing to close â†’ open game menu (OG: CUserLocal::OnKeyDownSkillEnd + CWvsContext::UI_Menu)
+      // Nothing to close Ã¢â€ â€™ open game menu (OG: CUserLocal::OnKeyDownSkillEnd + CWvsContext::UI_Menu)
       this._gameMenu?.Open();
       return true;
     }
@@ -2952,7 +3018,7 @@ this._dmgNumbers?.Update(dt);
       this._trySit();
       return true;
     }
-    // Emotion keys (F1-F7 by default) â€” send UserEmotion packet
+    // Emotion keys (F1-F7 by default) Ã¢â‚¬â€ send UserEmotion packet
     for (let i = 1; i <= 7; i++) {
       const action = KeyAction[`Emotion${i}` as keyof typeof KeyAction] as KeyAction;
       if (this._keyConfig.isActionDown((k) => k === key, action)) {
@@ -2960,7 +3026,7 @@ this._dmgNumbers?.Update(dt);
         return true;
       }
     }
-    // OG: ToggleMiniMapState â€” Tab key cycles minimap modes (normalâ†’hugeâ†’collapsed)
+    // OG: ToggleMiniMapState Ã¢â‚¬â€ Tab key cycles minimap modes (normalÃ¢â€ â€™hugeÃ¢â€ â€™collapsed)
     if (key === 'Tab') {
       this._miniMap?.cycleMode();
       return true;
@@ -2968,7 +3034,7 @@ this._dmgNumbers?.Update(dt);
     return false;
   }
 
-  /** OG: toggle CWorldMapDlg â€” opens the current field's deepest world map
+  /** OG: toggle CWorldMapDlg Ã¢â‚¬â€ opens the current field's deepest world map
    *  (GetDeepestWorldMap) on show, hides when already open. */
   private _toggleWorldMap(): void {
     if (!this._worldMap) return;
@@ -2995,10 +3061,10 @@ this._dmgNumbers?.Update(dt);
     }
   }
 
-  // OG: CUserLocal::HandleXKeyDown (decompile, 0x90f6d0) â€” TODO_AUDIT.md
+  // OG: CUserLocal::HandleXKeyDown (decompile, 0x90f6d0) Ã¢â‚¬â€ TODO_AUDIT.md
   // Seventy-sixth pass's chair/sitting finding. Precondition checks the OG
   // does (stun/attract/riding-vehicle/morphed/mid-skill-cast) aren't
-  // re-verified here â€” this client doesn't track several of those states
+  // re-verified here Ã¢â‚¬â€ this client doesn't track several of those states
   // at all, so only the core sit/stand/seat-or-chair toggle is ported.
   private _trySit(): void {
     if (!this._physics) return;
@@ -3072,7 +3138,7 @@ this._dmgNumbers?.Update(dt);
   protected _wireHandlers(game: MapleClaudeGame): void {
     const fh = game.fieldHandlers;
     fh.onSetField = (args) => this._onSetField(args);
-    // TODO_AUDIT.md Hundred-and-sixty-eighth pass: CUIEventAlarm â€” triggered by nNotifierCheck > 0 in SetField (decompile/71A0A0.c).
+    // TODO_AUDIT.md Hundred-and-sixty-eighth pass: CUIEventAlarm Ã¢â‚¬â€ triggered by nNotifierCheck > 0 in SetField (decompile/71A0A0.c).
     fh.onEventAlarm = (title, lines) => {
       this._eventAlarm.show(title, lines);
     };
@@ -3080,7 +3146,7 @@ this._dmgNumbers?.Update(dt);
     fh.onMobMove = (args) => this._onMobMove(args);
     fh.onMobDamaged = (args) => this._onMobDamaged(args);
     fh.onMobHpIndicator = (mobId, pct) => this._onMobHpIndicator(mobId, pct);
-    // OG: CMob::OnMobSpeaking (decompile/650000.c, opcode 301) â€” server-driven
+    // OG: CMob::OnMobSpeaking (decompile/650000.c, opcode 301) Ã¢â‚¬â€ server-driven
     // explicit speak: look up the entry and line from MobInfo.SpeakEntries.
     fh.onMobSpeaking = (args) => {
       const mob = this._mobs.get(args.mobId);
@@ -3091,7 +3157,7 @@ this._dmgNumbers?.Update(dt);
     fh.onMobLeave = (mobId, lt) => this._onMobLeave(mobId, lt);
     fh.onNpcEnter = (args) => this._onNpcEnter(args);
     fh.onNpcLeave = (id) => this._onNpcLeave(id);
-    // OG: CNpc::OnMove â€” NPC moves on map, updates position and animation
+    // OG: CNpc::OnMove Ã¢â‚¬â€ NPC moves on map, updates position and animation
     // actionIdx: -1 = chat only, 0+ = action index from template action list
     // chatIdx: -1 = no chat, 0+ = chat index from speak list
     // The action index maps to the NPC template's action list (aAct),
@@ -3101,7 +3167,7 @@ this._dmgNumbers?.Update(dt);
       const npc = this._npcs.find(n => n.ObjId === npcId);
       if (!npc) return;
       if (movePath) npc.ReplayMove(movePath);
-      // OG CNpc::OnMove (0x678060) â€” actionIdx: -1=chat only, >=0=action
+      // OG CNpc::OnMove (0x678060) Ã¢â‚¬â€ actionIdx: -1=chat only, >=0=action
       if (actionIdx === -1) {
         // Chat-only: resolve chat from speak list and show balloon
         if (chatIdx >= 0) npc.OnChat(chatIdx);
@@ -3126,10 +3192,13 @@ this._dmgNumbers?.Update(dt);
     fh.onNpcSetSpecialAction = ({ npcId, actionName }) => {
       const npc = this._npcs.find(n => n.ObjId === npcId);
       if (!npc) return;
-      // OG CNpc::OnSetSpecialAction (0x6750f0) â€” sets special action by name
+      // OG CNpc::OnSetSpecialAction (0x6750f0) Ã¢â‚¬â€ sets special action by name
       npc.OnSetSpecialAction(actionName);
     };
     fh.onUserEnter = (args) => this._onUserEnter(args);
+    // OG: remote stand/walk variants are re-expanded client-side from the
+    // remote character's own weapon entry (MoveAction2RawAction).
+    fh.weaponTypesOf = (charId) => this._remoteWeaponTypes(charId);
     fh.onUserLeave = (id) => this._onUserLeave(id);
     fh.onDropEnter = (args) => this._onDropEnter(args);
     fh.onDropLeave = (args) => this._onDropLeave(args);
@@ -3142,7 +3211,7 @@ this._dmgNumbers?.Update(dt);
       this._syncStatDetailInputs();
       // OG: sync pet stats from inventory Add ops to active Pet instances.
       // When the server sends a pet item (Cash tab Add with pet fields), update
-      // the matching Pet's tameness/repleteness via OnValidateStat â†’ UpdatePetAbility.
+      // the matching Pet's tameness/repleteness via OnValidateStat Ã¢â€ â€™ UpdatePetAbility.
       for (const op of ops) {
         if (op.opType !== InventoryOpType.Add) continue;
         if (op.petTameness === undefined) continue;
@@ -3221,16 +3290,16 @@ this._dmgNumbers?.Update(dt);
     };
     // CORRECTED (TODO_AUDIT.md Seventy-second pass addendum, waterfall
     // implementation pass): `CUIFamilyChart::DecodeLocalChart` (0x7b55a0)
-    // is NOT actually opaque â€” re-querying it directly produced a full
+    // is NOT actually opaque Ã¢â‚¬â€ re-querying it directly produced a full
     // pseudocode body (a real per-node family-tree decode). Left as a
     // no-op data sink anyway because the field-by-field shape hasn't
-    // been mapped yet (a real follow-up task, not a guess) â€” see
+    // been mapped yet (a real follow-up task, not a guess) Ã¢â‚¬â€ see
     // `FamilyChartResultArgs`'s doc comment in PacketArgs.ts. The other
     // Family opcodes ARE fully decoded; FamilyInfoResult populates the
     // existing FamilyWindow (CUIFamily) stat panel, and the rest route
     // to ChatBar/Notice exactly like OG's own CUIStatusBar::ChatLogAdd /
     // CUtilDlg::Notice/YesNo calls.
-    fh.onFamilyChartResult = () => { /* decode shape not yet mapped â€” see FamilyChartResultArgs doc comment */ };
+    fh.onFamilyChartResult = () => { /* decode shape not yet mapped Ã¢â‚¬â€ see FamilyChartResultArgs doc comment */ };
     fh.onFamilyInfoResult = (args) => {
       if (!this._familyWindow) return;
       this._familyWindow.InFamily = true;
@@ -3317,7 +3386,7 @@ this._dmgNumbers?.Update(dt);
     // Player-visible notifications from the IDA-dump opcode audit batch.
     // Most of the other new opcodes (SessionValue/PartyValue/InventoryGrow/
     // etc.) are internal state or need feature-specific UI this client
-    // doesn't have yet â€” left as registered-but-unconsumed callbacks rather
+    // doesn't have yet Ã¢â‚¬â€ left as registered-but-unconsumed callbacks rather
     // than guessed at.
     fh.onNotifyLevelUp = (args) => {
       this._chatBar.addLine(`${args.name} reached level ${args.level}.`);
@@ -3370,7 +3439,7 @@ this._dmgNumbers?.Update(dt);
         this._notice?.show('Marriage', args.message);
       }
       // Other result codes (11-14/16/18-34) are canned StringPool notices
-      // this client doesn't have the localized text for â€” silently
+      // this client doesn't have the localized text for Ã¢â‚¬â€ silently
       // dropped rather than shown as a meaningless numeric code.
     };
     fh.onSetWeekEventMessage = (args) => { this._chatBar.addLine(args.message); };
@@ -3380,7 +3449,7 @@ this._dmgNumbers?.Update(dt);
     // TODO_AUDIT.md "Resolved against the v95 decompile" section: the real
     // CMapleTVMan opcodes (405/406/407, MapleTVHandlers.ts) were correctly
     // decoded and registered on the router but GameStage never assigned any
-    // of the three callbacks â€” events decoded into the void. Banner-style
+    // of the three callbacks Ã¢â‚¬â€ events decoded into the void. Banner-style
     // graphical TV broadcast (sender/receiver avatar portraits) is a bigger
     // UI than exists anywhere else in this client; falling back to the same
     // chatBar-line convention as the other broadcast-style messages above.
@@ -3395,7 +3464,7 @@ this._dmgNumbers?.Update(dt);
     fh.onScriptProgressMessageNotify = (args) => { this._chatBar.addLine(args.message); };
     fh.onDataCRCCheckFailed = (args) => { this._notice?.show('Notice', args.message); };
     // TODO_AUDIT.md Eighty-sixth pass / "Resolved against the v95 decompile"
-    // section: CUIAntiMacro captcha â€” subType 6 is the real question (image
+    // section: CUIAntiMacro captcha Ã¢â‚¬â€ subType 6 is the real question (image
     // + free-text answer), everything else is a notice variant (no answer).
     fh.onAntiMacroResult = (args) => {
       if (args.subType === 6) this._antiMacroDialog?.showQuestion(args.jpeg);
@@ -3480,7 +3549,7 @@ this._dmgNumbers?.Update(dt);
       if (isLocalEcho) this._pendingLocalBalloon = null;
       else {
         // OG bDead = (m_nMoveAction & ~1) === 18. Local uses the live HP-death
-        // flag; remote chars don't retain a raw moveAction â€” TODO: track it.
+        // flag; remote chars don't retain a raw moveAction Ã¢â‚¬â€ TODO: track it.
         const bDead = args.charId === this._localCharId ? this._isPlayerDead : false;
         this._chatBalloon?.Set(args.charId, resolved, 5, BalloonType.Player, 0, 1, bDead);
       }
@@ -3522,15 +3591,15 @@ this._dmgNumbers?.Update(dt);
       }
       const resolved = this._resolveChatItemLinks(text);
       this._chatBar.addLine(`${prefix} ${fromName}: ${resolved}`, lType);
-      // OG bDead: remote source, moveAction not retained â€” TODO: track it.
+      // OG bDead: remote source, moveAction not retained Ã¢â‚¬â€ TODO: track it.
       this._chatBalloon?.Set(charId, resolved, 4, BalloonType.Player, 0, 1, false);
     };
     fh.onWhisper = ({ fromName, channelId, text }) => {
       // OG: CField::OnWhisper checks CConfig::IsInBlackList before
-      // displaying â€” TODO_AUDIT.md Eighty-second pass's `CTabBlackList`
+      // displaying Ã¢â‚¬â€ TODO_AUDIT.md Eighty-second pass's `CTabBlackList`
       // finding. Other IsInBlackList call sites (GroupMessage, Expedition/
       // MiniRoom/Messenger invites, Family/Guild/Party join requests) are
-      // the same pattern but not wired this pass â€” whisper is the most
+      // the same pattern but not wired this pass Ã¢â‚¬â€ whisper is the most
       // directly user-visible "ignore this person" case.
       if (this._blackList.has(fromName)) return;
       // OG: ChatLogAdd with lType=14 (whisper), channelID, bWhisperIcon
@@ -3551,8 +3620,8 @@ this._dmgNumbers?.Update(dt);
       if (!other) return;
       other.SetEmotion(args.emotion);
     };
-    // OG: CUser::OnRandomEmotion (0x8e34b0) â€” itemId â†’ weighted random emotion
-    // from the AreaBuffItem table â†’ SendEmotionChange(emotion, 0, -1). The
+    // OG: CUser::OnRandomEmotion (0x8e34b0) Ã¢â‚¬â€ itemId Ã¢â€ â€™ weighted random emotion
+    // from the AreaBuffItem table Ã¢â€ â€™ SendEmotionChange(emotion, 0, -1). The
     // per-item emotion/prop table isn't wired client-side, so fall back to a
     // uniform pick over the valid 1..23 range; SendEmotionChange still applies
     // its morph/cooldown gates.
@@ -3587,7 +3656,7 @@ this._dmgNumbers?.Update(dt);
         this._charInfo.guild = info.guild ?? '';
         this._charInfo.alliance = info.alliance ?? '';
         this._charInfo.isMarried = info.married;
-        // OG: CUIUserInfo::SetMultiPetInfo â€” populate pet data from info packet
+        // OG: CUIUserInfo::SetMultiPetInfo Ã¢â‚¬â€ populate pet data from info packet
         for (let i = 0; i < 3; i++) {
           const p = info.pets[i];
           if (p) {
@@ -3606,8 +3675,8 @@ this._dmgNumbers?.Update(dt);
         }
         // OG: bPetActivated set when any pet exists
         this._charInfo.bPetActivated = this._charInfo.pets.some(p => p !== null);
-        // OG: CharacterInfo response opens the UserInfo window (right-click â†’
-        // context menu â†’ "Info" â†’ SendCharacterInfoRequest â†’ SetUserInfo).
+        // OG: CharacterInfo response opens the UserInfo window (right-click Ã¢â€ â€™
+        // context menu Ã¢â€ â€™ "Info" Ã¢â€ â€™ SendCharacterInfoRequest Ã¢â€ â€™ SetUserInfo).
         this._charInfo.isVisible = true;
         if (!this._charInfo.container.parent) this.uiRoot.addChild(this._charInfo.container);
       }
@@ -3649,7 +3718,7 @@ this._dmgNumbers?.Update(dt);
     fh.onUserMove = (args) => {
       const other = this._otherChars.get(args.charId);
       if (!other) return;
-      if (other.IsDead) return; // legacy dead-flag (no longer set â€” OG remotes have no death visual)
+      if (other.IsDead) return; // legacy dead-flag (no longer set Ã¢â‚¬â€ OG remotes have no death visual)
       if (args.movePath) other.SetMovePath(args.movePath);
       else other.Position = { x: args.x, y: args.y };
       if (args.facingLeft !== undefined) other.SetFacing(args.facingLeft);
@@ -3662,15 +3731,15 @@ this._dmgNumbers?.Update(dt);
     };
     fh.onUserAttack = (args) => this._onUserAttack(args);
     fh.onOpenSkillGuide = () => {
-      // OG: CUserLocal::OnOpenSkillGuide (opcode 262) â€” opens skill UI then calls OpenCurSkillGuide
+      // OG: CUserLocal::OnOpenSkillGuide (opcode 262) Ã¢â‚¬â€ opens skill UI then calls OpenCurSkillGuide
       // OpenCurSkillGuide opens the guide for the current skill root (grade from m_aSkillRoot)
       this._skill.isVisible = true;
       if (!this._skill.container.parent) this.uiRoot.addChild(this._skill.container);
       this._skillGuide?.open(this._skill.activeSkillGuideGrade(), this._loader, this._uiWz);
     };
 
-    // Phase 8 â€” new field-effect / UI handlers
-    // OG: CUserLocal::OnFieldFadeInOut @0x905790 â€” decodes tFadeIn/tDelay/tFadeOut/
+    // Phase 8 Ã¢â‚¬â€ new field-effect / UI handlers
+    // OG: CUserLocal::OnFieldFadeInOut @0x905790 Ã¢â‚¬â€ decodes tFadeIn/tDelay/tFadeOut/
     // nAlpha and registers a CAnimationDisplayer fade at (avatar layer Z - 2).
     fh.onFieldFadeInOut = (tFadeIn, tDelay, tFadeOut, nAlpha) => {
       this._fieldFades.push({
@@ -3678,11 +3747,11 @@ this._dmgNumbers?.Update(dt);
         elapsed: 0, fadeOutStarted: false,
       });
     };
-    // OG: CUserLocal::OnFieldFadeOutForce @0x9057F0 â†’ RemoveAllFadeInAnimation(tFadeOut)
+    // OG: CUserLocal::OnFieldFadeOutForce @0x9057F0 Ã¢â€ â€™ RemoveAllFadeInAnimation(tFadeOut)
     fh.onFieldFadeOutForce = (tFadeOut) => {
       this._forceFieldFadesOut(tFadeOut);
     };
-    // OG: CUserLocal::OnNotifyHPDecByField â€” environmental HP drain
+    // OG: CUserLocal::OnNotifyHPDecByField Ã¢â‚¬â€ environmental HP drain
     fh.onNotifyHPDecByField = (hpDec) => {
       if (this._stats && hpDec > 0) {
         this._stats.hp = Math.max(0, this._stats.hp - hpDec);
@@ -3692,7 +3761,7 @@ this._dmgNumbers?.Update(dt);
         }
       }
     };
-    // OG: CUserLocal::OnSetDirectionMode â€” enables/disables player control for cutscenes
+    // OG: CUserLocal::OnSetDirectionMode Ã¢â‚¬â€ enables/disables player control for cutscenes
     fh.onSetDirectionMode = (bDirection, afterDelay) => {
       if (this._physics) {
         this._physics.SetDirectionMode(bDirection);
@@ -3716,7 +3785,7 @@ this._dmgNumbers?.Update(dt);
     fh.onFieldEffect = (args) => {
       switch (args.subType) {
         case 0: {
-          // OG: Effect/Summon.img/<summonId> â€” one-shot animation at (x,y)
+          // OG: Effect/Summon.img/<summonId> Ã¢â‚¬â€ one-shot animation at (x,y)
           const node = this._effectWz?.GetItem(`Summon.img/${args.summonId}`);
           if (node) {
             const frames = loadFrameSequence(this._loader, node);
@@ -3737,7 +3806,7 @@ this._dmgNumbers?.Update(dt);
           break;
         }
         case 4: {
-          // OG: play_field_sound â€” field ambient sound from Sound.wz
+          // OG: play_field_sound Ã¢â‚¬â€ field ambient sound from Sound.wz
           const sound = this._mobSoundWz?.GetItem(args.soundUol ?? '');
           if (sound instanceof WzSound) this.game.audioPlayer.PlayEffect(sound.AudioBytes);
           break;
@@ -3752,7 +3821,7 @@ this._dmgNumbers?.Update(dt);
           break;
         }
         case 7: {
-          // OG: Effect_RewardRullet â€” equipment-tier preview icons.
+          // OG: Effect_RewardRullet Ã¢â‚¬â€ equipment-tier preview icons.
           const jobPath = `MapEff.img/miro/RR1/${args.rewardJobIdx}0`;
           const partPath = `MapEff.img/miro/RR2/${args.rewardPartIdx}0`;
           const levPath = `MapEff.img/miro/RR3/${args.rewardLevIdx}0`;
@@ -3803,7 +3872,7 @@ this._dmgNumbers?.Update(dt);
       this._massacreGaugeHud.hide();
       this._statusMessenger.showLoot(args.won ? `Massacre cleared! Gauge ${args.finalGauge}` : `Massacre failed. Gauge ${args.finalGauge}`);
     };
-    // TODO_AUDIT.md Seventy-fourth pass: CUIQuestTimer â€” decoded but
+    // TODO_AUDIT.md Seventy-fourth pass: CUIQuestTimer Ã¢â‚¬â€ decoded but
     // dropped (FieldHandlers.onSetQuestTime had zero src/ wiring at all).
     fh.onSetQuestTime = (entries) => {
       for (const e of entries) {
@@ -3854,7 +3923,7 @@ this._dmgNumbers?.Update(dt);
     // TODO_AUDIT.md "Missing features" #5: CField::OnZakumTimer/
     // OnChaosZakumTimer (decompile/530cc0.c/531020.c, byte-identical logic)
     // pick one of 2 StringPool templates by flag, a 3rd when value===0, and
-    // post through CUIStatusBar::ChatLogAdd â€” a chat-log line, not a
+    // post through CUIStatusBar::ChatLogAdd Ã¢â‚¬â€ a chat-log line, not a
     // dedicated countdown widget. StringPool text isn't in this dump
     // (same limitation as ShopResult/AdminShopDlg elsewhere), so this
     // shows the raw flag/value rather than a fabricated string.
@@ -3880,10 +3949,10 @@ this._dmgNumbers?.Update(dt);
       this._partyCharIds.clear();
       for (const m of members) this._partyCharIds.set(m.charId, m.charId === bossId);
       this._chatBar.setMembership({ party: this._partyCharIds.size > 0 });
-      // TODO_AUDIT.md Hundred-and-twenty-eighth pass: CUIPartyHP â€” show HP bars for party members.
+      // TODO_AUDIT.md Hundred-and-twenty-eighth pass: CUIPartyHP Ã¢â‚¬â€ show HP bars for party members.
       this._partyHPBar.setMembers(members);
     };
-    // OG case 31 â€” no boss/crown indicator exists in UserList's party
+    // OG case 31 Ã¢â‚¬â€ no boss/crown indicator exists in UserList's party
     // panel yet to update; the minimap leader marker (PartyMaster vs
     // Party) is updated from this, though.
     fh.onPartyBossChanged = (newBossCharId) => {
@@ -3932,12 +4001,12 @@ this._dmgNumbers?.Update(dt);
       this.game.session.send(GameSender.PartyAdverApplyResponse(accepted ? 10 : 11, nPartyID));
       this._notice?.show('Expedition Apply', accepted ? 'Accepted.' : 'Rejected.');
     };
-    // OG: CUserLocal::OnRadioSchedule (0x918120) â€” decodeStr + decode4 â†’ CRadioManager::Play
+    // OG: CUserLocal::OnRadioSchedule (0x918120) Ã¢â‚¬â€ decodeStr + decode4 Ã¢â€ â€™ CRadioManager::Play
     // CRadioManager singleton not implemented; surface as a chat notification for now.
     fh.onRadioSchedule = (musicFile: string, duration: number) => {
       this._chatBar.addLine(`Radio: ${musicFile} (${duration}s)`, 0);
     };
-    // OG: CUserLocal::OnTeleport (0x913ff0) â€” server confirms teleport position.
+    // OG: CUserLocal::OnTeleport (0x913ff0) Ã¢â‚¬â€ server confirms teleport position.
     // Moves the player to the new coordinates and snaps to nearest foothold.
     fh.onUserTeleport = ({ x, y }) => {
       if (!this._physics) return;
@@ -3950,15 +4019,15 @@ this._dmgNumbers?.Update(dt);
       }
       this._camera.Target = this._physics.Position;
     };
-    // OG: CUserLocal::OnIncComboResponse (0x91a970) â€” server sends updated combo count.
+    // OG: CUserLocal::OnIncComboResponse (0x91a970) Ã¢â‚¬â€ server sends updated combo count.
     // Stores the combo count; display is handled by DrawCombo when available.
     fh.onIncComboResponse = (nCombo: number) => {
       this._comboCount = nCombo;
     };
-    // OG: CUserLocal::OnQuestGuideResult (0x90f1e0) â€” reads questId(4), drives minimap arrow.
+    // OG: CUserLocal::OnQuestGuideResult (0x90f1e0) Ã¢â‚¬â€ reads questId(4), drives minimap arrow.
     // No quest-arrow overlay yet; no-op is safe.
     fh.onQuestGuideResult = (_questId: number) => {};
-    // OG: CUserLocal::OnDeliveryQuest (0x90ef60) â€” reads questId(4), delivery quest notification.
+    // OG: CUserLocal::OnDeliveryQuest (0x90ef60) Ã¢â‚¬â€ reads questId(4), delivery quest notification.
     fh.onDeliveryQuest = (questId: number) => {
       this._notice?.show('Delivery Quest', `Quest ${questId} delivered.`);
     };
@@ -3978,19 +4047,19 @@ this._dmgNumbers?.Update(dt);
     fh.onFriendStatusChanged = (args) => {
       this._userList.updateFriendStatus(args.charId, args.online);
     };
-    // TODO_AUDIT.md Hundred-and-sixty-sixth pass: UpdateFriend (OG: decompile/A125D0.c) â€” incremental channel update.
+    // TODO_AUDIT.md Hundred-and-sixty-sixth pass: UpdateFriend (OG: decompile/A125D0.c) Ã¢â‚¬â€ incremental channel update.
     fh.onFriendUpdate = (charId, channel) => {
       this._userList.updateFriendEntry(charId, channel);
     };
-    // TODO_AUDIT.md Hundred-and-sixty-sixth pass: GuildResult OnlineStatus (OG case 63) â€” incremental online update.
+    // TODO_AUDIT.md Hundred-and-sixty-sixth pass: GuildResult OnlineStatus (OG case 63) Ã¢â‚¬â€ incremental online update.
     fh.onGuildMemberOnline = (charId, online) => {
       this._userList.updateGuildMemberOnline(charId, online);
     };
-    // TODO_AUDIT.md Hundred-and-sixty-seventh pass: GuildResult MemberJoin (OG case 41) â€” incremental add.
+    // TODO_AUDIT.md Hundred-and-sixty-seventh pass: GuildResult MemberJoin (OG case 41) Ã¢â‚¬â€ incremental add.
     fh.onGuildMemberJoin = (charId, name, _job, _level, grade, online) => {
       this._userList.addGuildMember({ charId, name, rank: grade === 1 ? 'Master' : 'Member', online });
     };
-    // TODO_AUDIT.md Hundred-and-sixty-seventh pass: GuildResult Leave/Expel (OG case 46/49) â€” incremental remove.
+    // TODO_AUDIT.md Hundred-and-sixty-seventh pass: GuildResult Leave/Expel (OG case 46/49) Ã¢â‚¬â€ incremental remove.
     fh.onGuildMemberLeave = (charId) => {
       this._userList.removeGuildMember(charId);
     };
@@ -4002,7 +4071,7 @@ this._dmgNumbers?.Update(dt);
         charId: m.characterId, name: m.name, rank: m.rank === 1 ? 'Master' : 'Member', online: m.online,
       })));
     };
-    // TODO_AUDIT.md Hundred-and-twenty-third pass: CTabGuildAlliance â€”
+    // TODO_AUDIT.md Hundred-and-twenty-third pass: CTabGuildAlliance Ã¢â‚¬â€
     // alliance member list tab (OutHeader.AllianceResult=68, sub-types 12/13/16
     // confirmed via byte_A0FBB8 + jpt_A0EFD2 cross-reference).
     // TODO_AUDIT.md Hundred-and-twenty-sixth pass: guildId propagated for
@@ -4027,14 +4096,14 @@ this._dmgNumbers?.Update(dt);
     this._userList.onAlliancePartyInvite = (charId, name) => {
       this.game.session.send(GameSender.PartyInvite(name));
     };
-    this._userList.getAllianceInviteName = () => window.prompt('Alliance invite â€” character name:') ?? '';
+    this._userList.getAllianceInviteName = () => window.prompt('Alliance invite Ã¢â‚¬â€ character name:') ?? '';
     this._userList.getAllianceNotice = () => window.prompt('Set alliance notice (max 100 chars):') ?? '';
-    // TODO_AUDIT.md Sixty-third pass: CUIGuildBBS â€” protocol was already
+    // TODO_AUDIT.md Sixty-third pass: CUIGuildBBS Ã¢â‚¬â€ protocol was already
     // fully decoded both directions, just with no UI panel to consume it.
     fh.onGuildBBSListResult = (args) => { this._guildBBS.SetList(args.notice, args.entries); };
     fh.onGuildBBSViewEntryResult = (args) => { this._guildBBS.SetEntry(args.entryId, args.characterId, args.title, args.text, args.comments); };
     fh.onGuildBBSEntryNotFound = () => { this._guildBBS.ShowNotFound(); };
-    // TODO_AUDIT.md Seventy-ninth pass: CSetGuildMarkDlg â€” OG opens a
+    // TODO_AUDIT.md Seventy-ninth pass: CSetGuildMarkDlg Ã¢â‚¬â€ OG opens a
     // dedicated bg/mark/color picker UI; this client uses simple numeric
     // prompts instead, same scope-reduction convention as GuildCreate's
     // window.prompt() (no WZ-rendered preset picker built).
@@ -4048,14 +4117,14 @@ this._dmgNumbers?.Update(dt);
     };
 
     // Tournament (374-377, CField_Tournament::OnPacket, decompile/563780.c)
-    // â€” opened on demand via /tournament; just feeds whatever the panel is
+    // Ã¢â‚¬â€ opened on demand via /tournament; just feeds whatever the panel is
     // currently showing.
     const th = game.tournamentHandlers;
     th.onTournamentInfo = (args) => {
       this._tournamentWindow?.setInfo(`flag=${args.flag} mode=${args.mode}`);
     };
     th.onTournamentMatchTable = (rawPayload) => {
-      this._tournamentWindow?.setMatchTable(`${rawPayload.length} bytes (unconfirmed shape â€” see TODO_AUDIT.md)`);
+      this._tournamentWindow?.setMatchTable(`${rawPayload.length} bytes (unconfirmed shape Ã¢â‚¬â€ see TODO_AUDIT.md)`);
     };
     th.onTournamentSetPrize = (args) => {
       if (args.hasItems && args.itemId1 !== null && args.itemId2 !== null) {
@@ -4071,7 +4140,7 @@ this._dmgNumbers?.Update(dt);
     };
 
     // Passive in-field event-minigame opcodes (SnowBall/Coconut/Ariant/GuildBoss)
-    // â€” server-pushed during normal field gameplay, surfaced as one-line
+    // Ã¢â‚¬â€ server-pushed during normal field gameplay, surfaced as one-line
     // HUD status messages rather than any dedicated panel (no player-
     // invoked command makes sense for these; see TODO_AUDIT.md).
     const eh = game.eventHandlers;
@@ -4114,7 +4183,7 @@ this._dmgNumbers?.Update(dt);
     fh.onSkillResetItemResult = ({ succeed }) => {
       this._notice?.show('SP Reset', succeed ? 'SP has been reset.' : 'SP reset failed.');
     };
-    // onSkillUseResult: ack-only â€” OG only clears an exclusive-request-pending
+    // onSkillUseResult: ack-only Ã¢â‚¬â€ OG only clears an exclusive-request-pending
     // flag (no user-visible text). No-op.
     fh.onSkillUseResult = (_ack) => {};
     // onSkillPrepare/onSkillCancel: plays the skill's `keyDown` charging
@@ -4165,7 +4234,7 @@ this._dmgNumbers?.Update(dt);
     fh.onMonsterBookSetCover = ({ coverId }) => {
       this._statusMessenger.showLoot(`[Monster Book] Cover: ${coverId}`);
     };
-    // OG: CField::OnHourChanged calls CClock::SetClock â€” same wall-clock
+    // OG: CField::OnHourChanged calls CClock::SetClock Ã¢â‚¬â€ same wall-clock
     // surface as the onClock subType-1 path.
     fh.onHourChanged = ({ hour, minute }) => { this._clock.setWallClock(hour, minute, 0); };
     fh.onMiniMapOnOff = ({ onOff }) => { if (this._miniMap) this._miniMap.isVisible = onOff; };
@@ -4194,12 +4263,12 @@ this._dmgNumbers?.Update(dt);
         this._statusMessenger.showLoot(`Claim result code ${args.result} ok.`);
       }
     };
-    // OG: CWvsContext::OnSetClaimSvrAvailableTime (decompile/9F1620.c) â€” 2 bytes: openHour, closeHour
+    // OG: CWvsContext::OnSetClaimSvrAvailableTime (decompile/9F1620.c) Ã¢â‚¬â€ 2 bytes: openHour, closeHour
     fh.onClaimSvrAvailableTime = (args) => {
       this._claim?.ShowServiceStatus(`Claim service available: ${args.openHour}:00-${args.closeHour}:00.`);
       this._chatBar.addLine(`Claim service available: ${args.openHour}:00-${args.closeHour}:00.`);
     };
-    // OG: CWvsContext::OnClaimSvrStatusChanged (decompile/9F1650.c) â€” 1 byte: connected
+    // OG: CWvsContext::OnClaimSvrStatusChanged (decompile/9F1650.c) Ã¢â‚¬â€ 1 byte: connected
     fh.onClaimSvrStatusChanged = (connected) => {
       this._claim?.ShowServiceStatus(`Claim service ${connected ? 'online' : 'offline'}.`);
       this._chatBar.addLine(`Claim service ${connected ? 'online' : 'offline'}.`);
@@ -4215,7 +4284,7 @@ this._dmgNumbers?.Update(dt);
         this._physics?.SetLadderRestrictions({ vehicleActive: this._isRidingTamingMob });
         this._syncLadderEligibility();
       }
-      // OG: CUIUserInfo::SetTamingMobInfo â€” feed taming mob data to char info panel
+      // OG: CUIUserInfo::SetTamingMobInfo Ã¢â‚¬â€ feed taming mob data to char info panel
       if (this._charInfo) {
         this._charInfo.tamingMob = {
           name: 'Taming Mob',
@@ -4314,7 +4383,7 @@ this._dmgNumbers?.Update(dt);
       this._chatBar.addLine(`[Shop Link] result ${resultCode}`);
     };
     fh.onImitatedNPCData = ({ entries }) => {
-      // OG: CNpcPool::OnNpcImitateData (0x679500) â€” stores imitated NPC appearances
+      // OG: CNpcPool::OnNpcImitateData (0x679500) Ã¢â‚¬â€ stores imitated NPC appearances
       // When an NPC has a matching template, it renders as the stored AvatarLook
       // instead of its own NPC sprite
       for (const entry of entries) {
@@ -4326,7 +4395,7 @@ this._dmgNumbers?.Update(dt);
       }
     };
     fh.onLimitedNPCDisableInfo = ({ templateIds }) => {
-      // OG: CNpcPool::OnUpdateLimitedDisableInfo (0x679210) â€” disables NPC templates
+      // OG: CNpcPool::OnUpdateLimitedDisableInfo (0x679210) Ã¢â‚¬â€ disables NPC templates
       // NPCs with matching templates become invisible and stop updating
       for (const templateId of templateIds) {
         for (const npc of this._npcs) {
@@ -4357,7 +4426,7 @@ this._dmgNumbers?.Update(dt);
     };
     fh.onRPSGameDlg = ({ subAction, npcSelect, cntStraightVictories }) => {
       if (subAction === 11) {
-        // OG: ProcessPacket case 11 â€” result with NPC choice
+        // OG: ProcessPacket case 11 Ã¢â‚¬â€ result with NPC choice
         this._rpsGame?.handleServerResult(npcSelect, cntStraightVictories);
       } else {
         this._rpsGame?.SetSubAction(subAction);
@@ -4401,7 +4470,7 @@ this._dmgNumbers?.Update(dt);
       this._chatBar.addLine('[Field] Specific data received');
     };
     fh.onCoupleMessage = ({ variant, sender, message }) => {
-      // OG: CField::OnCoupleMessage â€” lType=6 (couple/marriage orange font)
+      // OG: CField::OnCoupleMessage Ã¢â‚¬â€ lType=6 (couple/marriage orange font)
       if (variant === 'pair' && sender && message) {
         this._chatBar.addLine(`${sender} : ${message}`, 6);
         this._statusMessenger.showLoot(`[Couple] ${sender}: ${message}`);
@@ -4433,7 +4502,7 @@ this._dmgNumbers?.Update(dt);
       this._chatBar.addLine(`[Object State] ${entries.length} entries`);
     };
     // OG: CField::OnStalkResult (decompile/539910.c) feeds CUIMiniMap's
-    // m_mStalkee â€” the followed players tracked on the minimap. Entries
+    // m_mStalkee Ã¢â‚¬â€ the followed players tracked on the minimap. Entries
     // carry (objId, name, x, y) for adds and objId for removes; each add
     // becomes an InsertStalkee, each remove a RemoveStalkee. On-pane
     // stalkees get the Friend icon + name; off-pane ones accumulate into
@@ -4580,7 +4649,7 @@ this._dmgNumbers?.Update(dt);
     };
     fh.onShowItemReleaseEffect = ({ charId, flag }) => {
       if (charId === this._localCharId) {
-        // OG: CUIEquip::ShowItemReleaseEffect â€” flag maps to body part index for equipped item
+        // OG: CUIEquip::ShowItemReleaseEffect Ã¢â‚¬â€ flag maps to body part index for equipped item
         this._equip.showItemReleaseEffect(flag);
         // OG: CUIItem also shows release effect on the use-tab slot
         this._item?.showItemReleaseEffect(flag);
@@ -4681,7 +4750,7 @@ this._dmgNumbers?.Update(dt);
       if (pos && curHP > 0) this._dmgNumbers?.Add(curHP, pos.x, pos.y - 10, DamageKind.HealHp);
       if (other) {
         // OG CUserRemote::OnReceiveHP (0x953F50): updates the HP gauge data
-        // ONLY â€” no dead action, no stance change, no tombstone. The v95
+        // ONLY Ã¢â‚¬â€ no dead action, no stance change, no tombstone. The v95
         // client shows nothing when a remote character dies (the death
         // animation/tomb flow in CUser::OnSetDead is local-only; only
         // CUserLocal::OnSetDead calls it).
@@ -4706,63 +4775,63 @@ this._dmgNumbers?.Update(dt);
       this._statusMessenger.showLoot(`[Grenade] char ${charId} skill ${name} at (${posX},${posY}) keyDown=${tKeyDown}`);
     };
 
-    // â”€â”€ Medium-priority packet handler wiring â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ Medium-priority packet handler wiring Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
-    // OG: CUserLocal::OnOpenUI (0x9055f0) â€” server opens a UI panel.
+    // OG: CUserLocal::OnOpenUI (0x9055f0) Ã¢â‚¬â€ server opens a UI panel.
     // OG: CWvsContext::UI_Open maps uiType to specific UI windows.
     fh.onOpenUI = (uiType: number) => {
-      // OG: UI_Open switch â€” most types toggle their visibility.
+      // OG: UI_Open switch Ã¢â‚¬â€ most types toggle their visibility.
       // A few are handled specially by the server (type 21=party search, 33=repair).
       this._statusMessenger.showLoot(`[UI] Open type ${uiType}`);
     };
 
-    // OG: CUserLocal::OnOpenUIWithOption (0x932320) â€” server opens a UI with extra data.
+    // OG: CUserLocal::OnOpenUIWithOption (0x932320) Ã¢â‚¬â€ server opens a UI with extra data.
     fh.onOpenUIWithOption = (uiType: number, option: number) => {
       if (uiType === 7) {
-        // OG: Close quest UI then toggle with option â€” quest page navigation
+        // OG: Close quest UI then toggle with option Ã¢â‚¬â€ quest page navigation
         this._statusMessenger.showLoot(`[UI] Quest toggle option=${option}`);
       } else if (uiType === 21) {
         // OG: CUIPartySearch::RequestPartyAdverSearch
         this._statusMessenger.showLoot(`[UI] Party search option=${option}`);
       } else if (uiType === 33) {
-        // OG: CRepairDurabilityDlg â€” durability repair dialog
+        // OG: CRepairDurabilityDlg Ã¢â‚¬â€ durability repair dialog
         this._statusMessenger.showLoot(`[UI] Repair durability option=${option}`);
       }
     };
 
-    // OG: CUserLocal::OnNoticeMsg (0x9181f0) â€” server sends a notice popup.
+    // OG: CUserLocal::OnNoticeMsg (0x9181f0) Ã¢â‚¬â€ server sends a notice popup.
     fh.onNoticeMsg = (message: string) => {
       this._notice?.show('Notice', message);
     };
 
-    // OG: CUserLocal::OnChatMsg â€” local echo of the player's own sent chat.
+    // OG: CUserLocal::OnChatMsg Ã¢â‚¬â€ local echo of the player's own sent chat.
     fh.onUserLocalChatMsg = (message: string) => {
       // The local echo confirms the server received our chat; add to chat log.
       // Only add if non-empty and not a duplicate of what we already displayed locally.
       if (message) this._chatBar.addLine(message);
     };
 
-    // OG: CUserLocal::OnRadioSchedule â€” server tells client to play radio music
+    // OG: CUserLocal::OnRadioSchedule Ã¢â‚¬â€ server tells client to play radio music
     fh.onRadioSchedule = (musicFile: string, duration: number) => {
       // TODO: wire to audio service when radio/BGM playback is implemented
     };
-    // OG: CUserLocal::OnQuestGuideResult â€” minimap arrow to quest objective (pure UI)
+    // OG: CUserLocal::OnQuestGuideResult Ã¢â‚¬â€ minimap arrow to quest objective (pure UI)
     fh.onQuestGuideResult = (_questId: number) => {
       // TODO: draw minimap quest arrow when quest guide UI is implemented
     };
-    // OG: CUserLocal::OnDeliveryQuest â€” delivery quest notification
+    // OG: CUserLocal::OnDeliveryQuest Ã¢â‚¬â€ delivery quest notification
     fh.onDeliveryQuest = (_questId: number) => {
       // TODO: show delivery quest notification dialog
     };
 
-    // OG: CUser::OnMiniRoomBalloon â€” other characters' trade shop balloons.
+    // OG: CUser::OnMiniRoomBalloon Ã¢â‚¬â€ other characters' trade shop balloons.
     fh.onMiniRoomBalloon = (args) => {
       const other = this._otherChars.get(args.charId);
       if (!other) return;
       if (args.miniRoomType === 0) {
         other.SetStatusBadge('miniRoom', '', 0);
       } else {
-        const icon = args.miniRoomType === 1 ? 'ðŸª' : args.miniRoomType === 2 ? 'ðŸŽ®' : 'ðŸ“‹';
+        const icon = args.miniRoomType === 1 ? 'Ã°Å¸ÂÂª' : args.miniRoomType === 2 ? 'Ã°Å¸Å½Â®' : 'Ã°Å¸â€œâ€¹';
         other.SetStatusBadge('miniRoom', icon, 6);
       }
     };
@@ -4898,7 +4967,7 @@ this._dmgNumbers?.Update(dt);
     return dragon;
   }
 
-  // OG: key code â†’ human-readable name for #k<code># rich text tag.
+  // OG: key code Ã¢â€ â€™ human-readable name for #k<code># rich text tag.
   // Maps virtual key codes (VK_*) to display names matching OG StringPool output.
   private static _KEY_NAMES: Record<number, string> = {
     8: 'Backspace', 9: 'Tab', 13: 'Enter', 16: 'Shift', 17: 'Ctrl', 18: 'Alt',
@@ -4927,52 +4996,52 @@ this._dmgNumbers?.Update(dt);
   // OG: CTextAnalyzer::GetPhrase_Sharp/GetPhraseType/GetParameterNo
   // TODO_AUDIT.md Hundred-and-eighteenth pass: full CTextAnalyzer tag table
   // (decompile 0x9836b0/0x97d650/0x97d620/0x987cc0). GetPhraseType maps tag
-  // letters â†’ type numbers; AnalyzeText switch branches on them. Format rules
+  // letters Ã¢â€ â€™ type numbers; AnalyzeText switch branches on them. Format rules
   // from GetPhrase_Sharp (0x9836b0): `#E`,`#I`,`#S`,`#K`,`#w` are
-  // self-closing (no trailing `#`) â€” they set CT_INFO.nType=3 as style-change
+  // self-closing (no trailing `#`) Ã¢â‚¬â€ they set CT_INFO.nType=3 as style-change
   // markers. All others read until the next `#` terminator. GetParameterNo
   // (0x97d620) = `atoi(phrase+2)` for numeric payloads.
   // Tag table (confirmed from AnalyzeText 0x987cc0 switch):
-  //   #L<text># (1) â†’ list bullet (nType=4, width=18)
-  //   #E (2), #I (3), #S (4), #K (5), #w (6) â†’ color/style markers (nType=3)
-  //   #i<id># / #v<id># (7) â†’ item link (nType=1, loads item icon + name)
-  //   #e<id># (9) â†’ same as type 7 but via CheckSecretItemID (outline)
-  //   #s<id># (10) â†’ skill link (nType=1, loads skill icon + name)
-  //   #F<wzpath># / #f<wzpath># (11) â†’ WZ face/avatar image (nType=2)
-  //   #B<n># (13) â†’ progress bar percentage (nType=2, clamped 10â€“100)
-  //   #j<text># (14) â†’ inline text passthrough
-  //   #Q<questId># (15) â†’ quest expire-time from CharacterData
-  //   #D<questId># (16) â†’ play-time record from CharacterData
-  //   #W<wzpath># (17) â†’ inline WZ canvas
-  // Scoped down to text-substitution (no clickable rich text â€” ChatBar uses
+  //   #L<text># (1) Ã¢â€ â€™ list bullet (nType=4, width=18)
+  //   #E (2), #I (3), #S (4), #K (5), #w (6) Ã¢â€ â€™ color/style markers (nType=3)
+  //   #i<id># / #v<id># (7) Ã¢â€ â€™ item link (nType=1, loads item icon + name)
+  //   #e<id># (9) Ã¢â€ â€™ same as type 7 but via CheckSecretItemID (outline)
+  //   #s<id># (10) Ã¢â€ â€™ skill link (nType=1, loads skill icon + name)
+  //   #F<wzpath># / #f<wzpath># (11) Ã¢â€ â€™ WZ face/avatar image (nType=2)
+  //   #B<n># (13) Ã¢â€ â€™ progress bar percentage (nType=2, clamped 10Ã¢â‚¬â€œ100)
+  //   #j<text># (14) Ã¢â€ â€™ inline text passthrough
+  //   #Q<questId># (15) Ã¢â€ â€™ quest expire-time from CharacterData
+  //   #D<questId># (16) Ã¢â€ â€™ play-time record from CharacterData
+  //   #W<wzpath># (17) Ã¢â€ â€™ inline WZ canvas
+  // Scoped down to text-substitution (no clickable rich text Ã¢â‚¬â€ ChatBar uses
   // plain Pixi Text, not multi-span). Types 11, 15, 16, 17 need CharacterData
-  // or WZ-canvas â€” stripped; types 2-6 are pure style markers â€” stripped.
+  // or WZ-canvas Ã¢â‚¬â€ stripped; types 2-6 are pure style markers Ã¢â‚¬â€ stripped.
   private _resolveChatItemLinks(text: string): string {
     const ns = this.game.nameService;
     return text
-      // Types 7/9: #i/#v/#e + numeric id â†’ [ItemName]
+      // Types 7/9: #i/#v/#e + numeric id Ã¢â€ â€™ [ItemName]
       .replace(/#[ive](\d+)#/g, (_m, id) =>
         `[${ns.ItemName(Number(id)) ?? id}]`)
-      // Type 10: #s + skillId â†’ [SkillName]
+      // Type 10: #s + skillId Ã¢â€ â€™ [SkillName]
       .replace(/#s(\d+)#/g, (_m, id) =>
         `[${ns.SkillName(Number(id)) ?? id}]`)
-      // Type 13: #B<n># â†’ n% (clamped 10-100 by OG)
+      // Type 13: #B<n># Ã¢â€ â€™ n% (clamped 10-100 by OG)
       .replace(/#B(\d+)#/gi, (_m, n) => `${n}%`)
-      // Type 14: #j<text># â†’ pass through content between tags
+      // Type 14: #j<text># Ã¢â€ â€™ pass through content between tags
       .replace(/#j([^#]*)#/gi, (_m, content) => content)
-      // Type 1: #L<text># â†’ bullet (content after #L is ignored)
-      .replace(/#L[^#]*#/gi, 'â€¢ ')
-      // #k<keyCode># â†’ [Key: Name]
+      // Type 1: #L<text># Ã¢â€ â€™ bullet (content after #L is ignored)
+      .replace(/#L[^#]*#/gi, 'Ã¢â‚¬Â¢ ')
+      // #k<keyCode># Ã¢â€ â€™ [Key: Name]
       .replace(/#k(\d+)#/g, (_m, code) => `[Key: ${GameStage._keyName(Number(code))}]`)
-      // #n â†’ player character name
+      // #n Ã¢â€ â€™ player character name
       .replace(/#n/g, this._statusBar?.charName ?? '')
-      // Types 11/12: #F/#f + WZ path â€” strip (WZ canvas, not portable)
+      // Types 11/12: #F/#f + WZ path Ã¢â‚¬â€ strip (WZ canvas, not portable)
       .replace(/#[Ff][^#]*#/g, '')
-      // Types 15â€“17: #Q/#D/#W + content â€” strip (CharacterData/WZ-canvas)
+      // Types 15Ã¢â‚¬â€œ17: #Q/#D/#W + content Ã¢â‚¬â€ strip (CharacterData/WZ-canvas)
       .replace(/#[QDW][^#]*#/gi, '')
-      // Types 2â€“5: #E #I #S #K â€” self-closing style markers, no trailing #
+      // Types 2Ã¢â‚¬â€œ5: #E #I #S #K Ã¢â‚¬â€ self-closing style markers, no trailing #
       .replace(/#[EISK]/g, '')
-      // Type 6: #w â€” self-closing layout-toggle marker
+      // Type 6: #w Ã¢â‚¬â€ self-closing layout-toggle marker
       .replace(/#w/g, '');
   }
 
@@ -4983,7 +5052,7 @@ this._dmgNumbers?.Update(dt);
 this._localCharId = args.characterId ?? 0;
     this._pendingLinkedCharacter = args.linkedCharacter ?? '';
     this._skill?.setSpecialTooltipContext(this._pendingLinkedCharacter, this._skill.wildHunterMobNames);
-    // Stat / look / inventory â€” apply if statusBar/equip already exist,
+    // Stat / look / inventory Ã¢â‚¬â€ apply if statusBar/equip already exist,
     // otherwise store for deferred application in _initMenu. This runs
     // BEFORE the skillRecords block below so _skill.characterJob is set
     // (stat.job) before setSkillRecords builds the job roots/tabs.
@@ -4994,7 +5063,7 @@ this._localCharId = args.characterId ?? 0;
       this._pendingStat = stat;
     }
     // OG: the initial skill list ships inside the SetField migrate CharacterData
-    // block (SKILLRECORD flag) â€” feed CUISkill the same records a standalone
+    // block (SKILLRECORD flag) Ã¢â‚¬â€ feed CUISkill the same records a standalone
     // ChangeSkillRecordResult would. Stash for _initMenu when SkillBook isn't
     // constructed yet (mirrors _pendingStat).
     if (args.skillRecords) {
@@ -5005,10 +5074,10 @@ this._localCharId = args.characterId ?? 0;
         this._pendingSkillRecords = args.skillRecords;
       }
     } else {
-      console.log('[Skills] SetField carried NO skill records — server did not send them or CharacterData desynced before SKILLRECORD');
+      console.log('[Skills] SetField carried NO skill records â€” server did not send them or CharacterData desynced before SKILLRECORD');
     }
     this._isFieldTransferring = false;
-    // Revive warp (server sends SetField with isRevive) â€” clear the local death
+    // Revive warp (server sends SetField with isRevive) Ã¢â‚¬â€ clear the local death
     // state so the resurrected character can move again even if the revive
     // button callback didn't run (e.g. auto-revive timeout, admin command).
     this._applyLocalRevive();
@@ -5020,13 +5089,13 @@ this._localCharId = args.characterId ?? 0;
     this._shopMarker?.Clear();
     this.game.eventHandlers.resetFieldState();
 
-    // Guild load â€” doesn't depend on field.
+    // Guild load Ã¢â‚¬â€ doesn't depend on field.
     if (!this._guildLoadSent && this.game.session.isConnected) {
       this._guildLoadSent = true;
       this.game.session.send(GameSender.GuildLoad());
     }
 
-    // Store equipped items â€” applied in _initMenu if statusBar/equip panel not ready yet
+    // Store equipped items Ã¢â‚¬â€ applied in _initMenu if statusBar/equip panel not ready yet
     this._pendingEquipped = args.equipped ?? null;
     this._pendingEquippedCash = args.equippedCash ?? null;
     if (this._pendingEquipped && this._equip) {
@@ -5042,7 +5111,7 @@ this._localCharId = args.characterId ?? 0;
       this._player?.SetAvatar(args.look);
       if (this._charInfo) {
         this._charInfo.avatarLook = args.look;
-        // OG: CUIUserInfo::SetMedalAchievementInfo â€” medal from hairEquip slot 49
+        // OG: CUIUserInfo::SetMedalAchievementInfo Ã¢â‚¬â€ medal from hairEquip slot 49
         const medalId = args.look.hairEquip.get(49 /* BodyPartSlot.Medal */);
         if (medalId) {
           const medalName = this.game.nameService?.ItemName(medalId) ?? `Medal ${medalId}`;
@@ -5055,7 +5124,7 @@ this._localCharId = args.characterId ?? 0;
         } else {
           this._charInfo.medal = null;
         }
-        // OG: CUIUserInfo::SetAvatarInfo â€” extract taming mob equip from body parts
+        // OG: CUIUserInfo::SetAvatarInfo Ã¢â‚¬â€ extract taming mob equip from body parts
         // Slot 18 = saddle, Slot 19 = taming mob equip, Slot 20 = mob equip
         const saddleId = args.look.hairEquip.get(18) ?? 0;
         const mobEquipId = args.look.hairEquip.get(19) ?? 0;
@@ -5081,7 +5150,7 @@ this._localCharId = args.characterId ?? 0;
           }
           this._charInfo.tamingMob.items = tamingItems;
         }
-        // OG: CUIUserInfo::SetAvatarInfo â€” extract pet equipped items from body parts
+        // OG: CUIUserInfo::SetAvatarInfo Ã¢â‚¬â€ extract pet equipped items from body parts
         // Pet body parts: 26-28 (pet 0-2 hat), 35-37 (pet 0-2 clothing), 43-45 (pet 0-2 accessory)
         const petSlots = [
           { hat: 26, cloth: 35, acc: 43 }, // pet 0
@@ -5112,12 +5181,12 @@ this._localCharId = args.characterId ?? 0;
     }
 
     if (!this._mapWz) {
-      // Map.wz not loaded yet â€” defer the transition until it is.
+      // Map.wz not loaded yet Ã¢â‚¬â€ defer the transition until it is.
       this._deferredFieldArgs = args;
       return;
     }
 
-    // Clear entities immediately â€” the terrain swap is deferred to full black
+    // Clear entities immediately Ã¢â‚¬â€ the terrain swap is deferred to full black
     // (see _advanceFieldTransition) so the old map never pops to the new one.
     this._mobs.clear();
     this._npcs.length = 0;
@@ -5142,7 +5211,7 @@ this._localCharId = args.characterId ?? 0;
     this._fadePhase = 1;
   }
 
-  /** Swap the field at full black â€” pop-free map transition. */
+  /** Swap the field at full black Ã¢â‚¬â€ pop-free map transition. */
   private _applyFieldChange(args: SetFieldArgs): void {
     const mapId = args.stat?.posMap ?? args.posMap ?? 0;
     const portalId = args.stat?.portal ?? args.portal ?? 0;
@@ -5156,7 +5225,7 @@ this._localCharId = args.characterId ?? 0;
     if (this._townPortalStatus) this._fieldSubgameHud.SetMessage(this._townPortalStatus);
     this.game.fieldHandlers.setCurrentFieldType(this._field.Info.FieldType);
 
-    // OG: CField_Dojang (fieldType=14) â€” show dojang HUD for Mu Lung Dojo maps
+    // OG: CField_Dojang (fieldType=14) Ã¢â‚¬â€ show dojang HUD for Mu Lung Dojo maps
     // Floor progression is server-driven; initial floor set via clock/subType packet
     if (this._field.Info.FieldType === 14) {
       this._dojangHud.setFloor(1);
@@ -5165,12 +5234,12 @@ this._localCharId = args.characterId ?? 0;
       this._dojangHud.hide();
     }
 
-    // OG: CField_Dojang::CanUseSpecialArts (0x54EA40) â€”
+    // OG: CField_Dojang::CanUseSpecialArts (0x54EA40) Ã¢â‚¬â€
     // In dojang maps, certain skills are restricted. The restriction is applied
     // at the skill-use gate. For now, store the flag for future use.
     this._dojangSpecialArts = DojangHud.canUseSpecialArts(this._field.Info.FieldType);
 
-    // OG: CField::Restore* family â€” apply field-specific state on entry
+    // OG: CField::Restore* family Ã¢â‚¬â€ apply field-specific state on entry
     this._restoreFieldState();
 
     if (this._field.Info.Effect.length > 0) {
@@ -5183,7 +5252,7 @@ this._localCharId = args.characterId ?? 0;
       this._pendingBalloonParent = false;
     } else {
       // First login: SetField beats _initMenu, so the balloon layer doesn't
-      // exist yet — flag it so _initMenu parents it once created.
+      // exist yet â€” flag it so _initMenu parents it once created.
       this._pendingBalloonParent = true;
     }
     if (this._dmgNumbers) {
@@ -5204,6 +5273,13 @@ this._localCharId = args.characterId ?? 0;
     }
 
     this._physics = new PlayerController(this._field);
+    // OG: CAvatar::NotifyAvatarModified @0x46BB20 sets m_nStandType/m_nWalkType
+    // from the equipped weapon's Character/<weapon>.img entry every time the
+    // avatar (re)initializes. The physics controller is recreated per field,
+    // so re-sync the types here â€” otherwise stand2/walk2 weapons (polearms,
+    // two-handed swordsâ€¦) revert to stand1/walk1 and their sprites vanish
+    // (those weapons have NO stand1/walk1 nodes in the WZ).
+    this._syncWeaponStance();
     this._physics.SetStats(0, 0);
     this._physics.onJump = () => {
       if (this._mobSoundWz && this.game.audioPlayer) {
@@ -5221,7 +5297,7 @@ this._localCharId = args.characterId ?? 0;
       }
     };
     this._field.PlacePlayerAtPortal(this._physics, portalId);
-    // Recreate mob controllers with the new field â€” controllers created during
+    // Recreate mob controllers with the new field Ã¢â‚¬â€ controllers created during
     // the fade reference the old field and can't find footholds on the new map.
     if (this._mobCtl.size > 0) {
       const oldCtl = [...this._mobCtl.entries()];
@@ -5232,7 +5308,7 @@ this._localCharId = args.characterId ?? 0;
       }
     }
     // Flush any mob controllers that were deferred before the map loaded.
-    // Snapshot the array first â€” _createMobController may push back to it
+    // Snapshot the array first Ã¢â‚¬â€ _createMobController may push back to it
     // if _mobInfoSvc isn't ready yet, which corrupts the iterator.
     if (this._pendingMobControllers.length > 0) {
       console.log(`[MobCtrl] Flushing ${this._pendingMobControllers.length} deferred controllers`);
@@ -5255,13 +5331,13 @@ this._localCharId = args.characterId ?? 0;
       this._miniMap.setPortals(
         Object.values(this._field.Portals).map((p) => ({ x: p.X, y: p.Y, type: p.Type })),
       );
-      // OG: m_nMiniMapType â€” read from field info (0=simple, 1=normal)
+      // OG: m_nMiniMapType Ã¢â‚¬â€ read from field info (0=simple, 1=normal)
       this._miniMap.setMiniMapType(this._field.Info.MiniMapType as 0 | 1);
-      // OG: OnMouseButton â€” sends packet when clicking player dot
+      // OG: OnMouseButton Ã¢â‚¬â€ sends packet when clicking player dot
       this._miniMap.onPlayerDotClick = () => this.game.session.send(GameSender.UserMiniMapClick());
       // Live foothold reference for dynamic foothold state on minimap
       this._miniMap.setFootholds(this._field.Footholds);
-      // OG: WorldMap button on minimap â†’ toggle CWorldMapDlg
+      // OG: WorldMap button on minimap Ã¢â€ â€™ toggle CWorldMapDlg
       this._miniMap.onBtWorldMap = () => this._toggleWorldMap();
     }
     this._playMapBgm(this._field.Info.Bgm);
@@ -5271,7 +5347,7 @@ this._localCharId = args.characterId ?? 0;
     this._firePetEvent(1);
   }
 
-  /** Play map BGM from Sound.wz. The bgm string is e.g. "Bgm01/300000000" â€”
+  /** Play map BGM from Sound.wz. The bgm string is e.g. "Bgm01/300000000" Ã¢â‚¬â€
    *  resolve to "Bgm01.img/300000000" in Sound.wz, then PlayLoop. */
   private _playMapBgm(bgm: string): void {
     if (!bgm || bgm === this._currentBgm) return;
@@ -5287,26 +5363,26 @@ this._localCharId = args.characterId ?? 0;
   }
 
   /**
-   * OG: CField::Restore* family â€” apply field-specific state on entry.
+   * OG: CField::Restore* family Ã¢â‚¬â€ apply field-specific state on entry.
    * Called from _applyFieldChange after the field is loaded.
    *
    * Decompiled from v95 IDB:
-   * - RestoreForbiddenSkill (0x532FB0) â€” restrict skills
-   * - RestoreAllowedItem (0x532AB0) â€” restrict items
-   * - RestoreHelpMsg (0x52FF40) â€” show help messages
-   * - RestoreClock (0x533AB0) â€” start clock/timer
-   * - RestoreWeatherMsg (0x53CF80) â€” show weather message
-   * - RestorePhaseBG (0x532DD0) â€” set phase background
-   * - RestoreOption (0x53B070) â€” apply field options
-   * - RestoreSwinArea (0x5330E0) â€” set swim area
-   * - RestoreSeat (0x533820) â€” already handled by FieldScene._loadSeats
-   * - RestoreTownPortal (0x52E9C0) â€” already handled by TownPortalNotify replay
+   * - RestoreForbiddenSkill (0x532FB0) Ã¢â‚¬â€ restrict skills
+   * - RestoreAllowedItem (0x532AB0) Ã¢â‚¬â€ restrict items
+   * - RestoreHelpMsg (0x52FF40) Ã¢â‚¬â€ show help messages
+   * - RestoreClock (0x533AB0) Ã¢â‚¬â€ start clock/timer
+   * - RestoreWeatherMsg (0x53CF80) Ã¢â‚¬â€ show weather message
+   * - RestorePhaseBG (0x532DD0) Ã¢â‚¬â€ set phase background
+   * - RestoreOption (0x53B070) Ã¢â‚¬â€ apply field options
+   * - RestoreSwinArea (0x5330E0) Ã¢â‚¬â€ set swim area
+   * - RestoreSeat (0x533820) Ã¢â‚¬â€ already handled by FieldScene._loadSeats
+   * - RestoreTownPortal (0x52E9C0) Ã¢â‚¬â€ already handled by TownPortalNotify replay
    */
   private _restoreFieldState(): void {
     if (!this._field) return;
     const info = this._field.Info;
 
-    // OG: CField_Dojang â€” initialize dojang state for fieldType=14 maps
+    // OG: CField_Dojang Ã¢â‚¬â€ initialize dojang state for fieldType=14 maps
     // Floor number comes from the map name or server data; default to 1
     // Mob count is tracked as mobs enter/leave the field
     if (info.FieldType === 14) {
@@ -5345,7 +5421,7 @@ this._localCharId = args.characterId ?? 0;
     // RestoreHelpMsg (0x52FF40): show help messages from Map.wz
     // OG reads help/0, help/1, ... from MapString and shows as status messages
     // Help messages are loaded during FieldScene._loadInfo and stored in MapInfo
-    // For now, we just note that help messages exist â€” they'd need MapString resolution
+    // For now, we just note that help messages exist Ã¢â‚¬â€ they'd need MapString resolution
     if (info.HelpMsgCount > 0) {
       // Help messages require StringPool/MapString resolution which isn't fully wired
       // The count is stored in MapInfo for future use
@@ -5359,14 +5435,14 @@ this._localCharId = args.characterId ?? 0;
     // RestorePhaseBG (0x532DD0): set phase background
     // OG loads phase background from Map.wz and applies to the field
     if (info.PhaseBG) {
-      // Phase background is a WZ path â€” would need to load and display
+      // Phase background is a WZ path Ã¢â‚¬â€ would need to load and display
       // For now, store for future use
     }
 
     // RestoreOption (0x53B070): apply field options
     // OG uses this to set various field-level options
     if (info.FieldOption !== 0) {
-      // Field option is a bitmask â€” applied to field behavior
+      // Field option is a bitmask Ã¢â‚¬â€ applied to field behavior
     }
 
     // RestoreSwinArea (0x5330E0): set swim area bounds
@@ -5386,9 +5462,9 @@ this._localCharId = args.characterId ?? 0;
     }
   }
 
-  /** Drives the map-change fade: fade to black â†’ swap at full black â†’ hold until
-   *  the new field has actually rendered â†’ fade in.
-   *  OG timings from CUser::OnSetPhase â†’ RegisterFadeInOutAnimation:
+  /** Drives the map-change fade: fade to black Ã¢â€ â€™ swap at full black Ã¢â€ â€™ hold until
+   *  the new field has actually rendered Ã¢â€ â€™ fade in.
+   *  OG timings from CUser::OnSetPhase Ã¢â€ â€™ RegisterFadeInOutAnimation:
    *    tFadeIn=500ms, tDelay=400ms, tFadeOut=800ms, nAlpha=220.
    *  We fold the delay into the hold-at-black phase and hold it longer until the
    *  swapped-in field has rendered a couple of frames behind black. */
@@ -5407,7 +5483,7 @@ this._localCharId = args.characterId ?? 0;
     }
 
     if (this._fadePhase === 1) {
-      // Phase 1: fade to black (already black on first entry â€” swaps immediately)
+      // Phase 1: fade to black (already black on first entry Ã¢â‚¬â€ swaps immediately)
       this._fadeAlpha += dt * FadeToBlackPerSec;
       if (this._fadeAlpha >= 1) {
         this._fadeAlpha = 1;
@@ -5423,7 +5499,7 @@ this._localCharId = args.characterId ?? 0;
       }
     } else if (this._fadePhase === 2) {
       // Phase 2: hold at black until the OG tDelay elapsed AND the whole
-      // scene — map frames, local character avatar, and the UI chrome — has
+      // scene â€” map frames, local character avatar, and the UI chrome â€” has
       // rendered. Revealing earlier showed a half-loaded world.
       this._holdTimer += dt;
       if (this._holdTimer >= HoldAtBlackSec && this._framesSinceSwap >= MinRenderedFrames && this._isSceneFullyRendered()) {
@@ -5473,9 +5549,9 @@ this._localCharId = args.characterId ?? 0;
   /** Render the transition + scripted fades as full-screen black overlays above
    *  the world but below nothing else in uiRoot order (added last = topmost).
    *  The map-change overlay uses _fadeAlpha; each FieldFadeInOut entry uses
-   *  nAlpha/255 Ã— envelope (in over tFadeIn, hold tDelay, out over tFadeOut). */
+   *  nAlpha/255 Ãƒâ€” envelope (in over tFadeIn, hold tDelay, out over tFadeOut). */
   /** True when the whole scene is on screen: UI chrome built (_initMenu done
-   *  — _keyConfig is the last panel it constructs) and the local character's
+   *  â€” _keyConfig is the last panel it constructs) and the local character's
    *  avatar has visible layers. Gates the map-transition fade-in. */
   private _isSceneFullyRendered(): boolean {
     if (!this._statusBar || !this._keyConfig) return false;
@@ -5552,7 +5628,7 @@ this._localCharId = args.characterId ?? 0;
     // OG: if mob enters with controller flag, immediately create MobController
     if (args.controllerFlag) this._createMobController(args.mobId, mob);
 
-    // OG: CField_Dojang::Update (0x54EF10) â€” boss HP bar overlay
+    // OG: CField_Dojang::Update (0x54EF10) Ã¢â‚¬â€ boss HP bar overlay
     // When a boss mob enters a dojang map, show the boss HP bar
     if (this._field?.Info.FieldType === 14 && mob.IsBoss) {
       const bossName = mob.nameOf?.(args.templateId) || `Boss ${args.templateId}`;
@@ -5561,7 +5637,7 @@ this._localCharId = args.characterId ?? 0;
   }
 
   private _onMobMove(args: MobMoveArgs): void {
-    // OG: CMob::OnMove (0x652200) â€” processes server-driven mob movement
+    // OG: CMob::OnMove (0x652200) Ã¢â‚¬â€ processes server-driven mob movement
     const mob = this._mobs.get(args.mobId);
     if (!mob) {
       console.log(`[MobMove] mob ${args.mobId} not in _mobs (size=${this._mobs.size})`);
@@ -5576,7 +5652,7 @@ this._localCharId = args.characterId ?? 0;
     // Extract move action from bLeft (bits 1-7)
     const moveAction = args.bLeft >> 1;
 
-    // Process the MovePath elements â€” interpolate through each element
+    // Process the MovePath elements Ã¢â‚¬â€ interpolate through each element
     const path = args.movePath;
     if (path.elements.length > 0) {
       // Store full path for interpolation over time
@@ -5596,19 +5672,19 @@ this._localCharId = args.characterId ?? 0;
         ctl.OnServerMove(path, moveAction, facingLeft);
       }
     } else {
-      // No movement elements â€” just use origin
+      // No movement elements Ã¢â‚¬â€ just use origin
       mob.Position = { x: path.originX, y: path.originY };
       if (this._field) mob.Layer = this._field.LayerAt(mob.Position.x, mob.Position.y, mob.Layer);
     }
 
-    // Update animation based on move action (OG MobActionType â†’ MobState mapping)
+    // Update animation based on move action (OG MobActionType Ã¢â€ â€™ MobState mapping)
     if (!args.bNotChangeAction) {
       const state = this._mapMoveActionToState(moveAction);
       mob.SetState(state);
     }
   }
 
-  /** OG MobActionType â†’ MobState mapping */
+  /** OG MobActionType Ã¢â€ â€™ MobState mapping */
   private _mapMoveActionToState(moveAction: number): number {
     // OG MobActionType enum:
     // 0-6: Stand/Move variants
@@ -5618,16 +5694,16 @@ this._localCharId = args.characterId ?? 0;
     // 22-38: Skill1-Skill16, Skill17
     // 39: Fly
     if (moveAction >= 13 && moveAction <= 21) {
-      // Attack actions â†’ Attack state (13=Attack, 14=Attack2, ..., 21=AttackF)
+      // Attack actions Ã¢â€ â€™ Attack state (13=Attack, 14=Attack2, ..., 21=AttackF)
       return 2 + (moveAction - 13); // MobState.Attack=2, Attack2=3, etc.
     } else if (moveAction >= 7 && moveAction <= 9) {
-      // Hit actions â†’ Hit state (7=Hit, 8=Hit2, 9=Hit3)
+      // Hit actions Ã¢â€ â€™ Hit state (7=Hit, 8=Hit2, 9=Hit3)
       return 3 + (moveAction - 7); // MobState.Hit=3, Hit2=4, Hit3=5
     } else if (moveAction >= 10 && moveAction <= 12) {
-      // Die actions â†’ Die state (10=Die, 11=Die2, 12=Die3)
+      // Die actions Ã¢â€ â€™ Die state (10=Die, 11=Die2, 12=Die3)
       return 4 + (moveAction - 10); // MobState.Die=4, Die2=5, Die3=6
     } else if (moveAction >= 22 && moveAction <= 38) {
-      // Skill actions â†’ Skill state (22=Skill1, ..., 38=Skill17)
+      // Skill actions Ã¢â€ â€™ Skill state (22=Skill1, ..., 38=Skill17)
       return 26 + (moveAction - 22); // MobState.Skill1=26, etc.
     } else if (moveAction === 39) {
       return 9; // MobState.Fly
@@ -5643,14 +5719,14 @@ this._localCharId = args.characterId ?? 0;
     if (!mob) return;
     if (args.hp >= 0 && args.maxHp > 0) mob.Hp = args.hp;
     // OG CMob::OnHit: hit effect + sound are triggered by the optimistic
-    // path in _tryMeleeAttack / _onUserAttack â€” _onMobDamaged only handles
+    // path in _tryMeleeAttack / _onUserAttack Ã¢â‚¬â€ _onMobDamaged only handles
     // the server-authoritative HP update, damage number, and kill.
     if (args.damage > 0) {
       mob._lastDamage = args.damage;
       mob.RevealLabel();
       this._dmgNumbers?.Add(args.damage, mob.HeadPosition.x, mob.HeadPosition.y, DamageKind.DamageNormal);
     } else if (args.damage === 0) {
-      // OG CMob::ShowDamage: nDamage==0 â†’ CAnimationDisplayer::Effect_Miss
+      // OG CMob::ShowDamage: nDamage==0 Ã¢â€ â€™ CAnimationDisplayer::Effect_Miss
       mob.RevealLabel();
       this._dmgNumbers?.AddMiss(mob.HeadPosition.x, mob.HeadPosition.y);
     }
@@ -5671,7 +5747,7 @@ this._localCharId = args.characterId ?? 0;
       this._killMob(mob);
       return;
     }
-    // OG: CField_Dojang::Update (0x54EF10) â€” boss HP bar overlay
+    // OG: CField_Dojang::Update (0x54EF10) Ã¢â‚¬â€ boss HP bar overlay
     // In dojang maps, the boss mob's HP percentage drives the HP bar
     // OG: pct is 0-10000 (100% = 10000), converted to 0-100 for the bar
     if (this._field?.Info.FieldType === 14 && pct > 0) {
@@ -5681,7 +5757,7 @@ this._localCharId = args.characterId ?? 0;
 
   private _onReactorEnter(args: ReactorEnterArgs): void {
     const reactor = new ReactorLook(args.objId, args.templateId, args.state);
-    // Real WZ sprite/animation load â€” previously never called anywhere, so
+    // Real WZ sprite/animation load Ã¢â‚¬â€ previously never called anywhere, so
     // every reactor permanently rendered as ReactorLook's placeholder
     // graphic regardless of whether real Reactor.wz art existed.
     reactor.Load(this._loader, this._reactorWz);
@@ -5792,11 +5868,15 @@ this._localCharId = args.characterId ?? 0;
   private static readonly MeleeReachX = 120;
   private static readonly MeleeReachY = 40;
   private static readonly AttackCooldownSeconds = 0.6;
+  /** OG TryRecovery: heal amount = field recovery rate Ã— 10 (HP) / Ã— 3 (MP).
+   *  No map `info/recovery` source is parsed client-side yet â€” default 1.0
+   *  gives the OG baseline 10 HP / 3 MP per regen tick (every 10s idle). */
+  private static readonly IdleRecoveryRate = 1.0;
 
   /** Handle a chat line: route slash commands locally, send the rest as UserChat. */
   private _handleChatCommand(line: string): void {
     if (!line.startsWith('/')) {
-      // OG: try pet commands first â€” if any active pet recognizes the input,
+      // OG: try pet commands first Ã¢â‚¬â€ if any active pet recognizes the input,
       // don't send as regular chat. If the pet is level 15+, also send via
       // ChatCommand (pet speaks the message in a balloon).
       const localPets = this._pets.get(this._localCharId) ?? [];
@@ -5804,7 +5884,7 @@ this._localCharId = args.characterId ?? 0;
         if (!pet) continue;
         if (pet.ParseCommand(line)) return;
       }
-      // No pet command matched â€” send as regular chat.
+      // No pet command matched Ã¢â‚¬â€ send as regular chat.
       // But if a level 15+ pet exists, also have the pet speak it.
       for (const pet of localPets) {
         if (pet && pet.GetLevel() >= 15) {
@@ -5853,7 +5933,7 @@ this._localCharId = args.characterId ?? 0;
       const msg = lower.startsWith('/p ') ? rest('/p ') : rest('/party ');
       // TODO_AUDIT.md Tenth pass + Hundred-and-thirty-seventh pass: real OG
       // sends this through GroupChat (150) with the client-resolved
-      // online-member-id list, not plain UserChat â€” `_partyCharIds` (already
+      // online-member-id list, not plain UserChat Ã¢â‚¬â€ `_partyCharIds` (already
       // tracked for the minimap leader marker) is exactly that list for Party.
       // Guild/Alliance/Buddy now use guildMemberIds/allianceMemberIds/
       // onlineFriendIds from UserList. Alliance membership tracking uses the
@@ -5988,36 +6068,36 @@ this._localCharId = args.characterId ?? 0;
       return;
     }
     if (lower === '/help' || lower === '/?') {
-      this._statusMessenger.showLoot('Commands: /p /b /g /a â€” group chat, /w <name> <msg> â€” whisper');
+      this._statusMessenger.showLoot('Commands: /p /b /g /a Ã¢â‚¬â€ group chat, /w <name> <msg> Ã¢â‚¬â€ whisper');
       this._statusMessenger.showLoot('Party: /create, /invite <name>, /accept, /leave, /partysearch');
-      this._statusMessenger.showLoot('/dropmeso <amount> â€” drop mesos on the ground');
-      this._statusMessenger.showLoot('/apup <str|dex|int|luk> <count> â€” allocate multiple AP at once');
-      this._statusMessenger.showLoot('/resetap â€” redistribute AP among stats');
-      this._statusMessenger.showLoot('/shop <title> â€” create a personal shop here');
-      this._statusMessenger.showLoot('/m invite <name>, /m <text>, /m leave â€” Messenger (buddy chat)');
+      this._statusMessenger.showLoot('/dropmeso <amount> Ã¢â‚¬â€ drop mesos on the ground');
+      this._statusMessenger.showLoot('/apup <str|dex|int|luk> <count> Ã¢â‚¬â€ allocate multiple AP at once');
+      this._statusMessenger.showLoot('/resetap Ã¢â‚¬â€ redistribute AP among stats');
+      this._statusMessenger.showLoot('/shop <title> Ã¢â‚¬â€ create a personal shop here');
+      this._statusMessenger.showLoot('/m invite <name>, /m <text>, /m leave Ã¢â‚¬â€ Messenger (buddy chat)');
       this._statusMessenger.showLoot('/omok <title>, /memorygame <title>, /miniroom invite <name>, /miniroom leave');
-      this._statusMessenger.showLoot('/trade <name> â€” start a trade with a visible player');
-      this._statusMessenger.showLoot('/vega â€” open Vega spell enhancement dialog');
-      this._statusMessenger.showLoot('/tournament â€” toggle the tournament status panel');
-      this._statusMessenger.showLoot('/maker â€” open the first local ItemMake recipes');
-      this._statusMessenger.showLoot('/medals â€” open medal quest list');
-      this._statusMessenger.showLoot('/charsale â€” open character-sale name check panel');
+      this._statusMessenger.showLoot('/trade <name> Ã¢â‚¬â€ start a trade with a visible player');
+      this._statusMessenger.showLoot('/vega Ã¢â‚¬â€ open Vega spell enhancement dialog');
+      this._statusMessenger.showLoot('/tournament Ã¢â‚¬â€ toggle the tournament status panel');
+      this._statusMessenger.showLoot('/maker Ã¢â‚¬â€ open the first local ItemMake recipes');
+      this._statusMessenger.showLoot('/medals Ã¢â‚¬â€ open medal quest list');
+      this._statusMessenger.showLoot('/charsale Ã¢â‚¬â€ open character-sale name check panel');
       return;
     }
     this.game.session.send(GameSender.UserChat(line));
   }
 
-  // OG: CUserLocal::HandleUpKeyDown (0x919E50) â€” the Up-key portal trigger.
+  // OG: CUserLocal::HandleUpKeyDown (0x919E50) Ã¢â‚¬â€ the Up-key portal trigger.
   // Guards: not on one-time action (attacking), not immovable, no attract,
   // on a foothold. Then CPortalList::FindPortal(x, y, nXrange=20) picks the
-  // first non-type-0 portal whose rect (xÂ±20, yÂ±50) contains the player.
-  //   - nTMap == 999999999 â†’ script portals (7/8/11) send opcode 112
+  // first non-type-0 portal whose rect (xÃ‚Â±20, yÃ‚Â±50) contains the player.
+  //   - nTMap == 999999999 Ã¢â€ â€™ script portals (7/8/11) send opcode 112
   //     (portal-script request: fieldKey + portal name + x + y); other types
   //     fall to the town-portal / open-gate path.
   //   - same-map teleport (nTMap == current && !IsChangable, i.e. type 4/5
-  //     exempt) â†’ in-map teleport.
-  //   - otherwise â†’ CField::SendTransferFieldRequest(field, 0xFFFFFFFF,
-  //     portalName, 0, 0, 0) â†’ the same UserTransferFieldRequest we send via
+  //     exempt) Ã¢â€ â€™ in-map teleport.
+  //   - otherwise Ã¢â€ â€™ CField::SendTransferFieldRequest(field, 0xFFFFFFFF,
+  //     portalName, 0, 0, 0) Ã¢â€ â€™ the same UserTransferFieldRequest we send via
   //     GameSender.TransferField. Exempt types 4/5 (IsChangable) don't play
   //     the portal sound, and neither does the script path.
   private _handleUpKeyDown(): void {
@@ -6029,15 +6109,15 @@ this._localCharId = args.characterId ?? 0;
     const pos = this._physics.Position;
     const portal = this._findUpKeyPortal(pos.x, pos.y);
     if (portal === null) {
-      // OG: no portal under the Up key â†’ town portal / open-gate path.
-      // (Not wired â€” v95 town portals and open gates are party/skill flows.)
+      // OG: no portal under the Up key Ã¢â€ â€™ town portal / open-gate path.
+      // (Not wired Ã¢â‚¬â€ v95 town portals and open gates are party/skill flows.)
       return;
     }
 
-    // OG: nTMap == 999999999 â†’ script portal or town-portal fallback.
+    // OG: nTMap == 999999999 Ã¢â€ â€™ script portal or town-portal fallback.
     if (portal.TargetMap === 999999999) {
       if (portal.Type === 7 || portal.Type === 8 || portal.Type === 11) {
-        // OG opcode 112 â€” UserPortalScriptRequest (the client's "script
+        // OG opcode 112 Ã¢â‚¬â€ UserPortalScriptRequest (the client's "script
         // portal" trigger). The v95 server resolves it from the portal name.
         this._sendPortalScriptRequest(portal, pos);
       }
@@ -6045,9 +6125,9 @@ this._localCharId = args.characterId ?? 0;
     }
 
     // OG: same-map teleport (field->m_dwField == portal->nTMap &&
-    // !IsChangable) â†’ TryRegisterTeleport.
+    // !IsChangable) Ã¢â€ â€™ TryRegisterTeleport.
     if (portal.TargetMap === this._field.LoadedMapId && !GameStage.IsChangablePortal(portal.Type)) {
-      // In-map teleport â€” the server resolves the destination portal from the
+      // In-map teleport Ã¢â‚¬â€ the server resolves the destination portal from the
       // CURRENT portal's own name (pn), so send portal.Name, not the target
       // portal name.
       this._isFieldTransferring = true;
@@ -6062,14 +6142,14 @@ this._localCharId = args.characterId ?? 0;
     this.game.session.send(GameSender.TransferField(this._fieldKey, portal.TargetMap, portal.Name, pos.x, pos.y));
   }
 
-  /** OG: PORTAL::IsChangable â€” nType == 4 || nType == 5. These portals
+  /** OG: PORTAL::IsChangable Ã¢â‚¬â€ nType == 4 || nType == 5. These portals
    *  transfer without the portal sound and skip the same-map teleport branch. */
   private static IsChangablePortal(nType: number): boolean {
     return nType === 4 || nType === 5;
   }
 
-  /** OG: CPortalList::FindPortal (0x6AB230) with nXrange = 20 â€” the first
-   *  non-type-0 portal whose rect (x Â± nXrange, y Â± 50) contains the point. */
+  /** OG: CPortalList::FindPortal (0x6AB230) with nXrange = 20 Ã¢â‚¬â€ the first
+   *  non-type-0 portal whose rect (x Ã‚Â± nXrange, y Ã‚Â± 50) contains the point. */
   private _findUpKeyPortal(x: number, y: number): Portal | null {
     const range = GameStage.UpKeyPortalRangeX;
     for (const portal of Object.values(this._field!.Portals)) {
@@ -6083,10 +6163,10 @@ this._localCharId = args.characterId ?? 0;
   // portal types land in m_aPortal_Collision, and only those are ever checked
   // per-frame by CUserLocal::CheckPortal_Collision (called from Update, next
   // to CheckReactor_Collision):
-  //   - type 3  â†’ default case: cross-field transfer (auto-touch)
-  //   - type 9  â†’ script-portal request (opcode 112), delay/onlyOnce gated
-  //   - type 12 â†’ vertical jump,  type 13 â†’ custom impact (not transfers)
-  // Everything else (1,2,4,5,7,8,10,11) is NOT auto-touched â€” it requires the
+  //   - type 3  Ã¢â€ â€™ default case: cross-field transfer (auto-touch)
+  //   - type 9  Ã¢â€ â€™ script-portal request (opcode 112), delay/onlyOnce gated
+  //   - type 12 Ã¢â€ â€™ vertical jump,  type 13 Ã¢â€ â€™ custom impact (not transfers)
+  // Everything else (1,2,4,5,7,8,10,11) is NOT auto-touched Ã¢â‚¬â€ it requires the
   // Up key (HandleUpKeyDown). Type 6 is a town portal; type 0 is a start point.
   private static readonly AutoTouchTransferTypes = new Set([3, 9]);
   private static readonly UpKeyPortalRangeX = 20;
@@ -6095,7 +6175,7 @@ this._localCharId = args.characterId ?? 0;
   private static readonly PortalTouchRadiusYDown = 10;
   // OG: CUserLocal::CheckPortal_Collision case 9 gates the script-portal
   // request on `get_update_time() - m_tLastExclRequest >= nDelayTime` and
-  // `!bOnlyOnce || portalIdx != m_tPrevPortalIndex` â€” a per-portal cooldown.
+  // `!bOnlyOnce || portalIdx != m_tPrevPortalIndex` Ã¢â‚¬â€ a per-portal cooldown.
   private _portalCooldownUntil = 0;
   private _lastScriptPortal = 0;
 
@@ -6105,9 +6185,9 @@ this._localCharId = args.characterId ?? 0;
     // OG: CPortalList::UpdateHiddenPortal proximity check.
     // Hidden portals (pt=10/11) show PH/PSH animation when the player is
     // within the portal's hRange/vRange rect. Only one hidden portal is
-    // active at a time â€” the first match wins (matching the OG's linear
+    // active at a time Ã¢â‚¬â€ the first match wins (matching the OG's linear
     // scan of m_aPortal_Hidden). (Hidden portals are only *entered* via the
-    // Up key â€” this check just toggles the visible animation.)
+    // Up key Ã¢â‚¬â€ this check just toggles the visible animation.)
     let foundHiddenIdx: number | null = null;
     for (const portal of Object.values(this._field.Portals)) {
       if (portal.Type !== 10 && portal.Type !== 11) continue;
@@ -6122,7 +6202,7 @@ this._localCharId = args.characterId ?? 0;
     }
     this._field.SetActiveHiddenPortal(foundHiddenIdx);
 
-    // OG: CUserLocal::CheckPortal_Collision â€” only the m_aPortal_Collision
+    // OG: CUserLocal::CheckPortal_Collision Ã¢â‚¬â€ only the m_aPortal_Collision
     // types (3, 9, 12, 13) are tested per-frame; type 3 auto-transfers,
     // type 9 sends the script request with a delay/onlyOnce gate.
     for (const portal of Object.values(this._field.Portals)) {
@@ -6143,7 +6223,7 @@ this._localCharId = args.characterId ?? 0;
           return;
         }
         // OG default case: cross-field transfer. Send the CURRENT portal's own
-        // name (sName/pn) â€” the server resolves the destination from it.
+        // name (sName/pn) Ã¢â‚¬â€ the server resolves the destination from it.
         this._isFieldTransferring = true;
         this.game.session.send(GameSender.TransferField(this._fieldKey, portal.TargetMap, portal.Name, pos.x, pos.y));
         return;
@@ -6161,9 +6241,64 @@ this._localCharId = args.characterId ?? 0;
     this.game.session.send(p);
   }
 
+  /** OG: CWvsContext::TryRecovery @0x9D4020 (called every frame from
+   *  CWvsContext::Update @0x9EA7F0). HP/MP regenerate only while the
+   *  character is NOT moving (position unchanged since the previous frame)
+   *  AND the current action is a stand-family action (OG is_stand_action:
+   *  raw 2/3 = stand1/2, 48-54 = sit variants). Timers accumulate and at
+   *  >=10000ms the client sends SendStatChangeRequest (opcode 100, mask
+   *  0x1400): HP amount = rate*10, MP amount = rate*3 (sitting multiplies
+   *  the rate by 1.5; nOption=2 flags the sit for the server). Movement or
+   *  any other action resets both timers to 0. */
+  private _updateIdleRecovery(dtMs: number): void {
+    const physics = this._physics;
+    if (!physics) return;
+    const pos = physics.Position;
+    const prev = this._recoveryPrevPos;
+    this._recoveryPrevPos = { x: pos.x, y: pos.y };
+    if (!prev || prev.x !== pos.x || prev.y !== pos.y) {
+      this._restForHpMs = 0;
+      this._restForMpMs = 0;
+      return;
+    }
+    const stance = physics.Stance;
+    const sitting = stance === Stance.Sit;
+    if (!sitting && stance !== Stance.Stand1 && stance !== Stance.Stand2) {
+      this._restForHpMs = 0;
+      this._restForMpMs = 0;
+      return;
+    }
+    const rate = sitting ? GameStage.IdleRecoveryRate * 1.5 : GameStage.IdleRecoveryRate;
+    const stats = this._stats;
+    if (stats.maxHp > 0 && stats.hp < stats.maxHp) {
+      this._restForHpMs += dtMs;
+      if (this._restForHpMs >= 10000) {
+        this._restForHpMs -= 10000;
+        const hpAmount = Math.max(1, Math.floor(rate * 10));
+        this.game.session.send(GameSender.StatChangeRequest(Date.now(), 0x1400, hpAmount, 0, sitting ? 2 : 0));
+      }
+    } else {
+      this._restForHpMs = 0;
+    }
+    if (stats.maxMp > 0 && stats.mp < stats.maxMp) {
+      this._restForMpMs += dtMs;
+      if (this._restForMpMs >= 10000) {
+        this._restForMpMs -= 10000;
+        const mpAmount = Math.max(1, Math.floor(rate * 3));
+        this.game.session.send(GameSender.StatChangeRequest(Date.now(), 0x1400, 0, mpAmount, sitting ? 2 : 0));
+      }
+    } else {
+      this._restForMpMs = 0;
+    }
+  }
+
   private _tryMeleeAttack(): void {
     if (!this._physics) return;
     this._attackCooldown = GameStage.AttackCooldownSeconds;
+    // Plant the character for the duration of the swing's one-time action â€”
+    // movement/jump input is suppressed until it finishes (released in update).
+    this._meleeSwingActive = true;
+    this._physics.InputLocked = true;
 
     const pos = this._physics.Position;
     const facingLeft = this._physics.FacingLeft;
@@ -6174,7 +6309,7 @@ this._localCharId = args.characterId ?? 0;
     const minY = pos.y - GameStage.MeleeReachY * 2;
     const maxY = pos.y + GameStage.MeleeReachY;
 
-    // OG CReactor::OnHit — a swing overlapping a reactor's body sends
+    // OG CReactor::OnHit â€” a swing overlapping a reactor's body sends
     // UserHitReactor; the server owns hitable/state rules.
     this._hitReactorsInRect(minX, maxX, minY, maxY, 0);
 
@@ -6204,11 +6339,11 @@ this._localCharId = args.characterId ?? 0;
       const watk = this._statDetailInfo?.Inputs.watk ?? weaponStats?.incPad ?? attr?.IncPad ?? 0;
       const matk = this._statDetailInfo?.Inputs.matk ?? weaponStats?.incMad ?? attr?.IncMad ?? 0;
       // OG: the panel's damage range (CUIStatDetail) and live PDamage consume
-      // the same PAD aggregate â€” all equips + buffs â€” and the same mastery
+      // the same PAD aggregate Ã¢â‚¬â€ all equips + buffs Ã¢â‚¬â€ and the same mastery
       // (adjust_ramdom_damage), so attacks roll inside the displayed range.
       const mastery = this._statDetailInfo?.Inputs.mastery ?? this._masteryFromSkills;
       const dmgRange = calcDamageRange(this._job, wt, watk, matk, this._stats.str, this._stats.dex, this._stats.intStat, this._stats.luk, mastery);
-      // OG: CalcDamage::CalcAccR (0x724CE0) â€” client rolls hit/miss per mob.
+      // OG: CalcDamage::CalcAccR (0x724CE0) Ã¢â‚¬â€ client rolls hit/miss per mob.
       // Player ACC = floor(dex * 1.2 + luk * 1.0) + equip/buff accBonus.
       const playerBaseAcc = Math.floor(this._stats.dex * 1.2 + this._stats.luk * 1.0);
       const playerTotalAcc = playerBaseAcc + (this._statDetailInfo?.Inputs.accBonus ?? 0);
@@ -6218,7 +6353,7 @@ this._localCharId = args.characterId ?? 0;
       const hit = Math.random() * 100 < hitRate;
       // OG CalcDamage::PDamage (0x730130): crit chance roll per damage line,
       // then crit DAMAGE is a roll in [param+20(+niCDr), param'+50] ADDED as
-      // a percentage â€” `damage += preCrit * roll/100` â€” NOT a flat Ã—1.5.
+      // a percentage Ã¢â‚¬â€ `damage += preCrit * roll/100` Ã¢â‚¬â€ NOT a flat Ãƒâ€”1.5.
       // param' = SharpEyes low byte when active, else the crit skill's
       // LevelData.damage (_criticalDamageParam, wired in _syncStatDetailInputs).
       const critRate = this._statDetailInfo?.getCriticalProp?.() ?? 0;
@@ -6234,12 +6369,12 @@ this._localCharId = args.characterId ?? 0;
         dmg = Math.max(1, Math.min(999999, Math.floor(dmg * (100 + rollPct) / 100)));
       }
       targets.push(new MeleeTarget(closest.MobId, [dmg], closest.Position.x, closest.Position.y, 0));
-      // OG: weapon attack sound via sSfx from Character.wz â†’ Sound.wz/Weapon.img/{sSfx}/Attack
+      // OG: weapon attack sound via sSfx from Character.wz Ã¢â€ â€™ Sound.wz/Weapon.img/{sSfx}/Attack
       this._playWeaponAttackSound(weaponId);
       if (hit) {
         closest.ShowHitEffect();
         this._mobSounds?.PlayDamage(closest.TemplateId);
-        // Damage number is server-authoritative â€” the mobDamaged echo
+        // Damage number is server-authoritative Ã¢â‚¬â€ the mobDamaged echo
         // (OnMobDamaged) renders the WZ-digit number.
         this._battleRecord?.AddDamage(dmg, isCrit, false);
         this._skill.setDamageMeterSummary(this._battleRecord?.getDamageMeterSummary() ?? null);
@@ -6255,7 +6390,7 @@ this._localCharId = args.characterId ?? 0;
       this._fieldKey, actionAndDir, 6, pos.x, pos.y, targets, 1);
     this.game.session.sendRaw(blob);
 
-    // OG: CUserLocal::RegisterAfterimage (0x902d90) â€” after each attack,
+    // OG: CUserLocal::RegisterAfterimage (0x902d90) Ã¢â‚¬â€ after each attack,
     // stores AFTERIMAGEINFO with the attack's timing, direction, action,
     // weapon afterimage UOL, and SFX UOL from the weapon's character entry.
     // The afterimage is drawn as a fading trail behind the weapon swing.
@@ -6263,16 +6398,16 @@ this._localCharId = args.characterId ?? 0;
   }
 
   /**
-   * OG CUserLocal::DoAttack with a skill â€” the client executes the skill hit
+   * OG CUserLocal::DoAttack with a skill Ã¢â‚¬â€ the client executes the skill hit
    * itself (CalcDamage rolls are client-authoritative; the server validates
    * skill ownership/seal/morph in AttackHandler.handleAttack) and sends the
    * attack packet carrying the skillId. Buff/movement skills (no `damage`
    * level data) return without attacking.
    */
-  /** OG CReactor::OnHit — send UserHitReactor for every reactor whose body
+  /** OG CReactor::OnHit â€” send UserHitReactor for every reactor whose body
    *  box overlaps the attack rect. The server validates hitable/state/skill
    *  gates (FieldHandler::handleReactorHit) and broadcasts the state change.
-   *  Body box approximated as ±25px wide, 50px tall above the base point —
+   *  Body box approximated as Â±25px wide, 50px tall above the base point â€”
    *  the client does not track per-template WZ rects. */
   private _hitReactorsInRect(minX: number, maxX: number, minY: number, maxY: number, skillId: number): void {
     if (!this._reactors || this._reactors.size === 0) return;
@@ -6322,7 +6457,7 @@ this._localCharId = args.characterId ?? 0;
 
     if (candidates.length === 0) return;
 
-    // Damage range from the panel inputs Ã— the skill's damage%, crit per line.
+    // Damage range from the panel inputs Ãƒâ€” the skill's damage%, crit per line.
     const inp = this._statDetailInfo?.Inputs;
     const weaponId = this._equip.equippedWeaponItemId;
     const wt = weaponId !== null ? getWeaponType(weaponId) : 0;
@@ -6399,9 +6534,9 @@ this._localCharId = args.characterId ?? 0;
     }
   }
 
-  // OG: CUserLocal::RegisterAfterimage (0x902d90) â€” stores afterimage data
+  // OG: CUserLocal::RegisterAfterimage (0x902d90) Ã¢â‚¬â€ stores afterimage data
   // for the attack trail effect. The afterimage UOL is built from:
-  //   skill-specific: SKILLENTRY::GetAfterimageUOL â†’ "{base}/{weaponName}/{level}"
+  //   skill-specific: SKILLENTRY::GetAfterimageUOL Ã¢â€ â€™ "{base}/{weaponName}/{level}"
   //   basic attack: "Effect/Character/{weaponType}/{level}" where level = floor((mastery-10)/5)
   // SfxUOL comes from the weapon's Character.wz entry (sSfx field).
   private _registerAfterimage(
@@ -6411,14 +6546,14 @@ this._localCharId = args.characterId ?? 0;
     const actionCode = AttackAction.CodeFor(attackAction);
 
     // Build afterimage UOL from weapon type and mastery level
-    // OG: GetAfterimageUOL (0x8ed0c0) â€” for basic attacks (no skill),
+    // OG: GetAfterimageUOL (0x8ed0c0) Ã¢â‚¬â€ for basic attacks (no skill),
     // path = "Effect/Character/{weaponName}/{masteryLevel}"
     // where masteryLevel = max(0, floor((mastery - 10) / 5))
     let afterimageUOL = '';
     if (weaponId !== null) {
       const wt = getWeaponType(weaponId);
       const masteryLevel = Math.max(0, Math.floor((this._masteryFromSkills - 10) / 5));
-      // Weapon name from item ID â€” OG uses StringPool for weapon category names
+      // Weapon name from item ID Ã¢â‚¬â€ OG uses StringPool for weapon category names
       const weaponNames: Record<number, string> = {
         30: 'sword', 31: 'sword', 32: 'sword', 33: 'dagger',
         37: 'wand', 38: 'staff', 39: 'knuckle',
@@ -6441,7 +6576,7 @@ this._localCharId = args.characterId ?? 0;
     };
   }
 
-  // OG: weapon attack sound â€” reads sSfx from the weapon's Character.wz entry
+  // OG: weapon attack sound Ã¢â‚¬â€ reads sSfx from the weapon's Character.wz entry
   // and plays Sound.wz/Weapon.img/{sSfx}/Attack.
   private _playWeaponAttackSound(weaponId: number | null): void {
     if (!this._mobSoundWz || !this.game.audioPlayer || !weaponId) return;
@@ -6458,7 +6593,7 @@ this._localCharId = args.characterId ?? 0;
     }
   }
 
-  // OG: item consumption sound â€” plays Sound.wz/Item.img/{itemId}/Use
+  // OG: item consumption sound Ã¢â‚¬â€ plays Sound.wz/Item.img/{itemId}/Use
   private _playItemUseSound(itemId: number): void {
     if (!this._mobSoundWz || !this.game.audioPlayer) return;
     const paddedId = String(itemId).padStart(8, '0');
@@ -6471,7 +6606,7 @@ this._localCharId = args.characterId ?? 0;
     }
   }
 
-  // OG: play_skill_sound @0x966b60 â€” plays Sound.wz/Skill.img/{skillId}/{seType}.
+  // OG: play_skill_sound @0x966b60 Ã¢â‚¬â€ plays Sound.wz/Skill.img/{skillId}/{seType}.
   // seType values: "attack1", "attack2", "attack3", "use", "hit",
   // "summoned", "delayedHit", "getoff".
   private _playSkillSound(skillId: number, seType: string): void {
@@ -6492,11 +6627,11 @@ this._localCharId = args.characterId ?? 0;
       isAttacking: () => this._player?.IsPlayingOneTimeAction ?? false,
       // OG: CFinishAttack::GetDummySkillID (0x6de770) returns 32001007-32001011
       // based on current Aran combo stage. Map combo counter to variant:
-      //   combo 0-1   â†’ 32001007 (basic)
-      //   combo 2-4   â†’ 32001008
-      //   combo 5-9   â†’ 32001009
-      //   combo 10-19 â†’ 32001010
-      //   combo 20+   â†’ 32001011
+      //   combo 0-1   Ã¢â€ â€™ 32001007 (basic)
+      //   combo 2-4   Ã¢â€ â€™ 32001008
+      //   combo 5-9   Ã¢â€ â€™ 32001009
+      //   combo 10-19 Ã¢â€ â€™ 32001010
+      //   combo 20+   Ã¢â€ â€™ 32001011
       aranFinishSkillId: () => {
         const c = this._comboCounter;
         if (c >= 20) return 32001011;
@@ -6519,7 +6654,7 @@ this._localCharId = args.characterId ?? 0;
       if (dieEntries.length > 0) {
         mob.TrySpeaking(-1, -1, dieEntries);
       }
-      mob.OnDieComplete(3); // dieCount=3 â†’ Die1/Die2/Die3
+      mob.OnDieComplete(3); // dieCount=3 Ã¢â€ â€™ Die1/Die2/Die3
     } else {
       mob.OnDie();
     }
@@ -6529,12 +6664,12 @@ this._localCharId = args.characterId ?? 0;
     }
     this._mobCtl.delete(mob.MobId);
 
-    // OG: CField_Dojang::Update â€” when boss mob dies, clear the boss HP bar
+    // OG: CField_Dojang::Update Ã¢â‚¬â€ when boss mob dies, clear the boss HP bar
     if (this._field?.Info.FieldType === 14 && mob.IsBoss) {
       this._dojangHud.onBossLeave();
     }
 
-    // OG: CField_Dojang â€” track mob count for floor progression
+    // OG: CField_Dojang Ã¢â‚¬â€ track mob count for floor progression
     if (this._field?.Info.FieldType === 14) {
       const remaining = this._mobs.size - 1; // -1 for the mob being killed
       this._dojangHud.setMobCount(Math.max(0, remaining));
@@ -6554,7 +6689,7 @@ this._localCharId = args.characterId ?? 0;
     return this._questStates.get(id) ?? 0;
   }
 
-  /** OG CQuestMan::CheckStartDemand @0x6BB6E0 â€” client-side subset. Checks the
+  /** OG CQuestMan::CheckStartDemand @0x6BB6E0 Ã¢â‚¬â€ client-side subset. Checks the
    * demand conditions the client can evaluate locally: npc, level range
    * (with nLevelThreshold relaxation for near-start marks), jobs, dates,
    * day-of-week, precede quests and start-item demands. Mob progress is not
@@ -6584,14 +6719,14 @@ this._localCharId = args.characterId ?? 0;
       if (pq.state === 2 && (!rec || rec.state !== 0)) return false;   // must be completed
       if (pq.state === 1 && (!rec || rec.state !== 1)) return false;   // must be in progress
     }
-    // _item may not exist yet â€” NPCs can enter before _initMenu builds panels
+    // _item may not exist yet Ã¢â‚¬â€ NPCs can enter before _initMenu builds panels
     for (const it of req.Items) {
       if (it.count > 0 && this._item?.countItem(it.id) < it.count) return false;
     }
     return true;
   }
 
-  /** OG CQuestMan::CheckCompleteDemand @0x6BC3D0 â€” client-side subset:
+  /** OG CQuestMan::CheckCompleteDemand @0x6BC3D0 Ã¢â‚¬â€ client-side subset:
    * npc + level range + complete-item demands. Completion via mob counts /
    * mob-item drops cannot be verified locally, so those quests stay on the
    * in-progress mark until the server script confirms completion. */
@@ -6608,7 +6743,7 @@ this._localCharId = args.characterId ?? 0;
   }
 
   /** OG CNpc::SetQuestList @0x671980 classification: bucket every quest bound
-   * to this NPC by record state, then pick the mark by OG priority â€”
+   * to this NPC by record state, then pick the mark by OG priority Ã¢â‚¬â€
    * PreComplete(2) > PreStart(0) > Perform(1) > NearStart(3), else None(6). */
   private _npcQuestStateOf(npcTemplateId: number): number {
     const svc = this.game.questInfoService;
@@ -6623,7 +6758,7 @@ this._localCharId = args.characterId ?? 0;
         if (this._checkCompleteDemand(q, npcTemplateId)) perform = true;
         else preComplete = true;
       } else if (rec) {
-        // completed before â€” repeatable only when no interval gate blocks it
+        // completed before Ã¢â‚¬â€ repeatable only when no interval gate blocks it
         if (q.RepeatInterval <= 0 && this._checkStartDemand(q, npcTemplateId, 0)) preStart = true;
       } else {
         if (this._checkStartDemand(q, npcTemplateId, 0)) {
@@ -6648,14 +6783,14 @@ this._localCharId = args.characterId ?? 0;
     }
   }
 
-  /** Mirrors equip-tab (`invType===1`) ops with a negative slot â€” the real
-      `nCurItemPos`/`GW_ItemSlotEquip` convention for "currently worn" â€” into the
+  /** Mirrors equip-tab (`invType===1`) ops with a negative slot Ã¢â‚¬â€ the real
+      `nCurItemPos`/`GW_ItemSlotEquip` convention for "currently worn" Ã¢â‚¬â€ into the
       separate paper-doll `EquipInventory` panel. `_item.applyOps` already tracks
       this same data generically by `(tab, pos)`, but `EquipInventory` has its own
       independent `_equipped` map (keyed by body part, for the "Hat"/"Top"/etc.
-      slot layout) that nothing else populates â€” without this, the Equipment
+      slot layout) that nothing else populates Ã¢â‚¬â€ without this, the Equipment
       panel always renders empty regardless of what's actually worn. */
-  /** Apply stat data to statusBar/stats panels â€” called from _onSetField or deferred to _initMenu. */
+  /** Apply stat data to statusBar/stats panels Ã¢â‚¬â€ called from _onSetField or deferred to _initMenu. */
   private _applyStatToStatusBar(stat: CharacterStat): void {
     if (this._statusBar) {
       this._statusBar.level = stat.level;
@@ -6667,8 +6802,9 @@ this._localCharId = args.characterId ?? 0;
       this._statusBar.exp = stat.exp;
       this._statusBar.charName = stat.name;
       this._statusBar.jobName = JobName(stat.job);
-      // OG CUser::DrawNameTags â€” the local player's name plate below the feet.
+      // OG CUser::DrawNameTags Ã¢â‚¬â€ the local player's name plate below the feet.
       if (this._player) this._player.charName = stat.name;
+      if (this._messengerWin) this._messengerWin.selfName = stat.name;
     }
     if (this._stats) {
       this._stats.level = stat.level;
@@ -6694,7 +6830,7 @@ this._localCharId = args.characterId ?? 0;
       this._stats.jobCategory = Math.floor(stat.job / 100) % 10;
     }
     this._job = stat.job;
-    // Forward job/level/sp to SkillBook â€” these must be set before any
+    // Forward job/level/sp to SkillBook Ã¢â‚¬â€ these must be set before any
     // setSkillRecords call, or the skill tab list is empty on first login.
     if (this._skill) {
       this._skill.characterJob = stat.job;
@@ -6724,7 +6860,7 @@ this._localCharId = args.characterId ?? 0;
     }
   }
 
-  /** Apply pending equipped items from SetField â€” called after _initMenu creates the equip panel. */
+  /** Apply pending equipped items from SetField Ã¢â‚¬â€ called after _initMenu creates the equip panel. */
   /**
    * OG: SetToolTip_SetItem needs the per-member equipped state so worn members
    * render GEN_WHITE and missing ones GEN_GRAY2. Computed live from the equip
@@ -6806,7 +6942,7 @@ this._localCharId = args.characterId ?? 0;
   }
 
   /**
-   * OG: CUserLocal::UpdatePassiveSkillData / mSkillRecordEx â€” rebuild the
+   * OG: CUserLocal::UpdatePassiveSkillData / mSkillRecordEx Ã¢â‚¬â€ rebuild the
    * equipment-provided skill-level bonus map from every equipped item's
    * info/incSkill. The skill window shows this as the green "(+N)".
    */
@@ -6830,6 +6966,37 @@ this._localCharId = args.characterId ?? 0;
   private _bodyPartFromEquippedPos(invType: number, pos: number): number {
     const raw = -pos;
     return invType === InventoryType.Cash && raw >= 101 && raw <= 159 ? raw - 100 : raw;
+  }
+
+  /** OG: remote stand/walk variants are re-expanded client-side from the
+   *  remote character's own weapon entry (CAvatar::MoveAction2RawAction
+   *  @0x45FA30 reads the avatar's m_nStandType/m_nWalkType). */
+  private _remoteWeaponTypes(charId: number): { stand: number; walk: number } | null {
+    const look = this._otherChars.get(charId)?.Look ?? null;
+    const weaponId = look?.hairEquip.get(11 /* BodyPartSlot.Weapon */) ?? 0;
+    if (!weaponId) return null;
+    const imgEntry = ActionMan.GetInstance().GetCharacterImgEntry(weaponId, null);
+    return imgEntry ? { stand: imgEntry.nStand || 1, walk: imgEntry.nWalk || 1 } : null;
+  }
+
+  /** OG: CAvatar::NotifyAvatarModified @0x46BB20 â€” m_nStandType/m_nWalkType
+   *  come from the equipped weapon's Character/<weapon>.img `stand`/`walk`
+   *  fields (CAvatar::MoveAction2RawAction @0x45FA30 picks stand1/2 + walk1/2
+   *  from them; bare hands behave as type 1). */
+  private _syncWeaponStance(): void {
+    if (!this._physics) return;
+    const look = this._player?.AvatarLook ?? null;
+    const weaponId = this._equip?.equippedWeaponItemId ?? look?.hairEquip.get(11 /* BodyPartSlot.Weapon */) ?? 0;
+    if (!weaponId) {
+      this._physics.WeaponStand = 1;
+      this._physics.WeaponWalk = 1;
+      return;
+    }
+    const imgEntry = ActionMan.GetInstance().GetCharacterImgEntry(weaponId, null);
+    if (imgEntry) {
+      this._physics.WeaponStand = imgEntry.nStand || 1;
+      this._physics.WeaponWalk = imgEntry.nWalk || 1;
+    }
   }
 
   private _setEquippedAvatarItem(invType: number, pos: number, itemId: number, equipStats?: EquipStats): void {
@@ -6892,7 +7059,7 @@ this._localCharId = args.characterId ?? 0;
     this._refreshSkillBonuses();
   }
 
-  /** v95 equip item id â†’ equipped body part. 0 = not a known equip slot. */
+  /** v95 equip item id Ã¢â€ â€™ equipped body part. 0 = not a known equip slot. */
   private static _equipBodyPart(itemId: number): number {
     const cat = Math.floor(itemId / 10000);
     switch (cat) {
@@ -6926,14 +7093,14 @@ this._localCharId = args.characterId ?? 0;
     return sprite;
   }
 
-  // OG: is_state_change_item â€” categories 200,201,202,205,221,236,238,245
+  // OG: is_state_change_item Ã¢â‚¬â€ categories 200,201,202,205,221,236,238,245
   private _isStateChangeItem(itemId: number): boolean {
     const cat = Math.floor(itemId / 10000);
     return cat === 200 || cat === 201 || cat === 202 || cat === 205
       || cat === 221 || cat === 236 || cat === 238 || cat === 245;
   }
 
-  // OG CDraggableItem::MapFuncKey â€” determines which items can be bound to keys
+  // OG CDraggableItem::MapFuncKey Ã¢â‚¬â€ determines which items can be bound to keys
   private _isBindableItem(itemId: number, invType: number): boolean {
     const cat = Math.floor(itemId / 10000);
     if (invType === 2) {
@@ -6998,8 +7165,8 @@ this._localCharId = args.characterId ?? 0;
         this._player?.SetEmotion(1); // emotionId=1 = "hit" expression
         if (this._physics) {
           const dx = this._physics.Position.x - mob.Position.x;
-          // OG: CUserLocal::SetImpact (0x905E10) â†’ CVecCtrl::SetImpactNext with
-          // vx = Â±nImpact, vy = -nImpact â€” equal magnitudes give the diagonal
+          // OG: CUserLocal::SetImpact (0x905E10) Ã¢â€ â€™ CVecCtrl::SetImpactNext with
+          // vx = Ã‚Â±nImpact, vy = -nImpact Ã¢â‚¬â€ equal magnitudes give the diagonal
           // up-and-away launch (a halved vy barely lifts and reads as a glitch).
           this._physics.ApplyKnockback((dx >= 0 ? 1 : -1) * 200, -200, 0.3);
         }
@@ -7008,7 +7175,7 @@ this._localCharId = args.characterId ?? 0;
         }
       }
     };
-    // OG: body attack â€” collision damage when mob touches player
+    // OG: body attack Ã¢â‚¬â€ collision damage when mob touches player
     mc.onBodyAttack = (dmg) => {
       if (this._stats.hp !== undefined && this._stats.hp > 0) {
         const sec = this.game.fieldHandlers.secondaryStat;
@@ -7037,7 +7204,7 @@ this._localCharId = args.characterId ?? 0;
         if (hpDamage > 0) this._dmgNumbers?.Add(hpDamage, this._physics!.Position.x, this._physics!.Position.y - 40, DamageKind.MobDamage);
         if (this._physics) {
           const dx = this._physics.Position.x - mob.Position.x;
-          // OG: CUserLocal::SetImpact (0x905E10) â€” equal-magnitude diagonal launch.
+          // OG: CUserLocal::SetImpact (0x905E10) Ã¢â‚¬â€ equal-magnitude diagonal launch.
           this._physics.ApplyKnockback((dx >= 0 ? 1 : -1) * 150, -150, 0.2);
         }
         if (this._stats.hp <= 0) {
@@ -7051,7 +7218,7 @@ this._localCharId = args.characterId ?? 0;
   private _onMobLeave(mobId: number, _lt: number): void {
     console.log(`[MobDeathDbg] _onMobLeave mobId=${mobId} leaveType=${_lt}`);
     const mob = this._mobs.get(mobId);
-    // OG: CField_Dojang::Update â€” when boss mob leaves, clear the boss HP bar
+    // OG: CField_Dojang::Update Ã¢â‚¬â€ when boss mob leaves, clear the boss HP bar
     if (mob && this._field?.Info.FieldType === 14 && mob.IsBoss) {
       this._dojangHud.onBossLeave();
     }
@@ -7066,10 +7233,10 @@ this._localCharId = args.characterId ?? 0;
     npc.Load(this._loader, this._npcWz, (npcId, key) => this.game.nameService.NpcText(npcId, key));
     npc.LoadNames((npcId, key) => this.game.nameService.NpcText(npcId, key));
     npc.ObjId = args.objId;
-    // OG: position comes directly from the packet â€” the server sends the correct position
+    // OG: position comes directly from the packet Ã¢â‚¬â€ the server sends the correct position
     npc.Position = { x: args.x, y: args.y };
     npc.FootholdId = args.footholdId;
-    // OG: moveAction encodes direction â€” bit 0: 0=right, 1=left
+    // OG: moveAction encodes direction Ã¢â‚¬â€ bit 0: 0=right, 1=left
     const facingLeft = (args.moveAction & 1) !== 0;
     npc.FaceLeft(facingLeft);
     // OG: SetMoveAction stores the full moveAction and sets up action layer
@@ -7077,14 +7244,14 @@ this._localCharId = args.characterId ?? 0;
     npc.SetActive(args.bEnabled);
     npc.SetFootholds(Object.values(this._field?.Footholds ?? {}));
     // OG renders at the raw packet y (which can float a few px over the
-    // foothold line) â€” snap the feet flush to the ground so static NPCs
+    // foothold line) Ã¢â‚¬â€ snap the feet flush to the ground so static NPCs
     // stand on the platform.
     npc.SnapToFoothold();
-    // OG: DoActionOrChat â†’ GenerateMovePath â€” sends NpcMoveRequest to server
+    // OG: DoActionOrChat Ã¢â€ â€™ GenerateMovePath Ã¢â‚¬â€ sends NpcMoveRequest to server
     npc.onDoActionOrChat = (objectId, action, chatIdx) => {
       this.game.session.send(GameSender.NpcMoveRequest(objectId, action, chatIdx));
     };
-    // OG CNpc::OnChat â†’ CChatBalloon type 1001 (ChatBalloon.img/npc).
+    // OG CNpc::OnChat Ã¢â€ â€™ CChatBalloon type 1001 (ChatBalloon.img/npc).
     npc.onChatBalloon = (text) => {
       this._chatBalloon?.Set(npc.ObjId, text, 5, BalloonType.Npc);
     };
@@ -7092,7 +7259,7 @@ this._localCharId = args.characterId ?? 0;
       npc.SetBalloonOffset(0, -20);
     }
     // OG CNpc::Update calls SetQuestList every tick; on enter we compute the
-    // mark once â€” later changes flow through _refreshNpcQuestMarks.
+    // mark once Ã¢â‚¬â€ later changes flow through _refreshNpcQuestMarks.
     npc.SetQuestList(this._npcQuestStateOf(args.templateId));
     this._npcs.push(npc);
   }
@@ -7103,11 +7270,20 @@ this._localCharId = args.characterId ?? 0;
 
   private _onUserEnter(args: OtherCharEnterArgs): void {
     const ch = new OtherCharLook(args.charId, args.name, args.level, args.look ?? null);
-    // OG CUser::DrawNameTags â†’ CItemInfo::GetItemName for the type-1006 medal tag.
+    // OG CUser::DrawNameTags Ã¢â€ â€™ CItemInfo::GetItemName for the type-1006 medal tag.
     ch.itemNameOf = (id) => this.game.nameService?.ItemName(id) ?? `Medal[${id}]`;
     ch.SetPosition(args.x, args.y);
+    // OG: initial move action re-expanded through the remote char's own
+    // weapon stand/walk types (MoveAction2RawAction).
+    if (args.moveAction !== undefined) {
+      const wt = this._remoteWeaponTypes(args.charId);
+      const { stance } = MoveActionToStance(args.moveAction, wt?.stand ?? 1, wt?.walk ?? 1);
+      ch.SetStance(stance);
+      const facingLeft = (args.moveAction & 1) !== 0;
+      ch.SetFacing(facingLeft);
+    }
     ch.LoadSprites(this._loader, this._characterWz, this._itemWz, this._baseWz);
-    // OG CUser::DrawNameTags â€” guild/medal data from the enter packet
+    // OG CUser::DrawNameTags Ã¢â‚¬â€ guild/medal data from the enter packet
     if (args.guildName) {
       ch.SetGuildInfo(
         args.guildName,
@@ -7226,7 +7402,7 @@ this._localCharId = args.characterId ?? 0;
     this._equip.setPetCount(count);
   }
 
-  // OG: CUserLocal::OnPetActivated (0x90fb90) â€” opcodes 198/200. Creates,
+  // OG: CUserLocal::OnPetActivated (0x90fb90) Ã¢â‚¬â€ opcodes 198/200. Creates,
   // replaces, or removes the pet at the exact petIdx slot from real summon data.
   // When hasPet=false, reads a removeReason (1-4) and shows a chat message.
   // After creation: NotifyAvatarModified, update pet consume items, set
@@ -7258,7 +7434,7 @@ this._localCharId = args.characterId ?? 0;
       pet.ChatMessageCallback = (msg) => this._chatBar.addLine(msg);
       pets[args.petIdx] = pet;
     } else {
-      // OG: dismiss pet â€” show chat message for the dismiss reason
+      // OG: dismiss pet Ã¢â‚¬â€ show chat message for the dismiss reason
       pets[args.petIdx] = null;
       if (args.charId === this._localCharId && args.removeReason !== undefined) {
         // OG StringPool messages for dismiss reasons (0x18C-0x18E, 0x18A9):
@@ -7307,7 +7483,7 @@ this._localCharId = args.characterId ?? 0;
     }
   }
 
-  // OG: CUser::OnPetEvol (0x8e5ce0) â€” opcode 199. Always re-summons a new
+  // OG: CUser::OnPetEvol (0x8e5ce0) Ã¢â‚¬â€ opcode 199. Always re-summons a new
   // (evolved) pet at petIdx, same Init field shape as PetActivated.
   private _applyPetEvol(args: PetEvolArgs): void {
     const pets = this._pets.get(args.charId) ?? [];
@@ -7337,7 +7513,7 @@ this._localCharId = args.characterId ?? 0;
   private _onDropEnter(args: DropEnterArgs): void {
     console.log(`[Drop] enter dropId=${args.dropId} item=${args.itemIdOrAmount} isMoney=${args.isMoney} pos=${args.x},${args.y} animated=${args.animated}`);
     // Real item icon from the already-loaded ItemIconLoader (constructed in
-    // _initMenu, used elsewhere for inventory/shop icons) â€” previously never
+    // _initMenu, used elsewhere for inventory/shop icons) Ã¢â‚¬â€ previously never
     // threaded through to DropSprite at all, so every item drop rendered as
     // the generic colored-rectangle-with-name placeholder even when real WZ
     // icon art was available. Money drops use the meso bag sprite from
@@ -7348,7 +7524,7 @@ this._localCharId = args.characterId ?? 0;
       : args.isMoney && this._itemIcons
         ? this._itemIcons.GetMoneyIcon(args.itemIdOrAmount)
         : null;
-    // OG: CDropPool::MakeMoneyAnimation â€” the meso bag's iconRaw/0..3 spin
+    // OG: CDropPool::MakeMoneyAnimation Ã¢â‚¬â€ the meso bag's iconRaw/0..3 spin
     // frames with per-bucket delays (80/200/[4000,120,120,120]ms).
     const moneyFrames = args.isMoney && this._itemIcons
       ? this._itemIcons.GetMoneyAnimation(args.itemIdOrAmount)
@@ -7372,7 +7548,7 @@ this._localCharId = args.characterId ?? 0;
 
   // TODO_AUDIT.md Twenty-fourth pass: CDropPool::OnDropLeaveField
   // (decompile/511e20.c) confirms leaveType PickupOther/PickedUpByRemote/
-  // PickedUpBySelf (2/3/5) are the only ones with a real pickUpId â€” that's
+  // PickedUpBySelf (2/3/5) are the only ones with a real pickUpId Ã¢â‚¬â€ that's
   // also the only case OG visually distinguishes from an instant disappear
   // (the real code's `case 0` does its own in-place fade, not modeled
   // here). When the picker is the local player, play DropSprite's existing
@@ -7386,7 +7562,7 @@ this._localCharId = args.characterId ?? 0;
       || args.leaveType === DropLeaveType.PickedUpByPet;
     if (isPickup && args.pickUpId === this._localCharId && this._player) {
       // OG: pickup sound (Sound.wz/Game.img/PickUpItem) when the local player
-      // collects the drop â€” including pet pickups, whose dropLeaveField also
+      // collects the drop Ã¢â‚¬â€ including pet pickups, whose dropLeaveField also
       // carries the owner's character id as pickUpId.
       this._fieldSounds?.PlayPickUp();
       const drop = this._drops.find((d) => d.DropId === args.dropId);
@@ -7394,7 +7570,7 @@ this._localCharId = args.characterId ?? 0;
       // center); NavelPosition is that anchor on the local CharLook.
       if (drop) { drop.StartAbsorb(() => this._player!.NavelPosition); return; }
     }
-    // OG: meso explosion scatter â€” drops fly outward with random velocity then fade
+    // OG: meso explosion scatter Ã¢â‚¬â€ drops fly outward with random velocity then fade
     if (args.leaveType === DropLeaveType.Explode) {
       const drop = this._drops.find((d) => d.DropId === args.dropId);
       if (drop) { drop.StartExplode(); return; }
@@ -7456,7 +7632,7 @@ this._localCharId = args.characterId ?? 0;
     this._item?.setActiveProjectileWeaponType(weaponId !== null ? getWeaponType(weaponId) : 0);
   }
 
-  // OG: CUserLocal::ApplyWeaponOption (0x9092e0) â€” reads weapon's ItemOption
+  // OG: CUserLocal::ApplyWeaponOption (0x9092e0) Ã¢â‚¬â€ reads weapon's ItemOption
   // level data and populates combat modifiers cached in _weapon* fields.
   private _computeWeaponOption(stats: EquipStats, itemLevel: number): void {
     CUserLocal.applyWeaponOption(
@@ -7465,7 +7641,7 @@ this._localCharId = args.characterId ?? 0;
     );
   }
 
-  // OG: CUserLocal::ApplyDefenseOption (0x90e970) â€” accumulates IgnoreDAM/IgnoreDAMr
+  // OG: CUserLocal::ApplyDefenseOption (0x90e970) Ã¢â‚¬â€ accumulates IgnoreDAM/IgnoreDAMr
   // from equipped defense items and applies them to reduce incoming damage.
   // Called when the local player takes damage from mobs.
   private _getDefenseOptionData(bodyPart: number): import('../ui/game/StatDerived.js').DefenseOptionData | null {
@@ -7488,7 +7664,7 @@ this._localCharId = args.characterId ?? 0;
     const inp = this._statDetailInfo.Inputs;
     inp.jobId = this._job;
 
-    // Sum equipment bonuses (equips loop â€” OG Phase 2)
+    // Sum equipment bonuses (equips loop Ã¢â‚¬â€ OG Phase 2)
     // ponytail: uses per-instance EquipStats (incStr etc.) when available,
     // falls back to LoadAttr(itemId) template stats. Option and socket
     // effects (option1/2/3, socket1/2) are looked up from ItemOption.nx and
@@ -7537,7 +7713,7 @@ this._localCharId = args.characterId ?? 0;
         const sock2 = this._getSocketContributions(stats.socket2, itemLevel);
         if (sock2) { equipStr += sock2.str; equipDex += sock2.dex; equipInt += sock2.intt; equipLuk += sock2.luk; equipMhp += sock2.maxHp; equipMmp += sock2.maxMp; watk += sock2.watk; matk += sock2.matk; accBonus += sock2.acc; evaBonus += sock2.eva; pddBonus += sock2.pdd; mddBonus += sock2.mdd; equipSpeed += sock2.speed; equipJump += sock2.jump; }
 
-        // OG: CUserLocal::ApplyWeaponOption (0x9092e0) â€” when iterating
+        // OG: CUserLocal::ApplyWeaponOption (0x9092e0) Ã¢â‚¬â€ when iterating
         // the weapon slot (bodyPart=11), also extract combat modifiers
         // from the weapon's ItemOption: critical prob/damage, DAMr, BossDAMr,
         // IgnoreTargetDEF. These affect outgoing attack calculations.
@@ -7654,7 +7830,7 @@ this._localCharId = args.characterId ?? 0;
     inp.shadowPartnerDamageRate = sec.getShadowPartnerDamageRate();
     inp.hyperBodyHpMul = sec.getHyperBodyHpMultiplier();
     inp.hyperBodyMpMul = sec.getHyperBodyMpMultiplier();
-    // OG GetCriticalProp inputs â€” the detail panel's critical % row renders
+    // OG GetCriticalProp inputs Ã¢â‚¬â€ the detail panel's critical % row renders
     // getCriticalProp(), which reads these wired fields.
     this._statDetailInfo._weaponOptionCritical = CUserLocal.weaponCritProb;
     // packed CTS value: critRate = value >> 8 (getCriticalProp does the shift)
@@ -7723,7 +7899,7 @@ this._localCharId = args.characterId ?? 0;
     this._buffVisual.SetHyperBody(sec.isHyperBodyActive(), this._player);
     this._buffVisual.SetShadowPartner(sec.isShadowPartnerActive());
     this._buffVisual.SetBooster(sec.isBoosterActive());
-    // OG: CUserLocal::IsImmovable â€” stun/freeze/web debuffs make the character
+    // OG: CUserLocal::IsImmovable Ã¢â‚¬â€ stun/freeze/web debuffs make the character
     // immovable. The visual above already draws the stun stars; this drives the
     // physics so a stunned/frozen/webbed player actually can't move (CVecCtrl gates on it).
     const isImmovableDebuff = sec.isStunActive() || sec.isFrozenActive() || sec.isWebActive();
@@ -7745,7 +7921,7 @@ this._localCharId = args.characterId ?? 0;
     this._player!.morphTemplateId = avatar?.morphTemplateId || buff.morph;
   }
 
-  // OG: CUserLocal::OnSetDead @0x903FC0 â€” the instant HP hits 0 the local
+  // OG: CUserLocal::OnSetDead @0x903FC0 Ã¢â‚¬â€ the instant HP hits 0 the local
   // character freezes (immovable), plays the 'dead' action, spins, spawns the
   // tombstone at the player position, and schedules the revive dialog (which
   // this client opens once the tombstone-fall finishes landing). All death
@@ -7755,9 +7931,9 @@ this._localCharId = args.characterId ?? 0;
     this._isPlayerDead = true;
     this._physics.SetDead(true);
     this._player?.PlayOneTimeAction('dead');
-    // OG CUser::OnSetDead @0x8E4250 â€” the tomb/revive point is clamped to the
+    // OG CUser::OnSetDead @0x8E4250 Ã¢â‚¬â€ the tomb/revive point is clamped to the
     // foothold underneath (x, y-20); when that ground is far below (>80px),
-    // the xÂ±15 neighbours are probed and whichever lands closer wins.
+    // the xÃ‚Â±15 neighbours are probed and whichever lands closer wins.
     let sx = Math.round(this._physics.Position.x);
     let sy = Math.round(this._physics.Position.y);
     const field = this._field;
@@ -7785,7 +7961,7 @@ this._localCharId = args.characterId ?? 0;
     }
     this._tombstone?.Spawn({ x: sx, y: sy });
     // OG CUser::OnSetDead: the OverFace/UnderFace body layers' alpha is set to
-    // 0 instantly and animated back to 255 over currentTime+1250ms â€” the
+    // 0 instantly and animated back to 255 over currentTime+1250ms Ã¢â‚¬â€ the
     // corpse hides during the tomb drop and fades back in beneath it. The
     // chat-balloon additional layer is removed too (RemoveAdditionalLayer).
     if (this._player) this._player.container.alpha = 0;
@@ -7806,11 +7982,11 @@ this._localCharId = args.characterId ?? 0;
     this._tombstone?.Reset();
   }
 
-  /** OG: CWvsContext::Update â€” open CUIRevive once 2200ms has elapsed since death.
+  /** OG: CWvsContext::Update Ã¢â‚¬â€ open CUIRevive once 2200ms has elapsed since death.
    *  Kind selection per CUIRevive::OnCreate @0x83CEA0:
-   *  1. SoulStone buff active (ss.soulStone > 0) â†’ Notice/4, premium revive
-   *  2. Wheel of Destiny (item 5510000) in inventory â†’ Notice/2, premium revive
-   *  3. Otherwise â†’ Notice/0 plain town revive. */
+   *  1. SoulStone buff active (ss.soulStone > 0) Ã¢â€ â€™ Notice/4, premium revive
+   *  2. Wheel of Destiny (item 5510000) in inventory Ã¢â€ â€™ Notice/2, premium revive
+   *  3. Otherwise Ã¢â€ â€™ Notice/0 plain town revive. */
   protected _updateReviveDialog(dtMs: number): void {
     if (this._reviveDialogClockMs < 0) return;
     this._reviveDialogClockMs += dtMs;
@@ -7830,7 +8006,7 @@ this._localCharId = args.characterId ?? 0;
 
   private _onStatChanged(args: StatChangedArgs): void {
     if (args.hp !== undefined) {
-      // OG: Show poison DoT damage number â€” mob poison ticks HP server-side,
+      // OG: Show poison DoT damage number Ã¢â‚¬â€ mob poison ticks HP server-side,
       // the client shows a red floating number when HP decreases from poison.
       if (this._prevHp >= 0 && args.hp < this._prevHp && this._physics && this._dmgNumbers) {
         const sec = this.game.fieldHandlers.secondaryStat;
@@ -7851,7 +8027,7 @@ this._localCharId = args.characterId ?? 0;
     if (args.mp !== undefined) { this._statusBar.mp = args.mp; this._stats.mp = args.mp; }
     if (args.maxMp !== undefined) { this._statusBar.maxMp = args.maxMp; this._stats.maxMp = args.maxMp; }
 
-    // OG: CField_Dojang::Update â€” player stats overlay in dojang maps
+    // OG: CField_Dojang::Update Ã¢â‚¬â€ player stats overlay in dojang maps
     if (this._field?.Info.FieldType === 14) {
       this._dojangHud.updatePlayerStats(
         this._stats.hp ?? 0, this._stats.maxHp ?? 0,
@@ -7877,14 +8053,14 @@ this._localCharId = args.characterId ?? 0;
       this._firePetEvent(0);
       // OG: level up effect and sound
       // OG: CAnimationDisplayer::Effect_General (BasicEff.img/LevelUp) +
-      // play_game_sound "LevelUp" — same pair as CUser::OnEffect case 0,
+      // play_game_sound "LevelUp" â€” same pair as CUser::OnEffect case 0,
       // rendered locally since the server excludes self from that broadcast.
       if (args.level > prevLevel && this._physics) {
         this._playStatEffect('BasicEff.img/LevelUp', 'Game.img/LevelUp');
       }
     }
     // TODO_AUDIT.md Sixty-fifth pass: real bug found while wiring CUISkill's
-    // skill-up gate â€” args.sp was already fully decoded (the ExtendSP fix)
+    // skill-up gate Ã¢â‚¬â€ args.sp was already fully decoded (the ExtendSP fix)
     // but never forwarded anywhere, so SkillBook's level-up button never
     // appeared at all regardless of any gating logic.
     if (args.sp !== undefined) this._skill.sp = args.sp;
@@ -7910,12 +8086,12 @@ this._localCharId = args.characterId ?? 0;
       this._stats.job = jobName;
       this._stats.jobId = args.job;
       if (this._statusBar) this._statusBar.jobName = jobName;
-      // OG: CUISkill::SetSkillRootList is driven by the live job â€” job
+      // OG: CUISkill::SetSkillRootList is driven by the live job Ã¢â‚¬â€ job
       // advancement re-derives the skill roots/tabs. The server does not
       // resend skill records on job change (kinoko behavior), so rebuild the
       // SkillBook from the records we already hold with the new job.
       if (prevJob !== args.job && this._skillRecords) this._onSkillRecordResult(this._skillRecords);
-      // OG: CWvsContext::OnStatChanged dwFlag & JOB block — Effect_General
+      // OG: CWvsContext::OnStatChanged dwFlag & JOB block â€” Effect_General
       // BasicEff.img/JobChanged at the character + play_game_sound "JobChanged".
       // The server excludes the advancing player from the UserEffect broadcast.
       if (prevJob !== args.job) this._playStatEffect('BasicEff.img/JobChanged', 'Game.img/JobChanged');
@@ -8009,11 +8185,11 @@ this._localCharId = args.characterId ?? 0;
   }
 
   // OG get_critical_skill_level (0x70A240), fully decompiled:
-  // - job/1000 == 3 â†’ skill 30000022 (race-3 critical)
-  // - WT 45|46 (bow/xbow) â†’ cygnus(job/1000==1) ? 13000000 : 3000001 Critical Shot
-  // - WT 47 (claw)       â†’ cygnus ? 14100001 : 4100001 Critical Throw
-  // - WT 48 (knuckle)    â†’ 15110000 Critical Punch
-  // - other weapon types / unarmed â†’ no base critical
+  // - job/1000 == 3 Ã¢â€ â€™ skill 30000022 (race-3 critical)
+  // - WT 45|46 (bow/xbow) Ã¢â€ â€™ cygnus(job/1000==1) ? 13000000 : 3000001 Critical Shot
+  // - WT 47 (claw)       Ã¢â€ â€™ cygnus ? 14100001 : 4100001 Critical Throw
+  // - WT 48 (knuckle)    Ã¢â€ â€™ 15110000 Critical Punch
+  // - other weapon types / unarmed Ã¢â€ â€™ no base critical
   private _baseCriticalSkillId(): number {
     if (Math.floor(this._job / 1000) === 3) return 30000022;
     const weaponId = this._equip.equippedWeaponItemId;
@@ -8144,12 +8320,12 @@ this._localCharId = args.characterId ?? 0;
     const dlg = this._utilDlg;
     if (!dlg) return;
 
-    // OG: CScriptMan::OnScriptMessage â†’ CUtilDlgEx::SetUtilDlgEx. The packet's
+    // OG: CScriptMan::OnScriptMessage Ã¢â€ â€™ CUtilDlgEx::SetUtilDlgEx. The packet's
     // `messageParam` byte IS m_bParam (NotCancellable=0x1, PlayerAsSpeaker=0x2,
-    // SpeakerOnRight=0x4, FlipSpeaker=0x8) â€” forwarded so SetNPC/background/
+    // SpeakerOnRight=0x4, FlipSpeaker=0x8) Ã¢â‚¬â€ forwarded so SetNPC/background/
     // buttons honor the speaker layout. The Say/SayImage type must echo the
     // wire msgType in the reply (two separate OnSay/OnSayImage functions each
-    // hardcode their own constant â€” Say=0, SayImage=1).
+    // hardcode their own constant Ã¢â‚¬â€ Say=0, SayImage=1).
     dlg.m_bParam = (args as { messageParam?: number }).messageParam ?? 0;
     dlg.scriptMsgType = args.msgType;
     dlg.npcNameOf = (id) => this.game.nameService?.NpcName(id) ?? null;
@@ -8159,7 +8335,7 @@ this._localCharId = args.characterId ?? 0;
       case 0: // SAY
       case 1: { // SAY_IMAGE
         // hasPrev/hasNext (decoded by FieldHandlers from CScriptMan::OnSay)
-        // select Prev/Next vs OK â€” a multi-page monologue shows "Next" (or
+        // select Prev/Next vs OK Ã¢â‚¬â€ a multi-page monologue shows "Next" (or
         // "Prev"+"Next" once past the first page), not a lone "OK".
         dlg.SetUtilDlgEx(UtilDlgType.TEXT, args.speakerId, false, false, args.text);
         dlg.m_bSpeakerOnRight = (dlg.m_bParam & ScriptMessageParam.SpeakerOnRight) !== 0;
@@ -8167,7 +8343,7 @@ this._localCharId = args.characterId ?? 0;
         dlg.show();
         break;
       }
-      case 2: // ASK_YES_NO â€” genuine yes/no prompt (CScriptMan::OnAskYesNo)
+      case 2: // ASK_YES_NO Ã¢â‚¬â€ genuine yes/no prompt (CScriptMan::OnAskYesNo)
         dlg.SetUtilDlgEx(UtilDlgType.YESNO, args.speakerId, false, false, args.text);
         dlg.SetUtilDlgEx_YESNO();
         dlg.show();
@@ -8188,7 +8364,7 @@ this._localCharId = args.characterId ?? 0;
           0, Math.max(1, (args.maxNum ?? 9).toString().length), false);
         dlg.show();
         break;
-      case 5: // ASK_MENU â€” selectable dot list
+      case 5: // ASK_MENU Ã¢â‚¬â€ selectable dot list
         dlg.SetUtilDlgEx(UtilDlgType.LIST, args.speakerId, false, false, args.text);
         if (args.menu) {
           for (let i = 0; i < args.menu.length; i++) dlg.AddDotLine(args.menu[i], i, 5);
@@ -8196,7 +8372,7 @@ this._localCharId = args.characterId ?? 0;
         dlg.SetUtilDlgEx_LIST(true);
         dlg.show();
         break;
-      case 6: // ASK_QUIZ â€” free-text answer with the hint pre-filled
+      case 6: // ASK_QUIZ Ã¢â‚¬â€ free-text answer with the hint pre-filled
       case 7: { // ASK_SPEED_QUIZ
         dlg.SetUtilDlgEx(UtilDlgType.INPUT_STR, args.speakerId, false, false, args.text);
         dlg.SetUtilDlgEx_INPUT_STR(args.quizHint ?? '', args.quizMinLength ?? 0, args.quizMaxLength ?? 0, false, 0);
@@ -8204,7 +8380,7 @@ this._localCharId = args.characterId ?? 0;
         dlg.show();
         break;
       }
-      case 13: { // ASK_ACCEPT (quest) â€” quest-variant Yes/No (BtQYes/BtQNo)
+      case 13: { // ASK_ACCEPT (quest) Ã¢â‚¬â€ quest-variant Yes/No (BtQYes/BtQNo)
         dlg.pendingQuestId = args.questId ?? 0;
         dlg.pendingNpcId = args.speakerId ?? 0;
         dlg.pendingX = 0;
@@ -8237,7 +8413,7 @@ this._localCharId = args.characterId ?? 0;
     switch (r.type) {
       case 'ok':
       case 'next':
-        // Ok/Next â†’ Select(1); menu selection carries GetSelect().
+        // Ok/Next Ã¢â€ â€™ Select(1); menu selection carries GetSelect().
         if (dlg.m_dlgType === UtilDlgType.LIST && dlg.m_nSelect >= 0) {
           this.game.session.send(GameSender.ScriptAnswerNumber(ScriptMessageType.AskMenu, dlg.m_nSelect));
         } else {
@@ -8247,7 +8423,7 @@ this._localCharId = args.characterId ?? 0;
       case 'prev':
       case 'cancel':
         // OG collapses Prev and Cancel to the same wire value
-        // (ScriptAnswerAction.Cancel) â€” there is no distinct back-page byte.
+        // (ScriptAnswerAction.Cancel) Ã¢â‚¬â€ there is no distinct back-page byte.
         this.game.session.send(GameSender.ScriptAnswerCancel(msgType));
         break;
       case 'yes':
@@ -8272,7 +8448,7 @@ this._localCharId = args.characterId ?? 0;
 
   private _onShopOpen(args: any): void {
     if (args.items) {
-      // OG: CShopDlg::SetShopDlg (0x6EAB00) â€” populate shop with all decoded fields
+      // OG: CShopDlg::SetShopDlg (0x6EAB00) Ã¢â‚¬â€ populate shop with all decoded fields
       const items = args.items.map((i: any) => ({
         itemId: i.itemId,
         price: i.price,
@@ -8299,7 +8475,7 @@ this._localCharId = args.characterId ?? 0;
 
   private _onShopResult(args: any): void {
     // Per `CShopDlg::OnPacket` (decompile/6EB7D0.c): case 0 is a silent
-    // success (no notice shown by the real client either â€” it just
+    // success (no notice shown by the real client either Ã¢â‚¬â€ it just
     // refreshes the sell-list selection); 1/2/3/etc. are generic
     // string-table error notices with no real per-case text available in
     // this client to port (StringPool ids only, not literal strings in
@@ -8327,14 +8503,14 @@ this._localCharId = args.characterId ?? 0;
   }
 
   // Per `CStoreBankDlg::OnPacket` (decompile/745c60.c): sub-action 0x24 '$' is
-  // the only one that needs a player decision â€” a YesNo fee confirmation
+  // the only one that needs a player decision Ã¢â‚¬â€ a YesNo fee confirmation
   // before the client sends StoreBankGetAllConfirm. The rest are notices.
   private _onEntrustedShopCheckResult(args: EntrustedShopCheckResultArgs): void {
     // OG: CWvsContext::OnEntrustedShopCheckResult (decompile/9FFCB0.c).
     // subType 7 (open-shop trigger) needs a shop-title text-input dialog
     // with profanity filtering this client doesn't have; subType 17
     // (open-with-PIN) needs an in-game secondary-password prompt that
-    // also doesn't exist (only at character select) â€” both intentionally
+    // also doesn't exist (only at character select) Ã¢â‚¬â€ both intentionally
     // unhandled rather than guessed at.
     switch (args.subType) {
       case 8:
@@ -8377,12 +8553,12 @@ this._localCharId = args.characterId ?? 0;
 
   // Severe, confirmed bug (FIXED): `FieldHandlers._readTrunkBlock` (the only
   // source of `TrunkResultArgs.items`) emits `{invType, positionInType,
-  // itemId, quantity}` per item â€” every single item it decodes is TRUNK
+  // itemId, quantity}` per item Ã¢â‚¬â€ every single item it decodes is TRUNK
   // contents; this opcode (`OutHeader.TrunkResult=368`) carries no separate
   // "player's own inventory" item list at all (confirmed by reading
-  // `CTrunkDlg::OnPacket`, decompile/76A990.c, again above this pass â€” there
+  // `CTrunkDlg::OnPacket`, decompile/76A990.c, again above this pass Ã¢â‚¬â€ there
   // is no second item block anywhere in this function). The previous code
-  // read `i.isTrunk` (a field that has never existed on this shape â€” always
+  // read `i.isTrunk` (a field that has never existed on this shape Ã¢â‚¬â€ always
   // `undefined`) to split items between the trunk tab and the inventory
   // tab, and read `i.position` (the real field is `positionInType`, also
   // always `undefined`). Net effect: `trunkItems` was always `[]` (the
@@ -8415,13 +8591,13 @@ this._localCharId = args.characterId ?? 0;
 
   // `args.items` here (decoded by `FieldHandlers.handleMiniRoom`'s
   // MRP_EnterResult case) is `{setCount, setSize, price, item}[]`, where
-  // `item` is the full decoded item object â€” NOT yet the flat
+  // `item` is the full decoded item object Ã¢â‚¬â€ NOT yet the flat
   // `{index, itemId, name, setCount, setSize, price}` shape
   // `PersonalShop.ShopItemSlot` (and `OpenAsOwner`/`OpenAsVisitor`) expect.
   // The PSP_Refresh case below already does this exact remap correctly;
   // shared here so MRP_EnterResult's initial shop-open gets the same
   // treatment instead of passing the raw decoder shape straight through
-  // (confirmed bug, FIXED â€” every slot's `itemId`/`name`/`index` would have
+  // (confirmed bug, FIXED Ã¢â‚¬â€ every slot's `itemId`/`name`/`index` would have
   // read back `undefined` on first opening a personal shop, even though a
   // subsequent PSP_Refresh would have "fixed" the display by accident).
   private static _toShopItemSlots(raw: any[]): { index: number; itemId: number; name: string; setCount: number; setSize: number; price: number }[] {
@@ -8435,20 +8611,20 @@ this._localCharId = args.characterId ?? 0;
   // opcode 233 = OutHeader.UserEffectLocal/Remote per CUserLocal::OnPacket's
   // case 233) is a ~30-case sub-dispatcher this client only decodes at the
   // raw effectType+payload level so far. Only effectType 14 (0xE) and 20
-  // (0x14) are confirmed here â€” both just `DecodeStr` a WZ UOL then call
+  // (0x14) are confirmed here Ã¢â‚¬â€ both just `DecodeStr` a WZ UOL then call
   // `CAnimationDisplayer::Effect_Reserved(uol, ..., playerX, playerY)`,
   // i.e. "play this effect at the (local or remote) player's own current
   // position". `Effect_Reserved` itself is a large, generalized effect
-  // descriptor reader (RESERVEDINFO â€” randomized scatter/repeat behavior,
+  // descriptor reader (RESERVEDINFO Ã¢â‚¬â€ randomized scatter/repeat behavior,
   // optional item-linkage) that eventually drives `Effect_Squib` via its
-  // own per-frame Update, none of which is replicated here â€” this plays
+  // own per-frame Update, none of which is replicated here Ã¢â‚¬â€ this plays
   // the resolved WZ node once via the existing one-shot overlay instead of
   // the real randomized/repeating behavior. The other ~28 effectTypes are
   // not decoded at all yet.
   /** Per-frame couple-chair proximity pairing (OG CUserPool::Update,
    *  0x94C370). Sweeps characters with couple-chair items (3012xxx), groups
    *  unpaired chars by item ID, pairs closest within ~100px distance.
-   *  ponytail: overlay rendering (heart zone + per-character effect) deferred â€”
+   *  ponytail: overlay rendering (heart zone + per-character effect) deferred Ã¢â‚¬â€
    *  cosmetic only. See CUser::SetCoupleChairEffect (0x8F1FE0, ~2KB). */
   private _updateKeyDownBar(): void {
     if (!this._physics || !this._player) {
@@ -8461,8 +8637,8 @@ this._localCharId = args.characterId ?? 0;
       this._keyDownBar.hide();
       return;
     }
-    // OG: CUserLocal::DrawKeyDownBar â€” shows bar when preparing a skill.
-    // Fill fraction from charge progress (simplified: 0â†’1 over 1 second hold).
+    // OG: CUserLocal::DrawKeyDownBar Ã¢â‚¬â€ shows bar when preparing a skill.
+    // Fill fraction from charge progress (simplified: 0Ã¢â€ â€™1 over 1 second hold).
     const now = Date.now();
     if (!this._keyDownStartTime || this._lastPrepSkillId !== prepId) {
       this._keyDownStartTime = now;
@@ -8544,9 +8720,9 @@ this._localCharId = args.characterId ?? 0;
         this._couplePairs.set(b, { itemId: sitters[i].itemId, pairCharId: a });
         pairedThisFrame.add(a);
         pairedThisFrame.add(b);
-        // OG: couple-chair pairing â€” notify server to apply stat bonuses
+        // OG: couple-chair pairing Ã¢â‚¬â€ notify server to apply stat bonuses
         this.onCoupleChairPairChanged?.(true, a, b, sitters[i].itemId);
-        // Start heart overlay at midpoint â€” OG: Effect/ItemEff.img/<itemId>/0
+        // Start heart overlay at midpoint Ã¢â‚¬â€ OG: Effect/ItemEff.img/<itemId>/0
         if (!this._coupleHearts.some((h) => (h.a === a && h.b === b) || (h.a === b && h.b === a))) {
           const node = this._effectWz?.GetItem(`ItemEff.img/${sitters[i].itemId}/0`);
           if (node) {
@@ -8580,7 +8756,7 @@ this._localCharId = args.characterId ?? 0;
       this._couplePairs.delete(charId);
       if (pair) {
         this._couplePairs.delete(pair.pairCharId);
-        // OG: couple-chair unpairing â€” notify server to remove stat bonuses
+        // OG: couple-chair unpairing Ã¢â‚¬â€ notify server to remove stat bonuses
         this.onCoupleChairPairChanged?.(false, charId, pair.pairCharId, pair.itemId);
       }
       // Clean up heart overlay
@@ -8620,17 +8796,17 @@ this._localCharId = args.characterId ?? 0;
 
   /** ponytail: when combo counter > 0, try indexed variant <wzPath>/<combo>
    *  first (OG Effect_SkillUse format-ID-986 loop). Falls back to base path
-   *  if no such sub-node. Remote chars not tracked â€” only local combo. */
+   *  if no such sub-node. Remote chars not tracked Ã¢â‚¬â€ only local combo. */
   private _onUserEffect(args: UserEffectArgs): void {
     if (args.effectType === 0) {
-      // OG: CUser::OnEffect case 0 (LevelUp) — Effect_General BasicEff.img/LevelUp
+      // OG: CUser::OnEffect case 0 (LevelUp) â€” Effect_General BasicEff.img/LevelUp
       // at the character + play_game_sound "LevelUp". The server excludes the
       // leveling player; the local client renders its own via OnStatChanged.
       this._playStatEffect('BasicEff.img/LevelUp', 'Game.img/LevelUp', args);
       return;
     }
     if (args.effectType === 10) {
-      // OG: CUser::OnEffect case 0xA (JobChanged) â€” plays BasicEff.img/JobChanged
+      // OG: CUser::OnEffect case 0xA (JobChanged) Ã¢â‚¬â€ plays BasicEff.img/JobChanged
       // at the character (layer under face) + Sound/Game.img/JobChanged.
       this._playStatEffect('BasicEff.img/JobChanged', 'Game.img/JobChanged', args);
       return;
@@ -8666,12 +8842,12 @@ this._localCharId = args.characterId ?? 0;
   }
 
   // OG: CUserRemote::OnAttack (live IDA decompile, Maplestory95.exe.i64
-  // 0x95a670) â€” see UserAttackArgs/handleUserAttack doc comments for the
+  // 0x95a670) Ã¢â‚¬â€ see UserAttackArgs/handleUserAttack doc comments for the
   // common-case-only decode this is built on. Applies the same visual
   // treatment `_tryMeleeAttack` already gives the local player's own
   // attacks (hit flash, damage number, knockback) to other players'
   // broadcast attacks, plus their own attack pose. Mob death itself stays
-  // server-authoritative (a separate, already-existing mob-leave path) â€”
+  // server-authoritative (a separate, already-existing mob-leave path) Ã¢â‚¬â€
   // this only ever calls OnHit, never kills a mob locally.
   private _dispatchCashItem(slot: number, itemId: number, itemName: string): void {
     const t = getConsumeCashItemType(itemId);
@@ -8703,7 +8879,7 @@ this._localCharId = args.characterId ?? 0;
     if (attacker && !attacker.PlayAttackCode(args.action)) attacker.Attack();
 
     // OG: CUserRemote::OnAttack plays the remote player's skill sound
-    // (play_skill_sound @0x966b60 â€” Skill.img/{skillId}/attack1..3).
+    // (play_skill_sound @0x966b60 Ã¢â‚¬â€ Skill.img/{skillId}/attack1..3).
     if (attacker && args.skillId > 0 && (args.attackType === 'magic' || args.attackType === 'shoot')) {
       this._playSkillSound(args.skillId, 'attack1');
     }
@@ -8730,7 +8906,7 @@ this._localCharId = args.characterId ?? 0;
           const f = loadFrameSequence(this._loader, ballNode);
           if (f.length > 0) ballFrames = f;
         }
-        // TODO_AUDIT.md Hundred-and-forty-fourth pass / ponytail: skill ball fallback â€” try bullet item's info canvases (OG NormalBullet::PrepareBulletLayer 0x44C380)
+        // TODO_AUDIT.md Hundred-and-forty-fourth pass / ponytail: skill ball fallback Ã¢â‚¬â€ try bullet item's info canvases (OG NormalBullet::PrepareBulletLayer 0x44C380)
         if (!ballFrames && args.bulletItemId > 0 && this._itemWz) {
           const group = Math.floor(args.bulletItemId / 10000).toString().padStart(4, '0');
           const id = args.bulletItemId.toString().padStart(8, '0');
@@ -8740,7 +8916,7 @@ this._localCharId = args.characterId ?? 0;
             if (f.length > 0) ballFrames = f;
           }
         }
-        // TODO_AUDIT.md Hundred-and-seventy-fourth pass: CFadeoutBullet subset â€”
+        // TODO_AUDIT.md Hundred-and-seventy-fourth pass: CFadeoutBullet subset Ã¢â‚¬â€
         // fade projectile visuals over their short travel lifetime instead of popping off.
         this._projectiles.Spawn(muzzle.x, muzzle.y, firstTarget.Position.x, firstTarget.Position.y - 40, undefined, ballFrames, true);
       }
@@ -8794,7 +8970,7 @@ this._localCharId = args.characterId ?? 0;
             this._personalShop.OpenAsVisitor(args.title ?? '', items, args.myPosition ?? 1);
           }
         } else if (args.roomType === 5 && this._entrustedShop) {
-          // OG: CEntrustedShopDlg::Open â€” owner position 0 = owner, 1+ = visitor
+          // OG: CEntrustedShopDlg::Open Ã¢â‚¬â€ owner position 0 = owner, 1+ = visitor
           const isOwner = (args.myPosition ?? 0) === 0;
           const shopItems = (args.items ?? []).map((it: any, idx: number) => ({
             index: idx,
@@ -8847,7 +9023,7 @@ this._localCharId = args.characterId ?? 0;
           this._personalShop?.NotifySoldItem(args.itemIndex, args.quantity ?? 1, args.buyerName ?? '');
         }
         break;
-      // â”€â”€ MemoryGame sub-protocol â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // Ã¢â€â‚¬Ã¢â€â‚¬ MemoryGame sub-protocol Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
       case MiniRoomProtocolFull.MGRP_Ready:
         this._memoryGame?.OnUserReady(args.userIndex ?? 0);
         break;
@@ -8886,6 +9062,16 @@ this._localCharId = args.characterId ?? 0;
       case MiniRoomProtocolFull.MGRP_LeaveEngageCancel:
         break;
     }
+  }
+
+  /** Current member grade (1..5) for BtGradeUp/Down deltas; 0 = unknown. */
+  private _guildRankOf(charId: number): number {
+    const m = this._userList.guildMembers.find((g) => g.charId === charId);
+    if (!m) return 0;
+    const r = m.rank.toLowerCase();
+    if (r.startsWith('master')) return 1;
+    if (r.startsWith('jr')) return 2;
+    return 5;
   }
 
   private _onMessengerResult(args: MessengerResultArgs): void {

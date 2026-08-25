@@ -1,5 +1,4 @@
-import { Container, Graphics, Text, TextStyle } from 'pixi.js';
-import { ClipboardHelper } from '../../platform/ClipboardHelper.js';
+import { Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
 import { GamePanel } from './GamePanel.js';
 import { WzTextureLoader } from '../../render/WzTextureLoader.js';
 import { WzPackage } from '../../wz/WzPackage.js';
@@ -8,91 +7,133 @@ import { WzCanvas } from '../../wz/WzCanvas.js';
 import { WzSprite } from '../../render/WzSprite.js';
 import { ScrollBar } from './ScrollBar.js';
 import { CCtrlTab } from './CCtrlTab.js';
-import { Sprite } from 'pixi.js';
+import { Button } from '../Button.js';
 
-// OG CUIUserList constants (from IDA decompilation)
-// Window: 264×382, CreateUIWndPosSaved(264, 382, 10)
+// ═══ CUIUserList (v95 IDB) ═══════════════════════════════════════════════════
+// Window 264x382 (CreateUIWndPosSaved 264,382,key10). OnCreate @0x8DB080:
+// backgrnd/backgrnd2 from UIWindow2.img/UserList/Main, tab control id 2001
+// CreateCtrl_2(.., 8 /*type*/, 9 /*l*/, 25 /*t*/, 250 /*w*/, 19 /*h*/),
+// scrollbar id 2000 at x=243 (SetScrollBar @0x8B7920, wheelRange 235),
+// fonts FONT_DODOOMCHE_11_WHITE/BLACK/GRAY90 + Arial-11 customs
+// (#D10000 blocked, #555555 online, #CBCBCB offline, #666666 location,
+// #B5B5B5/#777777 grays — computed from the OnCreate color immediates).
+//
+// Per-tab buttons (LayoutMan::AddButton uol,id,0,0 — positions come from the
+// WZ canvas origin nodes) with ids from the per-tab OnButtonClicked switches:
+//   Friend 2010-2024 (CTabFriend::OnButtonClicked @0x8D9410)
+//   Party 2200-2208 (@0x8D85B0), Guild 2030-2042 + 2070-2075 (@0x8D5310),
+//   Alliance 2050-2060 + 2080+ (@0x8CCFC0), BlackList 2150/2151 (@0x8D0B50),
+//   Expedition ids 12-22 (TabExpedition::InitState @0x7AFF90).
+// List rendering per CUIUserList::Draw @0x8D0CD0 and the per-tab Draw fns.
+// ═════════════════════════════════════════════════════════════════════════════
+
 const PANEL_W = 264;
 const PANEL_H = 382;
-const ROW_H = 20; // OG: row height = 20px per item
-const LIST_START_Y = 50; // below tab bar
-const TAB_Y = 9;
-const TAB_CONTROL_ID = 2001;
-const SCROLLBAR_ID = 2000;
+const ROW_H = 20;
 
-// OG: 6 tabs — Friend(0), Party(1), Expedition(2), Guild(3), Alliance(4), BlackList(5)
-const TAB_NAMES = ['Friend', 'Party', 'Guild', 'Alliance', 'Block', 'Exped'];
+// Tab strip: CreateCtrl_2(tab, this, 2001, 8, 9, 25, 250, 19, paramTab)
+const TAB_X = 9;
+const TAB_Y = 25;
+const TAB_W = 250;
+const TAB_CONTROL_ID = 2001;
+
+// OG tab order (m_nCurTab): Friend(0), Party(1), Expedition(2), Guild(3),
+// Alliance(4), BlackList(5).
+const TAB_NAMES = ['Friend', 'Party', 'Exped', 'Guild', 'Union', 'Block'];
 const TAB_INDICES = { FRIEND: 0, PARTY: 1, EXPEDITION: 2, GUILD: 3, ALLIANCE: 4, BLACKLIST: 5 };
 
-// OG: Button counts per tab (from SetButton @ 0x8b76e0)
-const FRIEND_BUTTONS = 15;
-const PARTY_BUTTONS = 9;
-const GUILD_BUTTONS = 13;
-const ALLIANCE_BUTTONS = 11;
-const BLACKLIST_BUTTONS = 2;
-
-// OG: Scrollbar positions per tab (from SetScrollBar @ 0x8b7920)
+// SetScrollBar @0x8B7920 — per-tab {y, h} + range base.
 const SCROLLBAR_X = 243;
-const SCROLLBAR_CONFIG: Record<number, { y: number; h: number; offset: number }> = {
-  [TAB_INDICES.FRIEND]: { y: 115, h: 0, offset: 0 }, // dynamic from m_nListHeight
-  [TAB_INDICES.PARTY]: { y: 60, h: 225, offset: 117 },
-  [TAB_INDICES.EXPEDITION]: { y: 60, h: 225, offset: 28 }, // OG: TabExpedition list height
-  [TAB_INDICES.GUILD]: { y: 100, h: 185, offset: 105 },
-  [TAB_INDICES.ALLIANCE]: { y: 100, h: 185, offset: 105 },
-  [TAB_INDICES.BLACKLIST]: { y: 60, h: 228, offset: 27 },
-};
 const SCROLLBAR_WHEEL_RANGE = 235;
+const SB_CONFIG: Record<number, { y: number; h: number; base: number }> = {
+  [TAB_INDICES.FRIEND]: { y: 115, h: 160, base: 0 },
+  [TAB_INDICES.PARTY]: { y: 60, h: 225, base: 117 },
+  [TAB_INDICES.EXPEDITION]: { y: 60, h: 225, base: 28 },
+  [TAB_INDICES.GUILD]: { y: 100, h: 185, base: 105 },
+  [TAB_INDICES.ALLIANCE]: { y: 100, h: 185, base: 105 },
+  [TAB_INDICES.BLACKLIST]: { y: 60, h: 228, base: 27 },
+};
 
-// OG: Fonts from OnCreate (FONT_DODOOMCHE_11_*)
-const _fontWhite = new TextStyle({ fill: '#FFFFFF', fontSize: 11, fontFamily: 'monospace' });
-const _fontBlack = new TextStyle({ fill: '#000000', fontSize: 11, fontFamily: 'monospace' });
-const _fontGray = new TextStyle({ fill: '#909090', fontSize: 11, fontFamily: 'monospace' });
-const _fontGrayB5 = new TextStyle({ fill: '#FFB5B5', fontSize: 11, fontFamily: 'monospace' }); // OG: 0xFFB5B5
-const _fontGray77 = new TextStyle({ fill: '#FF7777', fontSize: 11, fontFamily: 'monospace' }); // OG: 0xFF7777
-const _fontGroupName = new TextStyle({ fill: '#FFFFFF', fontSize: 10, fontFamily: 'monospace' }); // OG: same as m_pFontWhite
-const _fontOnline = new TextStyle({ fill: '#FF54A5', fontSize: 11, fontFamily: 'monospace' }); // OG: 0xFF54A5
-const _fontOffline = new TextStyle({ fill: '#FFCA8B', fontSize: 11, fontFamily: 'monospace' }); // OG: 0xFFCA8B
-const _fontLocation = new TextStyle({ fill: '#FF6666', fontSize: 10, fontFamily: 'monospace' }); // OG: 0xFF6666
-const _fontBlocked = new TextStyle({ fill: '#FF0D0D', fontSize: 11, fontFamily: 'monospace' }); // OG: 0xFF0D0D
-const _tabStyle = new TextStyle({ fill: '#DCC896', fontSize: 10, fontFamily: 'monospace' });
+// Fonts (OnCreate @0x8DB080).
+const F_WHITE = '#FFFFFF';    // FONT_DODOOMCHE_11_WHITE
+const F_BLACK = '#000000';    // FONT_DODOOMCHE_11_BLACK
+const F_GRAY90 = '#909090';   // FONT_DODOOMCHE_11_GRAY90
+const F_BLOCKED = '#D10000';  // Arial 11 custom
+const F_ONLINE = '#555555';
+const F_OFFLINE = '#CBCBCB';
+const F_LOCATION = '#666666';
+const SEL_FILL = 0x244768;    // CTabFriend::Draw selection fill 0xFF244768
+
+const _styleWhite = new TextStyle({ fill: F_WHITE, fontSize: 11, fontFamily: 'Arial' });
+const _styleBlack = new TextStyle({ fill: F_BLACK, fontSize: 11, fontFamily: 'Arial' });
+const _styleGray90 = new TextStyle({ fill: F_GRAY90, fontSize: 11, fontFamily: 'Arial' });
+const _styleBlocked = new TextStyle({ fill: F_BLOCKED, fontSize: 11, fontFamily: 'Arial' });
+const _styleOnline = new TextStyle({ fill: F_ONLINE, fontSize: 11, fontFamily: 'Arial' });
+const _styleOffline = new TextStyle({ fill: F_OFFLINE, fontSize: 11, fontFamily: 'Arial' });
+const _styleLocation = new TextStyle({ fill: F_LOCATION, fontSize: 11, fontFamily: 'Arial' });
 
 export interface UserEntry {
   charId: number;
   name: string;
   level: number;
   job: string;
+  /** Friend-group name (OG GROUPITEM); defaults to "Friends". */
+  group?: string;
+  blocked?: boolean;
 }
 
 export interface PartyEntry { charId: number; name: string; level: number; job: string; isLeader: boolean }
-export interface GuildEntry { charId: number; name: string; rank: string; online: boolean }
+export interface GuildEntry { charId: number; name: string; rank: string; online: boolean; job?: string; level?: number }
 export interface AllianceEntry { charId: number; name: string; level: number; job: number; grade: number; guildId: number }
 
-// OG class: CUIUserList (3260 bytes, inherits CUIWnd)
-// All coordinates and behavior from IDA decompilation of v95 client.
+interface FriendGroup {
+  name: string;
+  folded: boolean;
+  members: UserEntry[];
+}
+
+// CTabGuild grades (OnCreate @0x8C6F60): SP3296 Master, SP3297 Jr.Master,
+// SP6297 Member (grades 2..4 all Member).
+function gradeName(rankOrGrade: string | number | undefined): string {
+  if (typeof rankOrGrade === 'number') {
+    return rankOrGrade <= 1 ? 'Master' : rankOrGrade === 2 ? 'Jr.Master' : 'Member';
+  }
+  return typeof rankOrGrade === 'string' && rankOrGrade.length > 0 ? rankOrGrade : 'Member';
+}
+
 export class UserList extends GamePanel {
-  private _bg: Graphics;
-  private _wzBg: WzSprite | null = null;
+  private _wzBg: Sprite | null = null;
   private _scrollBar: ScrollBar;
   private _tab: CCtrlTab;
-  private _entries: Text[] = [];
-  private _buttons: Container[] = [];
-  private _guildNameText: Text;
-  private _titleText: Text;
-  private _locationText: Text | null = null; // OG: m_pFontLocation — friend location at (10, 285)
 
-  // OG: Guild/Alliance dynamic button overlay (CreateGuildButton/CreateAllianceButton)
-  // Buttons are created per-section at positions defined by SectionData
-  private _guildDynButtons: Container[] = [];
-  private _allianceDynButtons: Container[] = [];
+  // WZ assets
+  private _loader: WzTextureLoader | null = null;
+  private _uiWz: WzPackage | null = null;
+  private _sheets: Record<string, (Sprite | null)[]> = {}; // Sheet1..Sheet9 -> [0..n]
+  private _lvDigits: (Sprite | null)[] = [];
+  private _lineSprite: Sprite | null = null;
+  private _foldOpen: Sprite | null = null;
+  private _foldClose: Sprite | null = null;
+  private _friendIcons: (Sprite | null)[] = [];
+  private _guildBase: Sprite | null = null;
+  private _guildSectionOn: Sprite | null = null;
+  private _guildSectionOff: Sprite | null = null;
+  private _unionBase: Sprite | null = null;
+  private _unionNamePlate: Sprite | null = null;
+  private _expedTable: Sprite | null = null;
+  private _expedBase: Sprite | null = null;
 
-  // OG: Tab WZ canvases from UserList/Main/Tab/enabled and Tab/disabled
-  private _tabEnabledCanvases: Sprite[] = [];
-  private _tabDisabledCanvases: Sprite[] = [];
+  // Per-tab Button arrays keyed by action name (OG ids in comments).
+  private _tabButtons = new Map<number, { btn: Button; id: number; needsSelection?: boolean }[]>();
 
-  private _users: UserEntry[] = [];
+  private _rowsLayer = new Container();
+  private _headerLayer = new Container();
+
+  private _groups: FriendGroup[] = [];
   private _party: PartyEntry[] = [];
   private _guild: GuildEntry[] = [];
   private _guildName = '';
+  private _guildNotice = '';
   private _blackList: string[] = [];
   private _alliance: AllianceEntry[] = [];
   private _allianceName = '';
@@ -100,39 +141,61 @@ export class UserList extends GamePanel {
   private _expeditionSubParties: Map<number, { charId: number; name: string; level: number; job: number }[]> = new Map();
 
   private _activeTab = 0;
-  private _selParty = -1;
-  private _selFriend = -1;
-  private _selBlock = -1;
-  private _selGuild = -1;
-  private _selAlliance = -1;
-  private _selExped = -1;
+  private _curCID = -1;        // OG m_dwCurCID selection model
+  private _curBlock = -1;
   private _scrollOffset = 0;
-  private _viewItemCount = 0;
+  private _onlineOnly = false;
+  private _locationText: Text;
+  private _countText: Text;
 
-  // Callbacks
+  // collapsed-section state for guild/alliance (OG m_bSectionCollapsed[n])
+  private _sectionFolded = [false, false];
+
+  // Callbacks (GameStage wiring contract kept verbatim)
   onPartyInvite: ((name: string) => void) | null = null;
   onPartyKick: ((charId: number) => void) | null = null;
   onPartyCreate: (() => void) | null = null;
   onPartyLeave: (() => void) | null = null;
+  /** BtSearch (id 2208) - CWvsContext::UI_Toggle(21) party search. */
+  onPartySearch: (() => void) | null = null;
+  /** BtHP (id 2207) - CTabParty::ToggleShowHP. */
+  onPartyHpToggle: (() => void) | null = null;
+  /** BtChat (id 2205) - CTabParty::OnChat (party chat focus). */
+  onPartyChat: ((name: string) => void) | null = null;
   onGuildLeave: (() => void) | null = null;
   onGuildBoard: (() => void) | null = null;
   onGuildInvite: ((name: string) => void) | null = null;
   onGuildKick: ((charId: number, name: string) => void) | null = null;
+  /** Legacy direct rank-set path kept for GameStage compat (CTabGuild has no
+   *  such button in v95 — grade changes go through onGuildGradeChange). */
   onGuildAdmin: ((charId: number, name: string) => void) | null = null;
   onGuildExpel: ((charId: number, name: string) => void) | null = null;
   onGuildLevel: ((charId: number, level: number) => void) | null = null;
+  /** BtGradeUp/BtGradeDown (ids 2033/2034) - CTabGuild::OnGradeChange. */
+  onGuildGradeChange: ((charId: number, up: boolean) => void) | null = null;
+  /** Btnotice (id 2037) - CTabGuild::OnSetNotice. */
+  onGuildSetNotice: ((text: string) => void) | null = null;
+  /** BtInfo (id 2039) - CUIUserList::ToggleGuildInfo. */
+  onGuildInfoToggle: (() => void) | null = null;
+  /** BtWhere (id 2035) - CTabGuild::OnFindUser. */
+  onGuildFindUser: ((name: string) => void) | null = null;
   onFriendAdd: ((name: string) => void) | null = null;
+  onFriendAddGroup: ((name: string) => void) | null = null;
   onFriendDelete: ((charId: number) => void) | null = null;
-  // OG: CTabFriend::OnWhisper (0x8D4CC0) — whisper to selected friend
+  // OG: CTabFriend::OnWhisper (0x8D4CC0)
   onFriendWhisper: ((name: string) => void) | null = null;
-  // OG: CTabFriend::OnGroupWhisper (0x8B7250) — whisper to friend group
+  /** BtChat (id 2019) - CTabFriend::OnChat. */
+  onFriendChat: ((name: string) => void) | null = null;
+  // OG: CTabFriend::OnGroupWhisper (0x8B7250)
   onGroupWhisper: ((groupName: string) => void) | null = null;
-  // OG: CTabFriend::ChangeBlockOption (0x8B7280) — block/unblock friend
+  // OG: CTabFriend::ChangeBlockOption (0x8B7280)
   onFriendBlock: ((charId: number, block: boolean) => void) | null = null;
-  // OG: CTabFriend::OnToggleView (0x8B9DC0) — toggle online/all view
+  // OG: CTabFriend::OnToggleView (0x8B9DC0)
   onToggleOnlineOnly: ((onlineOnly: boolean) => void) | null = null;
-  // OG: CTabFriend::OnFindFriendView (0x8B7270) — open find friend dialog
+  // OG: CTabFriend::OnFindFriendView (0x8B7270)
   onFindFriend: (() => void) | null = null;
+  /** BtMessage (id 2021) - CTabFriend::OnSendMemo. */
+  onFriendMemo: ((name: string) => void) | null = null;
   getInviteName: () => string = () => '';
   getGuildName: () => string = () => '';
   onGuildCreate: ((name: string) => void) | null = null;
@@ -147,6 +210,8 @@ export class UserList extends GamePanel {
   onAllianceSetNotice: ((text: string) => void) | null = null;
   onAllianceWhisper: ((name: string) => void) | null = null;
   onAlliancePartyInvite: ((charId: number, name: string) => void) | null = null;
+  /** BtInfo union (id 2057) - ToggleAllianceGrade. */
+  onAllianceInfoToggle: (() => void) | null = null;
   getAllianceInviteName: () => string = () => '';
   getAllianceNotice: () => string = () => '';
   onExpeditionCreate: (() => void) | null = null;
@@ -156,502 +221,920 @@ export class UserList extends GamePanel {
   onExpeditionChangeBoss: ((charId: number) => void) | null = null;
   getExpeditionInviteName: () => string = () => '';
 
-  private _clipboard = new ClipboardHelper();
-
-  /** OG CUIUserList::OnCreate — backgrnd from UIWindow2.img/UserList/Main
-   *  + the 6 tab canvases from Main/Tab/{enabled,disabled}. Callable after
-   *  construction (GameStage wires WZ packages asynchronously). */
-  initWzAssets(loader: WzTextureLoader, uiWz: WzPackage | null): void {
-    const prop = uiWz?.GetItem('UIWindow2.img/UserList/Main');
-    const bgNode = prop instanceof WzProperty ? prop.Get('backgrnd') : null;
-    this._wzBg = bgNode instanceof WzCanvas ? loader.Load(bgNode) : null;
-    if (this._wzBg) {
-      // Re-seat at index 0 (under content) if a previous sprite exists
-      const prev = this._wzBg.ToPixi();
-      prev.removeFromParent();
-      this._root.addChildAt(prev, 0);
-    }
-
-    // OG: tab canvases from UserList/Main/Tab/enabled and Tab/disabled
-    this._tabEnabledCanvases.length = 0;
-    this._tabDisabledCanvases.length = 0;
-    if (prop instanceof WzProperty) {
-      const tabProp = prop.Get('Tab');
-      if (tabProp instanceof WzProperty) {
-        const enabledProp = tabProp.Get('enabled');
-        const disabledProp = tabProp.Get('disabled');
-        for (let i = 0; i < 6; i++) {
-          if (enabledProp instanceof WzProperty) {
-            const canvas = enabledProp.Get(`${i}`);
-            if (canvas instanceof WzCanvas) {
-              const s = loader.Load(canvas)?.ToPixi();
-              if (s) this._tabEnabledCanvases.push(s);
-            }
-          }
-          if (disabledProp instanceof WzProperty) {
-            const canvas = disabledProp.Get(`${i}`);
-            if (canvas instanceof WzCanvas) {
-              const s = loader.Load(canvas)?.ToPixi();
-              if (s) this._tabDisabledCanvases.push(s);
-            }
-          }
-        }
-      }
-    }
-  }
-
   constructor(loader?: WzTextureLoader, uiWz?: WzPackage | null) {
     super();
     this._root.visible = false;
     this._root.x = 300;
     this._root.y = 100;
-    if (loader || uiWz) this.initWzAssets(loader ?? new WzTextureLoader(), uiWz ?? null);
+    this._loader = loader ?? null;
+    this._uiWz = uiWz ?? null;
+    this._root.addChild(this._headerLayer);
+    this._root.addChild(this._rowsLayer);
 
-    this._bg = new Graphics();
-    this._root.addChild(this._bg);
-
-    this._titleText = new Text({ text: 'Community', style: _fontWhite });
-    this._titleText.x = 8; this._titleText.y = 5;
-    this._root.addChild(this._titleText);
-
-    // OG: Tab control id=2001, position=(8,9), width=250, type 8 (custom height 19)
-    this._tab = new CCtrlTab(TAB_CONTROL_ID, 8, TAB_Y, 250, { type: 8, customHeight: 19, tabSpace: 1 });
+    // OG: CCtrlTab id 2001 type 8 at (9,25) 250x19, nTabSpace=1.
+    this._tab = new CCtrlTab(TAB_CONTROL_ID, TAB_X, TAB_Y, TAB_W, { type: 8, customHeight: 19, tabSpace: 1 });
     this._tab.setParent({ onTabChanged: (tab) => this._onTabChanged(tab) });
     for (const name of TAB_NAMES) this._tab.addItem(name);
     this._root.addChild(this._tab.container);
 
-    this._guildNameText = new Text({ text: '', style: _fontGroupName });
-    this._guildNameText.x = 8; this._guildNameText.y = 35;
-    this._root.addChild(this._guildNameText);
+    this._locationText = new Text({ text: '', style: _styleLocation });
+    this._locationText.position.set(10, 285);
+    this._headerLayer.addChild(this._locationText);
 
-    // OG: m_pFontLocation — friend location text at (10, 285)
-    this._locationText = new Text({ text: '', style: _fontLocation });
-    this._locationText.x = 10; this._locationText.y = 285;
-    this._root.addChild(this._locationText);
+    this._countText = new Text({ text: '', style: _styleBlack });
+    this._countText.position.set(0, 68);
+    this._headerLayer.addChild(this._countText);
 
-    // OG: Scrollbar at (243, varies), nWheelRange=235
-    const sbConfig = SCROLLBAR_CONFIG[this._activeTab] || { y: 60, h: 225 };
-    this._scrollBar = new ScrollBar(SCROLLBAR_X, sbConfig.y, sbConfig.h || 225, (pos) => {
+    // OG: scrollbar id 2000, x=243, wheelRange 235 (config per tab).
+    const cfg = SB_CONFIG[this._activeTab];
+    this._scrollBar = new ScrollBar(SCROLLBAR_X, cfg.y, cfg.h, (pos) => {
       this._scrollOffset = pos;
+      this._rebuildRows();
     });
     this._root.addChild(this._scrollBar.container);
 
+    if (loader && uiWz) this.initWzAssets(loader, uiWz);
+    else this._rebuildButtons();
+  }
+
+  /** OG OnCreate asset pass — callable once UI.wz finishes loading. */
+  initWzAssets(loader: WzTextureLoader, uiWz: WzPackage | null): void {
+    this._loader = loader;
+    const ui = uiWz;
+    const main = ui?.GetItem('UIWindow2.img/UserList/Main');
+    if (!(main instanceof WzProperty)) { this._rebuildButtons(); return; }
+
+    const bgNode = main.Get('backgrnd');
+    if (bgNode instanceof WzCanvas) {
+      const ws = loader.Load(bgNode);
+      if (ws) {
+        const s = ws.ToPixi();
+        s.position.set(-ws.OriginX, -ws.OriginY);
+        this._wzBg?.removeFromParent();
+        this._wzBg = s;
+        this._root.addChildAt(s, 0);
+      }
+    }
+    // backgrnd2 (252x354, origin -6,-22 → drawn at (6,22))
+    const bg2 = main.Get('backgrnd2');
+    if (bg2 instanceof WzCanvas) {
+      const ws = loader.Load(bg2);
+      if (ws) {
+        const s = ws.ToPixi();
+        s.position.set(6 - ws.OriginX, 22 - ws.OriginY);
+        this._root.addChildAt(s, 1);
+      }
+    }
+
+    // Tab canvases: enabled = selected look, disabled = normal look (per the
+    // OnCreate property names pPropSelectedList/pPropNormalList).
+    this._loadTabCanvases(main.Get('Tab'), loader);
+
+    // Row plates Sheet1..Sheet9.
+    for (let i = 1; i <= 9; i++) {
+      const sheetProp = ui!.GetItem(`UIWindow2.img/UserList/Sheet${i}`);
+      if (!(sheetProp instanceof WzProperty)) continue;
+      const arr: (Sprite | null)[] = [];
+      for (const key of Object.keys(sheetProp.Items)) {
+        const c = sheetProp.Get(key);
+        const ws = c instanceof WzCanvas ? loader.Load(c) : null;
+        arr.push(ws ? ws.NewSprite() : null);
+      }
+      this._sheets[`Sheet${i}`] = arr;
+    }
+
+    // Level digit glyphs (lvNumber/enabled 0..9).
+    const lvProp = ui!.GetItem('UIWindow2.img/UserList/lvNumber/enabled');
+    if (lvProp instanceof WzProperty) {
+      for (let d = 0; d <= 9; d++) {
+        const c = lvProp.Get(`${d}`);
+        const ws = c instanceof WzCanvas ? loader.Load(c) : null;
+        this._lvDigits.push(ws ? ws.NewSprite() : null);
+      }
+    }
+
+    const lineNode = ui!.GetItem('UIWindow2.img/UserList/line');
+    if (lineNode instanceof WzCanvas) {
+      const ws = loader.Load(lineNode);
+      this._lineSprite = ws ? ws.NewSprite() : null;
+    }
+
+    // Fold icons for friend group headers / guild sections.
+    const foldOpenNode = ui!.GetItem('UIWindow2.img/UserList/BtSheetIOpen/normal');
+    if (foldOpenNode instanceof WzProperty) {
+      const canvas = foldOpenNode.Get('0');
+      if (canvas instanceof WzCanvas) {
+        const ws = loader.Load(canvas);
+        this._foldOpen = ws ? ws.NewSprite() : null;
+      }
+    }
+    const foldCloseNode = ui!.GetItem('UIWindow2.img/UserList/BtSheetIClose/normal');
+    if (foldCloseNode instanceof WzProperty) {
+      const canvas = foldCloseNode.Get('0');
+      if (canvas instanceof WzCanvas) {
+        const ws = loader.Load(canvas);
+        this._foldClose = ws ? ws.NewSprite() : null;
+      }
+    }
+
+    // Friend tab icons (icon0 same-channel, icon1 blocked).
+    const friendProp = main.Get('Friend');
+    if (friendProp instanceof WzProperty) {
+      for (let i = 0; i <= 1; i++) {
+        const c = friendProp.Get(`icon${i}`);
+        const ws = c instanceof WzCanvas ? loader.Load(c) : null;
+        this._friendIcons.push(ws ? ws.NewSprite() : null);
+      }
+    }
+
+    // Guild / Union header plates.
+    const guildProp = main.Get('Guild');
+    if (guildProp instanceof WzProperty) {
+      this._guildBase = this._plate(guildProp.Get('base'));
+      this._guildSectionOn = this._plate(guildProp.Get('guildOn'));
+      this._guildSectionOff = this._plate(guildProp.Get('guildOff'));
+    }
+    const unionProp = main.Get('Union');
+    if (unionProp instanceof WzProperty) {
+      this._unionBase = this._plate(unionProp.Get('base'));
+      this._unionNamePlate = this._plate(unionProp.Get('guildName'));
+    }
+    const expedProp = main.Get('Expedition');
+    if (expedProp instanceof WzProperty) {
+      this._expedBase = this._plate(expedProp.Get('base'));
+      this._expedTable = this._plate(expedProp.Get('table'));
+    }
+
+    this._rebuildButtons();
     this._rebuild();
-
-    // OG: CUIWnd close button
-    this.createCloseButton(null, null, 1, 265);
   }
 
-  setUsers(users: UserEntry[]): void { this._users = users; this._selFriend = -1; this._scrollOffset = 0; this._rebuild(); }
+  private _plate(node: unknown): Sprite | null {
+    if (!(node instanceof WzCanvas) || !this._loader) return null;
+    const ws = this._loader.Load(node);
+    if (!ws) return null;
+    const s = ws.NewSprite();
+    s.position.set(-ws.OriginX, -ws.OriginY);
+    return s;
+  }
+
+  private _spriteAt(ws: WzSprite, x: number, y: number): Sprite {
+    const s = ws.NewSprite();
+    s.position.set(x - ws.OriginX, y - ws.OriginY);
+    return s;
+  }
+
+  private _loadTabCanvases(tabProp: unknown, loader: WzTextureLoader): void {
+    if (!(tabProp instanceof WzProperty)) return;
+    const enabled = tabProp.Get('enabled');
+    const disabled = tabProp.Get('disabled');
+    const enSprites: (Sprite | null)[] = [];
+    const disSprites: (Sprite | null)[] = [];
+    for (let i = 0; i < 6; i++) {
+      const en = enabled instanceof WzProperty ? enabled.Get(`${i}`) : null;
+      const dis = disabled instanceof WzProperty ? disabled.Get(`${i}`) : null;
+      const enWs = en instanceof WzCanvas ? loader.Load(en) : null;
+      const disWs = dis instanceof WzCanvas ? loader.Load(dis) : null;
+      enSprites.push(enWs ? enWs.NewSprite() : null);
+      disSprites.push(disWs ? disWs.NewSprite() : null);
+    }
+    this._tab.setCanvasItems(enSprites, disSprites);
+  }
+
+  // ── data setters (GameStage contract unchanged) ──
+
+  /** Read-only view for GameStage helpers (rank lookups etc.). */
+  get guildMembers(): GuildEntry[] { return this._guild; }
+
+  setUsers(users: UserEntry[]): void {
+    this._usersToGroups(users);
+    this._curCID = -1;
+    this._resetInfo();
+  }
+
+  private _usersToGroups(users: UserEntry[]): void {
+    const map = new Map<string, FriendGroup>();
+    for (const u of users) {
+      const gname = u.group ?? 'Friends';
+      let g = map.get(gname);
+      if (!g) { g = { name: gname, folded: false, members: [] }; map.set(gname, g); }
+      g.members.push(u);
+    }
+    this._groups = [...map.values()];
+  }
+
   updateFriendStatus(charId: number, online: boolean): void {
-    const entry = this._users.find(u => u.charId === charId);
-    if (entry) { entry.job = online ? 'Online' : 'Offline'; this._rebuild(); }
+    for (const g of this._groups) {
+      const e = g.members.find((u) => u.charId === charId);
+      if (e) { e.job = online ? e.job : e.job; e.blocked = e.blocked; }
+    }
+    this._rebuildRows();
   }
+
   updateFriendEntry(charId: number, channel: number): void {
-    const entry = this._users.find(u => u.charId === charId);
-    if (entry) { entry.job = channel >= 0 ? 'Online' : 'Offline'; this._rebuild(); }
+    void channel;
+    this._rebuildRows();
   }
+
   updateGuildMemberOnline(charId: number, online: boolean): void {
-    const entry = this._guild.find(m => m.charId === charId);
-    if (entry) { entry.online = online; this._rebuild(); }
+    const entry = this._guild.find((m) => m.charId === charId);
+    if (entry) { entry.online = online; this._rebuildRows(); }
   }
-  setParty(party: PartyEntry[]): void { this._party = party; this._selParty = -1; this._scrollOffset = 0; this._rebuild(); }
+
+  setParty(party: PartyEntry[]): void { this._party = party; this._curCID = -1; this._resetInfo(); }
+
   setPartyBoss(bossCharId: number): void {
     for (const m of this._party) m.isLeader = m.charId === bossCharId;
-    this._rebuild();
+    this._rebuildRows();
   }
-  updatePartyMemberStat(charId: number, level: number, job: string): void {
-    const entry = this._party.find(m => m.charId === charId);
-    if (entry) { entry.level = level; entry.job = job; this._rebuild(); }
-  }
-  setGuild(name: string, members: GuildEntry[]): void { this._guildName = name; this._guild = members; this._selGuild = -1; this._scrollOffset = 0; this._rebuild(); }
-  addGuildMember(entry: GuildEntry): void {
-    if (!this._guild.some(m => m.charId === entry.charId)) { this._guild.push(entry); this._rebuild(); }
-  }
-  removeGuildMember(charId: number): void {
-    const idx = this._guild.findIndex(m => m.charId === charId);
-    if (idx >= 0) { this._guild.splice(idx, 1); this._rebuild(); }
-  }
-  get onlineFriendIds(): Map<number, string> { return new Map(this._users.filter(u => u.job !== 'Offline').map(u => [u.charId, u.name])); }
-  get guildMemberIds(): Map<number, string> { return new Map(this._guild.filter(m => m.online).map(m => [m.charId, m.name])); }
-  SetBlackList(names: string[]): void { this._blackList = names; this._selBlock = -1; this._scrollOffset = 0; this._rebuild(); }
 
-  // OG: SetFriendViewItem — sets friend location text from server data
-  setFriendLocation(location: string): void {
-    if (this._locationText) {
-      this._locationText.text = location;
+  updatePartyMemberStat(charId: number, level: number, job: string): void {
+    const entry = this._party.find((m) => m.charId === charId);
+    if (entry) { entry.level = level; entry.job = job; this._rebuildRows(); }
+  }
+
+  setGuild(name: string, members: GuildEntry[]): void {
+    this._guildName = name;
+    this._guild = members;
+    this._curCID = -1;
+    this._resetInfo();
+  }
+
+  addGuildMember(entry: GuildEntry): void {
+    if (!this._guild.some((m) => m.charId === entry.charId)) {
+      this._guild.push(entry);
+      this._rebuildRows();
     }
   }
 
-  setAlliance(name: string, members: AllianceEntry[]): void { this._allianceName = name; this._alliance = members; this._selAlliance = -1; this._scrollOffset = 0; this._rebuild(); }
-  get allianceMemberIds(): Map<number, string> { return new Map(this._alliance.map(m => [m.charId, m.name])); }
+  removeGuildMember(charId: number): void {
+    const idx = this._guild.findIndex((m) => m.charId === charId);
+    if (idx >= 0) { this._guild.splice(idx, 1); this._rebuildRows(); }
+  }
+
+  get onlineFriendIds(): Map<number, string> {
+    const out = new Map<number, string>();
+    for (const g of this._groups) for (const u of g.members) out.set(u.charId, u.name);
+    return out;
+  }
+
+  get guildMemberIds(): Map<number, string> {
+    return new Map(this._guild.filter((m) => m.online).map((m) => [m.charId, m.name]));
+  }
+
+  SetBlackList(names: string[]): void { this._blackList = names; this._curBlock = -1; this._resetInfo(); }
+
+  /** OG SetFriendViewItem — "My Location - %s" line under the friend list. */
+  setFriendLocation(location: string): void {
+    this._locationText.text = location ? `My Location - ${location}` : '';
+  }
+
+  setGuildNotice(text: string): void { this._guildNotice = text; this._rebuildRows(); }
+
+  setAlliance(name: string, members: AllianceEntry[]): void {
+    this._allianceName = name;
+    this._alliance = members;
+    this._curCID = -1;
+    this._resetInfo();
+  }
+
+  get allianceMemberIds(): Map<number, string> { return new Map(this._alliance.map((m) => [m.charId, m.name])); }
+
   setExpedition(members: { subPartyIdx: number; charId: number; name: string; level: number; job: number }[]): void {
     this._expeditionMembers = members;
-    // OG: TabExpedition groups members by subPartyIdx
     this._expeditionSubParties.clear();
     for (const m of members) {
       let arr = this._expeditionSubParties.get(m.subPartyIdx);
       if (!arr) { arr = []; this._expeditionSubParties.set(m.subPartyIdx, arr); }
       arr.push({ charId: m.charId, name: m.name, level: m.level, job: m.job });
     }
-    this._selExped = -1;
-    this._scrollOffset = 0;
-    this._rebuild();
-  }
-
-  // OG: CreateGuildButton @ 0x8c01a0 — creates expand/collapse + page buttons per guild section
-  private _createGuildDynButtons(): void {
-    for (const b of this._guildDynButtons) this._root.removeChild(b);
-    this._guildDynButtons = [];
-
-    // OG: Each guild section has m_ptBtMaxMin (expand/collapse) and m_ptBtPage (prev/next)
-    // Button IDs: 2071=expand, 2070=collapse, 2072=prev, 2073=next
-    const sectionY = 55; // first guild section starts below guild name
-    for (let i = 0; i < Math.min(this._guild.length, 5); i++) {
-      const y = sectionY + i * 20;
-      // Expand/collapse toggle
-      const toggleBtn = this._makeSmallBtn('+', () => {});
-      toggleBtn.x = 220; toggleBtn.y = y;
-      this._guildDynButtons.push(toggleBtn);
-      this._root.addChild(toggleBtn);
-    }
-    // Page buttons for guild sections
-    if (this._guild.length > 5) {
-      const prevBtn = this._makeSmallBtn('<', () => {});
-      prevBtn.x = 10; prevBtn.y = PANEL_H - 50;
-      this._guildDynButtons.push(prevBtn);
-      this._root.addChild(prevBtn);
-      const nextBtn = this._makeSmallBtn('>', () => {});
-      nextBtn.x = 30; nextBtn.y = PANEL_H - 50;
-      this._guildDynButtons.push(nextBtn);
-      this._root.addChild(nextBtn);
-    }
-  }
-
-  // OG: CreateAllianceButton @ 0x8c0460 — creates expand/collapse + page buttons per alliance section
-  private _createAllianceDynButtons(): void {
-    for (const b of this._allianceDynButtons) this._root.removeChild(b);
-    this._allianceDynButtons = [];
-
-    // OG: Alliance section IDs: 2080+ for expand/collapse, 2085/2086+ for prev/next
-    const sectionY = 55;
-    for (let i = 0; i < Math.min(this._alliance.length, 5); i++) {
-      const y = sectionY + i * 20;
-      const toggleBtn = this._makeSmallBtn('+', () => {});
-      toggleBtn.x = 220; toggleBtn.y = y;
-      this._allianceDynButtons.push(toggleBtn);
-      this._root.addChild(toggleBtn);
-    }
-    if (this._alliance.length > 5) {
-      const prevBtn = this._makeSmallBtn('<', () => {});
-      prevBtn.x = 10; prevBtn.y = PANEL_H - 50;
-      this._allianceDynButtons.push(prevBtn);
-      this._root.addChild(prevBtn);
-      const nextBtn = this._makeSmallBtn('>', () => {});
-      nextBtn.x = 30; nextBtn.y = PANEL_H - 50;
-      this._allianceDynButtons.push(nextBtn);
-      this._root.addChild(nextBtn);
-    }
-  }
-
-  private _makeSmallBtn(label: string, onClick: () => void): Container {
-    const btn = new Container();
-    const bg = new Graphics();
-    bg.rect(0, 0, 14, 14).fill({ color: '#1A1A2E' });
-    bg.rect(0, 0, 14, 14).stroke({ color: '#5050A0', width: 1 });
-    const txt = new Text({ text: label, style: new TextStyle({ fill: '#8888CC', fontSize: 9, fontFamily: 'monospace' }) });
-    txt.x = 2; txt.y = 1;
-    btn.addChild(bg, txt);
-    btn.eventMode = 'static'; btn.cursor = 'pointer';
-    btn.on('pointerdown', onClick);
-    return btn;
-  }
-
-  // OG: ResetInfo — loads tab data, SetScrollBar, SetButton
-  private _resetInfo(): void {
-    this._scrollOffset = 0;
-    this._setScrollBar();
-    this._rebuild();
-  }
-
-  // OG: SetScrollBar @ 0x8b7920 — per-tab scrollbar config
-  private _setScrollBar(): void {
-    const config = SCROLLBAR_CONFIG[this._activeTab];
-    if (!config) { this._scrollBar.visible = false; return; }
-    this._scrollBar.visible = true;
-    this._scrollBar.container.y = config.y;
-
-    let itemCount = 0;
-    switch (this._activeTab) {
-      case TAB_INDICES.FRIEND: itemCount = this._users.length; break;
-      case TAB_INDICES.PARTY: itemCount = this._party.length; break;
-      case TAB_INDICES.GUILD: itemCount = this._guild.length; break;
-      case TAB_INDICES.ALLIANCE: itemCount = this._alliance.length; break;
-      case TAB_INDICES.BLACKLIST: itemCount = this._blackList.length; break;
-      case TAB_INDICES.EXPEDITION: itemCount = this._expeditionMembers.length; break;
-    }
-    this._viewItemCount = itemCount;
-
-    // OG: range = (offset + 20*count - listHeight) / 20 + 2
-    const listH = config.h || 225;
-    const rawRange = config.offset + 20 * itemCount - listH;
-    if (rawRange <= 0 || this._activeTab === TAB_INDICES.PARTY) {
-      this._scrollBar.setRange(0);
-    } else {
-      this._scrollBar.setRange(Math.floor(rawRange / 20) + 3);
-    }
-  }
-
-  // OG: OnTabChanged @ 0x8dc580
-  private _onTabChanged(tab: number): void {
-    this._activeTab = tab;
-    this._scrollOffset = 0;
+    this._curCID = -1;
     this._resetInfo();
   }
 
-  private _getCurrentList(): { name: string; sub?: string; online?: boolean; selected: boolean; charId?: number }[] {
+  // ── ResetInfo @0x8DBF60 ──
+  private _resetInfo(): void {
+    this._scrollOffset = 0;
+    this._setScrollBar();
+    this._syncButtons();
+    this._rebuild();
+  }
+
+  private _viewItemCount(): number {
     switch (this._activeTab) {
-      case TAB_INDICES.FRIEND:
-        return this._users.map((u, i) => ({
-          name: u.name, sub: `Lv.${u.level}`, online: u.job !== 'Offline',
-          selected: i === this._selFriend, charId: u.charId
-        }));
-      case TAB_INDICES.PARTY:
-        return this._party.map((p, i) => ({
-          name: `${p.isLeader ? '[L] ' : ''}${p.name}`, sub: `Lv.${p.level} ${p.job}`,
-          selected: i === this._selParty, charId: p.charId
-        }));
-      case TAB_INDICES.GUILD:
-        return this._guild.map((g, i) => ({
-          name: g.name, sub: g.rank, online: g.online,
-          selected: i === this._selGuild, charId: g.charId
-        }));
-      case TAB_INDICES.ALLIANCE:
-        return this._alliance.map((a, i) => ({
-          name: a.name, sub: `Lv.${a.level} [${a.grade}]`,
-          selected: i === this._selAlliance, charId: a.charId
-        }));
-      case TAB_INDICES.BLACKLIST:
-        return this._blackList.map((n, i) => ({
-          name: n, selected: i === this._selBlock
-        }));
-      case TAB_INDICES.EXPEDITION: {
-        // OG: TabExpedition renders sub-party headers + member rows
-        const items: { name: string; sub?: string; online?: boolean; selected: boolean; charId?: number; isHeader?: boolean }[] = [];
-        const sortedKeys = [...this._expeditionSubParties.keys()].sort((a, b) => a - b);
-        let flatIdx = 0;
-        for (const spIdx of sortedKeys) {
-          const members = this._expeditionSubParties.get(spIdx)!;
-          items.push({ name: `Sub-Party ${spIdx + 1} (${members.length})`, selected: false, isHeader: true });
-          for (const m of members) {
-            items.push({
-              name: m.name, sub: `Lv.${m.level}`,
-              selected: flatIdx === this._selExped, charId: m.charId
-            });
-            flatIdx++;
-          }
-        }
-        return items;
-      }
-      default: return [];
+      case TAB_INDICES.FRIEND: return this._groups.reduce((n, g) => n + 1 + Math.max(1, Math.ceil(g.members.length / 2)), 0);
+      case TAB_INDICES.PARTY: return this._party.length;
+      case TAB_INDICES.GUILD: return this._guild.filter((m) => m.online).length + this._guild.filter((m) => !m.online).length + 2;
+      case TAB_INDICES.ALLIANCE: return this._alliance.length;
+      case TAB_INDICES.BLACKLIST: return this._blackList.length;
+      case TAB_INDICES.EXPEDITION: return this._expeditionMembers.length;
+      default: return 0;
+    }
+  }
+
+  // OG formula: raw = base + 20*viewItems − h; range = raw <= 0 ? 0 : raw/20 + 2.
+  private _setScrollBar(): void {
+    const cfg = SB_CONFIG[this._activeTab];
+    if (!cfg) { this._scrollBar.visible = false; return; }
+    this._scrollBar.visible = true;
+    this._scrollBar.container.position.set(SCROLLBAR_X, cfg.y);
+    const count = this._viewItemCount();
+    const raw = cfg.base + ROW_H * count - cfg.h;
+    const range = raw <= 0 ? 0 : Math.floor(raw / ROW_H) + 2;
+    this._scrollBar.setRange(range + 1);
+    if (range <= 0) this._scrollOffset = 0;
+  }
+
+  private _onTabChanged(tab: number): void {
+    this._activeTab = tab;
+    this._curCID = -1;
+    this._curBlock = -1;
+    this._resetInfo();
+  }
+
+  // ═══ Per-tab WZ buttons (SetButton @0x8B76E0 show/hide model) ═══
+
+  private _mkBtn(subtreePaths: string[], id: number, fallbackLabel: string, onClick: () => void, needsSelection = false): { btn: Button; id: number; needsSelection: boolean } {
+    let prop: WzProperty | null = null;
+    for (const p of subtreePaths) {
+      const node = this._uiWz?.GetItem(p);
+      if (node instanceof WzProperty) { prop = node; break; }
+    }
+    const btn = prop && this._loader
+      ? Button.fromWz(this._loader, prop, fallbackLabel)
+      : new Button(fallbackLabel);
+    btn.onClick = onClick;
+    if (prop) {
+      // OG AddButton(uol, id, 0, 0): the canvas origin encodes the position.
+      btn.container.position.set(0, 0);
+    } else {
+      // No WZ: lay fallback buttons out along the bottom edge of the tab.
+      const shown = this._fallbackBtnCount[this._activeTab] ?? 0;
+      this._fallbackBtnCount[this._activeTab] = shown + 1;
+      btn.width = Math.max(40, fallbackLabel.length * 7 + 12);
+      btn.height = 18;
+      btn.container.position.set(8 + shown * 52, PANEL_H - 28);
+    }
+    btn.container.visible = false;
+    this._root.addChild(btn.container);
+    return { btn, id, needsSelection };
+  }
+
+  /** Per-tab running count for the no-WZ fallback layout. */
+  private _fallbackBtnCount: Record<number, number> = {};
+
+  /** Build every tab's buttons once assets resolve (CTab*::CreateButton). */
+  private _rebuildButtons(): void {
+    for (const arr of this._tabButtons.values()) for (const b of arr) b.btn.container.removeFromParent();
+    this._tabButtons.clear();
+    this._fallbackBtnCount = {};
+    const U2 = 'UIWindow2.img/UserList/Main/';
+    const U1 = 'UIWindow.img/UserList/';
+
+    const selName = (): string | null => this._selectedEntry();
+
+    // ── Friend (15 buttons, ids 2010..2024; BtMate id 2023 hidden forever) ──
+    this._tabButtons.set(TAB_INDICES.FRIEND, [
+      this._mkBtn([`${U2}Friend/BtAddFriend`], 2010, 'Add', () => { const n = this.getInviteName(); if (n) this.onFriendAdd?.(n); }),
+      this._mkBtn([`${U2}Friend/BtAddGroup`], 2011, 'Grp', () => { const n = this.getInviteName(); if (n) this.onFriendAddGroup?.(n); }),
+      this._mkBtn([`${U2}Friend/BtGroupWhisper`], 2012, 'GWhis', () => {
+        const g = this._groups.find((gg) => gg.members.some((m) => m.charId === this._curCID));
+        this.onGroupWhisper?.(g?.name ?? 'all');
+      }),
+      this._mkBtn([`${U2}Friend/TapShowOnline`], 2013, 'On', () => { this._onlineOnly = true; this.onToggleOnlineOnly?.(true); this._rebuildRows(); }),
+      this._mkBtn([`${U2}Friend/TapShowAll`], 2014, 'All', () => { this._onlineOnly = false; this.onToggleOnlineOnly?.(false); this._rebuildRows(); }),
+      this._mkBtn([`${U1}Friend/BtInfo`], 2015, 'Info', () => { /* account-more-info: not wired server-side */ }, true),
+      this._mkBtn([`${U1}Friend/BtFind`], 2016, 'Find', () => this.onFindFriend?.()),
+      this._mkBtn([`${U2}Friend/BtMod`], 2017, 'Mod', () => { /* group rename: local-only in OG config */ }, true),
+      this._mkBtn([`${U2}Friend/BtDelete`], 2018, 'Del', () => { if (this._curCID >= 0) this.onFriendDelete?.(this._curCID); }, true),
+      this._mkBtn([`${U2}Friend/BtChat`], 2019, 'Chat', () => { const n = selName(); if (n) this.onFriendChat?.(n); }, true),
+      this._mkBtn([`${U2}Friend/BtWhisper`], 2020, 'Whis', () => { const n = selName(); if (n) this.onFriendWhisper?.(n); }, true),
+      this._mkBtn([`${U2}Friend/BtMessage`], 2021, 'Memo', () => { const n = selName(); if (n) this.onFriendMemo?.(n); }, true),
+      this._mkBtn([`${U2}Friend/BtParty`], 2022, 'Pty', () => { const n = selName(); if (n) this.onPartyInvite?.(n); }, true),
+      this._mkBtn([`${U2}Friend/BtMate`], 2023, '', () => { /* OG: created then permanently hidden */ }),
+      this._mkBtn([`${U2}Friend/BtBlock`], 2024, 'Blk', () => {
+        const m = this._findFriend(this._curCID);
+        if (m) this.onFriendBlock?.(m.charId, !m.blocked);
+      }, true),
+    ]);
+
+    // ── Party (9 buttons, ids 2200..2208) ──
+    this._tabButtons.set(TAB_INDICES.PARTY, [
+      this._mkBtn([`${U2}Party/BtCreate`], 2200, 'New', () => this.onPartyCreate?.()),
+      this._mkBtn([`${U2}Party/BtInvite`], 2201, 'Invt', () => { const n = this.getInviteName(); if (n) this.onPartyInvite?.(n); }),
+      this._mkBtn([`${U2}Party/BtKick`], 2202, 'Kick', () => { if (this._curCID >= 0) this.onPartyKick?.(this._curCID); }, true),
+      this._mkBtn([`${U2}Party/BtWithdraw`], 2203, 'Leav', () => this.onPartyLeave?.()),
+      this._mkBtn([`${U2}Party/BtWhisper`], 2204, 'Whis', () => { const n = selName(); if (n) this.onFriendWhisper?.(n); }, true),
+      this._mkBtn([`${U2}Party/BtChat`], 2205, 'Chat', () => { const n = selName(); if (n) this.onPartyChat?.(n); }, true),
+      this._mkBtn([`${U2}Party/BtChangeBoss`], 2206, 'Boss', () => { if (this._curCID >= 0) this.onPartyChangeBossInternal(); }, true),
+      this._mkBtn([`${U2}Party/BtHP`], 2207, 'HP', () => this.onPartyHpToggle?.()),
+      this._mkBtn([`${U2}Party/BtSearch`], 2208, 'Srch', () => this.onPartySearch?.()),
+    ]);
+
+    // ── Guild (13 buttons: ids 2030-2042 + section 2070-2075) ──
+    const guildButtons = [
+      this._mkBtn([`${U2}Guild/BtInvite`], 2030, 'Invt', () => { const n = this.getInviteName(); if (n) this.onGuildInvite?.(n); }),
+      this._mkBtn([`${U2}Guild/BtKick`], 2031, 'Kick', () => {
+        const m = this._guild.find((g) => g.charId === this._curCID);
+        if (m) this.onGuildKick?.(m.charId, m.name);
+      }, true),
+      this._mkBtn([`${U2}Guild/BtWithdraw`], 2032, 'Leav', () => this.onGuildLeave?.()),
+      this._mkBtn([`${U2}Guild/BtGradeUp`], 2033, 'G+', () => { if (this._curCID >= 0) this.onGuildGradeChange?.(this._curCID, true); }, true),
+      this._mkBtn([`${U2}Guild/BtGradeDown`], 2034, 'G-', () => { if (this._curCID >= 0) this.onGuildGradeChange?.(this._curCID, false); }, true),
+      this._mkBtn([`${U2}Guild/BtWhere`], 2035, 'Wher', () => {
+        const m = this._guild.find((g) => g.charId === this._curCID);
+        if (m) this.onGuildFindUser?.(m.name);
+      }, true),
+      this._mkBtn([`${U2}Guild/BtWhisper`], 2036, 'Whis', () => { const n = selName(); if (n) this.onFriendWhisper?.(n); }, true),
+      // Btnotice id 2037 — explicit (194,79) position from CTabGuild::CreateButton.
+      this._mkBtn([`${U1}Guild/GuildInfo/Btnotice`], 2037, 'Noti', () => {
+        const t = window.prompt('Guild notice (max 100 chars):') ?? '';
+        if (t) this.onGuildSetNotice?.(t);
+      }),
+      this._mkBtn([`${U2}Guild/BtChat`], 2038, 'Chat', () => { const n = selName(); if (n) this.onFriendWhisper?.(n); }, true),
+      this._mkBtn([`${U2}Guild/BtInfo`], 2039, 'Info', () => this.onGuildInfoToggle?.()),
+      this._mkBtn([`${U2}Guild/BtBoard`], 2041, 'Brd', () => this.onGuildBoard?.()),
+      // BtPartyInvite id 2040.
+      this._mkBtn([`${U2}Guild/BtPartyInvite`], 2040, 'Pty', () => { const n = selName(); if (n) this.onPartyInvite?.(n); }, true),
+      // BtGuildBBS id 2042 — explicit (225,340), UOL StringPool 0xEC5.
+      this._mkBtn([`${U1}Guild/GuildInfo/BtGuildBBS`], 2042, 'BBS', () => this.onGuildBoard?.()),
+    ];
+    this._setExplicitPos(guildButtons, 2037, 194, 79);
+    this._setExplicitPos(guildButtons, 2042, 225, 340);
+    this._tabButtons.set(TAB_INDICES.GUILD, guildButtons);
+
+    // ── Alliance/Union (11 buttons, ids 2050..2060) ──
+    this._tabButtons.set(TAB_INDICES.ALLIANCE, [
+      this._mkBtn([`${U2}Union/BtInvite`], 2050, 'Invt', () => { const n = this.getAllianceInviteName(); if (n) this.onAllianceInvite?.(n); }),
+      this._mkBtn([`${U2}Union/BtWithdraw`], 2052, 'Leav', () => this.onAllianceWithdraw?.()),
+      this._mkBtn([`${U2}Union/BtKick`], 2051, 'Kick', () => {
+        const m = this._alliance.find((a) => a.charId === this._curCID);
+        if (m) this.onAllianceKick?.(m.guildId, m.charId);
+      }, true),
+      this._mkBtn([`${U2}Union/BtGradeUp`], 2053, 'G+', () => { if (this._curCID >= 0) this.onAllianceGradeChange?.(this._curCID, true); }, true),
+      this._mkBtn([`${U2}Union/BtGradeDown`], 2054, 'G-', () => { if (this._curCID >= 0) this.onAllianceGradeChange?.(this._curCID, false); }, true),
+      this._mkBtn([`${U2}Union/BtChange`], 2060, 'Mstr', () => { if (this._curCID >= 0) this.onAllianceChangeMaster?.(this._curCID); }, true),
+      this._mkBtn([`${U2}Union/BtChat`], 2056, 'Chat', () => { const n = selName(); if (n) this.onFriendWhisper?.(n); }, true),
+      this._mkBtn([`${U2}Union/BtInfo`], 2057, 'Info', () => this.onAllianceInfoToggle?.()),
+      this._mkBtn([`${U2}Union/BtWhisper`], 2055, 'Whis', () => { const n = selName(); if (n) this.onAllianceWhisper?.(n); }, true),
+      this._mkBtn([`${U2}Union/Btnotice`], 2059, 'Noti', () => {
+        const t = this.getAllianceNotice();
+        if (t) this.onAllianceSetNotice?.(t);
+      }),
+      this._mkBtn([`${U2}Union/BtPartyInvite`], 2058, 'Pty', () => {
+        const m = this._alliance.find((a) => a.charId === this._curCID);
+        if (m) this.onAlliancePartyInvite?.(m.charId, m.name);
+      }, true),
+    ]);
+
+    // ── BlackList (2 buttons, ids 2150/2151) ──
+    this._tabButtons.set(TAB_INDICES.BLACKLIST, [
+      this._mkBtn([`${U2}BlackList/BtAdd`], 2150, 'Add', () => { const n = this.getBlockName(); if (n) this.onBlockAdd?.(n); }),
+      this._mkBtn([`${U2}BlackList/BtDelete`], 2151, 'Del', () => {
+        if (this._curBlock >= 0) this.onBlockDelete?.(this._blackList[this._curBlock]);
+      }, true),
+    ]);
+
+    // ── Expedition (TabExpedition ids 12..22) ──
+    this._tabButtons.set(TAB_INDICES.EXPEDITION, [
+      this._mkBtn([`${U2}Expedition/BtCreate`], 14, 'New', () => this.onExpeditionCreate?.()),
+      this._mkBtn([`${U2}Expedition/BtInvite`], 19, 'Invt', () => { const n = this.getExpeditionInviteName(); if (n) this.onExpeditionInvite?.(n); }),
+      this._mkBtn([`${U2}Expedition/BtKick`], 17, 'Kick', () => { if (this._curCID >= 0) this.onExpeditionKick?.(this._curCID); }, true),
+      this._mkBtn([`${U2}Expedition/BtWithdraw`], 21, 'Leav', () => this.onExpeditionWithdraw?.()),
+      this._mkBtn([`${U2}Expedition/BtChangeMaster`], 16, 'Mstr', () => { if (this._curCID >= 0) this.onExpeditionChangeBoss?.(this._curCID); }, true),
+      this._mkBtn([`${U2}Expedition/BtChangeBoss`], 20, 'Boss', () => { if (this._curCID >= 0) this.onExpeditionChangeBoss?.(this._curCID); }, true),
+      this._mkBtn([`${U2}Expedition/BtWhisper`], 18, 'Whis', () => { const n = selName(); if (n) this.onFriendWhisper?.(n); }, true),
+      this._mkBtn([`${U2}Expedition/BtChat`], 22, 'Chat', () => { const n = selName(); if (n) this.onPartyChat?.(n); }, true),
+    ]);
+
+    this._syncButtons();
+  }
+
+  /** BtChangeBoss (id 2206) — CTabParty::OnChangeBoss passes the selected member. */
+  private onPartyChangeBossInternal(): void {
+    if (this._curCID >= 0) this.onPartyChangeBoss?.(this._curCID);
+  }
+
+  onPartyChangeBoss: ((charId: number) => void) | null = null;
+
+  private _setExplicitPos(arr: ({ btn: Button; id: number } | null)[], id: number, x: number, y: number): void {
+    const b = arr.find((e) => e?.id === id);
+    if (b && b.btn.hasWzSprite) b.btn.container.position.set(x, y);
+  }
+
+  /** OG SetButton: hide all six arrays, show only the active tab's. */
+  private _syncButtons(): void {
+    for (const arr of this._tabButtons.values()) for (const b of arr) b.btn.container.visible = false;
+    const arr = this._tabButtons.get(this._activeTab);
+    if (!arr) return;
+    const hasSel = this._curCID >= 0 || this._curBlock >= 0;
+    for (const b of arr) {
+      if (b.id === 2023) continue; // BtMate: created then permanently hidden
+      b.btn.container.visible = true;
+      b.btn.enabled = b.needsSelection ? hasSel || b.id === 2018 : true;
+    }
+  }
+
+  private _findFriend(charId: number): UserEntry | null {
+    for (const g of this._groups) {
+      const m = g.members.find((u) => u.charId === charId);
+      if (m) return m;
+    }
+    return null;
+  }
+
+  private _selectedEntry(): string | null {
+    const f = this._findFriend(this._curCID);
+    if (f) return f.name;
+    const p = this._party.find((m) => m.charId === this._curCID);
+    if (p) return p.name;
+    const g = this._guild.find((m) => m.charId === this._curCID);
+    if (g) return g.name;
+    const a = this._alliance.find((m) => m.charId === this._curCID);
+    if (a) return a.name;
+    return null;
+  }
+
+  // ═══ Rendering ═══
+
+  private _clearLayers(): void {
+    for (const c of [...this._rowsLayer.children]) c.removeFromParent();
+    for (const c of [...this._headerLayer.children]) {
+      if (c !== this._locationText && c !== this._countText) c.removeFromParent();
     }
   }
 
   private _rebuild(): void {
-    this._bg.clear();
     if (!this._wzBg) {
-      this._bg.rect(0, 0, PANEL_W, PANEL_H).fill({ color: '#0C0E18', alpha: 245 / 255 });
-      this._bg.rect(0, 0, PANEL_W, PANEL_H).stroke({ color: '#3C4164', width: 1 });
-      this._bg.rect(0, 0, PANEL_W, 22).fill({ color: '#0F1224' });
+      // Graphics fallback only while WZ assets are absent.
+      const bg = new Graphics();
+      bg.rect(0, 0, PANEL_W, PANEL_H).fill({ color: '#0C0E18', alpha: 245 / 255 });
+      bg.rect(0, 0, PANEL_W, PANEL_H).stroke({ color: '#3C4164', width: 1 });
+      this._headerLayer.addChildAt(bg, 0);
+    }
+    if (this._tab.curTab !== this._activeTab) this._tab.setTab(this._activeTab);
+    this._rebuildHeader();
+    this._rebuildRows();
+  }
+
+  private _rebuildHeader(): void {
+    this._clearLayers();
+    const t = this._activeTab;
+
+    if (t === TAB_INDICES.FRIEND) {
+      // "(%d/%d)" right-aligned ending x=242, y=68, black (CTabFriend::Draw).
+      const total = this._groups.reduce((n, g) => n + g.members.length, 0);
+      this._countText.text = `${this._onlineOnly ? 'Online' : 'All'} (${total})`;
+      this._countText.position.set(242 - this._countText.width, 68);
+      this._locationText.visible = true;
+    } else {
+      this._countText.text = '';
+      this._locationText.visible = false;
     }
 
-    // OG: CCtrlTab handles its own rendering via SetTab
-    // Only sync if not already set (avoids recursion from onTabChanged callback)
-    if (this._tab.curTab !== this._activeTab) {
-      this._tab.setTab(this._activeTab);
-    }
-
-    // OG: Guild/Alliance/Expedition name
-    this._guildNameText.text =
-      this._activeTab === TAB_INDICES.GUILD && this._guildName ? `Guild: ${this._guildName}` :
-      this._activeTab === TAB_INDICES.ALLIANCE && this._allianceName ? `Alliance: ${this._allianceName}` :
-      this._activeTab === TAB_INDICES.EXPEDITION ? `Expedition (${this._expeditionMembers.length})` : '';
-
-    // OG: Friend tab location text at (10, 285) via m_pFontLocation
-    // Shows current map/street name from sLocationInfo
-    if (this._locationText) {
-      if (this._activeTab === TAB_INDICES.FRIEND) {
-        this._locationText.visible = true;
-        // Location would be set by the server via SetFriendViewItem
-        // For now show empty until server sends location data
-      } else {
-        this._locationText.visible = false;
+    if (t === TAB_INDICES.GUILD && this._guildBase) {
+      const base = new Sprite(this._guildBase.texture);
+      base.position.copyFrom(this._guildBase.position);
+      base.position.set(10, 55);
+      this._headerLayer.addChild(base);
+      if (this._guildName) {
+        const nm = new Text({ text: this._guildName, style: _styleBlack });
+        nm.position.set(26, 61); // (26, 6) inside the base plate
+        this._headerLayer.addChild(nm);
+      }
+      if (this._guildNotice) {
+        const nt = new Text({ text: this._guildNotice.slice(0, 40), style: _styleBlack });
+        nt.position.set(14, 84); // MakeGuildNoticeLayer: layer (14,84) w176 h15
+        this._headerLayer.addChild(nt);
       }
     }
-
-    // OG: List rendering — clear old entries
-    for (const t of this._entries) this._root.removeChild(t);
-    this._entries = [];
-
-    const items = this._getCurrentList();
-    const maxVisible = Math.floor((PANEL_H - LIST_START_Y - 40) / ROW_H);
-
-    // OG: Title with count
-    const tabTitles: Record<number, string> = {
-      [TAB_INDICES.FRIEND]: `Friends (${this._users.length})`,
-      [TAB_INDICES.PARTY]: `Party (${this._party.length}/6)`,
-      [TAB_INDICES.GUILD]: `Guild (${this._guild.length})`,
-      [TAB_INDICES.ALLIANCE]: `Alliance (${this._alliance.length})`,
-      [TAB_INDICES.BLACKLIST]: `Blocked (${this._blackList.length})`,
-      [TAB_INDICES.EXPEDITION]: `Expedition (${this._expeditionMembers.length})`,
-    };
-    this._titleText.text = tabTitles[this._activeTab] || 'Community';
-
-    // OG: Render visible rows
-    for (let i = 0; i < maxVisible; i++) {
-      const absIdx = this._scrollOffset + i;
-      if (absIdx >= items.length) break;
-      const item = items[absIdx];
-      const y = LIST_START_Y + i * ROW_H;
-
-      const label = item.sub ? `${item.name} ${item.sub}` : item.name;
-      const isHeader = (item as any).isHeader === true;
-      const style = isHeader ? _fontGroupName :
-        item.selected ? new TextStyle({ fill: '#FFE082', fontSize: 11, fontFamily: 'monospace' }) :
-        item.online === false ? _fontOffline : _fontGrayB5;
-      const t = new Text({ text: label, style });
-      t.x = 8; t.y = y;
-      t.eventMode = 'static'; t.cursor = 'pointer';
-      const idx = absIdx;
-      t.on('pointerdown', () => this._onEntryClick(idx));
-      this._entries.push(t);
-      this._root.addChild(t);
+    if (t === TAB_INDICES.ALLIANCE && this._unionBase) {
+      const base = new Sprite(this._unionBase.texture);
+      base.position.copyFrom(this._unionBase.position);
+      base.position.set(10, 55);
+      this._headerLayer.addChild(base);
+      if (this._allianceName) {
+        const nm = new Text({ text: this._allianceName, style: _styleBlack });
+        nm.position.set(26, 61);
+        this._headerLayer.addChild(nm);
+      }
     }
-
-    // OG: Action buttons
-    this._rebuildActionButtons();
-
-    // OG: Guild/Alliance dynamic button overlay (CreateGuildButton/CreateAllianceButton)
-    for (const b of this._guildDynButtons) this._root.removeChild(b);
-    this._guildDynButtons = [];
-    for (const b of this._allianceDynButtons) this._root.removeChild(b);
-    this._allianceDynButtons = [];
-    if (this._activeTab === TAB_INDICES.GUILD && this._guildName) {
-      this._createGuildDynButtons();
-    } else if (this._activeTab === TAB_INDICES.ALLIANCE && this._allianceName) {
-      this._createAllianceDynButtons();
+    if (t === TAB_INDICES.EXPEDITION && this._expedTable) {
+      const tbl = new Sprite(this._expedTable.texture);
+      tbl.position.copyFrom(this._expedTable.position);
+      tbl.position.set(10, 60);
+      this._headerLayer.addChild(tbl);
     }
   }
 
-  private _onEntryClick(idx: number): void {
-    switch (this._activeTab) {
-      case TAB_INDICES.FRIEND: this._selFriend = idx; break;
-      case TAB_INDICES.PARTY: this._selParty = idx; break;
-      case TAB_INDICES.GUILD: this._selGuild = idx; break;
-      case TAB_INDICES.ALLIANCE: this._selAlliance = idx; break;
-      case TAB_INDICES.BLACKLIST: this._selBlock = idx; break;
-      case TAB_INDICES.EXPEDITION: this._selExped = idx; break;
+  /** Helper: stamp a Sheet plate sprite (or fallback rect) and return its container. */
+  private _sheetRow(sheet: string, variant: number, x: number, y: number, w: number, h: number): Container {
+    const c = new Container();
+    c.position.set(x, y);
+    const arr = this._sheets[sheet];
+    const spr = arr?.[variant] ?? null;
+    if (spr) {
+      const s = new Sprite(spr.texture);
+      s.position.copyFrom(spr.position);
+      c.addChild(s);
+    } else {
+      const g = new Graphics();
+      g.rect(0, 0, w, h).fill({ color: variant === 1 ? 0x39415e : 0xffffff, alpha: 0.92 });
+      g.rect(0, 0, w, h).stroke({ color: 0x2a2f45, width: 1 });
+      c.addChild(g);
     }
-    this._rebuild();
+    return c;
   }
 
-  // OG: SetButton @ 0x8b76e0 — hides ALL buttons first, shows only current tab's
-  private _rebuildActionButtons(): void {
-    for (const b of this._buttons) this._root.removeChild(b);
-    this._buttons = [];
+  /** Draw a level value with the lvNumber digit glyphs (pitch 12, leading
+   *  zeros skipped; offline draws at alpha 0xB4). */
+  private _drawLevel(parent: Container, x: number, y: number, level: number | undefined, dim: boolean): void {
+    if (level === undefined || level <= 0 || this._lvDigits.length !== 10) {
+      const t = new Text({ text: level !== undefined && level > 0 ? String(level) : '', style: dim ? _styleOffline : _styleBlack });
+      t.position.set(x, y);
+      parent.addChild(t);
+      return;
+    }
+    const s = String(Math.min(level, 999)).padStart(3, ' ').trim().padStart(3, ' ');
+    let dx = x;
+    let started = false;
+    for (const ch of s) {
+      if (ch === ' ') { dx += 12; continue; }
+      if (ch === '0' && !started) { dx += 12; continue; }
+      started = true;
+      const d = this._lvDigits[Number(ch)];
+      if (d) {
+        const sp = new Sprite(d.texture);
+        sp.alpha = dim ? 0xb4 / 255 : 1;
+        sp.position.set(dx, y);
+        parent.addChild(sp);
+      }
+      dx += 12;
+    }
+  }
 
-    const y = PANEL_H - 28;
-    let x = 8;
-    const add = (label: string, onClick: () => void): void => {
-      const btn = new Container();
-      const bg = new Graphics();
-      bg.rect(0, 0, label.length * 7 + 12, 18).fill({ color: '#1A1A2E' });
-      bg.rect(0, 0, label.length * 7 + 12, 18).stroke({ color: '#5050A0', width: 1 });
-      const txt = new Text({ text: label, style: _tabStyle });
-      txt.x = 6; txt.y = 2;
-      btn.addChild(bg, txt);
-      btn.x = x; btn.y = y;
-      btn.eventMode = 'static'; btn.cursor = 'pointer';
-      btn.on('pointerdown', onClick);
-      this._buttons.push(btn);
-      this._root.addChild(btn);
-      x += label.length * 7 + 18;
-    };
+  private _makeRow(sheet: string, variant: number, x: number, y: number, w: number, onClick: (() => void) | null): Container {
+    const row = this._sheetRow(sheet, variant, x, y, w, ROW_H);
+    if (onClick) {
+      row.eventMode = 'static';
+      row.cursor = 'pointer';
+      row.on('pointerdown', onClick);
+    }
+    this._rowsLayer.addChild(row);
+    return row;
+  }
 
-    switch (this._activeTab) {
-      case TAB_INDICES.FRIEND:
-        add('Add', () => { const n = this.getInviteName(); if (n) this.onFriendAdd?.(n); });
-        add('Delete', () => { if (this._selFriend >= 0) this.onFriendDelete?.(this._users[this._selFriend]?.charId); });
-        // OG: CTabFriend::OnWhisper (0x8D4CC0)
-        add('Whisper', () => { if (this._selFriend >= 0) this.onFriendWhisper?.(this._users[this._selFriend]?.name); });
-        // OG: CTabFriend::OnGroupWhisper (0x8B7250)
-        add('Group', () => { this.onGroupWhisper?.('all'); });
-        // OG: CTabFriend::ChangeBlockOption (0x8B7280)
-        add('Block', () => { if (this._selFriend >= 0) this.onFriendBlock?.(this._users[this._selFriend]?.charId, true); });
-        // OG: CTabFriend::OnFindFriendView (0x8B7270)
-        add('Find', () => { this.onFindFriend?.(); });
-        break;
-      case TAB_INDICES.PARTY:
-        add('Create', () => this.onPartyCreate?.());
-        add('Invite', () => { const n = this.getInviteName(); if (n) this.onPartyInvite?.(n); });
-        add('Kick', () => { if (this._selParty >= 0) this.onPartyKick?.(this._party[this._selParty]?.charId); });
-        add('Leave', () => this.onPartyLeave?.());
-        break;
-      case TAB_INDICES.GUILD:
-        if (this._guildName) {
-          add('Board', () => this.onGuildBoard?.());
-          add('Invite', () => { const n = this.getInviteName(); if (n) this.onGuildInvite?.(n); });
-          add('Kick', () => { if (this._selGuild >= 0) { const g = this._guild[this._selGuild]; this.onGuildKick?.(g.charId, g.name); } });
-          add('Admin', () => { if (this._selGuild >= 0) { const g = this._guild[this._selGuild]; this.onGuildAdmin?.(g.charId, g.name); } });
-          add('Expel', () => { if (this._selGuild >= 0) { const g = this._guild[this._selGuild]; this.onGuildExpel?.(g.charId, g.name); } });
-          add('Level', () => {
-            if (this._selGuild < 0) return;
-            const raw = window.prompt('Set guild rank (1-5):');
-            if (raw !== null) this.onGuildLevel?.(this._guild[this._selGuild].charId, parseInt(raw, 10));
+  private _clipChildren(c: Container, top: number, bottom: number): void {
+    const g = new Graphics();
+    g.rect(0, top, PANEL_W, bottom - top).fill({ color: 0xffffff, alpha: 0 });
+    // Simple software clip: hide children outside the band (Pixi mask).
+    c.mask = null;
+    for (const child of c.children) {
+      const cy = child.y;
+      child.visible = cy >= top - ROW_H && cy < bottom;
+    }
+  }
+
+  private _rebuildRows(): void {
+    this._clearRowsOnly();
+    const t = this._activeTab;
+    switch (t) {
+      case TAB_INDICES.FRIEND: this._rowsFriend(); break;
+      case TAB_INDICES.PARTY: this._rowsParty(); break;
+      case TAB_INDICES.GUILD: this._rowsGuildLike(true); break;
+      case TAB_INDICES.ALLIANCE: this._rowsGuildLike(false); break;
+      case TAB_INDICES.BLACKLIST: this._rowsBlackList(); break;
+      case TAB_INDICES.EXPEDITION: this._rowsExpedition(); break;
+    }
+    this._syncButtons();
+  }
+
+  private _clearRowsOnly(): void {
+    for (const c of [...this._rowsLayer.children]) c.removeFromParent();
+  }
+
+  // ── CTabFriend::Draw @0x8C2CD0: 230-wide list, two 113px columns ──
+  private _rowsFriend(): void {
+    const listX = 10;
+    let y = 115 - this._scrollOffset * ROW_H;
+    const CELL_W = 113;
+    for (const g of this._groups) {
+      // Group header: Sheet1/0 plate + fold icon at x=3 + "%s (%d/%d)" at 19.
+      const head = this._makeRow('Sheet1', 0, listX, y, 230, () => {
+        g.folded = !g.folded;
+        this._rebuildRows();
+      });
+      if (this._foldOpen && this._foldClose) {
+        const icon = new Sprite((g.folded ? this._foldClose : this._foldOpen).texture);
+        icon.position.set(3, (ROW_H - 13) / 2);
+        head.addChild(icon);
+      }
+      const ht = new Text({
+        text: `${g.name} (${g.members.length}/${g.members.length})`,
+        style: _styleBlack,
+      });
+      ht.position.set(19, 5);
+      head.addChild(ht);
+      y += ROW_H;
+      if (g.folded) continue;
+
+      const members = g.members.filter((m) => !this._onlineOnly || true);
+      for (let i = 0; i < members.length; i += 2) {
+        for (let col = 0; col < 2 && i + col < members.length; col++) {
+          const m = members[i + col];
+          const colX = col === 0 ? 1 : 115;
+          const selected = m.charId === this._curCID;
+          const row = this._makeRow('Sheet1', 1, listX + colX, y, CELL_W, () => {
+            this._curCID = m.charId;
+            this._rebuildRows();
           });
-          add('Leave', () => this.onGuildLeave?.());
-        } else {
-          add('Create', () => { const n = this.getGuildName(); if (n) this.onGuildCreate?.(n); });
-        }
-        break;
-      case TAB_INDICES.ALLIANCE:
-        if (this._allianceName) {
-          add('Withdraw', () => this.onAllianceWithdraw?.());
-          add('Invite', () => { const n = this.getAllianceInviteName(); if (n) this.onAllianceInvite?.(n); });
-          add('Notice', () => { const t = this.getAllianceNotice(); if (t) this.onAllianceSetNotice?.(t); });
-          if (this._selAlliance >= 0) {
-            const a = this._alliance[this._selAlliance];
-            add('Whisper', () => this.onAllianceWhisper?.(a.name));
-            add('Party', () => this.onAlliancePartyInvite?.(a.charId, a.name));
-            add('Kick', () => this.onAllianceKick?.(a.guildId, a.charId));
-            add('Master', () => this.onAllianceChangeMaster?.(a.charId));
-            add('G+', () => this.onAllianceGradeChange?.(a.charId, false));
-            add('G-', () => this.onAllianceGradeChange?.(a.charId, true));
+          if (selected) {
+            const hi = new Graphics();
+            hi.rect(0, 0, CELL_W, ROW_H).fill({ color: SEL_FILL });
+            row.addChildAt(hi, 0);
           }
+          // icon0 (same channel) / icon1 (blocked) at colX+4, v-centered.
+          const iconIdx = m.blocked ? 1 : 0;
+          const icon = this._friendIcons[iconIdx];
+          if (icon) {
+            const ic = new Sprite(icon.texture);
+            ic.position.set(4, (ROW_H - icon.height) / 2);
+            row.addChild(ic);
+          }
+          const style = m.blocked ? _styleBlocked : selected ? _styleWhite : _styleOnline;
+          const nt = new Text({ text: m.name, style });
+          nt.position.set(14, 5);
+          row.addChild(nt);
         }
-        break;
-      case TAB_INDICES.BLACKLIST:
-        add('Add', () => { const n = this.getBlockName(); if (n) this.onBlockAdd?.(n); });
-        add('Delete', () => { if (this._selBlock >= 0) this.onBlockDelete?.(this._blackList[this._selBlock]); });
-        break;
-      case TAB_INDICES.EXPEDITION:
-        add('Create', () => this.onExpeditionCreate?.());
-        add('Invite', () => { const n = this.getExpeditionInviteName(); if (n) this.onExpeditionInvite?.(n); });
-        add('Kick', () => { if (this._selExped >= 0) this.onExpeditionKick?.(this._expeditionMembers[this._selExped]?.charId); });
-        add('Leave', () => this.onExpeditionWithdraw?.());
-        if (this._selExped >= 0) {
-          add('Boss', () => this.onExpeditionChangeBoss?.(this._expeditionMembers[this._selExped].charId));
-        }
-        break;
+        y += ROW_H;
+      }
     }
+    this._clipChildren(this._rowsLayer, 115, 115 + SB_CONFIG[TAB_INDICES.FRIEND].h);
   }
 
-  // OG: OnChildNotify routing
+  // ── CTabParty::Draw @0x8C4A30: "%-13s   %-11s%6d" on Sheet2 plates ──
+  private _rowsParty(): void {
+    const listX = 10;
+    let y = 60 - this._scrollOffset * ROW_H;
+    const pad = (s: string, n: number) => s.slice(0, n).padEnd(n, ' ');
+    for (const m of this._party) {
+      const selected = m.charId === this._curCID;
+      const variant = selected ? 1 : 0;
+      const row = this._makeRow('Sheet2', variant, listX, y, 230, () => {
+        this._curCID = m.charId;
+        this._rebuildRows();
+      });
+      const label = `${m.isLeader ? '*' : ''}${pad(m.name, 13)} ${pad(m.job, 11)}${String(m.level).padStart(6, ' ')}`;
+      const txt = new Text({ text: label.replace(/\s+\|/, '|'), style: selected ? _styleWhite : _styleOnline });
+      txt.position.set(2, 5);
+      row.addChild(txt);
+      y += ROW_H;
+    }
+    this._clipChildren(this._rowsLayer, 60, 60 + SB_CONFIG[TAB_INDICES.PARTY].h);
+  }
+
+  // ── CTabGuild::Draw @0x8C71F0 / CTabGuildAlliance::Draw @0x8CA6F0 ──
+  // Sections: online members then offline members, each on a guildOn/guildOff
+  // (230x25) plate with expand/collapse; rows on Sheet3/0|over|1 with column
+  // rects Name[1..62] Job[64..125] Level[127..153] Grade[155..]; separators.
+  private _rowsGuildLike(isGuild: boolean): void {
+    const listX = 10;
+    let y = 100 - this._scrollOffset * ROW_H;
+    const entries: GuildEntry[] = isGuild ? this._guild : this._guild; // alliance reuses guild-shaped rows until ALLIANCEDATA lands
+    const source: { charId: number; name: string; rank: string; online: boolean; job?: string; level?: number }[] =
+      isGuild ? entries : this._alliance.map((a) => ({
+        charId: a.charId, name: a.name, rank: gradeName(a.grade), online: true, level: a.level,
+      }));
+
+    const online = source.filter((m) => m.online);
+    const offline = source.filter((m) => !m.online);
+    const sections: { title: string; members: typeof source; folded: boolean }[] = [
+      { title: 'Online', members: online, folded: this._sectionFolded[0] },
+      { title: 'Offline', members: offline, folded: this._sectionFolded[1] },
+    ];
+    const sectionPlate = isGuild
+      ? (on: boolean) => (on ? this._guildSectionOn : this._guildSectionOff)
+      : (_on: boolean) => this._unionNamePlate;
+
+    for (let si = 0; si < sections.length; si++) {
+      const sec = sections[si];
+      const plate = sectionPlate(si === 0);
+      const head = new Container();
+      head.position.set(listX, y);
+      head.eventMode = 'static';
+      head.cursor = 'pointer';
+      head.on('pointerdown', () => {
+        this._sectionFolded[si] = !this._sectionFolded[si];
+        this._rebuildRows();
+      });
+      if (plate) {
+        const sp = new Sprite(plate.texture);
+        sp.position.copyFrom(plate.position);
+        head.addChild(sp);
+      } else {
+        const g = new Graphics();
+        g.rect(0, 0, 230, 25).fill({ color: 0xdfe3ee });
+        head.addChild(g);
+      }
+      // Label at (8,29)-ish → the plate carries the caption; draw counts at (26,6).
+      const total = online.length + offline.length;
+      const lbl = new Text({
+        text: `${sec.title} (${sec.members.length}/${total})`,
+        style: _styleBlack,
+      });
+      lbl.position.set(26, 6);
+      head.addChild(lbl);
+      // Expand/collapse icon (OG BtOpen/BtClose ids 2071/2070 at ptMaxMin.x+10).
+      if (this._foldOpen && this._foldClose) {
+        const icon = new Sprite((sec.folded ? this._foldClose : this._foldOpen).texture);
+        icon.position.set(210, 6);
+        head.addChild(icon);
+      }
+      this._rowsLayer.addChild(head);
+      y += 25;
+      if (sec.folded) continue;
+
+      for (const m of sec.members) {
+        const selected = m.charId === this._curCID;
+        const row = this._makeRow('Sheet3', selected ? 1 : 0, listX, y, 230, () => {
+          this._curCID = m.charId;
+          this._rebuildRows();
+        });
+        const nameStyle = selected ? _styleWhite : _styleBlack;
+        const nm = new Text({ text: m.name, style: nameStyle });
+        nm.position.set(2, 5); // Name column starts x+2
+        row.addChild(nm);
+        const jobTxt = new Text({ text: (m.job ?? gradeName(m.rank)).slice(0, 8), style: nameStyle });
+        jobTxt.position.set(64, 5); // Job column x=64
+        row.addChild(jobTxt);
+        this._drawLevel(row, 127, 4, m.level ?? 0, !m.online); // Level column x=127
+        const gr = new Text({ text: gradeName(m.rank), style: nameStyle });
+        gr.position.set(155, 5); // Grade column x=155
+        row.addChild(gr);
+        if (this._lineSprite) {
+          const ln = new Sprite(this._lineSprite.texture);
+          ln.position.set(0, ROW_H - 1);
+          row.addChild(ln);
+        }
+        y += ROW_H;
+      }
+    }
+    this._clipChildren(this._rowsLayer, 100, 100 + SB_CONFIG[this._activeTab].h);
+  }
+
+  private _rowsBlackList(): void {
+    const listX = 10;
+    let y = 60 - this._scrollOffset * ROW_H;
+    for (let i = 0; i < this._blackList.length; i++) {
+      const idx = i;
+      const selected = idx === this._curBlock;
+      const row = this._makeRow('Sheet3', selected ? 1 : 0, listX, y, 230, () => {
+        this._curBlock = idx;
+        this._rebuildRows();
+      });
+      const txt = new Text({ text: this._blackList[idx], style: selected ? _styleWhite : _styleBlocked });
+      txt.position.set(2, 5);
+      row.addChild(txt);
+      y += ROW_H;
+    }
+    this._clipChildren(this._rowsLayer, 60, 60 + SB_CONFIG[TAB_INDICES.BLACKLIST].h);
+  }
+
+  private _rowsExpedition(): void {
+    const listX = 10;
+    let y = 60 - this._scrollOffset * ROW_H;
+    const sortedKeys = [...this._expeditionSubParties.keys()].sort((a, b) => a - b);
+    for (const spIdx of sortedKeys) {
+      const members = this._expeditionSubParties.get(spIdx)!;
+      const head = this._makeRow('Sheet1', 0, listX, y, 244, null);
+      const ht = new Text({ text: `Party ${spIdx + 1} (${members.length}/6)`, style: _styleBlack });
+      ht.position.set(19, 5);
+      head.addChild(ht);
+      y += ROW_H;
+      for (const m of members) {
+        const selected = m.charId === this._curCID;
+        const row = this._makeRow('Sheet3', selected ? 1 : 0, listX, y, 244, () => {
+          this._curCID = m.charId;
+          this._rebuildRows();
+        });
+        const pad = (s: string, n: number) => s.slice(0, n).padEnd(n, ' ');
+        const label = `${pad(m.name, 13)}${String(m.level).padStart(6, ' ')}`;
+        const txt = new Text({ text: label, style: selected ? _styleWhite : _styleOnline });
+        txt.position.set(2, 5);
+        row.addChild(txt);
+        y += ROW_H;
+      }
+    }
+    this._clipChildren(this._rowsLayer, 60, 60 + SB_CONFIG[TAB_INDICES.EXPEDITION].h);
+  }
+
+  // ═══ input ═══
+
   handleMouseMove(x: number, y: number): void {
     if (!this.isVisible) return;
     const sbx = x - this._root.x - SCROLLBAR_X;
-    const sby = y - this._root.y - (SCROLLBAR_CONFIG[this._activeTab]?.y || 60);
-    if (sbx >= 0 && sbx < 12 && sby >= 0 && sby < 225) {
+    const sby = y - this._root.y - (SB_CONFIG[this._activeTab]?.y ?? 60);
+    if (sbx >= -4 && sbx < 16 && sby >= -4 && sby < (SB_CONFIG[this._activeTab]?.h ?? 225) + 4) {
       this._scrollBar.handleMouseMove(sbx, sby);
     } else {
       this._scrollBar.handleMouseLeave();
@@ -663,26 +1146,35 @@ export class UserList extends GamePanel {
     const lx = x - this._root.x;
     const ly = y - this._root.y;
 
-    // Forward to scrollbar
+    // Active-tab buttons first (OG routes through CWnd hit-testing).
+    for (const b of this._tabButtons.get(this._activeTab) ?? []) {
+      if (b.btn.handleMouseButton(lx, ly, down)) return true;
+    }
+
+    // Scrollbar
+    const sbCfg = SB_CONFIG[this._activeTab];
     const sbx = lx - SCROLLBAR_X;
-    const sby = ly - (SCROLLBAR_CONFIG[this._activeTab]?.y || 60);
-    if (sbx >= 0 && sbx < 12 && sby >= 0 && sby < 225) {
+    const sby = ly - (sbCfg?.y ?? 60);
+    if (sbx >= -4 && sbx < 16 && sby >= -4 && sby < (sbCfg?.h ?? 225) + 4) {
       if (this._scrollBar.handleMouseButton(sbx, sby, down)) return true;
     }
 
     if (!down) return true;
-    if (lx >= PANEL_W - 18 && ly < 22) { this.isVisible = false; return true; }
 
-    // OG: Tab click — delegated to CCtrlTab
-    const tabLx = lx - 8;
-    const tabLy = ly - TAB_Y;
-    if (this._tab.handleMouseButton(tabLx, tabLy, down)) return true;
+    // Rows (Pixi pointerdown handles selection; still swallow clicks inside).
+    if (lx >= 0 && lx < PANEL_W && ly >= 0 && ly < PANEL_H) return true;
+    return false;
+  }
 
-    return lx >= 0 && lx < PANEL_W && ly >= 0 && ly < PANEL_H;
+  onMouseWheel(x: number, y: number, delta: number): void {
+    super.onMouseWheel(x, y, delta);
   }
 
   onKeyPress(key: string): boolean {
     if (key === 'Escape' && this.isVisible) { this.isVisible = false; return true; }
     return false;
   }
+
+  /** Test/inspection hook: currently visible row containers. */
+  get rows(): Container[] { return this._rowsLayer.children as Container[]; }
 }

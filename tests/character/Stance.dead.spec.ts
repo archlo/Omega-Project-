@@ -25,7 +25,7 @@ describe('Stance moveAction encoding (v95 wire layout)', () => {
     expect(MoveActionToStance((1 << 1) | 1).facingLeft).toBe(true);
     expect(MoveActionToStance((2 << 1) | 0).stance).toBe(Stance.Stand1);
     expect(MoveActionToStance((4 << 1) | 0).stance).toBe(Stance.Stand1); // stand variant collapses
-    expect(MoveActionToStance((3 << 1) | 0).stance).toBe(Stance.Walk2);  // fall branch
+    expect(MoveActionToStance((3 << 1) | 0).stance).toBe(Stance.Fall);   // idx 3 → raw 44 (fall, 0x45FA30)
     expect(MoveActionToStance((5 << 1) | 0).stance).toBe(Stance.Jump);
     expect(MoveActionToStance((6 << 1) | 0).stance).toBe(Stance.Fly);    // swim
     expect(MoveActionToStance((7 << 1) | 0).stance).toBe(Stance.Ladder);

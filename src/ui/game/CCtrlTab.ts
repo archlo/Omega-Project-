@@ -1,4 +1,5 @@
-import { Container, Graphics, Text, TextStyle } from 'pixi.js';
+import { Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
+import type { Texture } from 'pixi.js';
 
 // OG CCtrlTab types and their layout constants (from IDA decompilation)
 // RelocateTabPos @ 0x4ee7f0
@@ -85,6 +86,38 @@ export class CCtrlTab {
     this._redraw();
   }
 
+  // OG: AddItem_Canvas @ 0x4efc40 — per-item selected/normal canvases. When
+  // set (CUIUserList::OnCreate passes Tab/enabled + Tab/disabled), the tab
+  // strip renders the WZ canvas instead of the Graphics box + label.
+  private _itemSelectedTex: (Texture | null)[] = [];
+  private _itemNormalTex: (Texture | null)[] = [];
+  private _tabSprites: Sprite[] = [];
+
+  /** Replace the text-label items with WZ canvas pairs (selected, normal). */
+  setCanvasItems(selected: (Sprite | null)[], normal: (Sprite | null)[]): void {
+    this._itemSelectedTex = selected.map((s) => s?.texture ?? null);
+    this._itemNormalTex = normal.map((s) => s?.texture ?? null);
+    if (this._items.length === 0) {
+      for (let i = 0; i < Math.max(selected.length, normal.length); i++) {
+        this.addItem('', i > 0);
+      }
+      this._relocateCanvasWidths();
+    }
+    this._redraw();
+  }
+
+  /** Canvas tabs keep their bitmap width; lay them out edge to edge. */
+  private _relocateCanvasWidths(): void {
+    let x = 0;
+    for (let i = 0; i < this._items.length; i++) {
+      const tex = this._itemNormalTex[i] ?? this._itemSelectedTex[i];
+      const w = tex?.width ?? this._items[i].width;
+      this._items[i].x = x;
+      this._items[i].width = w;
+      x += w + (this._type === 8 ? this._tabSpace : 4);
+    }
+  }
+
   // OG: RemoveAllItems @ 0x4ee090
   removeAllItems(): void {
     this._items = [];
@@ -143,15 +176,30 @@ export class CCtrlTab {
     this._bg.clear();
     for (const t of this._tabTexts) this.container.removeChild(t);
     this._tabTexts = [];
+    for (const s of this._tabSprites) this.container.removeChild(s);
+    this._tabSprites = [];
 
-    // Draw base image background if enabled
-    if (this._bDrawBaseImage) {
-      this._bg.rect(0, 0, this.width, this.height).fill({ color: '#141628' });
+    const hasCanvases = this._itemNormalTex.length > 0 || this._itemSelectedTex.length > 0;
+    if (hasCanvases && this._items.length > 0 &&
+        (this._itemNormalTex.length !== this._items.length)) {
+      this._relocateCanvasWidths();
     }
 
     for (let i = 0; i < this._items.length; i++) {
       const item = this._items[i];
       const isSelected = i === this._curTab;
+
+      // WZ canvas tabs: selected canvas when active, normal otherwise.
+      const tex = isSelected
+        ? (this._itemSelectedTex[i] ?? this._itemNormalTex[i])
+        : (this._itemNormalTex[i] ?? this._itemSelectedTex[i]);
+      if (tex) {
+        const sp = new Sprite(tex);
+        sp.position.set(item.x, 0);
+        this._tabSprites.push(sp);
+        this.container.addChild(sp);
+        continue;
+      }
 
       // Draw tab background
       if (isSelected) {
@@ -163,12 +211,14 @@ export class CCtrlTab {
       }
 
       // Draw tab label
-      const style = isSelected ? this._selectedFont : this._normalFont;
-      const t = new Text({ text: item.label, style });
-      t.x = item.x + 4;
-      t.y = Math.floor((this.height - 10) / 2);
-      this._tabTexts.push(t);
-      this.container.addChild(t);
+      if (item.label) {
+        const style = isSelected ? this._selectedFont : this._normalFont;
+        const t = new Text({ text: item.label, style });
+        t.x = item.x + 4;
+        t.y = Math.floor((this.height - 10) / 2);
+        this._tabTexts.push(t);
+        this.container.addChild(t);
+      }
     }
   }
 

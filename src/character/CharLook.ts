@@ -39,6 +39,9 @@ export class CharLook {
   Position = { x: 0, y: 0 };
   FootholdId = 0;
   ChairHeight = 0;
+  /** Current animation frame (test/anchor consumers). */
+  get Frame(): number { return this._frame; }
+  get CurrentAction(): string { return this._currentAction; }
 
   /** Character name shown in a plate BELOW the feet (OG CLife::MakeNameTag
    *  type 1000). Empty = no tag (e.g. the inner avatar used by OtherCharLook,
