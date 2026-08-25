@@ -8267,6 +8267,26 @@ this._localCharId = args.characterId ?? 0;
   }
 
   private _onQuestRecord(args: { questId: number; state: number; value: string; isEx: boolean }): void {
+    // OG: CWvsContext::CheckQuestCompleteByMob diffs the old vs new quest
+    // record string (3 chars per demanded mob) to drive the
+    // CNoticeQuestProgress mob notices.
+    const oldValue = this._questRecordValues.get(args.questId) ?? '';
+    if (args.state === 1 && args.value && args.value !== oldValue) {
+      const info = this.game.questInfoService?.Get(args.questId);
+      const mobs = info?.Complete.Mobs ?? [];
+      for (let i = 0; i < mobs.length; i++) {
+        const seg = 3 * (i + 1);
+        if (args.value.length < seg) break;
+        const cur = parseInt(args.value.slice(seg - 3, seg), 10) || 0;
+        let old = 0;
+        if (oldValue.length >= seg) old = parseInt(oldValue.slice(seg - 3, seg), 10) || 0;
+        if (cur !== old && cur > 0) {
+          const name = this.game.nameService.MobName(mobs[i].id) ?? `[${mobs[i].id}]`;
+          this._questNotice?.UpdateMob(args.questId, mobs[i].id, name, cur, mobs[i].count);
+        }
+      }
+    }
+    this._questRecordValues.set(args.questId, args.value);
     const existing = this._questRecords.findIndex(q => q.questId === args.questId);
     if (existing >= 0) {
       this._questRecords[existing].state = args.state;
