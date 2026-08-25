@@ -45,6 +45,10 @@ export class OtherCharLook {
   private _adBoardText = '';
   private _adBoardTimer = 0;
   private _statusBadges = new Map<string, { text: string; timer: number }>();
+  /** OG CUser::m_pMiniRoom — the room id carried by this char's balloon;
+   *  visitors send it back in MRP_Enter to browse the shop. 0 = none. */
+  MiniRoomId = 0;
+  MiniRoomType = 0;
 
   // Remote character buff state
   private _tempStatMaskLo = 0n;

@@ -15,6 +15,7 @@ import { CharLook } from '../character/CharLook.js';
 import { AvatarCodec } from '../net/handlers/AvatarCodec.js';
 import { AvatarLook } from '../domain/AvatarLook.js';
 import { ScrollBar } from '../ui/game/ScrollBar.js';
+import { ToolTip } from '../ui/game/ToolTip.js';
 import type { ModifiedCommodityEntry, SetCashShopArgs } from '../domain/CashShopData.js';
 import { CashCommodityTable } from '../domain/CashCommodityTable.js';
 import type {
@@ -301,15 +302,16 @@ export class CashShopStage extends Stage {
   }
 
   // ── Inventory click state ──
-  private _selectedInvCell = -1;
-  private _lastInventoryClickCell = -1;
-  private _lastInventoryClickAt = 0;
+  private _selectedInvCell = -1; // OG m_nSelectedNo — ABSOLUTE slot index
   private _invItemTI = 0; // OG m_nItemTI — current inventory tab (0=equip, 1=use, 2=setup, 3=etc, 4=cash)
-  private _invFirstPosition = 0; // OG m_nFirstPosition — scroll offset for inventory grid
-  private _invSlotCount = 0; // total items in current inventory tab
+  private _invFirstPosition = 0; // OG m_nFirstPosition (0-based here; OG is 4*scrollPos+1)
+  private _invScrollPos: number[] = [0, 0, 0, 0, 0]; // OG ms_anItemScrollPos[5] — per-tab scroll memory
+  private _stoLRequestSent = false; // OG m_bCashShopRequestSent — one StoL request in flight
 
   // ── Character data (for inventory rendering) ──
   private _characterData: any = null;
+  // OG CCSWnd_Inventory::OnMouseMove — item tooltip for cash-tab items
+  private _invToolTip = new ToolTip();
 
   // ── Locker state ──
   private _lockerItems: { sn: number; itemId: number; name: string }[] = [];
@@ -527,10 +529,13 @@ export class CashShopStage extends Stage {
     this._icons = new ItemIconLoader(this._loader, game.wz.character, game.wz.item);
     this._loadAssets();
     this._buildStaticLayer();
-    // OG CCSWnd_Inventory: ScrollBar id1001 at window-local (160, 54), h=102
+    // OG CCSWnd_Inventory: ScrollBar id1001 at window-local (160, 54), h=102.
+    // OnChildNotify @0x4C4160: ms_anItemScrollPos[ti] = pos; FirstPosition = 4*pos+1
+    // (TS keeps a 0-based FirstPosition = 4*pos).
     const invPos = this._invScrollbarPos();
     this._inventoryScrollbar = new ScrollBar(invPos.x, invPos.y, 102, pos => {
-      this._invFirstPosition = pos;
+      this._invScrollPos[this._invItemTI] = pos;
+      this._invFirstPosition = pos * INV_COLS;
     }, { loader: this._loader, uiWz: this._ui });
     this._root.addChild(this._inventoryScrollbar.container);
     // OG CCSWnd_Locker: scrollbar right of the 6-col grid, top aligned with cells
@@ -546,6 +551,8 @@ export class CashShopStage extends Stage {
     // land away from the visuals.
     this.uiRoot.addChild(this._staticRoot);
     this.uiRoot.addChild(this._root);
+    // OG CCSWnd_Inventory::OnMouseMove — CUIToolTip above the shop UI
+    this.uiRoot.addChild(this._invToolTip.container);
     // Mouse coords arrive as 800x600 FRAME coords (_canvasToFrame) � the OG
     // shop fills the whole frame, so no manual horizontal centering.
     this._root.x = 0;
@@ -591,6 +598,8 @@ export class CashShopStage extends Stage {
     this._loader = null;
     this._inventoryScrollbar = null;
     this._lockerScrollbar = null;
+    this._invToolTip.clearToolTip();
+    this._invToolTip.container.removeFromParent();
     this._root.removeFromParent();
     this._root.destroy({ children: true });
     this._staticRoot.removeFromParent();
@@ -1972,7 +1981,7 @@ export class CashShopStage extends Stage {
         const slotIdx = startIdx + cellIdx;
         const cx = INV_X + 22 + col * INV_COL_STEP;
         const cy = INV_Y + 55 + row * INV_COL_STEP;
-        const isSelected = cellIdx === this._selectedInvCell;
+        const isSelected = startIdx + cellIdx === this._selectedInvCell;
         const item = slotIdx < items.length ? items[slotIdx] : undefined;
 
         if (!item || !(item.itemId > 0)) {
@@ -2025,8 +2034,8 @@ export class CashShopStage extends Stage {
       }
     }
     if (this._btRebate) this._drawWzSprite(this._btRebate, LOCKER_X + 160, LOCKER_Y + 82);
-    // OG scroll range = ceil(slotCount / 4) + 1
-    this._inventoryScrollbar?.setRange(Math.ceil(items.length / INV_COLS) + 1);
+    // OG OnTabChanged @0x4BD8F0: SetScrollRange(tableSize / 4 + 1)
+    this._inventoryScrollbar?.setRange(Math.floor(items.length / INV_COLS) + 1);
   }
 
   /** Splits a 0xAARRGGBB constant into a pixi fill ({ color, alpha }). */
@@ -2039,32 +2048,99 @@ export class CashShopStage extends Stage {
     return item.cashSN > 0 || this._invItemTI === 4;
   }
 
-  /** Get items for the current inventory tab from CharacterData */
+  /** Get items for the current inventory tab from CharacterData.
+   *  OG: CharacterData::GetItem(ti, pos) over aaItemSlot[1..4]. The decoded
+   *  TS CharacterData exposes the same tabs as indexed SlotItem arrays
+   *  (CharacterDataDecoder): equipInventory / consumeInventory /
+   *  installInventory / etcInventory / cashInventory, each {slot, item}. */
   private _getInvItems(): { itemId: number; count: number; cashSN: number }[] {
     if (this._invItemTI === 4) {
-      return this._cashInventoryItems.map(item => ({
-        itemId: item.itemId,
-        count: item.count,
-        cashSN: item.sn,
-      }));
+      const cash = this._characterData ? (this._characterData as any).cashInventory : null;
+      const result = Array.isArray(cash) ? this._mapSlotItems(cash) : [];
+      // Merge items purchased this shop visit (server BuyDone appends here)
+      // that the migrated snapshot doesn't carry yet.
+      for (const item of this._cashInventoryItems) {
+        if (!result.some(r => r.cashSN === item.sn)) {
+          result.push({ itemId: item.itemId, count: item.count, cashSN: item.sn });
+        }
+      }
+      return result;
     }
     if (!this._characterData) return [];
     const cd = this._characterData as any;
-    // OG: aaItemSlot is an array of arrays indexed by inventory type
-    // aaItemSlot[0] = equip, [1] = use, [2] = setup, [3] = etc, [4] = cash
-    const slotArrays = cd.aaItemSlot ?? cd.itemSlot ?? [];
-    const slots = slotArrays[this._invItemTI] ?? [];
+    // Tab order matches OG m_nItemTI 1..4: Equip, Use(Consume), Setup(Install), Etc
+    const slots: Array<{ slot?: number; item?: any }> =
+      this._invItemTI === 0 ? cd.equipInventory
+      : this._invItemTI === 1 ? cd.consumeInventory
+      : this._invItemTI === 2 ? cd.installInventory
+      : cd.etcInventory;
+    return this._mapSlotItems(Array.isArray(slots) ? slots : []);
+  }
+
+  /** Maps decoded {slot, item} entries to display items sorted by slot. */
+  private _mapSlotItems(slots: Array<{ slot?: number; item?: any }>): { itemId: number; count: number; cashSN: number }[] {
     const result: { itemId: number; count: number; cashSN: number }[] = [];
-    for (const slot of slots) {
-      if (!slot) continue;
-      const itemId = slot.nItemId ?? slot.itemId ?? 0;
-      const count = slot.nNumber ?? slot.count ?? 1;
-      const cashSN = slot.liCashItemSN?.lowPart ?? slot.cashSN ?? 0;
-      if (itemId > 0) {
-        result.push({ itemId, count, cashSN });
-      }
+    for (const entry of [...slots].sort((a, b) => (a.slot ?? 0) - (b.slot ?? 0))) {
+      const item = entry?.item;
+      const itemId = item?.itemId ?? 0;
+      if (itemId <= 0) continue;
+      const cashSN = item?.cash && typeof item?.itemSn === 'bigint' ? Number(item.itemSn & 0xffffffffn) : 0;
+      result.push({ itemId, count: Math.max(1, item?.quantity ?? 1), cashSN });
     }
     return result;
+  }
+
+  /** OG GetSlotPositionFromPoint @0x4BE640 — absolute slot index under the
+   *  cursor within the visible [FirstPosition .. FirstPosition+12) window,
+   *  or -1 when no cell is hit (OG returns 0 for "none"). */
+  private _invSlotFromPoint(lx: number, ly: number): number {
+    const items = this._getInvItems();
+    const last = Math.min(this._invFirstPosition + INV_ROWS * INV_COLS, items.length);
+    for (let row = 0; row < INV_ROWS; row++) {
+      for (let col = 0; col < INV_COLS; col++) {
+        const cx = INV_X + 22 + col * INV_COL_STEP;
+        const cy = INV_Y + 55 + row * INV_COL_STEP;
+        if (lx >= cx && lx < cx + INV_CELL && ly >= cy && ly < cy + INV_CELL) {
+          const pos = this._invFirstPosition + row * INV_COLS + col;
+          return pos < last ? pos : -1;
+        }
+      }
+    }
+    return -1;
+  }
+
+  /** OG SetSelectedNo @0x4BDAD0 — select an absolute slot and auto-scroll so
+   *  its row is visible (keep scroll in [row-2 .. row]). */
+  private _invSetSelectedNo(slotIdx: number): void {
+    this._selectedInvCell = -1;
+    if (slotIdx >= 0 && slotIdx < this._getInvItems().length) {
+      this._selectedInvCell = slotIdx;
+      const sb = this._inventoryScrollbar;
+      if (sb) {
+        const row = Math.floor(slotIdx / INV_COLS);
+        let cur = sb.pos;
+        if (row >= cur + INV_ROWS) cur = row - (INV_ROWS - 1);
+        else if (row < cur) cur = row;
+        if (cur !== (this._invScrollPos[this._invItemTI] ?? 0)) {
+          this._invScrollPos[this._invItemTI] = cur;
+          sb.pos = cur;
+          this._invFirstPosition = cur * INV_COLS;
+        }
+      }
+    }
+  }
+
+  /** Used slots of a tab (OG EnableExButton compares table size <= 96). */
+  private _invUsedSlots(invType: number): number {
+    const cd = this._characterData as any;
+    if (!cd) return 0;
+    const arr =
+      invType === 1 ? cd.consumeInventory
+      : invType === 2 ? cd.installInventory
+      : invType === 3 ? cd.etcInventory
+      : invType === 4 ? cd.cashInventory
+      : cd.equipInventory;
+    return Array.isArray(arr) ? arr.length : 0;
   }
 
   /** Decode the fixed-size GW_CashItemInfo payload used by the OG client. */
@@ -3064,6 +3140,18 @@ export class CashShopStage extends Stage {
     this._inventoryScrollbar?.handleMouseMove(lx - invPos.x, ly - invPos.y);
     this._lockerScrollbar?.handleMouseMove(lx - lockerPos.x, ly - lockerPos.y);
 
+    // OG CCSWnd_Inventory::OnMouseMove @0x4BEEC0 — ShowItemToolTip for cash
+    // items at (cursor.x + IsMyAddon, cursor.y + IsMyAddon + 20); ClearToolTip otherwise.
+    {
+      const hit = this._invSlotFromPoint(lx, ly);
+      const item = hit >= 0 ? this._getInvItems()[hit] : undefined;
+      if (item && this._isCashInvItem(item)) {
+        this._invToolTip.setToolTipString2(lx, ly + 20, this._getItemName(item.itemId), '');
+      } else {
+        this._invToolTip.clearToolTip();
+      }
+    }
+
     // Track hover state for buttons (OG: mouseOver state)
     this._hoveredBtn = null;
 
@@ -3141,6 +3229,19 @@ export class CashShopStage extends Stage {
     const lx = x - this._root.x;
     const ly = y;
     if (!down) {
+      // Inventory mouse-up — OG CCSWnd_Inventory::OnMouseButton msg 515:
+      // releasing over a cash-SN item moves it to the locker
+      // (CCashShop::OnMoveCashItemStoL, one request in flight).
+      const hit = this._invSlotFromPoint(lx, ly);
+      if (hit >= 0 && !this._stoLRequestSent) {
+        const item = this._getInvItems()[hit];
+        if (item && item.cashSN > 0) {
+          this._stoLRequestSent = true;
+          this.game?.session.send(GameSender.CashShopMoveStoL(item.cashSN));
+          this._statusMessage = 'Moving item to locker...';
+          this._selectedInvCell = -1;
+        }
+      }
       const invPos = this._invScrollbarPos();
       const lockerPos = this._lockerScrollbarPos();
       this._inventoryScrollbar?.handleMouseButton(lx - invPos.x, ly - invPos.y, false);
@@ -3546,6 +3647,11 @@ export class CashShopStage extends Stage {
     ] as const;
     for (const [bx, by, invType] of expansionButtons) {
       if (lx >= INV_X + bx && lx < INV_X + bx + 64 && ly >= INV_Y + by && ly < INV_Y + by + 22) {
+        // OG EnableExButton @0x4BD9D0 — expansion disabled at the 96-slot cap
+        if (this._invUsedSlots(invType) > 96) {
+          this._statusMessage = 'Inventory slots are already fully expanded.';
+          return;
+        }
         this.game?.session.send(GameSender.CashShopIncSlotCount(invType));
         return;
       }
@@ -3568,38 +3674,31 @@ export class CashShopStage extends Stage {
       return;
     }
 
-    // Inventory cell clicks
-    for (let row = 0; row < INV_ROWS; row++) {
-      for (let col = 0; col < INV_COLS; col++) {
-         const cx = INV_X + 22 + col * INV_COL_STEP;
-         const cy = INV_Y + 55 + row * INV_COL_STEP;
-        if (lx >= cx && lx < cx + INV_CELL && ly >= cy && ly < cy + INV_CELL) {
-          const cell = row * INV_COLS + col;
-          const items = this._getInvItems();
-          const item = items[this._invFirstPosition + cell];
-          this._selectedInvCell = cell;
-          const now = Date.now();
-          const isDoubleClick = cell === this._lastInventoryClickCell && now - this._lastInventoryClickAt < 400;
-          this._lastInventoryClickCell = cell;
-          this._lastInventoryClickAt = now;
-          if (isDoubleClick && item?.cashSN && this._invItemTI === 4) {
-            this.game?.session.send(GameSender.CashShopMoveStoL(item.cashSN));
-            this._statusMessage = 'Moving cash item to locker...';
-          }
-          return;
-        }
+    // Inventory cell clicks — OG CCSWnd_Inventory::OnMouseButton msg 513
+    // (GetSlotPositionFromPoint → SetSelectedNo for cash-SN items only)
+    {
+      const hit = this._invSlotFromPoint(lx, ly);
+      if (hit >= 0) {
+        const item = this._getInvItems()[hit];
+        if (item && item.cashSN > 0) this._invSetSelectedNo(hit);
+        return;
       }
     }
 
-    // Inventory vertical tab clicks (OG: CCSWnd_Inventory tab control, args 4,17,28,156)
+    // Inventory vertical tab clicks (OG: CCSWnd_Inventory tab control, args 4,17,28,156).
+    // OnTabChanged @0x4BD8F0: restore the per-tab remembered scroll position.
     const invTabNames = ['Equip', 'Use', 'Setup', 'Etc', 'Cash'];
     const invTabH = Math.floor(INV_TAB_H / invTabNames.length);
     for (let i = 0; i < invTabNames.length; i++) {
       const ty = INV_Y + INV_TAB_Y + i * invTabH;
       if (lx >= INV_X + INV_TAB_X && lx < INV_X + INV_TAB_X + INV_TAB_W && ly >= ty && ly < ty + invTabH) {
         this._invItemTI = i;
-        this._invFirstPosition = 0;
         this._selectedInvCell = -1;
+        this._invToolTip.clearToolTip();
+        const pos = Math.min(this._invScrollPos[i] ?? 0, Math.floor(this._getInvItems().length / INV_COLS));
+        this._inventoryScrollbar?.setRange(Math.floor(this._getInvItems().length / INV_COLS) + 1);
+        if (this._inventoryScrollbar) this._inventoryScrollbar.pos = pos;
+        this._invFirstPosition = pos * INV_COLS;
         return;
       }
     }
@@ -4294,9 +4393,16 @@ export class CashShopStage extends Stage {
         this._buyPending = false;
         this._statusMessage = 'Name change complete!';
         break;
-      case 0x6D: this._statusMessage = `Inventory expanded to ${args.newSlotCount}`; break;
+      case 0x6D: {
+        // Keep the local snapshot's tab size in sync with the server
+        const cd = this._characterData as any;
+        if (Array.isArray(cd?.inventorySize)) cd.inventorySize[args.invType] = args.newSlotCount;
+        this._statusMessage = `Inventory expanded to ${args.newSlotCount}`;
+        break;
+      }
       case 0x6F: this._statusMessage = `Storage expanded to ${args.trunkCount}`; break;
       case 0x77: {
+        this._stoLRequestSent = false;
         const item = this._parseCashItem(args.itemBytes);
         if (item) {
           this._lockerItems = this._lockerItems.filter(value => value.sn !== item.sn);
@@ -4306,9 +4412,17 @@ export class CashShopStage extends Stage {
         break;
       }
       case 0x79: {
+        this._stoLRequestSent = false;
         const item = this._parseCashItem(args.itemBytes);
         if (item) {
           this._cashInventoryItems = this._cashInventoryItems.filter(value => value.sn !== item.sn);
+          // Also drop it from the decoded cash snapshot if present
+          const cd = this._characterData as any;
+          if (Array.isArray(cd?.cashInventory)) {
+            cd.cashInventory = cd.cashInventory.filter(
+              (s: any) => !(s?.item?.cash && typeof s?.item?.itemSn === 'bigint' && Number(s.item.itemSn & 0xffffffffn) === item.sn),
+            );
+          }
           this._lockerItems.push({ sn: item.sn, itemId: item.itemId, name: this._getItemName(item.itemId) });
         }
         this._statusMessage = 'Item moved to locker';
@@ -4337,6 +4451,9 @@ export class CashShopStage extends Stage {
       case 0x76: // EnableEquipSlotExtFailed
       case 0x78: // MoveLtoSFailed
       case 0x7A: // MoveStoLFailed
+        this._stoLRequestSent = false;
+        this._statusMessage = 'Could not move the item.';
+        break;
       case 0x7C: // DestroyFailed
       case 0x97: // RebateFailed
       case 0xB0: // PurchaseRecordFailed

@@ -141,6 +141,10 @@ export class ItemTooltip {
   private _descOf: ((itemId: number) => string | null) | null;
   private _setItemOf: ((itemId: number) => SetItemPanelData | null) | null;
   private _mobNameOf: ((mobId: number) => string | null) | null;
+  /** OG SetToolTip_Equip couple-ring branch: resolve the partner name for a
+   *  ring (itemId/10000 == 11120) from the CharacterData record list. */
+  ringPartnerOf: ((itemId: number, itemSn: bigint) => string | null) | null = null;
+  private _currentItemSn: bigint | null = null;
   private _pLevel = 0; private _pStr = 0; private _pDex = 0; private _pInt = 0; private _pLuk = 0;
   private _pJob = 0;
 
@@ -204,7 +208,8 @@ this._descOf = descOf;
     equippedSetCount: number = 0,
     petLevel?: number, petTameness?: number, petRepleteness?: number, petRemainLife?: number,
     equipStats?: { incStr: number; incDex: number; incInt: number; incLuk: number; incPad: number; incMad: number; incPdd: number; incMdd: number; incMhp: number; incMmp: number; incAcc: number; incEva: number; incSpeed: number; incJump: number; ruc: number; cuc: number; option1: number; option2: number; option3: number },
-     bundleOpts?: BundleTooltipOptions): void {
+     bundleOpts?: BundleTooltipOptions, itemSn: bigint = 0n): void {
+    this._currentItemSn = itemSn;
     const attr = this._icons.LoadAttr(itemId);
     const isEquip = (attr?.IsEquip === true) || Math.floor(itemId / 1_000_000) === 1;
     // Pet items: category 500 (5000000+)
@@ -1035,6 +1040,14 @@ if (orderCommentStr) { this._txt(ti++, 4, yCursor, orderCommentStr, DescColor, 9
 
     // OG: Durability label (AddInfo, StringPool 0x1A0D) when WZ base durability > 0
     if ((attr.DurabilityMax ?? 0) > 0) push(this._string(OG_TOOLTIP_STRING_IDS.durability, 'Durability:'));
+
+    // OG SetToolTip_Equip ring branch (0x8A66E5..0x8A6815): couple rings
+    // (itemId/10000 == 11120 && != 1112000) matched by item SN against
+    // CharacterData's GW_CoupleRecord list render Format(SP 0x2B1, partner).
+    if (Math.floor(_itemId / 10000) === 11120 && _itemId !== 1112000) {
+      const partner = this.ringPartnerOf?.(_itemId, this._currentItemSn ?? 0n) ?? null;
+      if (partner) push(partner);
+    }
 
     // OG: Stat rows follow SetToolTip_Equip_Basic order and PrintValue formatting.
     // Instance stats win over WZ base; percent rows read from WZ base (pe2) in OG.

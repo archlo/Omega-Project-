@@ -147,6 +147,9 @@ export class MapleClaudeGame {
     this.questInfoService = new QuestInfoService(() => {
       if (!this.wzDir) return null;
       return WzPackage.OpenBase(this.wzDir, 'Quest');
+    }, () => {
+      if (!this.wzDir) return null;
+      return WzPackage.OpenBase(this.wzDir, 'Etc');
     });
   }
 

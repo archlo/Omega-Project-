@@ -98,11 +98,35 @@ export class QuestLog extends GamePanel {
   /** Resolves a quest id to a level-range display string (red prefix), or ''. */
   levelOf: (id: number) => string = () => '';
 
+  /** OG m_mQuestSortKey — "sortkey" field on the QuestInfo node. */
+  sortKeyOf: (id: number) => number = () => 0;
+
+  /** OG GetQuestCategory — the quest's "area" field. */
+  categoryOf: (id: number) => number = () => 0;
+
+  /** OG CQuestMan::GetQuestCategoryName — Etc.wz/QuestCategory.img names. */
+  categoryNameOf: (idx: number) => string = () => '';
+
+  /** Start-demand LvMin, for the QICompareFunc tiebreak sort. */
+  minLevelOf: (id: number) => number = () => 0;
+
+  /** OG IsWorthlessQuest (0x8223B0): tab-0 quests you out-leveled by 10+. */
+  worthlessOf: (id: number) => boolean = () => false;
+
+  /** OG IsMarkedAsRead — used by the suitable-level quest helper. */
+  readOf: (id: number) => boolean = () => false;
+
   /** Fired when a quest row is clicked. The stage opens the companion QuestDetail panel. */
   onSelectQuest: ((id: number) => void) | null = null;
 
+  /** Fired when the helper chain finds nothing to show and OG closes the detail (ToggleDetail(0)). */
+  onNoQuestSelected: (() => void) | null = null;
+
   /** Currently selected quest id (or -1). Read-only from outside. */
   get selectedId(): number { return this._selected; }
+
+  /** Active tab index (0 available / 1 in-progress / 2 completed / 3 party). */
+  get activeTab(): number { return this._activeTab; }
 
   private _loader: WzTextureLoader;
   private _uiWz: WzPackage | null;
@@ -117,6 +141,8 @@ export class QuestLog extends GamePanel {
   private _maxScroll = 0;
   private _selected = -1;
   private _showAll = false;
+  /** Per-tab minimized category set (OG m_abOption bit per tab*cat). */
+  private _minimizedByTab: Set<number>[] = [new Set(), new Set(), new Set(), new Set()];
 
   private _groupsByTab: QuestGroup[][] = [
     [], [], [], [],
@@ -132,10 +158,11 @@ export class QuestLog extends GamePanel {
   private _btAllLevel: Button | null = null;
   private _catBtns: Button[] = [];
 
-  constructor(opts: { loader?: WzTextureLoader; uiWz?: WzPackage | null } = {}) {
+  constructor(opts: { loader?: WzTextureLoader; uiWz?: WzPackage | null; initialTab?: number } = {}) {
     super();
     this._loader = opts.loader ?? (null as unknown as WzTextureLoader);
     this._uiWz = opts.uiWz ?? null;
+    if (opts.initialTab !== undefined) this._activeTab = Math.max(0, Math.min(3, opts.initialTab));
     this._root.visible = false;
     this._root.x = 50;
     this._root.y = 60;
@@ -238,27 +265,59 @@ export class QuestLog extends GamePanel {
   }
 
   private _rebuildRows(): void {
-    const rows: DisplayRow[] = [];
-    const state = new Map<number, boolean>();
-    for (const g of this._groupsByTab[this._activeTab]) {
-      for (const id of g.quests) state.set(id, false);
-    }
-    for (const g of this._groupsByTab[this._activeTab]) {
-      const quests = g.quests.filter((id) => !this._showAll || !this._isWorthless(id));
-      if (quests.length === 0) continue;
-      rows.push({ header: true, name: g.name, category: 0, count: quests.length, minimized: false });
-      for (const id of quests) {
-        rows.push({
+    // OG CUIQuestInfo::LoadData (0x832D40): every quest is bucketed into its
+    // category (the "area" field); header rows are inserted per existing
+    // category; ZSort with QICompareFunc (0x822110) orders by category, then
+    // nSortKey, then start-demand LvMin. The BtMyLevel option bit 0x10000000
+    // hides "worthless" quests (IsWorthlessQuest: only meaningful on tab 0).
+    const tab = this._activeTab;
+    const minimized = this._minimizedByTab[tab];
+    const filterActive = !this._showAll;
+
+    // Bucket quests per category.
+    const byCategory = new Map<number, QuestRow[]>();
+    for (const g of this._groupsByTab[tab]) {
+      for (const id of g.quests) {
+        if (filterActive && this.worthlessOf(id)) continue; // OG IsWorthlessQuest gate
+        const cat = this.categoryOf(id);
+        let list = byCategory.get(cat);
+        if (!list) { list = []; byCategory.set(cat, list); }
+        list.push({
           id,
           name: this.nameOf(id),
           level: this._levelOf(id),
-          category: 0,
-          sortKey: 0,
-          iconType: this._iconTypeForTab(this._activeTab),
+          category: cat,
+          sortKey: this.sortKeyOf(id),
+          iconType: this._iconTypeForTab(tab),
         });
       }
     }
-    this._rowsByTab[this._activeTab] = rows;
+
+    // QICompareFunc: category asc → sortKey asc → LvMin asc (stable on id).
+    const cmp = (a: QuestRow, b: QuestRow): number =>
+      a.category - b.category ||
+      a.sortKey - b.sortKey ||
+      this.minLevelOf(a.id) - this.minLevelOf(b.id) ||
+      a.id - b.id;
+
+    const rows: DisplayRow[] = [];
+    const cats = [...byCategory.keys()].sort((a, b) => a - b);
+    for (const cat of cats) {
+      const quests = byCategory.get(cat)!.sort(cmp);
+      const isMin = minimized.has(cat);
+      rows.push({
+        header: true,
+        // OG header text = the category name; fall back to the server group
+        // label when no WZ name exists for the index.
+        name: this.categoryNameOf(cat) || this._groupsByTab[tab][0]?.name || '',
+        category: cat,
+        count: quests.length,
+        minimized: isMin,
+      });
+      if (isMin) continue;
+      rows.push(...quests);
+    }
+    this._rowsByTab[tab] = rows;
     this._maxScroll = Math.max(0, rows.length - MAX_ROW_COUNT);
     if (this._scroll > this._maxScroll) this._scroll = this._maxScroll;
     if (this._scrollBar) this._scrollBar.setRange(this._maxScroll + 1);
@@ -270,8 +329,8 @@ export class QuestLog extends GamePanel {
     return [0, 1, 2, 4][tab];
   }
 
-  private _isWorthless(_id: number): boolean {
-    return false;
+  private _isWorthless(id: number): boolean {
+    return this.worthlessOf(id);
   }
 
   private _levelOf(id: number): string {
@@ -356,9 +415,10 @@ export class QuestLog extends GamePanel {
       const t = new Text({ text: `${row.name} (${row.count})`, style: _headerStyle });
       t.position.set(31, LIST_TOP + r * ROW_H - 1);
       this._rowLayer.addChild(t);
-      // Category toggle button: BtMax (minimize) at (140-ish)
+      // Category toggle button (OG ids: BtMin 3000+4*cat+tab minimizes,
+      // BtMax 4000+4*cat+tab expands — m_abOption bit per category).
       if (this._loader && this._uiWz) {
-        const bt = this._toggleButton(row.minimized ? 'BtMin' : 'BtMax');
+        const bt = this._toggleButton(row.minimized ? 'BtMin' : 'BtMax', row.category);
         if (bt) {
           bt.container.position.set(211 - 13, y);
           this._root.addChild(bt.container);
@@ -403,16 +463,77 @@ export class QuestLog extends GamePanel {
     return 'header' in row && row.header;
   }
 
-  private _toggleButton(nodeName: string): Button | null {
+  private _toggleButton(nodeName: string, category: number): Button | null {
     if (!this._loader || !this._uiWz) return null;
     const node = this._uiWz.GetItem(`UIWindow2.img/Quest/${nodeName}`);
     if (!(node instanceof WzProperty)) return null;
     const b = Button.fromWz(this._loader, node, '');
-    b.onClick = () => { /* minimize/expand category — skip for now */ };
+    b.onClick = () => {
+      // OG OnButtonClicked ids 3000+/4000+: set/clear the minimized bit.
+      const set = this._minimizedByTab[this._activeTab];
+      if (nodeName === 'BtMin') set.add(category);
+      else set.delete(category);
+      this._rebuildRows();
+    };
     return b;
   }
 
   // ── Input ───────────────────────────────────────────────────────────────────
+
+  /**
+   * OG CUIQuestInfo::TryShowSuitableLevelQuest (0x832090): switch to the
+   * Available tab, then walk its rows in order and open the detail of the
+   * first quest that is not worthless (and not read yet when bNotRead).
+   * Returns the selected quest id or -1.
+   */
+  tryShowSuitableLevelQuest(notRead: boolean): number {
+    this._activeTab = 0;
+    this._scroll = 0;
+    this._rebuildRows();
+    this._applyButtons();
+    const rows = this._rowsByTab[0];
+    for (const row of rows) {
+      if (this._isHeader(row)) continue;
+      if (this.worthlessOf(row.id)) continue;
+      if (notRead && this.readOf(row.id)) continue;
+      this._selected = row.id;
+      this.onSelectQuest?.(row.id);
+      return row.id;
+    }
+    return -1;
+  }
+
+  /** OG TryShowTopQuest — select the first quest row of the active tab. */
+  tryShowTopQuest(): boolean {
+    const rows = this._rowsByTab[this._activeTab];
+    for (const row of rows) {
+      if (this._isHeader(row)) continue;
+      this._selected = row.id;
+      this.onSelectQuest?.(row.id);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * OG OnTabChanged (0x8351D0) helper chain: on the Available tab auto-open
+   * the first unread suitable-level quest (the "quest helper"), falling back
+   * to any suitable quest; otherwise select the top row or close the detail.
+   */
+  runTabHelper(): void {
+    let picked = -1;
+    if (this._activeTab === 0) {
+      picked = this.tryShowSuitableLevelQuest(true);
+      if (picked < 0) picked = this.tryShowSuitableLevelQuest(false);
+    } else {
+      this._rebuildRows();
+      this._applyButtons();
+    }
+    if (picked < 0 && !this.tryShowTopQuest()) {
+      this._selected = -1;
+      this.onNoQuestSelected?.();
+    }
+  }
 
   handleMouseButton(mx: number, my: number, down: boolean): boolean {
     if (!this.isVisible) return false;
@@ -430,8 +551,7 @@ export class QuestLog extends GamePanel {
           if (this._activeTab !== i) {
             this._activeTab = i;
             this._scroll = 0;
-            this._rebuildRows();
-            this._applyButtons();
+            this.runTabHelper();
           }
           return true;
         }

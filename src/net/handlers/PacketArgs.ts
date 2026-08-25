@@ -62,6 +62,9 @@ export interface SetFieldArgs {
   equippedCash?: { slot: number; item: any }[];
   /** OG: CharacterData.skillRecords — decoded from the SKILLRECORD flag block. */
   skillRecords?: { skillId: number; level: number; masterLevel?: number }[];
+  /** OG: CharacterData couple/friend records — ring tooltip partner matching. */
+  coupleRecords?: { pairCharacterId: number; pairCharacterName: string; itemSn: bigint; pairItemSn: bigint }[];
+  friendRecords?: { pairCharacterId: number; pairCharacterName: string; itemSn: bigint; pairItemSn: bigint; friendItemId: number }[];
   /** Non-migrate-only: field type (1 byte; e.g. 0=normal, 1=instance). */
   nFieldType?: number;
   posMap?: number; portal?: number;
@@ -172,7 +175,7 @@ export interface TempStatEntry { skillId: number; value: number; seconds: number
 export interface UserEmotionArgs { charId: number; emotion: number; durationMs: number; byItemOption: boolean; }
 export interface UserEffectArgs { charId: number; effectType: number; payload: Uint8Array; isLocal: boolean; }
 export interface MobCtrlAckArgs { mobId: number; mobCtrlSn: number; nextAttackPossible: boolean; mp: number; nextSkillId: number; nextSkillLevel: number; }
-export interface LootMessageArgs { warning: number; isMoney: boolean; itemId?: number; quantity?: number; money?: number; }
+export interface LootMessageArgs { warning: number; isMoney: boolean; itemId?: number; quantity?: number; money?: number; extra?: number; cafeBonus?: number; }
 export interface QuestRecordArgs { questId: number; state: number; value: string; isEx: boolean; }
 
 /** OutHeader.Message=38 sub-types not yet tied to a specific caller.
@@ -541,6 +544,9 @@ export interface MiniRoomArgs {
   msgType?: number;
   charName?: string;
   userIndex?: number;
+  userName?: string;
+  job?: number;
+  newSize?: number;
   text?: string;
   leaveType?: number;
   index?: number;
@@ -553,7 +559,11 @@ export interface MiniRoomArgs {
   balloon?: true;
   ownerId?: number;
   miniRoomType?: number;
+  /** OG dwMiniRoomSN — the room object id visitors send back in MRP_Enter. */
+  roomId?: number;
   pwd?: boolean;
+  curUsers?: number;
+  gameOn?: boolean;
   isEmployee?: boolean;
   // MemoryGame sub-protocol
   cardIndex?: number;

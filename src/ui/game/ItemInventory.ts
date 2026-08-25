@@ -199,6 +199,7 @@ export class ItemInventory extends GamePanel implements DragTarget {
     optionOf?: (optionId: number, level: number) => Record<string, number> | null,
     itemInfo?: ItemInfoService | null,
     strings?: StringPoolService | null,
+    ringPartnerOf?: (itemId: number, itemSn: bigint) => string | null,
   } = {}) {
     super();
     this._root.visible = false;
@@ -213,6 +214,7 @@ export class ItemInventory extends GamePanel implements DragTarget {
       this._tooltip = new ItemTooltip(opts.font, opts.icons, assets,
         opts.descOf ?? null, opts.setItemOf ?? null, opts.optionOf ?? null,
         opts.itemInfo ?? null, opts.strings ?? null);
+      this._tooltip.ringPartnerOf = opts.ringPartnerOf ?? null;
     } else {
       this._tooltip = null;
     }

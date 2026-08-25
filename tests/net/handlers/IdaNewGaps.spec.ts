@@ -61,8 +61,12 @@ describe('IDA_NEW_GAPS.md opcode handlers', () => {
     board.writeInt(1001); board.writeString('S> apples');
     dispatch(router, board);
 
+    // OG: ShowItemUpgradeEffect (@0x8E7B00) — after charId: success(u8) +
+    // cursed(u8) + enchantSkill(u8) + enchantCategory(u32) + whiteScroll(u8) +
+    // recoverable(u8) — matches the server's UserPacket.userItemUpgradeEffect.
     const upgrade = OutPacket.Of(OutHeader.ShowItemUpgradeEffect);
-    upgrade.writeInt(1001); upgrade.writeByte(1); upgrade.writeInt(2040000);
+    upgrade.writeInt(1001); upgrade.writeByte(1); upgrade.writeByte(0); upgrade.writeByte(0);
+    upgrade.writeInt(0); upgrade.writeByte(1); upgrade.writeByte(0);
     dispatch(router, upgrade);
 
     // OG: OnGuildMarkChanged (0x953FE0) — after charId: markBg(u16) + markBgColor(u8) + mark(u16) + markColor(u8). No guildId.
@@ -97,7 +101,7 @@ describe('IDA_NEW_GAPS.md opcode handlers', () => {
 
     expect(seen).toEqual([
       { charId: 1001, message: 'S> apples' },
-      { charId: 1001, result: 1, itemId: 2040000 },
+      { charId: 1001, success: 1, cursed: false, enchantSkill: false, enchantCategory: 0, whiteScroll: true, recoverable: false },
       { charId: 1001, markBg: 1, markBgColor: 2, mark: 3, markColor: 4 },
       { charId: 1001, level: 10, isCharging: true, skillId: 30001000, facingLeft: true, nAction: 5 },
       { charId: 1001, value: 1, posX: 500, posY: 300 },

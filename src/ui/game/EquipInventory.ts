@@ -250,6 +250,7 @@ export class EquipInventory extends GamePanel implements DragTarget {
       optionOf?: (optionId: number, level: number) => Record<string, number> | null,
       itemInfo?: ItemInfoService | null,
       strings?: StringPoolService | null,
+      ringPartnerOf?: (itemId: number, itemSn: bigint) => string | null,
   } = {}) {
     super();
     this._root.visible = false;
@@ -274,6 +275,7 @@ export class EquipInventory extends GamePanel implements DragTarget {
     if (opts.font && opts.icons) {
       const assets = new TooltipAssets(opts.loader ?? new WzTextureLoader(), opts.uiWz ?? null);
         this._tooltip = new ItemTooltip(opts.font, opts.icons, assets, opts.descOf ?? null, opts.setItemOf ?? null, opts.optionOf ?? null, opts.itemInfo ?? null, opts.strings ?? null);
+    this._tooltip.ringPartnerOf = opts.ringPartnerOf ?? null;
     } else {
       this._tooltip = null;
     }

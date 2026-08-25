@@ -59,6 +59,7 @@ export class QuestData {
 
 export class QuestInfoService {
   private readonly _questWz: () => WzPackage | null;
+  private readonly _etcWz: (() => WzPackage | null) | null;
   private _all: Map<number, QuestData> | null = null;
   private _byNpc: Map<number, { questId: number; isStart: boolean }[]> | null = null;
 
@@ -75,7 +76,6 @@ export class QuestInfoService {
   private _timeLimitQuests = new Map<number, number>();   // questId → time limit
   private _timeLimitQuests2 = new Map<number, number>();  // questId → time limit 2
   private _dailyPlayQuests = new Map<number, number>();   // questId → daily play time
-  private _questCategories = new Map<number, number>();   // questId → category
   private _questCategoryNames: string[] = [];
   private _partyQuestIconPaths = new Map<number, string>();
   private _seriesQuests = new Map<string, number[]>();    // seriesName → questIds
@@ -86,8 +86,9 @@ export class QuestInfoService {
   private _normalAutoStartQuests: number[] = [];
   private _disallowedDelivery: number[] = [];
 
-  constructor(questWz: () => WzPackage | null) {
+  constructor(questWz: () => WzPackage | null, etcWz: (() => WzPackage | null) | null = null) {
     this._questWz = questWz;
+    this._etcWz = etcWz;
   }
 
   Get(questId: number): QuestData | null {
@@ -129,12 +130,21 @@ export class QuestInfoService {
 
   GetQuestCategory(questId: number): number {
     this._ensureLoaded();
-    return this._questCategories.get(questId) ?? 0;
+    // OG CQuestMan::GetQuestCategory: m_mQuestCategory is loaded from the
+    // quest's "area" field in QuestInfo.img (StringPool 1776); 0 when absent.
+    return this._all?.get(questId)?.Area ?? 0;
   }
 
   GetQuestCategoryName(idx: number): string {
     this._ensureLoaded();
+    // OG CQuestMan::GetQuestCategoryName: names from Etc.wz/QuestCategory.img.
     return this._questCategoryNames[idx] ?? '';
+  }
+
+  GetQuestSortKey(questId: number): number {
+    this._ensureLoaded();
+    // OG m_mQuestSortKey: "sortkey" field on the QuestInfo node (StringPool 4546).
+    return this._all?.get(questId)?.SortKey ?? 0;
   }
 
   GetQuestArray(): number[] {
@@ -345,7 +355,6 @@ export class QuestInfoService {
             q.TimeLimit2 = QuestInfoService._int(startNode.Get('tLimit2'));
             q.DailyPlayTime = QuestInfoService._int(startNode.Get('tDailyPlayTime'));
             q.OneShot = QuestInfoService._int(startNode.Get('bOneShot')) !== 0;
-            q.SortKey = QuestInfoService._int(startNode.Get('nSortKey'));
             q.ShowLayerTag = QuestInfoService._str(startNode.Get('sShowLayerTag'));
             q.ShowEffect = QuestInfoService._str(startNode.Get('sShowEffect'));
             q.RepeatInterval = QuestInfoService._int(startNode.Get('tRepeatInterval'));
@@ -405,8 +414,7 @@ export class QuestInfoService {
         if (q.PartyQuestIconPath) this._partyQuestIconPaths.set(id, q.PartyQuestIconPath);
         if (q.Exclusive.length > 0) this._exclusiveGroups.set(id, q.Exclusive);
 
-        // Build category index from quest ID ranges (OG logic)
-        this._questCategories.set(id, QuestInfoService._questCategoryFromId(id));
+        // Build category index from the quest's area field (OG m_mQuestCategory)
       }
 
       // Build series quest indexes from QuestInfo.img "parent" field
@@ -423,20 +431,26 @@ export class QuestInfoService {
     } catch (ex) {
       console.warn('QuestInfoService: failed loading Quest.wz', ex);
     }
+    this._loadCategoryNames();
     this._all = all;
     this._byNpc = byNpc;
   }
 
-  /** OG: quest category derived from quest ID range */
-  private static _questCategoryFromId(id: number): number {
-    if (id >= 1000 && id < 1200) return 1;   // Intro
-    if (id >= 1200 && id < 1500) return 2;   // Party
-    if (id >= 2000 && id < 2500) return 10;  // Adventurer
-    if (id >= 2500 && id < 3000) return 11;  // Cygnus
-    if (id >= 3000 && id < 3500) return 12;  // Aran/Evan
-    if (id >= 9000 && id < 9700) return 51;  // Medal quests (OG: category 51 = medal)
-    if (id >= 9900 && id < 10000) return 52;  // Event
-    return 0;
+  /** OG: quest category names from Etc.wz/QuestCategory.img (index → name). */
+  private _loadCategoryNames(): void {
+    if (this._questCategoryNames.length > 0 || !this._etcWz) return;
+    try {
+      const etc = this._etcWz();
+      let root: unknown = etc?.GetItem('QuestCategory.img');
+      if (root instanceof WzImage) root = root.Root;
+      if (!(root instanceof WzProperty)) return;
+      for (const [key, val] of Object.entries(root.Items)) {
+        const idx = parseInt(key);
+        if (!isNaN(idx) && typeof val === 'string') this._questCategoryNames[idx] = val;
+      }
+    } catch {
+      // category names are cosmetic — ignore missing Etc data
+    }
   }
 
   private static _index(map: Map<number, { questId: number; isStart: boolean }[]>, npc: number, questId: number, isStart: boolean): void {
@@ -466,6 +480,14 @@ export class QuestInfoService {
     q.Blurb[0]      = QuestInfoService._str(p.Get('0'));
     q.Blurb[1]      = QuestInfoService._str(p.Get('1'));
     q.Blurb[2]      = QuestInfoService._str(p.Get('2'));
+
+    // OG m_mQuestSortKey: "sortkey" on the QuestInfo node (StringPool 4546).
+    // Stored as a numeric string in this WZ set.
+    const rawSortKey = p.Get('sortkey');
+    const sortKey = typeof rawSortKey === 'string'
+      ? (parseInt(rawSortKey) || 0)
+      : QuestInfoService._int(rawSortKey);
+    if (sortKey !== 0) q.SortKey = sortKey;
 
     // Party quest icon path
     q.PartyQuestIconPath = QuestInfoService._str(p.Get('partyQuestIconPath'));

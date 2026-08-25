@@ -95,6 +95,13 @@ export class WorldMap extends GamePanel {
   /** GameStage wires this: given a spot's mapNo list, returns the highest-priority
    *  quest marker state (0=none, 1=available, 2=in-progress, 3=completed). */
   questStateOfSpot: ((mapNo: number[]) => number) | null = null;
+  /** OG MakeCurrentMobList/ScoreLinkMap quest-guide context — GameStage
+   *  provides the active quest's demand mobs + the current field id. */
+  questGuideOf: (() => { currentFieldId: number; questMobIds: number[] } | null) | null = null;
+  /** Etc.nx provider for Etc/MapObjectInfo.img/<mapNo>/mob lists. */
+  etcWz: WzPackage | null = null;
+  /** OG m_pQuestGuideHighScoreWorldMap — the best-scoring MapLink target. */
+  private _highScoreLink: string | null = null;
   private _animClockMs = 0;
 
   // Map transfer list (from OpenMapTransfer)
@@ -432,20 +439,74 @@ export class WorldMap extends GamePanel {
     // Re-run SetWorldMap on the current map to score links for quest mode
     const current = this._loadMapProp(this._currentMapName.replace(/^WorldMap\//, '').replace(/\.img$/, ''));
     if (current) this._setWorldMap(current);
+    // OG CreateWorldMapDlg(bMobMark=1): with the quest guide on, the dialog
+    // opens on GetDeepestWorldMap_For_MobMark() — the highest-scoring link.
+    if (this._questToggle && this._highScoreLink && this._highScoreLink !== this._currentMapName) {
+      this.navigateTo(this._highScoreLink);
+    }
   }
 
   /**
-   * OG: ScoreLinkMap (0x9B83B0) — scores each MapLink against quest mob
-   * and demand-item lists. When quest toggle is active, links with the
-   * highest score are visually prioritized (the link image for the
-   * best-scoring link gets drawn).
+   * OG: ScoreLinkMap (0x9B83B0) + MakeCurrentMobList (0x9B7D00) +
+   * GetDeepestWorldMap_For_MobMark (0x9B8A80). For each MapLink of the
+   * current map: resolve the linked WorldMap property, walk its MapList
+   * mapNos, build the mob set from Etc/MapObjectInfo.img/<mapNo>/mob and
+   * score:
+   *   +50  per mapNo equal to the current field id   (MakeCurrentMobList)
+   *   +100 per quest demand mob present in that set  (ScoreLinkMap)
+   * The highest-scoring link is stored (m_pQuestGuideHighScoreWorldMap);
+   * with the quest toggle on, the dialog drills into it.
    */
   private _scoreLinkMap(): void {
-    // Structural stub — requires CQuestMan data (mob lists, demand items)
-    // which is populated at runtime from the quest system. Without quest
-    // state wired, this is a no-op. When quest data becomes available,
-    // score each MapLink's linkMap against the current quest objectives
-    // and select the highest-scoring link.
+    this._highScoreLink = null;
+    if (!this._questToggle) return;
+    const ctx = this.questGuideOf?.();
+    if (!ctx || ctx.questMobIds.length === 0) return;
+    const wanted = new Set(ctx.questMobIds);
+    let bestScore = 0;
+    for (const link of this._links) {
+      const prop = this._loadMapProp(link.linkMap);
+      if (!prop) continue;
+      let score = 0;
+      const mobsHere = new Set<number>();
+      const mapList = prop.Get('MapList');
+      if (mapList instanceof WzProperty) {
+        for (const key of Object.keys(mapList.Items)) {
+          const spot = mapList.Get(key);
+          if (!(spot instanceof WzProperty)) continue;
+          const mapNoNode = spot.Get('mapNo');
+          if (!(mapNoNode instanceof WzProperty)) continue;
+          for (const mk of Object.keys(mapNoNode.Items)) {
+            const v = mapNoNode.Get(mk);
+            const mapNo = this._readInt(v, -1);
+            if (mapNo < 0) continue;
+            // OG: GetCurFieldID() == mapNo → +50
+            if (mapNo === ctx.currentFieldId) score += 50;
+            // OG: "Etc/MapObjectInfo.img/%d/mob" → current mob list
+            const mobNode = this.etcWz?.GetItem(`Etc/MapObjectInfo.img/${mapNo}/mob`);
+            if (mobNode instanceof WzProperty) {
+              for (const mobKey of Object.keys(mobNode.Items)) {
+                const id = this._readInt(mobNode.Get(mobKey), 0);
+                if (id > 0 && !mobsHere.has(id)) mobsHere.add(id);
+              }
+            }
+          }
+        }
+      }
+      // ScoreLinkMap tail: +100 per quest mob found in m_lCurrentMobList
+      for (const qm of wanted) {
+        if (mobsHere.has(qm)) score += 100;
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        this._highScoreLink = link.linkMap;
+      }
+    }
+  }
+
+  /** OG m_nQuestGuideHighScore / m_pQuestGuideHighScoreWorldMap getter. */
+  get highScoreLink(): string | null {
+    return this._highScoreLink;
   }
 
   private _rebuildBg(): void {

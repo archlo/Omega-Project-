@@ -1656,6 +1656,11 @@ export class FieldHandlers {
       // the SetField migrate CharacterData block (SKILLRECORD flag), NOT as a
       // separate ChangeSkillRecordResult packet. Forward so CUISkill populates.
       if (characterData.skillRecords.length > 0) args.skillRecords = characterData.skillRecords;
+      // OG: CharacterData couple/friend records — SetToolTip_Equip's ring
+      // branch (0x8A66FC..0x8A6815) matches the hovered equip's item SN
+      // against these to render the partner-name row (SP 0x2B1).
+      if (characterData.coupleRecords.length > 0) args.coupleRecords = characterData.coupleRecords;
+      if (characterData.friendRecords.length > 0) args.friendRecords = characterData.friendRecords;
     } else {
       args.nFieldType = p.readByte();
       args.posMap = p.readInt();
@@ -2289,9 +2294,9 @@ export class FieldHandlers {
             break;
           case LootSubType.MoneyWarning:
             args.isMoney = true;
-            p.readByte();
+            args.extra = p.readByte();
             args.money = p.readInt();
-            p.readShort();
+            args.cafeBonus = p.readShort();
             break;
         }
         this.onLootMessage?.(args);
@@ -3885,6 +3890,12 @@ export class FieldHandlers {
           args.targetName = p.readString();
           break;
         case MiniRoomProtocol.MRP_Enter:
+          // OG: CMiniRoomBaseDlg::OnEnter / CPersonalShopDlg::OnEnter @0x697B10
+          // — a user took a seat: byte slot + AvatarLook + name(str) + job(short).
+          args.userIndex = p.readByte();
+          AvatarCodec.DecodeAvatarLook(p);
+          args.userName = p.readString();
+          args.job = p.readShort();
           break;
         case MiniRoomProtocol.TRP_UnTrade:
           break;
@@ -3895,6 +3906,13 @@ export class FieldHandlers {
         case MiniRoomProtocol.PSP_BuyItem:
           args.index = p.readByte();
           args.quantity = p.readShort();
+          break;
+        case MiniRoomProtocolFull.PSP_MoveItemToInventory:
+          // Server builder moveItemToInventory(newSize, itemIndex):
+          // byte newSize + short removedIndex. OG decodes only the count and
+          // shifts slot 0 out, but our server echoes the actual index.
+          args.newSize = p.readByte();
+          args.index = p.readShort();
           break;
         // ── MemoryGame sub-protocol ────────────────────────────────────
         case MiniRoomProtocolFull.MGRP_TieRequest:
@@ -3961,21 +3979,42 @@ export class FieldHandlers {
   }
 
   private handleUserMiniRoomBalloon(p: InPacket): void {
+    // OG: CWvsContext::OnMiniRoomBalloon @0x699F30 — int charId, byte
+    // nMiniRoomType; type 0 = destroy badge and STOP (no further fields).
+    // Otherwise: int dwMiniRoomSN, str sTitle, bPrivate, nGameKind,
+    // nCurUsers, nMaxUsers, bGameOn.
     const ownerId = p.readInt();
     const miniRoomType = p.readByte();
-    p.readByte();
+    if (miniRoomType === 0) {
+      this.onMiniRoom?.(MiniRoomProtocol.MRP_Balloon, { action: MiniRoomProtocol.MRP_Balloon, balloon: true, ownerId, miniRoomType });
+      return;
+    }
+    const roomId = p.readInt();
     const title = p.readString();
     const pwd = p.readByte() !== 0;
-    this.onMiniRoom?.(MiniRoomProtocol.MRP_Balloon, { action: MiniRoomProtocol.MRP_Balloon, balloon: true, ownerId, miniRoomType, title, pwd });
+    const gameSpec = p.readByte();
+    const curUsers = p.readByte();
+    const maxUsers = p.readByte();
+    const gameOn = p.readByte() !== 0;
+    this.onMiniRoom?.(MiniRoomProtocol.MRP_Balloon, { action: MiniRoomProtocol.MRP_Balloon, balloon: true, ownerId, miniRoomType, roomId, title, pwd, curUsers, maxUsers, gameOn });
   }
 
   private handleEmployeeMiniRoomBalloon(p: InPacket): void {
+    // Same layout as the user balloon (CEmployeePool balloons).
     const ownerId = p.readInt();
     const miniRoomType = p.readByte();
-    p.readByte();
+    if (miniRoomType === 0) {
+      this.onMiniRoom?.(MiniRoomProtocol.MRP_Balloon, { action: MiniRoomProtocol.MRP_Balloon, balloon: true, ownerId, miniRoomType, isEmployee: true });
+      return;
+    }
+    const roomId = p.readInt();
     const title = p.readString();
     const pwd = p.readByte() !== 0;
-    this.onMiniRoom?.(MiniRoomProtocol.MRP_Balloon, { action: MiniRoomProtocol.MRP_Balloon, balloon: true, ownerId, miniRoomType, title, pwd, isEmployee: true });
+    const gameSpec = p.readByte();
+    const curUsers = p.readByte();
+    const maxUsers = p.readByte();
+    const gameOn = p.readByte() !== 0;
+    this.onMiniRoom?.(MiniRoomProtocol.MRP_Balloon, { action: MiniRoomProtocol.MRP_Balloon, balloon: true, ownerId, miniRoomType, roomId, title, pwd, curUsers, maxUsers, gameOn, isEmployee: true });
   }
 
   private handleReactorEnter(p: InPacket): void {

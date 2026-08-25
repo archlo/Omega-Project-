@@ -48,14 +48,22 @@ export class NoticeQuestProgress {
 
   private push(e: Omit<InternalEntry, 'tLastChange'>): void {
     const now = performance.now();
-    // OG dedup: reuse the slot for the same (quest, item/mob) when its last
-    // change is older than 3000ms; otherwise find any slot whose last change
-    // is older than 3000ms; if all are fresh, drop silently (OG LABEL_24).
-    let slot = this._entries.findIndex((o) =>
-      now - o.tLastChange > DEDUP_MS &&
+    const sameKey = this._entries.findIndex((o) =>
       o.questId === e.questId &&
       (e.itemId !== 0 ? o.itemId === e.itemId : o.mobId === e.mobId));
-    if (slot < 0) slot = this._entries.findIndex((o) => now - o.tLastChange > DEDUP_MS || o.tLastChange === 0);
+    // OG: the same (quest, item/mob) entry refreshes in place only once its
+    // 3000ms window passed; inside the window it's swallowed (LABEL_24).
+    if (sameKey >= 0) {
+      if (now - this._entries[sameKey].tLastChange <= DEDUP_MS) return;
+      this._entries[sameKey] = { ...e, tLastChange: now };
+      this.rebuild();
+      return;
+    }
+    let slot = -1;
+    if (this._entries.length < MAX_ENTRIES) slot = this._entries.length;
+    if (slot < 0) {
+      slot = this._entries.findIndex((o) => now - o.tLastChange > DEDUP_MS);
+    }
     if (slot < 0) return;
     this._entries[slot] = { ...e, tLastChange: now };
     this.rebuild();

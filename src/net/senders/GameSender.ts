@@ -1741,6 +1741,20 @@ export class GameSender {
     return GameSender.MiniRoomCreate(MiniRoomType.TradingRoom, '', '', 0);
   }
 
+  // OG: CWvsContext::SendCreateMiniRoomRequest shop branch — after the type
+  // byte the personal-shop create carries: str sTitle, byte 0, short nPOS,
+  // int nItemID (the store permit; the server validates ownership).
+  static MiniRoomCreatePersonalShop(title: string, itemId: number): OutPacket {
+    const p = OutPacket.Of(InHeader.MiniRoom);
+    p.writeByte(MiniRoomProtocol.MRP_Create);
+    p.writeByte(MiniRoomType.PersonalShop);
+    p.writeString(title);
+    p.writeByte(0);
+    p.writeShort(0);
+    p.writeInt(itemId);
+    return p;
+  }
+
   static MiniRoomEnter(miniRoomId: number, password: string): OutPacket {
     const p = OutPacket.Of(InHeader.MiniRoom);
     p.writeByte(MiniRoomProtocol.MRP_Enter);
@@ -1825,6 +1839,45 @@ export class GameSender {
     const p = OutPacket.Of(InHeader.MiniRoom);
     p.writeByte(MiniRoomProtocol.MRP_Balloon);
     p.writeByte(open ? 1 : 0);
+    return p;
+  }
+
+  // OG: CPersonalShopDlg::MoveItemToInventory @0x6987A0 — owner withdraws a
+  // listing back to inventory: [144][27][short nIdx].
+  static ShopMoveItemToInventory(itemIndex: number): OutPacket {
+    const p = OutPacket.Of(InHeader.MiniRoom);
+    p.writeByte(MiniRoomProtocolFull.PSP_MoveItemToInventory);
+    p.writeShort(itemIndex);
+    return p;
+  }
+
+  // OG: CPersonalShopDlg::OnClickBanButton @0x69B1C0 — ban/blacklist a visitor:
+  // [144][28][byte slot 1..3][str name].
+  static ShopBan(slot: number, name: string): OutPacket {
+    const p = OutPacket.Of(InHeader.MiniRoom);
+    p.writeByte(MiniRoomProtocolFull.PSP_Ban);
+    p.writeByte(slot);
+    p.writeString(name);
+    return p;
+  }
+
+  // OG: CPersonalShopDlg::Update @0x69B340 — owner auto-kicks visitors idle
+  // over one hour: [144][29][byte slot][str name].
+  static ShopKickTimeOver(slot: number, name: string): OutPacket {
+    const p = OutPacket.Of(InHeader.MiniRoom);
+    p.writeByte(MiniRoomProtocolFull.PSP_KickedTimeOver);
+    p.writeByte(slot);
+    p.writeString(name);
+    return p;
+  }
+
+  // OG: CPersonalShopDlg::DeliverBlackList @0x69B0D0 — sent together with
+  // BtStart (OnStart): [144][30][short count][count x str].
+  static ShopDeliverBlackList(names: string[]): OutPacket {
+    const p = OutPacket.Of(InHeader.MiniRoom);
+    p.writeByte(MiniRoomProtocolFull.PSP_DeliverBlackList);
+    p.writeShort(names.length);
+    for (const n of names) p.writeString(n);
     return p;
   }
 

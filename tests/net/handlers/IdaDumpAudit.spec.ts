@@ -377,14 +377,14 @@ describe('Opcodes found via the v95 IDA dump switch-table audit', () => {
     expect(captured).toEqual({ flag: true });
   });
 
-  it('SetPassengerRequest decodes npcId', () => {
+  it('SetPassengerRequest decodes the follow requester id (OnSetPassenserRequest 0x9FB090)', () => {
     const { router, fh } = setup();
     let captured: any = null;
     fh.onSetPassengerRequest = (a: any) => (captured = a);
     const p = OutPacket.Of(OutHeader.SetPassengerRequest);
     p.writeInt(9001000);
     dispatch(router, p.toArray());
-    expect(captured).toEqual({ npcId: 9001000 });
+    expect(captured).toEqual({ requesterId: 9001000 });
   });
 
   it('ScriptProgressMessage / DataCRCCheckFailed / MapleTVUseRes decode a string', () => {
@@ -432,14 +432,14 @@ describe('Opcodes found via the v95 IDA dump switch-table audit', () => {
     expect(captured).toEqual({ flag: 1 });
   });
 
-  it('FindFriend decodes two bytes', () => {
+  it('FindFriend decodes the sub-opcode (+ error byte for sub 9)', () => {
     const { router, fh } = setup();
     let captured: any = null;
     fh.onFindFriend = (a: any) => (captured = a);
     const p = OutPacket.Of(OutHeader.FindFriend);
-    p.writeByte(1); p.writeByte(0);
+    p.writeByte(9); p.writeByte(3);
     dispatch(router, p.toArray());
-    expect(captured).toEqual({ flag1: 1, flag2: 0 });
+    expect(captured).toEqual({ sub: 9, errorCode: 3 });
   });
 
   it('TransferChannelNotify decodes channel + message', () => {
