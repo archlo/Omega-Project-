@@ -535,10 +535,12 @@ export const WhisperSendBit_Send = 0x06;
 
 /** InHeader.Messenger=143 sub-action. */
 export const enum MessengerRequestAction {
-  Enter  = 0,
-  Leave  = 2,
-  Invite = 3,
-  Chat   = 6,
+  Enter   = 0,
+  Leave   = 2,
+  Invite  = 3,
+  /** OG auto-decline reply to an S→C invite: str inviter + str myName + byte flag. */
+  Decline = 5,
+  Chat    = 6,
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

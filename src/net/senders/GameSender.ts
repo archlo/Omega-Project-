@@ -1269,6 +1269,34 @@ export class GameSender {
     return p;
   }
 
+  // OG C→S sub 5 — decline reply: str inviter + str myName + byte 1.
+  static MessengerDecline(inviterName: string, myName: string): OutPacket {
+    const p = OutPacket.Of(InHeader.Messenger);
+    p.writeByte(MessengerRequestAction.Decline);
+    p.writeString(inviterName);
+    p.writeString(myName);
+    p.writeByte(1);
+    return p;
+  }
+
+  // OG GuildRequestType.SetNotice — our server exposes it as recv opcode 150
+  // (GuildRequestResult) sub 0x14: str notice (grade ≤ 2 gate server-side).
+  static GuildSetNotice(notice: string): OutPacket {
+    const p = OutPacket.Of(InHeader.GuildRequestResult);
+    p.writeByte(0x14);
+    p.writeString(notice.slice(0, 100));
+    return p;
+  }
+
+  // Server opcode-150 sub 0x15: byte rankIndex(1..5) + str title (leader only).
+  static GuildRankTitle(rankIndex: number, title: string): OutPacket {
+    const p = OutPacket.Of(InHeader.GuildRequestResult);
+    p.writeByte(0x15);
+    p.writeByte(rankIndex);
+    p.writeString(title.slice(0, 10));
+    return p;
+  }
+
   static QuestAccept(questId: number, npcId: number, x: number, y: number): OutPacket {
     const p = OutPacket.Of(InHeader.UserQuestRequest);
     p.writeByte(QuestRequestAction.Accept);
@@ -1737,8 +1765,24 @@ export class GameSender {
     return p;
   }
 
+  // OG: CField::SendInviteTradingRoomMsg — trade create carries ONLY the
+  // MiniRoomType byte (TradingRoom = 3); no title/password/gameSpec tail.
   static MiniRoomCreateTrade(): OutPacket {
-    return GameSender.MiniRoomCreate(MiniRoomType.TradingRoom, '', '', 0);
+    const p = OutPacket.Of(InHeader.MiniRoom);
+    p.writeByte(MiniRoomProtocol.MRP_Create);
+    p.writeByte(MiniRoomType.TradingRoom);
+    return p;
+  }
+
+  // OG: CMiniRoomBaseDlg::SendInviteResult — [int dwSN][byte nErrCode]
+  // (MiniRoomInviteType: 0 success, 1 NoCharacter, 2 CannotInvite,
+  // 3 Rejected, 4 Blocked).
+  static MiniRoomInviteResult(roomId: number, errCode: number): OutPacket {
+    const p = OutPacket.Of(InHeader.MiniRoom);
+    p.writeByte(MiniRoomProtocol.MRP_InviteResult);
+    p.writeInt(roomId);
+    p.writeByte(errCode);
+    return p;
   }
 
   // OG: CWvsContext::SendCreateMiniRoomRequest shop branch — after the type

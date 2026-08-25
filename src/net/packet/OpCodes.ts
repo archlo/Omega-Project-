@@ -223,6 +223,9 @@ export enum InHeader {
   // 0x53=AdverRequest, 0x56=ApplyResponse).
   PartyAdverRequest         = 148,
   GuildRequest              = 149,
+  // Guild result requests (notice change / rank-title change) — the server
+  // dispatches recv opcode 150 to handleGuildResult (subs 0x14/0x15).
+  GuildRequestResult        = 150,
   FriendRequest             = 153,
   FuncKeyMappedModified     = 159,
 

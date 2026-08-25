@@ -82,7 +82,7 @@ import {
   UserShowPQRewardArgs, UserSetPhaseArgs, ShowRecoverUpgradeCountEffectArgs,
   UserMovingShootAttackPrepareArgs, UserHitArgs, UserSetActiveEffectItemArgs,
   UserShowUpgradeTombEffectArgs, UserSetTemporaryStatArgs, UserResetTemporaryStatArgs, TempStatBuff,
-  UserReceiveHPArgs, UserGuildNameChangedArgs, UserGuildMarkChangedArgs, UserThrowGrenadeArgs,
+  UserReceiveHPArgs, UserGuildNameChangedArgs, UserGuildMarkChangedArgs, UserThrowGrenadeArgs, UserBalloonMsgArgs,
   PetActivatedArgs, PetEvolArgs, PetMoveArgs, PetActionArgs,
   PetNameChangeArgs, PetLoadExceptionListArgs, PetActionCommandArgs,
   DragonMoveArgs, DragonAfterMoveArgs, DragonActionArgs,
@@ -485,8 +485,13 @@ export class FieldHandlers {
   onNoticeMsg: ((message: string) => void) | null = null;
   // OG: CUser::OnChatMsg (local echo) — decodeStr → chat log add
   onUserLocalChatMsg: ((message: string) => void) | null = null;
-  // OG: CUser::OnMiniRoomBalloon — decode mini room balloon info
+  // OG: CUserLocal::OnMiniRoomBalloon — other characters' trade shop balloons
+  // (real balloons arrive on UserMiniRoomBalloon/EmployeeMiniRoomBalloon 184/321).
   onMiniRoomBalloon: ((args: { charId: number; miniRoomType: number; sn: number; title: string; bPrivate: boolean; gameKind: number; curUsers: number; maxUsers: number; gameOn: boolean }) => void) | null = null;
+  // OG: CUserLocal::OnBalloonMsg (0x91D780) — opcode 245, the local player's
+  // script balloon (glTutoMsg0 "Once you leave this area...").
+  onUserBalloonMsg: ((args: UserBalloonMsgArgs) => void) | null = null;
+
 
   // ── Pet & Dragon callbacks (IDA_NEW_GAPS.md) ───────────────────────
   onPetActivated: ((args: PetActivatedArgs) => void) | null = null;
@@ -824,6 +829,7 @@ export class FieldHandlers {
     this.onNoticeMsg = null;
     this.onUserLocalChatMsg = null;
     this.onMiniRoomBalloon = null;
+    this.onUserBalloonMsg = null;
     this.onPetActivated = null;
     this.onPetEvol = null;
     this.onPetMove = null;
@@ -3887,7 +3893,11 @@ export class FieldHandlers {
         case MiniRoomProtocol.MRP_Create:
           break;
         case MiniRoomProtocol.MRP_Invite:
+          // CMiniRoomBaseDlg::OnInviteStatic: byte miniRoomType + str inviter
+          // name + int dwMiniRoomSN.
+          args.roomType = p.readByte();
           args.targetName = p.readString();
+          args.roomId = p.readInt();
           break;
         case MiniRoomProtocol.MRP_Enter:
           // OG: CMiniRoomBaseDlg::OnEnter / CPersonalShopDlg::OnEnter @0x697B10

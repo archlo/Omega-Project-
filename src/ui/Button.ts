@@ -191,6 +191,14 @@ export class Button {
     this._refreshSprite();
   }
 
+  /** CCtrlButtonQuestToggle-style latched buttons: use an existing WZ state
+   *  canvas (e.g. `pressed`) as the checked art when the node has no
+   *  dedicated `checked` child. */
+  loadCheckedSpriteFrom(loader: WzTextureLoader, buttonRoot: WzProperty | null, state = 'pressed'): void {
+    this._checkedSprite = Button._loadFirst(loader, buttonRoot, state);
+    if (this._checked) this._refreshSprite();
+  }
+
   private drawBg(): void {
     const g = this._bg;
     g.clear();

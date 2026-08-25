@@ -174,3 +174,24 @@ describe('WorldMap (CWorldMapDlg)', () => {
     });
   });
 });
+
+// -- Authentic chrome (OnCreate @0x9B9E10 audit) ------------------------------
+describe('WorldMap authentic chrome', () => {
+  it('persists the quest-guide option (CConfig::Get/SetQuestGuideOption)', () => {
+    WorldMap.SetQuestGuideOption(true);
+    expect(WorldMap.GetQuestGuideOption()).toBe(true);
+    WorldMap.SetQuestGuideOption(false);
+    expect(WorldMap.GetQuestGuideOption()).toBe(false);
+  });
+
+  it('plays UI.img/WorldmapOpen once per open transition (play_ui_sound SP 0x500)', () => {
+    const map = new WorldMap();
+    const sounds: string[] = [];
+    map.playUiSound = (n) => sounds.push(n);
+    map.OpenMapTransfer([]);
+    map.OpenMapTransfer([]); // already open — no repeat
+    map.isVisible = false;
+    map.OpenMapTransfer([]);
+    expect(sounds).toEqual(['WorldmapOpen', 'WorldmapOpen']);
+  });
+});

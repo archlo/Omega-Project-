@@ -119,4 +119,27 @@ describe('Messenger', () => {
     expect(captured.action).toBe(1);
     expect(captured.userIndex).toBe(0);
   });
+
+  it('MessengerDecline encodes OG sub 5 (inviter, myName, flag)', () => {
+    const p = new InPacket(GameSender.MessengerDecline('Inviter', 'Me').toArray());
+    expect(p.readShort()).toBe(InHeader.Messenger);
+    expect(p.readByte()).toBe(5);
+    expect(p.readString()).toBe('Inviter');
+    expect(p.readString()).toBe('Me');
+    expect(p.readByte()).toBe(1);
+    expect(p.remaining).toBe(0);
+  });
+
+  it('GuildSetNotice / GuildRankTitle encode opcode-150 sub-actions', () => {
+    const n = new InPacket(GameSender.GuildSetNotice('Hello guild').toArray());
+    expect(n.readShort()).toBe(InHeader.GuildRequestResult);
+    expect(n.readByte()).toBe(0x14);
+    expect(n.readString()).toBe('Hello guild');
+
+    const t = new InPacket(GameSender.GuildRankTitle(2, 'Jr Master').toArray());
+    expect(t.readShort()).toBe(InHeader.GuildRequestResult);
+    expect(t.readByte()).toBe(0x15);
+    expect(t.readByte()).toBe(2);
+    expect(t.readString()).toBe('Jr Master');
+  });
 });

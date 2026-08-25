@@ -1133,7 +1133,12 @@ export class GameStage extends Stage {
           : 'Enter Shop',
         onClick: () => { this.game.session.send(GameSender.MiniRoomEnter(target.MiniRoomId, '')); },
       }] : []),
-      { label: 'Trade', onClick: () => { this.game.session.send(GameSender.MiniRoomCreateTrade()); } },
+      // OG: CField::SendInviteTradingRoomMsg — [MRP_Create][TradingRoom] then
+      // [MRP_Invite][target character id].
+      { label: 'Trade', onClick: () => {
+          this.game.session.send(GameSender.MiniRoomCreateTrade());
+          this.game.session.send(GameSender.MiniRoomInvite(target.CharId));
+        } },
       { label: 'Party', onClick: () => { this.game.session.send(GameSender.PartyInvite(name)); } },
       { label: 'Guild', onClick: () => { this.game.session.send(GameSender.GuildJoin(target.CharId, name)); } },
     ];
@@ -1717,6 +1722,10 @@ export class GameStage extends Stage {
       }
       return { currentFieldId: this._field?.LoadedMapId ?? -1, questMobIds: [...mobIds] };
     };
+    this._worldMap.playUiSound = (name) => {
+      const node = this._mobSoundWz?.GetItem(`UI.img/${name}`);
+      if (node instanceof WzSound) this.game.audioPlayer?.PlayEffect(node.AudioBytes);
+    };
     this._tournamentWindow = new TournamentWindow();
     this._ranking = new Ranking(this._loader, uiWz, font);
     this._monsterBook = new MonsterBook(this._loader, uiWz, font);
@@ -1998,13 +2007,26 @@ export class GameStage extends Stage {
     };
     this._vegaDialog.OnClose = () => {};
 
-    this._tradingRoom = new TradingRoom(this._loader, uiWz, font);
+    this._tradingRoom = new TradingRoom(this._loader, uiWz);
     this._tradingRoom.OnTrade = () => { this.game.session.send(GameSender.TradeConfirm()); };
     this._tradingRoom.OnCancel = () => { this.game.session.send(GameSender.MiniRoomLeave()); };
     this._tradingRoom.OnPutMoney = (amount) => { this.game.session.send(GameSender.TradePutMoney(amount)); };
     this._tradingRoom.OnPutItem = (index, invType, position, quantity) => {
       this.game.session.send(GameSender.TradePutItem(index, invType, position, quantity));
     };
+    this._tradingRoom.OnChat = (text) => { this.game.session.send(GameSender.MiniRoomChat(text)); };
+    // OG PutMoney @0x764450 routes the amount through CUtilDlgEx INPUT_NO.
+    this._tradingRoom.modals = {
+      askAmount: (msg, def, max, cb) => {
+        const meso = this._item?.getMeso() ?? 0;
+        this._utilDlg?.SetUtilDlgEx(UtilDlgType.INPUT, 0, true, false, msg || 'How much mesos do you want to trade?');
+        this._utilDlg?.SetUtilDlgEx_INPUT_NO(Math.min(def, Math.max(1, meso)), 1, Math.max(1, max === 0x7FFFFFFF ? meso : max), 0, 10, false);
+        this._utilDlg!.onResult = (r) => cb(r.type === 'ok' ? this._utilDlg!.GetInputNo_Result() : 0);
+        this._utilDlg?.show();
+      },
+      notice: (msg) => this._statusMessenger.showLoot(msg),
+    };
+    this._tradingRoom.characterLevel = this._stats?.level ?? 0;
     this._cashTradingRoom = new CashTradingRoom(this._loader, uiWz);
     this._cashTradingRoom.OnTrade = () => { this.game.session.send(GameSender.TradeConfirm()); };
     this._cashTradingRoom.OnCancel = () => { this.game.session.send(GameSender.MiniRoomLeave()); };
@@ -2613,8 +2635,12 @@ export class GameStage extends Stage {
       if (cur > 0) this.game.session.send(GameSender.GuildLevel(charId, Math.max(1, Math.min(5, cur + (up ? -1 : 1)))));
     };
     this._userList.onGuildSetNotice = () => {
-      // GuildRequestAction.SetNotice packet not present in this server build yet
-      this._statusMessenger.showLoot('[Guild] Notice editing needs server support');
+      // OG CTabGuild::Btnotice → SetNotice; server opcode-150/0x14 handler
+      // gates on grade ≤ 2 and broadcasts guildNoticeChanged.
+      const notice = window.prompt('Guild notice (max 100 chars):') ?? '';
+      if (notice.trim().length > 0) {
+        this.game.session.send(GameSender.GuildSetNotice(notice.trim()));
+      }
     };
     this._userList.onGuildFindUser = (_name) => { this._findFriend?.container && (this._findFriend.isVisible = true); };
     this._userList.onPartySearch = () => { this._partySearchDialog?.Open(); };
@@ -2693,7 +2719,9 @@ export class GameStage extends Stage {
       }
     };
     this._guildGradeWin.onGradeNameChange = (gradeIndex, name) => {
-      void gradeIndex; void name; // SetGuildGradeName packet not wired server-side yet
+      // Server opcode-150/0x15: byte rankIndex(1..5) + str title, leader only;
+      // the reply loadGuildDone refreshes every client's rank titles.
+      this.game.session.send(GameSender.GuildRankTitle(gradeIndex, name));
     };
     this._statusBar.onChat = () => { this._chatBar.focus(); };
     this._statusBar.onGameOption = () => { this._quickSlotConfig && (this._quickSlotConfig.isVisible = !this._quickSlotConfig.isVisible); };
@@ -5241,6 +5269,13 @@ this._dmgNumbers?.Update(dt);
       }
     };
 
+    // OG: CUserLocal::OnBalloonMsg (0x91D780) — script balloons hover over the
+    // local avatar (avatarOriented) anchored -15px above its height; duration
+    // arrives in seconds on the wire (client multiplies by 1000).
+    fh.onUserBalloonMsg = (args) => {
+      this._chatBalloon?.Set(this._localCharId, args.msg, Math.max(1, Math.ceil(args.durationMs / 1000)));
+    };
+
     fh.onPetActivated = (args) => {
       this._applyPetActivated(args);
       if (args.hasPet) {
@@ -6622,7 +6657,10 @@ this._localCharId = args.characterId ?? 0;
     // type 9 sends the script request with a delay/onlyOnce gate.
     for (const portal of Object.values(this._field.Portals)) {
       if (!GameStage.AutoTouchTransferTypes.has(portal.Type)) continue;
-      if (!portal.TargetPortal && portal.TargetMap === 999999999) continue;
+      // Script portals (pt=9, e.g. the Maple Island tuto00/infoMinimap/glBmsg
+      // collision triggers) carry tm=999999999 and no target portal BY DESIGN —
+      // only skip target-less portals for the transfer path below.
+      if (portal.Type !== 9 && !portal.TargetPortal && portal.TargetMap === 999999999) continue;
       const dx = Math.abs(pos.x - portal.X);
       const dy = pos.y - portal.Y;
       if (dx <= GameStage.PortalTouchRadiusX
@@ -9382,7 +9420,12 @@ this._localCharId = args.characterId ?? 0;
       this._playStatEffect('BasicEff.img/JobChanged', 'Game.img/JobChanged', args);
       return;
     }
-    if (args.effectType !== 14 && args.effectType !== 20) return;
+    if (args.effectType !== 14 && args.effectType !== 20 && args.effectType !== 25) return;
+    // OG CUser::OnEffect: 14 = SquibEffect, 20 = ReservedEffect, 25 =
+    // AvatarOriented (Effect_AvatarOriented — the UI/tutorial.img tip cards
+    // played by the Maple Island tutorial portal scripts). All three carry a
+    // single string UOL; 14/20 resolve against Effect.wz, 25 usually points
+    // into UI.wz, so probe both.
     let uol: string;
     try {
       uol = new InPacket(args.payload).readString();
@@ -9396,7 +9439,7 @@ this._localCharId = args.characterId ?? 0;
       const facingLeft = args.isLocal ? (this._physics?.FacingLeft ?? true) : (this._otherChars.get(args.charId)?.FacingLeft ?? true);
       if (indexed) { this._skillEffects?.PlayAtCaster(indexed, charId, facingLeft); return; }
     }
-    const node = this._effectWz?.GetItem(wzPath);
+    const node = this._effectWz?.GetItem(wzPath) ?? this._uiWz?.GetItem(wzPath);
     if (!node) return;
     const facingLeft = args.isLocal ? (this._physics?.FacingLeft ?? true) : (this._otherChars.get(args.charId)?.FacingLeft ?? true);
     this._skillEffects?.PlayAtCaster(node, charId, facingLeft);
@@ -9557,9 +9600,42 @@ this._localCharId = args.characterId ?? 0;
       return;
     }
     switch (action) {
+      case 2: // MRP_Invite — "X wishes to trade with you" (CMiniRoomBaseDlg::OnInviteStatic)
+        if (args.roomType === MiniRoomType.TradingRoom) {
+          const inviter = args.targetName ?? 'Someone';
+          const roomId = args.roomId ?? 0;
+          this._utilDlg?.SetUtilDlgEx(UtilDlgType.YESNO, 0, true, false, `${inviter} wishes to trade with you.`);
+          this._utilDlg?.SetUtilDlgEx_YESNO();
+          this._utilDlg!.onResult = (r) => {
+            if (r.type === 'ok') {
+              this.game.session.send(GameSender.MiniRoomEnter(roomId, ''));
+            } else {
+              // MiniRoomInviteType.Rejected
+              this.game.session.send(GameSender.MiniRoomInviteResult(roomId, 3));
+            }
+          };
+          this._utilDlg?.show();
+        }
+        break;
+      case 3: { // MRP_InviteResult — requester side outcome
+        const type = args.inviteType ?? 0;
+        if (type !== 0) {
+          const who = args.targetName ?? '';
+          const text =
+            type === 1 ? 'Unable to find the character.' :
+            type === 2 ? `${who} is doing something else right now.` :
+            type === 3 ? `${who} has declined your trade request.` :
+            `${who} is unable to trade.`;
+          this._statusMessenger.showLoot(text);
+        }
+        break;
+      }
       case 5: // MRP_EnterResult
         if (args.roomType === 3 && this._tradingRoom) {
-          this._tradingRoom.Open(args.users?.[1]?.name ?? 'Partner', args.myPosition ?? 0);
+          // Partner = the seated user at the other seat.
+          const mine = args.myPosition ?? 0;
+          const partner = (args.users ?? []).find((u: any) => u.index !== mine);
+          this._tradingRoom.Open(partner?.name ?? 'Partner', mine);
         } else if (args.roomType === 4 && this._personalShop) {
           // OG OnEnterResult @0x699A80 — myPosition 0 = owner, 1..3 visitor.
           const items = GameStage._toShopItemSlots(args.items ?? [], (id) => this.game.nameService.ItemName(id) ?? `[${id}]`);
@@ -9611,7 +9687,16 @@ this._localCharId = args.characterId ?? 0;
         }
         break;
       case 10: { // MRP_Leave
-        if (this._tradingRoom?.isVisible) this._tradingRoom.OnPartnerLeave();
+        const trade = this._tradingRoom;
+        if (trade?.isVisible) {
+          trade.OnPartnerLeave();
+          // OG OnLeave @0x764A10 notices: 2->SP421, 7 TradeDone (gain calc),
+          // 8 fail, 9 only-item, 12 field error, 13 CRC.
+          const lt = args.leaveType ?? 0;
+          if (lt === 7) this._statusMessenger.showLoot('Trade successful. Please check the results.');
+          else if (lt === 2) this._statusMessenger.showLoot('The trade has been cancelled.');
+          else if (lt === 8) this._statusMessenger.showLoot('Trade unsuccessful.');
+        }
         if (this._entrustedShop?.isVisible) this._entrustedShop.isVisible = false;
         const shop = this._personalShop;
         if (shop?.isVisible) {
@@ -9624,16 +9709,34 @@ this._localCharId = args.characterId ?? 0;
         }
         break;
       }
-      case 15: // TRP_PutItem
-        if (this._tradingRoom && args.item) {
-          this._tradingRoom.OnPartnerPutItem(args.index, { invType: 1, itemId: args.item.itemId, quantity: args.item.quantity ?? 1 });
+      case 15: { // TRP_PutItem — userIndex byte + slot index byte + item struct
+        if (this._tradingRoom?.isVisible && args.item) {
+          const mine = (args.userIndex ?? 0) === this._tradingRoom.myPosition;
+          if (!mine) {
+            this._tradingRoom.OnPartnerPutItem(args.userIndex ?? 1, args.index, {
+              invType: 0,
+              itemId: args.item.itemId,
+              quantity: args.item.quantity ?? 1,
+            });
+          } else {
+            // Server echoes our own put — reflect the authoritative state.
+            this._tradingRoom.OnPartnerPutItem(args.userIndex ?? 0, args.index, {
+              invType: 0,
+              itemId: args.item.itemId,
+              quantity: args.item.quantity ?? 1,
+            });
+          }
         }
         break;
-      case 16: // TRP_PutMoney
-        if (this._tradingRoom) this._tradingRoom.OnPartnerPutMoney(args.money ?? 0);
+      }
+      case 16: // TRP_PutMoney — userIndex byte + int money
+        if (this._tradingRoom) this._tradingRoom.OnPartnerPutMoney(args.userIndex ?? 1, args.money ?? 0);
         break;
-      case 17: // TRP_Trade
+      case 17: // TRP_Trade — partner locked their offer
         if (this._tradingRoom) this._tradingRoom.OnPartnerTrade();
+        break;
+      case 18: // TRP_UnTrade — partner cancelled their confirmation
+        if (this._tradingRoom) this._tradingRoom.OnPartnerUnTrade();
         break;
       case 24: // PSP_BuyResult
         this._personalShop?.AcceptBuyResult(args.resultCode ?? 0);
@@ -9705,6 +9808,9 @@ this._localCharId = args.characterId ?? 0;
     return 5;
   }
 
+  /** Pending S→C messenger invite awaiting the FadeYesNo answer. */
+  private _pendingMessengerInvite: { inviterName: string; messengerId: number } | null = null;
+
   private _onMessengerResult(args: MessengerResultArgs): void {
     if (!this._messengerWin) return;
     switch (args.action) {
@@ -9713,19 +9819,43 @@ this._localCharId = args.characterId ?? 0;
         if (args.userIndex !== undefined && args.name) this._messengerWin.SetParticipant(args.userIndex, args.name);
         break;
       case MessengerAction.Join:
-        if (args.userIndex !== undefined) this._messengerWin.SetSelf(args.userIndex);
+        // OG sub 1 self-join result; slot < 0 = join failed → solo fallback.
+        if (args.userIndex !== undefined && args.userIndex >= 0) this._messengerWin.SetSelf(args.userIndex);
         break;
       case MessengerAction.Leave:
         if (args.userIndex !== undefined) this._messengerWin.RemoveParticipant(args.userIndex);
         break;
       case MessengerAction.Invite:
-        if (args.name) this._statusMessenger.showLoot(`[Messenger] Invite from ${args.name} (ch.${args.channel ?? 0})`);
+        // OG OnInvite: flag=0 → auto-decline (config/blacklist); else the
+        // FadeYesNo dialog. Accept re-sends Enter(0) with the invite's sn.
+        if (!args.name || args.messengerId === undefined) break;
+        this._pendingMessengerInvite = { inviterName: args.name, messengerId: args.messengerId };
+        {
+          if (!this._fadeYesNo) {
+            this._fadeYesNo = new FadeYesNo(this._loader, this._uiWz);
+            this.uiRoot.addChild(this._fadeYesNo.container);
+          }
+          const pending = this._pendingMessengerInvite;
+          this._fadeYesNo.onYes = () => {
+            if (pending) this.game.session.send(GameSender.MessengerEnter(pending.messengerId));
+            this._pendingMessengerInvite = null;
+          };
+          this._fadeYesNo.onNo = () => {
+            if (pending) {
+              this.game.session.send(GameSender.MessengerDecline(pending.inviterName, this._messengerWin?.selfName ?? ''));
+            }
+            this._pendingMessengerInvite = null;
+          };
+          this._fadeYesNo.Open(`${args.name} has invited you to the Maple Messenger. Accept?`);
+        }
         break;
       case MessengerAction.Hide:
-        if (args.name) this._statusMessenger.showLoot(`[Messenger] ${args.name} is ${args.flag ? 'online' : 'offline'}`);
+        // OG OnInviteResult (SP 0x318/0x319): accepted / declined line.
+        if (args.name) this._statusMessenger.showLoot(`[Messenger] ${args.name} ${args.flag ? 'accepted' : 'declined'} your invite`);
         break;
       case MessengerAction.DeclineInvite:
-        if (args.name) this._statusMessenger.showLoot(`[Messenger] ${args.name} declined your invite`);
+        // OG OnBlocked (SP 0x31A/0x31B).
+        if (args.name) this._statusMessenger.showLoot(`[Messenger] ${args.name} cannot receive invites`);
         break;
       case MessengerAction.Chat:
         if (args.chat) this._messengerWin.AddChat(args.chat);

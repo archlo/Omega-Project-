@@ -74,6 +74,8 @@ export class WorldMap extends GamePanel {
   // Callbacks
   onTeleportToMap: ((mapId: number) => void) | null = null;
   onNavigateToMap: ((mapName: string) => void) | null = null;
+  /** play_ui_sound provider — Sound.wz/UI.img/<name> (WorldmapOpen on create). */
+  playUiSound: ((name: string) => void) | null = null;
 
   // State
   private _loader: WzTextureLoader | null;
@@ -350,7 +352,6 @@ export class WorldMap extends GamePanel {
   openForField(fieldId: number): void {
     this._transferMapIds = [];
     if (fieldId === this._lastFieldId && this._baseCanvas && this.isVisible) {
-      this.isVisible = true;
       return;
     }
     const deepest = this._findDeepestWorldMap(fieldId);
@@ -359,13 +360,13 @@ export class WorldMap extends GamePanel {
       this._baseCanvas = null;
       this._spots = [];
       this._links = [];
-      this.isVisible = true;
+      this._open();
       return;
     }
     this._setWorldMap(deepest);
     this._currentMapName = this._mapNameOf(deepest);
     this._lastFieldId = fieldId;
-    this.isVisible = true;
+    this._open();
   }
 
   /**
@@ -394,7 +395,14 @@ export class WorldMap extends GamePanel {
     this._spots = [];
     this._links = [];
     this._baseCanvas = null;
+    this._open();
+  }
+
+  /** OG OnCreate tail: play_ui_sound(StringPool 0x500) — Sound.wz/UI.img/WorldmapOpen. */
+  private _open(): void {
+    const wasOpen = this.isVisible;
     this.isVisible = true;
+    if (!wasOpen) this.playUiSound?.('WorldmapOpen');
   }
 
   // ── UI construction ─────────────────────────────────────────────────
@@ -430,6 +438,10 @@ export class WorldMap extends GamePanel {
       : new Button(this._questToggle ? '?' : '!');
     this._btQuestToggle.container.position.set(WM_WIDTH - 65, 4);
     this._btQuestToggle.enabled = true;
+    if (qtNode instanceof WzProperty && this._loader) {
+      // CCtrlButtonQuestToggle Draw: the guide-on state shows the pressed art.
+      this._btQuestToggle.loadCheckedSpriteFrom(this._loader, qtNode, 'pressed');
+    }
     this._questToggle = WorldMap.GetQuestGuideOption();
     this._syncQuestToggleSprite();
     this._btQuestToggle.onClick = () => {
@@ -441,23 +453,22 @@ export class WorldMap extends GamePanel {
     this._root.addChild(this._btQuestToggle.container);
   }
 
-  /** CCtrlButtonQuestToggle Draw: pressed sprite while the guide is on,
-   *  normal otherwise; disabled texture when toggling is not allowed. */
+  /** CCtrlButtonQuestToggle Draw: pressed sprite while the guide is on. */
   private _syncQuestToggleSprite(): void {
-    const b = this._btQuestToggle;
-    if (!b) return;
-    b.enabled = true;
-    try { b.setState?.(this._questToggle ? 'pressed' : 'normal'); }
-    catch { /* older Button without state API */ }
+    this._btQuestToggle?.setChecked(this._questToggle);
   }
 
-  /** CConfig::GetQuestGuideOption / SetQuestGuideOption — persisted client-side. */
+  /** CConfig::GetQuestGuideOption / SetQuestGuideOption — persisted client-side
+   *  (localStorage when available, in-memory fallback otherwise). */
   static GetQuestGuideOption(): boolean {
-    try { return localStorage.getItem('WorldMapQuestGuide') === '1'; } catch { return false; }
+    try { return localStorage.getItem('WorldMapQuestGuide') === '1'; }
+    catch { return WorldMap._questGuideMem; }
   }
   static SetQuestGuideOption(on: boolean): void {
-    try { localStorage.setItem('WorldMapQuestGuide', on ? '1' : '0'); } catch { /* ignore */ }
+    WorldMap._questGuideMem = on;
+    try { localStorage.setItem('WorldMapQuestGuide', on ? '1' : '0'); } catch { /* no storage */ }
   }
+  private static _questGuideMem = false;
 
   /**
    * OG: OnButtonClicked id=2000 — toggles quest mode, persists via

@@ -1008,6 +1008,17 @@ export type ExpeditionResultArgs =
 // Inbound via PartyResult=62 sub-actions 75-80 → CUIPartySearch → TabPartyAdver.
 // Outbound via InHeader.PartyAdverRequest=148.
 
+/** OG: CUserLocal::OnBalloonMsg (0x91D780) — opcode 245, local script balloon. */
+export interface UserBalloonMsgArgs {
+  msg: string;
+  width: number;
+  durationMs: number;
+  avatarOriented: boolean;
+  /** Screen anchor when avatarOriented === false (OG int x + int y). */
+  x?: number;
+  y?: number;
+}
+
 /** GWPartyMember-like entry for adver listings. */
 export interface PartyAdverMember {
   dwCharacterID: number;
