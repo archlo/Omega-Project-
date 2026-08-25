@@ -6,9 +6,9 @@ import { WzSprite } from '../../../src/render/WzSprite.js';
 // ponytail: avoids pulling in jsdom just to satisfy Text.width's canvas measurement in tests
 Object.defineProperty(Text.prototype, 'width', { get: () => 0 });
 
-// OG edit control coordinates (ChatBar.ts constants, CHAT_DY=0)
+// OG edit control coordinates (ChatBar.ts: edit y = _chatWndY + 6, dynamic)
 const EDIT_X = 75;
-const EDIT_Y = 534;
+const EDIT_Y = 548; // input-strip row
 const DISPLAY_X = 0;
 const DISPLAY_Y_SMALL = 492;
 const CHAT_HEIGHT_SMALL = 24;
@@ -23,7 +23,7 @@ describe('ChatBar history recall', () => {
   }
 
   function typeAndSend(bar: ChatBar, msg: string): void {
-    const [sx, sy] = screenPos(bar, EDIT_X + 4, EDIT_Y + 2);
+    const [sx, sy] = screenPos(bar, EDIT_X + 4, (bar as any)._editY + 2);
     bar.handleMouseButton(sx, sy, true);
     for (const ch of msg) bar.onKeyPress(ch);
     bar.onKeyPress('Enter');
@@ -35,7 +35,7 @@ describe('ChatBar history recall', () => {
     typeAndSend(bar, 'second');
 
     // Re-focus after last send (endChat unfocused the bar)
-    const [fx, fy] = screenPos(bar, EDIT_X + 4, EDIT_Y + 2);
+    const [fx, fy] = screenPos(bar, EDIT_X + 4, (bar as any)._editY + 2);
     bar.handleMouseButton(fx, fy, true);
     bar.onKeyPress('ArrowUp');
     expect((bar as any)._input).toBe('second');
@@ -280,9 +280,11 @@ describe('ChatBar WZ layer positions (OG mainBar origin anchor)', () => {
     expect(cover.position.y).toBe(518 + 24); // 542
   });
 
-  it('shifts layers with the chat window type', () => {
+  it('keeps the input-strip layers fixed when the log expands upward', () => {
     // Expanded type: m_ptChatWnd.y = 515 − height (default height 70 →
-    // _chatWndY = 515 + 0 − 70 = 445). The layers track _chatWndY.
+    // _chatWndY = 445). The LOG grows upward, but the input-strip chrome
+    // (chatEnter etc.) stays glued at the fixed bottom edge (~541) so the
+    // chat bar keeps its position relative to the status bar.
     const bar = new ChatBar();
     (bar as any).setChatType(3);
     const b = bar as any;
@@ -291,6 +293,6 @@ describe('ChatBar WZ layer positions (OG mainBar origin anchor)', () => {
     b._layerEnter = enter;
     b._applyLayout();
     expect(enter.position.x).toBe(45);
-    expect(enter.position.y).toBe(445 + 23); // 468
+    expect(enter.position.y).toBe(518 + 23); // 541 — unchanged from minimal
   });
 });

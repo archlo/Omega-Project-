@@ -213,8 +213,17 @@ export class ComboBox {
   loadWzAsset(loader: WzTextureLoader, root: WzProperty, childPath?: string): void {
     let node: unknown = root;
     if (childPath && typeof root.Get === 'function') {
-      node = root.Get(childPath);
-      if (!node) return;
+      // WzProperty.Get is a FLAT dictionary lookup — descend path segments
+      // one level at a time ('base/normal' would never match as a key).
+      node = root;
+      for (const seg of childPath.split('/')) {
+        if (node && typeof (node as any).Get === 'function' && !(node instanceof WzCanvas)) {
+          node = (node as any).Get(seg);
+        } else {
+          node = null;
+        }
+        if (!node) return;
+      }
     }
     // Unwrap property nodes (look for '0' or 'bmp' child)
     if (node && typeof (node as any).Get === 'function' && typeof (node as any).ToPixi !== 'function') {

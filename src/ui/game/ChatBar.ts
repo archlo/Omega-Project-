@@ -29,19 +29,21 @@ const CHAT_TYPE_EXPANDED = 3; // Full: edit+combo, y=515-h, h=stored/70
 const CHAT_DY = 0;
 
 // --- Edit control (OG MakeCtrlEdit 0x870BA0) ---
-// CreateCtrl(id=1011, x=75, y=524, w=409, h=12)
+// CreateCtrl(id=1011, x=75, y=524, w=409, h=12) — y is an OFFSET from
+// m_ptChatWnd.y (518 default): the whole chat window — log, WZ chrome AND the
+// input row — moves as one unit when expanded/dragged.
 const EDIT_ID = 1011;
 const EDIT_X = 75;
-const EDIT_Y = 524 + CHAT_DY + 10;
-const EDIT_W = 409;
+const EDIT_Y_ABS = 548;     // input-strip row, lowered to sit inside the chatEnter box
+export const EDIT_W = 409;
 const EDIT_H = 12;
 const EDIT_MAX_CHARS = 70;  // OG: 256 if GM, else 70
 
 // --- ComboBox (OG MakeCtrlEdit 0x870BA0) ---
-// CreateCtrl_2(id=1012, x=3, y=519, w=68, h=21)
+// CreateCtrl_2(id=1012, x=3, y=519, w=68, h=21) — same bottom-anchored unit.
 const COMBO_ID = 1012;
 const COMBO_X = 3;
-const COMBO_Y = 519 + CHAT_DY;
+const COMBO_Y_ABS = 539;    // aligned with the chatSpace2 strip
 const COMBO_W = 68;
 const COMBO_H = 21;
 const COMBO_BOX_WIDTH = 90;  // OG: nBoxWidth = 90
@@ -52,6 +54,7 @@ const DISPLAY_X = 0;        // OG: text drawn at x=9 inside canvas
 const DISPLAY_W_515 = 515;  // Expanded width (OG: 0x203)
 const DISPLAY_W_518 = 518;  // Minimal width (OG: 0x206)
 const LINE_H = 13;          // Line height (OG: 13px)
+const LOG_UP = 2;           // user pref: log text sits 2px higher
 const CHAT_LINE_H = 13;     // Same as LINE_H
 const MAX_LOG_ENTRIES = 64; // OG: m_aChatLog trimmed to > 0x40
 const TEXT_X = 9;           // OG: DrawTextA x=9 inside canvas
@@ -187,6 +190,18 @@ export class ChatBar extends GamePanel {
   private _chatType = CHAT_TYPE_MINIMAL;
   private _chatHeight = 24;
   private _chatWndY = 518 + CHAT_DY;     // m_ptChatWnd.y
+  // NOTE: the chat window expands UPWARD (y = 515 - h) — its bottom edge is
+  // FIXED against the status bar, so the edit/combo rows use absolute Y
+  // (OG CreateCtrl y=524 / y=519) and do NOT follow _chatWndY.
+  private get _editY(): number { return EDIT_Y_ABS + CHAT_DY; }
+  /** Per-type vertical nudge of the log text (user pref): minimal 2px UP,
+   *  expanded 10px DOWN, small unchanged. Used by render AND hit tests. */
+  private get _logUp(): number {
+    if (this._chatType === CHAT_TYPE_MINIMAL) return 5;
+    if (this._chatType === CHAT_TYPE_EXPANDED) return -10;
+    return 0;
+  }
+  private get _comboY(): number { return COMBO_Y_ABS + CHAT_DY; }
   private _chatWndLineVisible = 1; // m_nChatWndLineVisible
   private _nScrWidth = SCROLLBAR_W; // m_nScrWidth = CCtrlScrollBar::GetScrollBarSize(1, 8)
   private _dwChatFilterFlag = 0; // m_dwChatFilterFlag
@@ -382,13 +397,13 @@ export class ChatBar extends GamePanel {
 
     this._inputText = new Text({ text: '', style: _inputStyle });
     this._inputText.x = EDIT_X + 4;
-    this._inputText.y = EDIT_Y + 1;
+    this._inputText.y = this._editY + 1;
     this._root.addChild(this._inputText);
 
     this._cursor = new Graphics();
     this._cursor.rect(0, 0, 1, 11).fill({ color: '#FFF' });
     this._cursor.x = EDIT_X + 4;
-    this._cursor.y = EDIT_Y + 1;
+    this._cursor.y = this._editY + 1;
     this._cursor.visible = false;
     this._root.addChild(this._cursor);
 
@@ -407,7 +422,7 @@ export class ChatBar extends GamePanel {
       }
     };
     this._combo.container.x = COMBO_X;
-    this._combo.container.y = COMBO_Y;
+    this._combo.container.y = this._comboY;
     this._root.addChild(this._combo.container);
 
     // OG: m_pFontChatLog[0..26] — per-type fonts (height + ARGB color)
@@ -500,6 +515,9 @@ export class ChatBar extends GamePanel {
     // present in both closed and open states.
     if (this._layerSpace2) this._layerSpace2.visible = true;
     if (this._layerEnter) this._layerEnter.visible = bCreate;
+    // OG SetChatType @0x879C00: the chat/tapBar layer is created for types
+    // 3 (expanded) and 2 (small), destroyed for 0/1.
+    if (this._layerChatBar) this._layerChatBar.visible = bCreate;
     if (this._layerCover) this._layerCover.visible = bCreate;
     if (this._chatOpenButton) this._chatOpenButton.container.visible = this._chatType === CHAT_TYPE_MINIMAL;
     if (this._chatCloseButton) this._chatCloseButton.container.visible = this._chatType !== CHAT_TYPE_MINIMAL;
@@ -507,8 +525,11 @@ export class ChatBar extends GamePanel {
     if (this._scrollUpButton) this._scrollUpButton.container.visible = showScrollControls;
     if (this._scrollDownButton) this._scrollDownButton.container.visible = showScrollControls;
 
-    // Hide Graphics fallbacks when WZ layers available
-    this._bg.visible = !this._layerSpace && !this._layerSpace2;
+    // _bg is the LOG-AREA backdrop (navy tint) — keep it visible even when the
+    // WZ chrome loads: the chatSpace/chatEnter canvases only cover the input
+    // strip, so without this the expanded log renders over the bare field.
+    // It sits below the WZ sprites in the display list, so they draw on top.
+    this._bg.visible = true;
     this._inputBg.visible = !this._layerEnter;
   }
 
@@ -524,23 +545,32 @@ export class ChatBar extends GamePanel {
     const tabBarY = displayY;
     this._tabBarGfx.clear();
     this._tabBarGfx.rect(DISPLAY_X, tabBarY, displayW, TAB_H).fill({ color: '#222', alpha: 0.7 });
-    const showTabs = this._chatType === CHAT_TYPE_EXPANDED;
+    const showTabs = this._chatType !== CHAT_TYPE_NONE && this._chatType !== CHAT_TYPE_MINIMAL;
     this._tabBarGfx.visible = showTabs;
 
     // Chat log lines
     this._rebuildLines(displayY, displayW);
 
-    // Display background
+    // Display background — translucent navy so the log reads over the field
+    // (OG draws log text over the tinted chatSpace/chatCover canvases).
     this._bg.clear();
     this._bg.rect(DISPLAY_X, displayY, displayW, this._chatHeight)
-      .fill({ color: '#000', alpha: this._chatType === CHAT_TYPE_MINIMAL ? 1.0 : 0.5 });
+      .fill({ color: '#0A1020', alpha: this._chatType === CHAT_TYPE_MINIMAL ? 1.0 : 0.82 });
     this._bg.rect(DISPLAY_X, displayY, displayW, this._chatHeight)
-      .stroke({ color: '#444', width: 1 });
+      .stroke({ color: '#3A4664', width: 1 });
+
+    // Filter tabs sit ON TOP of the log and move with its top edge
+    // (OG _ResetChatBarPos: Move(x, m_ptChatWnd.y - 19)) — re-add them after
+    // the line containers so they win the z-order.
+    for (const t of this._tabGraphics) if (t.visible) this._root.addChild(t);
+    for (const s of [...this._tabBarSprites, ...this._tabBarCheckedSprites]) if (s?.visible) this._root.addChild(s);
+    for (const l of this._tabLabels) if (l.visible) this._root.addChild(l);
+    for (const b of this._tabBarButtons) if (b && b.container.visible) this._root.addChild(b.container);
 
     // Input background
     this._inputBg.clear();
-    this._inputBg.rect(EDIT_X, EDIT_Y, EDIT_W, EDIT_H).fill({ color: '#111', alpha: 0.8 });
-    this._inputBg.rect(EDIT_X, EDIT_Y, EDIT_W, EDIT_H).stroke({ color: '#555', width: 1 });
+    this._inputBg.rect(EDIT_X, this._editY, EDIT_W, EDIT_H).fill({ color: '#111', alpha: 0.8 });
+    this._inputBg.rect(EDIT_X, this._editY, EDIT_W, EDIT_H).stroke({ color: '#555', width: 1 });
 
     // tapBar layer position (OG: RelMove(0, m_ptChatWnd.y - 2))
     if (this._layerChatBar) {
@@ -548,12 +578,18 @@ export class ChatBar extends GamePanel {
     }
 // OG mainBar layers are origin-anchored: screen = _barRef(512,599) − WZ origin,
     // i.e. chatSpace (512,57)→(0,542), chatSpace2 (512,60)→(0,539), chatEnter
-    // (467,58)→(45,541), chatCover (509,57)→(3,542). As offsets from the log top
-    // (m_ptChatWnd.y=518): +24/+21/+23/+24. Shifted with the bar via _chatWndY.
-    if (this._layerSpace) this._layerSpace.position.set(DISPLAY_X, this._chatWndY + 24);
-    if (this._layerSpace2) this._layerSpace2.position.set(DISPLAY_X, this._chatWndY + 21);
-    if (this._layerEnter) this._layerEnter.position.set(DISPLAY_X + 45, this._chatWndY + 23);
-    if (this._layerCover) this._layerCover.position.set(DISPLAY_X + 3, this._chatWndY + 24);
+    // (467,58)→(45,541), chatCover (509,57)→(3,542). These are the INPUT STRIP:
+    // they sit at the FIXED bottom edge of the chat UI (baseline ptChatWnd.y
+    // 518) and do NOT ride up when the log expands upward.
+    if (this._layerSpace) this._layerSpace.position.set(DISPLAY_X, 518 + CHAT_DY + 24);
+    if (this._layerSpace2) this._layerSpace2.position.set(DISPLAY_X, 518 + CHAT_DY + 21);
+    if (this._layerEnter) this._layerEnter.position.set(DISPLAY_X + 45, 518 + CHAT_DY + 23);
+    if (this._layerCover) this._layerCover.position.set(DISPLAY_X + 3, 518 + CHAT_DY + 24);
+
+    // Input row rides with the window (bottom-anchored unit).
+    if (this._inputText) this._inputText.y = this._editY + 1;
+    if (this._cursor) this._cursor.y = this._editY + 1;
+    if (this._combo) this._combo.container.y = this._comboY;
 
     // Filter buttons position (OG: _ResetChatBarPos — x starts at 1, y = m_ptChatWnd.y - 19, spacing 46px)
     this._setFilterButton();
@@ -574,7 +610,7 @@ export class ChatBar extends GamePanel {
     for (let i = 0; i < this._maxLines; i++) {
       const container = new Container();
       // OG: y is set in _syncLines via bottom-up calculation
-      container.y = displayY + tabOffset + this._chatHeight - 13 * i - 13;
+      container.y = displayY + tabOffset + this._chatHeight - 13 * i - 13 - this._logUp;
       container.visible = false;
 
       const t = new Text({ text: '', style: this._chatFonts[0] });
@@ -603,7 +639,7 @@ export class ChatBar extends GamePanel {
     // OG: _ResetChatBarPos (0x86DC30) — hide filter buttons for groups the
     // character isn't in, clear the matching filter bit, then lay out shown
     // buttons left-to-right at x=1+i*46, y=m_ptChatWnd.y-19.
-    const show = this._chatType === CHAT_TYPE_EXPANDED;
+    const show = this._chatType !== CHAT_TYPE_NONE && this._chatType !== CHAT_TYPE_MINIMAL;
     const members = [true, true, this._memberParty, this._memberGuild, this._memberAlliance, this._memberExpedition];
     if (show) {
       if (!this._memberParty) this._dwChatFilterFlag &= ~FILTER_PARTY;
@@ -661,8 +697,26 @@ export class ChatBar extends GamePanel {
     for (let i = 0; i < this._tabBarButtons.length; i++) {
       const btn = this._tabBarButtons[i];
       if (btn) {
+        // OG SetChatType @0x879C00: filter buttons exist ONLY in expanded.
+        btn.container.visible = show && members[i];
         btn.setChecked(this._filterChecked[i]);
       }
+    }
+
+    // Z-order: lift every VISIBLE tab element above the log lines/backdrop.
+    // Visibility was just decided here, so this is the correct place — doing
+    // it earlier (in _applyLayout) skips still-hidden sprites and leaves them
+    // buried under containers added afterwards.
+    for (let i = 0; i < this._tabLabels.length; i++) {
+      const wzTab = this._tabBarSprites[i];
+      const wzChecked = this._tabBarCheckedSprites[i];
+      if (wzTab?.visible) this._root.addChild(wzTab);
+      if (wzChecked?.visible) this._root.addChild(wzChecked);
+      if (this._tabGraphics[i]?.visible) this._root.addChild(this._tabGraphics[i]);
+      if (this._tabLabels[i]?.visible) this._root.addChild(this._tabLabels[i]);
+    }
+    for (const b of this._tabBarButtons) {
+      if (b && b.container.visible) this._root.addChild(b.container);
     }
   }
 
@@ -852,7 +906,7 @@ export class ChatBar extends GamePanel {
       const showWhisper = isWhisperType && entry.isFirstLine;
 
       // OG: y = m_nChatWndHeight - 13*idx - 13 (bottom-up rendering)
-      const lineY = this._chatHeight - 13 * i - 13;
+      const lineY = this._chatHeight - 13 * i - 13 - this._logUp;
       container.y = displayY + tabOffset + lineY;
 
       if (showWhisper) {
@@ -1393,7 +1447,7 @@ private _setFilterButton(): void {
     const inDisplay = lx >= DISPLAY_X && lx < DISPLAY_X + displayW
       && ly >= displayY + tabOffset
       && ly < displayY + this._chatHeight;
-    const inInput = lx >= EDIT_X && lx < EDIT_X + EDIT_W && ly >= EDIT_Y && ly < EDIT_Y + EDIT_H;
+    const inInput = lx >= EDIT_X && lx < EDIT_X + EDIT_W && ly >= this._editY && ly < this._editY + EDIT_H;
     const scrollbarX = DISPLAY_X + 565 - this._nScrWidth;
     const scrollbarTop = 516 + CHAT_DY - this._chatHeight;
     const inScrollbar = this._scrollGfx.visible
@@ -1402,7 +1456,7 @@ private _setFilterButton(): void {
 
     // Delegate combo box hit testing to ComboBox component
     const comboLx = lx - COMBO_X;
-    const comboLy = ly - COMBO_Y;
+    const comboLy = ly - this._comboY;
     if (this._combo.handleMouseButton(comboLx, comboLy, down)) {
       return true;
     }
@@ -1457,7 +1511,7 @@ private _setFilterButton(): void {
     // OG: TryBeginWhisper — click on whisper icon in chat log
     if (inDisplay) {
       const tabOff = this._chatType === CHAT_TYPE_EXPANDED ? TAB_H : 0;
-      const lineIdx = Math.floor((this._chatHeight - (ly - displayY - tabOff)) / LINE_H);
+      const lineIdx = Math.floor((this._chatHeight - this._logUp - (ly - displayY - tabOff)) / LINE_H);
       // Map display line index (bottom-up) to filtered chatLog index
       const filtered: number[] = [];
       for (let i = 0; i < this._chatLog.length; i++) {
@@ -2117,10 +2171,10 @@ private _setFilterButton(): void {
 // Chat layers (OG OnCreate lines 1814-1893) — all direct children of mainBar.
     // Origin-anchored (screen = _barRef − WZ origin) → offsets from _chatWndY:
     // chatSpace +24, chatSpace2 +21, chatEnter +23/x45, chatCover +24/x3.
-    this._layerSpace = loadCanvas(bar, 'chatSpace', DISPLAY_X, this._chatWndY + 24);
-    this._layerSpace2 = loadCanvas(bar, 'chatSpace2', DISPLAY_X, this._chatWndY + 21);
-    this._layerEnter = loadCanvas(bar, 'chatEnter', DISPLAY_X + 45, this._chatWndY + 23, false);
-    this._layerCover = loadCanvas(bar, 'chatCover', DISPLAY_X + 3, this._chatWndY + 24, false);
+    this._layerSpace = loadCanvas(bar, 'chatSpace', DISPLAY_X, 518 + CHAT_DY + 24);
+    this._layerSpace2 = loadCanvas(bar, 'chatSpace2', DISPLAY_X, 518 + CHAT_DY + 21);
+    this._layerEnter = loadCanvas(bar, 'chatEnter', DISPLAY_X + 45, 518 + CHAT_DY + 23, false);
+    this._layerCover = loadCanvas(bar, 'chatCover', DISPLAY_X + 3, 518 + CHAT_DY + 24, false);
 
 // Combo box WZ sprite (OG: StatusBar2.img/mainBar/chatTarget/base/<state>/0)
     // The `base` node holds normal/mouseOver/pressed/disabled states, each with a
@@ -2453,7 +2507,7 @@ private _setFilterButton(): void {
       const inDisplay = lx >= DISPLAY_X && lx < DISPLAY_X + DISPLAY_W_515
         && ly >= displayY + tabOffset && ly < displayY + this._chatHeight;
       if (inDisplay) {
-        const lineIdx = Math.floor((this._chatHeight - (ly - displayY - tabOffset)) / LINE_H);
+        const lineIdx = Math.floor((this._chatHeight - this._logUp - (ly - displayY - tabOffset)) / LINE_H);
         const filtered: number[] = [];
         for (let i = 0; i < this._chatLog.length; i++) {
           if (this._isFiltered(this._chatLog[i].lType)) filtered.push(i);

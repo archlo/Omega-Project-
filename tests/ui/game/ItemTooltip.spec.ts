@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { Sprite, Texture, Text } from 'pixi.js';
 import { ItemTooltip } from '../../../src/ui/game/ItemTooltip.js';
 import { BuiltInFont } from '../../../src/ui/BuiltInFont.js';
@@ -6,9 +6,9 @@ import { TooltipAssets } from '../../../src/ui/game/TooltipAssets.js';
 import { ToolTip } from '../../../src/ui/game/ToolTip.js';
 import type { ItemAttr } from '../../../src/character/ItemIconLoader.js';
 
-// â”€â”€ Mock BuiltInFont â€” avoids PixiJS Text which needs DOM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Mock BuiltInFont — avoids PixiJS Text which needs DOM ───────────────────
 // The real BuiltInFont.measure() creates new Text(...) which calls
-// document.createElement('canvas') for text metrics â€” unavailable in Node.
+// document.createElement('canvas') for text metrics — unavailable in Node.
 function makeMockFont() {
   return {
     lineHeight: 15,
@@ -59,7 +59,7 @@ function makeExactItemInfo(icon: any) {
   } as any;
 }
 
-// â”€â”€ ItemTooltip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── ItemTooltip ─────────────────────────────────────────────────────────────
 
 describe('ItemTooltip', () => {
   describe('constructor', () => {
@@ -74,7 +74,7 @@ describe('ItemTooltip', () => {
     });
   });
 
-  // â”€â”€ SetPlayer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── SetPlayer ────────────────────────────────────────────────────────────
 
   describe('SetPlayer', () => {
     it('stores player stats for requirement checks', () => {
@@ -83,7 +83,7 @@ describe('ItemTooltip', () => {
     });
   });
 
-  // â”€â”€ Hide â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Hide ─────────────────────────────────────────────────────────────────
 
   describe('Hide', () => {
     it('hides the root container', () => {
@@ -95,9 +95,9 @@ describe('ItemTooltip', () => {
     });
   });
 
-  // â”€â”€ Draw â€” equip routing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Draw — equip routing ─────────────────────────────────────────────────
 
-  describe('Draw â€” equip routing', () => {
+  describe('Draw — equip routing', () => {
     it('routes to equip tooltip for 1xxxxxx items', () => {
       const attr: ItemAttr = {
         IsEquip: true, Category: 130,
@@ -144,7 +144,7 @@ describe('ItemTooltip', () => {
     });
   });
 
-  // â”€â”€ _drawEquip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── _drawEquip ───────────────────────────────────────────────────────────
 
   describe('_drawEquip', () => {
     function equipAttr(overrides: Partial<ItemAttr> = {}): ItemAttr {
@@ -255,7 +255,7 @@ describe('ItemTooltip', () => {
 
     it('renders protection border when ProtectionType set', () => {
       const tip = makeTooltip({ attr: equipAttr({ ProtectionType: 0 }) });
-      // PROTECTION_COLORS[0] = 0xFF66FFFF which is > 0xFFFFFF â€” PixiJS v8
+      // PROTECTION_COLORS[0] = 0xFF66FFFF which is > 0xFFFFFF — PixiJS v8
       // can't parse this ARGB format. This is a pre-existing production bug;
       // the tooltip still renders (background is drawn before the border call).
       // We verify the tooltip doesn't crash the rest of the render:
@@ -266,7 +266,7 @@ describe('ItemTooltip', () => {
       }).not.toThrow();
     });
 
-    // â”€â”€ OG 1:1 layout positions (verified from IDA: SetToolTip_Equip) â”€â”€â”€â”€â”€â”€
+    // ── OG 1:1 layout positions (verified from IDA: SetToolTip_Equip) ──────
 
     it('draws item name dot at (10, y+5) and name text centered at y', () => {
       const tip = makeTooltip({ attr: equipAttr() });
@@ -275,7 +275,7 @@ describe('ItemTooltip', () => {
       const nameText = tip.root.children[2] as any;
       expect(nameText.text).toBe('NameTest');
       // OG DrawItemTitle @0x88ccb0: name centered at (w - titleW)/2.
-      // Using the actual font measurement (HL_ORANGE 12px â‰ˆ 7.2px/char).
+      // Using the actual font measurement (HL_ORANGE 12px ≈ 7.2px/char).
       // NameTest = 8 chars * 7.2px = 57.6, w = 236.
       expect(nameText.x).toBeCloseTo((236 - 57.6) / 2, 1);
       expect(nameText.y).toBe(10);
@@ -315,7 +315,7 @@ it('positions icon sprite at the OG DrawItemIcon hotspot', () => {
       const assets = makeAssets();
       const tip = makeTooltip({ attr: equipAttr(), assets });
       tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
-      // Level/STR/DEX/INT/LUK all req 0 â†’ DrawNumber(0, met=true, x=144)
+      // Level/STR/DEX/INT/LUK all req 0 → DrawNumber(0, met=true, x=144)
       const zeroRows = (assets.DrawNumber as any).mock.calls.filter(
         (c: any[]) => c[0] === 0 && c[2] === 144);
       expect(zeroRows.length).toBe(5);
@@ -329,7 +329,7 @@ it('positions icon sprite at the OG DrawItemIcon hotspot', () => {
       const tip = makeTooltip({ attr: equipAttr(), assets });
       tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
       expect(assets.Get).toHaveBeenCalledWith('Can/none');
-      // POP row = index 5 â†’ y = 42 + 5*12 = 102; bottom-right anchored at
+      // POP row = index 5 → y = 42 + 5*12 = 102; bottom-right anchored at
       // (144-14, 102-7) = (130, 95). Not via DrawNumber (bNone).
       const blitted = tip.root.children.find((c: any) => c.x === 130 && c.y === 95);
       expect(blitted).toBeTruthy();
@@ -356,7 +356,7 @@ it('positions icon sprite at the OG DrawItemIcon hotspot', () => {
       expect(durCall).toBeTruthy();
       expect(durCall[2]).toBe(161);
       expect(durCall[3]).toBe(138);
-      // 125/200 â†’ floor(62.5) = 62 â€” proves pct math, not raw durability
+      // 125/200 → floor(62.5) = 62 — proves pct math, not raw durability
       const tip2 = makeTooltip({ attr: equipAttr({ Durability: 125, DurabilityMax: 200 }), assets });
       tip2.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
       const pctCall = (assets.DrawNumber as any).mock.calls.find((c: any[]) => c[0] === 62);
@@ -369,7 +369,7 @@ it('positions icon sprite at the OG DrawItemIcon hotspot', () => {
       assets.Percent.mockReturnValue({ NewSprite: () => new Sprite(), Width: 5, Height: 7 });
       const tip = makeTooltip({ attr: equipAttr({ Durability: 50, DurabilityMax: 100 }), assets });
       tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
-      // pct=50 â†’ 2 digits â†’ x = 2*(6+81) = 174; y = 42+96 = 138
+      // pct=50 → 2 digits → x = 2*(6+81) = 174; y = 42+96 = 138
       const blitted = tip.root.children.find((c: any) => c.x === 174 && c.y === 138);
       expect(blitted).toBeTruthy();
     });
@@ -378,7 +378,7 @@ it('positions icon sprite at the OG DrawItemIcon hotspot', () => {
       const assets = makeAssets();
       const tip = makeTooltip({ attr: equipAttr({ Durability: 5, DurabilityMax: 100 }), assets });
       tip.Draw(1300000, 'Sword', 0, 1, 100, 100, 1024, 768);
-      // pct = 5 â†’ isLow â†’ DurabilityBar(false), DrawNumber(5, met=false,...)
+      // pct = 5 → isLow → DurabilityBar(false), DrawNumber(5, met=false,...)
       expect(assets.DurabilityBar).toHaveBeenCalledWith(false);
       const durCall = (assets.DrawNumber as any).mock.calls.find((c: any[]) => c[0] === 5);
       expect(durCall).toBeTruthy();
@@ -441,7 +441,7 @@ it('positions icon sprite at the OG DrawItemIcon hotspot', () => {
     });
   });
 
-  // â”€â”€ _drawConsumable â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── _drawConsumable ──────────────────────────────────────────────────────
 
   describe('_drawConsumable', () => {
     it('renders item name and ID', () => {
@@ -606,7 +606,7 @@ it('positions icon sprite at the OG DrawItemIcon hotspot', () => {
     });
   });
 
-  // â”€â”€ DrawSkillTooltip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── DrawSkillTooltip ─────────────────────────────────────────────────────
 
   describe('DrawSkillTooltip', () => {
     it('renders skill name, description, and level info', () => {
@@ -720,7 +720,7 @@ it('positions icon sprite at the OG DrawItemIcon hotspot', () => {
     });
   });
 
-  // â”€â”€ DrawPetTooltip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── DrawPetTooltip ───────────────────────────────────────────────────────
 
   describe('DrawPetTooltip', () => {
     it('renders pet name, template, stats, and skills', () => {
@@ -787,9 +787,11 @@ it('positions icon sprite at the OG DrawItemIcon hotspot', () => {
       const texts = tip.root.children.filter((child: any) => child instanceof Text && child.visible) as Text[];
       expect(texts.find(t => t.text === 'Power Strike')?.x).toBe(10);
       expect(texts.find(t => t.text === 'Deals damage')?.x).toBe(87);
-      expect(tip.root.children).toContain(icon);
-      expect(icon.x).toBe(10);
-      expect(icon.y).toBe(32);
+      // Cloned, never the caller's sprite itself.
+      const drawn = tip.root.children.find((c: any) => c !== icon && c instanceof Sprite && c.x === 10) as any;
+      expect(drawn).toBeDefined();
+      expect(drawn.x).toBe(10);
+      expect(drawn.y).toBe(32);
     });
 
     it('accounts for wrapped help lines and displays master level text', () => {
@@ -885,7 +887,7 @@ it('accounts for skill rows but keeps limit rows bottom-anchored', () => {
     });
   });
 
-  // â”€â”€ DrawRingTooltip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── DrawRingTooltip ──────────────────────────────────────────────────────
 
   describe('DrawRingTooltip', () => {
     it('renders couple ring with partner name', () => {
@@ -945,9 +947,13 @@ it('accounts for skill rows but keeps limit rows bottom-anchored', () => {
         { ringImage, partnerText: 'Coupled with Maple' },
       );
 
-      expect(tip.root.children).toContain(ringImage);
-      expect(ringImage.x).toBe(10);
-      expect(ringImage.y).toBe(48);
+      // The tooltip clones caller-owned sprites (never takes ownership �
+      // _blitSprites cleanup would destroy the source panel's sprite).
+      const drawn = tip.root.children.find(
+        (c: any) => c !== ringImage && c instanceof Sprite && c.x === 10,
+      ) as any;
+      expect(drawn).toBeDefined();
+      expect(drawn.y).toBe(48);
       const texts = tip.root.children.filter((child: any) => child.visible && typeof child.text === 'string') as any[];
       expect(texts.some((text) => text.text === 'Coupled with Maple')).toBe(true);
       expect(texts.some((text) => text.text === 'Partner: Ignored raw name')).toBe(false);
@@ -963,7 +969,8 @@ it('accounts for skill rows but keeps limit rows bottom-anchored', () => {
         undefined, undefined, { resolveRingImage: resolver });
       expect(resolver).toHaveBeenCalledWith(1112803);
       expect(assets.Get).not.toHaveBeenCalledWith('ring');
-      expect(tip.root.children).toContain(ringImage);
+      const drawn = tip.root.children.find((c: any) => c !== ringImage && c instanceof Sprite && c.x === 10) as any;
+      expect(drawn).toBeDefined();
     });
 
     it('renders stat bonuses from equipAttr fallback', () => {
@@ -1000,7 +1007,7 @@ it('accounts for skill rows but keeps limit rows bottom-anchored', () => {
     });
   });
 
-  // â”€â”€ DrawMacroSysSkillTooltip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── DrawMacroSysSkillTooltip ─────────────────────────────────────────────
 
   describe('DrawMacroSysSkillTooltip', () => {
     it('renders macro name and skill slots', () => {
@@ -1044,7 +1051,7 @@ it('accounts for skill rows but keeps limit rows bottom-anchored', () => {
     });
   });
 
-  // â”€â”€ DrawSlotIncTooltip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── DrawSlotIncTooltip ───────────────────────────────────────────────────
 
   describe('DrawSlotIncTooltip', () => {
     it('renders slot increase for equip tab', () => {
@@ -1097,7 +1104,7 @@ it('accounts for skill rows but keeps limit rows bottom-anchored', () => {
     });
   });
 
-  // â”€â”€ DrawEquipExtTooltip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── DrawEquipExtTooltip ──────────────────────────────────────────────────
 
   describe('DrawEquipExtTooltip', () => {
     it('renders expiry info for non-expired item', () => {
@@ -1128,7 +1135,7 @@ it('accounts for skill rows but keeps limit rows bottom-anchored', () => {
     });
   });
 
-  // â”€â”€ DrawString2Tooltip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── DrawString2Tooltip ───────────────────────────────────────────────────
 
   describe('DrawString2Tooltip', () => {
     it('renders multiple colored lines', () => {
@@ -1163,7 +1170,7 @@ it('accounts for skill rows but keeps limit rows bottom-anchored', () => {
     });
   });
 
-  // â”€â”€ DrawStringMultiLineTooltip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── DrawStringMultiLineTooltip ───────────────────────────────────────────
 
   describe('DrawStringMultiLineTooltip', () => {
     it('renders word-wrapped text', () => {
@@ -1195,7 +1202,7 @@ it('accounts for skill rows but keeps limit rows bottom-anchored', () => {
     });
   });
 
-  // â”€â”€ _buildInfoLines (internal) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── _buildInfoLines (internal) ───────────────────────────────────────────
 
   describe('_buildInfoLines', () => {
     it('returns empty array for null attr', () => {
@@ -1423,7 +1430,7 @@ it('accounts for skill rows but keeps limit rows bottom-anchored', () => {
     });
   });
 
-  // â”€â”€ _gradeColor (static, internal) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── _gradeColor (static, internal) ───────────────────────────────────────
 
   describe('_gradeColor', () => {
     it('returns correct colors for grade values', () => {
@@ -1437,3 +1444,4 @@ it('accounts for skill rows but keeps limit rows bottom-anchored', () => {
     });
   });
 });
+

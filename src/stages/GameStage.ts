@@ -1,4 +1,4 @@
-﻿import { Container, Graphics } from 'pixi.js';
+import { Container, Graphics } from 'pixi.js';
 import { Stage, MouseButton } from '../app/Stage.js';
 import { MapleClaudeGame } from '../MapleClaudeGame.js';
 import { WzPackage } from '../wz/WzPackage.js';
@@ -359,6 +359,7 @@ export class GameStage extends Stage {
   protected _antiMacroDialog: AntiMacroDialog | null = null;
   private _adminShopNpcTemplateId: number | null = null;
   protected _chatBalloon: ChatBalloonLayer | null = null;
+  private _pendingBalloonParent = false;
   protected _tradingRoom: TradingRoom | null = null;
   protected _cashTradingRoom: CashTradingRoom | null = null;
   protected _personalShop: PersonalShop | null = null;
@@ -1362,7 +1363,7 @@ export class GameStage extends Stage {
     this._trunk.OnWithdrawMoney = (amount) => { this.game.session.send(GameSender.TrunkWithdrawMoney(amount)); };
     this._trunk.OnDepositMoney = (amount) => { this.game.session.send(GameSender.TrunkDepositMoney(amount)); };
 
-    this._messengerWin = new Messenger(this._loader, uiWz, font);
+    this._messengerWin = new Messenger(this._loader, uiWz);
     this._messengerWin.onClosed = () => { this.game.session.send(GameSender.MessengerLeave()); };
 
     this._equip = new EquipInventory({
@@ -1834,6 +1835,14 @@ export class GameStage extends Stage {
       onLeave: () => { this.game.session.send(GameSender.MiniRoomLeave()); },
     });
     this._chatBalloon = new ChatBalloonLayer(this._loader, uiWz, font);
+    // First-login race: SetField can arrive before _initMenu creates the
+    // balloon layer, leaving it unparented (invisible). If the field is
+    // already loaded, parent now — above the field container.
+    if (this._pendingBalloonParent || this._field) {
+      if (this._chatBalloon) this.mapRoot.addChild(this._chatBalloon.root);
+      if (this._dmgNumbers) this.mapRoot.addChild(this._dmgNumbers.container);
+      this._pendingBalloonParent = false;
+    }
     // The chat balloon anchors via WorldToScreen (the map/camera viewport
     // space that entities use), so it must live in the MAP layer â€” not the
     // scaled+centered UI frame. On any window other than exactly 800x600 the
@@ -3950,11 +3959,13 @@ this._dmgNumbers?.Update(dt);
       this._notice?.show('Delivery Quest', `Quest ${questId} delivered.`);
     };
     fh.onFriendList = (friends) => {
-      // OG has a dedicated CUIFriendGroup dialog for renaming/re-sorting
-      // groups (decompile/7bcbe0.c); that dialog's only network effect is
-      // re-sending FriendAdd (no separate "set group" opcode exists â€” see
-      // FriendRequestAction's doc comment), so until UserList gets real
-      // grouped sub-lists this just surfaces the group OG already assigned.
+      // OG: CUIFindFriend::OnCreate ends with SendMyInfoRequest and the list
+      // window renders FriendLoaded rows (name/level/job per CUIFindFriend).
+      this._findFriend?.SetFriends(friends.map((f) => ({
+        name: f.name,
+        online: f.online,
+        channel: f.channel,
+      })));
       this._userList.setUsers(friends.map((f) => ({
         charId: f.charId, name: f.name, level: 0,
         job: f.online ? `Online${f.group ? ` [${f.group}]` : ''}` : 'Offline',
@@ -5163,8 +5174,19 @@ this._localCharId = args.characterId ?? 0;
       if (node) this._skillEffects?.PlayFullScreen(node);
     }
     this.mapRoot.addChild(this._field.container);
-    if (this._chatBalloon) this.mapRoot.addChild(this._chatBalloon.root);
-    if (this._dmgNumbers) this.mapRoot.addChild(this._dmgNumbers.container);
+    if (this._chatBalloon) {
+      this.mapRoot.addChild(this._chatBalloon.root);
+      this._pendingBalloonParent = false;
+    } else {
+      // First login: SetField beats _initMenu, so the balloon layer doesn't
+      // exist yet — flag it so _initMenu parents it once created.
+      this._pendingBalloonParent = true;
+    }
+    if (this._dmgNumbers) {
+      this.mapRoot.addChild(this._dmgNumbers.container);
+    } else {
+      this._pendingBalloonParent = true; // dmgNumbers shares the same race
+    }
     this.mapRoot.addChild(this._shopMarkerLayer);
     this.mapRoot.addChild(this._skillEffectLayer);
     this.mapRoot.addChild(this._itemEffectLayer);
@@ -5396,10 +5418,11 @@ this._localCharId = args.characterId ?? 0;
         this._framesSinceSwap = 0;
       }
     } else if (this._fadePhase === 2) {
-      // Phase 2: hold at black until the OG tDelay elapsed AND the new field
-      // has rendered â€” revealing earlier showed a still-loading map.
+      // Phase 2: hold at black until the OG tDelay elapsed AND the whole
+      // scene — map frames, local character avatar, and the UI chrome — has
+      // rendered. Revealing earlier showed a half-loaded world.
       this._holdTimer += dt;
-      if (this._holdTimer >= HoldAtBlackSec && this._framesSinceSwap >= MinRenderedFrames) {
+      if (this._holdTimer >= HoldAtBlackSec && this._framesSinceSwap >= MinRenderedFrames && this._isSceneFullyRendered()) {
         this._fadePhase = -1; // begin fade-in
       }
     } else if (this._fadePhase === -1) {
@@ -5447,6 +5470,15 @@ this._localCharId = args.characterId ?? 0;
    *  the world but below nothing else in uiRoot order (added last = topmost).
    *  The map-change overlay uses _fadeAlpha; each FieldFadeInOut entry uses
    *  nAlpha/255 Ã— envelope (in over tFadeIn, hold tDelay, out over tFadeOut). */
+  /** True when the whole scene is on screen: UI chrome built (_initMenu done
+   *  — _keyConfig is the last panel it constructs) and the local character's
+   *  avatar has visible layers. Gates the map-transition fade-in. */
+  private _isSceneFullyRendered(): boolean {
+    if (!this._statusBar || !this._keyConfig) return false;
+    if (!this._player || this._player.container.children.length === 0) return false;
+    return true;
+  }
+
   private _drawFadeOverlays(): void {
     const w = this.game.pixiApp.screen.width;
     const h = this.game.pixiApp.screen.height;
@@ -5468,7 +5500,11 @@ this._localCharId = args.characterId ?? 0;
     if (maxAlpha > 0) {
       this._fadeOverlay.clear();
       this._fadeOverlay.rect(0, 0, w, h).fill({ color: 0x000000, alpha: maxAlpha });
-      this.uiRoot.addChild(this._fadeOverlay);
+      // Parent to the RAW stage, above both mapContainer and frameContainer:
+      // uiRoot lives in the scaled/letterboxed 800x600 frame, so a fade there
+      // only covers part of the screen at custom window sizes.
+      const stage = this.game.pixiApp.stage;
+      if (this._fadeOverlay.parent !== stage) stage.addChild(this._fadeOverlay);
     } else if (this._fadeOverlay.parent) {
       this._fadeOverlay.parent.removeChild(this._fadeOverlay);
     }
