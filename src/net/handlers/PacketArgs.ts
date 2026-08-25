@@ -428,7 +428,9 @@ export interface MapleTVUseResArgs { message: string; }
 export interface AvatarMegaphoneResArgs { result: number; message: string; }
 export interface SuccessInUsegachaponBoxArgs { itemId: number; }
 export interface SetBuyEquipExtArgs { flag: boolean; }
-export interface SetPassengerRequestArgs { npcId: number; }
+/** OG: CWvsContext::OnSetPassenserRequest @0x9FB090 (opcode 126) —
+ *  int requesterID: "X wants to follow you". */
+export interface SetPassengerRequestArgs { requesterId: number; }
 // OG: opcode 127 — already flagged (M2/H8 in the prior security audit) as
 // unsanitized server-controlled text injected into quest-progress display.
 export interface ScriptProgressMessageArgs { message: string; }
@@ -438,7 +440,12 @@ export interface DataCRCCheckFailedArgs { message: string; }
 export interface UpdateGMBoardArgs { boardId: number; message: string; }
 export interface ShowSlotMessageArgs { slot: number; }
 export interface AccountMoreInfoArgs { flag: number; }
-export interface FindFriendArgs { flag1: number; flag2: number; }
+/** OG: CWvsContext::OnFindFirend (0x9CF9A0, opcode 134) — byte sub-opcode:
+ *  6 my-info / 8 search result / 9 request error (byte code) / 11 detail. */
+export interface FindFriendArgs {
+  sub: number;
+  errorCode?: number;
+}
 export interface TransferChannelNotifyArgs { channel: number; message: string; }
 // OG: ForcedStat::Decode (resolved via func_named_calls from OnForcedStatSet,
 // whose own decode_layout was empty — the function delegates entirely).
@@ -1186,14 +1193,35 @@ export interface DragonBallBoxArgs {
 export interface UserChatHistoryArgs { charId: number; text: string; }
 export interface UserADBoardArgs { charId: number; message: string; }
 export interface SetConsumeItemEffectArgs { charId: number; itemId: number; }
-export interface ShowItemUpgradeEffectArgs { charId: number; result: number; itemId?: number; }
-export interface ShowItemHyperUpgradeEffectArgs { charId: number; result: number; itemId?: number; }
-export interface ShowItemOptionUpgradeEffectArgs { charId: number; result: number; itemId?: number; }
+export interface ShowItemUpgradeEffectArgs {
+  charId: number;
+  /** bSuccess (byte 1 of the packet body; -1 = scroll-not-usable error). */
+  success: number;
+  cursed: boolean;
+  enchantSkill: boolean;
+  enchantCategory: number;
+  whiteScroll: boolean;
+  recoverable: boolean;
+}
+/** Hyper/option variants: server stops after nEnchantCategory (OG decode
+ *  order success/cursed/enchantSkill/category, no whiteScroll/recoverable
+ *  tail on these opcodes). */
+export interface ShowItemHyperUpgradeEffectArgs { charId: number; success: boolean; cursed: boolean; enchantSkill: boolean; enchantCategory: number; }
+export interface ShowItemOptionUpgradeEffectArgs { charId: number; success: boolean; cursed: boolean; enchantSkill: boolean; enchantCategory: number; }
 export interface ShowItemReleaseEffectArgs { charId: number; flag: number; }
 export interface ShowItemUnreleaseEffectArgs { charId: number; flag: number; }
 export interface UserHitByUserArgs { charId: number; damage: number; }
 export interface UserTeslaTriangleArgs { charId: number; state: number; }
-export interface UserFollowCharacterArgs { charId: number; targetId: number; }
+/** OG: CUser::OnFollowCharacter (0x8E3220, user-common opcode 193 — leading
+ *  int charId): int driverId; when 0: byte bTransferField, then int x + int y
+ *  when set (detach teleport). */
+export interface UserFollowCharacterArgs {
+  charId: number;
+  driverId: number;
+  transferField: boolean;
+  x: number;
+  y: number;
+}
 export interface UserShowPQRewardArgs { charId: number; rewardId: number; }
 export interface UserSetPhaseArgs { charId: number; phase: number; }
 export interface ShowRecoverUpgradeCountEffectArgs { charId: number; count: number; }

@@ -360,16 +360,10 @@ this._gfx = new Graphics();
     const ly = screenY - this._root.y;
     const sc = hitTestKey(lx, ly);
     if (sc < 0) return false;
-    const fk: FuncKeyMappedRecord = { type: FuncKeyType.Skill, id: skillId };
-    for (let i = 0; i < MapSize; i++) {
-      if (this._map[i].type === FuncKeyType.Skill && this._map[i].id === skillId) {
-        this._map[i] = { ...FuncKeyMappedNone };
-      }
-    }
-    this._map[sc] = fk;
-    // TODO_AUDIT.md Hundred-and-fifteenth pass: notify callers of binding change
-    // (was missing — the binding took effect but onBindingsChanged was never fired).
-    this.onBindingsChanged?.();
+    // OG CFuncKeyMappedMan::SetFuncKeyMapped — route through bindSkillToKey so
+    // the duplicate-slot cleanup, m_mapOnOpen snapshot and onSaveToServer all
+    // run (the old inline copy silently skipped persistence).
+    this.bindSkillToKey(sc, skillId);
     return true;
   }
 

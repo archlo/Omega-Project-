@@ -46,6 +46,28 @@ const TAB_W = 508;
 const TAB_H = 78;
 const TAB_COUNT = 9;
 
+// CCSWnd_Tab::GetTabIndex @0x4C62C0 — static s_nCSW_Tab_Left (read from the
+// binary @0xC56798). Per-category left edge in tab-window-local x; column [0]
+// is used when the category sits LEFT of the selected one, [1] when right
+// (the selected tab pops wider and pushes the tabs after it +12px). Category
+// 8 (Event) lives in the far-left slot at x=3. Hit test: ry ∈ [22, 53),
+// rx ∈ [left, left+51).
+const CSW_TAB_LEFTS: readonly (readonly [number, number])[] = [
+  [0, 0],       // index 0 unused
+  [57, 69],
+  [107, 119],
+  [157, 169],
+  [209, 220],
+  [260, 272],
+  [311, 323],
+  [362, 374],
+  [3, 3],       // cat 8 = Event tab, far-left slot
+  [451, 451],
+];
+const TAB_HIT_TOP = 22;   // window-local band top (ry - 22 <= 0x1E)
+const TAB_HIT_BOTTOM = 53;
+const TAB_HIT_W = 51;     // cmp diff, 33h
+
 // Item grid (CCSWnd_List) — center, 2 columns × 5 rows = 10 plates
 // OG: CreateWnd L=275, T=95, W=412, H=430
 export const LIST_X = 275;
@@ -3387,18 +3409,13 @@ export class CashShopStage extends Stage {
       return;
     }
 
-    // Tab clicks — the 9 strip slots map to categories 1..9
-    // (OG CCSWnd_Tab::GetTabIndex → OnChangedCategory(idx)).
-    // The WZ tab canvases blit at (+2, 0) and the clickable tab labels sit
-    // along the BOTTOM of the 78px canvas — restrict hits to that band so
-    // empty upper canvas area isn't clickable.
-    const tabItemW = Math.floor(TAB_W / TAB_COUNT);
-    const tabHitTop = TAB_Y + TAB_H - 22;
-    for (let i = 0; i < TAB_COUNT; i++) {
-      const tx = TAB_X + 2 + i * tabItemW;
-      if (lx >= tx && lx < tx + tabItemW && ly >= tabHitTop && ly < TAB_Y + TAB_H) {
-        const cat = i + 1;
-        if (this._activeTab !== cat) this.SetCategory(cat);
+    // Tab clicks — OG CCSWnd_Tab::OnMouseButton msg 513 → GetTabIndex
+    // @0x4C62C0: window-local band ry ∈ [22,53), per-category left table
+    // (s_nCSW_Tab_Left) with the +12px shift for tabs right of the selection.
+    {
+      const idx = this._tabIndexFromPoint(lx, ly);
+      if (idx > 0) {
+        if (this._activeTab !== idx) this.SetCategory(idx);
         return;
       }
     }
@@ -3586,6 +3603,22 @@ export class CashShopStage extends Stage {
         return;
       }
     }
+  }
+
+  /** OG CCSWnd_Tab::GetTabIndex @0x4C62C0 — category under the cursor
+   *  (frame coords), or 0 when none. The currently-selected category is
+   *  never returned (OG skips i == m_nTab). */
+  private _tabIndexFromPoint(lx: number, ly: number): number {
+    const rx = lx - TAB_X;
+    const ry = ly - TAB_Y;
+    if (ry < TAB_HIT_TOP || ry >= TAB_HIT_BOTTOM) return 0;
+    for (let i = 1; i <= TAB_COUNT; i++) {
+      if (i === this._activeTab) continue;
+      const left = CSW_TAB_LEFTS[i][i < this._activeTab ? 0 : 1];
+      const d = rx - left;
+      if (d >= 0 && d < TAB_HIT_W) return i;
+    }
+    return 0;
   }
 
   private _handleActiveDialogClick(lx: number, ly: number): boolean {

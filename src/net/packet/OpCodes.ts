@@ -142,6 +142,17 @@ export enum InHeader {
   // opcode 91, short(nPOS), int(nItemID).
   UserMapTransferItemUseRequest = 91,
 
+  // OG upgrade-scroll family (CP_UserUpgradeItemUseRequest = 0x5D..0x5F):
+  // SendUpgradeItemUseRequest @0x9D6260 (93): int(ts) short(usePos)
+  //   short(equipPos) short(bWhiteScroll) byte(bEnchantSkill).
+  // SendHyperUpgradeItemUseRequest @0x9D6130 (94) / SendItemOptionUpgrade-
+  // ItemUseRequest @0x9D6000 (95): int(ts) short(usePos) short(equipPos)
+  //   byte(bEnchantSkill). No itemId is encoded; both sides resolve the
+  //   scroll/equip from their slot positions.
+  UserUpgradeItemUseRequest           = 93,
+  UserHyperUpgradeItemUseRequest      = 94,
+  UserItemOptionUpgradeItemUseRequest = 95,
+
   // 92-119 — portals / stats / skills / quests
   UserPortalScrollUseRequest = 92,
   UserAbilityUpRequest     = 98,
@@ -344,12 +355,22 @@ export enum InHeader {
   UserNewYearCardUseRequest = 137,
 
   // OG: CWvsContext::SendRandomMorphOtherRequest (0x9cced0) — short(2) int(4).
-  // Uses a random morph item on another player. Opcode TBD.
-  UserRandomMorphOtherRequest = 138,
+  // Server recv enum: RANDOM_MORPH_REQUEST = 184.
+  UserRandomMorphOtherRequest = 184,
 
-  // OG: CWvsContext::SendFollowCharacterRequest (0x9f9530) — int(4) byte(1) byte(1).
-  // Follows another character. Opcode TBD.
-  UserFollowCharacterRequest = 139,
+  // OG: CWvsContext::SendFollowCharacterRequest (0x9F9530, COutPacket(134))
+  // — int dwDriverID, byte bAutoReq, byte bKeyInput. Server recv:
+  // USER_FOLLOW_CHARACTER_REQUEST = 134.
+  UserFollowCharacterRequest = 134,
+
+  // OG: CWvsContext::SendFollowRequestApply (0x9F4690, COutPacket(138)) /
+  // auto-deny in OnSetPassenserRequest (0x9FB090) — int requesterID,
+  // byte apply, [deny tail]. Server recv: SET_PASSENGER_RESULT = 138.
+  FollowRequestApply = 138,
+
+  // OG: CWvsContext::OnMemoNotify_Receive (0x9F3830) — C->S MEMO_REQUEST(154)
+  // Encode1(2) = fetch the memo list.
+  MemoListRequest = 154,
 
   // OG: CWvsContext::SendRequestSessionValue (0x9e1a90) — string byte(1).
   // Requests a session value. Opcode TBD.

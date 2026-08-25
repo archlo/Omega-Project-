@@ -880,6 +880,42 @@ export class GameSender {
     return GameSender.ItemUpgradeApply(scrollPos, scrollItemId, targetItemTI, targetSlotPos, ts1, ts2);
   }
 
+  // OG: CWvsContext::SendUpgradeItemUseRequest @0x9D6260 — opcode 93,
+  // int(update_time) short(nUPOS) short(nEPOS) short(bWhiteScroll)
+  // byte(bEnchantSkill). The scroll and equip are resolved from slot
+  // positions on both ends; no itemIds travel on the wire.
+  static UpgradeItemUseRequest(usePos: number, equipPos: number, whiteScroll = false, enchantSkill = false): OutPacket {
+    const p = OutPacket.Of(InHeader.UserUpgradeItemUseRequest);
+    p.writeInt(Date.now());
+    p.writeShort(usePos);
+    p.writeShort(equipPos);
+    p.writeShort(whiteScroll ? 1 : 0);
+    p.writeByte(enchantSkill ? 1 : 0);
+    return p;
+  }
+
+  // OG: CWvsContext::SendHyperUpgradeItemUseRequest @0x9D6130 — opcode 94,
+  // int(update_time) short(nUPOS) short(nEPOS) byte(bEnchantSkill).
+  static HyperUpgradeItemUseRequest(usePos: number, equipPos: number, enchantSkill = false): OutPacket {
+    const p = OutPacket.Of(InHeader.UserHyperUpgradeItemUseRequest);
+    p.writeInt(Date.now());
+    p.writeShort(usePos);
+    p.writeShort(equipPos);
+    p.writeByte(enchantSkill ? 1 : 0);
+    return p;
+  }
+
+  // OG: CWvsContext::SendItemOptionUpgradeItemUseRequest @0x9D6000 —
+  // opcode 95, same shape as the hyper variant.
+  static ItemOptionUpgradeItemUseRequest(usePos: number, equipPos: number, enchantSkill = false): OutPacket {
+    const p = OutPacket.Of(InHeader.UserItemOptionUpgradeItemUseRequest);
+    p.writeInt(Date.now());
+    p.writeShort(usePos);
+    p.writeShort(equipPos);
+    p.writeByte(enchantSkill ? 1 : 0);
+    return p;
+  }
+
   // OG: CUIKarmaDlg::_SendConsumeCashItemUseRequest (v95 IDA dump,
   // func_encode_seq for 0x7d7ef0: int(4) short(2) int(4) int(4) int(4)).
   // Unlike ItemUpgrade/ItemProtector, Karma builds the whole packet in one
@@ -2657,6 +2693,31 @@ export class GameSender {
     const p = OutPacket.Of(InHeader.UserRandomMorphOtherRequest);
     p.writeShort(pos);
     p.writeInt(itemId);
+    return p;
+  }
+
+  // OG: CWvsContext::SendFollowRequestApply (0x9F4690, COutPacket 138) and
+  // the auto-deny path in OnSetPassenserRequest (0x9FB090 LABEL_20).
+  // accept: int requesterId, byte 1.
+  // deny:   int requesterId, byte 0 (+ deny reason tail).
+  static FollowRequestApply(requesterId: number, apply: boolean, denyReason = 5): OutPacket {
+    const p = OutPacket.Of(InHeader.FollowRequestApply);
+    p.writeInt(requesterId);
+    if (apply) {
+      p.writeByte(1);
+    } else {
+      p.writeByte(0);
+      p.writeByte(denyReason);
+      p.writeInt(denyReason);
+    }
+    return p;
+  }
+
+  // OG: CWvsContext::OnMemoNotify_Receive (0x9F3830, COutPacket 154 + Encode1(2))
+  // — requests the memo list from the server.
+  static MemoListRequest(): OutPacket {
+    const p = OutPacket.Of(InHeader.MemoListRequest);
+    p.writeByte(2);
     return p;
   }
 

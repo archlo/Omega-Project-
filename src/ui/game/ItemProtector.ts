@@ -7,6 +7,7 @@ import { WzProperty } from '../../wz/WzProperty.js';
 import { WzCanvas } from '../../wz/WzCanvas.js';
 import { BuiltInFont } from '../BuiltInFont.js';
 import { Button } from '../Button.js';
+import { InventoryType } from '../../domain/InventoryItem.js';
 import type { DragTarget } from '../DragController.js';
 import type { ItemDragPayload } from './ItemInventory.js';
 
@@ -33,11 +34,31 @@ export class ItemProtector extends GamePanel implements DragTarget {
     this.TargetSlotPosition = targetSlotPosition;
   }
 
+  /** A dragged-on equip is parked (OG PutItem stored it on the dialog). */
+  get hasValidTarget(): boolean {
+    return this.TargetItemTI !== 0 && this.TargetSlotPosition !== 0;
+  }
+
+  /** Seeds the protector item being used (from its double-click) and clears
+      any previous target. */
+  Open(scrollPos?: number, scrollItemId?: number): void {
+    if (scrollPos !== undefined) this.ScrollPos = scrollPos;
+    if (scrollItemId !== undefined) this.ScrollItemId = scrollItemId;
+    this.TargetItemTI = 0;
+    this.TargetSlotPosition = 0;
+    this.isVisible = true;
+  }
+
   // OG: CUIItemProtector::PutItem — accepts a dragged-on equip while open.
+  // TargetItemTI = payload invType (server inventoryTypeByValue);
+  // negative slotPos = equipped slot.
+  // OG: CUIItemProtector::PutItem — accepts a dragged-on equip while open.
+  // nTargetTI is the server inventory type (Equip), not the item id.
   tryAcceptDrag(payload: unknown, _x: number, _y: number): boolean {
-    if (!this.isVisible || !payload || typeof payload !== 'object' || !('itemId' in payload)) return false;
+    if (!this.isVisible || !payload || typeof payload !== 'object' || !('invType' in payload)) return false;
     const p = payload as ItemDragPayload;
-    this.setTarget(this.ScrollPos, this.ScrollItemId, p.itemId, p.slotPos);
+    if (p.invType !== InventoryType.Equip) return false;
+    this.setTarget(this.ScrollPos, this.ScrollItemId, p.invType, p.slotPos);
     return true;
   }
 
@@ -67,8 +88,6 @@ export class ItemProtector extends GamePanel implements DragTarget {
     title.x = 8; title.y = 5;
     this.container.addChild(title);
   }
-
-  Open(): void { this.isVisible = true; }
 
   update(_dt: number): void {}
 

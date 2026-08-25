@@ -25,12 +25,15 @@ const EffectEFrameMs = 100;
 const EffectPFrameMs = 150;
 
 export class ItemScrollDialog extends GamePanel implements DragTarget {
-  OnUpgrade: ((scrollPos: number, scrollItemId: number, targetItemTI: number, targetSlotPos: number) => void) | null = null;
+  // OG CUIItemUpgrade::OnButtonClicked appends the dragged equip's slot
+  // position + itemId to the upgrade request (the client resolves both
+  // items from slots — the ids are only used for validation).
+  OnUpgrade: ((scrollPos: number, scrollItemId: number, targetSlotPos: number, targetItemId: number) => void) | null = null;
   OnClose: (() => void) | null = null;
 
   private _scrollItemId = 0;
   private _scrollPos = 0;
-  private _targetItemTI = 0;
+  private _targetItemId = 0;
   private _targetSlotPos = 0;
   private _state: 0 | 1 | 2 = 0;
   private _tStart = 0;
@@ -156,7 +159,7 @@ export class ItemScrollDialog extends GamePanel implements DragTarget {
   Open(scrollItemId: number, scrollName: string, scrollPos: number): void {
     this._scrollItemId = scrollItemId;
     this._scrollPos = scrollPos;
-    this._targetItemTI = 0;
+    this._targetItemId = 0;
     this._targetSlotPos = 0;
     this._state = 0;
     this._tStart = 0;
@@ -198,7 +201,7 @@ export class ItemScrollDialog extends GamePanel implements DragTarget {
     if (!this.isVisible || this._state !== 0 || this._requestSent) return false;
     if (!payload || typeof payload !== 'object' || !('itemId' in payload)) return false;
     const p = payload as ItemDragPayload;
-    this._targetItemTI = p.itemId;
+    this._targetItemId = p.itemId;
     this._targetSlotPos = p.slotPos;
     if (this._btUpgrade) this._btUpgrade.enabled = true;
     this._infoText.text = `Scroll: ${this._scrollItemId} | Equip: ${p.itemId}`;
@@ -226,6 +229,15 @@ export class ItemScrollDialog extends GamePanel implements DragTarget {
     }
     this._resultState = true;
     if (this._state === 2) this._showResult();
+  }
+
+  /** Server-driven completion hook: our server answers scrolls with the
+   *  ITEM_UPGRADE_RESULT(425) echo / the ShowItemUpgradeEffect broadcast
+   *  rather than an OG CUIItemUpgrade::OnItemUpgradeResult payload, so
+   *  GameStage forwards the outcome here to finish the gauge animation.
+   *  resultByte 61 = done (result 0 = success), anything else = failed. */
+  CompleteUpgrade(resultByte: number, result = 0, iuc = 0): void {
+    this.OnItemUpgradeResult(resultByte, undefined, undefined, result, iuc);
   }
 
   update(_dt: number): void {
@@ -290,13 +302,13 @@ export class ItemScrollDialog extends GamePanel implements DragTarget {
   }
 
   private _onUpgradeClick(): void {
-    if (this._state !== 0 || this._requestSent || !this._targetItemTI) return;
+    if (this._state !== 0 || this._requestSent || !this._targetItemId) return;
     this._requestSent = true;
     this._tStart = performance.now();
     this._state = 1;
     if (this._btUpgrade) this._btUpgrade.enabled = false;
     if (this._btCancel) this._btCancel.enabled = false;
-    this.OnUpgrade?.(this._scrollPos, this._scrollItemId, this._targetItemTI, this._targetSlotPos);
+    this.OnUpgrade?.(this._scrollPos, this._scrollItemId, this._targetSlotPos, this._targetItemId);
   }
 
   private _onCancelClick(): void {

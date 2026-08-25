@@ -7,6 +7,7 @@ import { WzProperty } from '../../wz/WzProperty.js';
 import { WzCanvas } from '../../wz/WzCanvas.js';
 import { BuiltInFont } from '../BuiltInFont.js';
 import { Button } from '../Button.js';
+import { InventoryType } from '../../domain/InventoryItem.js';
 import type { DragTarget } from '../DragController.js';
 import type { ItemDragPayload } from './ItemInventory.js';
 
@@ -47,11 +48,30 @@ export class GoldHammer extends GamePanel implements DragTarget {
     this.TargetSlotPosition = targetSlotPosition;
   }
 
+  /** A dragged-on equip is parked (OG PutItem stored it on the dialog). */
+  get hasValidTarget(): boolean {
+    return this.TargetItemTI !== 0 && this.TargetSlotPosition !== 0;
+  }
+
+  /** Seeds the hammer item being used (from its double-click) and clears
+      any previous target. */
+  Open(scrollPos?: number, scrollItemId?: number): void {
+    if (scrollPos !== undefined) this.ScrollPos = scrollPos;
+    if (scrollItemId !== undefined) this.ScrollItemId = scrollItemId;
+    this.TargetItemTI = 0;
+    this.TargetSlotPosition = 0;
+    this.isVisible = true;
+  }
+
   // OG: CUIItemUpgrade::PutItem — accepts a dragged-on equip while open.
+  // OG: CUIItemUpgrade::PutItem — accepts a dragged-on equip while open.
+  // nTargetTI on the opcode-85 wire is the equip's SERVER inventory type
+  // (kinoko ITEMUPGRADE decodes it via InventoryType.getByValue), not its id.
   tryAcceptDrag(payload: unknown, _x: number, _y: number): boolean {
-    if (!this.isVisible || !payload || typeof payload !== 'object' || !('itemId' in payload)) return false;
+    if (!this.isVisible || !payload || typeof payload !== 'object' || !('invType' in payload)) return false;
     const p = payload as ItemDragPayload;
-    this.setTarget(this.ScrollPos, this.ScrollItemId, p.itemId, p.slotPos);
+    if (p.invType !== InventoryType.Equip) return false;
+    this.setTarget(this.ScrollPos, this.ScrollItemId, p.invType, p.slotPos);
     return true;
   }
 
@@ -82,8 +102,6 @@ export class GoldHammer extends GamePanel implements DragTarget {
     // OG: CUIWnd close button
     this.createCloseButton(null, null, 1, 200);
   }
-
-  Open(): void { this.isVisible = true; }
 
   update(_dt: number): void {}
 

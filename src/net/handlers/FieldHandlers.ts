@@ -1237,13 +1237,24 @@ export class FieldHandlers {
     router.register(OutHeader.AvatarMegaphoneRes, (p, s) => { this.onAvatarMegaphoneRes?.({ result: p.readByte(), message: p.readString() }); });
     router.register(OutHeader.SuccessInUsegachaponBox, (p, s) => { this.onSuccessInUsegachaponBox?.({ itemId: p.readInt() }); });
     router.register(OutHeader.SetBuyEquipExt, (p, s) => { this.onSetBuyEquipExt?.({ flag: p.readByte() !== 0 }); });
-    router.register(OutHeader.SetPassengerRequest, (p, s) => { this.onSetPassengerRequest?.({ npcId: p.readInt() }); });
+    router.register(OutHeader.SetPassengerRequest, (p, s) => {
+      // OG: CWvsContext::OnSetPassenserRequest @0x9FB090 — int requesterID
+      // ("X wants to follow you"; client answers via opcode 138).
+      this.onSetPassengerRequest?.({ requesterId: p.readInt() });
+    });
     router.register(OutHeader.ScriptProgressMessage, (p, s) => { this.onScriptProgressMessageNotify?.({ message: p.readString() }); });
     router.register(OutHeader.DataCRCCheckFailed, (p, s) => { this.onDataCRCCheckFailed?.({ message: p.readString() }); });
     router.register(OutHeader.UpdateGMBoard, (p, s) => { this.onUpdateGMBoard?.({ boardId: p.readInt(), message: p.readString() }); });
     router.register(OutHeader.ShowSlotMessage, (p, s) => { this.onShowSlotMessage?.({ slot: p.readByte() }); });
     router.register(OutHeader.AccountMoreInfo, (p, s) => { this.onAccountMoreInfo?.({ flag: p.readByte() }); });
-    router.register(OutHeader.FindFriend, (p, s) => { this.onFindFriend?.({ flag1: p.readByte(), flag2: p.readByte() }); });
+    router.register(OutHeader.FindFriend, (p, s) => {
+      // OG: CWvsContext::OnFindFirend @0x9CF9A0 — byte sub-opcode
+      // (6 my-info / 8 search / 9 error+byte / 11 detail).
+      const sub = p.readByte();
+      const args: FindFriendArgs = { sub };
+      if (sub === 9) args.errorCode = p.readByte();
+      this.onFindFriend?.(args);
+    });
     router.register(OutHeader.TransferChannelNotify, (p, s) => { this.onTransferChannelNotify?.({ channel: p.readInt(), message: p.readString() }); });
     // OG: ForcedStat::Decode (IDA: 0x727600) — a 4-byte mask, then each of 13
     // fields is decoded ONLY if its bit is set: str/dex/int/luk (1/2/4/8,
@@ -4829,6 +4840,10 @@ export class FieldHandlers {
         }
         args.count = count;
         args.memos = memos;
+      } else if (subAction === 5) {
+        // OG OnMemoResult case 5 — send-result code byte feeding the
+        // SP 2689/2690/2691 notices.
+        args.flag = p.readByte();
       } else if (subAction === 7) {
         args.flag = p.readByte();
         args.name = p.readString();
@@ -5062,34 +5077,49 @@ export class FieldHandlers {
     } catch { /* malformed */ }
   }
 
+  // OG: CUser::ShowItemUpgradeEffect @0x8E7B00 decode order (after the
+  // CUserPool dispatcher strips the leading charId int):
+  //   byte bSuccess, byte bCursed, byte bEnchantSkill, int nEnchantCategory,
+  //   byte bWhiteScroll, byte bRecoverable.
   private handleShowItemUpgradeEffect(p: InPacket): void {
     try {
       const charId = p.readInt();
-      const result = p.readByte();
-      let itemId: number | undefined;
-      // OG reads itemId conditionally on result byte
-      if (result !== 0) itemId = p.readInt();
-      this.onShowItemUpgradeEffect?.({ charId, result, itemId });
+      const success = p.readByte();
+      this.onShowItemUpgradeEffect?.({
+        charId,
+        success,
+        cursed: p.readByte() !== 0,
+        enchantSkill: p.readByte() !== 0,
+        enchantCategory: p.readInt(),
+        whiteScroll: p.readByte() !== 0,
+        recoverable: p.readByte() !== 0,
+      });
     } catch { /* malformed */ }
   }
 
   private handleShowItemHyperUpgradeEffect(p: InPacket): void {
     try {
       const charId = p.readInt();
-      const result = p.readByte();
-      let itemId: number | undefined;
-      if (result !== 0) itemId = p.readInt();
-      this.onShowItemHyperUpgradeEffect?.({ charId, result, itemId });
+      this.onShowItemHyperUpgradeEffect?.({
+        charId,
+        success: p.readByte() !== 0,
+        cursed: p.readByte() !== 0,
+        enchantSkill: p.readByte() !== 0,
+        enchantCategory: p.readInt(),
+      });
     } catch { /* malformed */ }
   }
 
   private handleShowItemOptionUpgradeEffect(p: InPacket): void {
     try {
       const charId = p.readInt();
-      const result = p.readByte();
-      let itemId: number | undefined;
-      if (result !== 0) itemId = p.readInt();
-      this.onShowItemOptionUpgradeEffect?.({ charId, result, itemId });
+      this.onShowItemOptionUpgradeEffect?.({
+        charId,
+        success: p.readByte() !== 0,
+        cursed: p.readByte() !== 0,
+        enchantSkill: p.readByte() !== 0,
+        enchantCategory: p.readInt(),
+      });
     } catch { /* malformed */ }
   }
 
@@ -5181,11 +5211,22 @@ export class FieldHandlers {
 
   private handleUserFollowCharacter(p: InPacket): void {
     try {
+      // OG: CUser::OnFollowCharacter (0x8E3220) — user-common packet with a
+      // leading int charId, then int driverId. driverId==0 detaches: byte
+      // bTransferField follows, and when set, int x + int y teleport pos.
       const charId = p.readInt();
-      let targetId = 0;
-      // OG: reads targetId only when charId is not local player
-      try { targetId = p.readInt(); } catch { }
-      this.onUserFollowCharacter?.({ charId, targetId });
+      const driverId = p.readInt();
+      let transferField = false;
+      let x = 0;
+      let y = 0;
+      if (driverId === 0) {
+        transferField = p.readByte() !== 0;
+        if (transferField) {
+          x = p.readInt();
+          y = p.readInt();
+        }
+      }
+      this.onUserFollowCharacter?.({ charId, driverId, transferField, x, y });
     } catch { /* malformed */ }
   }
 

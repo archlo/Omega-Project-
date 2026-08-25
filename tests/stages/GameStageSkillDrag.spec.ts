@@ -53,6 +53,10 @@ function makeStage(panels: unknown[]): any {
   stage._player = null;
   stage._pendingBridle = null;
   stage._dragController = new DragController();
+  stage.game = {
+    pixiApp: { canvas: { style: { cursor: 'default' } } },
+    session: { send: vi.fn() },
+  };
   return stage;
 }
 

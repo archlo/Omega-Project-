@@ -111,6 +111,10 @@ import { NpcTalk } from '../ui/game/NpcTalk.js';
 import { Shop } from '../ui/game/Shop.js';
 import { GameMenu } from '../ui/game/GameMenu.js';
 import { Revive } from '../ui/game/Revive.js';
+import { ShortCutMenu } from '../ui/game/ShortCutMenu.js';
+import { NoticeQuestProgress } from '../ui/game/NoticeQuestProgress.js';
+import { InitialQuiz } from '../ui/game/InitialQuiz.js';
+import { FadeYesNo } from '../ui/game/FadeYesNo.js';
 import { ListService } from '../localization/ListService.js';
 import { StringPoolService } from '../localization/StringPoolService.js';
 import { CashShopStage } from './CashShopStage.js';
@@ -481,6 +485,19 @@ export class GameStage extends Stage {
   private _recoveryPrevPos: { x: number; y: number } | null = null;
   private _restForHpMs = 0;
   private _restForMpMs = 0;
+  // ── CWvsContext feature panels (shortcut menu / quest notice / quiz /
+  // follow request) ──
+  protected _shortcutMenu: ShortCutMenu | null = null;
+  protected _questNotice: NoticeQuestProgress | null = null;
+  protected _quizModal: InitialQuiz | null = null;
+  protected _fadeYesNo: FadeYesNo | null = null;
+  /** OG m_dwFollowRequesterID — pending follow request awaiting an answer. */
+  protected _followRequesterId = 0;
+  /** OG CUser::m_dwDriverID — the charId we are following (0 = none). */
+  protected _followTargetId = 0;
+  // OG: quest progress record strings kept so the CNoticeQuestProgress mob
+  // variant can diff old vs new kill counts.
+  protected _questRecordValues = new Map<number, string>();
   protected _comboKeys = new SequencedKeyMan();
   protected _comboClockMs = 0;
   protected _comboCount = 0;
@@ -1695,6 +1712,10 @@ export class GameStage extends Stage {
       const canvas = this._skillService?.Get(skillId)?.Icon1 ?? this._skillService?.Get(skillId)?.Icon0;
       return canvas ? this._loader.Load(canvas)?.Texture ?? null : null;
     };
+    // OG: CDraggableSkill — dragging a skill icon OUT of a macro slot starts a
+    // drag (same payload as the skill book) so it can be re-dropped onto a
+    // quickslot / key-config cell.
+    this._skillMacro.onDragStart = (payload, texture, x, y) => { this._dragController.beginDrag(payload, texture, x, y); };
     // TODO_AUDIT.md Hundred-and-nineteenth pass: OnSave also updates _macroSlots
     // so the in-memory state stays consistent with what was just sent to the server.
     this._skillMacro.OnSave = (macros) => {
@@ -1763,9 +1784,21 @@ export class GameStage extends Stage {
       this.game.session.send(GameSender.ItemUpgradeApply(gh.ScrollPos, gh.ScrollItemId, gh.TargetItemTI, gh.TargetSlotPosition, Date.now(), Date.now()));
     };
     this._goldHammer.OnCancel = () => {};
+    // Regular upgrade scrolls use the dedicated OG opcodes 93/94/95
+    // (SendUpgradeItemUseRequest family): the wire carries only slot
+    // positions — both sides resolve the items themselves. The opcode-85
+    // dialogs (GoldHammer/KarmaScissors/ItemProtector) are the cash
+    // variants sharing UserConsumeCashItemUseRequest.
     this._scrollDialog = new ItemScrollDialog(this._loader, uiWz, font);
-    this._scrollDialog.OnUpgrade = (scrollPos, scrollItemId, targetItemTI, targetSlotPos) => {
-      this.game.session.send(GameSender.ItemUpgradeApply(scrollPos, scrollItemId, targetItemTI, targetSlotPos, Date.now(), Date.now()));
+    this._scrollDialog.OnUpgrade = (scrollPos, scrollItemId, targetSlotPos) => {
+      const cat = Math.floor(scrollItemId / 100);
+      if (cat === 20493) {
+        this.game.session.send(GameSender.HyperUpgradeItemUseRequest(scrollPos, targetSlotPos));
+      } else if (cat === 20494) {
+        this.game.session.send(GameSender.ItemOptionUpgradeItemUseRequest(scrollPos, targetSlotPos));
+      } else {
+        this.game.session.send(GameSender.UpgradeItemUseRequest(scrollPos, targetSlotPos));
+      }
     };
     this._scrollDialog.OnClose = () => {};
     this._partySearchDialog = new PartySearchDialog();
@@ -1781,6 +1814,9 @@ export class GameStage extends Stage {
     this._karmaScissors = new KarmaScissors(this._loader, uiWz, font);
     this._karmaScissors.OnConfirm = () => {
       const ks = this._karmaScissors!;
+      // Only send once a scissors AND a valid inventory-equip target exist —
+      // the server disposes the session on an unresolvable target.
+      if (!ks.hasValidTarget) return;
       this.game.session.send(GameSender.KarmaApply(ks.ScrollPos, ks.ScrollItemId, ks.TargetItemTI, ks.TargetSlotPosition, Date.now()));
     };
     this._karmaScissors.OnCancel = () => {};
@@ -3473,35 +3509,45 @@ this._dmgNumbers?.Update(dt);
     fh.onTrunkResult = (args) => this._onTrunkResult(args);
     fh.onMessengerResult = (args) => this._onMessengerResult(args);
     fh.onIncExp = (exp) => { this._statusMessenger.showEXP(exp); };
-    fh.onIncMoney = (money) => { this._statusMessenger.showLoot(`+${money} meso`); };
+    // OG: CWvsContext::OnIncMoneyMessage @0x9FE910 — SP 303/305 lines via
+    // CUIStatusBar::ChatLogAdd(lType=7), then a quest-by-meso check.
+    fh.onIncMoney = (money) => {
+      this._chatBar.addLine(
+        money > 0 ? `You have gained mesos (+${money})` : `You have lost mesos. (${money})`,
+        7,
+      );
+    };
     fh.onIncSp = (sp) => { this._statusMessenger.showLoot(`+${sp} SP`); };
     fh.onIncFame = (fame) => { this._statusMessenger.showLoot(`${fame > 0 ? '+' : ''}${fame} Fame`); };
     fh.onIncGp = (gp) => { this._statusMessenger.showLoot(`+${gp} Guild Points`); };
+    // OG: OnCashItemExpireMessage @0x9F8060 / OnGeneralItemExpireMessage
+    // @0x9F8180 — SP 309 "[%s] has passed its expiration date..." via
+    // ChatLogAdd(lType=12).
     fh.onCashItemExpire = (args) => {
       const name = this.game.nameService.ItemName(args.itemId) ?? `[${args.itemId}]`;
-      this._statusMessenger.showLoot(`${name} has expired`);
+      this._chatBar.addLine(`[${name}] has passed its expiration date and will be removed from your inventory.`, 12);
     };
     fh.onGeneralItemExpire = (itemIds) => {
       for (const itemId of itemIds) {
         const name = this.game.nameService.ItemName(itemId) ?? `[${itemId}]`;
-        this._statusMessenger.showLoot(`${name} has expired`);
+        this._chatBar.addLine(`[${name}] has passed its expiration date and will be removed from your inventory.`, 12);
       }
     };
-    // TODO_AUDIT.md Hundred-and-sixty-sixth pass: OG CUIStatusBar::ChatLogAdd(type=12) for each expired item-protect item.
     fh.onItemProtectExpire = (itemIds) => {
       for (const itemId of itemIds) {
         const name = this.game.nameService.ItemName(itemId) ?? `[${itemId}]`;
-        this._statusMessenger.showLoot(`${name} protection has expired`);
+        this._chatBar.addLine(`[${name}] protection has expired`, 12);
       }
     };
-    // TODO_AUDIT.md Hundred-and-sixty-sixth pass: OG ChatLogAdd(type=12) for each replace-message string.
     fh.onItemExpireReplace = (messages) => {
-      for (const msg of messages) this._statusMessenger.showLoot(msg);
+      for (const msg of messages) this._chatBar.addLine(msg, 12);
     };
+    // OG: OnSkillExpireMessage @0x9F8440 — per skill, SP 5266
+    // "%s has disappeared as the time limit has passed." via ChatLogAdd(12).
     fh.onSkillExpire = (skillIds) => {
       for (const id of skillIds) {
         const name = this.game.nameService.SkillName(id) ?? `[${id}]`;
-        this._statusMessenger.showLoot(`${name} has expired`);
+        this._chatBar.addLine(`${name} has disappeared as the time limit has passed.`, 12);
       }
     };
     fh.onGiveBuff = (args) => {
@@ -4348,15 +4394,39 @@ this._dmgNumbers?.Update(dt);
     fh.onSetBuyEquipExt = ({ flag }) => {
       this._statusMessenger.showLoot(`[Buy Equip] Extended ${flag ? 'enabled' : 'disabled'}`);
     };
-    fh.onSetPassengerRequest = ({ npcId }) => {
-      this._statusMessenger.showLoot(`[Passenger] NPC ${npcId} requesting ride`);
+    fh.onSetPassengerRequest = ({ requesterId }) => {
+      // OG: CWvsContext::OnSetPassenserRequest @0x9FB090 — "X wants to follow
+      // you" (SP 5849 "%s has requested to follow you.\r\nWould you like to
+      // accept?"). Requester must be on this field; the answer fires
+      // SendFollowRequestApply (C->S opcode 138).
+      const other = this._otherChars.get(requesterId);
+      if (!other) {
+        // OG auto-deny: requester not found -> Encode1(0), reason 1.
+        this.game.session.send(GameSender.FollowRequestApply(requesterId, false, 1));
+        return;
+      }
+      this._followRequesterId = requesterId;
+      if (!this._fadeYesNo) {
+        this._fadeYesNo = new FadeYesNo(this._loader, this._uiWz);
+        this._fadeYesNo.onYes = () => {
+          this.game.session.send(GameSender.FollowRequestApply(this._followRequesterId, true));
+          this._followRequesterId = 0;
+        };
+        this._fadeYesNo.onNo = () => {
+          this.game.session.send(GameSender.FollowRequestApply(this._followRequesterId, false, 5));
+          this._followRequesterId = 0;
+        };
+        this.uiRoot.addChild(this._fadeYesNo.container);
+      }
+      this._centerFadeYesNo();
+      this._fadeYesNo.Open(`${other.Name} has requested to follow you. Would you like to accept?`);
     };
     fh.onAccountMoreInfo = ({ flag }) => {
       this._chatBar.addLine(`[Account Info] flag ${flag}`);
     };
-    fh.onFindFriend = ({ flag1, flag2 }) => {
-      this._findFriend?.SetResult(flag1, flag2);
-      this._chatBar.addLine(`[Find Friend] flag1 ${flag1} flag2 ${flag2}`);
+    fh.onFindFriend = (args) => {
+      // OG OnFindFirend @0x9CF9A0 — sub 9 is the request-error branch.
+      if (args.sub === 9) this._chatBar.addLine(`[Find Friend] request failed (code ${args.errorCode ?? 0})`, 12);
     };
     fh.onForcedStatSet = ({ mask, str, dex, int, luk, pad, pdd, mad, mdd, acc, eva, speed, jump, speedMax }) => {
       this._forcedStat = {
@@ -4536,7 +4606,20 @@ this._dmgNumbers?.Update(dt);
           })));
         }
       }
-      else if (subAction === 7) this._statusMessenger.showLoot(`[Memo] From ${name ?? 'unknown'}`);
+      else if (subAction === 7) {
+        // OG: OnMemoResult case 7 -> CWvsContext::OnMemoNotify_Receive
+        // @0x9F3830 sends C->S MEMO_REQUEST(154) Encode1(2) = "fetch list".
+        this.game.session.send(GameSender.MemoListRequest());
+      }
+      else if (subAction === 5) {
+        // OG: send-result notice — SP 2752/2690/2691 by result byte.
+        const lines: Record<number, string> = {
+          0: 'The note has successfully been sent',
+          1: 'Please check the name of the receiving character.',
+          2: "The receiver's inbox is full. Please try again.",
+        };
+        this._notice?.show('Memo', lines[flag ?? 0] ?? `Memo result ${flag ?? '?'}`);
+      }
       else this._chatBar.addLine(`[Memo] subAction ${subAction}`);
     };
     // TODO_AUDIT.md Hundred-and-forty-eighth pass: surface decoded utility/pet/user packets through existing UI hooks.
@@ -4678,10 +4761,30 @@ this._dmgNumbers?.Update(dt);
       this._otherChars.get(charId)?.SetStatusBadge('tesla', 'T', 4);
       this._statusMessenger.showLoot(`[Tesla] char ${charId} state ${state}`);
     };
-    fh.onUserFollowCharacter = ({ charId, targetId }) => {
-      this._otherChars.get(charId)?.SetStatusBadge('follow', 'F', 6);
-      this._otherChars.get(targetId)?.SetStatusBadge('followTarget', 'L', 6);
-      this._statusMessenger.showLoot(`[Follow] char ${charId} following ${targetId}`);
+    fh.onUserFollowCharacter = ({ charId, driverId, transferField, x, y }) => {
+      // OG: CUser::OnFollowCharacter @0x8E3220 — driverId != 0 attaches the
+      // user to that driver (the passenger snaps to the driver's position);
+      // driverId == 0 detaches, optionally teleporting (bTransferField x/y)
+      // or snapping to the old driver's last known position.
+      const isLocal = charId === this._localCharId;
+      if (driverId !== 0) {
+        const driver = this._otherChars.get(driverId);
+        if (isLocal) {
+          this._followTargetId = driverId;
+          if (driver && this._physics) this._physics.Position = { ...driver.Position };
+        } else {
+          const follower = this._otherChars.get(charId);
+          if (follower && driver) follower.Position = { ...driver.Position };
+          follower?.SetStatusBadge('follow', 'F', 6);
+        }
+        driver?.SetStatusBadge('followTarget', 'L', 6);
+      } else {
+        if (isLocal) {
+          this._followTargetId = 0;
+          if (transferField && this._physics) this._physics.Position = { x, y };
+        }
+        this._otherChars.get(charId)?.SetStatusBadge('follow', 'F', 0);
+      }
     };
     fh.onUserShowPQReward = ({ charId, rewardId }) => {
       this._notice?.show('PQ Reward', `Character ${charId} reward ${rewardId}`);
@@ -8879,6 +8982,13 @@ this._localCharId = args.characterId ?? 0;
       case 26:
       case 65:
         this._itemProtector?.Open();
+        return;
+      // OG: CWvsContext::SendConsumeCashItemUseRequest case 0x40 — cash type
+      // 64 (item prefix 552, Scissors of Karma 5520000/5520001) opens
+      // CUIKarmaDlg(nPOS, nItemID) instead of sending; the target equip is
+      // chosen by dragging it onto the open dialog (CUIKarmaDlg::PutItem).
+      case 64:
+        this._karmaScissors?.Open(slot, itemId);
         return;
       case 67:
         this._scrollDialog?.Open(itemId, itemName, slot);

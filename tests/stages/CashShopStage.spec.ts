@@ -658,8 +658,31 @@ describe('CashShopStage ProcessBuy routing (OG CCashShop::ProcessBuy @0x4936B0)'
         expect(stage._searchResults).toBeNull();
       });
 
-      it('arrow keys move plate focus on the 2-column grid (OG OnKeyRet)', () => {
+      it('tab strip clicks follow s_nCSW_Tab_Left (OG GetTabIndex @0x4C62C0)', () => {
         const stage = makeGatedStage();
+        stage._activeTab = 1;
+        const y = 17 + 30; // window-local ry=30, inside the [22,53) band
+        // Cat 8 (Event tab) lives in the far-left slot at local x=3
+        expect(stage._tabIndexFromPoint(272 + 3 + 10, y)).toBe(8);
+        // With cat 1 selected, cat 2 uses column [1] → left=119
+        expect(stage._tabIndexFromPoint(272 + 119 + 10, y)).toBe(2);
+        // Cat 7 unselected-right: [1]=374
+        expect(stage._tabIndexFromPoint(272 + 374 + 10, y)).toBe(7);
+        // Cat 9: left=451 both columns
+        expect(stage._tabIndexFromPoint(272 + 451 + 10, y)).toBe(9);
+        // The selected category itself is never returned
+        expect(stage._tabIndexFromPoint(272 + 57 + 10, y)).toBe(0);
+        // Outside the vertical band
+        expect(stage._tabIndexFromPoint(272 + 119 + 10, 17 + 10)).toBe(0);
+        // Selection shift: with cat 3 selected, cat 2 uses column [0] → left=107
+        stage._activeTab = 3;
+        expect(stage._tabIndexFromPoint(272 + 107 + 10, y)).toBe(2);
+        // And clicking routes through SetCategory
+        stage.onMouseButton(272 + 451 + 10, y, true, 0);
+        expect(stage._activeTab).toBe(9);
+      });
+
+      it('arrow keys move plate focus on the 2-column grid (OG OnKeyRet)', () => {        const stage = makeGatedStage();
         const items = Array.from({ length: 10 }, (_, i) => comm({ sn: 30000000 + i }));
         stage._activeTab = 3;
         stage._commodities = items;
