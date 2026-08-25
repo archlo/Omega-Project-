@@ -5214,25 +5214,24 @@ export class FieldHandlers {
     } catch { /* malformed */ }
   }
 
-  // OG: CUser::OnMiniRoomBalloon (0x8e8d50) — decode mini room balloon info
-  // for other characters' trade shops / mini rooms visible on the map.
+  // OG: CUserLocal::OnBalloonMsg (0x91D780) — opcode 245 is the LOCAL player's
+  // balloon message (script balloonMsg / glTutoMsg0), NOT a mini-room balloon:
+  // str msg, short width, short duration(seconds), byte avatarOriented; when
+  // not avatar-oriented an int x + int y screen anchor follows. The mini-room
+  // balloons arrive on their own opcodes (184/321, handled above).
   private handleBalloonMsg(p: InPacket): void {
     try {
-      const charId = p.readInt();
-      const miniRoomType = p.readByte();
-      if (miniRoomType === 0) {
-        // type 0 = destroy balloon
-        this.onMiniRoomBalloon?.({ charId, miniRoomType: 0, sn: 0, title: '', bPrivate: false, gameKind: 0, curUsers: 0, maxUsers: 0, gameOn: false });
-        return;
+      const msg = p.readString();
+      const width = p.readShort();
+      const durationMs = p.readShort() * 1000;
+      const avatarOriented = p.readByte() !== 0;
+      let x: number | undefined;
+      let y: number | undefined;
+      if (!avatarOriented) {
+        x = p.readInt();
+        y = p.readInt();
       }
-      const sn = p.readInt();
-      const title = p.readString();
-      const bPrivate = p.readByte() !== 0;
-      const gameKind = p.readByte();
-      const curUsers = p.readByte();
-      const maxUsers = p.readByte();
-      const gameOn = p.readByte() !== 0;
-      this.onMiniRoomBalloon?.({ charId, miniRoomType, sn, title, bPrivate, gameKind, curUsers, maxUsers, gameOn });
+      this.onUserBalloonMsg?.({ msg, width, durationMs, avatarOriented, x, y });
     } catch { /* malformed */ }
   }
 

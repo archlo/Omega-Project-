@@ -411,8 +411,8 @@ export class WorldMap extends GamePanel {
       this._btQuestToggle = null;
     }
 
-    // OG: CreateCtrl_2(2, m_width-22, 4) — close button at top-right
-    const closeNode = this._mapWz?.GetItem('Basic.img/BtClose');
+    // OG: CreateCtrl_2(2, m_width-22, 4) — UOL StringPool "UI/Basic.img/BtClose3"
+    const closeNode = this._mapWz?.GetItem('Basic.img/BtClose3') ?? this._mapWz?.GetItem('Basic.img/BtClose');
     this._btClose = closeNode instanceof WzProperty
       ? Button.fromWz(this._loader ?? new WzTextureLoader(), closeNode, 'Close')
       : new Button('Close');
@@ -420,14 +420,43 @@ export class WorldMap extends GamePanel {
     this._btClose.onClick = () => { this.isVisible = false; };
     this._root.addChild(this._btClose.container);
 
-    // OG: CreateCtrl_2(2000, m_width-65, 4) — quest toggle at top-right
-    this._btQuestToggle = new Button(this._questToggle ? '?' : '!');
+    // OG: CreateCtrl_2(2000, m_width-65, 4) — CCtrlButtonQuestToggle, UOL
+    // "UI/UIWindow2.img/QuestGuide/Button/WorldMapQuestToggle" (45x12).
+    // Initial state = CConfig::GetQuestGuideOption() != 0 (persisted).
+    const qtNode = this._mapWz?.GetItem('UIWindow2.img/QuestGuide/Button/WorldMapQuestToggle')
+      ?? this._uiWz?.GetItem('UIWindow2.img/QuestGuide/Button/WorldMapQuestToggle');
+    this._btQuestToggle = qtNode instanceof WzProperty
+      ? Button.fromWz(this._loader ?? new WzTextureLoader(), qtNode, 'QuestToggle')
+      : new Button(this._questToggle ? '?' : '!');
     this._btQuestToggle.container.position.set(WM_WIDTH - 65, 4);
+    this._btQuestToggle.enabled = true;
+    this._questToggle = WorldMap.GetQuestGuideOption();
+    this._syncQuestToggleSprite();
     this._btQuestToggle.onClick = () => {
       this._questToggle = !this._questToggle;
+      WorldMap.SetQuestGuideOption(this._questToggle); // CConfig::SetQuestGuideOption
+      this._syncQuestToggleSprite();
       this._updateQuestToggle();
     };
     this._root.addChild(this._btQuestToggle.container);
+  }
+
+  /** CCtrlButtonQuestToggle Draw: pressed sprite while the guide is on,
+   *  normal otherwise; disabled texture when toggling is not allowed. */
+  private _syncQuestToggleSprite(): void {
+    const b = this._btQuestToggle;
+    if (!b) return;
+    b.enabled = true;
+    try { b.setState?.(this._questToggle ? 'pressed' : 'normal'); }
+    catch { /* older Button without state API */ }
+  }
+
+  /** CConfig::GetQuestGuideOption / SetQuestGuideOption — persisted client-side. */
+  static GetQuestGuideOption(): boolean {
+    try { return localStorage.getItem('WorldMapQuestGuide') === '1'; } catch { return false; }
+  }
+  static SetQuestGuideOption(on: boolean): void {
+    try { localStorage.setItem('WorldMapQuestGuide', on ? '1' : '0'); } catch { /* ignore */ }
   }
 
   /**

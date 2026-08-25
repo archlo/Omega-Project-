@@ -127,7 +127,6 @@ Compiled from the full OG-vs-TS audits (all ~1048 original-client classes cross-
 - `CSequencedKeyMan`: Double/Triple Stab tap-window shipped; the large per-job finisher table (`Restore`) and Aran/Mihile specialized finishers missing.
 - `CParticleEffect` / `CItemEffectManager`: active-effect-item looping shipped; full particle emitter physics and user-state three-layer start/repeat/end effects open.
 - `CAnimationDisplayer` backlog: HookingChain, MotionBlur, FireCracker, NewYear, Teslacoil, AbsorbItem-style field effects remain (fade-out projectiles and Chain Lightning subsets shipped).
-- Dual-set damage digits (`_1` first digit + `_0` rest per OG `Effect_HP`) — cosmetic only.
 
 ### UI panels & windows
 - `CUIEnchantDlg` (enchant-skill window) not built — enchant-buff scrolls show a notice only.
