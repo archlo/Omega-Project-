@@ -229,8 +229,12 @@ export class StatusBar extends GamePanel {
   }
 
   relayout(viewW: number, viewH: number): void {
-    this._viewW = viewW;
-    this._viewH = viewH;
+    // StatusBar lives inside frameContainer (800×600 frame-local coords),
+    // NOT in raw screen coords — the frame is scaled + centered by
+    // MapleClaudeGame._updateFrameTransform.  Use the frame dimensions so
+    // all absolute-positioned children stay inside the visible area.
+    this._viewW = 800;
+    this._viewH = 600;
   }
 
   update(dt: number): void {
