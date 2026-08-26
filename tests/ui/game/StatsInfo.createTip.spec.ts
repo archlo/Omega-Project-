@@ -37,13 +37,13 @@ describe('StatsInfo createTip job tips (CUIStat::CreateTip)', () => {
     seedBalloon(s);
     return s;
   }
-
   function seedBalloon(s: StatsInfo): void {
     const tex = { foo: 1 } as any;
-    const pieces: Record<string, any> = { c: { Texture: tex } };
+    const pieces: Record<string, any> = { c: tex };
     for (const p of ['nw', 'n', 'ne', 'e', 'w', 'sw', 's', 'se',
-      'nwArrow', 'neArrow', 'seArrow', 'swArrow', 'nwlArrow', 'nelArrow', 'swlArrow', 'selArrow']) {
-      pieces[p] = { Texture: tex };
+      'nwArrow', 'neArrow', 'seArrow', 'swArrow', 'nwlArrow',
+      'nelArrow', 'swlArrow', 'selArrow']) {
+      pieces[p] = tex;
     }
     (s as any)._balloonPieces = pieces;
   }

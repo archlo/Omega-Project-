@@ -49,6 +49,7 @@ function makeStage(chat: ChatBar): any {
   stage._physics = null;
   stage._player = null;
   stage._pendingBridle = null;
+  stage.game = { session: { send: vi.fn() }, frameToCanvas: (x: number, y: number) => ({ x, y }) };
   return stage;
 }
 

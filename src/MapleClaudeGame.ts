@@ -119,6 +119,16 @@ export class MapleClaudeGame {
     };
   }
 
+  /** Inverse of _canvasToFrame — world hit-testing (camera) needs RAW canvas
+      coords, while mouse events deliver frame-relative coords. */
+  frameToCanvas(fx: number, fy: number): { x: number; y: number } {
+    const scale = this.frameScale;
+    return {
+      x: fx * scale + this.frameContainer.x,
+      y: fy * scale + this.frameContainer.y,
+    };
+  }
+
   constructor() {
     this.router = new PacketRouter();
     this.session = new ClientSession(this.router);

@@ -45,7 +45,7 @@ function makeStage(): any {
   stage._pendingBridle = null;
   stage._drops = [];
   stage.uiRoot = { addChild: vi.fn() };
-  stage.game = { session: { send: vi.fn() } };
+  stage.game = { session: { send: vi.fn() }, frameToCanvas: (x: number, y: number) => ({ x, y }) };
   return stage;
 }
 
@@ -70,7 +70,7 @@ describe('GameStage player context menu (OG CUserLocal::HandleRButtonClk)', () =
   it('left-click on another character does NOT open the list (sends info request)', () => {
     const stage = makeStage();
     const send = vi.fn();
-    stage.game = { session: { send } };
+    stage.game = { session: { send }, frameToCanvas: (x: number, y: number) => ({ x, y }) };
     const other = {
       CharId: 900002,
       Name: 'OtherChar',
@@ -86,7 +86,7 @@ describe('GameStage player context menu (OG CUserLocal::HandleRButtonClk)', () =
   it('left-click on an NPC sends the UserSelectNpc packet (OG CUserLocal::HandleLButtonClk)', () => {
     const stage = makeStage();
     const send = vi.fn();
-    stage.game = { session: { send } };
+    stage.game = { session: { send }, frameToCanvas: (x: number, y: number) => ({ x, y }) };
     const npc = {
       ObjId: 200000,
       HitTest: (wx: number, wy: number) => wx === 300 && wy === 300,
@@ -104,7 +104,7 @@ describe('GameStage player context menu (OG CUserLocal::HandleRButtonClk)', () =
   it('click on empty ground does not send UserSelectNpc', () => {
     const stage = makeStage();
     const send = vi.fn();
-    stage.game = { session: { send } };
+    stage.game = { session: { send }, frameToCanvas: (x: number, y: number) => ({ x, y }) };
     stage._npcs = [];
 
     stage.onMouseButton(300, 300, false, MouseButton.Left);

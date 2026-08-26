@@ -364,18 +364,22 @@ export class UtilDlgEx extends GamePanel {
     this.m_nListFocus = 0;
   }
 
-  // OG: CTextAnalyzer::AnalyzeText — parses formatted text into CT_INFO nodes
-  // Simplified: handles #f[path]# icons, #i[id]# items, #b[n]# bold, newlines
+  // OG: CTextAnalyzer::AnalyzeText — parses formatted text into CT_INFO nodes.
+  // Tag subset implemented: #f[path]# / #f<path># icons (SP-decoded payloads
+  // carry NO brackets), #i[id]# items, #b bold, #n/#k font reset, #d no-op,
+  // and the #L<n># ... #l# selectable-row wrapper used by quest lists
+  // (row format "#d#L%d# %s#l#k\r\n" — StringPool 3236).
   private _analyzeText(text: string): void {
     this._lines = [];
     let fontIndex = 0;
     let y = 0;
-    const lines = text.split('\n');
+    let selectTag = -1; // active #L<n># row index, terminated by #l
+    const lines = text.split(/\r?\n/);
     for (const rawLine of lines) {
       let remaining = rawLine;
       let x = 0;
       while (remaining.length > 0) {
-        const iconMatch = remaining.match(/^#f\[([^\]]+)\]#/);
+        const iconMatch = remaining.match(/^#f\[([^\]]+)\]#/) ?? remaining.match(/^#f([^#]+)#/);
         if (iconMatch) {
           this._lines.push({
             nType: 2, nItemNo: this._lines.length, nLine: 0, pFont: 0,
@@ -387,21 +391,37 @@ export class UtilDlgEx extends GamePanel {
           remaining = remaining.slice(iconMatch[0].length);
           continue;
         }
+        const listStart = remaining.match(/^#L(\d+)#/);
+        if (listStart) { selectTag = parseInt(listStart[1], 10); remaining = remaining.slice(listStart[0].length); continue; }
+        if (remaining.startsWith('#l')) { selectTag = -1; remaining = remaining.slice(2); continue; }
         const boldMatch = remaining.match(/^#b/);
         if (boldMatch) { fontIndex = 1; remaining = remaining.slice(2); continue; }
-        const resetMatch = remaining.match(/^#n/);
+        const resetMatch = remaining.match(/^#[nk]/);
         if (resetMatch) { fontIndex = 0; remaining = remaining.slice(2); continue; }
+        if (remaining.startsWith('#d')) { remaining = remaining.slice(2); continue; }
         // Plain text until next # or end
         const nextHash = remaining.indexOf('#');
         const chunk = nextHash >= 0 ? remaining.slice(0, nextHash) : remaining;
         if (chunk.length > 0) {
-          this._lines.push({
-            nType: 0, nItemNo: this._lines.length, nLine: 0, pFont: fontIndex,
-            sText: chunk, pIcon: 0, nLeft: x, nTop: y, nWidth: 0, nHeight: 18,
-            nSelect: -1, nUnderLine: 0, bLineChange: 0, nFuncCode: 0,
-            bReward: 0, nNpcNo: 0, nMapNo: 0,
-          });
-          x += chunk.length * 8;
+          if (selectTag >= 0) {
+            // Selectable list row (same shape AddDotLine produces so the LIST
+            // focus/click machinery picks it up via SetUtilDlgEx_LIST).
+            this._lines.push({
+              nType: 4, nItemNo: this._lines.length, nLine: 0, pFont: 5,
+              sText: chunk, pIcon: 0, nLeft: 0, nTop: y, nWidth: 200, nHeight: 18,
+              nSelect: selectTag, nUnderLine: 16, bLineChange: 0, nFuncCode: 0,
+              bReward: 0, nNpcNo: 0, nMapNo: 0,
+            });
+            x = 0;
+          } else {
+            this._lines.push({
+              nType: 0, nItemNo: this._lines.length, nLine: 0, pFont: fontIndex,
+              sText: chunk, pIcon: 0, nLeft: x, nTop: y, nWidth: 0, nHeight: 18,
+              nSelect: -1, nUnderLine: 0, bLineChange: 0, nFuncCode: 0,
+              bReward: 0, nNpcNo: 0, nMapNo: 0,
+            });
+            x += chunk.length * 8;
+          }
         }
         remaining = nextHash >= 0 ? remaining.slice(nextHash) : '';
       }

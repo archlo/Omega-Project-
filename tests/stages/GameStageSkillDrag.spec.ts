@@ -56,6 +56,7 @@ function makeStage(panels: unknown[]): any {
   stage.game = {
     pixiApp: { canvas: { style: { cursor: 'default' } } },
     session: { send: vi.fn() },
+    frameToCanvas: (x: number, y: number) => ({ x, y }),
   };
   return stage;
 }
@@ -161,7 +162,7 @@ describe('GameStage skill drag-and-drop (OG CDraggableSkill::OnDropped)', () => 
     };
     const stage = makeStage([skillBook]);
     const sendSpy = vi.fn();
-    stage.game = { session: { send: sendSpy } };
+    stage.game = { session: { send: sendSpy }, frameToCanvas: (x: number, y: number) => ({ x, y }) };
     stage._pointOverVisiblePanel = () => false;
 
     stage.onMouseButton(210, 140, true, 0); // skill-book root at (190,40); icon rect local (13..45, 96..128)

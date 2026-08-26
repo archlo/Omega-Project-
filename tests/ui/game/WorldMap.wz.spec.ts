@@ -39,4 +39,14 @@ describe.skipIf(!nxDir)('WorldMap (real Map.nx)', () => {
     map.navigateTo(sleepy!.linkMap);
     expect((map as any)._spots.length).toBeGreaterThan(0);
   });
+
+  it('falls back to the whole-world WorldMap.img for unmapped fields (Free Market)', () => {
+    const mapWz = WzPackage.Open(`${nxDir}/Map.nx`);
+    const map = new WorldMap(new WzTextureLoader(), mapWz);
+    // Free Market rooms aren't listed by any regional WorldMap###.img.
+    map.openForField(910000000);
+    expect(map.isVisible).toBe(true);
+    expect((map as any)._baseCanvas).toBeTruthy();
+    expect((map as any)._spots.length).toBeGreaterThan(0);
+  });
 });

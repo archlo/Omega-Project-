@@ -126,6 +126,26 @@ describe('WorldMap (CWorldMapDlg)', () => {
       expect(map.handleMouseButton(400, 300, true)).toBe(true);
     });
 
+    it('falls back to the whole-world WorldMap.img when no numbered map has the field', () => {
+      // Free-Market / instanced maps aren't in any regional map — OG's WZ
+      // carries a root WorldMap.img (whole world) used as the fallback.
+      const pkg = packageOf({
+        ...worldMapPackage() as unknown as Record<string, WzImage>,
+        'WorldMap/WorldMap.img': mapImage({
+          BaseImg: new WzProperty(null as any, 0, { '0': canvas() }),
+          MapList: new WzProperty(null as any, 0, {
+            '0': mapListItem(-100, -50, 0, [910000000]),
+          }),
+          info: new WzProperty(null as any, 0, {}),
+        }),
+      });
+      const map = new WorldMap(loader, pkg);
+      map.openForField(910000000);
+      expect(map.isVisible).toBe(true);
+      expect((map as any)._baseCanvas).toBeTruthy();
+      expect((map as any)._spots.length).toBeGreaterThan(0);
+    });
+
     it('skips reload when the same field is re-opened', () => {
       const map = new WorldMap(loader, worldMapPackage());
       map.openForField(100000000);
@@ -193,5 +213,47 @@ describe('WorldMap authentic chrome', () => {
     map.isVisible = false;
     map.OpenMapTransfer([]);
     expect(sounds).toEqual(['WorldmapOpen', 'WorldmapOpen']);
+  });
+
+  it('drags by the top border strip (title band)', () => {
+    (globalThis as any).window ??= {};
+    const map = new WorldMap();
+    map.container.position.set(100, 80);
+    map.isVisible = true;
+
+    // Press inside the title band (top 27px), then move the cursor.
+    expect(map.handleMouseButton(150, 95, true)).toBe(true);
+    (globalThis as any).window.__mouseX = 220;
+    (globalThis as any).window.__mouseY = 160;
+    map.update(0);
+    expect(map.container.x).toBe(220 - 50); // grab offset was (50,15)
+    expect(map.container.y).toBe(160 - 15);
+
+    // Release ends the drag; further cursor moves don't move the window.
+    map.handleMouseButton(220, 160, false);
+    (globalThis as any).window.__mouseX = 500;
+    map.update(0);
+    expect(map.container.x).toBe(170);
+  });
+
+  it('does not start a drag below the title band', () => {
+    (globalThis as any).window ??= {};
+    const map = new WorldMap();
+    map.container.position.set(0, 0);
+    map.isVisible = true;
+    // Press in the map body (y > 27).
+    expect(map.handleMouseButton(400, 300, true)).toBe(true);
+    (globalThis as any).window.__mouseX = 90;
+    (globalThis as any).window.__mouseY = 90;
+    map.update(0);
+    expect(map.container.x).toBe(0);
+    expect(map.container.y).toBe(0);
+  });
+
+  it('onResize centers the dialog on screen', () => {
+    const map = new WorldMap();
+    map.onResize(1280, 960);
+    expect(map.container.x).toBe(Math.floor((1280 - 800) / 2));
+    expect(map.container.y).toBe(Math.floor((960 - 600) / 2));
   });
 });

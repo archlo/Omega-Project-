@@ -115,13 +115,16 @@ export class UserList extends GamePanel {
   private _foldOpen: Sprite | null = null;
   private _foldClose: Sprite | null = null;
   private _friendIcons: (Sprite | null)[] = [];
+  private _friendTitle: Sprite | null = null;
   private _guildBase: Sprite | null = null;
+  private _guildMark: Sprite | null = null;
   private _guildSectionOn: Sprite | null = null;
   private _guildSectionOff: Sprite | null = null;
   private _unionBase: Sprite | null = null;
   private _unionNamePlate: Sprite | null = null;
   private _expedTable: Sprite | null = null;
   private _expedBase: Sprite | null = null;
+  private _blackListBase: Sprite | null = null;
 
   // Per-tab Button arrays keyed by action name (OG ids in comments).
   private _tabButtons = new Map<number, { btn: Button; id: number; needsSelection?: boolean }[]>();
@@ -337,14 +340,16 @@ export class UserList extends GamePanel {
       }
     }
 
-    // Friend tab icons (icon0 same-channel, icon1 blocked).
+    // Friend tab icons (icon0 same-channel, icon1 blocked, icon2-5 alternate states).
     const friendProp = main.Get('Friend');
     if (friendProp instanceof WzProperty) {
-      for (let i = 0; i <= 1; i++) {
+      for (let i = 0; i <= 5; i++) {
         const c = friendProp.Get(`icon${i}`);
         const ws = c instanceof WzCanvas ? loader.Load(c) : null;
         this._friendIcons.push(ws ? ws.NewSprite() : null);
       }
+      // Friend/title: 244x25 header plate bitmap (origin -10,-60).
+      this._friendTitle = this._plate(friendProp.Get('title'));
     }
 
     // Guild / Union header plates.
@@ -353,6 +358,18 @@ export class UserList extends GamePanel {
       this._guildBase = this._plate(guildProp.Get('base'));
       this._guildSectionOn = this._plate(guildProp.Get('guildOn'));
       this._guildSectionOff = this._plate(guildProp.Get('guildOff'));
+      // Guild/guildmark: 20x20 guild mark icon (origin 0,0).
+      const markC = guildProp.Get('guildmark');
+      if (markC instanceof WzCanvas) {
+        const ws = loader.Load(markC);
+        this._guildMark = ws ? ws.NewSprite() : null;
+      }
+    }
+
+    // BlackList/base: 230x25 row plate (origin -10,-60).
+    const blProp = main.Get('BlackList');
+    if (blProp instanceof WzProperty) {
+      this._blackListBase = this._plate(blProp.Get('base'));
     }
     const unionProp = main.Get('Union');
     if (unionProp instanceof WzProperty) {
@@ -794,35 +811,41 @@ export class UserList extends GamePanel {
 
     if (t === TAB_INDICES.GUILD && this._guildBase) {
       const base = new Sprite(this._guildBase.texture);
+      base.anchor.copyFrom(this._guildBase.anchor);
       base.position.copyFrom(this._guildBase.position);
-      base.position.set(10, 55);
       this._headerLayer.addChild(base);
+      // Guild mark icon (20x20, origin 0,0) at left of plate.
+      if (this._guildMark) {
+        const mark = new Sprite(this._guildMark.texture);
+        mark.position.set(2, 2);
+        base.addChild(mark);
+      }
       if (this._guildName) {
         const nm = new Text({ text: this._guildName, style: _styleBlack });
-        nm.position.set(26, 61); // (26, 6) inside the base plate
-        this._headerLayer.addChild(nm);
+        nm.position.set(16, 6);
+        base.addChild(nm);
       }
       if (this._guildNotice) {
         const nt = new Text({ text: this._guildNotice.slice(0, 40), style: _styleBlack });
-        nt.position.set(14, 84); // MakeGuildNoticeLayer: layer (14,84) w176 h15
-        this._headerLayer.addChild(nt);
+        nt.position.set(4, 29);
+        base.addChild(nt);
       }
     }
     if (t === TAB_INDICES.ALLIANCE && this._unionBase) {
       const base = new Sprite(this._unionBase.texture);
+      base.anchor.copyFrom(this._unionBase.anchor);
       base.position.copyFrom(this._unionBase.position);
-      base.position.set(10, 55);
       this._headerLayer.addChild(base);
       if (this._allianceName) {
         const nm = new Text({ text: this._allianceName, style: _styleBlack });
-        nm.position.set(26, 61);
-        this._headerLayer.addChild(nm);
+        nm.position.set(16, 6);
+        base.addChild(nm);
       }
     }
     if (t === TAB_INDICES.EXPEDITION && this._expedTable) {
       const tbl = new Sprite(this._expedTable.texture);
+      tbl.anchor.copyFrom(this._expedTable.anchor);
       tbl.position.copyFrom(this._expedTable.position);
-      tbl.position.set(10, 60);
       this._headerLayer.addChild(tbl);
     }
   }
@@ -919,11 +942,25 @@ export class UserList extends GamePanel {
     let y = 115 - this._scrollOffset * ROW_H;
     const CELL_W = 113;
     for (const g of this._groups) {
-      // Group header: Sheet1/0 plate + fold icon at x=3 + "%s (%d/%d)" at 19.
-      const head = this._makeRow('Sheet1', 0, listX, y, 230, () => {
+      // Group header: Friend/title plate (244x25, origin -10,-60) + fold icon + "%s (%d/%d)".
+      const head = new Container();
+      head.position.set(listX, y);
+      head.eventMode = 'static';
+      head.cursor = 'pointer';
+      head.on('pointerdown', () => {
         g.folded = !g.folded;
         this._rebuildRows();
       });
+      if (this._friendTitle) {
+        const sp = new Sprite(this._friendTitle.texture);
+        sp.anchor.copyFrom(this._friendTitle.anchor);
+        sp.position.copyFrom(this._friendTitle.position);
+        head.addChild(sp);
+      } else {
+        // Fallback: Sheet1/0 plate.
+        const fb = this._sheetRow('Sheet1', 0, 0, 0, 230, ROW_H);
+        head.addChild(fb);
+      }
       if (this._foldOpen && this._foldClose) {
         const icon = new Sprite((g.folded ? this._foldClose : this._foldOpen).texture);
         icon.position.set(3, (ROW_H - 13) / 2);
@@ -935,6 +972,7 @@ export class UserList extends GamePanel {
       });
       ht.position.set(19, 5);
       head.addChild(ht);
+      this._rowsLayer.addChild(head);
       y += ROW_H;
       if (g.folded) continue;
 
@@ -1088,13 +1126,34 @@ export class UserList extends GamePanel {
     for (let i = 0; i < this._blackList.length; i++) {
       const idx = i;
       const selected = idx === this._curBlock;
-      const row = this._makeRow('Sheet3', selected ? 1 : 0, listX, y, 230, () => {
+      const row = new Container();
+      row.position.set(listX, y);
+      row.eventMode = 'static';
+      row.cursor = 'pointer';
+      row.on('pointerdown', () => {
         this._curBlock = idx;
         this._rebuildRows();
       });
+      if (this._blackListBase) {
+        const sp = new Sprite(this._blackListBase.texture);
+        sp.anchor.copyFrom(this._blackListBase.anchor);
+        sp.position.copyFrom(this._blackListBase.position);
+        row.addChild(sp);
+        // Selection highlight overlay.
+        if (selected) {
+          const hi = new Graphics();
+          hi.rect(0, 0, 230, ROW_H).fill({ color: SEL_FILL });
+          row.addChildAt(hi, 0);
+        }
+      } else {
+        // Fallback: Sheet3 plate.
+        const fb = this._sheetRow('Sheet3', selected ? 1 : 0, 0, 0, 230, ROW_H);
+        row.addChild(fb);
+      }
       const txt = new Text({ text: this._blackList[idx], style: selected ? _styleWhite : _styleBlocked });
       txt.position.set(2, 5);
       row.addChild(txt);
+      this._rowsLayer.addChild(row);
       y += ROW_H;
     }
     this._clipChildren(this._rowsLayer, 60, 60 + SB_CONFIG[TAB_INDICES.BLACKLIST].h);

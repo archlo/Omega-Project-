@@ -772,6 +772,7 @@ export class GameStage extends Stage {
     this._revivePanel?.Relayout(windowW, windowH);
     this._fearEffect.onResize(windowW, windowH);
     this._limitedView.onResize(windowW, windowH);
+    this._worldMap?.onResize(windowW, windowH);
     // OG: KeyDownBar/ComboDisplay â€” reposition on resize
     this._keyDownBar.container.position.set(windowW / 2, windowH - 40);
     this._comboDisplay.container.position.set(windowW - 80, 60);
@@ -790,8 +791,10 @@ export class GameStage extends Stage {
     this._gameMenu?.SetMouse(x, y);
     this._dragController.updatePosition(x, y);
 
-    // NPC hover detection for cursor feedback
-    const world = this._camera.ScreenToWorld(x, y);
+    // NPC hover detection for cursor feedback. Mouse coords are 800x600 FRAME
+    // coords; the camera works in RAW canvas coords (ViewWidth = window size),
+    // so convert before the world hit test.
+    const world = this._screenToWorld(x, y);
     const npc = this._npcs.find((n) => n.HitTest(world.x, world.y));
     if (npc && this.game.pixiApp.canvas.style.cursor !== 'pointer') {
       this.game.pixiApp.canvas.style.cursor = 'pointer';
@@ -957,7 +960,24 @@ export class GameStage extends Stage {
 
   private _clickedNpc: NpcLook | null = null;
 
-  onMouseButton(x: number, y: number, down: boolean, _button: MouseButton): void {
+  /** Mouse events arrive in 800x600 frame coords; the camera's view is the raw
+      window size, so world hit tests (NPC / remote char / drop) must convert
+      back to canvas coords first (OG CWndMan::GetCursorPos is already in the
+      client's single screen space — our split frame/canvas spaces need this). */
+  private _screenToWorld(x: number, y: number): { x: number; y: number } {
+    const c = this.game.frameToCanvas(x, y);
+    return this._camera.ScreenToWorld(c.x, c.y);
+  }
+
+  onMouseButton(x: number, y: number, down: boolean, button: MouseButton): void {
+    this._onMouseButtonDispatch(x, y, down, button);
+    // Global mouse-up: clear any pressed/hover state left behind when a panel
+    // opened during mouse-down and the mouse-up was consumed elsewhere —
+    // otherwise status-bar buttons stay visually stuck ("clicked").
+    if (!down) this._resetAllButtonStates();
+  }
+
+  private _onMouseButtonDispatch(x: number, y: number, down: boolean, _button: MouseButton): void {
     if (!down) ScrollBar.releasePointer();
     // Dismiss context menu on any click
     if (this._contextMenu && down) {
@@ -1046,7 +1066,7 @@ export class GameStage extends Stage {
     // Global mouse up for ChatBar scrollbar drag
     if (down) {
       // Track NPC on mouse down for click detection
-      const world = this._camera.ScreenToWorld(x, y);
+      const world = this._screenToWorld(x, y);
       const npc = this._npcs.find((n) => n.HitTest(world.x, world.y));
       if (npc) {
         this._clickedNpc = npc;
@@ -1054,7 +1074,7 @@ export class GameStage extends Stage {
     } else {
       // On mouse up, send packet if we tracked an NPC on down AND it's still under cursor,
       // OR if no NPC was tracked but one is currently under cursor (backward compatibility)
-      const world = this._camera.ScreenToWorld(x, y);
+      const world = this._screenToWorld(x, y);
       const npcUnderCursor = this._npcs.find((n) => n.HitTest(world.x, world.y));
       if (this._clickedNpc) {
         // Clicked NPC on down - verify it's still under cursor on up
@@ -1079,6 +1099,29 @@ export class GameStage extends Stage {
           this.game.session.send(GameSender.UserCharacterInfoRequest(other.CharId));
         }
         return;
+      }
+      // DEVIATION from OG v95 (user request): right-clicking your OWN character
+      // also opens the context menu. OG HandleRButtonClk only resolves remote
+      // users (CUserPool::FindRemoteUser) and spends self/empty right-clicks on
+      // buff-icon cancel — not ported.
+      if (_button === MouseButton.Right && this._player) {
+        const p = this._player.Position;
+        if (world.x >= p.x - 15 && world.x < p.x + 15 && world.y >= p.y - 78 && world.y < p.y) {
+          this._showSelfContextMenu(x, y);
+          return;
+        }
+      }
+      // OG CUserLocal::HandleLButtonClk (0x933920): left click inside your own
+      // character's rect (after the NPC check, before everything else) shows
+      // the auto-start quest list via CUserLocal::ShowAutoStartQuestList
+      // (0x90FEF0). The OG m_bKeyDown → OnKeyDownSkillEnd branch is not ported
+      // (our attack flow has no key-down skill-cancel path).
+      if (_button === MouseButton.Left && this._player && !this._utilDlg?.isVisible) {
+        const p = this._player.Position;
+        if (world.x >= p.x - 15 && world.x < p.x + 15 && world.y >= p.y - 78 && world.y < p.y) {
+          this._showAutoStartQuestList();
+          return;
+        }
       }
       // Mob click: detect click on a mob for bridle item use
       if (_button === MouseButton.Left && this._pendingBridle) {
@@ -1157,6 +1200,30 @@ export class GameStage extends Stage {
       this._contextMenu.container.removeFromParent();
       this._contextMenu = null;
     }
+  }
+
+  /** DEVIATION from OG v95: context menu for the local player. Invite-style
+      entries don't apply to yourself, so only Info + Copy Name are offered.
+      Info toggles CUIUserInfo for the local char (OG opens it from the
+      CharacterInfo response with isLocalChar=true). */
+  private _showSelfContextMenu(screenX: number, screenY: number): void {
+    this._dismissContextMenu();
+
+    const name = this._charInfo?.charName || this._player?.charName || 'Me';
+    const entries: ContextMenuEntry[] = [
+      { label: 'Info', onClick: () => { this._statusBar.onCharacter?.(); } },
+      {
+        label: 'Copy Name',
+        onClick: () => {
+          try { void navigator.clipboard.writeText(name); } catch { /* clipboard unavailable */ }
+        },
+      },
+    ];
+
+    this._contextMenu = new ContextMenu();
+    this._contextMenu.show(screenX, screenY, entries);
+    this.uiRoot.addChild(this._contextMenu.container);
+    this._panels.push(this._contextMenu);
   }
 
   onEnter(game: MapleClaudeGame): void {
@@ -3336,12 +3403,26 @@ this._dmgNumbers?.Update(dt);
 
   handleKeyDown(key: string): boolean {
     if (key === 'Escape') {
-      // OG: CWvsContext::ProcessBasicUIKey â†’ TryCloseUI â†’ close open panels
+      // OG: CWvsContext::ProcessBasicUIKey â†’ TryCloseUI â†’ close the topmost
+      // open UI window, ONE per press. HUD panels (status bar, minimap,
+      // quickslots), the revive gate and live script dialogs are not
+      // ESC-closable.
       if (this._quitOverlay?.isVisible) { this._quitOverlay.isVisible = false; return true; }
-      for (const p of [this._keyConfig, this._skill, this._equip, this._item, this._stats, this._charInfo, this._quest, this._optionMenu, this._quickSlotConfig, this._channelSelect, this._claim, this._ranking]) {
-        if (p?.isVisible) { p.isVisible = false; return true; }
+      const keepOpen = new Set<unknown>([
+        this._statusBar, this._miniMap, this._quickSlots, this._revivePanel,
+        this._questReward, this._notice, this._questAlarm, this._utilDlg,
+        this._contextMenu,
+      ]);
+      for (let i = this._panels.length - 1; i >= 0; i--) {
+        const p = this._panels[i];
+        if (!p?.isVisible || keepOpen.has(p)) continue;
+        p.isVisible = false;
+        p.resetButtonStates?.();
+        return true;
       }
-      // Nothing to close â†’ open game menu (OG: CUserLocal::OnKeyDownSkillEnd + CWvsContext::UI_Menu)
+      // Game menu itself toggles; only auto-OPEN it when nothing was closed
+      // (OG: UI_Menu fires from the nothing-left branch of TryCloseUI).
+      if (this._gameMenu?.isVisible) { this._gameMenu.isVisible = false; return true; }
       this._gameMenu?.Open();
       return true;
     }
@@ -8851,6 +8932,98 @@ this._localCharId = args.characterId ?? 0;
       [{ name: '[Completed]', quests: completed }],
       [{ name: '[Party]', quests: party }],
     ]);
+  }
+
+  /** True when every Complete demand of an in-progress quest is satisfied
+      (items counted from the inventory, mobs from the 3-chars-per-mob quest
+      record string). Drives the pre-complete group of the self-click quest
+      list (OG CQuestMan::CanComplete checks the same demands). */
+  private _questDemandsMet(questId: number): boolean {
+    const info = this.game.questInfoService?.Get(questId);
+    if (!info) return false;
+    for (const d of info.Complete.Items) {
+      if ((this._item?.countItem(d.id) ?? 0) < d.count) return false;
+    }
+    const value = this._questRecordValues.get(questId) ?? '';
+    for (let i = 0; i < info.Complete.Mobs.length; i++) {
+      const d = info.Complete.Mobs[i];
+      const seg = 3 * (i + 1);
+      const cur = value.length >= seg ? (parseInt(value.slice(seg - 3, seg), 10) || 0) : 0;
+      if (cur < d.count) return false;
+    }
+    return true;
+  }
+
+  /** OG CUserLocal::ShowAutoStartQuestList (0x90FEF0) + AddQuestList
+      (0x6BE190), 1:1: pops a CUtilDlgEx LIST (dlgType 4, speaker template
+      9010023 = the immediate pushed to GetNpcTemplate). The message is the
+      StringPool 4211 base sentence, then per non-empty group a #f image tag
+      banner (SP6591 list3 pre-complete / SP6589 list1 available / SP6590
+      list0 in-progress) and one selectable "#d#L<idx># <name> (<suffix>)#l#k"
+      row (format SP3236; suffixes SP4316 "Pre-completion enabled" /
+      SP4315 "In Progress" / SP6641 "Low Level Quest" / SP6731
+      "Level Requirement: %d"). Any pick sends CWvsContext::StartQuest — the
+      UserQuestRequest Accept with the start-demand NPC template.
+      Group sources adapted: OG reads server-tracked pre-start/pre-complete
+      lists (CWvsContext+3FF8/+4060); we derive completable from Complete
+      demands and available from level-gated QuestInfo. */
+  private _showAutoStartQuestList(): void {
+    const dlg = this._utilDlg;
+    if (!dlg) return;
+    const svc = this.game.questInfoService;
+
+    // OG AddQuestList skips ids missing from Quest/QuestInfo.img ("%04d" key).
+    const known = (id: number): boolean => !!svc?.Get(id);
+    const nameOf = (id: number): string =>
+      svc?.Get(id)?.Name || this.game.nameService?.QuestName(id) || `Quest ${id}`;
+
+    const inProgressAll = this._questRecords.filter(q => q.state === 1).map(q => q.questId)
+      .filter(known);
+    const completedIds = this._questRecords.filter(q => q.state === 0).map(q => q.questId);
+    const party = this._questRecords.filter(q => (q.questId - 1200) <= 0xC7).map(q => q.questId);
+
+    const completable = inProgressAll.filter(id => this._questDemandsMet(id));
+    const available = this._availableQuestIds(inProgressAll, completedIds, party).filter(known);
+
+    const lv = this._stats?.level ?? 0;
+    const startSuffixOf = (id: number): string => {
+      const info = svc?.Get(id);
+      const lvMin = info?.Start.LvMin ?? 0;
+      // OG IsWorthlessQuest also requires the permanent end-date marker; our
+      // QuestReq carries no usable end date client-side, so level alone gates.
+      if (lvMin > 0 && lv >= lvMin + 10) return ' (Low Level Quest)';
+      if (lvMin > 0 && lv < lvMin && lv >= lvMin - 10) return ` (Level Requirement: ${lvMin})`;
+      return '';
+    };
+
+    // Message body: base sentence + one #f banner + rows per non-empty group,
+    // exactly as OG concatenates SP4211 + SP6591/6589/6590 + SP3236 formats.
+    let text = 'Someone in MapleStory would like to send you a message.';
+    const rows: number[] = []; // aQuestList — selection index → quest id
+    const addGroup = (banner: string, ids: number[], suffixOf: (id: number) => string): void => {
+      if (ids.length === 0) return;
+      text += `\r\n\r\n${banner}\r\n`;
+      for (const id of ids) {
+        text += `#d#L${rows.length}# ${nameOf(id)}${suffixOf(id)}#l#k\r\n`;
+        rows.push(id);
+      }
+    };
+    addGroup('#fUI/UIWindow2.img/UtilDlgEx/list3#', completable, () => ' (Pre-completion enabled)');
+    addGroup('#fUI/UIWindow2.img/UtilDlgEx/list1#', available, startSuffixOf);
+    addGroup('#fUI/UIWindow2.img/UtilDlgEx/list0#', inProgressAll, () => ' (In Progress)');
+
+    dlg.SetUtilDlgEx(UtilDlgType.LIST, 9010023, false, false, text);
+    dlg.SetUtilDlgEx_LIST(true);
+    dlg.onResult = (r) => {
+      if (r.type !== 'ok' && r.type !== 'next') return;
+      const sel = dlg.GetSelect();
+      const questId = sel >= 0 ? rows[sel] : undefined;
+      if (!questId) return;
+      // OG StartQuest(questId, GetStartDemand(id).dwNpcTemplateID, bAutoStart=1)
+      const npc = svc?.Get(questId)?.Start.Npc ?? 0;
+      this.game.session.send(GameSender.QuestAccept(questId, npc, 0, 0));
+    };
+    dlg.show();
   }
 
   /** Quests the character can still start (loaded from QuestInfo, minus ones already taken). */

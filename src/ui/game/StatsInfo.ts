@@ -12,6 +12,7 @@ import { getIdealStatUp, StatPair } from './StatDetailInfo.js';
 import { StringPoolService } from '../../localization/StringPoolService.js';
 import { ToolTip } from './ToolTip.js';
 import { ToolTipHelper } from './ToolTipHelper.js';
+import { BalloonTipPieces, loadBalloonTipPieces, makeBalloonTip } from './BalloonTip.js';
 
 // OG CUIStat constants (from IDA decompilation — Draw @ 0x864bd0)
 const PANEL_W = 172;
@@ -105,7 +106,7 @@ export class StatsInfo extends GamePanel {
 
   // OG: CreateTip — job-specific stat recommendation balloon tips (4140 bytes)
   // All positions, StringPool IDs, and directions from IDA decompilation
-  private _tipLayers: Container[] = [];
+  private _tipLayers: (Container | null)[] = [];
 
   private _wzBg: WzSprite | null = null;
   private _wzBg2: WzSprite | null = null;
@@ -801,7 +802,10 @@ export class StatsInfo extends GamePanel {
   // OG: DestroyTip — removes all tip layers
   destroyTip(): void {
     for (const tip of this._tipLayers) {
-      if (tip.parent) tip.parent.removeChild(tip);
+      if (tip) {
+        tip.removeFromParent();
+        tip.destroy({ children: true });
+      }
     }
     this._tipLayers = [];
   }
@@ -909,87 +913,41 @@ export class StatsInfo extends GamePanel {
     }
   }
 
-  // OG: UIHelper::MakeBalloonTip @0x7C9780 + make_balloon @0x95DE30.
-  // Balloon 9-slice from UI/Login.img/WorldNotice/Balloon (StringPool 0xC9D):
-  // corners nw/ne/sw/se (9x9), edges n/s (1x9) and w/e (9x1), center c (1x1);
-  // arrow piece per direction (StringPool 1450-1453).
-  private _balloonPieces: Record<string, WzSprite | null> = {};
+  // OG: CUIStat::CreateTip calls UIHelper::MakeBalloonTip — the shared port
+  // lives in BalloonTip.ts (UIHelper::MakeBalloonTip @0x7C9780 +
+  // make_balloon @0x95DE30, pieces from Login.img/WorldNotice/Balloon).
+  private _balloonPieces: BalloonTipPieces | null = null;
 
   private _loadBalloonPieces(loader: WzTextureLoader, ui: WzPackage | null): void {
-    const root = ui?.GetItem('Login.img/WorldNotice/Balloon');
-    if (!(root instanceof WzProperty)) return;
-    const pieces = ['nw', 'n', 'ne', 'e', 'w', 'c', 'sw', 's', 'se',
-      'nwArrow', 'neArrow', 'seArrow', 'swArrow',
-      'nwlArrow', 'nelArrow', 'swlArrow', 'selArrow'];
-    for (const p of pieces) {
-      const c = root.Get(p);
-      this._balloonPieces[p] = c instanceof WzCanvas ? loader.Load(c) : null;
-    }
-  }
-
-  private _balloonSprite(name: string): Sprite | null {
-    const s = this._balloonPieces[name];
-    if (!s?.Texture) return null;
-    // Plain sprite with anchor 0 — position comes from the slice layout,
-    // not the WZ origin (the OG Copy calls are origin-adjusted already).
-    return new Sprite(s.Texture);
+    this._balloonPieces = loadBalloonTipPieces(loader, ui);
   }
 
   private _createBalloonTip(index: number, nX: number, nY: number, nDir: number, lines: string[], _font: TextStyle): void {
-    if (!this._balloonPieces['c']?.Texture) return; // no WZ assets → draw nothing
+    const pieces = this._balloonPieces;
+    if (!pieces) return; // no WZ assets → draw nothing
+
+    // Destroy the previous tip at this slot (createTip11 re-runs on every
+    // open/level change — the old layer must not accumulate under _root).
+    const prev = this._tipLayers[index];
+    if (prev) {
+      prev.removeFromParent();
+      prev.destroy({ children: true });
+      this._tipLayers[index] = null;
+    }
 
     const measure = new Text({ text: lines.length ? lines[0] : '', style: _valueStyle });
-    let maxW = 0;
-    for (const l of lines) {
-      measure.text = l;
-      if (measure.width > maxW) maxW = measure.width;
-    }
-    const tipW = Math.ceil(maxW) + 20;
-    const tipH = lines.length * 15 + 20;
-
-    // OG direction table (MakeBalloonTip switch on nDir)
-    let px: number, py: number, ox: number, oy: number, arrow: string, ax: number, ay: number;
-    switch (nDir) {
-      case 0: px = nX - tipW - 23; py = nY; ox = 0; oy = 23; arrow = 'nelArrow'; ax = tipW - 8; ay = 0; break;
-      case 1: px = nX - tipW - 23; py = nY - tipH - 23; ox = 0; oy = 0; arrow = 'selArrow'; ax = tipW - 8; ay = lines.length * 15 + 4; break;
-      case 2: px = nX; py = nY - tipH - 23; ox = 23; oy = 0; arrow = 'swlArrow'; ax = 0; ay = lines.length * 15 + 4; break;
-      default: px = nX; py = nY; ox = 23; oy = 23; arrow = 'nwlArrow'; ax = 0; ay = 0; break;
-    }
-
-    const tip = new Container();
-    tip.position.set(px, py);
-
-    const put = (name: string, x: number, y: number, w?: number, h?: number): void => {
-      const s = this._balloonSprite(name);
-      if (!s) return;
-      s.position.set(x, y);
-      if (w !== undefined) s.width = w;
-      if (h !== undefined) s.height = h;
-      tip.addChild(s);
-    };
-    const innerW = Math.max(0, tipW - 18);
-    const innerH = Math.max(0, tipH - 18);
-    // 9-slice at (ox, oy)
-    put('nw', ox, oy, 9, 9);
-    put('n', ox + 9, oy, innerW, 9);
-    put('ne', ox + 9 + innerW, oy, 9, 9);
-    put('w', ox, oy + 9, 9, innerH);
-    put('c', ox + 9, oy + 9, innerW, innerH);
-    put('e', ox + 9 + innerW, oy + 9, 9, innerH);
-    put('sw', ox, oy + 9 + innerH, 9, 9);
-    put('s', ox + 9, oy + 9 + innerH, innerW, 9);
-    put('se', ox + 9 + innerW, oy + 9 + innerH, 9, 9);
-    // Arrow
-    put(arrow, ox + ax, oy + ay);
-
-    // Text rows — centered, black (Balloon clr node = 0xFF000000), +15 step
-    const textStyle = new TextStyle({ fill: '#000000', fontSize: _font.fontSize as number ?? 9, fontFamily: _font.fontFamily });
-    for (let i = 0; i < lines.length; i++) {
-      const t = new Text({ text: lines[i], style: textStyle });
-      t.x = ox + tipW / 2 - t.width / 2;
-      t.y = oy + 10 + i * 15;
-      tip.addChild(t);
-    }
+    const tip = makeBalloonTip({
+      pieces,
+      lines,
+      nDir,
+      nX,
+      nY,
+      textStyle: new TextStyle({ fill: '#000000', fontSize: _font.fontSize as number ?? 9, fontFamily: _font.fontFamily }),
+      measure: (line) => {
+        measure.text = line;
+        return measure.width;
+      },
+    });
 
     this._root.addChild(tip);
     this._tipLayers[index] = tip;

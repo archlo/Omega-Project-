@@ -26,6 +26,39 @@ function installCanvasShim(): void {
   };
 }
 installCanvasShim();
+
+// OG CTextAnalyzer tag subset used by ShowAutoStartQuestList's message:
+// "#d#L%d# %s#l#k\r\n" rows (StringPool 3236) and "#fUI/.../listN#" banners
+// (SP6589/6590/6591 — bracket-less paths).
+describe('UtilDlgEx text analyzer tags (CTextAnalyzer subset)', () => {
+  it('parses #L<n># ... #l# into selectable list rows collected by SetUtilDlgEx_LIST', () => {
+    const d = makeDialog();
+    d.SetUtilDlgEx(UtilDlgType.LIST, 9010023, false, false,
+      'base\r\n\r\n#fUI/UIWindow2.img/UtilDlgEx/list1#\r\n' +
+      '#d#L0# First Quest (Low Level Quest)#l#k\r\n#d#L1# Second Quest#l#k\r\n');
+    d.SetUtilDlgEx_LIST(true);
+    void d.show();
+    const rows = (d as unknown as { _apListCT: { nSelect: number; sText: string }[] })._apListCT;
+    // SP3236 "#d#L%d# %s#l#k" — the space before %s lands in the row text.
+    expect(rows.map((r) => [r.nSelect, r.sText.trim()])).toEqual([
+      [0, 'First Quest (Low Level Quest)'],
+      [1, 'Second Quest'],
+    ]);
+  });
+
+  it('parses the bracket-less #f<path># banners into icon lines', () => {
+    const d = makeDialog();
+    d.SetUtilDlgEx(UtilDlgType.LIST, 0, false, false,
+      '#fUI/UIWindow2.img/UtilDlgEx/list3#\r\nplain\r\n');
+    const lines = (d as unknown as {
+      _lines: { nType: number; _iconPath?: string; sText: string }[];
+    })._lines;
+    expect(lines[0].nType).toBe(2);
+    expect(lines[0]._iconPath).toBe('UI/UIWindow2.img/UtilDlgEx/list3');
+    expect(lines.some((l) => l.nType === 0 && l.sText === 'plain')).toBe(true);
+  });
+});
+
 describe('UtilDlgEx layout (IDB-verified)', () => {
   it('uses the OG GetWndWidth values', () => {
     const d = makeDialog();

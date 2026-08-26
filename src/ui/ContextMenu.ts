@@ -42,7 +42,6 @@ export class ContextMenu extends GamePanel {
   private _menuW = 0;
   private _menuH = 0;
   private _hoveredIndex = -1;
-  private _mouseLeaveTimer: ReturnType<typeof setTimeout> | null = null;
   private _onDismiss: (() => void) | null = null;
   private _dynamicChildren: Container[] = [];
 
@@ -58,7 +57,6 @@ export class ContextMenu extends GamePanel {
     this._entries = entries;
     this._onDismiss = onDismiss ?? null;
     this._hoveredIndex = -1;
-    this._clearMouseLeaveTimer();
     this._rebuild();
     this._positionMenu(x, y);
     this.isVisible = true;
@@ -67,7 +65,6 @@ export class ContextMenu extends GamePanel {
   /** Hide and clear the context menu. */
   close(): void {
     this.isVisible = false;
-    this._clearMouseLeaveTimer();
     this._onDismiss?.();
   }
 
@@ -172,26 +169,11 @@ export class ContextMenu extends GamePanel {
     } else {
       this._hoverBg.visible = false;
     }
-
-    // Reset mouse-leave timer on movement within the menu
-    this._clearMouseLeaveTimer();
   }
 
-  // --- Mouse-leave auto-close ---
-
-  private _clearMouseLeaveTimer(): void {
-    if (this._mouseLeaveTimer !== null) {
-      clearTimeout(this._mouseLeaveTimer);
-      this._mouseLeaveTimer = null;
-    }
-  }
-
-  private _scheduleMouseLeaveClose(): void {
-    this._clearMouseLeaveTimer();
-    this._mouseLeaveTimer = setTimeout(() => {
-      if (this.isVisible) this.close();
-    }, 500);
-  }
+  // --- Mouse-leave auto-close (removed) ---
+  // OG CUIContextMenu is a modal CDialog (DoModal) — it never closes on mouse
+  // leave; only an outside click, a selection or Escape dismisses it.
 
   // --- Input ---
 
@@ -202,14 +184,12 @@ export class ContextMenu extends GamePanel {
 
     if (lx >= 0 && lx < this._menuW && ly >= 0 && ly < this._menuH) {
       this._updateHover(lx, ly);
-    } else {
-      // Mouse is outside menu bounds — start leave timer
-      if (this._hoveredIndex >= 0) {
-        this._hoveredIndex = -1;
-        this._hoverBg.clear();
-        this._hoverBg.visible = false;
-      }
-      this._scheduleMouseLeaveClose();
+    } else if (this._hoveredIndex >= 0) {
+      // Mouse left the menu — clear highlight. The menu itself stays open
+      // until an outside click / Escape (OG CUIContextMenu is modal DoModal).
+      this._hoveredIndex = -1;
+      this._hoverBg.clear();
+      this._hoverBg.visible = false;
     }
   }
 

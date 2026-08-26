@@ -8,6 +8,7 @@ import { WzProperty } from '../../wz/WzProperty.js';
 import { WzCanvas } from '../../wz/WzCanvas.js';
 import { Button } from '../Button.js';
 import { ToolTip } from './ToolTip.js';
+import { BalloonTipPieces, loadBalloonTipPieces, makeBalloonTip } from './BalloonTip.js';
 
 /**
  * OG: CWorldMapDlg — world map dialog.
@@ -25,6 +26,9 @@ import { ToolTip } from './ToolTip.js';
 // OG: CWorldMapDlg::OnCreate — close button at (m_width-22, 4), quest toggle at (m_width-65, 4)
 const BTN_CLOSE = 2;
 const BTN_QUEST_TOGGLE = 2000;
+
+/** CConfig::GetQuestGuideOption sentinel — the tip has never been shown. */
+const QUEST_GUIDE_OPTION_UNSHOWN = 999;
 
 /** OG: Draw blits the base canvas raw at (13, 24). */
 const BASE_X = 13;
@@ -104,6 +108,9 @@ export class WorldMap extends GamePanel {
   etcWz: WzPackage | null = null;
   /** OG m_pQuestGuideHighScoreWorldMap — the best-scoring MapLink target. */
   private _highScoreLink: string | null = null;
+  /** OG m_pLayerTip — the one-time quest-guide tip balloon. */
+  private _layerTip: Container | null = null;
+  private _balloonPieces: BalloonTipPieces | null = null;
   private _animClockMs = 0;
 
   // Map transfer list (from OpenMapTransfer)
@@ -121,7 +128,9 @@ export class WorldMap extends GamePanel {
   constructor(loader?: WzTextureLoader | null, mapWz?: WzPackage | null, uiWz?: WzPackage | null) {
     super();
     this.isVisible = false;
-    this.draggable = false;
+    // Window drag over the border's top band (27px chrome strip).
+    this.draggable = true;
+    this._wndTitleH = 27;
     this._loader = loader ?? null;
     this._mapWz = mapWz ?? null;
     this._uiWz = uiWz ?? null;
@@ -355,7 +364,11 @@ export class WorldMap extends GamePanel {
       return;
     }
     const deepest = this._findDeepestWorldMap(fieldId);
-    if (!deepest) {
+    // Fallback: maps not listed by any regional WorldMap###.img (Free Market
+    // rooms, instanced maps, field 0) open on the whole-world WorldMap.img so
+    // the panel always has its base image.
+    const prop = deepest ?? this._loadMapProp('') ?? deepest;
+    if (!prop) {
       this._currentMapName = '';
       this._baseCanvas = null;
       this._spots = [];
@@ -363,8 +376,8 @@ export class WorldMap extends GamePanel {
       this._open();
       return;
     }
-    this._setWorldMap(deepest);
-    this._currentMapName = this._mapNameOf(deepest);
+    this._setWorldMap(prop);
+    this._currentMapName = deepest ? this._mapNameOf(deepest) : 'World Map';
     this._lastFieldId = fieldId;
     this._open();
   }
@@ -402,7 +415,19 @@ export class WorldMap extends GamePanel {
   private _open(): void {
     const wasOpen = this.isVisible;
     this.isVisible = true;
+    // Re-center on each open; a drag within a session still wins until close.
+    const w = (typeof window !== 'undefined' ? window.innerWidth : 0) || 0;
+    const h = (typeof window !== 'undefined' ? window.innerHeight : 0) || 0;
+    if (w > 0 && h > 0) this.onResize(w, h);
     if (!wasOpen) this.playUiSound?.('WorldmapOpen');
+    // OG CreateWorldMapDlg tail: on the first-ever open (option sentinel 999)
+    // show the quest-guide tip once, then persist option=0 (guide off).
+    if (!wasOpen && WorldMap.GetQuestGuideOptionRaw() === QUEST_GUIDE_OPTION_UNSHOWN) {
+      this.createQuestGuideTip();
+      WorldMap.SetQuestGuideOption(false);
+      this._questToggle = false;
+      this._syncQuestToggleSprite();
+    }
   }
 
   // ── UI construction ─────────────────────────────────────────────────
@@ -419,8 +444,11 @@ export class WorldMap extends GamePanel {
       this._btQuestToggle = null;
     }
 
-    // OG: CreateCtrl_2(2, m_width-22, 4) — UOL StringPool "UI/Basic.img/BtClose3"
-    const closeNode = this._mapWz?.GetItem('Basic.img/BtClose3') ?? this._mapWz?.GetItem('Basic.img/BtClose');
+    // OG: CreateCtrl_2(2, m_width-22, 4) — UOL StringPool "UI/Basic.img/BtClose3".
+    // Basic.img lives in UI.nx (not Map.wz).
+    const closeNode = this._uiWz?.GetItem('Basic.img/BtClose3')
+      ?? this._uiWz?.GetItem('UIWindow2.img/BtClose3')
+      ?? this._mapWz?.GetItem('Basic.img/BtClose3');
     this._btClose = closeNode instanceof WzProperty
       ? Button.fromWz(this._loader ?? new WzTextureLoader(), closeNode, 'Close')
       : new Button('Close');
@@ -431,8 +459,11 @@ export class WorldMap extends GamePanel {
     // OG: CreateCtrl_2(2000, m_width-65, 4) — CCtrlButtonQuestToggle, UOL
     // "UI/UIWindow2.img/QuestGuide/Button/WorldMapQuestToggle" (45x12).
     // Initial state = CConfig::GetQuestGuideOption() != 0 (persisted).
-    const qtNode = this._mapWz?.GetItem('UIWindow2.img/QuestGuide/Button/WorldMapQuestToggle')
-      ?? this._uiWz?.GetItem('UIWindow2.img/QuestGuide/Button/WorldMapQuestToggle');
+    // OG: CreateCtrl_2(2000, m_width-65, 4) — CCtrlButtonQuestToggle, UOL
+    // "UI/UIWindow2.img/QuestGuide/Button/WorldMapQuestToggle" (45x12).
+    // Initial state = CConfig::GetQuestGuideOption() != 0 (persisted).
+    const qtNode = this._uiWz?.GetItem('UIWindow2.img/QuestGuide/Button/WorldMapQuestToggle')
+      ?? this._mapWz?.GetItem('UIWindow2.img/QuestGuide/Button/WorldMapQuestToggle');
     this._btQuestToggle = qtNode instanceof WzProperty
       ? Button.fromWz(this._loader ?? new WzTextureLoader(), qtNode, 'QuestToggle')
       : new Button(this._questToggle ? '?' : '!');
@@ -458,17 +489,88 @@ export class WorldMap extends GamePanel {
     this._btQuestToggle?.setChecked(this._questToggle);
   }
 
-  /** CConfig::GetQuestGuideOption / SetQuestGuideOption — persisted client-side
-   *  (localStorage when available, in-memory fallback otherwise). */
-  static GetQuestGuideOption(): boolean {
-    try { return localStorage.getItem('WorldMapQuestGuide') === '1'; }
-    catch { return WorldMap._questGuideMem; }
+  /**
+   * CConfig::GetQuestGuideOption — persisted client-side option. The OG stores
+   * an int where 999 is the "tip never shown yet" sentinel (CreateWorldMapDlg
+   * shows the quest-guide tip once, then writes 0). Without usable storage
+   * (headless tests) the in-memory fallback carries plain 0/1 values.
+   */
+  static GetQuestGuideOptionRaw(): number {
+    try {
+      const v = localStorage.getItem('WorldMapQuestGuide');
+      if (v !== null) return parseInt(v, 10) || 0;
+    } catch { /* no storage */ }
+    if (!WorldMap._probeStorage()) return WorldMap._questGuideMem ? 1 : 0;
+    return QUEST_GUIDE_OPTION_UNSHOWN;
   }
+
+  /** CConfig::GetQuestGuideOption — boolean view (option != 0). */
+  static GetQuestGuideOption(): boolean {
+    return WorldMap.GetQuestGuideOptionRaw() !== 0;
+  }
+
   static SetQuestGuideOption(on: boolean): void {
     WorldMap._questGuideMem = on;
     try { localStorage.setItem('WorldMapQuestGuide', on ? '1' : '0'); } catch { /* no storage */ }
   }
   private static _questGuideMem = false;
+  private static _storageProbed = false;
+  private static _storageOk = false;
+  private static _probeStorage(): boolean {
+    if (WorldMap._storageProbed) return WorldMap._storageOk;
+    WorldMap._storageProbed = true;
+    try {
+      localStorage.setItem('WorldMapQuestGuide_probe', '1');
+      localStorage.removeItem('WorldMapQuestGuide_probe');
+      WorldMap._storageOk = true;
+    } catch { WorldMap._storageOk = false; }
+    return WorldMap._storageOk;
+  }
+
+  // Decrypted StringPool literals used by CreateQuestGuideTip (SP6645-6647).
+  private static readonly TIP_LINE0 = 'This button';
+  private static readonly TIP_SHOW = 'shows quest start locations.';
+  private static readonly TIP_HIDE = 'hides quest start locations.';
+
+  /**
+   * OG CWorldMapDlg::CreateQuestGuideTip @0x9BAE80 — one-time hint balloon
+   * pointing at the quest-toggle button. Font "Canvas#Font" height 11 color
+   * 0xFF333333; contents [SP6645, toggle ? SP6647 : SP6646]; MakeBalloonTip
+   * with nDir=3 at the anchor beside the button (OG passes nX=610 on a
+   * 666-wide dialog whose toggle sits at w-65 → +9 from the button edge,
+   * nY=12).
+   */
+  createQuestGuideTip(): void {
+    if (!this._balloonPieces) {
+      const loader = this._loader ?? new WzTextureLoader();
+      this._balloonPieces = loadBalloonTipPieces(loader, this._uiWz ?? this._mapWz);
+    }
+    if (!this._balloonPieces) return; // no WZ assets → draw nothing
+
+    this.destroyQuestGuideTip();
+    const measure = new Text({ text: '', style: _rowStyle });
+    this._layerTip = makeBalloonTip({
+      pieces: this._balloonPieces,
+      lines: [
+        WorldMap.TIP_LINE0,
+        this._questToggle ? WorldMap.TIP_HIDE : WorldMap.TIP_SHOW,
+      ],
+      nDir: 3,
+      nX: WM_WIDTH - 65 + 9,
+      nY: 12,
+      textStyle: new TextStyle({ fontFamily: 'Arial', fontSize: 11, fill: '#333333' }),
+      measure: (line) => { measure.text = line; return measure.width; },
+    });
+    this._root.addChild(this._layerTip);
+  }
+
+  destroyQuestGuideTip(): void {
+    if (this._layerTip) {
+      this._layerTip.removeFromParent();
+      this._layerTip.destroy({ children: true });
+      this._layerTip = null;
+    }
+  }
 
   /**
    * OG: OnButtonClicked id=2000 — toggles quest mode, persists via
@@ -671,7 +773,12 @@ export class WorldMap extends GamePanel {
   // ── Drawing (OG: Draw 0x9BA060) ─────────────────────────────────────
 
   update(dt: number): void {
-    if (!this.isVisible) return;
+    if (!this.isVisible) {
+      // The one-time quest-guide tip only lives while the dialog is open.
+      this.destroyQuestGuideTip();
+      return;
+    }
+    this.updateDrag();
     this._animClockMs += dt * 1000;
     this.draw();
   }
@@ -1034,13 +1141,34 @@ export class WorldMap extends GamePanel {
     return lines.length > 0 ? lines : [''];
   }
 
+  /**
+   * Fixed-rect drag override — the base GamePanel.beginDrag uses
+   * getLocalBounds(), which walks Text children and throws before fonts are
+   * measured (same fix as StatsInfo.beginDrag). The world map has a known
+   * 800x600 window with the 27px border strip as its title band.
+   */
+  beginDrag(lx: number, ly: number, down: boolean): boolean {
+    if (!this.draggable) return false;
+    if (!down && this._wndDragging) {
+      this._wndDragging = false;
+      return true;
+    }
+    if (!down) return false;
+    if (lx < 0 || lx >= WM_WIDTH || ly < 0 || ly >= WM_HEIGHT) return false;
+    if (ly >= this._wndTitleH) return false;
+    this._wndDragging = true;
+    this._wndDragOff = { x: lx, y: ly };
+    return true;
+  }
+
   handleMouseButton(mx: number, my: number, down: boolean): boolean {
     if (!this.isVisible) return false;
 
     const lx = mx - this._root.x;
     const ly = my - this._root.y;
 
-    for (const b of [this._btClose, this._btQuestToggle]) {
+    // Window drag (title band = top border chrome).
+    if (this.beginDrag(lx, ly, down)) return true;    for (const b of [this._btClose, this._btQuestToggle]) {
       if (b?.handleMouseButton(lx, ly, down)) return true;
     }
 
@@ -1098,8 +1226,11 @@ export class WorldMap extends GamePanel {
     return true;
   }
 
-  onResize(_w: number, _h: number): void {
-    // OG: full-screen dialog
+  onResize(w: number, h: number): void {
+    // Center the dialog; a user drag wins until the next resize.
+    if (this._wndDragging) return;
+    this._root.x = Math.max(0, Math.floor((w - WM_WIDTH) / 2));
+    this._root.y = Math.max(0, Math.floor((h - WM_HEIGHT) / 2));
   }
 
   private _transferIdAt(x: number, y: number): number | null {
