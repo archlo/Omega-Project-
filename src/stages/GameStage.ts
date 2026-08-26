@@ -2768,6 +2768,7 @@ export class GameStage extends Stage {
     this._statusBar.onMTS = () => {}; // MTS no longer exists
     this._chatBar.initWzAssets(this._loader, uiWz);
     this._userList.initWzAssets(this._loader, uiWz);
+    this._guildBBS.initWzAssets(this._loader, uiWz);
     this._guildGradeWin = new GuildGradeWindow(false, this._loader, uiWz);
     if (!this._guildGradeWin.container.parent) this.uiRoot.addChild(this._guildGradeWin.container);
     // CUIUserList::ToggleGuildInfo — spawn at the community window's right edge.
