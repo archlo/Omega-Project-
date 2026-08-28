@@ -55,6 +55,7 @@ export class QuickSlotBar extends GamePanel implements DragTarget {
   private _bShowSlide = true;
   private _cashTagLoader: (() => Sprite | null) | null = null;
   bindItemToKey: ((scancode: number, itemId: number) => void) | null = null;
+  private _attachedToStatusBar = false;
 
   constructor(
     loader: WzTextureLoader, ui: WzPackage | null, _font: BuiltInFont | null,
@@ -119,7 +120,7 @@ export class QuickSlotBar extends GamePanel implements DragTarget {
 
   draw(): void {
     if (!this.isVisible) return;
-    const attached = this._viewW > 800;
+    const attached = this._attachedToStatusBar || this._viewW > 800;
     this._slotG.clear();
 
     if (this._bgSprite) this._bgSprite.visible = !attached;
@@ -268,6 +269,12 @@ export class QuickSlotBar extends GamePanel implements DragTarget {
     }
   }
 
+  /** OG CQuickSlot is a nested COM layer at (881,2) inside StatusBar (m_pLayerQuickSlot). */
+  setAttached(attached: boolean): void {
+    this._attachedToStatusBar = attached;
+  }
+  get isAttached(): boolean { return this._attachedToStatusBar; }
+
   SetKeys(keys: number[] | null): void {
     if (keys === null) return;
     for (let i = 0; i < SlotCount && i < keys.length; i++) this._keys[i] = keys[i];
@@ -294,8 +301,13 @@ export class QuickSlotBar extends GamePanel implements DragTarget {
   }
 
   private get _gridTopLeft(): { x: number; y: number } {
+    if (this._attachedToStatusBar) {
+      // OG: CUIStatusBar::m_pLayerQuickSlot RelMove(881,2) inside StatusBar — force attached
+      // regardless of viewport width so the bar is always ON the status bar.
+      const barCenterX = Math.max(512, this._viewW / 2);
+      return { x: barCenterX - 512 + AttachedLayerX, y: this._viewH - BarH + AttachedLayerY };
+    }
     if (this._viewW > 800) {
-      // OG: RelMove(881, 2) relative to StatusBar origin at bottom of screen
       const barCenterX = Math.max(512, this._viewW / 2);
       return { x: barCenterX - 512 + AttachedLayerX, y: this._viewH - BarH + AttachedLayerY };
     }

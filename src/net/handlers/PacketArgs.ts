@@ -503,8 +503,8 @@ export interface AuthenCodeChangedArgs { nSet: number; value: number; }
 export type LogoutGiftArgs = Record<string, never>;
 export interface TrunkItem { invType: number; positionInType: number; itemId: number; quantity: number; }
 export interface TrunkResultArgs { resultType: number; templateId?: number; hasContents?: boolean; slotCount?: number; money?: number; items: TrunkItem[]; message?: string; }
-export interface MessengerMigratedEntry { index: number; name: string; channel: number; }
-export interface MessengerResultArgs { action: number; userIndex?: number; name?: string; channel?: number; flag?: boolean; messengerId?: number; chat?: string; migrated: MessengerMigratedEntry[]; }
+export interface MessengerMigratedEntry { index: number; name: string; channel: number; avatarLook?: import('../../domain/AvatarLook.js').AvatarLook; }
+export interface MessengerResultArgs { action: number; userIndex?: number; name?: string; channel?: number; flag?: boolean; messengerId?: number; chat?: string; migrated: MessengerMigratedEntry[]; avatarLook?: import('../../domain/AvatarLook.js').AvatarLook; }
 export interface SkillRecordEntry { skillId: number; level: number; masterLevel: number; }
 export interface QuickslotKey { key: number; }
 export interface WhisperReceiveArgs { fromName: string; channelId: number; text: string; isAdmin?: boolean; }
@@ -550,7 +550,7 @@ export interface MiniRoomArgs {
   text?: string;
   leaveType?: number;
   index?: number;
-  item?: unknown;
+  item?: any;
   money?: number;
   resultCode?: number;
   itemIndex?: number;
@@ -559,6 +559,7 @@ export interface MiniRoomArgs {
   balloon?: true;
   ownerId?: number;
   miniRoomType?: number;
+  itemCRC?: number;
   /** OG dwMiniRoomSN — the room object id visitors send back in MRP_Enter. */
   roomId?: number;
   pwd?: boolean;

@@ -1859,6 +1859,20 @@ export class GameSender {
     return p;
   }
 
+  static TradeMoveItemToInventory(index: number): OutPacket {
+    const p = OutPacket.Of(InHeader.MiniRoom);
+    p.writeByte(MiniRoomProtocol.TRP_MoveItemToInventory);
+    p.writeByte(index);
+    return p;
+  }
+
+  static TradeItemCRC(crc: number): OutPacket {
+    const p = OutPacket.Of(InHeader.MiniRoom);
+    p.writeByte(MiniRoomProtocol.TRP_ItemCRC);
+    p.writeInt(crc);
+    return p;
+  }
+
   static ShopPutItem(invType: number, position: number, setCount: number, setSize: number, price: number): OutPacket {
     const p = OutPacket.Of(InHeader.MiniRoom);
     p.writeByte(MiniRoomProtocol.PSP_PutItem);

@@ -3870,6 +3870,13 @@ export class FieldHandlers {
         case MiniRoomProtocol.TRP_Trade:
           break;
         case MiniRoomProtocol.TRP_MoveItemToInventory:
+          args.userIndex = p.readByte();
+          args.index = p.readByte();
+          break;
+        case MiniRoomProtocol.TRP_ItemCRC:
+          try { args.itemCRC = p.readInt(); } catch { /* optional */ }
+          break;
+        case MiniRoomProtocol.TRP_LimitFail:
           break;
         case MiniRoomProtocol.PSP_BuyResult:
           args.resultCode = p.readByte();

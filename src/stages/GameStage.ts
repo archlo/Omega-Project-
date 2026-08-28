@@ -1507,6 +1507,9 @@ export class GameStage extends Stage {
       (itemId) => this._item.countItem(itemId),
     );
     this._quickSlots.bindItemToKey = (scancode, itemId) => this._keyConfig.bindItemToKey(scancode, itemId);
+    // OG CUIStatusBar owns CQuickSlot as child layer at (881,2) — force attached
+    // so the bar is always ON the status bar, not as a floating popup.
+    this._quickSlots.setAttached(true);
     this.uiRoot.addChild(this._quickSlots.container);
     this._quickSlots.Relayout(this.game.pixiApp.screen.width, this.game.pixiApp.screen.height);
     // Initial layout pass � onResize only fires on window resize events, so
@@ -2075,11 +2078,16 @@ export class GameStage extends Stage {
     this._vegaDialog.OnClose = () => {};
 
     this._tradingRoom = new TradingRoom(this._loader, uiWz);
+    this._tradingRoom.setIconProvider((id) => this._itemIcons?.LoadIcon(id) ?? null);
     this._tradingRoom.OnTrade = () => { this.game.session.send(GameSender.TradeConfirm()); };
+    this._tradingRoom.OnUnTrade = () => { this.game.session.send(GameSender.TradeCancel()); };
     this._tradingRoom.OnCancel = () => { this.game.session.send(GameSender.MiniRoomLeave()); };
     this._tradingRoom.OnPutMoney = (amount) => { this.game.session.send(GameSender.TradePutMoney(amount)); };
     this._tradingRoom.OnPutItem = (index, invType, position, quantity) => {
       this.game.session.send(GameSender.TradePutItem(index, invType, position, quantity));
+    };
+    this._tradingRoom.OnMoveItemToInventory = (index) => {
+      this.game.session.send(GameSender.TradeMoveItemToInventory(index));
     };
     this._tradingRoom.OnChat = (text) => { this.game.session.send(GameSender.MiniRoomChat(text)); };
     // OG PutMoney @0x764450 routes the amount through CUtilDlgEx INPUT_NO.
@@ -6283,17 +6291,18 @@ this._localCharId = args.characterId ?? 0;
 
   private _onReactorEnter(args: ReactorEnterArgs): void {
     const reactor = new ReactorLook(args.objId, args.templateId, args.state);
-    // Real WZ sprite/animation load â€” previously never called anywhere, so
-    // every reactor permanently rendered as ReactorLook's placeholder
-    // graphic regardless of whether real Reactor.wz art existed.
     reactor.Load(this._loader, this._reactorWz);
     reactor.Position = { x: args.x, y: args.y };
-    if (this._field) {
-      const g = this._field.GetFootholdBelow(args.x, args.y - 1);
-      const gy = g?.YAt(args.x);
-      if (gy != null) reactor.Position.y = gy;
-    }
+    reactor.container.scale.x = args.flip ? -1 : 1;
+    reactor.EnsureDisplay();
     this._reactors.set(args.objId, reactor);
+  }
+
+  private _sweepReactorLoads(): void {
+    if (!this._reactorWz) return;
+    for (const r of this._reactors.values()) {
+      if (!r.Loaded) { r.Load(this._loader, this._reactorWz); r.EnsureDisplay(); }
+    }
   }
 
   private _onReactorLeave(args: ReactorLeaveArgs): void {
@@ -9911,6 +9920,16 @@ this._localCharId = args.characterId ?? 0;
         break;
       case 18: // TRP_UnTrade — partner cancelled their confirmation
         if (this._tradingRoom) this._tradingRoom.OnPartnerUnTrade();
+        break;
+      case 19: // TRP_MoveItemToInventory — partner took back an item
+        if (this._tradingRoom && args.userIndex !== undefined && args.index !== undefined) {
+          this._tradingRoom.OnPartnerMoveItemToInventory(args.userIndex, args.index);
+        }
+        break;
+      case 20: // TRP_ItemCRC — ignored (OG validates ItemCRC int, no visual)
+        break;
+      case 21: // TRP_LimitFail — trade money limit exceeded
+        if (this._tradingRoom) this._statusMessenger.showLoot('Trade money limit exceeded.');
         break;
       case 24: // PSP_BuyResult
         this._personalShop?.AcceptBuyResult(args.resultCode ?? 0);

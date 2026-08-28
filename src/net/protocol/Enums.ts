@@ -560,12 +560,14 @@ export const enum MiniRoomProtocol {
   MRP_Leave            = 10,
   MRP_Balloon          = 11,
 
-  /** Trade sub-actions */
+  /** Trade sub-actions (CTradingRoomDlg::OnPacket @0x7649A0) */
   TRP_PutItem          = 15,
   TRP_PutMoney         = 16,
   TRP_Trade            = 17,
   TRP_UnTrade          = 18,
   TRP_MoveItemToInventory = 19,
+  TRP_ItemCRC          = 20,
+  TRP_LimitFail        = 21,
 
   /** Personal shop (Hired Merchant) sub-actions */
   PSP_PutItem          = 22,

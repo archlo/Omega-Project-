@@ -86,9 +86,13 @@ export class ReactorLook {
     this._frameTimer = 0;
   }
 
+  get Loaded(): boolean { return this._loaded; }
+
+  EnsureDisplay(): void { this._rebuildDisplay(); }
+
   Update(dt: number): void {
     const frames = this._anims.get(this._curState);
-    if (!frames || frames.length === 0) return;
+    if (!frames || frames.length === 0) { this._rebuildDisplay(); return; }
     let delayMs = frames[this._frame].delayMs;
     if (delayMs <= 0) delayMs = 150;
     this._frameTimer += dt * 1000;

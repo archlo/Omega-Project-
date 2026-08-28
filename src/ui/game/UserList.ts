@@ -611,7 +611,10 @@ export class UserList extends GamePanel {
     const selName = (): string | null => this._selectedEntry();
 
     // ── Friend (15 buttons, ids 2010..2024; BtMate id 2023 hidden forever) ──
-    this._tabButtons.set(TAB_INDICES.FRIEND, [
+    // CTabFriend::CreateButton @0x8BC7C0: BtInfo (2015) at (208,285) and BtFind
+    // (2016) at (10,350) use EXPLICIT positions (UIWindow.img, not UIWindow2.img);
+    // buttons 2017..2024 are created with SetEnable(0).
+    const friendButtons = [
       this._mkBtn([`${U2}Friend/BtAddFriend`], 2010, 'Add', () => { const n = this.getInviteName(); if (n) this.onFriendAdd?.(n); }),
       this._mkBtn([`${U2}Friend/BtAddGroup`], 2011, 'Grp', () => { const n = this.getInviteName(); if (n) this.onFriendAddGroup?.(n); }),
       this._mkBtn([`${U2}Friend/BtGroupWhisper`], 2012, 'GWhis', () => {
@@ -633,7 +636,10 @@ export class UserList extends GamePanel {
         const m = this._findFriend(this._curCID);
         if (m) this.onFriendBlock?.(m.charId, !m.blocked);
       }, true),
-    ]);
+    ];
+    this._setExplicitPos(friendButtons, 2015, 208, 285);
+    this._setExplicitPos(friendButtons, 2016, 10, 350);
+    this._tabButtons.set(TAB_INDICES.FRIEND, friendButtons);
 
     // ── Party (9 buttons, ids 2200..2208) ──
     this._tabButtons.set(TAB_INDICES.PARTY, [
@@ -748,7 +754,7 @@ export class UserList extends GamePanel {
     for (const b of arr) {
       if (b.id === 2023) continue; // BtMate: created then permanently hidden
       b.btn.container.visible = true;
-      b.btn.enabled = b.needsSelection ? hasSel || b.id === 2018 : true;
+      b.btn.enabled = b.needsSelection ? hasSel : true;
     }
   }
 

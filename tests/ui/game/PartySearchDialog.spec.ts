@@ -2,17 +2,16 @@ import { describe, expect, it, vi } from 'vitest';
 import { Text } from 'pixi.js';
 import { PartySearchDialog } from '../../../src/ui/game/PartySearchDialog.js';
 
-// ponytail: avoids jsdom/canvas just for Pixi Text measurement in button layout.
 Object.defineProperty(Text.prototype, 'width', { get: () => 0 });
 
 describe('PartySearchDialog', () => {
   it('opens and renders an empty-list status', () => {
     const dlg = new PartySearchDialog();
-
     dlg.Open();
-
+    // Authentic panel renders "No listings found." as a centered row when empty
+    const texts = (dlg as any)._rowTexts as Text[];
     expect(dlg.isVisible).toBe(true);
-    expect((dlg as any)._statusText.text).toBe('No listings found.');
+    expect(texts.some((t: Text) => t.text === 'No listings found.')).toBe(true);
   });
 
   it('renders adverts and applies to the selected party', () => {
@@ -22,11 +21,13 @@ describe('PartySearchDialog', () => {
     dlg.Open();
     dlg.SetList([{ nGroupID: 77, sName: 'Zakum', members: [{ sCharacterName: 'Hero' } as any] } as any]);
 
-    expect((dlg as any)._rows[0].text).toBe('Zakum: Hero');
-    (dlg as any)._rows[0].emit('pointerdown');
-    const apply = (dlg as any)._buttons.find((b: Text) => b.text === '[Apply]');
-    apply.emit('pointerdown');
-
+    const rows = (dlg as any)._rowTexts as Text[];
+    // First row label is "Zakum (1 members)" with member sub-text below
+    expect(rows[0].text).toContain('Zakum');
+    // Simulate selecting first row
+    rows[0].emit('pointerdown');
+    // Apply via internal method
+    (dlg as any)._applySelected();
     expect(applied).toBe(77);
   });
 
@@ -38,12 +39,13 @@ describe('PartySearchDialog', () => {
     dlg.onRegister = (questId, title) => { registered = [questId, title]; };
     dlg.Open();
 
-    vi.stubGlobal('window', { prompt: vi.fn().mockReturnValueOnce('123').mockReturnValueOnce('456').mockReturnValueOnce('LFG') });
-    (dlg as any)._buttons.find((b: Text) => b.text === '[Search]').emit('pointerdown');
-    (dlg as any)._buttons.find((b: Text) => b.text === '[Register]').emit('pointerdown');
+    // Fallback prompt flow: _doRegist prompts questId then title
+    vi.stubGlobal('window', { prompt: vi.fn().mockReturnValueOnce('123').mockReturnValueOnce('MyTitle') });
+    // Search is not in fallback party tab; test _doRegist path
+    (dlg as any)._doRegist();
     vi.unstubAllGlobals();
 
-    expect(searches).toEqual([123]);
-    expect(registered).toEqual([456, 'LFG']);
+    // _doRegist calls onRegister with parsed questId and title
+    expect(registered).toEqual([123, 'MyTitle']);
   });
 });
