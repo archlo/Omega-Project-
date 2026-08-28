@@ -1,0 +1,33 @@
+[
+  {
+    "query": "OnDragonPacket",
+    "matches": [
+      {
+        "address": "0x8e5c00",
+        "name": "CUser::OnDragonPacket(long,CInPacket &)"
+      }
+    ]
+  },
+  {
+    "query": "CDragon::OnCreated",
+    "matches": [
+      {
+        "address": "0x50dc90",
+        "name": "CDragon::OnCreated(CUser *,CInPacket &)"
+      }
+    ]
+  },
+  {
+    "query": "CDragon::OnMove",
+    "matches": [
+      {
+        "address": "0x50ad30",
+        "name": "CDragon::OnMove(CInPacket &)"
+      }
+    ]
+  },
+  {
+    "query": "CDragon::Init",
+    "matches": []
+  }
+]

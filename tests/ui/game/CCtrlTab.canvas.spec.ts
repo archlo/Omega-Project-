@@ -1,15 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { Container, Sprite } from 'pixi.js';
+import { Container, Sprite, Texture } from 'pixi.js';
 import { CCtrlTab, type TabItem } from '../../../src/ui/game/CCtrlTab.js';
 
-// Make a fake Sprite with a stub texture whose width we control.
+// Make a fake Sprite with a stub texture whose width we control. `new Sprite()`
+// shares the Texture.EMPTY singleton, so give each sprite its own Texture.
 function fakeSprite(width: number): Sprite {
-  const s = new Sprite();
-  const tex = s.texture;
+  const tex = new Texture({ source: { width, height: 19 } } as never);
   Object.defineProperty(tex, 'width', { get: () => width, configurable: true });
   Object.defineProperty(tex, 'height', { get: () => 19, configurable: true });
-  Object.defineProperty(tex, 'orig', { get: () => ({ width, height: 19 }), configurable: true });
-  Object.defineProperty(tex, 'frame', { get: () => ({ width, height: 19, x: 0, y: 0 }), configurable: true });
+  const s = new Sprite(tex);
   return s;
 }
 
@@ -23,8 +22,8 @@ describe('CCtrlTab canvas tab relocation', () => {
     tab.setCanvasItems(sel, norm);
 
     const positions = items().map((i) => i.x);
-    // Edge-to-edge: x0=0, x1=30, x2=60, x3=100, x4=130, x5=180
-    expect(positions).toEqual([0, 30, 60, 100, 130, 180]);
+    // Edge-to-edge with tabSpace=1: x0=0, x1=31, x2=62, x3=103, x4=134, x5=185
+    expect(positions).toEqual([0, 31, 62, 103, 134, 185]);
     // Widths use the canvas bitmap widths, not text measurement.
     expect(items().map((i) => i.width)).toEqual([30, 30, 40, 30, 50, 59]);
   });
