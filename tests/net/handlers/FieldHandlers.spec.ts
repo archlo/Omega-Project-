@@ -585,8 +585,8 @@ describe('FieldHandlers', () => {
     expect(args).toHaveLength(1);
     expect(args[0].bossId).toBe(1001);
     expect(args[0].members).toEqual([
-      { charId: 1001, name: 'BossPerson', job: 200, level: 33, channel: 0, hp: 120, maxHp: 500 },
-      { charId: 2002, name: 'MemberTwo', job: 411, level: 71, channel: 0, hp: 3210, maxHp: 4000 },
+      { charId: 1001, name: 'BossPerson', job: 200, level: 33, channel: 0, fieldId: 100000000, hp: 120, maxHp: 500 },
+      { charId: 2002, name: 'MemberTwo', job: 411, level: 71, channel: 0, fieldId: 910000000, hp: 3210, maxHp: 4000 },
     ]);
   });
 

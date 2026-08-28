@@ -47,7 +47,7 @@ const SCROLLBAR_X = 243;
 const SCROLLBAR_WHEEL_RANGE = 235;
 const SB_CONFIG: Record<number, { y: number; h: number; base: number }> = {
   [TAB_INDICES.FRIEND]: { y: 115, h: 160, base: 0 },
-  [TAB_INDICES.PARTY]: { y: 60, h: 225, base: 117 },
+  [TAB_INDICES.PARTY]: { y: 105, h: 225, base: 117 },
   [TAB_INDICES.EXPEDITION]: { y: 60, h: 225, base: 28 },
   [TAB_INDICES.GUILD]: { y: 100, h: 185, base: 105 },
   [TAB_INDICES.ALLIANCE]: { y: 100, h: 185, base: 105 },
@@ -82,9 +82,9 @@ export interface UserEntry {
   blocked?: boolean;
 }
 
-export interface PartyEntry { charId: number; name: string; level: number; job: string; isLeader: boolean }
+export interface PartyEntry { charId: number; name: string; level: number; job: string; isLeader: boolean; online?: boolean; sameMap?: boolean }
 export interface GuildEntry { charId: number; name: string; rank: string; online: boolean; job?: string; level?: number }
-export interface AllianceEntry { charId: number; name: string; level: number; job: number; grade: number; guildId: number }
+export interface AllianceEntry { charId: number; name: string; level: number; job: number; grade: number; guildId: number; guildName?: string }
 
 interface FriendGroup {
   name: string;
@@ -116,6 +116,12 @@ export class UserList extends GamePanel {
   private _foldClose: Sprite | null = null;
   private _friendIcons: (Sprite | null)[] = [];
   private _friendTitle: Sprite | null = null;
+  /** Party leader crown: Main/Party/icon0/1 (17x16) sameMap leader; icon0/0
+   *  (13x13) elseWhere leader. CTabParty::Draw @0x8C4A30 draws it at (11,row+1). */
+  private _partyCrown: Sprite | null = null;
+  /** Party tab header plate: Main/Party/partyOn (230x25, origin 0,0) — the
+   *  fixed title row at the top of the party list (CTabParty::Draw `_214`). */
+  private _partyHeader: Sprite | null = null;
   private _guildBase: Sprite | null = null;
   private _guildMark: Sprite | null = null;
   private _guildSectionOn: Sprite | null = null;
@@ -197,6 +203,9 @@ export class UserList extends GamePanel {
   onToggleOnlineOnly: ((onlineOnly: boolean) => void) | null = null;
   // OG: CTabFriend::OnFindFriendView (0x8B7270)
   onFindFriend: (() => void) | null = null;
+  /** BtInfo (id 2015) - CTabFriend::OnAccontMoreInfoView @0x8B7260 =
+   *  CWvsContext::UI_Open(40) AccountMoreInfo dialog. */
+  onAccountMoreInfo: (() => void) | null = null;
   /** BtMessage (id 2021) - CTabFriend::OnSendMemo. */
   onFriendMemo: ((name: string) => void) | null = null;
   getInviteName: () => string = () => '';
@@ -263,6 +272,7 @@ export class UserList extends GamePanel {
   /** OG OnCreate asset pass — callable once UI.wz finishes loading. */
   initWzAssets(loader: WzTextureLoader, uiWz: WzPackage | null): void {
     this._loader = loader;
+    this._uiWz = uiWz; // `_mkBtn` resolves WZ button subtrees through this field
     const ui = uiWz;
     const main = ui?.GetItem('UIWindow2.img/UserList/Main');
     if (!(main instanceof WzProperty)) { this._rebuildButtons(); return; }
@@ -278,13 +288,15 @@ export class UserList extends GamePanel {
         this._root.addChildAt(s, 0);
       }
     }
-    // backgrnd2 (252x354, origin -6,-22 → drawn at (6,22))
+    // backgrnd2 (252x354, origin -6,-22 → top-left at (6,22)). ToPixi anchors
+    // at the origin, so position (0,0) places the origin point at the panel
+    // corner and the canvas top-left lands at (-OriginX,-OriginY)=(6,22).
     const bg2 = main.Get('backgrnd2');
     if (bg2 instanceof WzCanvas) {
       const ws = loader.Load(bg2);
       if (ws) {
         const s = ws.ToPixi();
-        s.position.set(6 - ws.OriginX, 22 - ws.OriginY);
+        s.position.set(0, 0);
         this._root.addChildAt(s, 1);
       }
     }
@@ -350,6 +362,21 @@ export class UserList extends GamePanel {
       }
       // Friend/title: 244x25 header plate bitmap (origin -10,-60).
       this._friendTitle = this._plate(friendProp.Get('title'));
+    }
+
+    // Party leader crown: Main/Party/icon0/1 (17x16, origin 0,0) — CTabParty::Draw
+    // draws it for the boss at (11, rowY+1); icon0/0 (13x13) is the elseWhere variant.
+    const partyProp = main.Get('Party');
+    if (partyProp instanceof WzProperty) {
+      this._partyHeader = this._plate(partyProp.Get('partyOn'));
+      const icon0 = partyProp.Get('icon0');
+      if (icon0 instanceof WzProperty) {
+        const c1 = icon0.Get('1');
+        if (c1 instanceof WzCanvas) {
+          const ws = loader.Load(c1);
+          this._partyCrown = ws ? ws.NewSprite() : null;
+        }
+      }
     }
 
     // Guild / Union header plates.
@@ -495,6 +522,11 @@ export class UserList extends GamePanel {
     return out;
   }
 
+  /** Name of the currently selected friend (null when none). */
+  get friendNameOfSelected(): string | null {
+    return this._findFriend(this._curCID)?.name ?? null;
+  }
+
   get guildMemberIds(): Map<number, string> {
     return new Map(this._guild.filter((m) => m.online).map((m) => [m.charId, m.name]));
   }
@@ -511,6 +543,9 @@ export class UserList extends GamePanel {
   setAlliance(name: string, members: AllianceEntry[]): void {
     this._allianceName = name;
     this._alliance = members;
+    // One collapsed-state slot per member guild (CTabGuildAlliance sections).
+    const guildCount = new Set(members.map((m) => m.guildName || `Guild ${m.guildId}`)).size;
+    while (this._sectionFolded.length < guildCount) this._sectionFolded.push(false);
     this._curCID = -1;
     this._resetInfo();
   }
@@ -623,9 +658,15 @@ export class UserList extends GamePanel {
       }),
       this._mkBtn([`${U2}Friend/TapShowOnline`], 2013, 'On', () => { this._onlineOnly = true; this.onToggleOnlineOnly?.(true); this._rebuildRows(); }),
       this._mkBtn([`${U2}Friend/TapShowAll`], 2014, 'All', () => { this._onlineOnly = false; this.onToggleOnlineOnly?.(false); this._rebuildRows(); }),
-      this._mkBtn([`${U1}Friend/BtInfo`], 2015, 'Info', () => { /* account-more-info: not wired server-side */ }, true),
+      this._mkBtn([`${U1}Friend/BtInfo`], 2015, 'Info', () => this.onAccountMoreInfo?.(), true),
       this._mkBtn([`${U1}Friend/BtFind`], 2016, 'Find', () => this.onFindFriend?.()),
-      this._mkBtn([`${U2}Friend/BtMod`], 2017, 'Mod', () => { /* group rename: local-only in OG config */ }, true),
+      this._mkBtn([`${U2}Friend/BtMod`], 2017, 'Mod', () => {
+        // CTabFriend::OnModify @0x8D90E0: with a friend selected, re-add it
+        // (regroup via the Add wire keyed by name); with only a current group,
+        // rename it. We fold both into the regroup path (friend selected here).
+        const f = this._findFriend(this._curCID);
+        if (f) { const n = this.getInviteName(); if (n) this.onFriendAddGroup?.(n); }
+      }, true),
       this._mkBtn([`${U2}Friend/BtDelete`], 2018, 'Del', () => { if (this._curCID >= 0) this.onFriendDelete?.(this._curCID); }, true),
       this._mkBtn([`${U2}Friend/BtChat`], 2019, 'Chat', () => { const n = selName(); if (n) this.onFriendChat?.(n); }, true),
       this._mkBtn([`${U2}Friend/BtWhisper`], 2020, 'Whis', () => { const n = selName(); if (n) this.onFriendWhisper?.(n); }, true),
@@ -742,7 +783,7 @@ export class UserList extends GamePanel {
 
   private _setExplicitPos(arr: ({ btn: Button; id: number } | null)[], id: number, x: number, y: number): void {
     const b = arr.find((e) => e?.id === id);
-    if (b && b.btn.hasWzSprite) b.btn.container.position.set(x, y);
+    if (b) b.btn.container.position.set(x, y);
   }
 
   /** OG SetButton: hide all six arrays, show only the active tab's. */
@@ -810,6 +851,20 @@ export class UserList extends GamePanel {
       this._countText.text = `${this._onlineOnly ? 'Online' : 'All'} (${total})`;
       this._countText.position.set(242 - this._countText.width, 68);
       this._locationText.visible = true;
+    } else if (t === TAB_INDICES.PARTY) {
+      // CTabParty::Draw: "%d/%d" (sameMap / total), right-aligned ending x=220,
+      // y=68 (SP2121 format, font 10); rcOnlineCount rect (220-20-textW,63,240,84).
+      // The partyOn (230x25) header plate is the fixed title row at the top.
+      if (this._partyHeader) {
+        const hp = new Sprite(this._partyHeader.texture);
+        hp.anchor.copyFrom(this._partyHeader.anchor);
+        hp.position.copyFrom(this._partyHeader.position);
+        this._headerLayer.addChild(hp);
+      }
+      const sameMap = this._party.filter((m) => m.sameMap).length;
+      this._countText.text = `${sameMap}/${this._party.length}`;
+      this._countText.position.set(220 - this._countText.width, 68);
+      this._locationText.visible = false;
     } else {
       this._countText.text = '';
       this._locationText.visible = false;
@@ -1017,52 +1072,152 @@ export class UserList extends GamePanel {
   }
 
   // ── CTabParty::Draw @0x8C4A30: "%-13s   %-11s%6d" on Sheet2 plates ──
+  // Three sections drawn in order: sameMap, elseWhere, offline. Within each
+  // section every row uses Sheet2/1 (_244); the section's LAST row uses
+  // Sheet2/2 (_429) as the section cap (sameMap: last && no elseWhere).
   private _rowsParty(): void {
     const listX = 10;
-    let y = 60 - this._scrollOffset * ROW_H;
+    const start = SB_CONFIG[TAB_INDICES.PARTY].y; // 105 (v24)
+    let y = start - this._scrollOffset * ROW_H;
     const pad = (s: string, n: number) => s.slice(0, n).padEnd(n, ' ');
-    for (const m of this._party) {
-      const selected = m.charId === this._curCID;
-      const variant = selected ? 1 : 0;
-      const row = this._makeRow('Sheet2', variant, listX, y, 230, () => {
-        this._curCID = m.charId;
-        this._rebuildRows();
-      });
-      const label = `${m.isLeader ? '*' : ''}${pad(m.name, 13)} ${pad(m.job, 11)}${String(m.level).padStart(6, ' ')}`;
-      const txt = new Text({ text: label.replace(/\s+\|/, '|'), style: selected ? _styleWhite : _styleOnline });
-      txt.position.set(2, 5);
-      row.addChild(txt);
-      y += ROW_H;
+    const sameMap = this._party.filter((m) => m.sameMap);
+    const elseWhere = this._party.filter((m) => m.online && !m.sameMap);
+    const offline = this._party.filter((m) => !m.online);
+    const sections: { members: PartyEntry[]; isSameMap: boolean }[] = [
+      { members: sameMap, isSameMap: true },
+      { members: elseWhere, isSameMap: false },
+      { members: offline, isSameMap: false },
+    ];
+    for (const sec of sections) {
+      const lastIdx = sec.members.length - 1;
+      for (let i = 0; i < sec.members.length; i++) {
+        const m = sec.members[i];
+        const selected = m.charId === this._curCID;
+        // Sheet2/1 (_244) normal; the section's last row uses Sheet2/2 (_429).
+        // sameMap only caps when it's the last section (no elseWhere/offline after).
+        const isCap = i === lastIdx && (sec.isSameMap ? elseWhere.length === 0 && offline.length === 0 : true);
+        const variant = isCap ? 2 : 1;
+        const row = this._makeRow('Sheet2', variant, listX, y, 230, () => {
+          this._curCID = m.charId;
+          this._rebuildRows();
+        });
+        // CTabParty::Draw selection fill: 0xFF244768 rect at (10, v24, 230, 20).
+        if (selected) {
+          const hi = new Graphics();
+          hi.rect(0, 0, 230, ROW_H).fill({ color: SEL_FILL });
+          row.addChildAt(hi, 0);
+        }
+        // Leader crown (Main/Party/icon0/1, 17x16) at absolute (11, rowY+1);
+        // text is at absolute x=27 per DrawTextA(27, v24+5) — both row-local.
+        if (m.isLeader && this._partyCrown) {
+          const crown = new Sprite(this._partyCrown.texture);
+          crown.position.set(1, 1);
+          row.addChild(crown);
+        }
+        const label = `${m.isLeader && !this._partyCrown ? '*' : ''}${pad(m.name, 13)} ${pad(m.job, 11)}${String(m.level).padStart(6, ' ')}`;
+        const txt = new Text({ text: label.replace(/\s+\|/, '|'), style: selected ? _styleWhite : _styleOnline });
+        txt.position.set(17, 5);
+        row.addChild(txt);
+        y += ROW_H;
+      }
     }
-    this._clipChildren(this._rowsLayer, 60, 60 + SB_CONFIG[TAB_INDICES.PARTY].h);
+    this._clipChildren(this._rowsLayer, start, start + SB_CONFIG[TAB_INDICES.PARTY].h);
   }
 
   // ── CTabGuild::Draw @0x8C71F0 / CTabGuildAlliance::Draw @0x8CA6F0 ──
-  // Sections: online members then offline members, each on a guildOn/guildOff
-  // (230x25) plate with expand/collapse; rows on Sheet3/0|over|1 with column
+  // Guild: online members then offline members, each on a guildOn/guildOff
+  // (230x25) plate with expand/collapse. Alliance: one section per guild
+  // (unionName plate header + members). Rows on Sheet3/0|over|1 with column
   // rects Name[1..62] Job[64..125] Level[127..153] Grade[155..]; separators.
   private _rowsGuildLike(isGuild: boolean): void {
     const listX = 10;
     let y = 100 - this._scrollOffset * ROW_H;
-    const entries: GuildEntry[] = isGuild ? this._guild : this._guild; // alliance reuses guild-shaped rows until ALLIANCEDATA lands
-    const source: { charId: number; name: string; rank: string; online: boolean; job?: string; level?: number }[] =
-      isGuild ? entries : this._alliance.map((a) => ({
-        charId: a.charId, name: a.name, rank: gradeName(a.grade), online: true, level: a.level,
-      }));
+    const entries: GuildEntry[] = this._guild;
 
+    type Row = { charId: number; name: string; rank: string; online: boolean; job?: string; level?: number };
+    type Section = { title: string; plate: (on: boolean) => Sprite | null; folded: boolean; members: Row[] };
+
+    // ── Alliance: one collapsible section per member guild (CTabGuildAlliance::Draw). ──
+    if (!isGuild) {
+      const byGuild = new Map<string, Row[]>();
+      for (const a of this._alliance) {
+        const key = a.guildName || `Guild ${a.guildId}`;
+        const list = byGuild.get(key) ?? [];
+        list.push({ charId: a.charId, name: a.name, rank: gradeName(a.grade), online: true, level: a.level });
+        byGuild.set(key, list);
+      }
+      const guilds = [...byGuild.entries()];
+      for (let gi = 0; gi < guilds.length; gi++) {
+        const [title, members] = guilds[gi];
+        const head = new Container();
+        head.position.set(listX, y);
+        head.eventMode = 'static';
+        head.cursor = 'pointer';
+        head.on('pointerdown', () => {
+          this._sectionFolded[gi] = !this._sectionFolded[gi];
+          this._rebuildRows();
+        });
+        if (this._unionNamePlate) {
+          const sp = new Sprite(this._unionNamePlate.texture);
+          sp.position.copyFrom(this._unionNamePlate.position);
+          head.addChild(sp);
+        } else {
+          const g = new Graphics();
+          g.rect(0, 0, 230, 25).fill({ color: 0xdfe3ee });
+          head.addChild(g);
+        }
+        const lbl = new Text({ text: `${title} (${members.length})`, style: _styleBlack });
+        lbl.position.set(26, 6);
+        head.addChild(lbl);
+        if (this._foldOpen && this._foldClose) {
+          const icon = new Sprite((this._sectionFolded[gi] ? this._foldClose : this._foldOpen).texture);
+          icon.position.set(210, 6);
+          head.addChild(icon);
+        }
+        this._rowsLayer.addChild(head);
+        y += 25;
+        if (this._sectionFolded[gi]) continue;
+
+        for (const m of members) {
+          const selected = m.charId === this._curCID;
+          const row = this._makeRow('Sheet3', selected ? 1 : 0, listX, y, 230, () => {
+            this._curCID = m.charId;
+            this._rebuildRows();
+          });
+          const nameStyle = selected ? _styleWhite : _styleBlack;
+          const nm = new Text({ text: m.name, style: nameStyle });
+          nm.position.set(2, 5);
+          row.addChild(nm);
+          const jobTxt = new Text({ text: (m.job ?? gradeName(m.rank)).slice(0, 8), style: nameStyle });
+          jobTxt.position.set(64, 5);
+          row.addChild(jobTxt);
+          this._drawLevel(row, 127, 4, m.level ?? 0, false);
+          const gr = new Text({ text: gradeName(m.rank), style: nameStyle });
+          gr.position.set(155, 5);
+          row.addChild(gr);
+          if (this._lineSprite) {
+            const ln = new Sprite(this._lineSprite.texture);
+            ln.position.set(0, ROW_H - 1);
+            row.addChild(ln);
+          }
+          y += ROW_H;
+        }
+      }
+      this._clipChildren(this._rowsLayer, 100, 100 + SB_CONFIG[this._activeTab].h);
+      return;
+    }
+
+    const source: Row[] = entries;
     const online = source.filter((m) => m.online);
     const offline = source.filter((m) => !m.online);
-    const sections: { title: string; members: typeof source; folded: boolean }[] = [
-      { title: 'Online', members: online, folded: this._sectionFolded[0] },
-      { title: 'Offline', members: offline, folded: this._sectionFolded[1] },
+    const sections: Section[] = [
+      { title: 'Online', plate: (on) => (on ? this._guildSectionOn : this._guildSectionOff), folded: this._sectionFolded[0], members: online },
+      { title: 'Offline', plate: (_on) => this._guildSectionOff, folded: this._sectionFolded[1], members: offline },
     ];
-    const sectionPlate = isGuild
-      ? (on: boolean) => (on ? this._guildSectionOn : this._guildSectionOff)
-      : (_on: boolean) => this._unionNamePlate;
 
     for (let si = 0; si < sections.length; si++) {
       const sec = sections[si];
-      const plate = sectionPlate(si === 0);
+      const plate = sec.plate(si === 0);
       const head = new Container();
       head.position.set(listX, y);
       head.eventMode = 'static';

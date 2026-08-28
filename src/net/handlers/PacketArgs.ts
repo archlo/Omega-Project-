@@ -186,7 +186,7 @@ export interface CashItemExpireArgs { itemId: number; }
 export interface GiveBuffArgs { itemId: number; }
 export interface OpenUrlArgs { url: string; }
 // TODO_AUDIT.md Hundred-and-twenty-eighth pass: hp/maxHp extracted from PARTYDATA blob (bytes 322–369 of the 378-byte struct).
-export interface PartyMember { charId: number; name: string; job: number; level: number; channel: number; hp: number; maxHp: number; }
+export interface PartyMember { charId: number; name: string; job: number; level: number; channel: number; fieldId: number; hp: number; maxHp: number; }
 // OG: GW_Friend (39-byte fixed record, decompile/a10760.c et al.) — `group`
 // is the trailing 17-byte `sFriendGroup` field, previously decoded and
 // discarded (data loss, not just an unported feature: CUIFriendGroup's only
@@ -194,7 +194,7 @@ export interface PartyMember { charId: number; name: string; job: number; level:
 export interface FriendEntry { charId: number; name: string; flag: number; channel: number; online: boolean; group: string; }
 export interface GuildMember { characterId: number; name: string; job: number; level: number; rank: number; online: boolean; }
 export interface GuildLoadArgs { guildId: number; name: string; members: GuildMember[]; }
-export interface AllianceMember { characterId: number; name: string; job: number; level: number; grade: number; guildId: number; }
+export interface AllianceMember { characterId: number; name: string; job: number; level: number; grade: number; guildId: number; guildName?: string; }
 export interface AllianceLoadArgs { allianceName: string; members: AllianceMember[]; }
 /** OG: CShopDlg::ITEM struct — all fields from SetShopDlg (0x6EAB00). */
 export interface ShopItemEntry {

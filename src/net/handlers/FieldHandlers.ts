@@ -2800,7 +2800,8 @@ export class FieldHandlers {
     const bossId = p.readInt();
     // TODO_AUDIT.md Hundred-and-twenty-eighth pass: PARTYDATA layout confirmed via GetPartyMemberData offsets.
     // fieldIds[6] at PARTYDATA+202, townPortals[6×5] at +226, hp[6] at +322, maxHp[6] at +346, 2 ints at +370.
-    for (let i = 0; i < PartyMax; i++) p.readInt(); // fieldIds
+    const fieldIds: number[] = [];
+    for (let i = 0; i < PartyMax; i++) fieldIds.push(p.readInt()); // fieldIds
     for (let i = 0; i < PartyMax; i++) {
       p.readInt(); p.readInt(); p.readInt(); p.readInt(); p.readInt(); // town portals (5 ints each)
     }
@@ -2812,7 +2813,7 @@ export class FieldHandlers {
     const members: PartyMember[] = [];
     for (let i = 0; i < PartyMax; i++) {
       if (charIds[i] === 0) continue;
-      members.push({ charId: charIds[i], name: names[i], job: jobs[i], level: levels[i], channel: channels[i], hp: hps[i], maxHp: maxHps[i] });
+      members.push({ charId: charIds[i], name: names[i], job: jobs[i], level: levels[i], channel: channels[i], fieldId: fieldIds[i], hp: hps[i], maxHp: maxHps[i] });
     }
     this.onPartyLoad?.({ members, bossId });
   }
@@ -3004,7 +3005,7 @@ export class FieldHandlers {
     // TODO_AUDIT.md Hundred-and-twenty-sixth pass: guildId now captured and
     // propagated to each member so Kick/ChangeMaster buttons can reference it.
     const guildId = p.readInt();
-    p.readString(); // guild name
+    const guildName = p.readString(); // guild name
     for (let i = 0; i < 5; i++) p.readString(); // grade names
     const n = p.readByte();
     const ids: number[] = [];
@@ -3016,7 +3017,7 @@ export class FieldHandlers {
       const level = p.readInt();
       const grade = p.readInt();
       p.readInt(); p.readInt(); p.readInt(); // online + 2 more
-      members.push({ characterId: ids[i], name, job, level, grade, guildId });
+      members.push({ characterId: ids[i], name, job, level, grade, guildId, guildName });
     }
     // Skip remaining GUILDDATA fields (points/emblem/notice/skills).
     p.readInt(); p.readShort(); p.readByte(); p.readShort(); p.readByte();

@@ -2733,6 +2733,18 @@ export class GameStage extends Stage {
     this._userList.onGuildCreate = (name) => { this.game.session.send(GameSender.GuildCreate(name)); };
     this._userList.onFriendAdd = (name) => { this.game.session.send(GameSender.FriendAdd(name)); };
     this._userList.onFriendDelete = (charId) => { this.game.session.send(GameSender.FriendDelete(charId)); };
+    // OG: CTabFriend::OnAccontMoreInfoView @0x8B7260 = UI_Open(40); the dialog
+    // shows account info. Server sends only a flag byte today, so surface it as
+    // a status line rather than an invented empty dialog.
+    this._userList.onAccountMoreInfo = () => {
+      this._statusMessenger?.showLoot('[Account Info] (no account data from server)');
+    };
+    // OG: CTabFriend::OnGroupAdd — regroup a friend (BtAddGroup 2011 / BtMod 2017
+    // friend path) reuses the Add wire keyed by name (SendSetFriendMsg).
+    this._userList.onFriendAddGroup = (group) => {
+      const sel = this._userList.friendNameOfSelected;
+      if (sel) this.game.session.send(GameSender.FriendSetGroup(sel, group));
+    };
     // OG: CTabFriend::OnWhisper (0x8D4CC0) â€” whisper to selected friend
     this._userList.onFriendWhisper = (name) => { this._chatBar?.setWhisperTarget(name); };
     // OG: CTabFriend::OnGroupWhisper (0x8B7250) â€” whisper to all online friends
@@ -4407,10 +4419,19 @@ this._dmgNumbers?.Update(dt);
       this._field?.ApplyFootHoldState(args.entries);
     };
     fh.onPartyLoad = ({ members, bossId }) => {
+      // OG CTabParty keeps m_aSameMap / m_aElseWhere / m_aOffLine sections;
+      // classify each member by channel/fieldId (offline = channel -2 or the
+      // UNDEFINED_FIELD_ID sentinel; sameMap = on the local player's field).
+      const currentField = this._field?.LoadedMapId ?? -1;
+      const classify = (m: { channel: number; fieldId: number }): { online: boolean; sameMap: boolean } => {
+        const offline = m.channel === -2 || m.fieldId === 999999999;
+        return { online: !offline, sameMap: !offline && m.fieldId === currentField };
+      };
       this._userList.setParty(members.map((m) => ({
         charId: m.charId, name: m.name, level: m.level,
         job: JobName(m.job),
         isLeader: m.charId === bossId,
+        ...classify(m),
       })));
       this._partyCharIds.clear();
       for (const m of members) this._partyCharIds.set(m.charId, m.charId === bossId);
@@ -4548,6 +4569,7 @@ this._dmgNumbers?.Update(dt);
       if (!info) { this._userList.setAlliance('', []); return; }
       this._userList.setAlliance(info.allianceName, info.members.map((m) => ({
         charId: m.characterId, name: m.name, level: m.level, job: m.job, grade: m.grade, guildId: m.guildId,
+        guildName: m.guildName ?? '',
       })));
     };
     this._userList.onAllianceWithdraw = () => { this.game.session.send(GameSender.AllianceWithdraw()); };

@@ -92,6 +92,8 @@ export class CCtrlTab {
   private _itemSelectedTex: (Texture | null)[] = [];
   private _itemNormalTex: (Texture | null)[] = [];
   private _tabSprites: Sprite[] = [];
+  /** Whether _relocateCanvasWidths has laid out WZ canvas tabs (once). */
+  private _canvasWidthsApplied = false;
 
   /** Replace the text-label items with WZ canvas pairs (selected, normal). */
   setCanvasItems(selected: (Sprite | null)[], normal: (Sprite | null)[]): void {
@@ -181,8 +183,9 @@ export class CCtrlTab {
 
     const hasCanvases = this._itemNormalTex.length > 0 || this._itemSelectedTex.length > 0;
     if (hasCanvases && this._items.length > 0 &&
-        (this._itemNormalTex.length !== this._items.length)) {
+        (this._itemNormalTex.length !== this._items.length || !this._canvasWidthsApplied)) {
       this._relocateCanvasWidths();
+      this._canvasWidthsApplied = true;
     }
 
     for (let i = 0; i < this._items.length; i++) {

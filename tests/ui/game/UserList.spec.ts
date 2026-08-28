@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Container, Text } from 'pixi.js';
+import { Container, Graphics, Sprite, Text } from 'pixi.js';
 import { UserList } from '../../../src/ui/game/UserList.js';
 
 // ponytail: avoids pulling in jsdom just to satisfy Text.width's canvas measurement in tests
@@ -66,6 +66,24 @@ describe('UserList authentic structure', () => {
     list.setGuild('My Guild', [{ charId: 42, name: 'Bob', rank: 'Jr.Master', online: true }]);
     selectRowByText(list, 'Bob');
     expect(kick.btn.enabled).toBe(true);
+  });
+
+  it('BtInfo (2015) and BtFind (2016) sit at explicit OG positions even without WZ', () => {
+    const list = new UserList();
+    // CTabFriend::CreateButton @0x8BC7C0: BtInfo at (208,285), BtFind at (10,350).
+    const info = buttons(list, 0).find((b) => b.id === 2015)!;
+    const find = buttons(list, 0).find((b) => b.id === 2016)!;
+    expect([info.btn.container.position.x, info.btn.container.position.y]).toEqual([208, 285]);
+    expect([find.btn.container.position.x, find.btn.container.position.y]).toEqual([10, 350]);
+  });
+
+  it('friend buttons 2017..2024 (except BtMate) start disabled with no selection', () => {
+    const list = new UserList();
+    list.isVisible = true;
+    for (const id of [2017, 2018, 2019, 2020, 2021, 2022, 2024]) {
+      const b = buttons(list, 0).find((x) => x.id === id)!;
+      expect(b.btn.enabled, `id ${id}`).toBe(false);
+    }
   });
 });
 
@@ -148,6 +166,31 @@ describe('UserList guild tab actions', () => {
     expect(texts).toContain('Master');   // grade column
     expect(texts).toContain('Member');
   });
+
+  it('groups alliance members by guild with per-guild section headers', () => {
+    const list = new UserList();
+    list.isVisible = true;
+    (list as unknown as { _tab: { setTab(t: number): void } })._tab.setTab(4);
+    list.setAlliance('Grand Union', [
+      { charId: 1, name: 'Alpha', level: 50, job: 110, grade: 1, guildId: 10, guildName: 'Red Guild' },
+      { charId: 2, name: 'Beta', level: 60, job: 120, grade: 3, guildId: 10, guildName: 'Red Guild' },
+      { charId: 3, name: 'Gamma', level: 40, job: 210, grade: 2, guildId: 20, guildName: 'Blue Guild' },
+    ]);
+    const texts = list.rows.flatMap((r) => r.children.filter((c) => c instanceof Text).map((c) => (c as Text).text));
+    // Per-guild header rows appear before their members (CTabGuildAlliance::Draw).
+    const redIdx = texts.findIndex((t) => t.startsWith('Red Guild'));
+    const blueIdx = texts.findIndex((t) => t.startsWith('Blue Guild'));
+    expect(redIdx).toBeGreaterThanOrEqual(0);
+    expect(blueIdx).toBeGreaterThan(redIdx);
+    const redMemberIdx = texts.findIndex((t) => t.includes('Alpha'));
+    const blueMemberIdx = texts.findIndex((t) => t.includes('Gamma'));
+    expect(redMemberIdx).toBeGreaterThan(redIdx);
+    expect(blueMemberIdx).toBeGreaterThan(blueIdx);
+    expect(texts).toContain('Beta');
+    // Grade names via gradeName (1=Master, 2=Jr.Master, 3=Member).
+    expect(texts).toContain('Master');
+    expect(texts).toContain('Jr.Master');
+  });
 });
 
 // TODO_AUDIT.md Eighty-second pass: CTabBlackList local-only ignore list.
@@ -199,6 +242,128 @@ describe('UserList party tab', () => {
     expect(bossRow).toBeDefined();
     expect(bossRow!.startsWith('*')).toBe(true);
     expect(texts.some((t) => t.includes('MemberTwo') && !t.startsWith('*'))).toBe(true);
+  });
+
+  it('uses Sheet2/1 for member rows and Sheet2/2 for the last row', () => {
+    const list = new UserList();
+    openPartyTab(list);
+    // CTabParty::Draw @0x8C4A30: rows use _244 (Sheet2/1); the section-last row
+    // uses _429 (Sheet2/2). Inject sentinel plates with distinguishable origins
+    // and assert which variant each row selected.
+    const sentinels = [0, 1, 2, 3].map((i) => {
+      const s = new Sprite();
+      s.position.set(i, 0);
+      return s;
+    });
+    (list as unknown as { _sheets: Record<string, (Sprite | null)[]> })._sheets['Sheet2'] = sentinels;
+    list.setParty([
+      { charId: 1, name: 'A', level: 10, job: 'Warrior', isLeader: false },
+      { charId: 2, name: 'B', level: 20, job: 'Rogue', isLeader: false },
+    ]);
+    const rows = list.rows;
+    expect(rows).toHaveLength(2);
+    const plateIdx = (row: Container) => {
+      const sp = row.children.find((c) => c instanceof Sprite);
+      return sp ? Math.round(sp.position.x) : -1;
+    };
+    expect(plateIdx(rows[0])).toBe(1); // Sheet2/1 normal
+    expect(plateIdx(rows[1])).toBe(2); // Sheet2/2 section-last
+  });
+
+  it('draws the leader crown sprite for the party boss', () => {
+    const list = new UserList();
+    openPartyTab(list);
+    const crown = new Sprite();
+    (list as unknown as { _partyCrown: Sprite | null })._partyCrown = crown;
+    list.setParty([
+      { charId: 1, name: 'Boss', level: 33, job: 'Magician', isLeader: true },
+      { charId: 2, name: 'Minion', level: 71, job: 'Hermit', isLeader: false },
+    ]);
+    const bossRow = list.rows[0];
+    const minionRow = list.rows[1];
+    expect(bossRow.children.some((c) => c instanceof Sprite && c.texture === crown.texture)).toBe(true);
+    expect(minionRow.children.some((c) => c instanceof Sprite && c.texture === crown.texture)).toBe(false);
+    // Crown sits at absolute x=11 (row-local (1,1)).
+    const bossCrown = bossRow.children.find((c) => c instanceof Sprite && c.texture === crown.texture) as Sprite;
+    expect([bossCrown.position.x, bossCrown.position.y]).toEqual([1, 1]);
+  });
+
+  it('renders sameMap / elseWhere / offline sections in OG order', () => {
+    const list = new UserList();
+    openPartyTab(list);
+    list.setParty([
+      { charId: 1, name: 'OfflineGuy', level: 10, job: 'Warrior', isLeader: false, online: false, sameMap: false },
+      { charId: 2, name: 'SameMapGuy', level: 20, job: 'Rogue', isLeader: false, online: true, sameMap: true },
+      { charId: 3, name: 'ElseWhereGuy', level: 30, job: 'Mage', isLeader: false, online: true, sameMap: false },
+    ]);
+    const texts = list.rows.flatMap((r) => r.children.filter((c) => c instanceof Text).map((c) => (c as Text).text));
+    // sameMap first, then elseWhere, then offline (CTabParty::Draw order).
+    expect(texts[0]).toContain('SameMapGuy');
+    expect(texts[1]).toContain('ElseWhereGuy');
+    expect(texts[2]).toContain('OfflineGuy');
+  });
+
+  it('caps only the last section row with Sheet2/2 when sections follow', () => {
+    const list = new UserList();
+    openPartyTab(list);
+    const sentinels = [0, 1, 2, 3].map((i) => {
+      const s = new Sprite();
+      s.position.set(i, 0);
+      return s;
+    });
+    (list as unknown as { _sheets: Record<string, (Sprite | null)[]> })._sheets['Sheet2'] = sentinels;
+    // sameMap + elseWhere present: sameMap's last row is NOT capped (_244), the
+    // elseWhere section's last row IS (_429). Offline empty.
+    list.setParty([
+      { charId: 1, name: 'A', level: 10, job: 'Warrior', isLeader: false, online: true, sameMap: true },
+      { charId: 2, name: 'B', level: 20, job: 'Rogue', isLeader: false, online: true, sameMap: false },
+    ]);
+    const rows = list.rows;
+    const plateIdx = (row: Container) => {
+      const sp = row.children.find((c) => c instanceof Sprite);
+      return sp ? Math.round(sp.position.x) : -1;
+    };
+    expect(plateIdx(rows[0])).toBe(1); // sameMap last row: _244 (elseWhere follows)
+    expect(plateIdx(rows[1])).toBe(2); // elseWhere last row: _429 cap
+  });
+
+  it('shows the "%d/%d" online count right-aligned ending x=220 y=68', () => {
+    const list = new UserList();
+    openPartyTab(list);
+    list.setParty([
+      { charId: 1, name: 'A', level: 10, job: 'Warrior', isLeader: false, online: true, sameMap: true },
+      { charId: 2, name: 'B', level: 20, job: 'Rogue', isLeader: false, online: true, sameMap: false },
+      { charId: 3, name: 'C', level: 30, job: 'Mage', isLeader: false, online: false, sameMap: false },
+    ]);
+    const count = (list as unknown as { _countText: Text })._countText;
+    expect(count.text).toBe('1/3');
+    expect(count.y).toBe(68);
+    expect(count.x).toBeLessThanOrEqual(220);
+  });
+
+  it('draws the partyOn header plate as the fixed party title row', () => {
+    const list = new UserList();
+    openPartyTab(list);
+    const plate = new Sprite();
+    (list as unknown as { _partyHeader: Sprite | null })._partyHeader = plate;
+    list.setParty([{ charId: 1, name: 'A', level: 10, job: 'Warrior', isLeader: false }]);
+    const header = (list as unknown as { _headerLayer: Container })._headerLayer;
+    expect(header.children.some((c) => c instanceof Sprite && c.texture === plate.texture)).toBe(true);
+  });
+
+  it('draws the SEL_FILL selection rect on the selected party row', () => {
+    const list = new UserList();
+    openPartyTab(list);
+    list.setParty([
+      { charId: 1, name: 'A', level: 10, job: 'Warrior', isLeader: false },
+      { charId: 2, name: 'B', level: 20, job: 'Rogue', isLeader: false },
+    ]);
+    selectRowByText(list, 'A');
+    const rows = list.rows;
+    const selectedFill = (row: Container) => row.children.filter((c) => c instanceof Graphics).length;
+    // The fallback plate is a Graphics; the selected row adds the SEL_FILL on top.
+    expect(selectedFill(rows[0])).toBe(2);
+    expect(selectedFill(rows[1])).toBe(1);
   });
 
   it('setPartyBoss moves the leader marker', () => {
@@ -255,5 +420,34 @@ describe('UserList friend tab', () => {
     header.emit('pointerdown');
     const texts = list.rows.flatMap((r) => r.children.filter((c) => c instanceof Text).map((c) => (c as Text).text));
     expect(texts.some((t) => t.includes('Alice'))).toBe(false);
+  });
+
+  it('BtInfo (2015) fires onAccountMoreInfo (OG UI_Open(40))', () => {
+    const list = new UserList();
+    list.isVisible = true;
+    let opened = 0;
+    list.onAccountMoreInfo = () => { opened++; };
+    click(list, 0, 'Info');
+    expect(opened).toBe(1);
+  });
+
+  it('BtMod (2017) regroups the selected friend through onFriendAddGroup', () => {
+    const list = new UserList();
+    list.isVisible = true;
+    list.setUsers([{ charId: 1, name: 'Alice', level: 30, job: 'Magician' }]);
+    list.getInviteName = () => 'Guildies';
+    let regrouped: string | null = null;
+    list.onFriendAddGroup = (group) => { regrouped = group; };
+    selectRowByText(list, 'Alice');
+    click(list, 0, 'Mod');
+    expect(regrouped).toBe('Guildies');
+  });
+
+  it('friendNameOfSelected exposes the selected friend name', () => {
+    const list = new UserList();
+    list.setUsers([{ charId: 1, name: 'Alice', level: 30, job: 'Magician' }]);
+    expect(list.friendNameOfSelected).toBe(null);
+    selectRowByText(list, 'Alice');
+    expect(list.friendNameOfSelected).toBe('Alice');
   });
 });
