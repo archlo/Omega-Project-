@@ -1,0 +1,4 @@
+// CUISkill::CloseSkillGuide @ 0x84a5b0
+// Decompiled from v95 IDB
+
+{"addr":"0x84a5b0","code":"void __thiscall CUISkill::CloseSkillGuide(CUISkill *this)\n{\n  CWndSkillGuide *p; // ecx\n  ZRef<CWndSkillGuide> *p_m_pWndSkillGuide; // esi\n\n  p = this->m_pWndSkillGuide.p; /*0x84a5b3*/\n  if ( p ) /*0x84a5bb*/\n  {\n    CWnd::Destroy(p); /*0x84a5bd*/\n    p_m_pWndSkillGuide = &this->m_pWndSkillGuide; /*0x84a5c2*/\n    if ( p_m_pWndSkillGuide->p ) /*0x84a5c8*/\n    {\n      ZRef<CWndSkillGuide>::_ReleaseRaw(p_m_pWndSkillGuide, nullptr); /*0x84a5d2*/\n      p_m_pWndSkillGuide->p = nullptr; /*0x84a5d7*/\n    }\n  }\n}","refs":[{"addr":"0x9b0e50","name":"?Destroy@CWnd@@QAEXXZ"},{"addr":"0x84a150","name":"?_ReleaseRaw@?$ZRef@VCWndSkillGuide@@@@AAEXPAVZRefCounted@@@Z"}]}

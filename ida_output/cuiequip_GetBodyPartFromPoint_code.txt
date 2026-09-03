@@ -1,0 +1,32 @@
+﻿int __thiscall CUIEquip::GetBodyPartFromPoint(CUIEquip *this, int rx, int ry)
+{
+  int m_bExpanded; // ecx
+  int v4; // edx
+  int v5; // esi
+  EqSlotInfo *i; // edi
+  int *p_nX; // eax
+  int v8; // eax
+  int v10; // [esp+10h] [ebp-4h]
+
+  m_bExpanded = this->m_ewi.m_bExpanded; /*0x7a3ce1*/
+  v4 = 0; /*0x7a3ce9*/
+  v10 = m_bExpanded; /*0x7a3cf4*/
+  v5 = (m_bExpanded != 0) + 58; /*0x7a3cfb*/
+  if ( v5 <= 0 ) /*0x7a3cff*/
+    return 0; /*0x7a3d54*/
+  for ( i = CUIEquip::CExpandableWndInfo::m_sEqSlotInfo; ; ++i ) /*0x7a3d09*/
+  {
+    if ( m_bExpanded || (p_nX = dword_C6EA20, v4 < 58) ) /*0x7a3d1c*/
+      p_nX = &i->nX; /*0x7a3d1e*/
+    if ( *p_nX < rx && rx < *p_nX + 32 ) /*0x7a3d2b*/
+    {
+      v8 = p_nX[1]; /*0x7a3d2d*/
+      if ( v8 < ry && ry < v8 + 32 ) /*0x7a3d39*/
+        break; /*0x7a3d39*/
+    }
+    if ( ++v4 >= v5 ) /*0x7a3d41*/
+      return 0; /*0x7a3d41*/
+    m_bExpanded = v10; /*0x7a3d43*/
+  }
+  return v4 + 1; /*0x7a3d49*/
+}

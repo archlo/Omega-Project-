@@ -1,0 +1,7 @@
+// _ZtlSecureGet_nLevel
+// Address: 0x63a520
+
+int __fastcall CMobTemplate::_ZtlSecureGet_nLevel(CMobTemplate *this)
+{
+  return _ZtlSecureFuse<long>(this->_ZtlSecureTear_nLevel, this->_ZtlSecureTear_nLevel_CS); /*0x63a530*/
+}

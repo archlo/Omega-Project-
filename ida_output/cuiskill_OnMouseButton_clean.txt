@@ -1,0 +1,416 @@
+// CUISkill::OnMouseButton
+// Decompiled from v95 IDB
+
+void __thiscall CUISkill::OnMouseButton(CUISkill *this, unsigned int msg, unsigned int wParam, int rx, int ry)
+{
+  CharacterData *p; // ebx
+  void (__thiscall ***v7)(_DWORD, int); // esi
+  volatile LONG *v8; // edi
+  CUISkill *v9; // ebp
+  int SkillIndexFromPoint; // esi
+  int nSkillID; // esi
+  int v12; // edx
+  void (__stdcall *v13)(VARIANTARG *); // esi
+  HRESULT v14; // eax
+  HRESULT (__stdcall *v15)(VARIANTARG *); // edi
+  IWzCanvas *m_pInterface; // eax
+  HRESULT v17; // eax
+  HRESULT v18; // eax
+  HRESULT v19; // eax
+  HRESULT v20; // eax
+  HRESULT v21; // eax
+  IWzGr2DLayer *v22; // edi
+  HRESULT v23; // eax
+  IWzGr2DLayer *v24; // eax
+  HRESULT (__stdcall *put_origin)(IWzVector2D *, tagVARIANT); // eax
+  HRESULT v26; // eax
+  HRESULT v27; // eax
+  HRESULT v28; // eax
+  IWzCanvas *v29; // ebx
+  HRESULT (__stdcall *get_cy)(IWzCanvas *, int *); // eax
+  HRESULT v31; // eax
+  HRESULT (__stdcall *get_cx)(IWzCanvas *, int *); // eax
+  int v33; // esi
+  HRESULT v34; // eax
+  HRESULT v35; // eax
+  IWzGr2DLayer *v36; // eax
+  IUIMsgHandler *v37; // esi
+  CDraggableSkill *v38; // eax
+  StringPool *Instance; // eax
+  unsigned int (__stdcall *Release)(IUnknown *); // ecx
+  unsigned int (__stdcall *v41)(IUnknown *); // eax
+  int v42; // esi
+  _bstr_t::Data_t *m_Data; // ebx
+  int v44; // esi
+  wchar_t *m_pStr; // [esp+78h] [ebp-C0h]
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v46; // [esp+90h] [ebp-A8h] BYREF
+  VARIANTARG v47; // [esp+94h] [ebp-A4h] BYREF
+  VARIANTARG v48; // [esp+A4h] [ebp-94h] BYREF
+  IUIMsgHandler *v49; // [esp+B4h] [ebp-84h]
+  const SKILLENTRY *pSkillEntry; // [esp+B8h] [ebp-80h] BYREF
+  int v51; // [esp+BCh] [ebp-7Ch] BYREF
+  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > pIcon; // [esp+C0h] [ebp-78h]
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > pLayer; // [esp+C4h] [ebp-74h] BYREF
+  int v54; // [esp+C8h] [ebp-70h]
+  Ztl_variant_t vCanvas; // [esp+CCh] [ebp-6Ch] BYREF
+  VARIANTARG v56; // [esp+DCh] [ebp-5Ch] BYREF
+  VARIANTARG pvarg; // [esp+ECh] [ebp-4Ch] BYREF
+  VARIANTARG pvargDest; // [esp+FCh] [ebp-3Ch] BYREF
+  VARIANTARG v59; // [esp+10Ch] [ebp-2Ch] BYREF
+  Ztl_variant_t result; // [esp+11Ch] [ebp-1Ch] BYREF
+  int v61; // [esp+134h] [ebp-4h]
+
+  v49 = (IUIMsgHandler *)this; /*0x84b73f*/
+  p = CWvsContext::GetCharacterData( /*0x84b753*/
+        (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+        (ZRef<CharacterData> *)&pLayer)->p;
+  if ( v54 ) /*0x84b75c*/
+  {
+    v7 = (void (__thiscall ***)(_DWORD, int))(v54 - 16); /*0x84b75e*/
+    v8 = (volatile LONG *)(v54 - 16 + 4); /*0x84b761*/
+    if ( !InterlockedDecrement(v8) ) /*0x84b765*/
+    {
+      InterlockedIncrement(v8); /*0x84b770*/
+      if ( v7 ) /*0x84b778*/
+        (**v7)(v7, 1); /*0x84b782*/
+    }
+    v54 = 0; /*0x84b784*/
+  }
+  if ( msg == 513 )
+  {
+    v9 = (CUISkill *)((char *)this - 4); /*0x84b7af*/
+    SkillIndexFromPoint = CUISkill::GetSkillIndexFromPoint(v9, rx, ry, 1); /*0x84b7ba*/
+    if ( SkillIndexFromPoint >= 0 )
+    {
+      pSkillEntry = CUISkill::GetSkillRootVisible(v9, 0)->aSkill.a[SkillIndexFromPoint].p; /*0x84b7d5*/
+      nSkillID = pSkillEntry->nSkillID; /*0x84b7d9*/
+      v12 = pSkillEntry->nSkillID / 1000 % 10; /*0x84b7f2*/
+      if ( v12 )
+      {
+        if ( v12 != 9
+          && !is_nonslot_skill(pSkillEntry->nSkillID)
+          && CSkillInfo::GetSkillLevel(TSingleton<CSkillInfo>::ms_pInstance, p, nSkillID, &pSkillEntry) > 0 )
+        {
+          v13 = VariantInit; /*0x84b830*/
+          VariantInit(&pvarg); /*0x84b83b*/
+          v14 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing); /*0x84b847*/
+          if ( v14 < 0 ) /*0x84b851*/
+            _com_issue_error(v14); /*0x84b854*/
+          v61 = 1; /*0x84b85e*/
+          vCanvas.vt = 3; /*0x84b865*/
+          vCanvas.decVal.Lo32 = 0; /*0x84b86a*/
+          if ( !g_gr.m_pInterface ) /*0x84b87e*/
+            _com_issue_error(-2147467261); /*0x84b885*/
+          IWzGr2D::CreateLayer(g_gr.m_pInterface, &pLayer, 0, 0, 0, 0, 0, &vCanvas, (const Ztl_variant_t *)&pvarg); /*0x84b89e*/
+          v15 = VariantClear; /*0x84b8a3*/
+          LOBYTE(v61) = 3; /*0x84b8ae*/
+          if ( vCanvas.vt == 8 ) /*0x84b8bb*/
+          {
+            vCanvas.vt = 0; /*0x84b8c3*/
+            if ( vCanvas.decVal.Lo32 ) /*0x84b8ca*/
+              ZAPI.CoTaskMemFree((void *)(vCanvas.decVal.Lo32 - 4)); /*0x84b8d0*/
+          }
+          else
+          {
+            VariantClear(&vCanvas); /*0x84b8dd*/
+          }
+          LOBYTE(v61) = 4; /*0x84b8df*/
+          if ( pvarg.vt == 8 ) /*0x84b8ec*/
+          {
+            pvarg.vt = 0; /*0x84b8f0*/
+            if ( pvarg.decVal.Lo32 ) /*0x84b8fb*/
+              ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x84b901*/
+          }
+          else
+          {
+            v15(&pvarg); /*0x84b90e*/
+          }
+          m_pInterface = pSkillEntry->apCanvas[1].m_pInterface; /*0x84b914*/
+          pIcon.m_pInterface = m_pInterface; /*0x84b91a*/
+          if ( m_pInterface ) /*0x84b920*/
+            m_pInterface->AddRef(m_pInterface); /*0x84b928*/
+          LOBYTE(v61) = 5; /*0x84b932*/
+          v13(&pvargDest); /*0x84b93a*/
+          v17 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing); /*0x84b949*/
+          if ( v17 < 0 ) /*0x84b953*/
+            _com_issue_error(v17); /*0x84b956*/
+          LOBYTE(v61) = 6; /*0x84b960*/
+          v13(&v56); /*0x84b968*/
+          v18 = ZComAPI::ZComVariantCopy(&v56, &vtMissing); /*0x84b974*/
+          if ( v18 < 0 ) /*0x84b97e*/
+            _com_issue_error(v18); /*0x84b981*/
+          LOBYTE(v61) = 7; /*0x84b990*/
+          v13(&v59); /*0x84b997*/
+          v19 = ZComAPI::ZComVariantCopy(&v59, &vtMissing); /*0x84b9a6*/
+          if ( v19 < 0 ) /*0x84b9b0*/
+            _com_issue_error(v19); /*0x84b9b3*/
+          LOBYTE(v61) = 8; /*0x84b9bd*/
+          v13(&v47); /*0x84b9c5*/
+          v20 = ZComAPI::ZComVariantCopy(&v47, &vtMissing); /*0x84b9d1*/
+          if ( v20 < 0 ) /*0x84b9db*/
+            _com_issue_error(v20); /*0x84b9de*/
+          LOBYTE(v61) = 9; /*0x84b9e8*/
+          v13(&v48); /*0x84b9f0*/
+          v21 = ZComAPI::ZComVariantCopy(&v48, &vtMissing); /*0x84b9fc*/
+          if ( v21 < 0 ) /*0x84ba06*/
+            _com_issue_error(v21); /*0x84ba09*/
+          v22 = pLayer.m_pInterface; /*0x84ba0e*/
+          LOBYTE(v61) = 10; /*0x84ba12*/
+          if ( !pLayer.m_pInterface ) /*0x84ba1c*/
+            _com_issue_error(-2147467261); /*0x84ba23*/
+          IWzGr2DLayer::InsertCanvas( /*0x84ba56*/
+            pLayer.m_pInterface,
+            &result,
+            pIcon.m_pInterface,
+            (const Ztl_variant_t *)&v48,
+            (const Ztl_variant_t *)&v47,
+            (const Ztl_variant_t *)&v59,
+            (const Ztl_variant_t *)&v56,
+            (const Ztl_variant_t *)&pvargDest);
+          if ( result.vt == 8 ) /*0x84ba64*/
+          {
+            result.vt = 0; /*0x84ba6f*/
+            if ( result.decVal.Lo32 ) /*0x84ba79*/
+              ZAPI.CoTaskMemFree((void *)(result.decVal.Lo32 - 4)); /*0x84ba7f*/
+          }
+          else
+          {
+            VariantClear(&result); /*0x84ba8f*/
+          }
+          LOBYTE(v61) = 9; /*0x84ba9b*/
+          if ( v48.vt == 8 ) /*0x84baa3*/
+          {
+            v48.vt = 0; /*0x84baab*/
+            if ( v48.decVal.Lo32 ) /*0x84bab2*/
+              ZAPI.CoTaskMemFree((void *)(v48.decVal.Lo32 - 4)); /*0x84bab8*/
+          }
+          else
+          {
+            VariantClear(&v48); /*0x84bac5*/
+          }
+          LOBYTE(v61) = 8; /*0x84bad1*/
+          if ( v47.vt == 8 ) /*0x84bad9*/
+          {
+            v47.vt = 0; /*0x84badd*/
+            if ( v47.decVal.Lo32 ) /*0x84bae8*/
+              ZAPI.CoTaskMemFree((void *)(v47.decVal.Lo32 - 4)); /*0x84baee*/
+          }
+          else
+          {
+            VariantClear(&v47); /*0x84bafb*/
+          }
+          LOBYTE(v61) = 7; /*0x84bb0a*/
+          if ( v59.vt == 8 ) /*0x84bb11*/
+          {
+            v59.vt = 0; /*0x84bb1c*/
+            if ( v59.decVal.Lo32 ) /*0x84bb26*/
+              ZAPI.CoTaskMemFree((void *)(v59.decVal.Lo32 - 4)); /*0x84bb2c*/
+          }
+          else
+          {
+            VariantClear(&v59); /*0x84bb3c*/
+          }
+          LOBYTE(v61) = 6; /*0x84bb47*/
+          if ( v56.vt == 8 ) /*0x84bb54*/
+          {
+            v56.vt = 0; /*0x84bb5c*/
+            if ( v56.decVal.Lo32 ) /*0x84bb63*/
+              ZAPI.CoTaskMemFree((void *)(v56.decVal.Lo32 - 4)); /*0x84bb69*/
+          }
+          else
+          {
+            VariantClear(&v56); /*0x84bb76*/
+          }
+          LOBYTE(v61) = 5; /*0x84bb7c*/
+          if ( pvargDest.vt == 8 ) /*0x84bb8c*/
+          {
+            pvargDest.vt = 0; /*0x84bb90*/
+            if ( pvargDest.decVal.Lo32 ) /*0x84bba1*/
+              ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4)); /*0x84bba7*/
+          }
+          else
+          {
+            VariantClear(&pvargDest); /*0x84bbb7*/
+          }
+          v23 = v22->put_color(v22, -2130706433u); /*0x84bbcb*/
+          if ( v23 < 0 ) /*0x84bbcf*/
+            _com_issue_errorex(v23, v22, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x84bbd8*/
+          v24 = CWnd::GetLayer(v9, &v46)->m_pInterface; /*0x84bbe9*/
+          LOBYTE(v61) = 11; /*0x84bbf2*/
+          v47.vt = 13; /*0x84bbf9*/
+          v47.decVal.Lo32 = (unsigned int)v24; /*0x84bbfe*/
+          if ( v24 ) /*0x84bc04*/
+            v24->AddRef(v24); /*0x84bc0c*/
+          put_origin = v22->put_origin; /*0x84bc30*/
+          LOBYTE(v61) = 12; /*0x84bc34*/
+          v26 = ((int (__stdcall *)(IWzGr2DLayer *, _DWORD, unsigned int, unsigned int, unsigned int))put_origin)( /*0x84bc3c*/
+                  v22,
+                  *(_DWORD *)&v47.vt,
+                  v47.decVal.Hi32,
+                  v47.decVal.Lo32,
+                  v47.decVal.Mid32);
+          if ( v26 < 0 ) /*0x84bc42*/
+            _com_issue_errorex(v26, v22, &_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4); /*0x84bc4b*/
+          LOBYTE(v61) = 11; /*0x84bc56*/
+          if ( v47.vt == 8 ) /*0x84bc5d*/
+          {
+            v47.vt = 0; /*0x84bc65*/
+            if ( v47.decVal.Lo32 ) /*0x84bc6c*/
+              ZAPI.CoTaskMemFree((void *)(v47.decVal.Lo32 - 4)); /*0x84bc72*/
+          }
+          else
+          {
+            VariantClear(&v47); /*0x84bc7f*/
+          }
+          LOBYTE(v61) = 5; /*0x84bc89*/
+          if ( v46.m_pInterface ) /*0x84bc93*/
+            v46.m_pInterface->Release(v46.m_pInterface); /*0x84bc9b*/
+          v13(&v48); /*0x84bca2*/
+          v27 = ZComAPI::ZComVariantCopy(&v48, &vtMissing); /*0x84bcae*/
+          if ( v27 < 0 ) /*0x84bcb8*/
+            _com_issue_error(v27); /*0x84bcbb*/
+          LOBYTE(v61) = 13; /*0x84bcc5*/
+          v13(&v47); /*0x84bccd*/
+          v28 = ZComAPI::ZComVariantCopy(&v47, &vtMissing); /*0x84bcd9*/
+          if ( v28 < 0 ) /*0x84bce3*/
+            _com_issue_error(v28); /*0x84bce6*/
+          v29 = pIcon.m_pInterface; /*0x84bceb*/
+          LOBYTE(v61) = 14; /*0x84bcef*/
+          if ( !pIcon.m_pInterface ) /*0x84bcf9*/
+            _com_issue_error(-2147467261); /*0x84bd00*/
+          get_cy = pIcon.m_pInterface->get_cy; /*0x84bd07*/
+          v51 = 0; /*0x84bd10*/
+          v31 = get_cy(pIcon.m_pInterface, &v51); /*0x84bd14*/
+          if ( v31 < 0 ) /*0x84bd18*/
+            _com_issue_errorex(v31, v29, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x84bd21*/
+          get_cx = v29->get_cx; /*0x84bd28*/
+          v33 = v51; /*0x84bd2b*/
+          v46.m_pInterface = nullptr; /*0x84bd35*/
+          v34 = get_cx(v29, (int *)&v46); /*0x84bd39*/
+          if ( v34 < 0 ) /*0x84bd3d*/
+            _com_issue_errorex(v34, v29, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x84bd46*/
+          v35 = ((int (__stdcall *)(IWzGr2DLayer *, unsigned int, int, _DWORD, unsigned int, unsigned int, unsigned int, _DWORD, unsigned int, unsigned int, unsigned int))v22->raw_RelMove)( /*0x84bdb0*/
+                  v22,
+                  rx - (unsigned int)v46.m_pInterface - 16,
+                  ry - v33 + 16,
+                  *(_DWORD *)&v47.vt,
+                  v47.decVal.Hi32,
+                  v47.decVal.Lo32,
+                  v47.decVal.Mid32,
+                  *(_DWORD *)&v48.vt,
+                  v48.decVal.Hi32,
+                  v48.decVal.Lo32,
+                  v48.decVal.Mid32);
+          if ( v35 < 0 ) /*0x84bdb4*/
+            _com_issue_errorex(v35, v22, &_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4); /*0x84bdbd*/
+          LOBYTE(v61) = 13; /*0x84bdc7*/
+          if ( v47.vt == 8 ) /*0x84bdd4*/
+          {
+            v47.vt = 0; /*0x84bddc*/
+            if ( v47.decVal.Lo32 ) /*0x84bde3*/
+              ZAPI.CoTaskMemFree((void *)(v47.decVal.Lo32 - 4)); /*0x84bde9*/
+          }
+          else
+          {
+            VariantClear(&v47); /*0x84bdf6*/
+          }
+          LOBYTE(v61) = 5; /*0x84bdfc*/
+          if ( v48.vt == 8 ) /*0x84be09*/
+          {
+            v48.vt = 0; /*0x84be0d*/
+            if ( v48.decVal.Lo32 ) /*0x84be18*/
+              ZAPI.CoTaskMemFree((void *)(v48.decVal.Lo32 - 4)); /*0x84be1e*/
+          }
+          else
+          {
+            VariantClear(&v48); /*0x84be2b*/
+          }
+          v36 = (IWzGr2DLayer *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0x2Cu); /*0x84be38*/
+          v46.m_pInterface = v36; /*0x84be3d*/
+          v37 = v49; /*0x84be41*/
+          LOBYTE(v61) = 15; /*0x84be45*/
+          if ( v36 )
+            v38 = CDraggableSkill::CDraggableSkill(
+                    (CDraggableSkill *)v36,
+                    v22,
+                    pSkillEntry->nSkillID,
+                    v49 != (IUIMsgHandler *)4 ? v49 : nullptr,
+                    0,
+                    -1,
+                    -1);
+          else
+            v38 = nullptr; /*0x84be71*/
+          LOBYTE(v61) = 5; /*0x84be85*/
+          CWndMan::BeginDragDrop(TSingleton<CWndMan>::ms_pInstance, v37 != (IUIMsgHandler *)4 ? v37 : nullptr, v38, 0);
+          Instance = StringPool::GetInstance(); /*0x84be9c*/
+          m_pStr = StringPool::GetStringW(Instance, (ZXString<unsigned short> *)&v46, 0x75Eu)->_m_pStr; /*0x84beaa*/
+          LOBYTE(v61) = 16; /*0x84beab*/
+          play_ui_sound(m_pStr); /*0x84beb3*/
+          LOBYTE(v61) = 5; /*0x84bebf*/
+          if ( v46.m_pInterface ) /*0x84bec9*/
+            ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&v46.m_pInterface[-3]); /*0x84becf*/
+          Release = v29->Release; /*0x84bed9*/
+          LOBYTE(v61) = 4; /*0x84bedd*/
+          Release(v29); /*0x84bee5*/
+          v41 = v22->Release; /*0x84bee9*/
+          v61 = -1; /*0x84beed*/
+          v41(v22); /*0x84bef8*/
+        }
+      }
+    }
+  }
+  else if ( msg == 515 ) /*0x84bf04*/
+  {
+    v42 = CUISkill::GetSkillIndexFromPoint((CUISkill *)((char *)this - 4), rx, ry, 0); /*0x84bf22*/
+    if ( TSingleton<CUserLocal>::ms_pInstance.m_Data ) /*0x84bf2b*/
+    {
+      m_Data = TSingleton<CUserLocal>::ms_pInstance.m_Data; /*0x84bf2d*/
+      if ( v42 >= 0 && !TSingleton<CUniqueModeless>::ms_pInstance ) /*0x84bf3a*/
+      {
+        v44 = CUISkill::GetSkillRootVisible((CUISkill *)((char *)this - 4), 0)->aSkill.a[v42].p->nSkillID; /*0x84bf4c*/
+        if ( !is_keydown_skill(v44) && !is_command_skill(v44) && is_active_skill(v44) ) /*0x84bf69*/
+          CUserLocal::DoActiveSkill((CUserLocal *)m_Data, v44, 0, nullptr); /*0x84bf7c*/
+      }
+    }
+  }
+}
+
+// References:
+//   ?GetCharacterData@CWvsContext@@QAE?AV?$ZRef@VCharacterData@@@@XZ @ 0x42b960
+//   ?ms_pInstance@?$TSingleton@VCWvsContext@@@@1PAVCWvsContext@@A @ 0xc64068
+//   __imp__InterlockedIncrement@4 @ 0xb14074
+//   __imp__InterlockedDecrement@4 @ 0xb14078
+//   ?GetSkillIndexFromPoint@CUISkill@@IAEJJJH@Z @ 0x84b390
+//   ?GetSkillRootVisible@CUISkill@@IAEPBUSKILLROOT@@H@Z @ 0x84a6f0
+//   __imp__VariantInit@4 @ 0xb14290
+//   ?ZComVariantCopy@ZComAPI@@YAJPAUtagVARIANT@@0@Z @ 0x401730
+//   ?vtMissing@@3V_variant_t@@A @ 0xc626e8
+//   ?_com_issue_error@@YGXJ@Z @ 0xa2fd00
+//   ?g_gr@@3V?$_com_ptr_t@V?$_com_IIID@UIWzGr2D@@$1?_GUID_e576ea33_d465_4f08_aab1_e78df73ee6d9@@3U__s_GUID@@B@@@@A @ 0xc6f430
+//   ?CreateLayer@IWzGr2D@@QAE?AV?$_com_ptr_t@V?$_com_IIID@UIWzGr2DLayer@@$1?_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf@@3U__s_GUID@@B@@@@JJKKJABVZtl_variant_t@@0@Z @ 0x42a3d0
+//   __imp__VariantClear@4 @ 0xb1428c
+//   ?ZAPI@@3U_ZAPIProcAddress@@A @ 0xc6d758
+//   ?InsertCanvas@IWzGr2DLayer@@QAE?AVZtl_variant_t@@PAUIWzCanvas@@ABV2@1111@Z @ 0x4294d0
+//   ?_com_issue_errorex@@YGXJPAUIUnknown@@ABU_GUID@@@Z @ 0xa2fd20
+//   __GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf @ 0xb46cb4
+//   ?GetLayer@CWnd@@QAE?AV?$_com_ptr_t@V?$_com_IIID@UIWzGr2DLayer@@$1?_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf@@3U__s_GUID@@B@@@@XZ @ 0x42a270
+//   __GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4 @ 0xb469e8
+//   __GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e @ 0xb46950
+//   ?Alloc@?$ZAllocEx@VZAllocAnonSelector@@@@QAEPAXI@Z @ 0x402040
+//   ?_s_alloc@?$ZAllocEx@VZAllocAnonSelector@@@@0V1@A @ 0xc6e67c
+//   ??0CDraggableSkill@@QAE@PAUIWzGr2DLayer@@JPAUIUIMsgHandler@@HJJ@Z @ 0x7d8f60
+//   ?BeginDragDrop@CWndMan@@QAEXPAUIUIMsgHandler@@PAUIDraggable@@H@Z @ 0x9b3380
+//   ?ms_pInstance@?$TSingleton@VCWndMan@@@@1PAVCWndMan@@A @ 0xc68ac4
+//   ?GetInstance@StringPool@@SAAAV1@XZ @ 0x7466a0
+//   ?GetStringW@StringPool@@QAE?AV?$ZXString@G@@I@Z @ 0x403b60
+//   ?play_ui_sound@@YAXPBG@Z @ 0x9666e0
+//   ?_Release@?$ZXString@G@@KAXPAU_ZXStringData@1@@Z @ 0x4034b0
+//   ?is_nonslot_skill@@YAHJ@Z @ 0x849b90
+//   ?GetSkillLevel@CSkillInfo@@QAEJABVCharacterData@@JPAPBUSKILLENTRY@@@Z @ 0x6f1d10
+//   ?ms_pInstance@?$TSingleton@VCSkillInfo@@@@1PAVCSkillInfo@@A @ 0xc63ea8
+//   ?ms_pInstance@?$TSingleton@VCUserLocal@@@@1PAVCUserLocal@@A @ 0xc68754
+//   ?DoActiveSkill@CUserLocal@@QAEHJIPAJ@Z @ 0x9445b0
+//   ?is_keydown_skill@@YAHJ@Z @ 0x509ea0
+//   ?is_command_skill@@YAHJ@Z @ 0x6ecc70
+//   ?is_active_skill@@YAHJ@Z @ 0x509e70
+//   ?ms_pInstance@?$TSingleton@VCUniqueModeless@@@@1PAVCUniqueModeless@@A @ 0xc64060

@@ -1,0 +1,226 @@
+﻿void __thiscall CUIStatusBar::SendGroupMessage(CUIStatusBar *this, int nChatTarget, const ZXString<char> *sText)
+{
+  CWvsContext *m_pStr; // esi
+  StringPool *v5; // eax
+  char *v6; // eax
+  unsigned __int16 v7; // bp
+  StringPool *v8; // eax
+  char *v9; // eax
+  char *v10; // eax
+  StringPool *Instance; // eax
+  char *v12; // eax
+  StringPool *v13; // eax
+  char *v14; // eax
+  StringPool *v15; // eax
+  char *v16; // eax
+  StringPool *v17; // eax
+  char *v18; // eax
+  StringPool *v19; // eax
+  ZXString<char> *String; // eax
+  CharacterData *p; // esi
+  char *sCharacterName; // ecx
+  unsigned int m_dwChatFilterFlag; // edi
+  StringPool *v24; // eax
+  ZXString<char> *v25; // eax
+  unsigned int update_time; // eax
+  int v27; // ebp
+  int i; // esi
+  unsigned int v29; // edi
+  unsigned __int8 *a; // eax
+  unsigned int v31; // edx
+  unsigned int v32; // eax
+  ZRef<GW_ItemSlotBase> v33[3]; // [esp-8h] [ebp-58h] BYREF
+  ZArray<unsigned long> adwGroupMemberID; // [esp+14h] [ebp-3Ch] BYREF
+  int nMemberCnt; // [esp+18h] [ebp-38h]
+  ZXString<char> sChatText; // [esp+1Ch] [ebp-34h] BYREF
+  ZXString<char> result; // [esp+20h] [ebp-30h] BYREF
+  ZXString<char> v38; // [esp+24h] [ebp-2Ch] BYREF
+  ZXString<char> v39; // [esp+28h] [ebp-28h] BYREF
+  ZXString<char> v40; // [esp+2Ch] [ebp-24h] BYREF
+  ZXString<char> v41; // [esp+30h] [ebp-20h] BYREF
+  COutPacket oPacket; // [esp+34h] [ebp-1Ch] BYREF
+  int v43; // [esp+4Ch] [ebp-4h]
+
+  m_pStr = (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr;
+  adwGroupMemberID.a = nullptr;
+  v43 = 0;
+  switch ( nChatTarget )
+  {
+    case 0:
+      CWvsContext::GetOnlineFriendID((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &adwGroupMemberID);
+      if ( adwGroupMemberID.a )
+      {
+        nMemberCnt = *(adwGroupMemberID.a - 1);
+        if ( nMemberCnt )
+          goto LABEL_12;
+      }
+      sText = (const ZXString<char> *)v33;
+      v33[0].p = nullptr;
+      LOBYTE(v43) = 7;
+      Instance = StringPool::GetInstance();
+      v12 = StringPool::GetString(Instance, &v38, 0xA2u)->_m_pStr;
+      LOBYTE(v43) = 9;
+      CUIStatusBar::ChatLogAdd(this, v12, 12, -1, 0, v33[0]);
+      v10 = v38._m_pStr;
+      break;
+    case 1:
+      v33[0].p = (GW_ItemSlotBase *)&adwGroupMemberID;
+      *(_DWORD *)&v33[0].gap0 = 0;
+      ZXString<char>::operator=((ZXString<char> *)v33, &this->m_sFriendGroupTarget);
+      CWvsContext::GetOnlineFriendIDByGroup(m_pStr, *(ZXString<char> *)&v33[0].gap0, (ZArray<unsigned long> *)v33[0].p);
+      if ( adwGroupMemberID.a )
+      {
+        nMemberCnt = *(adwGroupMemberID.a - 1);
+        if ( nMemberCnt )
+        {
+LABEL_12:
+          LOBYTE(nChatTarget) = 0;
+          v7 = 3;
+          goto LABEL_24;
+        }
+      }
+      sText = (const ZXString<char> *)v33;
+      v33[0].p = nullptr;
+      LOBYTE(v43) = 10;
+      v13 = StringPool::GetInstance();
+      v14 = StringPool::GetString(v13, &v39, 0xA2u)->_m_pStr;
+      LOBYTE(v43) = 12;
+      CUIStatusBar::ChatLogAdd(this, v14, 12, -1, 0, v33[0]);
+      v10 = v39._m_pStr;
+      break;
+    case 2:
+      CWvsContext::GetOnlinePartyMemberID(
+        (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+        &adwGroupMemberID);
+      if ( !adwGroupMemberID.a || (nMemberCnt = *(adwGroupMemberID.a - 1)) == 0 )
+      {
+        sText = (const ZXString<char> *)v33;
+        v33[0].p = nullptr;
+        LOBYTE(v43) = 1;
+        v5 = StringPool::GetInstance();
+        v6 = StringPool::GetString(v5, &sChatText, 0xA0u)->_m_pStr;
+        LOBYTE(v43) = 3;
+        CUIStatusBar::ChatLogAdd(this, v6, 12, -1, 0, v33[0]);
+        goto LABEL_47;
+      }
+      LOBYTE(nChatTarget) = 1;
+      v7 = 2;
+      goto LABEL_24;
+    case 3:
+      LOBYTE(nChatTarget) = 6;
+      v7 = 26;
+      CWvsContext::GetOnlineExpeditionMemberID(
+        (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+        &adwGroupMemberID);
+      if ( adwGroupMemberID.a )
+      {
+        nMemberCnt = *(adwGroupMemberID.a - 1);
+        if ( nMemberCnt )
+          goto LABEL_24;
+      }
+      sText = (const ZXString<char> *)v33;
+      v33[0].p = nullptr;
+      LOBYTE(v43) = 4;
+      v8 = StringPool::GetInstance();
+      v9 = StringPool::GetString(v8, &result, 0x18A4u)->_m_pStr;
+      LOBYTE(v43) = 6;
+      CUIStatusBar::ChatLogAdd(this, v9, 12, -1, 0, v33[0]);
+      v10 = result._m_pStr;
+      break;
+    case 4:
+      CWvsContext::GetOnlineGuildMemberID(
+        (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+        &adwGroupMemberID);
+      if ( adwGroupMemberID.a && (nMemberCnt = *(adwGroupMemberID.a - 1)) != 0 )
+      {
+        LOBYTE(nChatTarget) = 2;
+        v7 = 4;
+LABEL_24:
+        sChatText._m_pStr = nullptr;
+        v33[0].p = (GW_ItemSlotBase *)1837;
+        *(_DWORD *)&v33[0].gap0 = &v41;
+        LOBYTE(v43) = 19;
+        v19 = StringPool::GetInstance();
+        String = StringPool::GetString(v19, *(ZXString<char> **)&v33[0].gap0, (unsigned int)v33[0].p);
+        p = m_pStr->m_pCharacterData.p;
+        LOBYTE(v43) = 20;
+        if ( p )
+          sCharacterName = p->characterStat.sCharacterName;
+        else
+          sCharacterName = nullptr;
+        ZXString<char>::Format(&sChatText, String->_m_pStr, sCharacterName, sText->_m_pStr);
+        LOBYTE(v43) = 19;
+        if ( v41._m_pStr )
+          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v41._m_pStr - 1);
+        if ( TSingleton<CUIStatusBar>::ms_pInstance._m_pStr )
+        {
+          v41._m_pStr = (char *)v33;
+          CUIStatusBar::ChatLogAdd(
+            (CUIStatusBar *)TSingleton<CUIStatusBar>::ms_pInstance._m_pStr,
+            sChatText._m_pStr,
+            v7,
+            -1,
+            0,
+            (ZRef<GW_ItemSlotBase>)*(unsigned int *)&v33[0].gap0);
+        }
+        m_dwChatFilterFlag = this->m_dwChatFilterFlag;
+        if ( m_dwChatFilterFlag )
+        {
+          if ( ((1 << v7) & m_dwChatFilterFlag) == 0 )
+          {
+            v33[0].p = (GW_ItemSlotBase *)6445;
+            *(_DWORD *)&v33[0].gap0 = &v41;
+            v24 = StringPool::GetInstance();
+            v25 = StringPool::GetString(v24, *(ZXString<char> **)&v33[0].gap0, (unsigned int)v33[0].p);
+            LOBYTE(v43) = 21;
+            CHATLOG_ADD(v25, 0xCu);
+            LOBYTE(v43) = 19;
+            if ( v41._m_pStr )
+              ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v41._m_pStr - 1);
+          }
+        }
+        COutPacket::COutPacket(&oPacket, 140);
+        LOBYTE(v43) = 22;
+        update_time = get_update_time();
+        COutPacket::Encode4(&oPacket, update_time);
+        COutPacket::Encode1(&oPacket, nChatTarget);
+        v27 = nMemberCnt;
+        COutPacket::Encode1(&oPacket, nMemberCnt);
+        for ( i = 0; i < v27; ++i )
+        {
+          v29 = adwGroupMemberID.a[i];
+          a = oPacket.m_aSendBuff.a;
+          if ( oPacket.m_aSendBuff.a )
+            v31 = *((_DWORD *)oPacket.m_aSendBuff.a - 1);
+          else
+            v31 = 0;
+          if ( oPacket.m_uOffset + 4 > v31 )
+          {
+            if ( oPacket.m_aSendBuff.a )
+              v32 = *((_DWORD *)oPacket.m_aSendBuff.a - 1);
+            else
+              v32 = 0;
+            do
+              v32 *= 2;
+            while ( oPacket.m_uOffset + 4 > v32 );
+            ZArray<unsigned char>::_Realloc(&oPacket.m_aSendBuff, v32, 0, (const ZAllocHelper *)&sText);
+            a = oPacket.m_aSendBuff.a;
+          }
+          *(_DWORD *)&a[oPacket.m_uOffset] = v29;
+          oPacket.m_uOffset += 4;
+        }
+        v33[0].p = nullptr;
+        ZXString<char>::operator=((ZXString<char> *)&v33[0].p, sText);
+        COutPacket::EncodeStr(&oPacket, (ZXString<char>)v33[0].p);
+        CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket);
+        LOBYTE(v43) = 19;
+        ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff);
+LABEL_47:
+        v10 = sChatText._m_pStr;
+      }
+      else
+      {
+        sText = (const ZXString<char> *)v33;
+        v33[0].p = nullptr;
+        LOBYTE(v43) = 13;
+        v15 = St

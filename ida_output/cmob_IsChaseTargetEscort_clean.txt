@@ -1,0 +1,21 @@
+BOOL __thiscall CMob::IsChaseTargetEscort(CMob *this)
+{
+  _DWORD *v1; // ecx
+  int v3; // ecx
+  int v4; // eax
+  int v5; // esi
+
+  if ( !CMob::IsActive(this) || !v1[366] || *(_DWORD *)(v1[93] + 564) == 1 ) /*0x63b7cf*/
+    return 0; /*0x63b7d1*/
+  v3 = v1[66]; /*0x63b7d4*/
+  if ( v3 ) /*0x63b7dc*/
+    v4 = v3 - 12; /*0x63b7de*/
+  else
+    v4 = 0; /*0x63b7e3*/
+  v5 = *(_DWORD *)(v4 + 768); /*0x63b7e6*/
+  return v5 /*0x63b826*/
+      && (**(int (__thiscall ***)(int))v5)(v5) == 1
+      && (*(int (__thiscall **)(int, CRTTI *))(*(_DWORD *)v5 + 32))(v5, &CMob::ms_RTTI_CMob)
+      && v5 != 4
+      && *(_DWORD *)(*(_DWORD *)(v5 - 4 + 372) + 564) == 1;
+}

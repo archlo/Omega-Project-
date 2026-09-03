@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"addr\":\"0x991600\",\"code\":\"void __thiscall CVecCtrl::MakeContinuousMovePath(CVecCtrl *this, int tElapse)\\n{\\n  AbsPos *p_m_apOffset; // esi\\n  int m_nMoveAction; // ebx\\n  int v5; // esi\\n  const CLadderOrRope *v6; // ebp\\n  double v7; // [esp+10h] [ebp-30h]\\n  double v8; // [esp+18h] [ebp-28h]\\n  double v9; // [esp+20h] [ebp-20h]\\n  double v10; // [esp+28h] [ebp-18h]\\n  double v11; // [esp+30h] [ebp-10h]\\n  double v12; // [esp+38h] [ebp-8h]\\n\\n  p_m_apOffset = &this->m_apOffset; /*0x99160f*/\\n  v7 = _ZtlSecureFuse<double>(this->m_apOffset._ZtlSecureTear_y, this->m_apOffset._ZtlSecureTear_y_CS); /*0x99161f*/\\n  v8 = _ZtlSecureFuse<double>(p_m_apOffset->_ZtlSecureTear_x, p_m_apOffset->_ZtlSecureTear_x_CS); /*0x99162d*/\\n  m_nMoveAction = this->m_nMoveAction; /*0x991634*/\\n  v9 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vy, this->m_ap._ZtlSecureTear_vy_CS); /*0x991647*/\\n  v10 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vx, this->m_ap._ZtlSecureTear_vx_CS); /*0x991658*/\\n  v11 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_y, this->m_ap._ZtlSecureTear_y_CS); /*0x991669*/\\n  v12 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_x, this->m_ap._ZtlSecureTear_x_CS); /*0x991677*/\\n  v5 = 0; /*0x99168e*/\\n  v6 = _ZtlSecureFuse<CLadderOrRope *>(this->_ZtlSecureTear_m_pLadderOrRope, this->_ZtlSecureTear_m_pLadderOrRope_CS); /*0x991693*/\\n  if ( this->m_bWingsNow ) /*0x991695*/\\n  {\\n    v5 = 14; /*0x99169d*/\\n  }\\n  else if ( this->m_pfhFallStart ) /*0x9916a4*/\\n  {\\n    v5 = 12; /*0x9916ac*/\\n  }\\n  CMovePath::MakeMovePath( /*0x991709*/\\n    &this->m_path,\\n    v5,\\n    this->m_pfh,\\n    this->m_pfhFallStart,\\n    v6,\\n    (int)v12,\\n    (int)v11,\\n    (int)v10,\\n    (int)v9,\\n    m_nMoveAction,\\n    tElapse,\\n    (int)v8,\\n    (int)v7);\\n}\",\"refs\":[{\"addr\":\"0x52a210\",\"name\":\"??$_ZtlSecureFuse@N@@YANQBNI@Z\"},{\"addr\":\"0x4bb930\",\"name\":\"??$_ZtlSecureFuse@PAVCLadderOrRope@@@@YAPAVCLadderOrRope@@QBQAV0@I@Z\"},{\"addr\":\"0x667c90\",\"name\":\"?MakeMovePath@CMovePath@@QAEXJPBVCStaticFoothold@@0PBVCLadderOrRope@@JJJJJJJJ@Z\"}]}"
+    }
+  ],
+  "structuredContent": {
+    "addr": "0x991600",
+    "code": "void __thiscall CVecCtrl::MakeContinuousMovePath(CVecCtrl *this, int tElapse)\n{\n  AbsPos *p_m_apOffset; // esi\n  int m_nMoveAction; // ebx\n  int v5; // esi\n  const CLadderOrRope *v6; // ebp\n  double v7; // [esp+10h] [ebp-30h]\n  double v8; // [esp+18h] [ebp-28h]\n  double v9; // [esp+20h] [ebp-20h]\n  double v10; // [esp+28h] [ebp-18h]\n  double v11; // [esp+30h] [ebp-10h]\n  double v12; // [esp+38h] [ebp-8h]\n\n  p_m_apOffset = &this->m_apOffset; /*0x99160f*/\n  v7 = _ZtlSecureFuse<double>(this->m_apOffset._ZtlSecureTear_y, this->m_apOffset._ZtlSecureTear_y_CS); /*0x99161f*/\n  v8 = _ZtlSecureFuse<double>(p_m_apOffset->_ZtlSecureTear_x, p_m_apOffset->_ZtlSecureTear_x_CS); /*0x99162d*/\n  m_nMoveAction = this->m_nMoveAction; /*0x991634*/\n  v9 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vy, this->m_ap._ZtlSecureTear_vy_CS); /*0x991647*/\n  v10 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vx, this->m_ap._ZtlSecureTear_vx_CS); /*0x991658*/\n  v11 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_y, this->m_ap._ZtlSecureTear_y_CS); /*0x991669*/\n  v12 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_x, this->m_ap._ZtlSecureTear_x_CS); /*0x991677*/\n  v5 = 0; /*0x99168e*/\n  v6 = _ZtlSecureFuse<CLadderOrRope *>(this->_ZtlSecureTear_m_pLadderOrRope, this->_ZtlSecureTear_m_pLadderOrRope_CS); /*0x991693*/\n  if ( this->m_bWingsNow ) /*0x991695*/\n  {\n    v5 = 14; /*0x99169d*/\n  }\n  else if ( this->m_pfhFallStart ) /*0x9916a4*/\n  {\n    v5 = 12; /*0x9916ac*/\n  }\n  CMovePath::MakeMovePath( /*0x991709*/\n    &this->m_path,\n    v5,\n    this->m_pfh,\n    this->m_pfhFallStart,\n    v6,\n    (int)v12,\n    (int)v11,\n    (int)v10,\n    (int)v9,\n    m_nMoveAction,\n    tElapse,\n    (int)v8,\n    (int)v7);\n}",
+    "refs": [
+      {
+        "addr": "0x52a210",
+        "name": "??$_ZtlSecureFuse@N@@YANQBNI@Z"
+      },
+      {
+        "addr": "0x4bb930",
+        "name": "??$_ZtlSecureFuse@PAVCLadderOrRope@@@@YAPAVCLadderOrRope@@QBQAV0@I@Z"
+      },
+      {
+        "addr": "0x667c90",
+        "name": "?MakeMovePath@CMovePath@@QAEXJPBVCStaticFoothold@@0PBVCLadderOrRope@@JJJJJJJJ@Z"
+      }
+    ]
+  },
+  "isError": false
+}

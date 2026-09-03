@@ -1,0 +1,34 @@
+int __thiscall CMob::RawAction2MoveAction(CMob *this, int nAction)
+{
+  int result; // eax
+
+  switch ( nAction ) /*0x63aa80*/
+  {
+    case 0: /*0x63aa80*/
+      result = 1; /*0x63aa87*/
+      break; /*0x63aa8c*/
+    case 1: /*0x63aa80*/
+      result = 2; /*0x63aa8f*/
+      break; /*0x63aa94*/
+    case 2: /*0x63aa80*/
+      result = 3; /*0x63aa97*/
+      break; /*0x63aa9c*/
+    case 3: /*0x63aa80*/
+      result = 6; /*0x63aa9f*/
+      break; /*0x63aaa4*/
+    case 4: /*0x63aa80*/
+      result = 8; /*0x63aaaf*/
+      break; /*0x63aab4*/
+    case 39: /*0x63aa80*/
+      result = 16; /*0x63aaa7*/
+      break; /*0x63aaac*/
+    default:
+      result = 4 /*0x63aadc*/
+             * (_ZtlSecureFuse<long>(
+                  this->m_pTemplate->_ZtlSecureTear_nMoveAbility,
+                  this->m_pTemplate->_ZtlSecureTear_nMoveAbility_CS) == 4)
+             + 2;
+      break; /*0x63aadc*/
+  }
+  return result; /*0x63aa8c*/
+}

@@ -1,0 +1,216 @@
+﻿void __thiscall CPet::DoAction(
+        CPet *this,
+        int nType,
+        int nAction,
+        Ztl_bstr_t sChat,
+        int bSend,
+        int bChatBalloon,
+        const wchar_t *bIgnoreOnPlayingOneTimeAction)
+{
+  int v8; // ebx
+  _bstr_t::Data_t *m_Data; // ecx
+  bool v10; // zf
+  int update_time; // eax
+  unsigned int v12; // edi
+  IWzVector2D *m_pInterface; // eax
+  CVecCtrl *v14; // ecx
+  IWzVector2D *v15; // eax
+  CVecCtrl *v16; // ecx
+  _bstr_t::Data_t *v17; // eax
+  unsigned int dwTemplateID; // ebp
+  int *v19; // ebx
+  int v20; // eax
+  unsigned int sound_volume_by_pos; // eax
+  CPetTemplate *m_pTemplate; // eax
+  int nChatBalloon; // eax
+  IWzGr2DLayer *v24; // ecx
+  _bstr_t::Data_t *v25; // ecx
+  int v26; // eax
+  IWzVector2D *v27; // eax
+  IWzGr2DLayer *v28; // eax
+  char **p_m_str; // esi
+  const char *v30; // ecx
+  int v31; // esi
+  unsigned __int8 *Buffer; // eax
+  Ztl_bstr_t v33; // [esp-24h] [ebp-64h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v34; // [esp-20h] [ebp-60h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v35; // [esp-1Ch] [ebp-5Ch] BYREF
+  int v36; // [esp-18h] [ebp-58h]
+  int v37; // [esp-14h] [ebp-54h]
+  int v38; // [esp-10h] [ebp-50h]
+  unsigned __int8 *v39; // [esp-Ch] [ebp-4Ch]
+  unsigned int v40; // [esp-8h] [ebp-48h]
+  ZXString<char> v41[6]; // [esp-4h] [ebp-44h] BYREF
+  int tUpdateTime; // [esp+14h] [ebp-2Ch]
+  Ztl_bstr_t result; // [esp+18h] [ebp-28h] BYREF
+  _BYTE v44[8]; // [esp+1Ch] [ebp-24h] BYREF
+  COutPacket oPacket; // [esp+24h] [ebp-1Ch] BYREF
+  int v46; // [esp+3Ch] [ebp-4h]
+
+  v8 = nAction;
+  v46 = 0;
+  if ( nAction < 0 )
+  {
+    m_Data = sChat.m_Data;
+    v10 = sChat.m_Data == nullptr;
+    goto LABEL_57;
+  }
+  if ( !bIgnoreOnPlayingOneTimeAction && this->m_nOneTimeAction > -1 )
+  {
+    m_Data = sChat.m_Data;
+    v10 = sChat.m_Data == nullptr;
+    goto LABEL_57;
+  }
+  update_time = get_update_time();
+  v12 = update_time;
+  tUpdateTime = update_time;
+  if ( this->m_bFirstPetAction )
+  {
+    this->m_tLastPetAction = update_time;
+    this->m_bFirstPetAction = 0;
+  }
+  else
+  {
+    v41[0]._m_pStr = (char *)(update_time - this->m_tLastPetAction);
+    this->m_tLastPetAction = update_time;
+    if ( !CDurationChecker::Validate(&this->m_DCClient, (int)v41[0]._m_pStr) )
+    {
+      m_Data = sChat.m_Data;
+      v10 = sChat.m_Data == nullptr;
+      goto LABEL_57;
+    }
+  }
+  m_pInterface = this->m_pvc.m_pInterface;
+  if ( m_pInterface )
+    v14 = (CVecCtrl *)&m_pInterface[-3];
+  else
+    v14 = nullptr;
+  if ( CVecCtrl::IsOnLadder(v14)
+    || ((v15 = this->m_pvc.m_pInterface) == nullptr ? (v16 = nullptr) : (v16 = (CVecCtrl *)&v15[-3]),
+        CVecCtrl::IsOnRope(v16)) )
+  {
+    v8 = 8;
+    this->m_nRestAction = 8;
+  }
+  else if ( nAction >= 9 )
+  {
+    this->m_nOneTimeAction = nAction;
+    CPet::PrepareActionLayer(this);
+    if ( !nType )
+    {
+      v17 = CPetTemplate::GetActionName(this->m_pTemplate, &result, nAction - 9)->m_Data;
+      LOBYTE(v46) = 1;
+      if ( v17 )
+        bIgnoreOnPlayingOneTimeAction = v17->m_wstr;
+      else
+        bIgnoreOnPlayingOneTimeAction = nullptr;
+      dwTemplateID = this->m_pTemplate->dwTemplateID;
+      v19 = (int *)((int (__thiscall *)(IVecCtrlOwner *, _BYTE *))this->GetPos)(&this->IVecCtrlOwner, v44);
+      v20 = ((int (__thiscall *)(IVecCtrlOwner *, COutPacket *))this->GetPos)(&this->IVecCtrlOwner, &oPacket);
+      sound_volume_by_pos = get_sound_volume_by_pos(*v19, *(_DWORD *)(v20 + 4));
+      play_pet_sound(dwTemplateID, bIgnoreOnPlayingOneTimeAction, sound_volume_by_pos);
+      LOBYTE(v46) = 0;
+      if ( result.m_Data )
+        _bstr_t::Data_t::Release(result.m_Data);
+      v12 = tUpdateTime;
+      v8 = nAction;
+    }
+  }
+  else
+  {
+    this->m_nRestAction = nAction;
+  }
+  m_Data = sChat.m_Data;
+  if ( sChat.m_Data && sChat.m_Data->m_wstr && *((_DWORD *)sChat.m_Data->m_wstr - 1) >> 1 )
+  {
+    m_pTemplate = this->m_pTemplate;
+    if ( (_UNKNOWN *)m_pTemplate->dwTemplateID == &loc_4C4B5A && v8 == 20 )
+    {
+      if ( bChatBalloon )
+        nChatBalloon = m_pTemplate->nChatBalloon;
+      else
+        nChatBalloon = 0;
+      v41[0]._m_pStr = nullptr;
+      v40 = 90;
+      v39 = nullptr;
+      v38 = nChatBalloon;
+      v37 = 1002;
+      v36 = 5000;
+      v35.m_pInterface = (IWzVector2D *)sChat.m_Data;
+      _com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>::_com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>(
+        &v35,
+        &this->m_pvc);
+      v34.m_pInterface = v24;
+      _com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>(
+        &v34,
+        &this->m_pLayerAction);
+      v33.m_Data = v25;
+      Ztl_bstr_t::Ztl_bstr_t(&v33, &sChat);
+    }
+    else
+    {
+      if ( bChatBalloon )
+        v26 = m_pTemplate->nChatBalloon;
+      else
+        v26 = 0;
+      v41[0]._m_pStr = nullptr;
+      v40 = 0;
+      v39 = nullptr;
+      v38 = v26;
+      v27 = this->m_pvc.m_pInterface;
+      v37 = 1002;
+      v36 = 5000;
+      v35.m_pInterface = v27;
+      if ( v27 )
+        v27->AddRef(v27);
+      v28 = this->m_pLayerAction.m_pInterface;
+      v34.m_pInterface = v28;
+      if ( v28 )
+        v28->AddRef(v28);
+      v33.m_Data = sChat.m_Data;
+      if ( sChat.m_Data )
+        InterlockedIncrement((volatile LONG *)&sChat.m_Data->m_RefCount);
+    }
+    CChatBalloon::MakeBalloon(&this->m_chatBalloon, v33, v34, v35, v36, v37, v38, (int)v39, v40, (int)v41[0]._m_pStr);
+    m_Data = sChat.m_Data;
+  }
+  if ( bSend )
+  {
+    COutPacket::COutPacket(&oPacket, 200);
+    LOBYTE(v46) = 2;
+    COutPacket::EncodeBuffer(&oPacket, &this->m_liPetLockerSN, 8u);
+    COutPacket::Encode4(&oPacket, v12);
+    COutPacket::Encode1(&oPacket, nType);
+    COutPacket::Encode1(&oPacket, v8 < 9 ? 0 : v8);
+    if ( sChat.m_Data )
+    {
+      p_m_str = &sChat.m_Data->m_str;
+      if ( !sChat.m_Data->m_str )
+        *p_m_str = _com_util::ZtlConvertBSTRToString(sChat.m_Data->m_wstr);
+      v30 = *p_m_str;
+    }
+    else
+    {
+      v30 = nullptr;
+    }
+    v41[0]._m_pStr = nullptr;
+    if ( v30 )
+    {
+      v31 = strlen(v30);
+      v40 = v31;
+      v39 = (unsigned __int8 *)v30;
+      Buffer = (unsigned __int8 *)ZXString<char>::GetBuffer(v41, v31, 0);
+      memcpy(Buffer, v39, v40);
+      ZXString<char>::ReleaseBuffer(v41, v31);
+    }
+    COutPacket::EncodeStr(&oPacket, v41[0]);
+    CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket);
+    LOBYTE(v46) = 0;
+    ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff);
+    m_Data = sChat.m_Data;
+  }
+  v10 = m_Data == nullptr;
+LABEL_57:
+  if ( !v10 )
+    _bstr_t::Data_t::Release(m_Data);
+}

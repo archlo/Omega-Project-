@@ -1,0 +1,52 @@
+// cuistat::RestoreButtons
+
+void __thiscall CUIStat::RestoreButtons(CUIStat *this)
+{
+  CharacterData *p; // ebx
+  char *p_m_uTableSize; // esi
+  volatile LONG *p_m_uCount; // edi
+  int v5; // ecx
+  BOOL v6; // eax
+  CCtrlOriginButton **p_p; // esi
+  int v8; // ebx
+  BOOL v9; // edi
+  CCtrlOriginButton **v10; // esi
+  int v11; // ebx
+  ZRef<CharacterData> result; // [esp+10h] [ebp-8h] BYREF
+
+  p = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &result)->p; /*0x861ab9*/
+  if ( result.p ) /*0x861ac2*/
+  {
+    p_m_uTableSize = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x861ac4*/
+    p_m_uCount = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount; /*0x861ac7*/
+    if ( !InterlockedDecrement(p_m_uCount) ) /*0x861acb*/
+    {
+      InterlockedIncrement(p_m_uCount); /*0x861ad6*/
+      if ( p_m_uTableSize ) /*0x861ade*/
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1); /*0x861ae8*/
+    }
+    result.p = nullptr; /*0x861aea*/
+  }
+  v5 = _ZtlSecureFuse<short>(p->characterStat._ZtlSecureTear_nJob, p->characterStat._ZtlSecureTear_nJob_CS); /*0x861aff*/
+  v6 = (v5 == 1000 * (v5 / 1000) || v5 == 2001) /*0x861b3e*/
+    && _ZtlSecureFuse<unsigned char>(p->characterStat._ZtlSecureTear_nLevel, p->characterStat._ZtlSecureTear_nLevel_CS) <= 0xAu;
+  p_p = &this->m_pBtApUp[0].p; /*0x861b4e*/
+  v8 = 6; /*0x861b54*/
+  v9 = !v6; /*0x861b59*/
+  do /*0x861b74*/
+  {
+    (*p_p)->SetShow(&(*p_p)->IUIMsgHandler, v9); /*0x861b6c*/
+    p_p += 2; /*0x861b6e*/
+    --v8; /*0x861b71*/
+  }
+  while ( v8 ); /*0x861b74*/
+  v10 = &this->m_pBtAutoApUp[0].p; /*0x861b76*/
+  v11 = 3; /*0x861b7c*/
+  do /*0x861b95*/
+  {
+    (*v10)->SetShow(&(*v10)->IUIMsgHandler, v9); /*0x861b8d*/
+    v10 += 2; /*0x861b8f*/
+    --v11; /*0x861b92*/
+  }
+  while ( v11 ); /*0x861b95*/
+}

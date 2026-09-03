@@ -1,0 +1,24 @@
+// cuser::ADDITIONALLAYER::Reset
+
+void __thiscall CUser::ADDITIONALLAYER::Reset(CUser::ADDITIONALLAYER *this)
+{
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzGr2DLayer *v3; // eax
+
+  this->nData = -1; /*0x8df3c3*/
+  this->l.bFixed = 1; /*0x8df3ca*/
+  m_pInterface = this->l.pLayer.m_pInterface; /*0x8df3d1*/
+  if ( m_pInterface ) /*0x8df3d6*/
+  {
+    this->l.pLayer.m_pInterface = nullptr; /*0x8df3d8*/
+    m_pInterface->Release(m_pInterface); /*0x8df3e5*/
+  }
+  this->nDataForRepeat = -1; /*0x8df3e7*/
+  this->l2.bFixed = 1; /*0x8df3ed*/
+  v3 = this->l2.pLayer.m_pInterface; /*0x8df3f4*/
+  if ( v3 ) /*0x8df3f9*/
+  {
+    this->l2.pLayer.m_pInterface = nullptr; /*0x8df3fb*/
+    v3->Release(v3); /*0x8df408*/
+  }
+}

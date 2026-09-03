@@ -1,0 +1,35 @@
+﻿void __thiscall CUIWorldSelect::OnButtonClicked(CUIWorldSelect *this, unsigned int nId)
+{
+  CUIWorldSelect *v3; // ecx
+  int v4; // esi
+  CLogin *m_pLogin; // ecx
+
+  if ( CUIWorldSelect::IsRequestValid(this) ) /*0x6025e3*/
+  {
+    v4 = nId - 1000; /*0x6025f1*/
+    if ( (int)(nId - 1000) >= 0 && v4 < this->m_nWorld ) /*0x6025ff*/
+    {
+      this->m_nKeyFocus = v4; /*0x602602*/
+      CUIWorldSelect::EnableButtons(v3, nId - 1000); /*0x602608*/
+      CUIWorldSelect::SetKeyFocus(this, -1); /*0x602611*/
+      m_pLogin = this->m_pLogin; /*0x602616*/
+      this->m_nWorldIdx = v4; /*0x60261d*/
+      CLogin::SendCheckUserLimitPacket(m_pLogin, v4); /*0x602623*/
+      if ( TSingleton<CWndMan>::ms_pInstance ) /*0x602630*/
+      {
+        if ( TSingleton<CUIRecommendWorld>::ms_pInstance ) /*0x602639*/
+        {
+          CWndMan::SetFocus( /*0x602644*/
+            TSingleton<CWndMan>::ms_pInstance,
+            &TSingleton<CUIRecommendWorld>::ms_pInstance->IUIMsgHandler);
+        }
+        else if ( TSingleton<CUIChannelSelect>::ms_pInstance ) /*0x602650*/
+        {
+          CWndMan::SetFocus( /*0x60265b*/
+            TSingleton<CWndMan>::ms_pInstance,
+            &TSingleton<CUIChannelSelect>::ms_pInstance->IUIMsgHandler);
+        }
+      }
+    }
+  }
+}

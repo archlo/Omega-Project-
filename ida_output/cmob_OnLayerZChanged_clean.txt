@@ -1,0 +1,11 @@
+void __thiscall CMob::OnLayerZChanged(CMob *this, const CVecCtrl *pvc)
+{
+  IWzVector2D *v2; // eax
+
+  if ( pvc ) /*0x63b476*/
+    v2 = &pvc->IWzVector2D; /*0x63b478*/
+  else
+    v2 = nullptr; /*0x63b47d*/
+  if ( v2 == (IWzVector2D *)this->m_posAffectedGuidedBullet ) /*0x63b485*/
+    CMob::SetLayerZ((CMob *)((char *)this - 4)); /*0x63b48a*/
+}

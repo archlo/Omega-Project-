@@ -1,0 +1,14 @@
+﻿void __thiscall CMob::OnHPIndicator(CMob *this, CInPacket *iPacket)
+{
+  this->m_nHPpercentage = CInPacket::Decode1(iPacket);
+  if ( !_ZtlSecureFuse<int>(this->m_pTemplate->_ZtlSecureTear_bBoss, this->m_pTemplate->_ZtlSecureTear_bBoss_CS)
+    || _ZtlSecureFuse<int>(
+         this->m_pTemplate->_ZtlSecureTear_bHPGaugeHide,
+         this->m_pTemplate->_ZtlSecureTear_bHPGaugeHide_CS) )
+  {
+    if ( !this->m_nHPpercentage )
+      ZMap<long,long,long>::RemoveAll(&this->m_mDelayedHPIndicator);
+    iPacket = (CInPacket *)(ZAPI.timeGetTime() + 500);
+    *(_DWORD *)&ZMap<long,long,long>::Insert(&this->m_mDelayedHPIndicator, (const int *)&iPacket, nullptr)[12] = this->m_nHPpercentage;
+  }
+}

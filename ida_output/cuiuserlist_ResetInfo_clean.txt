@@ -1,0 +1,41 @@
+// cuiuserlist::ResetInfo
+
+void __thiscall CUIUserList::ResetInfo(CUIUserList *this)
+{
+  this->m_pTabExpedition->HideControls(this->m_pTabExpedition); /*0x8dbf6e*/
+  switch ( this->m_nCurTab ) /*0x8dbf7f*/
+  {
+    case 0: /*0x8dbf7f*/
+      CTabFriend::LoadData(this->m_pTabFriend); /*0x8dbf8c*/
+      break; /*0x8dbf91*/
+    case 1: /*0x8dbf7f*/
+      CTabParty::LoadData(this->m_pTabParty); /*0x8dbf9c*/
+      break; /*0x8dbfa1*/
+    case 2: /*0x8dbf7f*/
+      this->m_pTabExpedition->ActivateControls(this->m_pTabExpedition); /*0x8dc017*/
+      break; /*0x8dc017*/
+    case 3: /*0x8dbf7f*/
+      CTabGuild::LoadData(this->m_pTabGuild); /*0x8dbfa9*/
+      if ( TSingleton<CWndGuildGrade>::ms_pInstance && *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 3570) ) /*0x8dbfbc*/
+        CWnd::InvalidateRect(this->m_pWndGuildGrade, nullptr); /*0x8dbfcd*/
+      break; /*0x8dbfd2*/
+    case 4: /*0x8dbf7f*/
+      CTabGuildAlliance::LoadData(this->m_pTabGuildAlliance); /*0x8dbfda*/
+      if ( TSingleton<CWndAllianceGrade>::ms_pInstance /*0x8dbfef*/
+        && *(_DWORD *)(TSingleton<CWvsContext>::ms_pInstance._m_pStr + 14318) )
+      {
+        CWndAllianceGrade::LoadData(TSingleton<CWndAllianceGrade>::ms_pInstance); /*0x8dbff8*/
+      }
+      break; /*0x8dbffd*/
+    case 5: /*0x8dbf7f*/
+      CTabBlackList::LoadData(this->m_pTabBlackList); /*0x8dc005*/
+      break; /*0x8dc00a*/
+    default:
+      break;
+  }
+  CUIUserList::SetScrollBar(this, 0); /*0x8dc019*/
+  CUIUserList::SetButton(this); /*0x8dc024*/
+  CUIUserList::DestroyGuildButton(this, -1); /*0x8dc02d*/
+  CUIUserList::DestroyAllianceButton(this, -1); /*0x8dc036*/
+  CWnd::InvalidateRect(this, nullptr); /*0x8dc03f*/
+}

@@ -1,0 +1,260 @@
+﻿void __thiscall CUIStatusBar::ChatLogAdd(
+        CUIStatusBar *this,
+        const char *sChat,
+        int lType,
+        int nChannelID,
+        int bWhisperIcon,
+        ZRef<GW_ItemSlotBase> pItem)
+{
+  CUIStatusBar *v6; // edi
+  ZXString<unsigned short> *v7; // eax
+  int v8; // ebp
+  int v9; // esi
+  int v10; // esi
+  HRESULT v11; // eax
+  int v12; // eax
+  int v13; // eax
+  IWzFont *m_pInterface; // ecx
+  int v15; // esi
+  const ZXString<unsigned short> *v16; // eax
+  const ZXString<unsigned short> *v17; // eax
+  int v18; // esi
+  CUIStatusBar::CChatLog *v19; // edi
+  CUIStatusBar::CChatLog *v20; // esi
+  ZRef<CUIStatusBar::CChatLog> *v21; // edi
+  CUIStatusBar::CChatLog *p; // eax
+  CUIStatusBar::CChatLog *v23; // ecx
+  ZXString<unsigned short> *v24; // eax
+  __POSITION *Index; // eax
+  ZXString<unsigned short> v26; // [esp-20h] [ebp-78h] BYREF
+  int v27; // [esp-1Ch] [ebp-74h]
+  int v28; // [esp-18h] [ebp-70h]
+  int v29; // [esp-14h] [ebp-6Ch]
+  int v30; // [esp-10h] [ebp-68h]
+  _bstr_t v31; // [esp-Ch] [ebp-64h] BYREF
+  ZRef<GW_ItemSlotBase> v32[3]; // [esp-8h] [ebp-60h] BYREF
+  ZXString<unsigned short> sChatBuffer; // [esp+14h] [ebp-44h] BYREF
+  ZXString<unsigned short> sChatBufferTrim; // [esp+18h] [ebp-40h] BYREF
+  ZXString<unsigned short> sLine; // [esp+1Ch] [ebp-3Ch] BYREF
+  ZXString<unsigned short> result; // [esp+20h] [ebp-38h] BYREF
+  CUIStatusBar *v37; // [esp+24h] [ebp-34h]
+  _bstr_t *v38; // [esp+28h] [ebp-30h]
+  ZRef<GW_ItemSlotBase> *v39; // [esp+2Ch] [ebp-2Ch]
+  ZXString<unsigned short> *v40; // [esp+30h] [ebp-28h]
+  CUIStatusBar::CChatLog *v41; // [esp+38h] [ebp-20h]
+  VARIANTARG pvarg; // [esp+3Ch] [ebp-1Ch] BYREF
+  int v43; // [esp+54h] [ebp-4h]
+  int nLineCnt; // [esp+5Ch] [ebp+4h]
+
+  v6 = this; /*0x87aee7*/
+  v37 = this; /*0x87aee9*/
+  v43 = 2; /*0x87aeef*/
+  sLine._m_pStr = nullptr; /*0x87aef3*/
+  sChatBufferTrim._m_pStr = nullptr; /*0x87aef7*/
+  sChatBuffer._m_pStr = nullptr; /*0x87af0b*/
+  ZXString<unsigned short>::Assign<char>(&sChatBuffer, sChat, -1); /*0x87af0f*/
+  LOBYTE(v43) = 3; /*0x87af1a*/
+  if ( !*((_DWORD *)TSingleton<CMacroSysMan>::ms_pInstance._m_pStr + 3)
+    || (v32[0].p = nullptr,
+        ZXString<unsigned short>::operator=((ZXString<unsigned short> *)&v32[0].p, &sChatBuffer),
+        CMacroSysMan::CanItShow(
+          (CMacroSysMan *)TSingleton<CMacroSysMan>::ms_pInstance._m_pStr,
+          (ZXString<unsigned short>)v32[0].p)) )
+  {
+    ZXString<unsigned short>::operator=(&sChatBufferTrim, &sChatBuffer); /*0x87af97*/
+    v32[0].p = nullptr; /*0x87af9c*/
+    v7 = ZXString<unsigned short>::TrimRight(&sChatBufferTrim, nullptr); /*0x87afa2*/
+    ZXString<unsigned short>::TrimLeft(v7, (const wchar_t *)v32[0].p); /*0x87afa9*/
+    v8 = lType; /*0x87afae*/
+    v9 = 0; /*0x87afb2*/
+    while ( sChatBufferTrim._m_pStr && *sChatBufferTrim._m_pStr )
+    {
+      v10 = v9 + 1; /*0x87afcd*/
+      nLineCnt = v10; /*0x87afcf*/
+      VariantInit(&pvarg); /*0x87afd3*/
+      v11 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing); /*0x87afe3*/
+      if ( v11 < 0 ) /*0x87afed*/
+        _com_issue_error(v11); /*0x87b2cf*/
+      LOBYTE(v43) = 4; /*0x87aff3*/
+      if ( (v8 == 14 || v8 == 16 || v8 == 19 || v8 == 20) && v10 == 1 ) /*0x87b00f*/
+        v12 = -38; /*0x87b011*/
+      else
+        v12 = 0; /*0x87b016*/
+      v13 = v12 - v6->m_nScrWidth; /*0x87b018*/
+      v32[0].p = (GW_ItemSlotBase *)&pvarg; /*0x87b026*/
+      *(_DWORD *)&v32[0].gap0 = v13 + 547; /*0x87b02c*/
+      v31.m_Data = (_bstr_t::Data_t *)&pvarg; /*0x87b02d*/
+      v38 = &v31; /*0x87b02e*/
+      _bstr_t::_bstr_t(&v31, sChatBuffer._m_pStr); /*0x87b035*/
+      m_pInterface = v6->m_pFontChatLog[v8].m_pInterface; /*0x87b03a*/
+      LOBYTE(v43) = 5; /*0x87b041*/
+      if ( !m_pInterface ) /*0x87b048*/
+        _com_issue_error(-2147467261); /*0x87b2d9*/
+      LOBYTE(v43) = 4; /*0x87b04e*/
+      v15 = IWzFont::CalcLongestText( /*0x87b05e*/
+              m_pInterface,
+              (Ztl_bstr_t)v31.m_Data,
+              *(int *)&v32[0].gap0,
+              (const Ztl_variant_t *)v32[0].p);
+      LOBYTE(v43) = 3; /*0x87b060*/
+      if ( pvarg.vt == 8 ) /*0x87b065*/
+      {
+        pvarg.vt = 0; /*0x87b069*/
+        if ( pvarg.decVal.Lo32 ) /*0x87b074*/
+          ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x87b07a*/
+      }
+      else
+      {
+        VariantClear(&pvarg); /*0x87b087*/
+      }
+      v16 = ZXString<unsigned short>::Mid(&sChatBuffer, (ZXString<unsigned short> *)&lType, 0, v15); /*0x87b098*/
+      LOBYTE(v43) = 6; /*0x87b0a2*/
+      ZXString<unsigned short>::operator=(&sLine, v16); /*0x87b0a7*/
+      LOBYTE(v43) = 3; /*0x87b0b0*/
+      if ( lType ) /*0x87b0b7*/
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(lType - 12)); /*0x87b0bd*/
+      v17 = ZXString<unsigned short>::Mid(&sChatBuffer, &result, v15, -1); /*0x87b0d1*/
+      LOBYTE(v43) = 7; /*0x87b0db*/
+      ZXString<unsigned short>::operator=(&sChatBuffer, v17); /*0x87b0e0*/
+      LOBYTE(v43) = 3; /*0x87b0e9*/
+      if ( result._m_pStr ) /*0x87b0f0*/
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)result._m_pStr - 1); /*0x87b0f6*/
+      ZXString<unsigned short>::TrimLeft(&sChatBuffer, nullptr); /*0x87b103*/
+      if ( sChatBuffer._m_pStr && *sChatBuffer._m_pStr && (v8 < 7 || v8 > 12) ) /*0x87b11d*/
+        ZXString<unsigned short>::Format(&sChatBuffer, L"     %s", sChatBuffer._m_pStr); /*0x87b12a*/
+      switch ( v8 )
+      {
+        case 11:
+          v18 = -1325400065; /*0x87b182*/
+          break; /*0x87b187*/
+        case 13:
+          v18 = -1328879617; /*0x87b141*/
+          break; /*0x87b146*/
+        case 14:
+          v18 = -855654435; /*0x87b148*/
+          break; /*0x87b14d*/
+        case 15:
+          v18 = -570549; /*0x87b14f*/
+          break; /*0x87b154*/
+        case 16:
+        case 21:
+          v18 = -570440192; /*0x87b174*/
+          break; /*0x87b179*/
+        case 18:
+          v18 = 743250605; /*0x87b189*/
+          break; /*0x87b18e*/
+        case 19:
+          v18 = nChannelID != -1 ? -6697933 : -2130748327;
+          break; /*0x87b16b*/
+        case 20:
+          v18 = -2130748327; /*0x87b16d*/
+          break; /*0x87b172*/
+        case 22:
+        case 23:
+          v18 = -6697933; /*0x87b17b*/
+          break; /*0x87b180*/
+        default:
+          v18 = 0; /*0x87b190*/
+          break; /*0x87b190*/
+      }
+      v19 = (CUIStatusBar::CChatLog *)ZAllocEx<ZAllocAnonSelector>::Alloc( /*0x87b19e*/
+                                        &ZAllocEx<ZAllocAnonSelector>::_s_alloc,
+                                        0x34u);
+      v38 = (_bstr_t *)v19; /*0x87b1a0*/
+      if ( v19 ) /*0x87b1a6*/
+      {
+        v32[0].p = pItem.p; /*0x87b1b1*/
+        v39 = v32; /*0x87b1b8*/
+        if ( pItem.p ) /*0x87b1be*/
+          InterlockedIncrement(&pItem.p->_m_nRef); /*0x87b1c4*/
+        LOBYTE(v43) = 9; /*0x87b1d9*/
+        v31.m_Data = (_bstr_t::Data_t *)(nLineCnt <= 1); /*0x87b1e1*/
+        v30 = bWhisperIcon; /*0x87b1e2*/
+        v29 = nChannelID; /*0x87b1e3*/
+        v28 = v18; /*0x87b1e4*/
+        v27 = v8; /*0x87b1e5*/
+        v40 = &v26; /*0x87b1ed*/
+        v26._m_pStr = nullptr; /*0x87b1f2*/
+        ZXString<unsigned short>::operator=(&v26, &sLine); /*0x87b1f4*/
+        LOBYTE(v43) = 8; /*0x87b1fb*/
+        v20 = CUIStatusBar::CChatLog::CChatLog(v19, v26, v27, v28, v29, v30, (int)v31.m_Data, v32[0]); /*0x87b205*/
+      }
+      else
+      {
+        v20 = nullptr; /*0x87b209*/
+      }
+      v41 = v20; /*0x87b20b*/
+      if ( v20 ) /*0x87b211*/
+        InterlockedIncrement(&v20->_m_nRef); /*0x87b217*/
+      LOBYTE(v43) = 10; /*0x87b224*/
+      v21 = ZArray<ZRef<CUIStatusBar::CChatLog>>::InsertBefore(&CUIStatusBar::m_aChatLog, -1); /*0x87b22e*/
+      if ( v20 ) /*0x87b232*/
+        InterlockedIncrement(&v20->_m_nRef); /*0x87b238*/
+      p = v21->p; /*0x87b23e*/
+      if ( p ) /*0x87b243*/
+      {
+        if ( !InterlockedDecrement(&p->_m_nRef) ) /*0x87b249*/
+        {
+          InterlockedIncrement(&v21->p->_m_nRef); /*0x87b25a*/
+          v23 = v21->p; /*0x87b260*/
+          if ( v23 ) /*0x87b265*/
+            ((void (__thiscall *)(CUIStatusBar::CChatLog *, int))v23->dtr_ZRefCounted)(v23, 1); /*0x87b26d*/
+        }
+        v21->p = nullptr; /*0x87b26f*/
+      }
+      v21->p = v20; /*0x87b272*/
+      LOBYTE(v43) = 3; /*0x87b275*/
+      if ( v20 ) /*0x87b27c*/
+      {
+        if ( !InterlockedDecrement(&v20->_m_nRef) ) /*0x87b282*/
+        {
+          InterlockedIncrement(&v20->_m_nRef); /*0x87b28d*/
+          ((void (__thiscall *)(CUIStatusBar::CChatLog *, int))v20->dtr_ZRefCounted)(v20, 1); /*0x87b29b*/
+        }
+        v41 = nullptr; /*0x87b29d*/
+      }
+      ZXString<unsigned short>::operator=(&sChatBufferTrim, &sChatBuffer); /*0x87b2aa*/
+      v32[0].p = nullptr; /*0x87b2af*/
+      v24 = ZXString<unsigned short>::TrimRight(&sChatBufferTrim, nullptr); /*0x87b2b5*/
+      ZXString<unsigned short>::TrimLeft(v24, (const wchar_t *)v32[0].p); /*0x87b2bc*/
+      v9 = nLineCnt; /*0x87b2c1*/
+      v6 = v37; /*0x87b2c5*/
+    }
+    while ( CUIStatusBar::m_aChatLog.a && CUIStatusBar::m_aChatLog.a[-1].p > (CUIStatusBar::CChatLog *)0x40 ) /*0x87b2ed*/
+    {
+      Index = ZArray<ZRef<CUIStatusBar::CChatLog>>::FindIndex(&CUIStatusBar::m_aChatLog, 0); /*0x87b2f5*/
+      ZArray<ZRef<CUIStatusBar::CChatLog>>::RemoveAt(&CUIStatusBar::m_aChatLog, Index); /*0x87b300*/
+    }
+    CUIStatusBar::_RefreshChatLog(v6); /*0x87b309*/
+    LOBYTE(v43) = 2; /*0x87b312*/
+    if ( sChatBuffer._m_pStr ) /*0x87b319*/
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)sChatBuffer._m_pStr - 1); /*0x87b31f*/
+    LOBYTE(v43) = 1; /*0x87b32b*/
+    if ( sChatBufferTrim._m_pStr ) /*0x87b332*/
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)sChatBufferTrim._m_pStr - 1); /*0x87b338*/
+    LOBYTE(v43) = 0; /*0x87b344*/
+    if ( sLine._m_pStr ) /*0x87b34a*/
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)sLine._m_pStr - 1); /*0x87b350*/
+    v43 = -1; /*0x87b35c*/
+    if ( pItem.p ) /*0x87b366*/
+    {
+      if ( !InterlockedDecrement(&pItem.p->_m_nRef) ) /*0x87b36c*/
+      {
+        InterlockedIncrement(&pItem.p->_m_nRef); /*0x87b37e*/
+        if ( pItem.p ) /*0x87b38a*/
+          ((void (__thiscall *)(GW_ItemSlotBase *, int))pItem.p->dtr_ZRefCounted)(pItem.p, 1); /*0x87b392*/
+      }
+    }
+  }
+  else
+  {
+    LOBYTE(v43) = 2; /*0x87af4a*/
+    if ( sChatBuffer._m_pStr ) /*0x87af51*/
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)sChatBuffer._m_pStr - 1); /*0x87af57*/
+    LOBYTE(v43) = 1; /*0x87af63*/
+    if ( sChatBufferTrim._m_pStr ) /*0x87af6a*/
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)sChatBufferTrim._m_pStr - 1); /*0x87af70*/
+    v43 = -1; /*0x87af7c*/
+    ZRef<GW_ItemSlotBase>::~ZRef<GW_ItemSlotBase>(&pItem); /*0x87af84*/
+  }
+}

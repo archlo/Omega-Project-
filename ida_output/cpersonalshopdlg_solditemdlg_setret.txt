@@ -1,0 +1,15 @@
+// 0x698200
+void __thiscall CPersonalShopDlg::CSoldItemDlg::SetRet(CPersonalShopDlg::CSoldItemDlg *this, int nRet)
+{
+  CPersonalShopDlg *m_pDlg; // esi
+  ZRef<CPersonalShopDlg::CSoldItemDlg> *p_m_pSoldItem; // esi
+
+  m_pDlg = this->m_pDlg; /*0x698201*/
+  CWnd::Destroy(m_pDlg->m_pSoldItem.p); /*0x69820d*/
+  p_m_pSoldItem = &m_pDlg->m_pSoldItem; /*0x698212*/
+  if ( p_m_pSoldItem->p ) /*0x698218*/
+  {
+    ZRef<CPersonalShopDlg::CSoldItemDlg>::_ReleaseRaw(p_m_pSoldItem, nullptr); /*0x698222*/
+    p_m_pSoldItem->p = nullptr; /*0x698227*/
+  }
+}

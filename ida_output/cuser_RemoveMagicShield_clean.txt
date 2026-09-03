@@ -1,0 +1,13 @@
+// cuser::RemoveMagicShield
+
+void __thiscall CUser::RemoveMagicShield(CUser *this)
+{
+  IWzGr2DLayer *m_pInterface; // eax
+
+  m_pInterface = this->m_pLayerMagicShield.m_pInterface; /*0x8e1190*/
+  if ( m_pInterface ) /*0x8e1198*/
+  {
+    this->m_pLayerMagicShield.m_pInterface = nullptr; /*0x8e119a*/
+    m_pInterface->Release(m_pInterface); /*0x8e11aa*/
+  }
+}

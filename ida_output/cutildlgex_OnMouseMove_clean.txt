@@ -1,0 +1,11 @@
+// CUtilDlgEx::OnMouseMove
+// Address: 0x983060
+
+int __thiscall CUtilDlgEx::OnMouseMove(CUtilDlgEx *this, int rx, int ry)
+{
+  CUtilDlgEx::CheckMousePoint((CUtilDlgEx *)((char *)this - 4), rx, ry); /*0x98306d*/
+  return 0; /*0x983074*/
+}
+
+// References:
+//   ?CheckMousePoint@CUtilDlgEx@@IAEXJJ@Z @ 0x97e5d0

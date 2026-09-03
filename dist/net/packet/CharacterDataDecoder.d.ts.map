@@ -1,0 +1,1 @@
+{"version":3,"file":"CharacterDataDecoder.d.ts","sourceRoot":"","sources":["../../../src/net/packet/CharacterDataDecoder.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,QAAQ,EAAE,MAAM,eAAe,CAAC;AAGzC,OAAO,EACL,aAAa,EAGd,MAAM,+BAA+B,CAAC;AA8EvC;;;;;;;;;;;GAWG;AACH,qBAAa,oBAAoB;IAC/B,MAAM,CAAC,MAAM,CAAC,CAAC,EAAE,QAAQ,GAAG,aAAa;CAiG1C"}

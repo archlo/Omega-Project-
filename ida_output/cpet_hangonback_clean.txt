@@ -1,0 +1,192 @@
+﻿void __thiscall CPet::HangOnBack(CPet *this, int bHangOnBack, int bForce)
+{
+  int v4; // eax
+  int m_tHangOnBack; // eax
+  int v6; // eax
+  IWzGr2DLayer *v7; // eax
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzVector2D *v9; // eax
+  IWzGr2DLayer *v10; // edi
+  HRESULT v11; // eax
+  IWzGr2DLayer *v12; // eax
+  IWzGr2DLayer *v13; // edi
+  HRESULT v14; // eax
+  IWzGr2DLayer *v15; // edi
+  HRESULT v16; // eax
+  IWzGr2DLayer *v17; // edi
+  HRESULT v18; // eax
+  IWzVector2D *v19; // eax
+  IWzGr2DLayer *v20; // edi
+  HRESULT v21; // eax
+  IWzGr2DLayer *v22; // edi
+  HRESULT v23; // eax
+  IWzGr2DLayer *v24; // edi
+  HRESULT v25; // eax
+  CUser *m_pOwner; // ecx
+  VARIANTARG pvarg; // [esp+38h] [ebp-2Ch] BYREF
+  VARIANTARG v28; // [esp+48h] [ebp-1Ch] BYREF
+  int v29; // [esp+60h] [ebp-4h]
+
+  v4 = bHangOnBack;
+  if ( bForce || this->m_bHangOnBack != bHangOnBack || this->m_nPetIndex )
+  {
+    this->m_bHangOnBack = bHangOnBack;
+    if ( v4 )
+    {
+      if ( this->m_nOneTimeAction > -1 )
+      {
+        this->m_nOneTimeAction = -1;
+        CPet::PrepareActionLayer(this);
+      }
+      if ( !this->m_pOwner->IsPreview(this->m_pOwner) )
+        bForce = 0;
+      if ( !this->m_bPreviewState )
+      {
+        m_pInterface = this->m_chatBalloon.m_pLayerChat.m_pInterface;
+        if ( m_pInterface )
+        {
+          this->m_chatBalloon.m_pLayerChat.m_pInterface = nullptr;
+          m_pInterface->Release(m_pInterface);
+        }
+      }
+      v9 = CAvatar::GetBodyOrigin(
+             &this->m_pOwner->CAvatar,
+             (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&bHangOnBack)->m_pInterface;
+      v29 = 0;
+      pvarg.vt = 13;
+      pvarg.decVal.Lo32 = (unsigned int)v9;
+      if ( v9 )
+        v9->AddRef(v9);
+      v10 = this->m_pLayerAction.m_pInterface;
+      LOBYTE(v29) = 1;
+      if ( !v10 )
+        _com_issue_error(-2147467261);
+      v11 = ((int (__stdcall *)(IWzGr2DLayer *, _DWORD, unsigned int, unsigned int, unsigned int))v10->put_origin)(
+              v10,
+              *(_DWORD *)&pvarg.vt,
+              pvarg.decVal.Hi32,
+              pvarg.decVal.Lo32,
+              pvarg.decVal.Mid32);
+      if ( v11 < 0 )
+        _com_issue_errorex(v11, v10, &_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4);
+      LOBYTE(v29) = 0;
+      VariantClear(&pvarg);
+      v29 = -1;
+      if ( bHangOnBack )
+        (*(void (__stdcall **)(int))(*(_DWORD *)bHangOnBack + 8))(bHangOnBack);
+      v12 = CAvatar::GetLayerUnderFace(
+              &this->m_pOwner->CAvatar,
+              (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&bHangOnBack)->m_pInterface;
+      v29 = 2;
+      pvarg.vt = 13;
+      pvarg.decVal.Lo32 = (unsigned int)v12;
+      if ( v12 )
+        v12->AddRef(v12);
+      v13 = this->m_pLayerAction.m_pInterface;
+      LOBYTE(v29) = 3;
+      if ( !v13 )
+        _com_issue_error(-2147467261);
+      v14 = ((int (__stdcall *)(IWzGr2DLayer *, _DWORD, unsigned int, unsigned int, unsigned int))v13->put_overlay)(
+              v13,
+              *(_DWORD *)&pvarg.vt,
+              pvarg.decVal.Hi32,
+              pvarg.decVal.Lo32,
+              pvarg.decVal.Mid32);
+      if ( v14 < 0 )
+        _com_issue_errorex(v14, v13, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf);
+      LOBYTE(v29) = 2;
+      if ( pvarg.vt == 8 )
+      {
+        pvarg.vt = 0;
+        if ( pvarg.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4));
+      }
+      else
+      {
+        VariantClear(&pvarg);
+      }
+      v29 = -1;
+      if ( bHangOnBack )
+        (*(void (__stdcall **)(int))(*(_DWORD *)bHangOnBack + 8))(bHangOnBack);
+      v15 = this->m_pLayerAction.m_pInterface;
+      if ( !v15 )
+        _com_issue_error(-2147467261);
+      v16 = v15->put_z(v15, 3);
+      if ( v16 < 0 )
+        _com_issue_errorex(v16, v15, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf);
+      v17 = this->m_pLayerAction.m_pInterface;
+      if ( !v17 )
+        _com_issue_error(-2147467261);
+      v18 = v17->put_color(v17, 0);
+      if ( v18 < 0 )
+        _com_issue_errorex(v18, v17, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf);
+      this->m_tHangOnBack = 0;
+    }
+    else
+    {
+      v19 = this->m_pvc.m_pInterface;
+      v28.vt = 13;
+      v28.decVal.Lo32 = (unsigned int)v19;
+      if ( v19 )
+        v19->AddRef(v19);
+      v20 = this->m_pLayerAction.m_pInterface;
+      v29 = 4;
+      if ( !v20 )
+        _com_issue_error(-2147467261);
+      v21 = ((int (__stdcall *)(IWzGr2DLayer *, _DWORD, unsigned int, unsigned int, unsigned int))v20->put_origin)(
+              v20,
+              *(_DWORD *)&v28.vt,
+              v28.decVal.Hi32,
+              v28.decVal.Lo32,
+              v28.decVal.Mid32);
+      if ( v21 < 0 )
+        _com_issue_errorex(v21, v20, &_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4);
+      v29 = -1;
+      VariantClear(&v28);
+      v22 = this->m_pLayerAction.m_pInterface;
+      if ( !v22 )
+        _com_issue_error(-2147467261);
+      v23 = ((int (__stdcall *)(IWzGr2DLayer *, _DWORD, unsigned int, unsigned int, unsigned int))v22->put_overlay)(
+              v22,
+              *(_DWORD *)&vtEmpty.vt,
+              vtEmpty.decVal.Hi32,
+              vtEmpty.decVal.Lo32,
+              vtEmpty.decVal.Mid32);
+      if ( v23 < 0 )
+        _com_issue_errorex(v23, v22, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf);
+      CPet::SetLayerZ(this);
+      v24 = this->m_pLayerAction.m_pInterface;
+      if ( !v24 )
+        _com_issue_error(-2147467261);
+      v25 = v24->put_color(v24, -1u);
+      if ( v25 < 0 )
+        _com_issue_errorex(v25, v24, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf);
+      if ( !this->m_pOwner->IsPreview(this->m_pOwner) )
+        bForce = 1;
+    }
+    m_pOwner = this->m_pOwner;
+    if ( m_pOwner->m_bDelayedLoad )
+      bForce = 0;
+    if ( !m_pOwner->IsPreview(m_pOwner) )
+      CLife::ShowNameTag(this, bForce);
+  }
+  else
+  {
+    if ( bHangOnBack )
+    {
+      m_tHangOnBack = this->m_tHangOnBack;
+      if ( m_tHangOnBack < 120 )
+      {
+        v6 = m_tHangOnBack + 30;
+        this->m_tHangOnBack = v6;
+        if ( v6 >= 120 )
+        {
+          v7 = _com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::operator->(&this->m_pLayerAction);
+          IWzGr2DLayer::Putcolor(v7, 0xFFFFFFFF);
+        }
+      }
+    }
+    if ( this->m_pOwner->m_bDelayedLoad )
+      CLife::ShowNameTag(this, 0);
+  }
+}

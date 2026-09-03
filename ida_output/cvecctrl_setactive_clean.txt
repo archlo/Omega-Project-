@@ -1,0 +1,117 @@
+void __thiscall CVecCtrl::SetActive(
+        CVecCtrl *this,
+        int bActive,
+        int x,
+        int y,
+        int vx,
+        int vy,
+        int nMoveAction,
+        CStaticFoothold *pfh)
+{
+  int right; // ecx
+  IVecCtrlOwner *m_pOwner; // ecx
+  int v11; // edi
+  IVecCtrlOwner *v12; // ecx
+  int v13; // eax
+  long double v14; // st7
+  CAttrShoe *p; // eax
+  CAttrShoe *v16; // ecx
+  const ZRef<CAttrShoe> *v17; // eax
+  int v18; // [esp-10h] [ebp-9Ch]
+  int bShortUpdate[2]; // [esp+34h] [ebp-58h] BYREF
+  long double v20; // [esp+3Ch] [ebp-50h]
+  long double v21; // [esp+44h] [ebp-48h]
+  int v22; // [esp+88h] [ebp-4h]
+
+  right = this->m_rcBound.right; /*0x9918e4*/
+  this->m_bActive = bActive; /*0x9918ea*/
+  if ( x >= this->m_rcBound.left ) /*0x9918f5*/
+  {
+    if ( x > right ) /*0x9918fe*/
+      x = right; /*0x991900*/
+  }
+  else
+  {
+    x = this->m_rcBound.left; /*0x9918f7*/
+  }
+  if ( y >= this->m_rcBound.top ) /*0x991914*/
+  {
+    if ( y > this->m_rcBound.bottom ) /*0x99191d*/
+      y = this->m_rcBound.bottom; /*0x99191f*/
+  }
+  else
+  {
+    y = this->m_rcBound.top; /*0x991916*/
+  }
+  this->m_ap._ZtlSecureTear_x_CS = _ZtlSecureTear<double>((double)x, this->m_ap._ZtlSecureTear_x); /*0x99193e*/
+  this->m_ap._ZtlSecureTear_y_CS = _ZtlSecureTear<double>((double)y, this->m_ap._ZtlSecureTear_y); /*0x991952*/
+  this->m_ap._ZtlSecureTear_vx_CS = _ZtlSecureTear<double>((double)vx, this->m_ap._ZtlSecureTear_vx); /*0x991966*/
+  this->m_ap._ZtlSecureTear_vy_CS = _ZtlSecureTear<double>((double)vy, this->m_ap._ZtlSecureTear_vy); /*0x991974*/
+  m_pOwner = this->m_pOwner; /*0x991977*/
+  this->m_pfhLast = pfh; /*0x99197a*/
+  if ( m_pOwner->GetType(m_pOwner) != 7 ) /*0x991989*/
+    this->m_pfh = pfh; /*0x99198b*/
+  this->m_pfhFallStart = nullptr; /*0x991993*/
+  if ( this->m_pfh ) /*0x991999*/
+  {
+    this->m_lPage = pfh->m_lPage; /*0x9919a4*/
+    this->m_lZMass = pfh->m_lZMass; /*0x9919b5*/
+    RelPos::SetFromAbsPos(&this->m_rp, &this->m_ap, pfh); /*0x9919bb*/
+    AbsPos::SetFromRelPos(&this->m_ap, &this->m_rp, pfh); /*0x9919ca*/
+  }
+  else
+  {
+    this->m_lPage = 7; /*0x9919d1*/
+    this->m_lZMass = 0; /*0x9919db*/
+  }
+  qmemcpy((void *)&this->m_apl, &this->m_ap, sizeof(this->m_apl)); /*0x9919ec*/
+  v11 = nMoveAction; /*0x9919ee*/
+  if ( (nMoveAction & 0xFFFFFFFE) == 0 ) /*0x9919f7*/
+    v11 = this->m_pOwner->OnResolveMoveAction(this->m_pOwner, 0, 0, nMoveAction & 1, this); /*0x991a0c*/
+  v12 = this->m_pOwner; /*0x991a0e*/
+  this->m_nMoveAction = v11; /*0x991a11*/
+  if ( !v12->GetType(v12) /*0x991a51*/
+    || this->m_pOwner->GetType(this->m_pOwner) == 3
+    || this->m_pOwner->GetType(this->m_pOwner) == 4
+    || (v13 = this->m_pOwner->GetType(this->m_pOwner), bShortUpdate[0] = 0, v13 == 8) )
+  {
+    bShortUpdate[0] = 1; /*0x991a53*/
+  }
+  v20 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vy, this->m_ap._ZtlSecureTear_vy_CS); /*0x991a6b*/
+  v21 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vx, this->m_ap._ZtlSecureTear_vx_CS); /*0x991a7c*/
+  v18 = (int)_ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_y, this->m_ap._ZtlSecureTear_y_CS); /*0x991ab3*/
+  v14 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_x, this->m_ap._ZtlSecureTear_x_CS); /*0x991ab6*/
+  CMovePath::Init(&this->m_path, bActive, bShortUpdate[0], (int)v14, v18, (int)v21, (int)v20, v11, pfh, nullptr); /*0x991ad3*/
+  this->_ZtlSecureTear_m_nInputY_CS = _ZtlSecureTear<long>(0, this->_ZtlSecureTear_m_nInputY); /*0x991aed*/
+  this->_ZtlSecureTear_m_nInputX_CS = _ZtlSecureTear<long>(0, this->_ZtlSecureTear_m_nInputX); /*0x991afe*/
+  this->m_pAttrField = nullptr; /*0x991b04*/
+  p = this->m_pCurAttrShoe.p; /*0x991b0e*/
+  if ( p ) /*0x991b13*/
+  {
+    if ( !InterlockedDecrement(&p->_m_nRef) ) /*0x991b19*/
+    {
+      InterlockedIncrement(&this->m_pCurAttrShoe.p->_m_nRef); /*0x991b2a*/
+      v16 = this->m_pCurAttrShoe.p; /*0x991b30*/
+      if ( v16 ) /*0x991b35*/
+        ((void (__thiscall *)(CAttrShoe *, int))v16->dtr_ZRefCounted)(v16, 1); /*0x991b3d*/
+    }
+    this->m_pCurAttrShoe.p = nullptr; /*0x991b3f*/
+  }
+  if ( bActive ) /*0x991b48*/
+  {
+    this->m_pAttrField = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_pAttrField; /*0x991b56*/
+    v17 = this->m_pOwner->GetShoeAttr(this->m_pOwner, bShortUpdate); /*0x991b6b*/
+    v22 = 0; /*0x991b70*/
+    ZRef<CAttrShoe>::operator=(&this->m_pCurAttrShoe, v17); /*0x991b7b*/
+    v22 = -1; /*0x991b84*/
+    if ( bShortUpdate[1] ) /*0x991b91*/
+    {
+      if ( !InterlockedDecrement((volatile LONG *)(bShortUpdate[1] + 4)) ) /*0x991b97*/
+      {
+        InterlockedIncrement((volatile LONG *)(bShortUpdate[1] + 4)); /*0x991ba9*/
+        if ( bShortUpdate[1] ) /*0x991bb5*/
+          (**(void (__thiscall ***)(int, int))bShortUpdate[1])(bShortUpdate[1], 1); /*0x991bbd*/
+      }
+    }
+  }
+}

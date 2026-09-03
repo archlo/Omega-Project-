@@ -1,0 +1,66 @@
+// 0x698650
+void __thiscall CPersonalShopDlg::OnMoveItemToInventory(CPersonalShopDlg *this, CInPacket *iPacket)
+{
+  unsigned __int16 v3; // ax
+  int v4; // ebx
+  int v5; // ebp
+  CPersonalShopDlg::ITEM *v6; // esi
+  GW_ItemSlotBase *p; // eax
+  GW_ItemSlotBase *v8; // eax
+  GW_ItemSlotBase *v9; // ecx
+  ZRef<GW_ItemSlotBase> *p_pItem; // esi
+  GW_ItemSlotBase *v11; // eax
+  GW_ItemSlotBase *v12; // ecx
+
+  this->m_nItem = CInPacket::Decode1(iPacket); /*0x698665*/
+  v3 = CInPacket::Decode2(iPacket); /*0x69866b*/
+  v4 = v3; /*0x698670*/
+  if ( v3 < this->m_nItem ) /*0x698679*/
+  {
+    v5 = v3; /*0x698681*/
+    do /*0x6986f7*/
+    {
+      v6 = &this->m_aItem.a[v5]; /*0x69868d*/
+      v6->nNumber = v6[1].nNumber; /*0x698690*/
+      v6->nSet = v6[1].nSet; /*0x698695*/
+      v6->nPrice = v6[1].nPrice; /*0x69869b*/
+      p = v6[1].pItem.p; /*0x69869e*/
+      if ( p ) /*0x6986a3*/
+        InterlockedIncrement(&p->_m_nRef); /*0x6986a9*/
+      v8 = v6->pItem.p; /*0x6986af*/
+      if ( v8 ) /*0x6986b4*/
+      {
+        if ( !InterlockedDecrement(&v8->_m_nRef) ) /*0x6986ba*/
+        {
+          InterlockedIncrement(&v6->pItem.p->_m_nRef); /*0x6986cb*/
+          v9 = v6->pItem.p; /*0x6986d1*/
+          if ( v9 ) /*0x6986d6*/
+            ((void (__thiscall *)(GW_ItemSlotBase *, int))v9->dtr_ZRefCounted)(v9, 1); /*0x6986de*/
+        }
+        v6->pItem.p = nullptr; /*0x6986e0*/
+      }
+      ++v4; /*0x6986ea*/
+      v6->pItem.p = v6[1].pItem.p; /*0x6986eb*/
+      ++v5; /*0x6986ee*/
+    }
+    while ( v4 < this->m_nItem ); /*0x6986f7*/
+  }
+  this->m_aItem.a[this->m_nItem].nNumber = 0; /*0x69870b*/
+  this->m_aItem.a[this->m_nItem].nSet = 0; /*0x69871d*/
+  this->m_aItem.a[this->m_nItem].nPrice = 0; /*0x698730*/
+  p_pItem = &this->m_aItem.a[this->m_nItem].pItem; /*0x698743*/
+  v11 = this->m_aItem.a[this->m_nItem].pItem.p; /*0x698747*/
+  if ( v11 ) /*0x69874c*/
+  {
+    if ( !InterlockedDecrement(&v11->_m_nRef) ) /*0x698752*/
+    {
+      InterlockedIncrement(&p_pItem->p->_m_nRef); /*0x698763*/
+      v12 = p_pItem->p; /*0x698769*/
+      if ( v12 ) /*0x69876e*/
+        ((void (__thiscall *)(GW_ItemSlotBase *, int))v12->dtr_ZRefCounted)(v12, 1); /*0x698776*/
+    }
+    p_pItem->p = nullptr; /*0x698778*/
+  }
+  CPersonalShopDlg::SetScrollBar(this); /*0x698781*/
+  CWnd::InvalidateRect(this, nullptr); /*0x69878a*/
+}

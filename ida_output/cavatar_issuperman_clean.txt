@@ -1,0 +1,3 @@
+﻿=== 0x45ef70 ===
+{"addr":"0x45ef70","code":"BOOL __thiscall CAvatar::IsSuperMan(CAvatar *this)\n{\n  return this->m_dwMorphTemplateID && CMorphTemplate::IsSuperMan(this->m_dwMorphTemplateID); /*0x45ef8c*/\n}","refs":[{"addr":"0x6650e0","name":"?IsSuperMan@CMorphTemplate@@SAHK@Z"}]}
+

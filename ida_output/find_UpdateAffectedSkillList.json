@@ -1,0 +1,15 @@
+[
+  {
+    "query": "UpdateAffectedSkillList",
+    "matches": [
+      {
+        "address": "0x64a500",
+        "name": "CMob::UpdateAffectedSkillList(long)"
+      },
+      {
+        "address": "0x8ffaf0",
+        "name": "CUser::UpdateAffectedSkillList(long,int)"
+      }
+    ]
+  }
+]

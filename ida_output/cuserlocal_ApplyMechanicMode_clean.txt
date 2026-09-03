@@ -1,0 +1,14 @@
+// cuserlocal::ApplyMechanicMode
+
+void __thiscall CUserLocal::ApplyMechanicMode(CUserLocal *this, int nOldMechanicMode, int nNewMechanicMode)
+{
+  if ( nNewMechanicMode == 35121005 ) /*0x9034fc*/
+  {
+    this->m_repeatSkill.nSkillID = this->m_nMechanicMode; /*0x903504*/
+    this->m_repeatSkill.tStart = get_update_time(); /*0x90350f*/
+  }
+  else if ( nOldMechanicMode == 35121005 && !nNewMechanicMode && this->m_repeatSkill.nSkillID != 35121003 ) /*0x903531*/
+  {
+    CUserLocal::ClearRepeatSkill(this); /*0x903533*/
+  }
+}

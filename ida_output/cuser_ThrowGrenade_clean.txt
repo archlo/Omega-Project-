@@ -1,0 +1,128 @@
+// cuser::ThrowGrenade
+
+void __thiscall CUser::ThrowGrenade(CUser *this, int nSkillID, int nSLV, int tKeyDown, tagPOINT pt)
+{
+  CGrenade *v6; // eax
+  ZRefCounted *v7; // ebx
+  CGrenade *p_m_pPrev; // ebx
+  ZRef<CGrenade> *v9; // edi
+  IWzGr2DLayer *v10; // edi
+  HRESULT (__stdcall *v11)(IWzGr2DLayer *, int *); // eax
+  HRESULT v12; // eax
+  double v13; // st7
+  int v14; // edi
+  IWzVector2D *v15; // eax
+  CVecCtrl *v16; // ecx
+  int v17; // eax
+  IWzGr2DLayer *m_pInterface; // edi
+  HRESULT (__stdcall *get_flip)(IWzGr2DLayer *, int *); // ecx
+  HRESULT v20; // eax
+  int v21; // edi
+  int update_time; // eax
+  IWzVector2D *v23; // eax
+  CVecCtrl *v24; // ecx
+  int vy; // [esp+10h] [ebp-8Ch]
+  IWzVector2D *vy_4; // [esp+14h] [ebp-88h]
+  int nImpactX; // [esp+2Ch] [ebp-70h] BYREF
+  int bFlip; // [esp+30h] [ebp-6Ch] BYREF
+  int nImpactY; // [esp+34h] [ebp-68h]
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > result[2]; // [esp+38h] [ebp-64h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v31; // [esp+40h] [ebp-5Ch] BYREF
+  long double v32; // [esp+44h] [ebp-58h]
+  double v33; // [esp+4Ch] [ebp-50h]
+  ZRef<CGrenade> pGrenade; // [esp+54h] [ebp-48h] BYREF
+  int v35; // [esp+98h] [ebp-4h]
+
+  v6 = ZRefCounted_Alloc<CGrenade>(nullptr); /*0x8f2870*/
+  if ( v6 ) /*0x8f287a*/
+    v7 = &v6->ZRefCounted; /*0x8f287c*/
+  else
+    v7 = nullptr; /*0x8f2881*/
+  v7->_m_nRef = 1; /*0x8f2883*/
+  p_m_pPrev = (CGrenade *)&v7[-1]._m_pPrev; /*0x8f288a*/
+  pGrenade.p = p_m_pPrev; /*0x8f288d*/
+  v35 = 0; /*0x8f2897*/
+  v9 = ZList<ZRef<CGrenade>>::AddTail(&this->m_lpGrenade); /*0x8f28a7*/
+  if ( p_m_pPrev ) /*0x8f28ab*/
+    InterlockedIncrement(&p_m_pPrev->_m_nRef); /*0x8f28b1*/
+  if ( v9->p ) /*0x8f28b7*/
+  {
+    ZRef<CGrenade>::_ReleaseRaw(v9, nullptr); /*0x8f28c1*/
+    v9->p = nullptr; /*0x8f28c6*/
+  }
+  v9->p = p_m_pPrev; /*0x8f28d4*/
+  if ( nSkillID == 4341003 ) /*0x8f28d7*/
+  {
+    bFlip = 500; /*0x8f29c4*/
+    if ( tKeyDown >= 500 ) /*0x8f29cc*/
+      bFlip = tKeyDown; /*0x8f29ce*/
+    v17 = (int)((double)bFlip / (double)get_max_gauge_time(4341003) * DOUBLE_900_0); /*0x8f29f9*/
+    result[0].m_pInterface = (IWzVector2D *)(v17 * v17); /*0x8f2a03*/
+    nImpactX = v17; /*0x8f2a07*/
+    nImpactY = (int)sqrt(DOUBLE_832500_0 - (double)(v17 * v17)); /*0x8f2a1f*/
+    v32 = (double)nImpactY; /*0x8f2a27*/
+    v33 = (double)v17; /*0x8f2a2f*/
+    m_pInterface = this->m_pLayerOverFace.m_pInterface; /*0x8f2a4f*/
+    result[1].m_pInterface = (IWzVector2D *)(int)(atan(fabs(v32 / v33)) * (DOUBLE_180_0 / PI_184)); /*0x8f2a55*/
+    if ( !m_pInterface ) /*0x8f2a5b*/
+      _com_issue_error(-2147467261); /*0x8f2a62*/
+    get_flip = m_pInterface->get_flip; /*0x8f2a69*/
+    bFlip = 0; /*0x8f2a75*/
+    v20 = get_flip(m_pInterface, &bFlip); /*0x8f2a7d*/
+    if ( v20 < 0 ) /*0x8f2a81*/
+      _com_issue_errorex(v20, m_pInterface, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x8f2a8a*/
+    v21 = bFlip; /*0x8f2a93*/
+    vy_4 = result[1].m_pInterface; /*0x8f2a97*/
+    vy = get_update_time() + 950; /*0x8f2aa2*/
+    update_time = get_update_time(); /*0x8f2aa3*/
+    CGrenade::Init(p_m_pPrev, 4341003, nSLV, this, v21, pt, 0, 0, 1, update_time + 450, vy, (int)vy_4); /*0x8f2ac9*/
+    if ( (this->m_nMoveAction & 1) != 0 ) /*0x8f2ad5*/
+      bFlip = -nImpactX; /*0x8f2add*/
+    else
+      bFlip = nImpactX; /*0x8f2ae7*/
+    v23 = CGrenade::GetVecCtrl(p_m_pPrev, &v31)->m_pInterface; /*0x8f2af7*/
+    if ( v23 ) /*0x8f2afb*/
+      v24 = (CVecCtrl *)&v23[-3]; /*0x8f2afd*/
+    else
+      v24 = nullptr; /*0x8f2b02*/
+    CVecCtrl::SetImpactNext(v24, (double)bFlip, v32); /*0x8f2b16*/
+    if ( v31.m_pInterface ) /*0x8f2b21*/
+      v31.m_pInterface->Release(v31.m_pInterface); /*0x8f2b29*/
+    result[1].m_pInterface = (IWzVector2D *)(nImpactX + nImpactY); /*0x8f2b35*/
+    CGrenade::SetDragValue( /*0x8f2b63*/
+      p_m_pPrev,
+      (int)(DOUBLE_100000_0 * (v33 / (double)(nImpactX + nImpactY))),
+      (int)(v32 / (double)(nImpactX + nImpactY) * DOUBLE_100000_0));
+    CAnimationDisplayer::RemovePrepareAnimation(TSingleton<CAnimationDisplayer>::ms_pInstance, this->m_dwCharacterId); /*0x8f2b75*/
+  }
+  else
+  {
+    v10 = this->m_pLayerOverFace.m_pInterface; /*0x8f28dd*/
+    if ( !v10 ) /*0x8f28e5*/
+      _com_issue_error(-2147467261); /*0x8f28ec*/
+    v11 = v10->get_flip; /*0x8f28f3*/
+    nImpactX = 0; /*0x8f28ff*/
+    v12 = v11(v10, &nImpactX); /*0x8f2907*/
+    if ( v12 < 0 ) /*0x8f290b*/
+      _com_issue_errorex(v12, v10, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x8f2914*/
+    CGrenade::Init(p_m_pPrev, nSkillID, nSLV, this, nImpactX, pt, 0, 0, 0, 0, 0, 0); /*0x8f293d*/
+    v13 = (double)tKeyDown / DOUBLE_1000_0 * DOUBLE_600_0; /*0x8f294b*/
+    v14 = (int)v13; /*0x8f295d*/
+    if ( (this->m_nMoveAction & 1) != 0 ) /*0x8f295f*/
+      bFlip = -(int)v13; /*0x8f2963*/
+    else
+      bFlip = (int)v13; /*0x8f2969*/
+    v15 = CGrenade::GetVecCtrl(p_m_pPrev, result)->m_pInterface; /*0x8f2979*/
+    if ( v15 ) /*0x8f297d*/
+      v16 = (CVecCtrl *)&v15[-3]; /*0x8f297f*/
+    else
+      v16 = nullptr; /*0x8f2984*/
+    nImpactY = -v14; /*0x8f2988*/
+    CVecCtrl::SetImpactNext(v16, (double)bFlip, (double)-v14); /*0x8f299e*/
+    if ( result[0].m_pInterface ) /*0x8f29a9*/
+      result[0].m_pInterface->Release(result[0].m_pInterface); /*0x8f29b5*/
+  }
+  v35 = -1; /*0x8f2b7a*/
+  if ( p_m_pPrev ) /*0x8f2b87*/
+    ZRef<CGrenade>::_ReleaseRaw(&pGrenade, nullptr); /*0x8f2b8f*/
+}

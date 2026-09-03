@@ -1,0 +1,28 @@
+// CCSWnd_Tab::OnMouseButton @ 0x4c6ee0
+// Decompiled from v95 IDB
+
+void __thiscall CCSWnd_Tab::OnMouseButton(CCSWnd_Tab *this, unsigned int msg, unsigned int wParam, int rx, int ry)
+{
+  IWzCanvas *TabIndex; // esi
+  StringPool *Instance; // eax
+  ZXString<unsigned short> *StringW; // eax
+  CCashShop *m_nTab; // ecx
+
+  CCSWnd_Char::EndChat((CCSWnd_Char *)(this->m_nTab + 1380)); /*0x4c6f11*/
+  if ( msg == 513 ) /*0x4c6f1e*/
+  {
+    TabIndex = (IWzCanvas *)CCSWnd_Tab::GetTabIndex((CCSWnd_Tab *)((char *)this - 4), rx, ry); /*0x4c6f34*/
+    if ( TabIndex ) /*0x4c6f38*/
+    {
+      Instance = StringPool::GetInstance(); /*0x4c6f44*/
+      StringW = StringPool::GetStringW(Instance, (ZXString<unsigned short> *)&msg, 0x4F7u); /*0x4c6f4b*/
+      play_ui_sound(StringW->_m_pStr); /*0x4c6f5b*/
+      if ( msg ) /*0x4c6f71*/
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(msg - 12)); /*0x4c6f77*/
+      m_nTab = (CCashShop *)this->m_nTab; /*0x4c6f7f*/
+      this->m_pCanvasTab[9].m_pInterface = TabIndex; /*0x4c6f86*/
+      CCashShop::OnChangedCategory(m_nTab, (int)TabIndex); /*0x4c6f8c*/
+      CWnd::InvalidateRect((CCSWnd_Tab *)((char *)this - 4), nullptr); /*0x4c6f95*/
+    }
+  }
+}

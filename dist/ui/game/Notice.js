@@ -1,0 +1,152 @@
+import { Container, Graphics, Text, TextStyle } from 'pixi.js';
+import { GamePanel } from './GamePanel.js';
+import { WzCanvas } from '../../wz/WzCanvas.js';
+// OG class: CUINoticePremium (156 bytes, inherits CDialog)
+// WZ: UI/UIWindow2.img/Notice/...
+// Close button at (283, 14), StringPool 0x1962 for button UOL
+const PANEL_W = 340;
+const PANEL_H = 120;
+const _titleStyle = new TextStyle({ fill: '#FFE4B5', fontSize: 12, fontFamily: 'monospace' });
+const _msgStyle = new TextStyle({ fill: '#FFF', fontSize: 11, fontFamily: 'monospace', wordWrap: true, wordWrapWidth: 300 });
+export class Notice extends GamePanel {
+    _bg;
+    _titleText;
+    _msgText;
+    _btnOk;
+    _btnCancel;
+    _isConfirm = false;
+    onDismiss = null;
+    onConfirm = null;
+    _message = '';
+    constructor(opts = {}) {
+        super();
+        this._root.visible = false;
+        // OG: CUINoticePremium loads from UIWindow2.img/Notice
+        const noticeProp = opts.uiWz?.GetItem('UIWindow2.img/Notice');
+        const bgNode = noticeProp?.Get('backgrnd');
+        const wzBg = (bgNode instanceof WzCanvas && opts.loader) ? opts.loader.Load(bgNode) : null;
+        this._bg = new Graphics();
+        this._root.addChild(this._bg);
+        if (wzBg) {
+            const s = wzBg.ToPixi();
+            this._root.addChild(s);
+        }
+        else {
+            this._bg.rect(0, 0, PANEL_W, PANEL_H).fill({ color: '#0C0E18', alpha: 0.95 });
+            this._bg.rect(0, 0, PANEL_W, PANEL_H).stroke({ color: '#3C4164', width: 1 });
+            this._bg.rect(0, 0, PANEL_W, 22).fill({ color: '#0F1224' });
+        }
+        this._bg.rect(0, 0, PANEL_W, 22).fill({ color: '#0F1224' });
+        this._root.addChild(this._bg);
+        this._titleText = new Text({ text: 'Notice', style: _titleStyle });
+        this._titleText.x = 10;
+        this._titleText.y = 4;
+        this._root.addChild(this._titleText);
+        this._msgText = new Text({ text: '', style: _msgStyle });
+        this._msgText.x = 16;
+        this._msgText.y = 28;
+        this._root.addChild(this._msgText);
+        this._btnOk = new Container();
+        const btn = new Graphics();
+        btn.rect(0, 0, 56, 20).fill({ color: '#1E2030', alpha: 0.9 });
+        btn.rect(0, 0, 56, 20).stroke({ color: '#505570', width: 1 });
+        const t = new Text({ text: 'OK', style: new TextStyle({ fill: '#CCC', fontSize: 10, fontFamily: 'monospace' }) });
+        t.x = 20;
+        t.y = 4;
+        this._btnOk.addChild(btn, t);
+        this._btnOk.y = PANEL_H - 28;
+        this._root.addChild(this._btnOk);
+        this._btnCancel = new Container();
+        const cbtn = new Graphics();
+        cbtn.rect(0, 0, 56, 20).fill({ color: '#1E2030', alpha: 0.9 });
+        cbtn.rect(0, 0, 56, 20).stroke({ color: '#505570', width: 1 });
+        const ct = new Text({ text: 'No', style: new TextStyle({ fill: '#CCC', fontSize: 10, fontFamily: 'monospace' }) });
+        ct.x = 20;
+        ct.y = 4;
+        this._btnCancel.addChild(cbtn, ct);
+        this._btnCancel.y = PANEL_H - 28;
+        this._btnCancel.visible = false;
+        this._root.addChild(this._btnCancel);
+        this._layoutButtons();
+        this._root.x = (800 - PANEL_W) / 2;
+        this._root.y = (600 - PANEL_H) / 2;
+    }
+    _layoutButtons() {
+        if (this._isConfirm) {
+            this._btnOk.x = PANEL_W / 2 - 60;
+            this._btnCancel.x = PANEL_W / 2 + 4;
+        }
+        else {
+            this._btnOk.x = (PANEL_W - 56) / 2;
+        }
+    }
+    show(title, message) {
+        this._isConfirm = false;
+        this._btnCancel.visible = false;
+        this._layoutButtons();
+        this._titleText.text = title;
+        this._message = message;
+        this._msgText.text = message;
+        this.isVisible = true;
+        this._root.visible = true;
+    }
+    showConfirm(title, message) {
+        this._isConfirm = true;
+        this._btnCancel.visible = true;
+        this._layoutButtons();
+        this._titleText.text = title;
+        this._message = message;
+        this._msgText.text = message;
+        this.isVisible = true;
+        this._root.visible = true;
+    }
+    handleMouseButton(x, y, down) {
+        if (!this.isVisible)
+            return false;
+        const lx = x - this._root.x;
+        const ly = y - this._root.y;
+        if (!down)
+            return true;
+        if (lx >= this._btnOk.x && lx < this._btnOk.x + 56 && ly >= this._btnOk.y && ly < this._btnOk.y + 22) {
+            if (this._isConfirm)
+                this._confirm();
+            else
+                this._dismiss();
+            return true;
+        }
+        if (this._isConfirm && lx >= this._btnCancel.x && lx < this._btnCancel.x + 56 && ly >= this._btnCancel.y && ly < this._btnCancel.y + 22) {
+            this._dismiss();
+            return true;
+        }
+        if (lx >= 0 && lx < PANEL_W && ly >= 0 && ly < PANEL_H)
+            return true;
+        return false;
+    }
+    onKeyPress(key) {
+        if (!this.isVisible)
+            return false;
+        if (key === 'Enter' || key === ' ') {
+            if (this._isConfirm)
+                this._confirm();
+            else
+                this._dismiss();
+            return true;
+        }
+        if (key === 'Escape') {
+            this._dismiss();
+            return true;
+        }
+        return false;
+    }
+    _confirm() {
+        this.isVisible = false;
+        this._root.visible = false;
+        this.onConfirm?.();
+    }
+    _dismiss() {
+        this.isVisible = false;
+        this._root.visible = false;
+        this.onDismiss?.();
+    }
+}
+//# sourceMappingURL=Notice.js.map

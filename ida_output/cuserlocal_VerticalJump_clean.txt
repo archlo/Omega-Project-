@@ -1,0 +1,74 @@
+// cuserlocal::VerticalJump
+
+void __thiscall CUserLocal::VerticalJump(CUserLocal *this)
+{
+  IWzVector2D *m_pInterface; // eax
+  IWzVector2D *v3; // eax
+  CInputSystem *v4; // ebx
+  int v5; // esi
+  unsigned int v6; // edx
+  IWzVector2D *v7; // eax
+  CVecCtrl *v8; // esi
+  tagPOINT (__thiscall *GetPos)(IVecCtrlOwner *); // edx
+  int v10; // eax
+  StringPool *Instance; // eax
+  wchar_t *m_pStr; // eax
+  BOOL v13; // [esp-8h] [ebp-50h]
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v14; // [esp-4h] [ebp-4Ch] BYREF
+  int v15; // [esp+0h] [ebp-48h]
+  int *p_ry; // [esp+4h] [ebp-44h]
+  double vy; // [esp+8h] [ebp-40h] BYREF
+  int vx[3]; // [esp+20h] [ebp-28h] BYREF
+  int ry; // [esp+2Ch] [ebp-1Ch] BYREF
+  _BYTE v20[12]; // [esp+30h] [ebp-18h] BYREF
+  int v21; // [esp+44h] [ebp-4h]
+
+  m_pInterface = this->m_pvc.m_pInterface; /*0x90f538*/
+  if ( m_pInterface ) /*0x90f540*/
+    v3 = m_pInterface - 3; /*0x90f542*/
+  else
+    v3 = nullptr; /*0x90f547*/
+  if ( v3[104].__vftable )
+  {
+    v4 = TSingleton<CInputSystem>::ms_pInstance; /*0x90f55e*/
+    v5 = CInputSystem::IsKeyPressed(TSingleton<CInputSystem>::ms_pInstance, 39) != 0 ? 0x64 : 0;
+    v6 = v5 + (CInputSystem::IsKeyPressed(v4, 37) != 0 ? 0xFFFFFF9C : 0) + ((this->m_nMoveAction & 1) != 0 ? -200 : 200);
+    v7 = this->m_pvc.m_pInterface; /*0x90f59e*/
+    vx[0] = v6; /*0x90f5a4*/
+    if ( v7 ) /*0x90f5aa*/
+      v8 = (CVecCtrl *)&v7[-3]; /*0x90f5ac*/
+    else
+      v8 = nullptr; /*0x90f5b1*/
+    CVecCtrl::SetMovePathAttribute(v8, 24); /*0x90f5b7*/
+    CVecCtrl::SetImpactNext(v8, (double)vx[0], DOUBLE_N2300_0); /*0x90f5d2*/
+    vx[1] = (int)&vy; /*0x90f5df*/
+    vy = -2.760078430175781; /*0x90f5e3*/
+    GetPos = this->GetPos; /*0x90f5ec*/
+    p_ry = &ry; /*0x90f5f6*/
+    v21 = 0; /*0x90f5f9*/
+    v10 = ((int (__thiscall *)(IVecCtrlOwner *))GetPos)(&this->IVecCtrlOwner); /*0x90f601*/
+    v15 = *(_DWORD *)((int (__thiscall *)(IVecCtrlOwner *, _BYTE *, _DWORD))this->GetPos)( /*0x90f617*/
+                       &this->IVecCtrlOwner,
+                       v20,
+                       *(_DWORD *)(v10 + 4));
+    vx[2] = (int)&v14; /*0x90f61b*/
+    v14.m_pInterface = nullptr; /*0x90f61f*/
+    LOBYTE(v21) = 1; /*0x90f62f*/
+    Instance = StringPool::GetInstance(); /*0x90f634*/
+    m_pStr = StringPool::GetStringW(Instance, (ZXString<unsigned short> *)vx, 0xAD7u)->_m_pStr; /*0x90f646*/
+    v13 = (this->m_nMoveAction & 1) == 0; /*0x90f652*/
+    LOBYTE(v21) = 3; /*0x90f653*/
+    CAnimationDisplayer::Effect_General( /*0x90f65f*/
+      TSingleton<CAnimationDisplayer>::ms_pInstance,
+      m_pStr,
+      v13,
+      v14,
+      v15,
+      (int)p_ry,
+      LODWORD(vy),
+      SHIDWORD(vy));
+    v21 = -1; /*0x90f668*/
+    if ( vx[0] ) /*0x90f672*/
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(vx[0] - 12)); /*0x90f678*/
+  }
+}

@@ -1,0 +1,3 @@
+﻿=== 0x464e30 ===
+{"addr":"0x464e30","code":"void __thiscall CAvatar::ClearTamingMobActionLayer(CAvatar *this, int nIndex)\n{\n  ZArray<ZRef<CActionMan::TAMINGMOBACTIONFRAMEENTRY> > *aaTamingMobAction; // esi\n  int v3; // edi\n\n  aaTamingMobAction = this->m_aiAction[nIndex].aaTamingMobAction; /*0x464e43*/\n  v3 = 273; /*0x464e49*/\n  do /*0x464e66*/\n  {\n    ZArray<ZRef<CActionMan::TAMINGMOBACTIONFRAMEENTRY>>::_Realloc( /*0x464e5b*/\n      aaTamingMobAction++,\n      0,\n      1,\n      (const ZAllocHelper *)&nIndex);\n    --v3; /*0x464e63*/\n  }\n  while ( v3 ); /*0x464e66*/\n}","refs":[{"addr":"0x415890","name":"?_Realloc@?$ZArray@V?$ZRef@UTAMINGMOBACTIONFRAMEENTRY@CActionMan@@@@@@AAEPAV?$ZRef@UTAMINGMOBACTIONFRAMEENTRY@CActionMan@@@@IHABVZAllocHelper@@@Z"}]}
+

@@ -1,0 +1,9 @@
+// cuserlocal::IsStun
+
+BOOL __thiscall CUserLocal::IsStun(CUserLocal *this)
+{
+  const SecondaryStat *v1; // eax
+
+  v1 = this->GetSecondaryStat(this); /*0x560055*/
+  return _ZtlSecureFuse<long>(v1->_ZtlSecureTear_nStun_, v1->_ZtlSecureTear_nStun__CS) != 0; /*0x560072*/
+}

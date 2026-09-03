@@ -1,0 +1,3 @@
+// CUserLocal::IsDashing2 @ 0x9040e0
+
+{"addr":"0x9040e0","code":"BOOL __thiscall CUserLocal::IsDashing2(CUserLocal *this)\n{\n  const SecondaryStat *v2; // eax\n\n  v2 = this->GetSecondaryStat(this); /*0x9040e8*/\n  return v2->aTemporaryStat[1].p->IsActivated(v2->aTemporaryStat[1].p) && CUser::GetDashingSkill(this) == 4321000; /*0x90410e*/\n}","refs":[{"addr":"0x8de380","name":"?GetDashingSkill@CUser@@QBEJXZ"}]}

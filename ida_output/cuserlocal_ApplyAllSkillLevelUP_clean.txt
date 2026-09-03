@@ -1,0 +1,29 @@
+// cuserlocal::ApplyAllSkillLevelUP
+
+void __thiscall CUserLocal::ApplyAllSkillLevelUP(CUserLocal *this, int nItemOptionID, int nLevel, int *nSLV)
+{
+  ItemOptionInfo *p; // ecx
+  int niAllSkill; // eax
+  ItemOptionInfo *v6; // esi
+  volatile LONG *p_nReqLevel; // edi
+  ZRef<ItemOptionInfo> pOption; // [esp+Ch] [ebp-14h] BYREF
+  int v9; // [esp+1Ch] [ebp-4h]
+
+  CItemOptionInfo::GetItemOption(TSingleton<CItemOptionInfo>::ms_pInstance, &pOption, nItemOptionID); /*0x909125*/
+  p = pOption.p; /*0x90912a*/
+  if ( pOption.p ) /*0x909130*/
+  {
+    niAllSkill = pOption.p->aLevelData.a[nLevel].niAllSkill; /*0x90913f*/
+    if ( niAllSkill ) /*0x909147*/
+      *nSLV += niAllSkill; /*0x90914d*/
+    v6 = p - 1; /*0x90914f*/
+    p_nReqLevel = &p[-1].nReqLevel; /*0x909152*/
+    v9 = -1; /*0x909156*/
+    if ( !InterlockedDecrement(p_nReqLevel) ) /*0x90915e*/
+    {
+      InterlockedIncrement(p_nReqLevel); /*0x909169*/
+      if ( v6 ) /*0x909171*/
+        (*(void (__thiscall **)(ItemOptionInfo *, int))v6->nItemOptionID)(v6, 1); /*0x90917b*/
+    }
+  }
+}

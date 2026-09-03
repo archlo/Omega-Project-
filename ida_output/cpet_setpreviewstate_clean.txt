@@ -1,0 +1,72 @@
+﻿void __thiscall CPet::SetPreviewState(CPet *this)
+{
+  CPetTemplate *m_pTemplate; // eax
+  int nChatBalloon; // ecx
+  IWzVector2D *m_pInterface; // eax
+  IWzGr2DLayer *v5; // eax
+  _bstr_t::Data_t *v6; // ecx
+  StringPool *Instance; // eax
+  int nNameTag; // edx
+  IWzVector2D *v9; // eax
+  IWzGr2DLayer *v10; // eax
+  Ztl_bstr_t v11; // [esp-24h] [ebp-44h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v12; // [esp-20h] [ebp-40h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v13; // [esp-1Ch] [ebp-3Ch] BYREF
+  int v14; // [esp-18h] [ebp-38h]
+  int v15; // [esp-14h] [ebp-34h]
+  int v16; // [esp-10h] [ebp-30h]
+  int v17; // [esp-Ch] [ebp-2Ch]
+  int v18; // [esp-8h] [ebp-28h]
+  int v19; // [esp-4h] [ebp-24h]
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *v20; // [esp+8h] [ebp-18h]
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v21; // [esp+Ch] [ebp-14h]
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v22; // [esp+10h] [ebp-10h]
+  int v23; // [esp+1Ch] [ebp-4h]
+
+  m_pTemplate = this->m_pTemplate;
+  v19 = 0;
+  v18 = 0;
+  v17 = 0;
+  this->m_bPreviewState = 1;
+  nChatBalloon = m_pTemplate->nChatBalloon;
+  m_pInterface = this->m_pvc.m_pInterface;
+  v16 = nChatBalloon;
+  v15 = 1002;
+  v14 = 0;
+  v20 = &v13;
+  v13.m_pInterface = m_pInterface;
+  if ( m_pInterface )
+    m_pInterface->AddRef(m_pInterface);
+  v5 = this->m_pLayerAction.m_pInterface;
+  v6 = (_bstr_t::Data_t *)&v12;
+  v23 = 0;
+  v21 = &v12;
+  v12.m_pInterface = v5;
+  if ( v5 )
+    v5->AddRef(v5);
+  v11.m_Data = v6;
+  v22 = (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v11;
+  LOBYTE(v23) = 1;
+  Instance = StringPool::GetInstance();
+  StringPool::GetBSTR(Instance, &v11, 0x117Cu);
+  v23 = -1;
+  CChatBalloon::MakeBalloon(&this->m_chatBalloon, v11, v12, v13, v14, v15, v16, v17, v18, v19);
+  nNameTag = this->m_pTemplate->nNameTag;
+  v9 = this->m_pvc.m_pInterface;
+  v19 = 0;
+  v18 = 0;
+  v17 = 0;
+  v16 = 0;
+  v15 = nNameTag;
+  v14 = 1003;
+  v22 = (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v13;
+  v13.m_pInterface = v9;
+  if ( v9 )
+    v9->AddRef(v9);
+  v10 = this->m_pLayerAction.m_pInterface;
+  v22 = &v12;
+  v12.m_pInterface = v10;
+  if ( v10 )
+    v10->AddRef(v10);
+  CLife::MakeNameTag(this, this->m_pTemplate->sName._m_pStr, v12, v13, v14, v15, v16, v17, v18, v19);
+}

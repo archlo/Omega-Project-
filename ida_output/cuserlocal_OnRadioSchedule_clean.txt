@@ -1,0 +1,28 @@
+// cuserlocal::OnRadioSchedule
+
+void __thiscall CUserLocal::OnRadioSchedule(CUserLocal *this, CInPacket *iPacket)
+{
+  CInPacket *v2; // esi
+  unsigned int v3; // eax
+  ZXString<char> v4; // [esp-8h] [ebp-20h] BYREF
+  unsigned int v5; // [esp-4h] [ebp-1Ch]
+  ZXString<char> *v6; // [esp+8h] [ebp-10h]
+  int v7; // [esp+14h] [ebp-4h]
+
+  v2 = iPacket; /*0x918142*/
+  CInPacket::DecodeStr(iPacket, (ZXString<char> *)&iPacket); /*0x91814d*/
+  v7 = 0; /*0x918154*/
+  v3 = CInPacket::Decode4(v2); /*0x91815c*/
+  if ( TSingleton<CRadioManager>::ms_pInstance._m_pStr /*0x91816b*/
+    && !*((_DWORD *)TSingleton<CRadioManager>::ms_pInstance._m_pStr + 2) )
+  {
+    v5 = v3; /*0x918171*/
+    v6 = &v4; /*0x918179*/
+    v4._m_pStr = nullptr; /*0x91817e*/
+    ZXString<char>::operator=(&v4, (const ZXString<char> *)&iPacket); /*0x918184*/
+    CRadioManager::Play((CRadioManager *)TSingleton<CRadioManager>::ms_pInstance._m_pStr, v4, v5); /*0x91818f*/
+  }
+  v7 = -1; /*0x918198*/
+  if ( iPacket ) /*0x9181a2*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&iPacket[-1].m_uLength); /*0x9181a8*/
+}

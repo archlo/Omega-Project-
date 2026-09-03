@@ -1,0 +1,1 @@
+{"version":3,"file":"ItemDecoder.d.ts","sourceRoot":"","sources":["../../../src/net/packet/ItemDecoder.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,QAAQ,EAAE,MAAM,eAAe,CAAC;AACzC,OAAO,EAAe,aAAa,EAAc,MAAM,+BAA+B,CAAC;AAEvF,qBAAa,WAAW;IACtB,MAAM,CAAC,MAAM,CAAC,CAAC,EAAE,QAAQ,GAAG,aAAa;IA+CzC,OAAO,CAAC,MAAM,CAAC,YAAY;IAyC3B,OAAO,CAAC,MAAM,CAAC,eAAe;CAG/B"}

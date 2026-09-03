@@ -1,0 +1,14 @@
+﻿CUIMechanicEquip *__thiscall CUIMechanicEquip::CUIMechanicEquip(CUIMechanicEquip *this, int lLeft, int lTop)
+{
+  CWnd::CWnd(this); /*0x7a3dc8*/
+  if ( this == (CUIMechanicEquip *)-128 ) /*0x7a3ddd*/
+    TSingleton<CUIMechanicEquip>::ms_pInstance = nullptr; /*0x7a3de9*/
+  else
+    TSingleton<CUIMechanicEquip>::ms_pInstance = this; /*0x7a3de2*/
+  this->CWnd::IGObj::__vftable = (CUIMechanicEquip_vtbl *)&CUIMechanicEquip::`vftable'{for `IGObj'}; /*0x7a3df8*/
+  this->CWnd::IUIMsgHandler::__vftable = (IUIMsgHandler_vtbl *)&CUIMechanicEquip::`vftable'{for `IUIMsgHandler'}; /*0x7a3dfe*/
+  this->CWnd::ZRefCounted::__vftable = (ZRefCounted_vtbl *)&CUIMechanicEquip::`vftable'{for `ZRefCounted'}; /*0x7a3e05*/
+  CUIToolTip::CUIToolTip(&this->m_uiToolTip); /*0x7a3e0c*/
+  CWnd::CreateWnd(this, lLeft, lTop, 151, 172, 10, 1, nullptr, 1, Origin_LT); /*0x7a3e36*/
+  return this; /*0x7a3e3d*/
+}

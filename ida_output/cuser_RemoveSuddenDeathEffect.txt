@@ -1,0 +1,3 @@
+// CUser::RemoveSuddenDeathEffect @ 0x8e12c0
+
+{"addr":"0x8e12c0","code":"void __thiscall CUser::RemoveSuddenDeathEffect(CUser *this)\n{\n  IWzGr2DLayer *m_pInterface; // eax\n\n  m_pInterface = this->m_pLayerSuddenDeathEffect.m_pInterface; /*0x8e12c0*/\n  if ( m_pInterface ) /*0x8e12c8*/\n  {\n    this->m_pLayerSuddenDeathEffect.m_pInterface = nullptr; /*0x8e12ca*/\n    m_pInterface->Release(m_pInterface); /*0x8e12da*/\n  }\n}"}

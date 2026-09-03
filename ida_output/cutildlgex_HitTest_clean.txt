@@ -1,0 +1,15 @@
+// CUtilDlgEx::HitTest
+// Address: 0x97b020
+
+int __thiscall CUtilDlgEx::HitTest(CUtilDlgEx *this, int rx, int ry, CCtrlWnd **ppCtrl)
+{
+  int result; // eax
+
+  result = CWnd::HitTest(this, rx, ry, ppCtrl); /*0x97b034*/
+  if ( result && (!ppCtrl || !*ppCtrl) ) /*0x97b041*/
+    return (ry >= this->m_ctTop) + 1; /*0x97b051*/
+  return result; /*0x97b052*/
+}
+
+// References:
+//   ?HitTest@CWnd@@UAEHJJPAPAVCCtrlWnd@@@Z @ 0x9ae3b0

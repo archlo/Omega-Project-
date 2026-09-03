@@ -1,0 +1,214 @@
+// cuiuserlist::OnMouseButton
+
+void __thiscall CUIUserList::OnMouseButton(CUIUserList *this, unsigned int msg, unsigned int wParam, int rx, int ry)
+{
+  CCtrlScrollBar *p; // eax
+  int v7; // ebp
+  char *m_pStr; // ecx
+  int v9; // eax
+  _BYTE *m_dwCurCID; // eax
+  int v11; // edi
+  int v12; // edi
+  ZArray<CTabFriend::FRIENDITEM> *v13; // edi
+  unsigned int v14; // ebp
+  int v15; // ebx
+  ZArray<CTabFriend::FRIENDITEM> v16; // eax
+  bool v17; // zf
+  int j; // edi
+  int v19; // eax
+  int v20; // eax
+  CTabBlackList *m_pTabBlackList; // ecx
+  CCtrlScrollBar *v22; // eax
+  char *v23; // eax
+  tagPOINT v24[3]; // [esp-8h] [ebp-28h] BYREF
+  int i; // [esp+10h] [ebp-10h]
+  int v26; // [esp+14h] [ebp-Ch]
+  int bInvalidate; // [esp+18h] [ebp-8h]
+  unsigned int dwOldCID; // [esp+1Ch] [ebp-4h]
+
+  if ( msg == 513 )
+  {
+    dwOldCID = this->m_bAllianceGradeShown; /*0x8dc1ee*/
+    p = this->m_pSB.p; /*0x8dc1f2*/
+    v7 = 0; /*0x8dc1f8*/
+    bInvalidate = 0; /*0x8dc1fa*/
+    switch ( (unsigned int)p )
+    {
+      case 0u:
+        v24[0].y = (int)sStrDefault; /*0x8dc214*/
+        this->m_bAllianceGradeShown = 0; /*0x8dc219*/
+        ZXString<char>::operator=<char>((ZXString<char> *)&this->m_dwCurCID, (const char *)v24[0].y); /*0x8dc21f*/
+        i = 0; /*0x8dc224*/
+LABEL_4:
+        while ( 1 ) /*0x8dc228*/
+        {
+          m_pStr = this->m_sCurGroup._m_pStr; /*0x8dc228*/
+          v9 = *((_DWORD *)m_pStr + 42); /*0x8dc22e*/
+          v26 = v7; /*0x8dc234*/
+          if ( !v9 ) /*0x8dc23a*/
+            break; /*0x8dc23a*/
+          if ( (unsigned int)i >= *(_DWORD *)(v9 - 4) ) /*0x8dc247*/
+            break; /*0x8dc247*/
+          if ( this->m_bAllianceGradeShown ) /*0x8dc24d*/
+            break; /*0x8dc24d*/
+          m_dwCurCID = (_BYTE *)this->m_dwCurCID; /*0x8dc25a*/
+          if ( m_dwCurCID ) /*0x8dc268*/
+          {
+            if ( *m_dwCurCID ) /*0x8dc26a*/
+              break; /*0x8dc26a*/
+          }
+          v11 = *((_DWORD *)m_pStr + 42); /*0x8dc277*/
+          v24[0].y = ry - 115; /*0x8dc280*/
+          v24[0].x = rx - 10; /*0x8dc288*/
+          v12 = v7 + v11; /*0x8dc289*/
+          if ( ZAPI.PtInRect((const tagRECT *)(v12 + 4), v24[0]) ) /*0x8dc28f*/
+          {
+            v17 = *(_DWORD *)(v12 + 20) == 0; /*0x8dc326*/
+            v24[0].y = v12; /*0x8dc329*/
+            *(_DWORD *)(v12 + 20) = v17; /*0x8dc32f*/
+            ZXString<char>::operator=((ZXString<char> *)&this->m_dwCurCID, (const ZXString<char> *)v24[0].y); /*0x8dc332*/
+            v24[0].y = *(_DWORD *)(v12 + 20); /*0x8dc33a*/
+            v24[0].x = v24[0].y; /*0x8dc33b*/
+            bInvalidate = (int)v24; /*0x8dc33e*/
+            ZXString<char>::ZXString<char>((ZXString<char> *)v24, (const ZXString<char> *)v12); /*0x8dc343*/
+            CConfig::SetFriendGroupFolded( /*0x8dc34e*/
+              (CConfig *)TSingleton<CConfig>::ms_pInstance._m_pStr,
+              (ZXString<char>)v24[0].x,
+              v24[0].y);
+            bInvalidate = 1; /*0x8dc358*/
+            CUIUserList::SetFriendViewItem((CUIUserList *)((char *)this - 4)); /*0x8dc360*/
+            CUIUserList::SetScrollBar((CUIUserList *)((char *)this - 4), 0); /*0x8dc369*/
+            break; /*0x8dc369*/
+          }
+          if ( !*(_DWORD *)(v12 + 20) ) /*0x8dc29d*/
+          {
+            v13 = (ZArray<CTabFriend::FRIENDITEM> *)(*((_DWORD *)this->m_sCurGroup._m_pStr + 42) + v7 + 28); /*0x8dc2ae*/
+            v14 = 0; /*0x8dc2b4*/
+            if ( ZArray<CTabFriend::FRIENDITEM>::GetCount(v13) ) /*0x8dc2b6*/
+            {
+              v15 = 0; /*0x8dc2bf*/
+              while ( 1 ) /*0x8dc2c5*/
+              {
+                v16.a = v13->a; /*0x8dc2c5*/
+                v24[0].y = ry - 115; /*0x8dc2ca*/
+                v24[0].x = rx - 10; /*0x8dc2d4*/
+                if ( ZAPI.PtInRect(&v16.a[v15].rt, v24[0]) ) /*0x8dc2d9*/
+                  break; /*0x8dc2d9*/
+                ++v14; /*0x8dc2e5*/
+                ++v15; /*0x8dc2e6*/
+                if ( v14 >= ZArray<CTabFriend::FRIENDITEM>::GetCount(v13) ) /*0x8dc2f0*/
+                {
+                  ++i; /*0x8dc2f6*/
+                  v7 = v26 + 32; /*0x8dc2fa*/
+                  goto LABEL_4; /*0x8dc2fd*/
+                }
+              }
+              this->m_bAllianceGradeShown = v13->a[v14].dwFriendID; /*0x8dc30e*/
+            }
+          }
+          ++i; /*0x8dc318*/
+          v7 = v26 + 32; /*0x8dc31c*/
+        }
+        CTabFriend::OnClick((CTabFriend *)this->m_sCurGroup._m_pStr); /*0x8dc36e*/
+        break; /*0x8dc379*/
+      case 1u:
+        this->m_bAllianceGradeShown = CTabParty::GetMemberIDFromPoint( /*0x8dc39d*/
+                                        (CTabParty *)this->m_pTabFriend,
+                                        rx,
+                                        ry,
+                                        *(_DWORD *)(*(_DWORD *)&this->m_pSB.gap0 + 56));
+        break; /*0x8dc3a3*/
+      case 2u:
+        m_pTabBlackList = this->m_pTabBlackList; /*0x8dc49a*/
+        v24[0].y = ry; /*0x8dc4a0*/
+        v24[0].x = rx; /*0x8dc4a5*/
+        this->m_bAllianceGradeShown = 0; /*0x8dc4aa*/
+        ((void (__thiscall *)(CTabBlackList *, int, unsigned int, int, int))m_pTabBlackList->__vftable[7].dtr_CTabBlackList)( /*0x8dc4bb*/
+          m_pTabBlackList,
+          513,
+          wParam,
+          v24[0].x,
+          v24[0].y);
+        break; /*0x8dc4bb*/
+      case 3u:
+        this->m_bAllianceGradeShown = CTabGuild::GetMemberIDFromPoint( /*0x8dc3c7*/
+                                        (CTabGuild *)this->m_pTabParty,
+                                        rx,
+                                        ry,
+                                        *(_DWORD *)(*(_DWORD *)&this->m_pSB.gap0 + 56));
+        CTabGuild::OnListHeader( /*0x8dc3e1*/
+          (CTabGuild *)this->m_pTabParty,
+          1,
+          rx,
+          ry,
+          *(_DWORD *)(*(_DWORD *)&this->m_pSB.gap0 + 56));
+        CTabGuild::OnListHeader( /*0x8dc3fa*/
+          (CTabGuild *)this->m_pTabParty,
+          0,
+          rx,
+          ry,
+          *(_DWORD *)(*(_DWORD *)&this->m_pSB.gap0 + 56));
+        break; /*0x8dc3ff*/
+      case 4u:
+        this->m_bAllianceGradeShown = CTabGuildAlliance::GetMemberIDFromPoint( /*0x8dc423*/
+                                        (CTabGuildAlliance *)this->m_pTabGuild,
+                                        rx,
+                                        ry,
+                                        *(_DWORD *)(*(_DWORD *)&this->m_pSB.gap0 + 56));
+        for ( j = 0; ; ++j )
+        {
+          v19 = *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 3603); /*0x8dc436*/
+          v20 = v19 ? *(_DWORD *)(v19 - 4) : 0;
+          if ( j >= v20 + 1 ) /*0x8dc44a*/
+            break; /*0x8dc44a*/
+          CTabGuildAlliance::OnListHeader( /*0x8dc467*/
+            (CTabGuildAlliance *)this->m_pTabGuild,
+            j,
+            rx,
+            ry,
+            *(_DWORD *)(*(_DWORD *)&this->m_pSB.gap0 + 56));
+        }
+        break; /*0x8dc46d*/
+      case 5u:
+        this->m_bAllianceGradeShown = CTabBlackList::GetMemberIDFromPoint( /*0x8dc48e*/
+                                        (CTabBlackList *)this->m_pWndGuildGrade,
+                                        rx,
+                                        ry,
+                                        *(_DWORD *)(*(_DWORD *)&this->m_pSB.gap0 + 56));
+        break; /*0x8dc494*/
+      default:
+        break;
+    }
+    if ( this->m_bAllianceGradeShown != dwOldCID || bInvalidate ) /*0x8dc4ce*/
+      CWnd::InvalidateRect((CUIUserList *)((char *)this - 4), nullptr); /*0x8dc4d5*/
+  }
+  else if ( msg == 515 ) /*0x8dc4e1*/
+  {
+    v22 = this->m_pSB.p; /*0x8dc4e3*/
+    if ( v22 ) /*0x8dc4ec*/
+    {
+      v23 = (char *)&v22[-1].m_sUOL._m_pStr + 3; /*0x8dc4ee*/
+      if ( v23 ) /*0x8dc4f1*/
+      {
+        if ( v23 == (char *)2 ) /*0x8dc4f6*/
+          CTabGuild::OnChat((CTabGuild *)this->m_pTabParty); /*0x8dc4fe*/
+      }
+      else
+      {
+        CTabParty::OnChat((CTabParty *)this->m_pTabFriend); /*0x8dc50b*/
+      }
+    }
+    else
+    {
+      CTabFriend::OnDblClick((CTabFriend *)this->m_sCurGroup._m_pStr); /*0x8dc518*/
+    }
+  }
+  CUIToolTip::ClearToolTip((CUIToolTip *)&this->m_pBtClose.p); /*0x8dc523*/
+  if ( this->m_pSB.p == (CCtrlScrollBar *)2 ) /*0x8dc52f*/
+    ((void (__thiscall *)(CTabBlackList *, unsigned int, unsigned int, int, int))this->m_pTabBlackList->__vftable[7].dtr_CTabBlackList)( /*0x8dc552*/
+      this->m_pTabBlackList,
+      msg,
+      wParam,
+      rx,
+      ry);
+}

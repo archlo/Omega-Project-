@@ -1,0 +1,24 @@
+const SKILLENTRY *__thiscall CSkillInfo::GetSkill(CSkillInfo *this, int nSkillID)
+{
+  SKILLENTRY *v2; // edi
+  Ztl_bstr_t *p_sFinishUOL; // esi
+  ZRef<SKILLENTRY> p; // [esp+10h] [ebp-14h] BYREF
+  int v6; // [esp+20h] [ebp-4h]
+
+  p.p = nullptr; /*0x6f1bd6*/
+  v6 = 0; /*0x6f1beb*/
+  ZMap<long,ZRef<SKILLENTRY>,long>::GetAt(&this->m_mSkill, &nSkillID, &p); /*0x6f1bf3*/
+  v2 = p.p; /*0x6f1bf8*/
+  v6 = -1; /*0x6f1bfc*/
+  if ( p.p ) /*0x6f1c06*/
+  {
+    p_sFinishUOL = &p.p[-1].sFinishUOL; /*0x6f1c08*/
+    if ( !InterlockedDecrement((volatile LONG *)p.p[-1].apCanvas) ) /*0x6f1c0f*/
+    {
+      InterlockedIncrement((volatile LONG *)v2[-1].apCanvas); /*0x6f1c1a*/
+      if ( v2 != (SKILLENTRY *)16 ) /*0x6f1c22*/
+        ((void (__thiscall *)(Ztl_bstr_t *, int))p_sFinishUOL->m_Data->m_wstr)(&v2[-1].sFinishUOL, 1); /*0x6f1c2c*/
+    }
+  }
+  return v2; /*0x6f1c30*/
+}

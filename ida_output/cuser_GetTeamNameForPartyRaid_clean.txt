@@ -1,0 +1,40 @@
+// cuser::GetTeamNameForPartyRaid
+
+ZXString<char> *__thiscall CUser::GetTeamNameForPartyRaid(CUser *this, ZXString<char> *result)
+{
+  int TeamForPartyRaid; // eax
+  StringPool *Instance; // eax
+  char *v4; // eax
+  StringPool *v5; // eax
+  char *m_pStr; // [esp-4h] [ebp-28h]
+  char *v8; // [esp-4h] [ebp-28h]
+  ZXString<char> v9; // [esp+10h] [ebp-14h] BYREF
+  ZXString<char> v10; // [esp+14h] [ebp-10h] BYREF
+  int v11; // [esp+20h] [ebp-4h]
+
+  result->_m_pStr = nullptr; /*0x8e6b6f*/
+  v11 = 0; /*0x8e6b71*/
+  TeamForPartyRaid = CUser::GetTeamForPartyRaid(this); /*0x8e6b7d*/
+  if ( TeamForPartyRaid ) /*0x8e6b84*/
+  {
+    if ( TeamForPartyRaid != 1 ) /*0x8e6b89*/
+      return result; /*0x8e6b89*/
+    Instance = StringPool::GetInstance(); /*0x8e6b95*/
+    m_pStr = StringPool::GetString(Instance, &v9, 0x1570u)->_m_pStr; /*0x8e6ba3*/
+    v11 = 2; /*0x8e6ba5*/
+    ZXString<char>::Format(result, m_pStr); /*0x8e6bad*/
+    v4 = v9._m_pStr; /*0x8e6bb2*/
+  }
+  else
+  {
+    v5 = StringPool::GetInstance(); /*0x8e6bc2*/
+    v8 = StringPool::GetString(v5, &v10, 0x156Fu)->_m_pStr; /*0x8e6bd0*/
+    v11 = 1; /*0x8e6bd2*/
+    ZXString<char>::Format(result, v8); /*0x8e6bda*/
+    v4 = v10._m_pStr; /*0x8e6bdf*/
+  }
+  LOBYTE(v11) = 0; /*0x8e6be6*/
+  if ( v4 ) /*0x8e6bec*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v4 - 1); /*0x8e6bf2*/
+  return result; /*0x8e6bfc*/
+}

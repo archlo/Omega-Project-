@@ -1,0 +1,46 @@
+﻿void __thiscall CPet::OnNameChanged(CPet *this, CInPacket *iPacket)
+{
+  CInPacket *v3; // edi
+  const ZXString<char> *v4; // eax
+  int nNameTag; // eax
+  IWzVector2D *m_pInterface; // eax
+  IWzGr2DLayer *v7; // eax
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v8; // [esp-20h] [ebp-40h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v9; // [esp-1Ch] [ebp-3Ch] BYREF
+  int v10; // [esp-18h] [ebp-38h]
+  int v11; // [esp-14h] [ebp-34h]
+  int v12; // [esp-10h] [ebp-30h]
+  int v13; // [esp-Ch] [ebp-2Ch]
+  int v14; // [esp-8h] [ebp-28h]
+  int v15; // [esp-4h] [ebp-24h]
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v16; // [esp+10h] [ebp-10h]
+  int v17; // [esp+1Ch] [ebp-4h]
+
+  v3 = iPacket;
+  v4 = CInPacket::DecodeStr(iPacket, (ZXString<char> *)&iPacket);
+  ZXString<char>::operator=(&this->m_sName, v4);
+  v17 = -1;
+  if ( iPacket )
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&iPacket[-1].m_uLength);
+  if ( CInPacket::Decode1(v3) )
+    nNameTag = this->m_pTemplate->nNameTag;
+  else
+    nNameTag = 0;
+  v15 = 0;
+  v14 = 0;
+  v13 = 0;
+  v12 = 0;
+  v11 = nNameTag;
+  m_pInterface = this->m_pvc.m_pInterface;
+  v10 = 1003;
+  v16 = (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v9;
+  v9.m_pInterface = m_pInterface;
+  if ( m_pInterface )
+    m_pInterface->AddRef(m_pInterface);
+  v7 = this->m_pLayerAction.m_pInterface;
+  v16 = &v8;
+  v8.m_pInterface = v7;
+  if ( v7 )
+    v7->AddRef(v7);
+  CLife::MakeNameTag(this, this->m_sName._m_pStr, v8, v9, v10, v11, v12, v13, v14, v15);
+}

@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"addr\":\"0x77f670\",\"code\":\"void __thiscall CUINoticePremium::SetVisible(CUINoticePremium *this, int bVisible)\\n{\\n  IWzGr2DLayer *m_pInterface; // esi\\n  HRESULT v3; // eax\\n\\n  if ( this->m_pLayer.m_pInterface ) /*0x77f670*/\\n  {\\n    m_pInterface = this->m_pLayer.m_pInterface; /*0x77f677*/\\n    if ( !m_pInterface ) /*0x77f67c*/\\n      _com_issue_error(-2147467261); /*0x77f683*/\\n    v3 = m_pInterface->put_visible(m_pInterface, bVisible); /*0x77f696*/\\n    if ( v3 < 0 ) /*0x77f69a*/\\n      _com_issue_errorex(v3, m_pInterface, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x77f6a3*/\\n  }\\n}\",\"refs\":[{\"addr\":\"0xa2fd00\",\"name\":\"?_com_issue_error@@YGXJ@Z\"},{\"addr\":\"0xa2fd20\",\"name\":\"?_com_issue_errorex@@YGXJPAUIUnknown@@ABU_GUID@@@Z\"},{\"addr\":\"0xb46cb4\",\"name\":\"__GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf\"}]}"
+    }
+  ],
+  "structuredContent": {
+    "addr": "0x77f670",
+    "code": "void __thiscall CUINoticePremium::SetVisible(CUINoticePremium *this, int bVisible)\n{\n  IWzGr2DLayer *m_pInterface; // esi\n  HRESULT v3; // eax\n\n  if ( this->m_pLayer.m_pInterface ) /*0x77f670*/\n  {\n    m_pInterface = this->m_pLayer.m_pInterface; /*0x77f677*/\n    if ( !m_pInterface ) /*0x77f67c*/\n      _com_issue_error(-2147467261); /*0x77f683*/\n    v3 = m_pInterface->put_visible(m_pInterface, bVisible); /*0x77f696*/\n    if ( v3 < 0 ) /*0x77f69a*/\n      _com_issue_errorex(v3, m_pInterface, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x77f6a3*/\n  }\n}",
+    "refs": [
+      {
+        "addr": "0xa2fd00",
+        "name": "?_com_issue_error@@YGXJ@Z"
+      },
+      {
+        "addr": "0xa2fd20",
+        "name": "?_com_issue_errorex@@YGXJPAUIUnknown@@ABU_GUID@@@Z"
+      },
+      {
+        "addr": "0xb46cb4",
+        "name": "__GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf"
+      }
+    ]
+  },
+  "isError": false
+}

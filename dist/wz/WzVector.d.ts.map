@@ -1,0 +1,1 @@
+{"version":3,"file":"WzVector.d.ts","sourceRoot":"","sources":["../../src/wz/WzVector.ts"],"names":[],"mappings":"AAAA,qBAAa,QAAQ;aAID,CAAC,EAAE,MAAM;aACT,CAAC,EAAE,MAAM;IAJ3B,MAAM,CAAC,QAAQ,CAAC,IAAI,WAAsB;gBAGxB,CAAC,EAAE,MAAM,EACT,CAAC,EAAE,MAAM;IAG3B,QAAQ,IAAI,MAAM;CAGnB"}

@@ -1,0 +1,21 @@
+﻿int dynamic_initializer_for__CUIMechanicEquip::ms_aRegion__()
+{
+  int v0; // esi
+  int v1; // edi
+  int result; // eax
+
+  v0 = EqSlotInfo::GetX(1, 3); /*0xb0d6db*/
+  CUIMechanicEquip::ms_aRegion[0].nX = v0; /*0xb0d6e1*/
+  v1 = EqSlotInfo::GetY(2, 3); /*0xb0d6ec*/
+  dword_C6E814 = v1; /*0xb0d6f2*/
+  dword_C6E818 = EqSlotInfo::GetX(0, 3); /*0xb0d701*/
+  dword_C6E81C = EqSlotInfo::GetY(3, 3); /*0xb0d70f*/
+  dword_C6E820 = v0; /*0xb0d714*/
+  dword_C6E824 = dword_C6E81C; /*0xb0d71a*/
+  dword_C6E828 = EqSlotInfo::GetX(2, 3); /*0xb0d728*/
+  dword_C6E82C = v1; /*0xb0d72d*/
+  dword_C6E830 = v0; /*0xb0d733*/
+  result = EqSlotInfo::GetY(1, 3); /*0xb0d739*/
+  dword_C6E834 = result; /*0xb0d742*/
+  return result; /*0xb0d741*/
+}

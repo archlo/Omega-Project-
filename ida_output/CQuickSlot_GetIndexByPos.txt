@@ -1,0 +1,64 @@
+﻿int __thiscall CUIStatusBar::CQuickSlot::GetIndexByPos(CUIStatusBar::CQuickSlot *this, unsigned int x, unsigned int y)
+{
+  int v4; // ebx
+  IWzGr2DLayer *m_pInterface; // esi
+  HRESULT (__stdcall *get_x)(IWzShape2D *, int *); // edx
+  HRESULT v7; // eax
+  IWzGr2DLayer *v8; // esi
+  HRESULT (__stdcall *get_y)(IWzShape2D *, int *); // eax
+  HRESULT v10; // eax
+  IWzGr2DLayer *v11; // esi
+  HRESULT (__stdcall *v12)(IWzShape2D *, int *); // ecx
+  HRESULT v13; // eax
+  IWzGr2DLayer *v14; // esi
+  HRESULT (__stdcall *v15)(IWzShape2D *, int *); // ecx
+  HRESULT v16; // eax
+  int v18; // [esp+20h] [ebp-14h] BYREF
+  tagRECT rtShortCut; // [esp+24h] [ebp-10h] BYREF
+
+  v4 = 0; /*0x86d03b*/
+  while ( 1 ) /*0x86d040*/
+  {
+    m_pInterface = this->m_pLayerShortCut.m_pInterface; /*0x86d040*/
+    if ( !m_pInterface ) /*0x86d045*/
+      goto LABEL_17; /*0x86d045*/
+    get_x = m_pInterface->get_x; /*0x86d04d*/
+    v18 = 0; /*0x86d056*/
+    v7 = get_x(m_pInterface, &v18); /*0x86d05a*/
+    if ( v7 < 0 ) /*0x86d05e*/
+      _com_issue_errorex(v7, m_pInterface, &_GUID_4cfb57c7_eae3_40b3_ac98_4b2750e3642a); /*0x86d067*/
+    v8 = this->m_pLayerShortCut.m_pInterface; /*0x86d077*/
+    rtShortCut.left = v18 + s_ptShortKeyPos[v4].x; /*0x86d07a*/
+    if ( !v8 ) /*0x86d080*/
+      goto LABEL_17; /*0x86d080*/
+    get_y = v8->get_y; /*0x86d088*/
+    v18 = 0; /*0x86d091*/
+    v10 = get_y(v8, &v18); /*0x86d095*/
+    if ( v10 < 0 ) /*0x86d099*/
+      _com_issue_errorex(v10, v8, &_GUID_4cfb57c7_eae3_40b3_ac98_4b2750e3642a); /*0x86d0a2*/
+    v11 = this->m_pLayerShortCut.m_pInterface; /*0x86d0b2*/
+    rtShortCut.top = v18 + s_ptShortKeyPos[v4].y; /*0x86d0b5*/
+    if ( !v11 ) /*0x86d0bb*/
+      goto LABEL_17; /*0x86d0bb*/
+    v12 = v11->get_x; /*0x86d0c3*/
+    v18 = 0; /*0x86d0cc*/
+    v13 = v12(v11, &v18); /*0x86d0d0*/
+    if ( v13 < 0 ) /*0x86d0d4*/
+      _com_issue_errorex(v13, v11, &_GUID_4cfb57c7_eae3_40b3_ac98_4b2750e3642a); /*0x86d0dd*/
+    v14 = this->m_pLayerShortCut.m_pInterface; /*0x86d0ed*/
+    rtShortCut.right = s_ptShortKeyPos[v4].x + v18 + 32; /*0x86d0f4*/
+    if ( !v14 ) /*0x86d0fa*/
+LABEL_17:
+      _com_issue_error(-2147467261); /*0x86d165*/
+    v15 = v14->get_y; /*0x86d0fe*/
+    v18 = 0; /*0x86d107*/
+    v16 = v15(v14, &v18); /*0x86d10b*/
+    if ( v16 < 0 ) /*0x86d10f*/
+      _com_issue_errorex(v16, v14, &_GUID_4cfb57c7_eae3_40b3_ac98_4b2750e3642a); /*0x86d118*/
+    rtShortCut.bottom = s_ptShortKeyPos[v4].y + v18 + 32; /*0x86d13b*/
+    if ( ZAPI.PtInRect(&rtShortCut, (tagPOINT)__PAIR64__(y, x)) ) /*0x86d13f*/
+      return v4; /*0x86d153*/
+    if ( ++v4 >= 8 ) /*0x86d14d*/
+      return -1; /*0x86d15d*/
+  }
+}

@@ -1,0 +1,39 @@
+﻿void __thiscall CUIStatusBar::OnCreate(CUIStatusBar *this, void *pData)
+{
+  IWzFont *m_pInterface; // eax
+  IWzFont *v4; // edi
+  IWzFont *v5; // eax
+  IWzFont *v6; // edi
+  StringPool *Instance; // eax
+  wchar_t *m_pStr; // eax
+  void (__stdcall *v9)(VARIANTARG *); // ebx
+  HRESULT v10; // eax
+  _bstr_t::Data_t *v11; // ecx
+  StringPool *v12; // eax
+  IWzFont *v13; // ecx
+  StringPool *v14; // eax
+  wchar_t *v15; // eax
+  HRESULT v16; // eax
+  StringPool *v17; // eax
+  IWzFont *v18; // ecx
+  StringPool *v19; // eax
+  wchar_t *v20; // eax
+  HRESULT v21; // eax
+  _bstr_t::Data_t *v22; // ecx
+  StringPool *v23; // eax
+  IWzFont *v24; // ecx
+  StringPool *v25; // eax
+  wchar_t *v26; // eax
+  HRESULT v27; // eax
+  _bstr_t::Data_t *v28; // ecx
+  StringPool *v29; // eax
+  IWzFont *v30; // ecx
+  StringPool *v31; // eax
+  wchar_t *v32; // eax
+  HRESULT v33; // eax
+  StringPool *v34; // eax
+  IWzFont *v35; // ecx
+  StringPool *v36; // eax
+  wchar_t *v37; // eax
+  HRESULT v38; // eax
+  _bstr_t::... [113662 chars total]

@@ -1,0 +1,442 @@
+﻿void __thiscall CUIStatusBar::SetChatType(CUIStatusBar *this, IWzCanvas *nType)
+{
+  int v3; // eax
+  char *m_pStr; // ecx
+  int v5; // eax
+  int v6; // eax
+  int v7; // ecx
+  int m_nChatWndHeight; // ecx
+  int v9; // ecx
+  CCtrlScrollBar *p; // ecx
+  CCtrlScrollBar *v11; // eax
+  CCtrlScrollBar *v12; // eax
+  CCtrlScrollBar *v13; // ecx
+  CCtrlScrollBar *v14; // eax
+  CCtrlScrollBar *v15; // eax
+  CCtrlScrollBar *v16; // ecx
+  CCtrlScrollBar *v17; // eax
+  CCtrlScrollBar *v18; // eax
+  CUIStatusBar::CChatLog *v19; // eax
+  int v20; // edi
+  int m_nChatWndType; // eax
+  IWzGr2DLayer *v22; // eax
+  IWzGr2DLayer_vtbl *v23; // ecx
+  void (__stdcall *v24)(VARIANTARG *); // ebp
+  HRESULT v25; // eax
+  HRESULT v26; // eax
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzGr2DLayer *v28; // edi
+  HRESULT (__stdcall *v29)(VARIANTARG *); // edi
+  IWzGr2DLayer *v30; // edi
+  HRESULT v31; // eax
+  IWzGr2DLayer *v32; // eax
+  IWzGr2DLayer *v33; // ecx
+  IWzGr2DLayer *v34; // eax
+  IWzGr2DLayer *v35; // ecx
+  IWzGr2DLayer *v36; // edi
+  HRESULT v37; // eax
+  HRESULT v38; // eax
+  HRESULT v39; // eax
+  Ztl_variant_t *ObjectA; // eax
+  IUnknown *Unknown; // eax
+  HRESULT v42; // eax
+  IWzGr2DLayer *v43; // ecx
+  IWzCanvas *v44; // ecx
+  IWzGr2DLayer_vtbl **v45; // edi
+  int v46; // ebp
+  CCtrlOriginButton **p_p; // edi
+  _bstr_t v48; // [esp+3Ch] [ebp-88h] BYREF
+  const Ztl_variant_t *p_pvarg; // [esp+40h] [ebp-84h]
+  const Ztl_variant_t *p_pvargDest; // [esp+44h] [ebp-80h]
+  BOOL v51; // [esp+48h] [ebp-7Ch]
+  int v52; // [esp+4Ch] [ebp-78h]
+  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > v53; // [esp+64h] [ebp-60h] BYREF
+  VARIANTARG pvargDest; // [esp+68h] [ebp-5Ch] BYREF
+  VARIANTARG pvarg; // [esp+78h] [ebp-4Ch] BYREF
+  Ztl_variant_t vIndex; // [esp+88h] [ebp-3Ch] BYREF
+  Ztl_variant_t nAlpha; // [esp+98h] [ebp-2Ch] BYREF
+  Ztl_variant_t result; // [esp+A8h] [ebp-1Ch] BYREF
+  int v59; // [esp+C0h] [ebp-4h]
+
+  v3 = (int)nType; /*0x879c29*/
+  if ( nType != (IWzCanvas *)this->m_nChatWndType ) /*0x879c33*/
+  {
+    m_pStr = TSingleton<CConfig>::ms_pInstance._m_pStr; /*0x879c39*/
+    this->m_nChatWndType = (int)nType; /*0x879c44*/
+    *((_DWORD *)m_pStr + 22) = v3; /*0x879c4a*/
+    v5 = v3 - 1; /*0x879c4d*/
+    if ( v5 ) /*0x879c55*/
+    {
+      v6 = v5 - 1; /*0x879c5b*/
+      if ( v6 ) /*0x879c5d*/
+      {
+        if ( v6 == 1 ) /*0x879c65*/
+        {
+          v7 = *((_DWORD *)m_pStr + 24); /*0x879c6b*/
+          if ( (unsigned int)(v7 - 26) > 0x1CF ) /*0x879c76*/
+            this->m_nChatWndHeight = 70; /*0x879c80*/
+          else
+            this->m_nChatWndHeight = v7; /*0x879c78*/
+          m_nChatWndHeight = this->m_nChatWndHeight; /*0x879c8a*/
+          this->m_nChatWndLineVisible = m_nChatWndHeight / 13; /*0x879c9a*/
+          if ( !(m_nChatWndHeight % 13) ) /*0x879c98*/
+            this->m_nChatWndHeight = m_nChatWndHeight + 2; /*0x879ca7*/
+          v9 = 515 - this->m_nChatWndHeight; /*0x879cb2*/
+          v52 = 1; /*0x879cb8*/
+          this->m_ptChatWnd.y = v9; /*0x879cb9*/
+          CUIStatusBar::MakeCtrlEdit(this, v52); /*0x879cc1*/
+          p = this->m_pScrChatLog.p; /*0x879cc6*/
+          if ( p ) /*0x879cce*/
+            p->Destroy(p); /*0x879cd5*/
+          v11 = (CCtrlScrollBar *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0x74u); /*0x879cde*/
+          nType = (IWzCanvas *)v11; /*0x879ce3*/
+          v59 = 2; /*0x879ce7*/
+          if ( v11 ) /*0x879cf1*/
+            v12 = CCtrlScrollBar::CCtrlScrollBar(v11); /*0x879cf5*/
+          else
+            v12 = nullptr; /*0x879cfc*/
+          v59 = -1; /*0x879d05*/
+          ZRef<CCtrlScrollBar>::operator=(&this->m_pScrChatLog, v12); /*0x879d0d*/
+          this->m_pScrChatLog.p->CreateCtrl_2( /*0x879d45*/
+            this->m_pScrChatLog.p,
+            this,
+            1010u,
+            1,
+            8,
+            565 - this->m_nScrWidth,
+            516 - this->m_nChatWndHeight,
+            this->m_nChatWndHeight - 2,
+            nullptr);
+          this->m_pScrChatLog.p->m_nWheelRange = 577 - this->m_nScrWidth; /*0x879d58*/
+        }
+LABEL_29:
+        CUIStatusBar::ToggleMaxMinButton(this); /*0x879eb4*/
+        if ( CUIStatusBar::m_aChatLog.a ) /*0x879ec2*/
+          v19 = CUIStatusBar::m_aChatLog.a[-1].p; /*0x879ec8*/
+        else
+          v19 = nullptr; /*0x879ec4*/
+        v20 = (int)&v19->__vftable - this->m_nChatWndLineVisible + 1; /*0x879ed9*/
+        CCtrlScrollBar::SetScrollRange(this->m_pScrChatLog.p, v20); /*0x879edc*/
+        CCtrlScrollBar::SetCurPos(this->m_pScrChatLog.p, v20 - 1); /*0x879ee9*/
+        m_nChatWndType = this->m_nChatWndType; /*0x879eee*/
+        if ( m_nChatWndType == 3 || m_nChatWndType == 2 ) /*0x879efc*/
+        {
+          if ( this->m_pLayerChatBar.m_pInterface ) /*0x879f1a*/
+            goto LABEL_124; /*0x879f1a*/
+          v24 = VariantInit; /*0x879f2b*/
+          VariantInit(&pvarg); /*0x879f36*/
+          v25 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing); /*0x879f42*/
+          if ( v25 < 0 ) /*0x879f4c*/
+            _com_issue_error(v25); /*0x879f4f*/
+          v59 = 3; /*0x879f59*/
+          v24(&pvargDest); /*0x879f61*/
+          v26 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing); /*0x879f6d*/
+          if ( v26 < 0 ) /*0x879f77*/
+            _com_issue_error(v26); /*0x879f7a*/
+          LOBYTE(v59) = 4; /*0x879f85*/
+          if ( !g_gr.m_pInterface ) /*0x879f8c*/
+            _com_issue_error(-2147467261); /*0x879f93*/
+          m_pInterface = IWzGr2D::CreateLayer( /*0x879fb9*/
+                           g_gr.m_pInterface,
+                           (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&nType,
+                           0,
+                           0,
+                           0x241u,
+                           4u,
+                           0,
+                           (const Ztl_variant_t *)&pvargDest,
+                           (const Ztl_variant_t *)&pvarg)->m_pInterface;
+          v28 = this->m_pLayerChatBar.m_pInterface; /*0x879fbb*/
+          if ( v28 != m_pInterface ) /*0x879fc3*/
+          {
+            this->m_pLayerChatBar.m_pInterface = m_pInterface; /*0x879fc5*/
+            if ( m_pInterface ) /*0x879fcd*/
+              m_pInterface->AddRef(m_pInterface); /*0x879fd5*/
+            if ( v28 ) /*0x879fd9*/
+              v28->Release(v28); /*0x879fe1*/
+          }
+          if ( nType ) /*0x879fe9*/
+            nType->Release(nType); /*0x879ff1*/
+          v29 = VariantClear; /*0x879ff9*/
+          LOBYTE(v59) = 3; /*0x879fff*/
+          if ( pvargDest.vt == 8 ) /*0x87a004*/
+          {
+            pvargDest.vt = 0; /*0x87a00c*/
+            if ( pvargDest.decVal.Lo32 ) /*0x87a013*/
+              ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4)); /*0x87a019*/
+          }
+          else
+          {
+            VariantClear(&pvargDest); /*0x87a026*/
+          }
+          v59 = -1; /*0x87a02e*/
+          if ( pvarg.vt == 8 ) /*0x87a036*/
+          {
+            pvarg.vt = 0; /*0x87a03a*/
+            if ( pvarg.decVal.Lo32 ) /*0x87a045*/
+              ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x87a04b*/
+          }
+          else
+          {
+            v29(&pvarg); /*0x87a058*/
+          }
+          v30 = this->m_pLayerChatBar.m_pInterface; /*0x87a05a*/
+          if ( !v30 ) /*0x87a062*/
+            _com_issue_error(-2147467261); /*0x87a069*/
+          v31 = v30->put_color(v30, -1u); /*0x87a079*/
+          if ( v31 < 0 ) /*0x87a07d*/
+            _com_issue_errorex(v31, v30, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x87a086*/
+          v32 = CWnd::GetLayer( /*0x87a097*/
+                  this,
+                  (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&nType)->m_pInterface;
+          v59 = 5; /*0x87a0a3*/
+          pvarg.vt = 13; /*0x87a0a7*/
+          pvarg.decVal.Lo32 = (unsigned int)v32; /*0x87a0ac*/
+          if ( v32 ) /*0x87a0b2*/
+            v32->AddRef(v32); /*0x87a0ba*/
+          v33 = this->m_pLayerChatBar.m_pInterface; /*0x87a0bc*/
+          LOBYTE(v59) = 6; /*0x87a0c2*/
+          if ( !v33 ) /*0x87a0c9*/
+            _com_issue_error(-2147467261); /*0x87a0d0*/
+          IWzVector2D::Putorigin(v33, (const Ztl_variant_t *)&pvarg); /*0x87a0da*/
+          LOBYTE(v59) = 5; /*0x87a0e5*/
+          if ( pvarg.vt == 8 ) /*0x87a0e9*/
+          {
+            pvarg.vt = 0; /*0x87a0f1*/
+            if ( pvarg.decVal.Lo32 ) /*0x87a0f8*/
+              ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x87a0fe*/
+          }
+          else
+          {
+            VariantClear(&pvarg); /*0x87a10b*/
+          }
+          v59 = -1; /*0x87a118*/
+          if ( nType ) /*0x87a11e*/
+            nType->Release(nType); /*0x87a126*/
+          v34 = CWnd::GetLayer( /*0x87a134*/
+                  this,
+                  (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&nType)->m_pInterface;
+          v59 = 7; /*0x87a140*/
+          pvarg.vt = 13; /*0x87a144*/
+          pvarg.decVal.Lo32 = (unsigned int)v34; /*0x87a149*/
+          if ( v34 ) /*0x87a14f*/
+            v34->AddRef(v34); /*0x87a157*/
+          v35 = this->m_pLayerChatBar.m_pInterface; /*0x87a159*/
+          LOBYTE(v59) = 8; /*0x87a15f*/
+          if ( !v35 ) /*0x87a166*/
+            _com_issue_error(-2147467261); /*0x87a16d*/
+          IWzGr2DLayer::Putoverlay(v35, (const Ztl_variant_t *)&pvarg); /*0x87a177*/
+          LOBYTE(v59) = 7; /*0x87a182*/
+          if ( pvarg.vt == 8 ) /*0x87a186*/
+          {
+            pvarg.vt = 0; /*0x87a18a*/
+            if ( pvarg.decVal.Lo32 ) /*0x87a195*/
+              ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x87a19b*/
+          }
+          else
+          {
+            VariantClear(&pvarg); /*0x87a1a8*/
+          }
+          v59 = -1; /*0x87a1b2*/
+          if ( nType ) /*0x87a1b8*/
+            nType->Release(nType); /*0x87a1c0*/
+          v36 = this->m_pLayerChatBar.m_pInterface; /*0x87a1c2*/
+          if ( !v36 ) /*0x87a1ca*/
+            _com_issue_error(-2147467261); /*0x87a1d1*/
+          v37 = v36->put_z(v36, 0); /*0x87a1e1*/
+          if ( v37 < 0 ) /*0x87a1e5*/
+            _com_issue_errorex(v37, v36, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x87a1ee*/
+          v24(&pvargDest); /*0x87a1f8*/
+          v38 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing); /*0x87a204*/
+          if ( v38 < 0 ) /*0x87a20e*/
+            _com_issue_error(v38); /*0x87a211*/
+          v59 = 9; /*0x87a21b*/
+          v24(&pvarg); /*0x87a223*/
+          v39 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing); /*0x87a22f*/
+          if ( v39 < 0 ) /*0x87a239*/
+            _com_issue_error(v39); /*0x87a23c*/
+          v52 = 0; /*0x87a243*/
+          v51 = 0; /*0x87a244*/
+          p_pvargDest = (const Ztl_variant_t *)&pvargDest; /*0x87a249*/
+          p_pvarg = (const Ztl_variant_t *)&pvarg; /*0x87a24e*/
+          v48.m_Data = (_bstr_t::Data_t *)&pvargDest; /*0x87a24f*/
+          nType = (IWzCanvas *)&v48; /*0x87a250*/
+          LOBYTE(v59) = 10; /*0x87a260*/
+          _bstr_t::_bstr_t(&v48, L"UI/StatusBar2.img/chat/tapBar"); /*0x87a267*/
+          LOBYTE(v59) = 11; /*0x87a26c*/
+          if ( !g_rm.m_pInterface ) /*0x87a27a*/
+            _com_issue_error(-2147467261); /*0x87a281*/
+          LOBYTE(v59) = 10; /*0x87a28a*/
+          ObjectA = IWzResMan::GetObjectA(g_rm.m_pInterface, &result, (Ztl_bstr_t)v48.m_Data, p_pvarg, p_pvargDest); /*0x87a298*/
+          LOBYTE(v59) = 12; /*0x87a29f*/
+          Unknown = Ztl_variant_t::GetUnknown(ObjectA, v51, v52); /*0x87a2a4*/
+          nType = nullptr; /*0x87a2ae*/
+          v42 = _com_ptr_t<_com_IIID<IWzCanvas,&__s_GUID const _GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e>>::_QueryInterface<IUnknown *>( /*0x87a2b2*/
+                  (_com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > *)&nType,
+                  Unknown);
+          if ( v42 < 0 && v42 != -2147467262 ) /*0x87a2c0*/
+            _com_issue_error(v42); /*0x87a2c3*/
+          LOBYTE(v59) = 14; /*0x87a2cd*/
+          if ( result.vt == 8 ) /*0x87a2d7*/
+          {
+            result.vt = 0; /*0x87a2df*/
+            if ( result.decVal.Lo32 ) /*0x87a2e6*/
+              ZAPI.CoTaskMemFree((void *)(result.decVal.Lo32 - 4)); /*0x87a2ec*/
+          }
+          else
+          {
+            VariantClear(&result); /*0x87a2f9*/
+          }
+          LOBYTE(v59) = 15; /*0x87a2ff*/
+          if ( pvarg.vt == 8 ) /*0x87a309*/
+          {
+            pvarg.vt = 0; /*0x87a30d*/
+            if ( pvarg.decVal.Lo32 ) /*0x87a318*/
+              ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x87a31e*/
+          }
+          else
+          {
+            VariantClear(&pvarg); /*0x87a32b*/
+          }
+          LOBYTE(v59) = 16; /*0x87a331*/
+          if ( pvargDest.vt == 8 ) /*0x87a33b*/
+          {
+            pvargDest.vt = 0; /*0x87a343*/
+            if ( pvargDest.decVal.Lo32 ) /*0x87a34a*/
+              ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4)); /*0x87a350*/
+          }
+          else
+          {
+            VariantClear(&pvargDest); /*0x87a35d*/
+          }
+          nAlpha.vt = 3; /*0x87a368*/
+          nAlpha.decVal.Lo32 = 255; /*0x87a36d*/
+          vIndex.vt = 3; /*0x87a377*/
+          vIndex.decVal.Lo32 = 0; /*0x87a37c*/
+          v43 = this->m_pLayerChatBar.m_pInterface; /*0x87a380*/
+          LOBYTE(v59) = 18; /*0x87a388*/
+          if ( !v43 ) /*0x87a38e*/
+            _com_issue_error(-2147467261); /*0x87a395*/
+          v44 = IWzGr2DLayer::Getcanvas(v43, &v53, &vIndex)->m_pInterface; /*0x87a3a9*/
+          LOBYTE(v59) = 19; /*0x87a3ab*/
+          if ( !v44 ) /*0x87a3b2*/
+            _com_issue_error(-2147467261); /*0x87a3b9*/
+          v45 = (IWzGr2DLayer_vtbl **)nType; /*0x87a3be*/
+          IWzCanvas::Copy(v44, 1, 0, nType, &nAlpha); /*0x87a3cb*/
+          LOBYTE(v59) = 18; /*0x87a3d4*/
+          if ( v53.m_pInterface ) /*0x87a3da*/
+            v53.m_pInterface->Release(v53.m_pInterface); /*0x87a3e2*/
+          LOBYTE(v59) = 17; /*0x87a3e9*/
+          if ( vIndex.vt == 8 ) /*0x87a3f3*/
+          {
+            vIndex.vt = 0; /*0x87a3f7*/
+            if ( vIndex.decVal.Lo32 ) /*0x87a402*/
+              ZAPI.CoTaskMemFree((void *)(vIndex.decVal.Lo32 - 4)); /*0x87a408*/
+          }
+          else
+          {
+            VariantClear(&vIndex); /*0x87a415*/
+          }
+          LOBYTE(v59) = 16; /*0x87a41b*/
+          if ( nAlpha.vt == 8 ) /*0x87a425*/
+          {
+            nAlpha.vt = 0; /*0x87a42d*/
+            if ( nAlpha.decVal.Lo32 ) /*0x87a434*/
+              ZAPI.CoTaskMemFree((void *)(nAlpha.decVal.Lo32 - 4)); /*0x87a43a*/
+          }
+          else
+          {
+            VariantClear(&nAlpha); /*0x87a447*/
+          }
+          v59 = -1; /*0x87a44d*/
+          if ( !v45 ) /*0x87a457*/
+            goto LABEL_124; /*0x87a457*/
+          v23 = *v45; /*0x87a459*/
+          v52 = (int)v45; /*0x87a45b*/
+        }
+        else
+        {
+          v22 = this->m_pLayerChatBar.m_pInterface; /*0x879efe*/
+          if ( !v22 ) /*0x879f06*/
+            goto LABEL_124; /*0x879f06*/
+          this->m_pLayerChatBar.m_pInterface = nullptr; /*0x879f0c*/
+          v23 = v22->__vftable; /*0x879f12*/
+          v52 = (int)v22; /*0x879f14*/
+        }
+        v23->Release((IUnknown *)v52); /*0x87a45f*/
+LABEL_124:
+        v46 = 6; /*0x87a461*/
+        p_p = &this->m_apBtChatFilter[0].p; /*0x87a466*/
+        do /*0x87a48e*/
+        {
+          (*p_p)->SetShow(&(*p_p)->IUIMsgHandler, this->m_nChatWndType == 3); /*0x87a486*/
+          p_p += 2; /*0x87a488*/
+          --v46; /*0x87a48b*/
+        }
+        while ( v46 ); /*0x87a48e*/
+        CUIStatusBar::ChatLogDraw(this); /*0x87a492*/
+        return; /*0x87a492*/
+      }
+      v52 = 1; /*0x879d60*/
+      this->m_nChatWndHeight = 24; /*0x879d63*/
+      this->m_nChatWndLineVisible = 1; /*0x879d6d*/
+      this->m_ptChatWnd.y = 492; /*0x879d73*/
+      CUIStatusBar::MakeCtrlEdit(this, v52); /*0x879d7d*/
+      v13 = this->m_pScrChatLog.p; /*0x879d82*/
+      if ( v13 ) /*0x879d8a*/
+        v13->Destroy(v13); /*0x879d91*/
+      v14 = (CCtrlScrollBar *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0x74u); /*0x879d9a*/
+      nType = (IWzCanvas *)v14; /*0x879d9f*/
+      v59 = 1; /*0x879da3*/
+      if ( v14 ) /*0x879da9*/
+        v15 = CCtrlScrollBar::CCtrlScrollBar(v14); /*0x879dad*/
+      else
+        v15 = nullptr; /*0x879db4*/
+      v59 = -1; /*0x879dbd*/
+      ZRef<CCtrlScrollBar>::operator=(&this->m_pScrChatLog, v15); /*0x879dc1*/
+      this->m_pScrChatLog.p->CreateCtrl_2( /*0x879df9*/
+        this->m_pScrChatLog.p,
+        this,
+        1010u,
+        1,
+        8,
+        565 - this->m_nScrWidth,
+        515 - this->m_nChatWndHeight,
+        this->m_nChatWndHeight + 1,
+        nullptr);
+    }
+    else
+    {
+      v52 = 0; /*0x879e00*/
+      this->m_nChatWndHeight = 24; /*0x879e03*/
+      this->m_nChatWndLineVisible = 1; /*0x879e0d*/
+      this->m_ptChatWnd.y = 518; /*0x879e13*/
+      CUIStatusBar::MakeCtrlEdit(this, v52); /*0x879e1d*/
+      v16 = this->m_pScrChatLog.p; /*0x879e22*/
+      if ( v16 ) /*0x879e2a*/
+        v16->Destroy(v16); /*0x879e31*/
+      v17 = (CCtrlScrollBar *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0x74u); /*0x879e3a*/
+      nType = (IWzCanvas *)v17; /*0x879e3f*/
+      v59 = 0; /*0x879e43*/
+      if ( v17 ) /*0x879e49*/
+        v18 = CCtrlScrollBar::CCtrlScrollBar(v17); /*0x879e4d*/
+      else
+        v18 = nullptr; /*0x879e54*/
+      v59 = -1; /*0x879e5d*/
+      ZRef<CCtrlScrollBar>::operator=(&this->m_pScrChatLog, v18); /*0x879e61*/
+      this->m_pScrChatLog.p->CreateCtrl_2( /*0x879e95*/
+        this->m_pScrChatLog.p,
+        this,
+        1010u,
+        1,
+        8,
+        515 - this->m_nScrWidth,
+        517,
+        this->m_nChatWndHeight + 1,
+        nullptr);
+    }
+    this->m_pScrChatLog.p->m_nWheelRange = 577 - this->m_nScrWidth; /*0x879ea8*/
+    this->m_pScrChatLog.p->m_bHideThumb = 1; /*0x879eb1*/
+    goto LABEL_29; /*0x879eb1*/
+  }
+}

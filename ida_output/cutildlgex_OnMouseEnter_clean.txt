@@ -1,0 +1,12 @@
+// CUtilDlgEx::OnMouseEnter
+// Address: 0x97af90
+
+void __thiscall CUtilDlgEx::OnMouseEnter(CUtilDlgEx *this, int bEnter)
+{
+  CWnd::OnMouseEnter(this, bEnter); /*0x97af98*/
+  CUIToolTip::ClearToolTip((CUIToolTip *)&this->m_pLayerPetInfo); /*0x97afa3*/
+}
+
+// References:
+//   ?OnMouseEnter@CWnd@@UAEXH@Z @ 0x9ad370
+//   ?ClearToolTip@CUIToolTip@@QAEXXZ @ 0x880f20

@@ -1,0 +1,14 @@
+// CUtilDlgEx::SetUtilDlgEx_TEXT
+// Address: 0x97b420
+
+void __thiscall CUtilDlgEx::SetUtilDlgEx_TEXT(CUtilDlgEx *this, int bPrev, int bNext)
+{
+  this->m_bTextPrev = bPrev; /*0x97b428*/
+  this->m_bTextNext = bNext; /*0x97b42e*/
+  if ( bPrev || bNext ) /*0x97b43a*/
+    this->m_ctHeight += 18; /*0x97b43c*/
+  CUtilDlgEx::Layout_GEN(this, 0); /*0x97b445*/
+}
+
+// References:
+//   ?Layout_GEN@CUtilDlgEx@@IAEXH@Z @ 0x97b060

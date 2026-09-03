@@ -1,0 +1,8 @@
+// cuserlocal::OnIncComboResponse
+
+void __thiscall CUserLocal::OnIncComboResponse(CUserLocal *this, CInPacket *iPacket)
+{
+  this->m_nCombo = CInPacket::Decode4(iPacket); /*0x91a97c*/
+  this->m_tLastSetCombo = get_update_time(); /*0x91a989*/
+  CUserLocal::DrawCombo(this); /*0x91a98f*/
+}

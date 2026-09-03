@@ -1,0 +1,8 @@
+void __thiscall CMob::OnMobSkillDelay(CMob *this, CInPacket *iPacket)
+{
+  this->m_delaySkill.tSkillDelayTime = CInPacket::Decode4(iPacket); /*0x63d56f*/
+  this->m_delaySkill.tSkillDelayTime += get_update_time(); /*0x63d57a*/
+  this->m_delaySkill.nSkillID = CInPacket::Decode4(iPacket); /*0x63d589*/
+  this->m_delaySkill.nSLV = CInPacket::Decode4(iPacket); /*0x63d596*/
+  this->m_delaySkill.nOption = CInPacket::Decode4(iPacket); /*0x63d5a2*/
+}

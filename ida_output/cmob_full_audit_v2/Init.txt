@@ -1,0 +1,681 @@
+﻿void __thiscall CMob::Init(CMob *this, unsigned int dwMobID, CInPacket *iPacket)
+{
+  signed __int16 v4; // ax
+  signed __int16 v5; // ax
+  int Data; // eax
+  int v7; // eax
+  unsigned __int8 v8; // al
+  int v9; // eax
+  CStaticFoothold *Foothold; // eax
+  CVecCtrlMob *Instance; // edi
+  HRESULT v12; // eax
+  CMobTemplate *m_pTemplate; // eax
+  int v14; // eax
+  int v15; // ebp
+  int v16; // eax
+  int FineMoveDirAction; // eax
+  HRESULT v18; // eax
+  StringPool *v19; // eax
+  wchar_t *m_pStr; // eax
+  CMobTemplate *m_pTemplateByDoom; // eax
+  unsigned int ZtlSecureTear_nMoveAbility_CS; // ecx
+  int v23; // eax
+  CVecCtrlMob *v24; // edi
+  HRESULT v25; // eax
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzGr2DLayer *v27; // edi
+  IWzVector2D *v28; // eax
+  IWzGr2DLayer *v29; // edi
+  HRESULT v30; // eax
+  IWzGr2DLayer *v31; // edi
+  HRESULT v32; // eax
+  int v33; // edi
+  IWzGr2DLayer *v34; // ecx
+  IWzVector2D *v35; // ecx
+  IWzGr2DLayer *v36; // ecx
+  IWzVector2D *v37; // ecx
+  unsigned int m_tInitDelay; // eax
+  IWzGr2DLayer *v39; // ecx
+  IWzVector2D *v40; // ecx
+  CMob *Mob; // edi
+  unsigned int MobID; // ebx
+  IWzGr2DLayer *v43; // ecx
+  IWzVector2D *v44; // ecx
+  CMobTemplate *CurTemplate; // eax
+  unsigned int v46; // edi
+  int *v47; // ebp
+  int v48; // eax
+  unsigned int sound_volume_by_pos; // eax
+  StringPool *v50; // eax
+  wchar_t *v51; // eax
+  void (__stdcall *v52)(VARIANTARG *); // edi
+  HRESULT v53; // eax
+  HRESULT v54; // eax
+  wchar_t *v55; // ebp
+  Ztl_variant_t *ObjectA; // eax
+  IUnknown *Unknown; // eax
+  HRESULT v58; // eax
+  _bstr_t::Data_t *v59; // ecx
+  IWzProperty *v60; // edi
+  StringPool *v61; // eax
+  Ztl_variant_t *v62; // eax
+  int int32; // eax
+  int v64; // ebx
+  unsigned int v65; // eax
+  bool v66; // zf
+  unsigned int v67; // eax
+  int v68; // eax
+  unsigned int (__stdcall *Release)(IUnknown *); // ecx
+  unsigned int v70; // eax
+  CMobTemplate *v71; // edx
+  int v72; // ebx
+  ZFatalSection *v73; // ebp
+  ZFatalSection *v74; // edi
+  int m_nRef; // ebp
+  int v76; // ebp
+  IWzGr2DLayer *v77; // eax
+  IWzGr2DLayer *v78; // edi
+  void (__stdcall *v79)(VARIANTARG *); // edi
+  HRESULT v80; // eax
+  HRESULT v81; // eax
+  IWzGr2DLayer *v82; // ecx
+  IWzVector2D *v83; // ecx
+  long double dTrembleForce; // [esp+70h] [ebp-16Ch] BYREF
+  Ztl_variant_t *v85; // [esp+78h] [ebp-164h]
+  unsigned int p_pvargDest; // [esp+7Ch] [ebp-160h]
+  Ztl_bstr_t v87; // [esp+80h] [ebp-15Ch] BYREF
+  signed int v88; // [esp+84h] [ebp-158h]
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pProp; // [esp+9Ch] [ebp-140h] BYREF
+  ZXString<unsigned short> sUOL; // [esp+A0h] [ebp-13Ch] BYREF
+  CVecCtrlMob *pvcMobActiveObj; // [esp+A4h] [ebp-138h]
+  int nAppearType; // [esp+A8h] [ebp-134h] BYREF
+  unsigned int dwOption; // [esp+ACh] [ebp-130h]
+  Ztl_variant_t vCanvas; // [esp+B0h] [ebp-12Ch] BYREF
+  int tCur; // [esp+C0h] [ebp-11Ch]
+  int nEffectItemID; // [esp+C4h] [ebp-118h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v97; // [esp+C8h] [ebp-114h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v98; // [esp+CCh] [ebp-110h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > result; // [esp+D0h] [ebp-10Ch] BYREF
+  VARIANTARG pvarg; // [esp+D4h] [ebp-108h] BYREF
+  ZXString<unsigned short> v101; // [esp+E4h] [ebp-F8h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v102; // [esp+E8h] [ebp-F4h] BYREF
+  VARIANTARG v103; // [esp+ECh] [ebp-F0h] BYREF
+  VARIANTARG v104; // [esp+FCh] [ebp-E0h] BYREF
+  VARIANTARG v105; // [esp+10Ch] [ebp-D0h] BYREF
+  VARIANTARG pvargDest; // [esp+11Ch] [ebp-C0h] BYREF
+  Ztl_variant_t v107; // [esp+12Ch] [ebp-B0h] BYREF
+  Ztl_variant_t v108; // [esp+13Ch] [ebp-A0h] BYREF
+  Ztl_variant_t v109; // [esp+14Ch] [ebp-90h] BYREF
+  Ztl_bstr_t *v110; // [esp+15Ch] [ebp-80h]
+  Ztl_variant_t v111; // [esp+160h] [ebp-7Ch] BYREF
+  Ztl_variant_t v112; // [esp+170h] [ebp-6Ch] BYREF
+  Ztl_variant_t v113; // [esp+180h] [ebp-5Ch] BYREF
+  Ztl_variant_t nTime; // [esp+190h] [ebp-4Ch] BYREF
+  Ztl_variant_t v115; // [esp+1A0h] [ebp-3Ch] BYREF
+  Ztl_variant_t nType; // [esp+1B0h] [ebp-2Ch] BYREF
+  Ztl_variant_t v117; // [esp+1C0h] [ebp-1Ch] BYREF
+  int v118; // [esp+1D8h] [ebp-4h]
+
+  tCur = get_update_time();
+  this->_ZtlSecureTear_m_dwMobID_CS = _ZtlSecureTear<unsigned long>(dwMobID, this->_ZtlSecureTear_m_dwMobID);
+  CMob::SetShoeAttr(this);
+  v4 = CInPacket::Decode2(iPacket);
+  TSecType<long>::SetData(&this->m_ptPosPrev.x, v4);
+  v5 = CInPacket::Decode2(iPacket);
+  TSecType<long>::SetData(&this->m_ptPosPrev.y, v5);
+  Data = TSecType<long>::GetData(&this->m_ptPosPrev.x);
+  TSecType<long>::SetData(&this->m_ptPos.x, Data);
+  v7 = TSecType<long>::GetData(&this->m_ptPosPrev.y);
+  TSecType<long>::SetData(&this->m_ptPos.y, v7);
+  v8 = CInPacket::Decode1(iPacket);
+  this->_ZtlSecureTear_m_nMoveAction_CS = _ZtlSecureTear<long>(v8, this->_ZtlSecureTear_m_nMoveAction);
+  pvcMobActiveObj = (CVecCtrlMob *)CInPacket::Decode2(iPacket);
+  pProp.m_pInterface = (IWzProperty *)CInPacket::Decode2(iPacket);
+  v9 = (char)CInPacket::Decode1(iPacket);
+  nAppearType = v9;
+  if ( (char)v9 == -3 || v9 >= 0 )
+    dwOption = CInPacket::Decode4(iPacket);
+  else
+    dwOption = 0;
+  this->m_nTeamForMCarnival = CInPacket::Decode1(iPacket);
+  nEffectItemID = CInPacket::Decode4(iPacket);
+  this->m_nPhase = CInPacket::Decode4(iPacket);
+  pvcMobActiveObj = (CVecCtrlMob *)CWvsPhysicalSpace2D::GetFoothold(
+                                     TSingleton<CWvsPhysicalSpace2D>::ms_pInstance,
+                                     (__int16)pvcMobActiveObj);
+  Foothold = CWvsPhysicalSpace2D::GetFoothold(
+               TSingleton<CWvsPhysicalSpace2D>::ms_pInstance,
+               SLOWORD(pProp.m_pInterface));
+  if ( Foothold )
+    sUOL._m_pStr = (wchar_t *)Foothold->m_lZMass;
+  else
+    sUOL._m_pStr = nullptr;
+  Instance = CVecCtrlMob::CreateInstance();
+  v12 = _com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>::_QueryInterface<CVecCtrlMob *>(
+          &this->m_pvc,
+          Instance);
+  if ( v12 < 0 && v12 != -2147467262 )
+    _com_issue_error(v12);
+  if ( !this->m_stat.nDoom_ || (m_pTemplate = this->m_pTemplateByDoom) == nullptr )
+    m_pTemplate = this->m_pTemplate;
+  v14 = _ZtlSecureFuse<long>(m_pTemplate->_ZtlSecureTear_nMoveAbility, m_pTemplate->_ZtlSecureTear_nMoveAbility_CS);
+  CVecCtrlMob::Init(Instance, &this->IVecCtrlOwner, v14, (int)sUOL._m_pStr);
+  pProp.m_pInterface = (IWzProperty *)_ZtlSecureFuse<long>(
+                                        this->_ZtlSecureTear_m_nMoveAction,
+                                        this->_ZtlSecureTear_m_nMoveAction_CS);
+  v15 = TSecType<long>::GetData(&this->m_ptPos.y);
+  v16 = TSecType<long>::GetData(&this->m_ptPos.x);
+  Instance->SetActive(Instance, 0, v16, v15, 0, 0, (int)pProp.m_pInterface, (CStaticFoothold *)pvcMobActiveObj);
+  FineMoveDirAction = CMob::GetFineMoveDirAction(this, Instance->m_nMoveAction);
+  this->_ZtlSecureTear_m_nMoveAction_CS = _ZtlSecureTear<long>(FineMoveDirAction, this->_ZtlSecureTear_m_nMoveAction);
+  pvcMobActiveObj = CVecCtrlMob::CreateInstance();
+  v18 = _com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>::_QueryInterface<CVecCtrlMob *>(
+          &this->m_pvcActive,
+          pvcMobActiveObj);
+  if ( v18 < 0 && v18 != -2147467262 )
+    _com_issue_error(v18);
+  v19 = StringPool::GetInstance();
+  m_pStr = StringPool::GetStringW(v19, (ZXString<unsigned short> *)&pProp, 0x3D2u)->_m_pStr;
+  v118 = 0;
+  PcCreateObject<_com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>>(
+    m_pStr,
+    &this->m_pvcHead,
+    nullptr);
+  v118 = -1;
+  if ( pProp.m_pInterface )
+    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&pProp.m_pInterface[-3]);
+  if ( !this->m_stat.nDoom_ || (m_pTemplateByDoom = this->m_pTemplateByDoom) == nullptr )
+    m_pTemplateByDoom = this->m_pTemplate;
+  ZtlSecureTear_nMoveAbility_CS = m_pTemplateByDoom->_ZtlSecureTear_nMoveAbility_CS;
+  v88 = (signed int)sUOL._m_pStr;
+  v23 = _ZtlSecureFuse<long>(m_pTemplateByDoom->_ZtlSecureTear_nMoveAbility, ZtlSecureTear_nMoveAbility_CS);
+  v24 = pvcMobActiveObj;
+  CVecCtrlMob::Init(pvcMobActiveObj, &this->IVecCtrlOwner, v23, v88);
+  v24->SetActive(v24, 0, 0, 0, 0, 0, 0, nullptr);
+  VariantInit(&pvarg);
+  v25 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing);
+  if ( v25 < 0 )
+    _com_issue_error(v25);
+  v118 = 2;
+  vCanvas.vt = 3;
+  vCanvas.decVal.Lo32 = 0;
+  if ( !g_gr.m_pInterface )
+    _com_issue_error(-2147467261);
+  m_pInterface = IWzGr2D::CreateLayer(
+                   g_gr.m_pInterface,
+                   (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&pProp,
+                   0,
+                   0,
+                   0,
+                   0,
+                   0,
+                   &vCanvas,
+                   (const Ztl_variant_t *)&pvarg)->m_pInterface;
+  v27 = this->m_pLayerAction.m_pInterface;
+  if ( v27 != m_pInterface )
+  {
+    this->m_pLayerAction.m_pInterface = m_pInterface;
+    if ( m_pInterface )
+      m_pInterface->AddRef(m_pInterface);
+    if ( v27 )
+      v27->Release(v27);
+  }
+  if ( pProp.m_pInterface )
+    pProp.m_pInterface->Release(pProp.m_pInterface);
+  LOBYTE(v118) = 1;
+  if ( vCanvas.vt == 8 )
+  {
+    vCanvas.vt = 0;
+    if ( vCanvas.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(vCanvas.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&vCanvas);
+  }
+  v118 = -1;
+  if ( pvarg.vt == 8 )
+  {
+    pvarg.vt = 0;
+    if ( pvarg.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&pvarg);
+  }
+  v28 = this->m_pvc.m_pInterface;
+  vCanvas.vt = 13;
+  vCanvas.decVal.Lo32 = (unsigned int)v28;
+  if ( v28 )
+    v28->AddRef(v28);
+  v29 = this->m_pLayerAction.m_pInterface;
+  v118 = 3;
+  if ( !v29 )
+    _com_issue_error(-2147467261);
+  v30 = ((int (__stdcall *)(IWzGr2DLayer *, _DWORD, unsigned int, unsigned int, unsigned int))v29->put_origin)(
+          v29,
+          *(_DWORD *)&vCanvas.vt,
+          vCanvas.decVal.Hi32,
+          vCanvas.decVal.Lo32,
+          vCanvas.decVal.Mid32);
+  if ( v30 < 0 )
+    _com_issue_errorex(v30, v29, &_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4);
+  v118 = -1;
+  if ( vCanvas.vt == 8 )
+  {
+    vCanvas.vt = 0;
+    if ( vCanvas.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(vCanvas.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&vCanvas);
+  }
+  v31 = this->m_pLayerAction.m_pInterface;
+  if ( !v31 )
+    _com_issue_error(-2147467261);
+  v32 = v31->put_color(v31, (unsigned int)&byte_FFFFFF);
+  if ( v32 < 0 )
+    _com_issue_errorex(v32, v31, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf);
+  v33 = nAppearType;
+  switch ( nAppearType )
+  {
+    case -5:
+      v88 = _ZtlSecureTear<long>(tCur + 810, this->_ZtlSecureTear_m_tInitDelay);
+      v87.m_Data = (_bstr_t::Data_t *)this->_ZtlSecureTear_m_tInitDelay;
+      this->_ZtlSecureTear_m_tInitDelay_CS = v88;
+      if ( !_ZtlSecureFuse<long>((const int *)v87.m_Data, v88) )
+        CMob::_ZtlSecurePut_m_tInitDelay(this, 1);
+      this->_ZtlSecureTear_m_nSuspended_CS = _ZtlSecureTear<int>(1, this->_ZtlSecureTear_m_nSuspended);
+      goto LABEL_135;
+    case -4:
+      if ( _ZtlSecureFuse<int>(
+             this->m_pTemplate->_ZtlSecureTear_bRegenAction,
+             this->m_pTemplate->_ZtlSecureTear_bRegenAction_CS) )
+      {
+        CMob::_ZtlSecurePut_m_nOneTimeAction(this, 5);
+        Ztl_variant_t::Ztl_variant_t(&v117, &vtMissing);
+        v118 = 13;
+        Ztl_variant_t::Ztl_variant_t(&v115, &vtMissing);
+        v43 = this->m_pLayerAction.m_pInterface;
+        LOBYTE(v118) = 14;
+        if ( !v43 )
+          _com_issue_error(-2147467261);
+        v44 = IWzGr2DLayer::Getalpha(v43, &v97)->m_pInterface;
+        LOBYTE(v118) = 15;
+        if ( !v44 )
+          _com_issue_error(-2147467261);
+        IWzVector2D::RelMove(v44, 255, 0, &v115, &v117);
+        LOBYTE(v118) = 14;
+        if ( v97.m_pInterface )
+          v97.m_pInterface->Release(v97.m_pInterface);
+        Ztl_variant_t::~Ztl_variant_t(&v115);
+        v118 = -1;
+        Ztl_variant_t::~Ztl_variant_t(&v117);
+        CurTemplate = CMob::GetCurTemplate(this);
+        v46 = _ZtlSecureFuse<unsigned long>(
+                CurTemplate->_ZtlSecureTear_dwTemplateID,
+                CurTemplate->_ZtlSecureTear_dwTemplateID_CS);
+        v47 = (int *)((int (__thiscall *)(IVecCtrlOwner *, VARIANTARG *))this->GetPos)(&this->IVecCtrlOwner, &pvarg);
+        v48 = ((int (__thiscall *)(IVecCtrlOwner *, Ztl_variant_t *))this->GetPos)(&this->IVecCtrlOwner, &vCanvas);
+        sound_volume_by_pos = get_sound_volume_by_pos(*v47, *(_DWORD *)(v48 + 4));
+        play_mob_sound(v46, SE_MOB_REGEN, sound_volume_by_pos);
+      }
+      this->_ZtlSecureTear_m_tInitDelay_CS = _ZtlSecureTear<long>(0, this->_ZtlSecureTear_m_tInitDelay);
+      this->_ZtlSecureTear_m_nSuspended_CS = _ZtlSecureTear<int>(1, this->_ZtlSecureTear_m_nSuspended);
+      if ( _ZtlSecureFuse<unsigned long>(
+             this->m_pTemplate->_ZtlSecureTear_dwTemplateID,
+             this->m_pTemplate->_ZtlSecureTear_dwTemplateID_CS) == 8800000
+        || _ZtlSecureFuse<unsigned long>(
+             this->m_pTemplate->_ZtlSecureTear_dwTemplateID,
+             this->m_pTemplate->_ZtlSecureTear_dwTemplateID_CS) == 8800100 )
+      {
+        CAnimationDisplayer::Effect_Tremble(TSingleton<CAnimationDisplayer>::ms_pInstance, DOUBLE_30_0, 0, 0, 0, 0);
+      }
+      goto LABEL_135;
+    case -3:
+      Mob = CMobPool::GetMob(TSingleton<CMobPool>::ms_pInstance, dwOption);
+      if ( Mob )
+      {
+        MobID = CMob::GetMobID(this);
+        v88 = 1;
+        *ZList<unsigned long>::AddTail(&Mob->m_ldwRevive) = MobID;
+        CMob::SetSuspended(this, v88);
+      }
+      goto LABEL_135;
+    case -2:
+      if ( _ZtlSecureFuse<int>(
+             this->m_pTemplate->_ZtlSecureTear_bRegenAction,
+             this->m_pTemplate->_ZtlSecureTear_bRegenAction_CS) )
+      {
+        CMob::_ZtlSecurePut_m_nOneTimeAction(this, 5);
+        Ztl_variant_t::Ztl_variant_t(&v112, &vtMissing);
+        v118 = 7;
+        Ztl_variant_t::Ztl_variant_t(&v111, &vtMissing);
+        v36 = this->m_pLayerAction.m_pInterface;
+        LOBYTE(v118) = 8;
+        if ( !v36 )
+          _com_issue_error(-2147467261);
+        v37 = IWzGr2DLayer::Getalpha(v36, &v98)->m_pInterface;
+        LOBYTE(v118) = 9;
+        if ( !v37 )
+          _com_issue_error(-2147467261);
+        IWzVector2D::RelMove(v37, 255, 0, &v111, &v112);
+        LOBYTE(v118) = 8;
+        if ( v98.m_pInterface )
+          v98.m_pInterface->Release(v98.m_pInterface);
+        Ztl_variant_t::~Ztl_variant_t(&v111);
+        v118 = -1;
+        Ztl_variant_t::~Ztl_variant_t(&v112);
+      }
+      else
+      {
+        CMob::_ZtlSecurePut_m_tInitDelay(this, tCur + 800);
+        if ( !CMob::_ZtlSecureGet_m_tInitDelay(this) )
+          CMob::_ZtlSecurePut_m_tInitDelay(this, 1);
+        Ztl_variant_t::Ztl_variant_t(&v113, &vtMissing);
+        v118 = 10;
+        m_tInitDelay = CMob::_ZtlSecureGet_m_tInitDelay(this);
+        v109.vt = 3;
+        v109.decVal.Lo32 = m_tInitDelay;
+        v39 = this->m_pLayerAction.m_pInterface;
+        LOBYTE(v118) = 11;
+        if ( !v39 )
+          _com_issue_error(-2147467261);
+        v40 = IWzGr2DLayer::Getalpha(v39, &v102)->m_pInterface;
+        LOBYTE(v118) = 12;
+        if ( !v40 )
+          _com_issue_error(-2147467261);
+        IWzVector2D::RelMove(v40, 255, 255, &v109, &v113);
+        LOBYTE(v118) = 11;
+        if ( v102.m_pInterface )
+          v102.m_pInterface->Release(v102.m_pInterface);
+        Ztl_variant_t::~Ztl_variant_t(&v109);
+        v118 = -1;
+        Ztl_variant_t::~Ztl_variant_t(&v113);
+      }
+      goto LABEL_135;
+    case -1:
+      Ztl_variant_t::Ztl_variant_t(&nType, &vtMissing);
+      v118 = 4;
+      Ztl_variant_t::Ztl_variant_t(&nTime, &vtMissing);
+      v34 = this->m_pLayerAction.m_pInterface;
+      LOBYTE(v118) = 5;
+      if ( !v34 )
+        _com_issue_error(-2147467261);
+      v35 = IWzGr2DLayer::Getalpha(v34, &result)->m_pInterface;
+      LOBYTE(v118) = 6;
+      if ( !v35 )
+        _com_issue_error(-2147467261);
+      IWzVector2D::RelMove(v35, 255, 0, &nTime, &nType);
+      LOBYTE(v118) = 5;
+      if ( result.m_pInterface )
+        result.m_pInterface->Release(result.m_pInterface);
+      Ztl_variant_t::~Ztl_variant_t(&nTime);
+      v118 = -1;
+      Ztl_variant_t::~Ztl_variant_t(&nType);
+      goto LABEL_135;
+    default:
+      sUOL._m_pStr = nullptr;
+      v118 = 16;
+      v50 = StringPool::GetInstance();
+      v51 = StringPool::GetStringW(v50, &v101, 0x663u)->_m_pStr;
+      LOBYTE(v118) = 17;
+      ZXString<unsigned short>::Format(&sUOL, v51, v33);
+      LOBYTE(v118) = 16;
+      if ( v101._m_pStr )
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)v101._m_pStr - 1);
+      v52 = VariantInit;
+      VariantInit(&pvargDest);
+      v53 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing);
+      if ( v53 < 0 )
+        _com_issue_error(v53);
+      LOBYTE(v118) = 18;
+      v52(&v105);
+      v54 = ZComAPI::ZComVariantCopy(&v105, &vtMissing);
+      if ( v54 < 0 )
+        _com_issue_error(v54);
+      v55 = sUOL._m_pStr;
+      v88 = 0;
+      v87.m_Data = nullptr;
+      p_pvargDest = (unsigned int)&pvargDest;
+      v85 = (Ztl_variant_t *)&v105;
+      HIDWORD(dTrembleForce) = &v105;
+      pProp.m_pInterface = (IWzProperty *)&dTrembleForce + 1;
+      LOBYTE(v118) = 19;
+      _bstr_t::_bstr_t((_bstr_t *)&dTrembleForce + 1, sUOL._m_pStr);
+      LOBYTE(v118) = 20;
+      if ( !g_rm.m_pInterface )
+        _com_issue_error(-2147467261);
+      LOBYTE(v118) = 19;
+      ObjectA = IWzResMan::GetObjectA(
+                  g_rm.m_pInterface,
+                  &v107,
+                  *(Ztl_bstr_t *)((char *)&dTrembleForce + 4),
+                  v85,
+                  (const Ztl_variant_t *)p_pvargDest);
+      LOBYTE(v118) = 21;
+      Unknown = Ztl_variant_t::GetUnknown(ObjectA, (bool)v87.m_Data, v88);
+      pProp.m_pInterface = nullptr;
+      v58 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+              &pProp,
+              Unknown);
+      if ( v58 < 0 && v58 != -2147467262 )
+        _com_issue_error(v58);
+      LOBYTE(v118) = 23;
+      if ( v107.vt == 8 )
+      {
+        v107.vt = 0;
+        if ( v107.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(v107.decVal.Lo32 - 4));
+      }
+      else
+      {
+        VariantClear(&v107);
+      }
+      LOBYTE(v118) = 24;
+      if ( v105.vt == 8 )
+      {
+        v105.vt = 0;
+        if ( v105.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(v105.decVal.Lo32 - 4));
+      }
+      else
+      {
+        VariantClear(&v105);
+      }
+      LOBYTE(v118) = 25;
+      if ( pvargDest.vt == 8 )
+      {
+        v59 = nullptr;
+        pvargDest.vt = 0;
+        if ( pvargDest.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4));
+      }
+      else
+      {
+        VariantClear(&pvargDest);
+      }
+      v60 = pProp.m_pInterface;
+      if ( !pProp.m_pInterface )
+      {
+        v118 = -1;
+        if ( !v55 )
+          goto LABEL_135;
+        v88 = (signed int)(sUOL._m_pStr - 6);
+        goto LABEL_134;
+      }
+      v88 = 0;
+      v87.m_Data = v59;
+      v110 = &v87;
+      p_pvargDest = 6825;
+      v85 = (Ztl_variant_t *)&v87;
+      v61 = StringPool::GetInstance();
+      StringPool::GetBSTR(v61, (Ztl_bstr_t *)v85, p_pvargDest);
+      LOBYTE(v118) = 25;
+      v62 = IWzProperty::Getitem(v60, &v108, v87);
+      LOBYTE(v118) = 27;
+      int32 = get_int32(v62, v88);
+      v64 = tCur;
+      v65 = _ZtlSecureTear<long>(tCur + dwOption + int32, this->_ZtlSecureTear_m_tInitDelay);
+      v66 = v108.vt == 8;
+      this->_ZtlSecureTear_m_tInitDelay_CS = v65;
+      LOBYTE(v118) = 25;
+      if ( v66 )
+      {
+        v108.vt = 0;
+        if ( v108.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(v108.decVal.Lo32 - 4));
+      }
+      else
+      {
+        VariantClear(&v108);
+      }
+      if ( !_ZtlSecureFuse<long>(this->_ZtlSecureTear_m_tInitDelay, this->_ZtlSecureTear_m_tInitDelay_CS) )
+        this->_ZtlSecureTear_m_tInitDelay_CS = _ZtlSecureTear<long>(1, this->_ZtlSecureTear_m_tInitDelay);
+      v67 = dwOption + v64;
+      this->m_tSummonEffect = dwOption + v64;
+      if ( !v67 )
+        this->m_tSummonEffect = 1;
+      v68 = nAppearType;
+      this->m_nSummonType = nAppearType;
+      if ( v68 == 15 )
+        this->_ZtlSecureTear_m_tInitDelay_CS = _ZtlSecureTear<long>(v64 + 3000, this->_ZtlSecureTear_m_tInitDelay);
+      this->_ZtlSecureTear_m_nSuspended_CS = _ZtlSecureTear<int>(1, this->_ZtlSecureTear_m_nSuspended);
+      Release = v60->Release;
+      LOBYTE(v118) = 16;
+      Release(v60);
+      v118 = -1;
+      if ( sUOL._m_pStr )
+      {
+        v88 = (signed int)(sUOL._m_pStr - 6);
+LABEL_134:
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)v88);
+      }
+LABEL_135:
+      CMob::SetLayerZ(this);
+      CMob::PrepareActionLayer(this);
+      CMob::UpdateAffectedSkillList(this, 0);
+      this->_ZtlSecureTear_m_nMobCtrlState_CS = _ZtlSecureTear<long>(-1, this->_ZtlSecureTear_m_nMobCtrlState);
+      this->_ZtlSecureTear_m_nMP_CS = _ZtlSecureTear<long>(0, this->_ZtlSecureTear_m_nMP);
+      this->m_effectAttack.tStart = 0;
+      this->_ZtlSecureTear_m_tLastHitExpire_CS = _ZtlSecureTear<long>(0, this->_ZtlSecureTear_m_tLastHitExpire);
+      v70 = _ZtlSecureTear<long>(0, this->_ZtlSecureTear_m_tHitExpire);
+      v71 = this->m_pTemplate;
+      this->_ZtlSecureTear_m_tHitExpire_CS = v70;
+      if ( v71->bDamagedByMob )
+      {
+        CMob::CreateHPIndicator(this, 100, 0xFFFF0000);
+        CMob::ShowHPIndicator(this);
+      }
+      v72 = (*((int (__thiscall **)(_bstr_t::Data_t *))TSingleton<CUserLocal>::ms_pInstance.m_Data->m_wstr + 2))(TSingleton<CUserLocal>::ms_pInstance.m_Data);
+      if ( (*(unsigned __int8 (__thiscall **)(_DWORD))(**(_DWORD **)(v72 + 5092) + 4))(*(_DWORD *)(v72 + 5092)) )
+      {
+        v73 = *(ZFatalSection **)(v72 + 5092);
+        if ( v73 )
+        {
+          v74 = v73 + 3;
+          ZFatalSection::Lock(v73 + 3);
+          m_nRef = v73[4]._m_nRef;
+          if ( v74 )
+          {
+            v66 = v74->_m_nRef-- == 1;
+            if ( v66 )
+              v74->_m_pTIB = nullptr;
+          }
+          if ( m_nRef == dwMobID )
+          {
+            v76 = *(_DWORD *)(v72 + 5092);
+            ZFatalSection::Lock((ZFatalSection *)(v76 + 24));
+            if ( v76 != -24 )
+            {
+              v66 = (*(_DWORD *)(v76 + 28))-- == 1;
+              if ( v66 )
+                *(_DWORD *)(v76 + 24) = 0;
+            }
+            CMob::SetGuided(this, *(_DWORD *)(v76 + 16), 0);
+          }
+        }
+      }
+      if ( nEffectItemID )
+      {
+        v77 = CMob::LoadEffectLayer(
+                this,
+                (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&nEffectItemID,
+                nEffectItemID)->m_pInterface;
+        v78 = this->m_pEffectLayer.m_pInterface;
+        if ( v78 != v77 )
+        {
+          this->m_pEffectLayer.m_pInterface = v77;
+          if ( v77 )
+            v77->AddRef(v77);
+          if ( v78 )
+            v78->Release(v78);
+        }
+        if ( nEffectItemID )
+          (*(void (__stdcall **)(int))(*(_DWORD *)nEffectItemID + 8))(nEffectItemID);
+      }
+      if ( _ZtlSecureFuse<int>(
+             this->m_pTemplate->_ZtlSecureTear_bDisable,
+             this->m_pTemplate->_ZtlSecureTear_bDisable_CS) )
+      {
+        v79 = VariantInit;
+        VariantInit(&v104);
+        v80 = ZComAPI::ZComVariantCopy(&v104, &vtMissing);
+        if ( v80 < 0 )
+          _com_issue_error(v80);
+        v118 = 28;
+        v79(&v103);
+        v81 = ZComAPI::ZComVariantCopy(&v103, &vtMissing);
+        if ( v81 < 0 )
+          _com_issue_error(v81);
+        v82 = this->m_pLayerAction.m_pInterface;
+        LOBYTE(v118) = 29;
+        if ( !v82 )
+          _com_issue_error(-2147467261);
+        v83 = IWzGr2DLayer::Getalpha(
+                v82,
+                (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&nAppearType)->m_pInterface;
+        LOBYTE(v118) = 30;
+        if ( !v83 )
+          _com_issue_error(-2147467261);
+        IWzVector2D::RelMove(v83, 0, 0, (const Ztl_variant_t *)&v103, (const Ztl_variant_t *)&v104);
+        LOBYTE(v118) = 29;
+        if ( nAppearType )
+          (*(void (__stdcall **)(int))(*(_DWORD *)nAppearType + 8))(nAppearType);
+        LOBYTE(v118) = 28;
+        if ( v103.vt == 8 )
+        {
+          v103.vt = 0;
+          if ( v103.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(v103.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&v103);
+        }
+        v118 = -1;
+        if ( v104.vt == 8 )
+        {
+          v104.vt = 0;
+          if ( v104.decVal.Lo32 )
+            ZAPI.CoTaskMemFree((void *)(v104.decVal.Lo32 - 4));
+        }
+        else
+        {
+          VariantClear(&v104);
+        }
+      }
+      if ( _ZtlSecureFuse<long>(
+             this->m_pTemplate->_ZtlSecureTear_bAngerGauge,
+             this->m_pTemplate->_ZtlSecureTear_bAngerGauge_CS) )
+      {
+        CMob::InitAngerGaugeData(this);
+        CMob::CreateAngerIndicator(this);
+      }
+      if ( this->m_pTemplate->nEscortType == 1 )
+        pvcMobActiveObj->m_bEscortMob = 1;
+      return;
+  }
+}

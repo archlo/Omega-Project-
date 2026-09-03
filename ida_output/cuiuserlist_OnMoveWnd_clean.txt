@@ -1,0 +1,56 @@
+// cuiuserlist::OnMoveWnd
+
+void __thiscall CUIUserList::OnMoveWnd(CUIUserList *this, int l, int t)
+{
+  int v4; // eax
+  CWndAllianceGrade *v5; // ebx
+  int v6; // eax
+  IWzGr2DLayer *m_pInterface; // edi
+  HRESULT (__stdcall *get_width)(IWzGr2DLayer *, int *); // ecx
+  HRESULT v9; // eax
+  int (__thiscall *GetAbsTop)(IUIMsgHandler *); // eax
+  int v11; // edi
+  CWndGuildBoard *v12; // ebx
+  IUIMsgHandler *v13; // esi
+  int v14; // eax
+  int v15; // [esp-4h] [ebp-20h]
+  int v16; // [esp-4h] [ebp-20h]
+  int v17; // [esp-4h] [ebp-20h]
+
+  CWnd::OnMoveWnd(this, l, t); /*0x8b99e1*/
+  if ( this->m_bGuildGradeShown ) /*0x8b99e6*/
+  {
+    v15 = this->GetAbsTop(&this->IUIMsgHandler); /*0x8b99fe*/
+    v4 = this->GetAbsLeft(&this->IUIMsgHandler); /*0x8b9a04*/
+    CWnd::MoveWnd(this->m_pWndGuildGrade, v4 + 263, v15); /*0x8b9a12*/
+  }
+  if ( this->m_bAllianceGradeShown ) /*0x8b9a17*/
+  {
+    v5 = TSingleton<CWndAllianceGrade>::ms_pInstance; /*0x8b9a26*/
+    v16 = this->GetAbsTop(&this->IUIMsgHandler); /*0x8b9a35*/
+    v6 = this->GetAbsLeft(&this->IUIMsgHandler); /*0x8b9a3b*/
+    CWnd::MoveWnd(v5, v6 + 263, v16); /*0x8b9a45*/
+  }
+  if ( TSingleton<CWndGuildBoard>::ms_pInstance ) /*0x8b9a51*/
+  {
+    m_pInterface = CWnd::GetLayer( /*0x8b9a63*/
+                     this,
+                     (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&l)->m_pInterface;
+    if ( !m_pInterface ) /*0x8b9a6f*/
+      _com_issue_error(-2147467261); /*0x8b9a76*/
+    get_width = m_pInterface->get_width; /*0x8b9a7d*/
+    t = 0; /*0x8b9a89*/
+    v9 = get_width(m_pInterface, &t); /*0x8b9a91*/
+    if ( v9 < 0 ) /*0x8b9a95*/
+      _com_issue_errorex(v9, m_pInterface, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x8b9a9e*/
+    GetAbsTop = this->GetAbsTop; /*0x8b9aa6*/
+    v11 = t; /*0x8b9aa9*/
+    v12 = TSingleton<CWndGuildBoard>::ms_pInstance; /*0x8b9aad*/
+    v13 = &this->IUIMsgHandler; /*0x8b9ab3*/
+    v17 = GetAbsTop(v13); /*0x8b9abc*/
+    v14 = v13->GetAbsLeft(v13); /*0x8b9ac2*/
+    CWnd::MoveWnd(v12, v11 + v14, v17); /*0x8b9ac9*/
+    if ( l ) /*0x8b9adc*/
+      (*(void (__stdcall **)(int))(*(_DWORD *)l + 8))(l); /*0x8b9ae4*/
+  }
+}

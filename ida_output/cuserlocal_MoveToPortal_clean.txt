@@ -1,0 +1,6 @@
+// cuserlocal::MoveToPortal
+
+void __thiscall CUserLocal::MoveToPortal(CUserLocal *this, const char *sPortalName)
+{
+  CUserLocal::TryRegisterTeleport(this, nullptr, 0, nullptr, sPortalName, 1); /*0x52a1fd*/
+}

@@ -1,0 +1,146 @@
+// cuser::OnTeslaTriangle
+
+void __thiscall CUser::OnTeslaTriangle(CUser *this, CInPacket *iPacket)
+{
+  int v3; // esi
+  ZArray<unsigned long> *p; // ebx
+  Triangle *v5; // edi
+  unsigned int v6; // ebp
+  CSummoned *v7; // ebp
+  int *v8; // eax
+  ZArray<unsigned long> *v9; // esi
+  LONG (__stdcall *v10)(volatile LONG *); // ebx
+  ZRefCounted *v11; // esi
+  tagPOINT *v12; // esi
+  volatile LONG *p_y; // edi
+  LONG (__stdcall *v14)(volatile LONG *); // ebp
+  ZArray<unsigned long> *v15; // esi
+  volatile LONG *v16; // ebx
+  volatile LONG *v17; // edi
+  ZRef<Triangle> v18; // [esp-10h] [ebp-60h] BYREF
+  ZRef<ZArray<unsigned long> > v19; // [esp-8h] [ebp-58h] BYREF
+  unsigned int dwID; // [esp+14h] [ebp-3Ch] BYREF
+  ZMap<unsigned long,ZRef<CSummoned>,unsigned long> *p_m_mSummoned; // [esp+18h] [ebp-38h]
+  ZRef<CSummoned> pLeaderSummoned; // [esp+1Ch] [ebp-34h] BYREF
+  ZRef<CSummoned> pSummoned; // [esp+24h] [ebp-2Ch] BYREF
+  ZRef<ZArray<unsigned long> > padwID; // [esp+2Ch] [ebp-24h] BYREF
+  ZRef<Triangle> pTriangle; // [esp+34h] [ebp-1Ch] BYREF
+  char v26[8]; // [esp+3Ch] [ebp-14h] BYREF
+  int v27; // [esp+4Ch] [ebp-4h]
+
+  v3 = 0; /*0x8f3799*/
+  pTriangle.p = nullptr; /*0x8f379f*/
+  ZRef<Triangle>::_Alloc(&pTriangle); /*0x8f37a3*/
+  v27 = 1; /*0x8f37a8*/
+  pLeaderSummoned.p = nullptr; /*0x8f37ac*/
+  padwID.p = nullptr; /*0x8f37b9*/
+  ZRef<ZArray<unsigned long>>::_Alloc(&padwID); /*0x8f37bd*/
+  p = padwID.p; /*0x8f37c2*/
+  LOBYTE(v27) = 2; /*0x8f37cf*/
+  ZArray<unsigned long>::_Alloc(padwID.p, 3u, (const ZAllocHelper *)&iPacket); /*0x8f37d4*/
+  p_m_mSummoned = &this->m_mSummoned; /*0x8f37df*/
+  v5 = pTriangle.p; /*0x8f37e3*/
+  while ( 1 ) /*0x8f37f0*/
+  {
+    v6 = CInPacket::Decode4(iPacket); /*0x8f37f0*/
+    dwID = v6; /*0x8f37f2*/
+    pSummoned.p = nullptr; /*0x8f37f6*/
+    LOBYTE(v27) = 3; /*0x8f380c*/
+    if ( !ZMap<unsigned long,ZRef<CSummoned>,unsigned long>::GetAt(p_m_mSummoned, &dwID, &pSummoned) ) /*0x8f3811*/
+      break; /*0x8f3811*/
+    p->a[v3] = v6; /*0x8f3827*/
+    v7 = pSummoned.p; /*0x8f382a*/
+    CSummoned::SetTeslaCoilLeader(pSummoned.p, v3 == 0); /*0x8f3831*/
+    if ( !v3 ) /*0x8f3838*/
+    {
+      if ( v7 ) /*0x8f383c*/
+        InterlockedIncrement(&v7->_m_nRef); /*0x8f3842*/
+      if ( pLeaderSummoned.p ) /*0x8f384d*/
+        ZRef<CSummoned>::_ReleaseRaw(&pLeaderSummoned, nullptr); /*0x8f3855*/
+      pLeaderSummoned.p = v7; /*0x8f385a*/
+    }
+    v8 = (int *)((int (__thiscall *)(IVecCtrlOwner *, char *))v7->GetPos)(&v7->IVecCtrlOwner, v26); /*0x8f386c*/
+    v5->p[v3].x = *v8; /*0x8f3870*/
+    v5->p[v3].y = v8[1]; /*0x8f3876*/
+    v5->p[v3].y -= 30; /*0x8f387a*/
+    LOBYTE(v27) = 2; /*0x8f3885*/
+    ZRef<CSummoned>::_ReleaseRaw(&pSummoned, nullptr); /*0x8f388a*/
+    ++v3; /*0x8f388f*/
+    pSummoned.p = nullptr; /*0x8f3893*/
+    if ( v3 >= 3 ) /*0x8f389b*/
+    {
+      v19.p = p; /*0x8f38a6*/
+      v9 = p - 4; /*0x8f38a9*/
+      v10 = InterlockedIncrement; /*0x8f38ac*/
+      iPacket = (CInPacket *)&v19; /*0x8f38b5*/
+      InterlockedIncrement((volatile LONG *)&v9[1]); /*0x8f38ba*/
+      iPacket = (CInPacket *)&v18; /*0x8f38c1*/
+      v18.p = v5; /*0x8f38c5*/
+      if ( v5 ) /*0x8f38ca*/
+        v10(&v5[-1].p[1].y); /*0x8f38d0*/
+      CSummoned::SetTeslaCoilTriangle(pLeaderSummoned.p, v18, v19); /*0x8f38d6*/
+      LOBYTE(v27) = 1; /*0x8f38df*/
+      if ( !InterlockedDecrement((volatile LONG *)&v9[1]) ) /*0x8f38e4*/
+      {
+        v10((volatile LONG *)&v9[1]); /*0x8f38ef*/
+        if ( v9 ) /*0x8f38f3*/
+          (*(void (__thiscall **)(ZArray<unsigned long> *, int))v9->a)(v9, 1); /*0x8f38fd*/
+      }
+      LOBYTE(v27) = 0; /*0x8f3903*/
+      if ( pLeaderSummoned.p ) /*0x8f390a*/
+      {
+        v11 = &pLeaderSummoned.p->ZRefCounted; /*0x8f390c*/
+        if ( !InterlockedDecrement(&pLeaderSummoned.p->_m_nRef) ) /*0x8f3913*/
+        {
+          v10(&v11->_m_nRef); /*0x8f3921*/
+          if ( v11 ) /*0x8f3925*/
+            ((void (__thiscall *)(ZRefCounted *, int))v11->dtr_ZRefCounted)(v11, 1); /*0x8f392f*/
+        }
+      }
+      v27 = -1; /*0x8f3931*/
+      if ( v5 ) /*0x8f393b*/
+      {
+        v12 = &v5[-1].p[1]; /*0x8f393d*/
+        p_y = &v5[-1].p[1].y; /*0x8f3940*/
+        if ( !InterlockedDecrement(p_y) ) /*0x8f3944*/
+        {
+          v10(p_y); /*0x8f394f*/
+          goto LABEL_22; /*0x8f394f*/
+        }
+      }
+      return; /*0x8f394c*/
+    }
+  }
+  LOBYTE(v27) = 2; /*0x8f397a*/
+  if ( pSummoned.p ) /*0x8f397f*/
+    ZRef<CSummoned>::_ReleaseRaw(&pSummoned, nullptr); /*0x8f3987*/
+  v14 = InterlockedDecrement; /*0x8f398c*/
+  LOBYTE(v27) = 1; /*0x8f3992*/
+  if ( p ) /*0x8f3999*/
+  {
+    v15 = p - 4; /*0x8f399b*/
+    v16 = (volatile LONG *)&p[-3]; /*0x8f399e*/
+    if ( !InterlockedDecrement(v16) ) /*0x8f39a2*/
+    {
+      InterlockedIncrement(v16); /*0x8f39a9*/
+      if ( v15 ) /*0x8f39b1*/
+        ((void (__thiscall *)(ZArray<unsigned long> *, int))*v15->a)(v15, 1); /*0x8f39bb*/
+    }
+  }
+  LOBYTE(v27) = 0; /*0x8f39c2*/
+  if ( pLeaderSummoned.p ) /*0x8f39c7*/
+    ZRef<CSummoned>::_ReleaseRaw(&pLeaderSummoned, nullptr); /*0x8f39cf*/
+  v27 = -1; /*0x8f39d4*/
+  if ( v5 ) /*0x8f39de*/
+  {
+    v12 = &v5[-1].p[1]; /*0x8f39e4*/
+    v17 = &v5[-1].p[1].y; /*0x8f39e7*/
+    if ( !v14(v17) ) /*0x8f39eb*/
+    {
+      InterlockedIncrement(v17); /*0x8f39f6*/
+LABEL_22:
+      if ( v12 ) /*0x8f3953*/
+        (*(void (__thiscall **)(tagPOINT *, int))v12->x)(v12, 1); /*0x8f395d*/
+    }
+  }
+}

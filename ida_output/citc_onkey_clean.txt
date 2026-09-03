@@ -1,0 +1,7 @@
+void __thiscall CITC::OnKey(CITC *this, unsigned int wParam, unsigned int lParam)
+{
+  ((void (__thiscall *)(CITCWnd_Char *, unsigned int, unsigned int))this->m_wndChar.Update)(
+    &this->m_wndChar,
+    wParam,
+    lParam);
+}

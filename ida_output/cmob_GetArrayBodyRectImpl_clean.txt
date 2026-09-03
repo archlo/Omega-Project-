@@ -1,0 +1,52 @@
+void __thiscall CMob::GetArrayBodyRectImpl(
+        CMob *this,
+        ZArray<tagRECT> *originBodyRect,
+        ZArray<tagRECT> *originBodyRectFlip,
+        ZArray<tagRECT> *arcRect,
+        int bContinuous)
+{
+  ZArray<tagRECT> *v5; // ebx
+  int v6; // edi
+  tagRECT *v8; // esi
+  tagRECT *v9; // eax
+  int v10; // eax
+  tagRECT *v11; // eax
+  int v12; // eax
+  int Data; // [esp-8h] [ebp-24h]
+  int v14; // [esp-8h] [ebp-24h]
+  tagRECT rcPrev; // [esp+Ch] [ebp-10h] BYREF
+  unsigned int i; // [esp+20h] [ebp+4h]
+
+  v5 = originBodyRect; /*0x642404*/
+  v6 = 0; /*0x64240c*/
+  if ( originBodyRect->a && originBodyRect->a[-1].bottom ) /*0x642418*/
+  {
+    ZArray<tagRECT>::_Alloc(arcRect, 0, (const ZAllocHelper *)&arcRect); /*0x64242b*/
+    if ( !this->m_pTemplate->bNoFlip ) /*0x642436*/
+      _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nMoveAction, this->_ZtlSecureTear_m_nMoveAction_CS); /*0x64244c*/
+    if ( !this->m_pTemplate->bNoFlip /*0x64247b*/
+      && (_ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nMoveAction, this->_ZtlSecureTear_m_nMoveAction_CS) & 1) == 0 )
+    {
+      v5 = originBodyRectFlip; /*0x64247d*/
+    }
+    for ( i = 0; i < ZArray<tagRECT>::GetCount(v5); ++v6 ) /*0x642487*/
+    {
+      v8 = ZArray<tagRECT>::InsertBefore(arcRect, -1); /*0x6424a0*/
+      v9 = &v5->a[v6]; /*0x6424a7*/
+      *v8 = *v9; /*0x6424a9*/
+      Data = TSecType<long>::GetData(&this->m_ptPos.y); /*0x6424c8*/
+      v10 = TSecType<long>::GetData(&this->m_ptPos.x); /*0x6424cf*/
+      ZAPI.OffsetRect(v8, v10, Data); /*0x6424d6*/
+      if ( bContinuous ) /*0x6424e1*/
+      {
+        v11 = &v5->a[v6]; /*0x6424e8*/
+        rcPrev = *v11; /*0x6424ea*/
+        v14 = TSecType<long>::GetData(&this->m_ptPosPrev.y); /*0x64250e*/
+        v12 = TSecType<long>::GetData(&this->m_ptPosPrev.x); /*0x642515*/
+        ZAPI.OffsetRect(&rcPrev, v12, v14); /*0x642520*/
+        ZAPI.UnionRect(v8, v8, &rcPrev); /*0x64252d*/
+      }
+      ++i; /*0x64253a*/
+    }
+  }
+}

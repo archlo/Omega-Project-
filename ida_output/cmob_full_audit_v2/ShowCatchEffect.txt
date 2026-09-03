@@ -1,0 +1,34 @@
+﻿void __thiscall CMob::ShowCatchEffect(CMob *this, int bSuccess, int tDelay)
+{
+  IWzVector2D *m_pInterface; // esi
+  HRESULT (__stdcall *get_x)(IWzShape2D *, int *); // edx
+  HRESULT v6; // eax
+  IWzVector2D *v7; // esi
+  HRESULT (__stdcall *get_y)(IWzShape2D *, int *); // edx
+  HRESULT v9; // eax
+  int v10; // [esp+10h] [ebp-8h] BYREF
+  int lCenterLeft; // [esp+14h] [ebp-4h] BYREF
+
+  m_pInterface = this->m_pvcHead.m_pInterface;
+  if ( !m_pInterface )
+    _com_issue_error(-2147467261);
+  get_x = m_pInterface->get_x;
+  lCenterLeft = 0;
+  v6 = get_x(m_pInterface, &lCenterLeft);
+  if ( v6 < 0 )
+    _com_issue_errorex(v6, m_pInterface, &_GUID_4cfb57c7_eae3_40b3_ac98_4b2750e3642a);
+  v7 = this->m_pvcHead.m_pInterface;
+  if ( !v7 )
+    _com_issue_error(-2147467261);
+  get_y = v7->get_y;
+  v10 = 0;
+  v9 = get_y(v7, &v10);
+  if ( v9 < 0 )
+    _com_issue_errorex(v9, v7, &_GUID_4cfb57c7_eae3_40b3_ac98_4b2750e3642a);
+  CAnimationDisplayer::Effect_Catch(
+    TSingleton<CAnimationDisplayer>::ms_pInstance,
+    lCenterLeft,
+    v10 - 15,
+    bSuccess,
+    tDelay);
+}

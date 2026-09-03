@@ -1,0 +1,21 @@
+// 0x69bb50
+CPersonalShopDlg::CSoldItemDlg *__thiscall CPersonalShopDlg::CSoldItemDlg::CSoldItemDlg(
+        CPersonalShopDlg::CSoldItemDlg *this,
+        CPersonalShopDlg *pDlg)
+{
+  CDialog::CDialog(this); /*0x69bb78*/
+  this->CDialog::CWnd::IGObj::__vftable = (CPersonalShopDlg::CSoldItemDlg_vtbl *)&CPersonalShopDlg::CSoldItemDlg::`vftable'{for `IGObj'}; /*0x69bb83*/
+  this->CDialog::CWnd::IUIMsgHandler::__vftable = (IUIMsgHandler_vtbl *)&CPersonalShopDlg::CSoldItemDlg::`vftable'{for `IUIMsgHandler'}; /*0x69bb89*/
+  this->CDialog::CWnd::ZRefCounted::__vftable = (ZRefCounted_vtbl *)&CPersonalShopDlg::CSoldItemDlg::`vftable'{for `ZRefCounted'}; /*0x69bb90*/
+  this->m_pDlg = pDlg; /*0x69bb97*/
+  this->m_pBtClose.p = nullptr; /*0x69bba1*/
+  this->m_pSB.p = nullptr; /*0x69bba7*/
+  this->m_pCashIcon.m_pInterface = nullptr; /*0x69bbad*/
+  this->m_lm.m_pWnd = nullptr; /*0x69bbb3*/
+  this->m_lm.m_nOffsetX = 0; /*0x69bbb9*/
+  this->m_lm.m_nOffsetY = 0; /*0x69bbbf*/
+  this->m_lm.m_aLayer.a = nullptr; /*0x69bbc5*/
+  this->m_lm.m_aButton.a = nullptr; /*0x69bbcb*/
+  CDialog::CreateDlg(this, L"UI/UIWindow2.img/PersonalShop/saleList/backgrnd", 1, nullptr, 1); /*0x69bbe2*/
+  return this; /*0x69bbe9*/
+}

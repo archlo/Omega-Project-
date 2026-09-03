@@ -1,0 +1,1 @@
+{"version":3,"file":"WzConstants.d.ts","sourceRoot":"","sources":["../../src/wz/WzConstants.ts"],"names":[],"mappings":"AAAA,qBAAa,WAAW;IACtB,MAAM,CAAC,QAAQ,CAAC,UAAU,0BASvB;IAEH,MAAM,CAAC,QAAQ,CAAC,OAAO,0BAA4C;IACnE,MAAM,CAAC,QAAQ,CAAC,SAAS,0BAAqB;IAC9C,MAAM,CAAC,QAAQ,CAAC,gBAAgB,cAAc;CAC/C"}

@@ -1,0 +1,374 @@
+// CUtilDlgEx::SetRet
+// Address: 0x982830
+
+void __thiscall CUtilDlgEx::SetRet(CUtilDlgEx *this, ZXString<char> *nRet)
+{
+  char *i; // ecx
+  char *m_pStr; // edi
+  int v5; // eax
+  char v6; // al
+  StringPool *Instance; // eax
+  CCtrlEdit *p; // esi
+  IUIMsgHandler *v9; // eax
+  __int64 v10; // rax
+  bool v11; // cc
+  StringPool *v12; // eax
+  char *v13; // eax
+  char *v14; // ebx
+  unsigned int v15; // edi
+  unsigned __int8 *v16; // eax
+  CCtrlEdit *v17; // esi
+  IUIMsgHandler *v18; // eax
+  StringPool *v19; // eax
+  char *v20; // eax
+  unsigned int v21; // edi
+  unsigned __int8 *v22; // eax
+  CCtrlEdit *v23; // esi
+  IUIMsgHandler *v24; // eax
+  const ZXString<char> *Text; // eax
+  char *v26; // edi
+  int v27; // edi
+  StringPool *v28; // eax
+  char *v29; // eax
+  char *v30; // ecx
+  CCtrlEdit *v31; // esi
+  IUIMsgHandler *v32; // esi
+  const ZXString<char> *v33; // eax
+  ZXString<char> *v34; // eax
+  char *v35; // eax
+  int v36; // eax
+  StringPool *v37; // eax
+  char *v38; // eax
+  unsigned int v39; // edi
+  unsigned __int8 *Buffer; // eax
+  CCtrlEdit *v41; // esi
+  IUIMsgHandler *v42; // eax
+  StringPool *v43; // eax
+  char *v44; // eax
+  unsigned int v45; // edi
+  unsigned __int8 *v46; // eax
+  CCtrlEdit *v47; // esi
+  IUIMsgHandler *v48; // eax
+  const ZXString<char> *v49; // eax
+  unsigned __int8 *v50; // [esp-1Ch] [ebp-48h]
+  unsigned __int8 *v51; // [esp-1Ch] [ebp-48h]
+  unsigned __int8 *v52; // [esp-1Ch] [ebp-48h]
+  unsigned __int8 *v53; // [esp-1Ch] [ebp-48h]
+  ZXString<char> v54; // [esp-14h] [ebp-40h] BYREF
+  const wchar_t *v55; // [esp-10h] [ebp-3Ch]
+  ZRef<CDialog> *v56; // [esp-Ch] [ebp-38h]
+  int v57; // [esp-8h] [ebp-34h]
+  int m_nInputNo_Max; // [esp-4h] [ebp-30h]
+  ZXString<char> sMsg; // [esp+14h] [ebp-18h] BYREF
+  ZXString<char> sInput; // [esp+18h] [ebp-14h] BYREF
+  ZXString<char> result; // [esp+1Ch] [ebp-10h] BYREF
+  int v62; // [esp+28h] [ebp-4h]
+
+  sMsg._m_pStr = nullptr; /*0x98285b*/
+  v62 = 0; /*0x982864*/
+  if ( nRet != (ZXString<char> *)1 ) /*0x982868*/
+  {
+LABEL_89:
+    if ( !this->m_bTerminate ) /*0x982eea*/
+    {
+      this->m_nRet = (int)nRet; /*0x982ef6*/
+      this->m_bTerminate = 1; /*0x982efc*/
+      if ( this->m_dwWndKey ) /*0x982f06*/
+        CWnd::Destroy(this); /*0x982f0d*/
+    }
+    return; /*0x982f0d*/
+  }
+  if ( this->m_dlgType == 2 )
+  {
+    CCtrlEdit::GetText(this->m_pEditInput.p, &sInput); /*0x98288a*/
+    LOBYTE(v62) = 1; /*0x98288f*/
+    for ( i = nullptr; ; ++i )
+    {
+      m_pStr = sInput._m_pStr; /*0x982896*/
+      v5 = sInput._m_pStr ? *((_DWORD *)sInput._m_pStr - 1) : 0;
+      if ( (int)i >= v5 ) /*0x9828a7*/
+        break; /*0x9828a7*/
+      v6 = i[(unsigned int)sInput._m_pStr]; /*0x9828a9*/
+      if ( v6 < 48 || v6 > 57 ) /*0x9828b2*/
+      {
+        m_nInputNo_Max = 0; /*0x9828b7*/
+        v57 = 0; /*0x9828b8*/
+        v56 = nullptr; /*0x9828b9*/
+        v55 = nullptr; /*0x9828ba*/
+        v54._m_pStr = i; /*0x9828bb*/
+        nRet = &v54; /*0x9828be*/
+        Instance = StringPool::GetInstance(); /*0x9828c8*/
+        StringPool::GetString(Instance, &v54, 0x341u); /*0x9828cf*/
+        CUtilDlg::Notice(v54, v55, v56, v57, m_nInputNo_Max); /*0x9828d4*/
+        p = this->m_pEditInput.p; /*0x9828d9*/
+        if ( p ) /*0x9828e4*/
+          v9 = &p->IUIMsgHandler; /*0x9828e6*/
+        else
+          v9 = nullptr; /*0x9828eb*/
+        CWndMan::SetFocus(TSingleton<CWndMan>::ms_pInstance, v9); /*0x9828f4*/
+        LOBYTE(v62) = 0; /*0x9828f9*/
+        if ( m_pStr ) /*0x982900*/
+        {
+LABEL_15:
+          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)m_pStr - 1); /*0x982906*/
+          return; /*0x982912*/
+        }
+        return; /*0x982900*/
+      }
+    }
+    v10 = _atoi64(sInput._m_pStr); /*0x982918*/
+    if ( HIDWORD(v10) || (int)v10 < 0 ) /*0x98292a*/
+    {
+      v37 = StringPool::GetInstance(); /*0x982cdb*/
+      v38 = StringPool::GetString(v37, (ZXString<char> *)&nRet, 0x343u)->_m_pStr; /*0x982ced*/
+      m_nInputNo_Max = this->m_nInputNo_Max; /*0x982cef*/
+      LOBYTE(v62) = 2; /*0x982cf6*/
+      ZXString<char>::Format(&sMsg, v38, m_nInputNo_Max); /*0x982cfa*/
+      LOBYTE(v62) = 1; /*0x982d06*/
+      if ( nRet ) /*0x982d0d*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&nRet[-3]); /*0x982d13*/
+      v14 = sMsg._m_pStr; /*0x982d1b*/
+      m_nInputNo_Max = 0; /*0x982d1f*/
+      v57 = 0; /*0x982d20*/
+      v56 = nullptr; /*0x982d21*/
+      v55 = nullptr; /*0x982d22*/
+      nRet = &v54; /*0x982d26*/
+      v54._m_pStr = nullptr; /*0x982d2a*/
+      if ( sMsg._m_pStr ) /*0x982d33*/
+      {
+        v39 = strlen(sMsg._m_pStr); /*0x982d37*/
+        v52 = (unsigned __int8 *)sMsg._m_pStr; /*0x982d4c*/
+        Buffer = (unsigned __int8 *)ZXString<char>::GetBuffer(&v54, v39, 0); /*0x982d52*/
+        memcpy(Buffer, v52, v39); /*0x982d58*/
+        ZXString<char>::ReleaseBuffer(&v54, v39); /*0x982d63*/
+        m_pStr = sInput._m_pStr; /*0x982d68*/
+      }
+      CUtilDlg::Notice(v54, v55, v56, v57, m_nInputNo_Max); /*0x982d6c*/
+      v41 = this->m_pEditInput.p; /*0x982d71*/
+      if ( v41 ) /*0x982d7c*/
+        v42 = &v41->IUIMsgHandler; /*0x982d7e*/
+      else
+        v42 = nullptr; /*0x982d83*/
+      CWndMan::SetFocus(TSingleton<CWndMan>::ms_pInstance, v42); /*0x982d8c*/
+      LOBYTE(v62) = 0; /*0x982d91*/
+      if ( m_pStr ) /*0x982d98*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)m_pStr - 1); /*0x982d9e*/
+      v62 = -1; /*0x982da6*/
+      if ( !v14 ) /*0x982db0*/
+        return; /*0x982db0*/
+      goto LABEL_85; /*0x982db0*/
+    }
+    v11 = (int)v10 < this->m_nInputNo_Min; /*0x982930*/
+    this->m_nInputNo_Result = v10; /*0x982936*/
+    if ( v11 ) /*0x98293c*/
+    {
+      v12 = StringPool::GetInstance(); /*0x98294c*/
+      v13 = StringPool::GetString(v12, (ZXString<char> *)&nRet, 0x342u)->_m_pStr; /*0x98295e*/
+      m_nInputNo_Max = this->m_nInputNo_Min; /*0x982960*/
+      LOBYTE(v62) = 3; /*0x982967*/
+      ZXString<char>::Format(&sMsg, v13, m_nInputNo_Max); /*0x98296c*/
+      LOBYTE(v62) = 1; /*0x982978*/
+      if ( nRet ) /*0x98297f*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&nRet[-3]); /*0x982985*/
+      v14 = sMsg._m_pStr; /*0x98298d*/
+      m_nInputNo_Max = 0; /*0x982991*/
+      v57 = 0; /*0x982992*/
+      v56 = nullptr; /*0x982993*/
+      v55 = nullptr; /*0x982994*/
+      nRet = &v54; /*0x982998*/
+      v54._m_pStr = nullptr; /*0x98299c*/
+      if ( sMsg._m_pStr ) /*0x9829a5*/
+      {
+        v15 = strlen(sMsg._m_pStr); /*0x9829a9*/
+        v50 = (unsigned __int8 *)sMsg._m_pStr; /*0x9829bc*/
+        v16 = (unsigned __int8 *)ZXString<char>::GetBuffer(&v54, v15, 0); /*0x9829c2*/
+        memcpy(v16, v50, v15); /*0x9829c8*/
+        ZXString<char>::ReleaseBuffer(&v54, v15); /*0x9829d3*/
+        m_pStr = sInput._m_pStr; /*0x9829d8*/
+      }
+      CUtilDlg::Notice(v54, v55, v56, v57, m_nInputNo_Max); /*0x9829dc*/
+      v17 = this->m_pEditInput.p; /*0x9829e1*/
+      if ( v17 ) /*0x9829ec*/
+        v18 = &v17->IUIMsgHandler; /*0x9829ee*/
+      else
+        v18 = nullptr; /*0x9829f3*/
+      CWndMan::SetFocus(TSingleton<CWndMan>::ms_pInstance, v18); /*0x9829fc*/
+      LOBYTE(v62) = 0; /*0x982a01*/
+      if ( m_pStr ) /*0x982a08*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)m_pStr - 1); /*0x982a0e*/
+      v62 = -1; /*0x982a16*/
+      if ( !v14 ) /*0x982a20*/
+        return; /*0x982a20*/
+      goto LABEL_85; /*0x982a20*/
+    }
+    if ( (int)v10 > this->m_nInputNo_Max ) /*0x982a3d*/
+    {
+      v19 = StringPool::GetInstance(); /*0x982a4d*/
+      v20 = StringPool::GetString(v19, (ZXString<char> *)&nRet, 0x343u)->_m_pStr; /*0x982a5f*/
+      m_nInputNo_Max = this->m_nInputNo_Max; /*0x982a61*/
+      LOBYTE(v62) = 4; /*0x982a68*/
+      ZXString<char>::Format(&sMsg, v20, m_nInputNo_Max); /*0x982a6d*/
+      LOBYTE(v62) = 1; /*0x982a79*/
+      if ( nRet ) /*0x982a80*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&nRet[-3]); /*0x982a86*/
+      v14 = sMsg._m_pStr; /*0x982a8e*/
+      m_nInputNo_Max = 0; /*0x982a92*/
+      v57 = 0; /*0x982a93*/
+      v56 = nullptr; /*0x982a94*/
+      v55 = nullptr; /*0x982a95*/
+      nRet = &v54; /*0x982a99*/
+      v54._m_pStr = nullptr; /*0x982a9d*/
+      if ( sMsg._m_pStr ) /*0x982aa6*/
+      {
+        v21 = strlen(sMsg._m_pStr); /*0x982aaa*/
+        v51 = (unsigned __int8 *)sMsg._m_pStr; /*0x982abc*/
+        v22 = (unsigned __int8 *)ZXString<char>::GetBuffer(&v54, v21, 0); /*0x982ac2*/
+        memcpy(v22, v51, v21); /*0x982ac8*/
+        ZXString<char>::ReleaseBuffer(&v54, v21); /*0x982ad3*/
+        m_pStr = sInput._m_pStr; /*0x982ad8*/
+      }
+      CUtilDlg::Notice(v54, v55, v56, v57, m_nInputNo_Max); /*0x982adc*/
+      v23 = this->m_pEditInput.p; /*0x982ae1*/
+      if ( v23 ) /*0x982aec*/
+        v24 = &v23->IUIMsgHandler; /*0x982aee*/
+      else
+        v24 = nullptr; /*0x982af3*/
+      CWndMan::SetFocus(TSingleton<CWndMan>::ms_pInstance, v24); /*0x982afc*/
+      LOBYTE(v62) = 0; /*0x982b01*/
+      if ( m_pStr ) /*0x982b08*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)m_pStr - 1); /*0x982b0e*/
+      v62 = -1; /*0x982b16*/
+      if ( !v14 ) /*0x982b20*/
+        return; /*0x982b20*/
+      goto LABEL_85; /*0x982b20*/
+    }
+    Text = CCtrlEdit::GetText(this->m_pEditInput.p, &result); /*0x982b42*/
+    LOBYTE(v62) = 5; /*0x982b50*/
+    ZXString<char>::operator=(&this->m_sInputStr_Result, Text); /*0x982b55*/
+    LOBYTE(v62) = 1; /*0x982b5e*/
+    if ( result._m_pStr ) /*0x982b65*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x982b6b*/
+    v26 = this->m_sInputStr_Result._m_pStr; /*0x982b73*/
+    if ( v26 ) /*0x982b77*/
+      v27 = *((_DWORD *)v26 - 1); /*0x982b79*/
+    else
+      v27 = 0; /*0x982b7e*/
+    if ( v27 >= this->m_nInputStr_Min ) /*0x982b86*/
+    {
+      LOBYTE(v62) = 0; /*0x982c51*/
+      if ( sInput._m_pStr ) /*0x982c58*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sInput._m_pStr - 1); /*0x982c5e*/
+      goto LABEL_59; /*0x982c5e*/
+    }
+    v28 = StringPool::GetInstance(); /*0x982b96*/
+    v29 = StringPool::GetString(v28, (ZXString<char> *)&nRet, 0x344u)->_m_pStr; /*0x982ba8*/
+    m_nInputNo_Max = this->m_nInputStr_Min; /*0x982baa*/
+    LOBYTE(v62) = 6; /*0x982bb1*/
+    ZXString<char>::Format(&sMsg, v29, m_nInputNo_Max); /*0x982bb6*/
+    LOBYTE(v62) = 1; /*0x982bc2*/
+    if ( nRet ) /*0x982bc9*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&nRet[-3]); /*0x982bcf*/
+    m_pStr = sMsg._m_pStr; /*0x982bd7*/
+    m_nInputNo_Max = 0; /*0x982bdb*/
+    v57 = 0; /*0x982bdc*/
+    v56 = nullptr; /*0x982bdd*/
+    v55 = nullptr; /*0x982bde*/
+    v54._m_pStr = v30; /*0x982bdf*/
+    nRet = &v54; /*0x982be2*/
+    ZXString<char>::ZXString<char>(&v54, sMsg._m_pStr, -1); /*0x982be9*/
+    CUtilDlg::Notice(v54, v55, v56, v57, m_nInputNo_Max); /*0x982bee*/
+    v31 = this->m_pEditInput.p; /*0x982bf3*/
+    if ( v31 ) /*0x982bfe*/
+      v32 = &v31->IUIMsgHandler; /*0x982c00*/
+    else
+      v32 = nullptr; /*0x982c05*/
+    CWndMan::SetFocus(TSingleton<CWndMan>::ms_pInstance, v32); /*0x982c0e*/
+    LOBYTE(v62) = 0; /*0x982c17*/
+    if ( sInput._m_pStr ) /*0x982c1e*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sInput._m_pStr - 1); /*0x982c24*/
+    v62 = -1; /*0x982c2c*/
+    if ( m_pStr ) /*0x982c36*/
+      goto LABEL_15; /*0x982c36*/
+    return; /*0x982c36*/
+  }
+LABEL_59:
+  if ( this->m_dlgType != 3 ) /*0x982c6d*/
+    goto LABEL_94; /*0x982c6d*/
+  v33 = CCtrlEdit::GetText(this->m_pEditInput.p, &result); /*0x982c7e*/
+  LOBYTE(v62) = 7; /*0x982c8c*/
+  ZXString<char>::operator=(&this->m_sInputStr_Result, v33); /*0x982c91*/
+  LOBYTE(v62) = 0; /*0x982c9a*/
+  if ( result._m_pStr ) /*0x982ca1*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x982ca7*/
+  v34 = ZXString<char>::TrimRight(&this->m_sInputStr_Result, nullptr); /*0x982cb3*/
+  v35 = ZXString<char>::TrimLeft(v34, nullptr)->_m_pStr; /*0x982cbf*/
+  v36 = v35 ? *((_DWORD *)v35 - 1) : 0;
+  if ( v36 >= this->m_nInputStr_Min ) /*0x982dcf*/
+  {
+LABEL_94:
+    if ( this->m_dlgType == 8 ) /*0x982eae*/
+    {
+      v49 = CCtrlMLEdit::GetText(this->m_pMLEditInput.p, &result); /*0x982ebb*/
+      LOBYTE(v62) = 9; /*0x982ec7*/
+      ZXString<char>::operator=(&this->m_sInputStr_Result, v49); /*0x982ecc*/
+      LOBYTE(v62) = 0; /*0x982ed5*/
+      if ( result._m_pStr ) /*0x982edc*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x982ee2*/
+    }
+    goto LABEL_89; /*0x982ee2*/
+  }
+  v43 = StringPool::GetInstance(); /*0x982ddf*/
+  v44 = StringPool::GetString(v43, (ZXString<char> *)&nRet, 0x345u)->_m_pStr; /*0x982df1*/
+  m_nInputNo_Max = this->m_nInputStr_Min; /*0x982df3*/
+  LOBYTE(v62) = 8; /*0x982dfa*/
+  ZXString<char>::Format(&sMsg, v44, m_nInputNo_Max); /*0x982dff*/
+  LOBYTE(v62) = 0; /*0x982e0b*/
+  if ( nRet ) /*0x982e12*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&nRet[-3]); /*0x982e18*/
+  v14 = sMsg._m_pStr; /*0x982e20*/
+  m_nInputNo_Max = 0; /*0x982e24*/
+  v57 = 0; /*0x982e25*/
+  v56 = nullptr; /*0x982e26*/
+  v55 = nullptr; /*0x982e27*/
+  nRet = &v54; /*0x982e2b*/
+  v54._m_pStr = nullptr; /*0x982e2f*/
+  if ( sMsg._m_pStr ) /*0x982e38*/
+  {
+    v45 = strlen(sMsg._m_pStr); /*0x982e3c*/
+    v53 = (unsigned __int8 *)sMsg._m_pStr; /*0x982e4c*/
+    v46 = (unsigned __int8 *)ZXString<char>::GetBuffer(&v54, v45, 0); /*0x982e52*/
+    memcpy(v46, v53, v45); /*0x982e58*/
+    ZXString<char>::ReleaseBuffer(&v54, v45); /*0x982e63*/
+  }
+  CUtilDlg::Notice(v54, v55, v56, v57, m_nInputNo_Max); /*0x982e68*/
+  v47 = this->m_pEditInput.p; /*0x982e6d*/
+  if ( v47 ) /*0x982e78*/
+    v48 = &v47->IUIMsgHandler; /*0x982e7a*/
+  else
+    v48 = nullptr; /*0x982e7f*/
+  CWndMan::SetFocus(TSingleton<CWndMan>::ms_pInstance, v48); /*0x982e88*/
+  v62 = -1; /*0x982e8d*/
+  if ( v14 ) /*0x982e97*/
+LABEL_85:
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v14 - 1); /*0x982e99*/
+}
+
+// References:
+//   ?Destroy@CWnd@@QAEXXZ @ 0x9b0e50
+//   ?GetText@CCtrlEdit@@QAE?AV?$ZXString@D@@XZ @ 0x4842c0
+//   ?GetInstance@StringPool@@SAAAV1@XZ @ 0x7466a0
+//   ?GetString@StringPool@@QAE?AV?$ZXString@D@@I@Z @ 0x403b30
+//   ?Notice@CUtilDlg@@SAHV?$ZXString@D@@PBGPAV?$ZRef@VCDialog@@@@HH@Z @ 0x977220
+//   ?SetFocus@CWndMan@@QAEXPAUIUIMsgHandler@@@Z @ 0x9b1a10
+//   ?ms_pInstance@?$TSingleton@VCWndMan@@@@1PAVCWndMan@@A @ 0xc68ac4
+//   ?_Release@?$ZXString@D@@KAXPAU_ZXStringData@1@@Z @ 0x403460
+//   __atoi64 @ 0xa30ecc
+//   ?Format@?$ZXString@D@@QAAAAV1@PBDZZ @ 0x443c70
+//   ?GetBuffer@?$ZXString@D@@QAEPADHH@Z @ 0x42c880
+//   _memcpy @ 0xa2fde0
+//   ?ReleaseBuffer@?$ZXString@D@@QAEXH@Z @ 0x42a080
+//   ??4?$ZXString@D@@QAEAAV0@ABV0@@Z @ 0x42d1c0
+//   ??$?0D@?$ZXString@D@@QAE@PBDH@Z @ 0x42d230
+//   ?TrimRight@?$ZXString@D@@QAEAAV1@PBD@Z @ 0x481cb0
+//   ?TrimLeft@?$ZXString@D@@QAEAAV1@PBD@Z @ 0x481d70
+//   ?GetText@CCtrlMLEdit@@QAE?AV?$ZXString@D@@XZ @ 0x68f6f0

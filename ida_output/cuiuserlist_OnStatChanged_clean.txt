@@ -1,0 +1,7 @@
+// cuiuserlist::OnStatChanged
+
+void __thiscall CUIUserList::OnStatChanged(CUIUserList *this)
+{
+  if ( this->m_nCurTab == 2 ) /*0x8b70b7*/
+    TabExpedition::OnStatChanged(this->m_pTabExpedition); /*0x8b70bf*/
+}

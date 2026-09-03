@@ -1,0 +1,19 @@
+﻿int dynamic_initializer_for__CUIDragonEquip::ms_aRegion__()
+{
+  int v0; // esi
+  int v1; // edi
+  int result; // eax
+
+  CUIDragonEquip::ms_aRegion[0].nX = EqSlotInfo::GetX(0, 2); /*0xb0d75f*/
+  v0 = EqSlotInfo::GetY(1, 2); /*0xb0d769*/
+  dword_C6E83C[0] = v0; /*0xb0d76f*/
+  dword_C6E840 = EqSlotInfo::GetX(1, 2); /*0xb0d77e*/
+  v1 = EqSlotInfo::GetY(2, 2); /*0xb0d788*/
+  dword_C6E844 = v1; /*0xb0d78e*/
+  dword_C6E848 = EqSlotInfo::GetX(2, 2); /*0xb0d79d*/
+  dword_C6E84C = v0; /*0xb0d7a2*/
+  result = EqSlotInfo::GetX(3, 2); /*0xb0d7a8*/
+  dword_C6E854 = v1; /*0xb0d7b0*/
+  dword_C6E850 = result; /*0xb0d7b7*/
+  return result; /*0xb0d7b6*/
+}

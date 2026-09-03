@@ -1,0 +1,54 @@
+int __thiscall CMob::IsRectIntersectWithTrapezoid(CMob *this, int x0, int x1, int x2, int y, int r, const tagRECT *rc)
+{
+  int v7; // esi
+  BOOL v8; // ecx
+  int v9; // edi
+  int v10; // ebp
+  int v11; // eax
+  int v12; // eax
+  int v13; // eax
+  tagRECT rcAttack; // [esp+10h] [ebp-20h] BYREF
+  tagRECT rcIntersect; // [esp+20h] [ebp-10h] BYREF
+  int bLeft; // [esp+38h] [ebp+8h]
+
+  v7 = x1; /*0x63b39e*/
+  v8 = x1 > x2; /*0x63b3a6*/
+  v9 = x1 - x0; /*0x63b3ac*/
+  v10 = x0 - x1; /*0x63b3b0*/
+  for ( bLeft = v8; ; v8 = bLeft )
+  {
+    v11 = 0; /*0x63b3bc*/
+    LOBYTE(v11) = v8 ? v7 > x2 : v7 < x2;
+    if ( !v11 ) /*0x63b3d0*/
+      break; /*0x63b3d0*/
+    if ( v8 ) /*0x63b3d8*/
+    {
+      rcAttack.right = v7; /*0x63b3da*/
+      v12 = v10; /*0x63b3de*/
+      v7 -= 20; /*0x63b3e0*/
+      v10 += 20; /*0x63b3e3*/
+      v9 -= 20; /*0x63b3e6*/
+      if ( x2 >= v7 ) /*0x63b3eb*/
+        rcAttack.left = x2; /*0x63b3f3*/
+      else
+        rcAttack.left = v7; /*0x63b3ed*/
+    }
+    else
+    {
+      rcAttack.left = v7; /*0x63b3f9*/
+      v7 += 20; /*0x63b3fd*/
+      v12 = v9; /*0x63b400*/
+      v10 -= 20; /*0x63b402*/
+      v9 += 20; /*0x63b405*/
+      rcAttack.right = v7; /*0x63b40a*/
+      if ( v7 >= x2 ) /*0x63b40e*/
+        rcAttack.right = x2; /*0x63b410*/
+    }
+    v13 = v12 / r; /*0x63b415*/
+    rcAttack.top = y - v13; /*0x63b429*/
+    rcAttack.bottom = v13 + y + 1; /*0x63b432*/
+    if ( ZAPI.IntersectRect(&rcIntersect, &rcAttack, rc) ) /*0x63b43c*/
+      return 1; /*0x63b456*/
+  }
+  return 0; /*0x63b44a*/
+}

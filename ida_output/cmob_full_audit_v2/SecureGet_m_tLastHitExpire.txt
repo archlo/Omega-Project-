@@ -1,0 +1,4 @@
+﻿int __fastcall CMob::_ZtlSecureGet_m_tLastHitExpire(CMob *this)
+{
+  return _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_tLastHitExpire, this->_ZtlSecureTear_m_tLastHitExpire_CS);
+}

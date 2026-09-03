@@ -1,0 +1,4 @@
+int __thiscall CMob::GetType(CMob *this)
+{
+  return 1; /*0x64cf75*/
+}

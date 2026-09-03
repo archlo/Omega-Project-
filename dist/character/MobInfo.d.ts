@@ -1,0 +1,64 @@
+import type { MobAttack } from './MobAttack.js';
+import type { MobSkillRef } from './MobSkillRef.js';
+export interface MobSpeakEntry {
+    action: number;
+    lines: string[];
+}
+export declare class MobInfo {
+    TemplateId: number;
+    Level: number;
+    Exp: number;
+    MaxHp: number;
+    MaxMp: number;
+    Pad: number;
+    Pdr: number;
+    Mad: number;
+    Mdr: number;
+    Acc: number;
+    Eva: number;
+    HpRecovery: number;
+    MpRecovery: number;
+    FixedDamage: number;
+    RemoveAfter: number;
+    DropItemPeriod: number;
+    MoveAbility: number;
+    Speed: number;
+    FlySpeed: number;
+    Fly: boolean;
+    ChaseSpeed: number;
+    BodyAttack: boolean;
+    Pushed: number;
+    Undead: boolean;
+    Boss: boolean;
+    NoFlip: boolean;
+    OnlyNormalAttack: boolean;
+    DamagedByMob: boolean;
+    PickUp: boolean;
+    CannotEvade: boolean;
+    SelfDestruction: boolean;
+    FirstSelfDestruction: boolean;
+    Invincible: boolean;
+    Disable: boolean;
+    NotAttack: boolean;
+    FirstAttack: boolean;
+    HpTagColor: number;
+    HpTagBgColor: number;
+    HpGaugeHide: boolean;
+    UpperMostLayer: boolean;
+    WeaponID: number;
+    AngerGauge: boolean;
+    ChargeCount: number;
+    Category: number;
+    EscortType: number;
+    MobSpeciesCode: string;
+    Attacks: Map<number, MobAttack>;
+    Skills: Map<number, MobSkillRef>;
+    DamagedElemAttr: Map<string, string>;
+    DamagedBySkill: Set<number>;
+    Revives: number[];
+    SpeakEntries: MobSpeakEntry[];
+    get IsStay(): boolean;
+    get IsFly(): boolean;
+    get IsJump(): boolean;
+}
+//# sourceMappingURL=MobInfo.d.ts.map

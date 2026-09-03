@@ -1,0 +1,26 @@
+BOOL __thiscall CMob::IsSamePhaseWithMe(CMob *this)
+{
+  CStage *p; // esi
+  ZRefCounted_vtbl *v3; // esi
+  char *m_nPhase; // eax
+  BOOL result; // eax
+
+  p = g_pStage.p; /*0x63b511*/
+  result = false; /*0x63b559*/
+  if ( g_pStage.p ) /*0x63b51c*/
+  {
+    if ( g_pStage.p->IsKindOf(&g_pStage.p->IUIMsgHandler, &CField::ms_RTTI_CField) ) /*0x63b52c*/
+    {
+      if ( TSingleton<CUserLocal>::ms_pInstance.m_Data ) /*0x63b53a*/
+      {
+        v3 = p[24].ZRefCounted::__vftable; /*0x63b53c*/
+        if ( !v3 ) /*0x63b544*/
+          return true; /*0x63b544*/
+        m_nPhase = (char *)this->m_nPhase; /*0x63b546*/
+        if ( (int)v3 >= (int)m_nPhase && m_nPhase == TSingleton<CUserLocal>::ms_pInstance.m_Data[983].m_str ) /*0x63b556*/
+          return true; /*0x63b51c*/
+      }
+    }
+  }
+  return result; /*0x63b558*/
+}

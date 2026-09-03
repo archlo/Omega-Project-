@@ -1,0 +1,17 @@
+// CUtilDlgEx::UpdateImage
+// Address: 0x9852e0
+
+void __thiscall CUtilDlgEx::UpdateImage(CUtilDlgEx *this)
+{
+  ZArray<ZRef<CCtrlButton>>::RemoveAll(&this->m_apBtnFocus); /*0x9852e9*/
+  this->m_apButton[0].p->SetEnable(&this->m_apButton[0].p->IUIMsgHandler, this->m_bImagePrev); /*0x985303*/
+  this->m_apButton[1].p->SetEnable(&this->m_apButton[1].p->IUIMsgHandler, this->m_bImageNext); /*0x98531b*/
+  this->m_apButton[2].p->SetEnable(&this->m_apButton[2].p->IUIMsgHandler, this->m_bImageNext == 0); /*0x985337*/
+  CUtilDlgEx::MakeImage(this); /*0x98533b*/
+  CWnd::InvalidateRect(this, nullptr); /*0x985344*/
+}
+
+// References:
+//   ?RemoveAll@?$ZArray@V?$ZRef@VCCtrlButton@@@@@@QAEXXZ @ 0x6e5180
+//   ?MakeImage@CUtilDlgEx@@IAEXXZ @ 0x982280
+//   ?InvalidateRect@CWnd@@QAEXPBUtagRECT@@@Z @ 0x9ad3f0

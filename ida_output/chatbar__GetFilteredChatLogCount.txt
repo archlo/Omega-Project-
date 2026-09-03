@@ -1,0 +1,31 @@
+﻿CUIStatusBar::CChatLog *__thiscall CUIStatusBar::_GetFilteredChatLogCount(CUIStatusBar *this)
+{
+  CUIStatusBar::CChatLog *result; // eax
+  int v3; // edi
+  GW_ItemSlotBase *i; // esi
+  CUIStatusBar::CChatLog *v5; // ecx
+  bool v6; // zf
+
+  result = (CUIStatusBar::CChatLog *)CUIStatusBar::m_aChatLog.a;
+  if ( this->m_dwChatFilterFlag )
+  {
+    v3 = 0;
+    for ( i = nullptr; result && i < result[-1].m_pItem.p; i = (GW_ItemSlotBase *)((char *)i + 1) )
+    {
+      v5 = (CUIStatusBar::CChatLog *)*(&result->_m_nRef + 2 * (_DWORD)i);
+      if ( v5 )
+      {
+        v6 = CUIStatusBar::CChatLog::IsFiltered(v5, this->m_dwChatFilterFlag) == 0;
+        result = (CUIStatusBar::CChatLog *)CUIStatusBar::m_aChatLog.a;
+        if ( !v6 )
+          ++v3;
+      }
+    }
+    return (CUIStatusBar::CChatLog *)v3;
+  }
+  else if ( CUIStatusBar::m_aChatLog.a )
+  {
+    return CUIStatusBar::m_aChatLog.a[-1].p;
+  }
+  return result;
+}

@@ -1,0 +1,4 @@
+MobStat *__thiscall CMob::GetMobStat(CMob *this)
+{
+  return &this->m_stat; /*0x639f66*/
+}

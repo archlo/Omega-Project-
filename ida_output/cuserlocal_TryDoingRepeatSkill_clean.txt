@@ -1,0 +1,119 @@
+// cuserlocal::TryDoingRepeatSkill
+
+void __thiscall CUserLocal::TryDoingRepeatSkill(CUserLocal *this, int tCur)
+{
+  int nSkillID; // eax
+  IWzGr2DLayer *m_pInterface; // eax
+  int v5; // eax
+  CharacterData *p; // edi
+  int SkillLevel; // eax
+  CharacterData *v8; // edi
+  int v9; // eax
+  ZRef<CSummoned> pSummon; // [esp+10h] [ebp-2Ch] BYREF
+  ZRef<CSummoned> result; // [esp+18h] [ebp-24h] BYREF
+  ZRef<CharacterData> v12; // [esp+20h] [ebp-1Ch] BYREF
+  ZRef<CharacterData> v13; // [esp+28h] [ebp-14h] BYREF
+  int v14; // [esp+38h] [ebp-4h]
+
+  nSkillID = this->m_repeatSkill.nSkillID; /*0x93d428*/
+  if ( nSkillID <= 35121005 ) /*0x93d435*/
+  {
+    if ( nSkillID == 35121005 ) /*0x93d43b*/
+    {
+      CUserLocal::TryDoingSiege(this, tCur); /*0x93d648*/
+      return; /*0x93d648*/
+    }
+    if ( nSkillID != 35111004 ) /*0x93d446*/
+    {
+      if ( nSkillID == 35121003 ) /*0x93d451*/
+      {
+        if ( this->m_repeatSkill.bKeyDownbar || tCur - this->m_repeatSkill.tStart < 810 ) /*0x93d472*/
+        {
+          if ( this->m_repeatSkill.bDone ) /*0x93d49b*/
+          {
+            if ( tCur - this->m_repeatSkill.tAttackStartTime >= 2520 ) /*0x93d548*/
+            {
+              CUser::GetSummoned(this, &result, 35121003); /*0x93d55a*/
+              v14 = 1; /*0x93d563*/
+              if ( result.p ) /*0x93d56d*/
+              {
+                if ( !result.p->m_bAssistAttackManual ) /*0x93d56f*/
+                {
+                  CSummoned::SendRemove(result.p); /*0x93d578*/
+                  CUserLocal::ClearRepeatSkill(this); /*0x93d57f*/
+                  if ( this->m_nMechanicMode == 35121005 ) /*0x93d58a*/
+                  {
+                    this->m_repeatSkill.nSkillID = 35121005; /*0x93d58c*/
+                    this->m_repeatSkill.tStart = tCur; /*0x93d592*/
+                  }
+                }
+              }
+              v14 = -1; /*0x93d59c*/
+              ZRef<CSummoned>::~ZRef<CSummoned>(&result); /*0x93d5a4*/
+            }
+          }
+          else if ( tCur - this->m_repeatSkill.tStart >= 2790 ) /*0x93d4b7*/
+          {
+            CUser::GetSummoned(this, &pSummon, 35121003); /*0x93d4c5*/
+            v14 = 0; /*0x93d4ce*/
+            if ( pSummon.p ) /*0x93d4dd*/
+              pSummon.p->m_bAssistAttackManual = 1; /*0x93d4df*/
+            this->m_repeatSkill.bDone = 1; /*0x93d4e5*/
+            this->m_repeatSkill.tAttackStartTime = tCur; /*0x93d4eb*/
+            m_pInterface = this->m_pLayerKeyDownBar.m_pInterface; /*0x93d4f1*/
+            if ( m_pInterface ) /*0x93d4f9*/
+            {
+              this->m_pLayerKeyDownBar.m_pInterface = nullptr; /*0x93d4fb*/
+              m_pInterface->Release(m_pInterface); /*0x93d50b*/
+            }
+            v14 = -1; /*0x93d511*/
+            ZRef<CSummoned>::~ZRef<CSummoned>(&pSummon); /*0x93d519*/
+          }
+        }
+        else
+        {
+          CUserLocal::CreateKeyDownBar(this, 35121003); /*0x93d477*/
+          this->m_repeatSkill.bKeyDownbar = 1; /*0x93d47c*/
+        }
+      }
+      return; /*0x93d498*/
+    }
+    v5 = tCur; /*0x93d5be*/
+    if ( tCur - this->m_repeatSkill.tStart >= 5000 ) /*0x93d5d0*/
+    {
+      p = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &v12)->p; /*0x93d5e6*/
+      ZRef<CharacterData>::~ZRef<CharacterData>(&v12); /*0x93d5ed*/
+      SkillLevel = CSkillInfo::GetSkillLevel( /*0x93d602*/
+                     TSingleton<CSkillInfo>::ms_pInstance,
+                     p,
+                     this->m_repeatSkill.nSkillID,
+                     nullptr);
+      CUserLocal::SendSkillEffectRequest(this, 35110004, SkillLevel, 1); /*0x93d611*/
+      CUserLocal::ClearRepeatSkill(this); /*0x93d618*/
+      play_skill_sound(35111004, SE_SKILL_USE, 0); /*0x93d626*/
+      return; /*0x93d640*/
+    }
+LABEL_31:
+    CUserLocal::TryDoingSiege(this, v5); /*0x93d70e*/
+    return; /*0x93d70f*/
+  }
+  if ( nSkillID != 35121013 ) /*0x93d652*/
+    return; /*0x93d652*/
+  if ( !this->m_bSendTankSiegeModeEnd ) /*0x93d65f*/
+  {
+    v5 = tCur; /*0x93d688*/
+    if ( tCur - this->m_tLastTankSiegeMode >= 5000 ) /*0x93d69a*/
+    {
+      v8 = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &v13)->p; /*0x93d6ac*/
+      ZRef<CharacterData>::~ZRef<CharacterData>(&v13); /*0x93d6b3*/
+      v9 = CSkillInfo::GetSkillLevel(TSingleton<CSkillInfo>::ms_pInstance, v8, this->m_repeatSkill.nSkillID, nullptr); /*0x93d6c8*/
+      CUserLocal::SendSkillEffectRequest(this, 35120013, v9, 1); /*0x93d6db*/
+      this->m_bSendTankSiegeModeEnd = 1; /*0x93d6e9*/
+      play_skill_sound(35121013, SE_SKILL_USE, 0); /*0x93d6ef*/
+      return; /*0x93d709*/
+    }
+    goto LABEL_31; /*0x93d69a*/
+  }
+  if ( this->m_nMechanicMode == 35121005 ) /*0x93d667*/
+    this->m_repeatSkill.nSkillID = 35121005; /*0x93d66d*/
+}

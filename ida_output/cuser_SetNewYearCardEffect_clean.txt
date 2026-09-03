@@ -1,0 +1,203 @@
+// cuser::SetNewYearCardEffect
+
+int __thiscall CUser::SetNewYearCardEffect(
+        CUser *this,
+        _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > nType,
+        CUser *pPairUser,
+        IWzVector2D *dwSN,
+        _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *nItemID)
+{
+  int *v7; // eax
+  CUser::ADDITIONALLAYER *NewYearCardAdditionalLayer; // edi
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *p_pLayer; // edi
+  StringPool *Instance; // eax
+  wchar_t *m_pStr; // eax
+  StringPool *v12; // eax
+  wchar_t *v13; // eax
+  IWzVector2D *m_pInterface; // eax
+  StringPool *v15; // eax
+  wchar_t *v16; // eax
+  CUser *v17; // esi
+  IWzVector2D *v18; // eax
+  StringPool *v19; // eax
+  wchar_t *v20; // eax
+  CUser *v21; // esi
+  const _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *Layer; // eax
+  IWzGr2DLayer *v23; // ecx
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v24; // [esp-8h] [ebp-70h] BYREF
+  int v25; // [esp-4h] [ebp-6Ch]
+  int v26; // [esp+0h] [ebp-68h]
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v27; // [esp+4h] [ebp-64h] BYREF
+  int v28; // [esp+8h] [ebp-60h]
+  int v29; // [esp+Ch] [ebp-5Ch]
+  int v30; // [esp+10h] [ebp-58h]
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > pVecThis; // [esp+24h] [ebp-44h] BYREF
+  ZXString<unsigned short> result; // [esp+28h] [ebp-40h] BYREF
+  tagPOINT ptRemote; // [esp+2Ch] [ebp-3Ch] BYREF
+  tagPOINT ptThis; // [esp+34h] [ebp-34h] BYREF
+  Ztl_variant_t ppOrigin; // [esp+3Ch] [ebp-2Ch] BYREF
+  Ztl_variant_t vRepeat; // [esp+4Ch] [ebp-1Ch] BYREF
+  int v37; // [esp+64h] [ebp-4h]
+
+  if ( this->m_bDelayedLoad ) /*0x8f147a*/
+    return 0; /*0x8f1482*/
+  if ( ((int)nType.m_pInterface & 2) != 0 ) /*0x8f149e*/
+  {
+    NewYearCardAdditionalLayer = CUser::RetrieveNewYearCardAdditionalLayer(this, (unsigned int)dwSN); /*0x8f14e3*/
+    CUser::ADDITIONALLAYER::Reset(NewYearCardAdditionalLayer); /*0x8f14e7*/
+    p_pLayer = &NewYearCardAdditionalLayer->l.pLayer; /*0x8f14ec*/
+    if ( !p_pLayer->m_pInterface ) /*0x8f14ef*/
+    {
+      ((void (__thiscall *)(IVecCtrlOwner *, tagPOINT *))this->GetPos)(&this->IVecCtrlOwner, &ptThis); /*0x8f150a*/
+      dwSN = nullptr; /*0x8f150c*/
+      v37 = 0; /*0x8f151a*/
+      Instance = StringPool::GetInstance(); /*0x8f151e*/
+      m_pStr = StringPool::GetStringW(Instance, &result, 0x3D2u)->_m_pStr; /*0x8f152a*/
+      LOBYTE(v37) = 1; /*0x8f1533*/
+      PcCreateObject<_com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>>( /*0x8f1538*/
+        m_pStr,
+        (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&dwSN,
+        nullptr);
+      LOBYTE(v37) = 0; /*0x8f1544*/
+      if ( result._m_pStr ) /*0x8f154a*/
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)result._m_pStr - 1); /*0x8f1550*/
+      pVecThis.m_pInterface = nullptr; /*0x8f1558*/
+      LOBYTE(v37) = 2; /*0x8f1566*/
+      v12 = StringPool::GetInstance(); /*0x8f156b*/
+      v13 = StringPool::GetStringW(v12, &result, 0x3D2u)->_m_pStr; /*0x8f1577*/
+      LOBYTE(v37) = 3; /*0x8f1580*/
+      PcCreateObject<_com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>>( /*0x8f1585*/
+        v13,
+        &pVecThis,
+        nullptr);
+      LOBYTE(v37) = 2; /*0x8f1591*/
+      if ( result._m_pStr ) /*0x8f1598*/
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)result._m_pStr - 1); /*0x8f159e*/
+      m_pInterface = CUser::GetVecCtrl( /*0x8f15b2*/
+                       this,
+                       (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&result)->m_pInterface;
+      LOBYTE(v37) = 4; /*0x8f15b9*/
+      ppOrigin.vt = 13; /*0x8f15be*/
+      ppOrigin.decVal.Lo32 = (unsigned int)m_pInterface; /*0x8f15c3*/
+      if ( m_pInterface ) /*0x8f15c9*/
+        m_pInterface->AddRef(m_pInterface); /*0x8f15d1*/
+      LOBYTE(v37) = 5; /*0x8f15d7*/
+      if ( !pVecThis.m_pInterface ) /*0x8f15de*/
+        _com_issue_error(-2147467261); /*0x8f15e5*/
+      IWzVector2D::Putorigin(pVecThis.m_pInterface, &ppOrigin); /*0x8f15ef*/
+      Ztl_variant_t::~Ztl_variant_t(&ppOrigin); /*0x8f15f8*/
+      LOBYTE(v37) = 2; /*0x8f1601*/
+      if ( result._m_pStr ) /*0x8f1608*/
+        (*(void (__stdcall **)(wchar_t *))(*(_DWORD *)result._m_pStr + 8))(result._m_pStr); /*0x8f1610*/
+      nType.m_pInterface = nullptr; /*0x8f1612*/
+      LOBYTE(v37) = 6; /*0x8f1620*/
+      v15 = StringPool::GetInstance(); /*0x8f1625*/
+      v16 = StringPool::GetStringW(v15, &result, 0x3D2u)->_m_pStr; /*0x8f1631*/
+      LOBYTE(v37) = 7; /*0x8f163a*/
+      PcCreateObject<_com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>>( /*0x8f163f*/
+        v16,
+        &nType,
+        nullptr);
+      LOBYTE(v37) = 6; /*0x8f164b*/
+      if ( result._m_pStr ) /*0x8f1652*/
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)result._m_pStr - 1); /*0x8f1658*/
+      v17 = pPairUser; /*0x8f1660*/
+      v18 = CUser::GetVecCtrl( /*0x8f1670*/
+              pPairUser,
+              (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&pPairUser)->m_pInterface;
+      LOBYTE(v37) = 8; /*0x8f1677*/
+      ppOrigin.vt = 13; /*0x8f167c*/
+      ppOrigin.decVal.Lo32 = (unsigned int)v18; /*0x8f1681*/
+      if ( v18 ) /*0x8f1687*/
+        v18->AddRef(v18); /*0x8f168f*/
+      LOBYTE(v37) = 9; /*0x8f1695*/
+      if ( !nType.m_pInterface ) /*0x8f169c*/
+        _com_issue_error(-2147467261); /*0x8f16a3*/
+      IWzVector2D::Putorigin(nType.m_pInterface, &ppOrigin); /*0x8f16ad*/
+      Ztl_variant_t::~Ztl_variant_t(&ppOrigin); /*0x8f16b6*/
+      LOBYTE(v37) = 6; /*0x8f16bf*/
+      if ( pPairUser ) /*0x8f16c6*/
+        ((void (__stdcall *)(CUser *))pPairUser->GetSecondaryStat)(pPairUser); /*0x8f16ce*/
+      ((void (__thiscall *)(IVecCtrlOwner *, tagPOINT *))v17->GetPos)(&v17->IVecCtrlOwner, &ptRemote); /*0x8f16de*/
+      if ( !dwSN ) /*0x8f16e6*/
+        _com_issue_error(-2147467261); /*0x8f16ed*/
+      IWzShape2D::Move(dwSN, (ptRemote.x + ptThis.x) / 2, (ptRemote.y + ptThis.y) / 2 - 20); /*0x8f1715*/
+      if ( !dwSN ) /*0x8f1720*/
+        _com_issue_error(-2147467261); /*0x8f1727*/
+      IWzVector2D::Ratio(dwSN, pVecThis.m_pInterface, 2, 2, 1, 1); /*0x8f1739*/
+      if ( !dwSN ) /*0x8f1744*/
+        _com_issue_error(-2147467261); /*0x8f174b*/
+      IWzVector2D::Ratio(dwSN, nType.m_pInterface, 2, 2, 1, 1); /*0x8f175d*/
+      pPairUser = nullptr; /*0x8f1762*/
+      LOBYTE(v37) = 10; /*0x8f1770*/
+      v19 = StringPool::GetInstance(); /*0x8f1775*/
+      v20 = StringPool::GetStringW(v19, &result, 0x9ABu)->_m_pStr; /*0x8f1785*/
+      LOBYTE(v37) = 11; /*0x8f178e*/
+      ZXString<unsigned short>::Format((ZXString<unsigned short> *)&pPairUser, v20, nItemID); /*0x8f1793*/
+      LOBYTE(v37) = 10; /*0x8f179f*/
+      if ( result._m_pStr ) /*0x8f17a6*/
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)result._m_pStr - 1); /*0x8f17ac*/
+      v30 = 0; /*0x8f17b4*/
+      v29 = 255; /*0x8f17b5*/
+      v28 = -1073343324; /*0x8f17ba*/
+      nItemID = &v27; /*0x8f17c0*/
+      v26 = 0; /*0x8f17c6*/
+      v27.m_pInterface = nullptr; /*0x8f17c7*/
+      v25 = 0; /*0x8f17c9*/
+      v24.m_pInterface = dwSN; /*0x8f17d1*/
+      result._m_pStr = (wchar_t *)&v24; /*0x8f17d7*/
+      if ( dwSN ) /*0x8f17dd*/
+        ((void (__thiscall *)(IWzVector2D *, IWzVector2D *))dwSN->AddRef)(dwSN, dwSN); /*0x8f17e5*/
+      v21 = pPairUser; /*0x8f17e7*/
+      Layer = CAnimationDisplayer::LoadLayer( /*0x8f17f5*/
+                (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&nItemID,
+                (const wchar_t *)pPairUser,
+                0,
+                v24,
+                v25,
+                v26,
+                v27,
+                v28,
+                v29,
+                v30);
+      _com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::operator=( /*0x8f1800*/
+        p_pLayer,
+        Layer);
+      if ( nItemID ) /*0x8f180b*/
+        ((void (__stdcall *)(_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *))nItemID->m_pInterface[2].__vftable)(nItemID); /*0x8f1813*/
+      Ztl_variant_t::Ztl_variant_t(&vRepeat, &vtMissing); /*0x8f181e*/
+      LOBYTE(v37) = 12; /*0x8f182c*/
+      Ztl_variant_t::Ztl_variant_t(&ppOrigin, &vtMissing); /*0x8f1831*/
+      v23 = p_pLayer->m_pInterface; /*0x8f1836*/
+      LOBYTE(v37) = 13; /*0x8f1838*/
+      if ( !v23 ) /*0x8f183f*/
+        _com_issue_error(-2147467261); /*0x8f1846*/
+      IWzGr2DLayer::Animate(v23, GA_REPEAT, &ppOrigin, &vRepeat); /*0x8f1857*/
+      Ztl_variant_t::~Ztl_variant_t(&ppOrigin); /*0x8f1860*/
+      Ztl_variant_t::~Ztl_variant_t(&vRepeat); /*0x8f1869*/
+      LOBYTE(v37) = 6; /*0x8f186e*/
+      if ( v21 ) /*0x8f1875*/
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&v21[-1].m_bRepeatEffect); /*0x8f187b*/
+      LOBYTE(v37) = 2; /*0x8f1887*/
+      if ( nType.m_pInterface ) /*0x8f188e*/
+        ((void (__stdcall *)(_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> >))nType.m_pInterface->Release)(nType); /*0x8f1896*/
+      LOBYTE(v37) = 0; /*0x8f189c*/
+      if ( pVecThis.m_pInterface ) /*0x8f18a2*/
+        pVecThis.m_pInterface->Release(pVecThis.m_pInterface); /*0x8f18aa*/
+      v37 = -1; /*0x8f18b0*/
+      if ( dwSN ) /*0x8f18ba*/
+        dwSN->Release(dwSN); /*0x8f18c2*/
+    }
+  }
+  else
+  {
+    v7 = ZMap<unsigned long,long,unsigned long>::GetAt( /*0x8f14ae*/
+           &this->m_mapNewYearCardEffectMap,
+           (const unsigned int *)&dwSN,
+           nullptr);
+    if ( v7 ) /*0x8f14b5*/
+      CUser::ADDITIONALLAYER::Reset(&this->m_aAdditionalLayer[*v7]); /*0x8f14c3*/
+    ZMap<unsigned long,long,unsigned long>::RemoveKey(&this->m_mapNewYearCardEffectMap, (const unsigned int *)&dwSN); /*0x8f14cf*/
+  }
+  return 1; /*0x8f1484*/
+}

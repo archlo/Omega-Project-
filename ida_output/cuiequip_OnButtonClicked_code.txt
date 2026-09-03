@@ -1,0 +1,23 @@
+﻿void __thiscall CUIEquip::OnButtonClicked(CUIEquip *this, unsigned int nId)
+{
+  switch ( nId ) /*0x7a7e63*/
+  {
+    case 0xBB8u: /*0x7a7e63*/
+      *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 4147) = 50200052; /*0x7a7e7a*/
+      CWvsContext::SendMigrateToShopRequest((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, 0); /*0x7a7e93*/
+      break; /*0x7a7e93*/
+    case 0xBB9u: /*0x7a7e63*/
+      CUIEquip::ToggleDragonEquip(this); /*0x7a7e98*/
+      break; /*0x7a7e9f*/
+    case 0xBBAu: /*0x7a7e63*/
+      CUIEquip::TogglePetEquip(this); /*0x7a7e6a*/
+      break; /*0x7a7e71*/
+    case 0xBBBu: /*0x7a7e63*/
+      CUIEquip::ToggleMechanicEquip(this); /*0x7a7ea2*/
+      goto LABEL_6; /*0x7a7ea2*/
+    default:
+LABEL_6:
+      CUIWnd::OnButtonClicked(this, nId); /*0x7a7ea7*/
+      break; /*0x7a7eaa*/
+  }
+}

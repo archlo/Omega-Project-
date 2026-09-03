@@ -1,0 +1,15 @@
+// cuser::GetPos
+
+int *__thiscall CUser::GetPos(CUser *this, int *a2)
+{
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *p_m_pLayerAR01; // esi
+  int Data; // edi
+  int v4; // ecx
+
+  p_m_pLayerAR01 = &this->m_pLayerAR01; /*0x4bddd1*/
+  Data = TSecType<long>::GetData((TSecType<long> *)&this->m_ptPos.y.m_secdata); /*0x4bdde2*/
+  v4 = TSecType<long>::GetData((TSecType<long> *)p_m_pLayerAR01); /*0x4bdde9*/
+  *a2 = Data; /*0x4bddef*/
+  a2[1] = v4; /*0x4bddf2*/
+  return a2; /*0x4bddf1*/
+}

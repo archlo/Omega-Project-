@@ -1,0 +1,4 @@
+// CUIStat::GetRTTI @ 0x867980
+// Decompiled from v95 IDB
+
+{"addr":"0x867980","code":"const CRTTI *__thiscall CUIStat::GetRTTI(CUIStat *this)\n{\n  return &CUIStat::ms_RTTI_CUIStat; /*0x867985*/\n}","refs":[{"addr":"0xc61878","name":"?ms_RTTI_CUIStat@CUIStat@@0VCRTTI@@A"}]}

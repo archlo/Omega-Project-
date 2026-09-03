@@ -1,0 +1,11 @@
+﻿unsigned int __thiscall CMob::GetCrc(CMob *this)
+{
+  unsigned int result; // eax
+
+  if ( !this->m_bNeedToUpdateCrc )
+    return this->m_dwMobCrc;
+  result = CMob::CalcCrc(this);
+  this->m_dwMobCrc = result;
+  this->m_bNeedToUpdateCrc = 0;
+  return result;
+}

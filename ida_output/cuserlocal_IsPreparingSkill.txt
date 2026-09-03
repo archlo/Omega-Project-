@@ -1,0 +1,3 @@
+// CUserLocal::IsPreparingSkill @ 0x9033b0
+
+{"addr":"0x9033b0","code":"BOOL __thiscall CUserLocal::IsPreparingSkill(CUserLocal *this)\n{\n  return this->m_preparingSkill.nSkillID != 0; /*0x9033bb*/\n}"}

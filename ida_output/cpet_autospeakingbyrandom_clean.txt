@@ -1,0 +1,62 @@
+﻿void __thiscall CPet::AutoSpeakingByRandom(CPet *this)
+{
+  char *m_pStr; // edi
+  int nChatBalloon; // edx
+  IWzVector2D *m_pInterface; // eax
+  IWzGr2DLayer *v5; // eax
+  _bstr_t::Data_t *v6; // ecx
+  _bstr_t v7; // [esp-24h] [ebp-4Ch] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v8; // [esp-20h] [ebp-48h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v9; // [esp-1Ch] [ebp-44h] BYREF
+  int v10; // [esp-18h] [ebp-40h]
+  int v11; // [esp-14h] [ebp-3Ch]
+  int v12; // [esp-10h] [ebp-38h]
+  int v13; // [esp-Ch] [ebp-34h]
+  int v14; // [esp-8h] [ebp-30h]
+  int v15; // [esp-4h] [ebp-2Ch]
+  ZXString<char> sChat; // [esp+Ch] [ebp-1Ch] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *v17; // [esp+10h] [ebp-18h]
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v18; // [esp+14h] [ebp-14h]
+  _bstr_t *v19; // [esp+18h] [ebp-10h]
+  int v20; // [esp+24h] [ebp-4h]
+
+  CPetTemplate::GetAutoSpeakingByRandom(this->m_pTemplate, &sChat);
+  m_pStr = sChat._m_pStr;
+  v20 = 0;
+  if ( sChat._m_pStr && *sChat._m_pStr )
+  {
+    nChatBalloon = this->m_pTemplate->nChatBalloon;
+    m_pInterface = this->m_pvc.m_pInterface;
+    v15 = 0;
+    v14 = 0;
+    v13 = 0;
+    v12 = nChatBalloon;
+    v11 = 1002;
+    v10 = 5000;
+    v17 = &v9;
+    v9.m_pInterface = m_pInterface;
+    if ( m_pInterface )
+      m_pInterface->AddRef(m_pInterface);
+    v5 = this->m_pLayerAction.m_pInterface;
+    v6 = (_bstr_t::Data_t *)&v8;
+    LOBYTE(v20) = 1;
+    v18 = &v8;
+    v8.m_pInterface = v5;
+    if ( v5 )
+      v5->AddRef(v5);
+    v7.m_Data = v6;
+    v19 = &v7;
+    LOBYTE(v20) = 2;
+    _bstr_t::_bstr_t(&v7, m_pStr);
+    LOBYTE(v20) = 0;
+    CChatBalloon::MakeBalloon(&this->m_chatBalloon, (Ztl_bstr_t)v7.m_Data, v8, v9, v10, v11, v12, v13, v14, v15);
+    v20 = -1;
+  }
+  else
+  {
+    v20 = -1;
+    if ( !sChat._m_pStr )
+      return;
+  }
+  ZXString<char>::_Release((ZXString<char>::_ZXStringData *)m_pStr - 1);
+}

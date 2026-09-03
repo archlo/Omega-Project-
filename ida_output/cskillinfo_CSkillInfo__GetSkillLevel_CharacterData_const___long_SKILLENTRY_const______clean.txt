@@ -1,0 +1,155 @@
+// CSkillInfo::GetSkillLevel(CharacterData const &,long,SKILLENTRY const * *)
+
+int __thiscall CSkillInfo::GetSkillLevel(CSkillInfo *this, const CharacterData *c, int nSkillID, int ppSkillEntry)
+{
+  int v4; // esi
+  const SKILLENTRY **i; // edi
+  SKILLENTRY *Skill; // ebx
+  const SKILLENTRY **v8; // edi
+  int MaxLevel; // eax
+
+  v4 = nSkillID;
+  for ( i = (const SKILLENTRY **)ppSkillEntry; ; i = nullptr )
+  {
+    while ( 1 )
+    {
+      while ( 1 )
+      {
+        while ( 1 )
+        {
+          while ( 1 )
+          {
+            while ( 1 )
+            {
+              while ( 1 )
+              {
+                if ( v4 > 20001020 )
+                {
+                  if ( v4 > 20011067 )
+                  {
+                    switch ( v4 )
+                    {
+                      case 30001009:
+                      case 30001010:
+                      case 30001011:
+                      case 30001020:
+                      case 30001066:
+                      case 30001067:
+                        goto $LN24_42;
+                      default:
+                        goto LABEL_10;
+                    }
+                  }
+                  if ( v4 >= 20011066 )
+                    goto $LN24_42;
+                  if ( v4 > 20011011 )
+                  {
+                    if ( v4 == 20011020 )
+                      goto $LN24_42;
+                  }
+                  else if ( v4 >= 20011009 || v4 >= 20001066 && v4 <= 20001067 )
+                  {
+                    goto $LN24_42;
+                  }
+                }
+                else
+                {
+                  if ( v4 == 20001020 )
+                    goto $LN24_42;
+                  if ( v4 <= (int)&loc_989A72 + 1 )
+                  {
+                    if ( v4 < (int)&loc_989A6D + 4 )
+                    {
+                      switch ( v4 )
+                      {
+                        case 1009:
+                        case 1010:
+                        case 1011:
+                        case 1020:
+                        case 1066:
+                        case 1067:
+                          break;
+                        default:
+                          goto LABEL_10;
+                      }
+                    }
+$LN24_42:
+                    if ( i )
+                      *i = CSkillInfo::GetSkill(this, v4);
+                    return 1;
+                  }
+                  if ( v4 > (int)&loc_989AAB )
+                  {
+                    if ( v4 >= 20001009 && v4 <= 20001011 )
+                      goto $LN24_42;
+                  }
+                  else if ( v4 >= (int)&loc_989AAA || (_UNKNOWN *)v4 == (_UNKNOWN *)((char *)&loc_989A7A + 2) )
+                  {
+                    goto $LN24_42;
+                  }
+                }
+LABEL_10:
+                if ( !i || (Skill = (SKILLENTRY *)*i) == nullptr )
+                  Skill = (SKILLENTRY *)CSkillInfo::GetSkill(this, v4);
+                if ( i && !*i )
+                  *i = Skill;
+                if ( !Skill )
+                  return 0;
+                if ( v4 != 4321001 )
+                  break;
+                v4 = 4321000;
+                i = nullptr;
+                nSkillID = 4321000;
+              }
+              if ( v4 != 35121011 )
+                break;
+              v4 = 35121009;
+              i = nullptr;
+              nSkillID = 35121009;
+            }
+            if ( v4 != 33101007 && v4 != 33101006 )
+              break;
+            v4 = 33101005;
+            i = nullptr;
+            nSkillID = 33101005;
+          }
+          if ( v4 != 35101009 )
+            break;
+          v4 = 35001001;
+          i = nullptr;
+          nSkillID = 35001001;
+        }
+        if ( v4 != 35101010 )
+          break;
+        v4 = 35001004;
+        i = nullptr;
+        nSkillID = 35001004;
+      }
+      if ( v4 != 33101008 )
+        break;
+      v4 = 33101004;
+      i = nullptr;
+      nSkillID = 33101004;
+    }
+    if ( v4 != 35121013 )
+      break;
+    v4 = 35111004;
+    nSkillID = 35111004;
+  }
+  ppSkillEntry = 0;
+  if ( !ZMap<long,long,long>::GetAt(&c->mSkillRecord, &nSkillID, &ppSkillEntry) )
+    return 0;
+  v8 = (const SKILLENTRY **)ppSkillEntry;
+  if ( !ppSkillEntry )
+    return 0;
+  ppSkillEntry = 0;
+  if ( ZMap<long,long,long>::GetAt(&c->mSkillRecordEx, &nSkillID, &ppSkillEntry) )
+    v8 = (const SKILLENTRY **)((char *)v8 + ppSkillEntry);
+  if ( Skill->bCombatOrders )
+    MaxLevel = c->nCombatOrders + SKILLENTRY::GetMaxLevel(Skill);
+  else
+    MaxLevel = SKILLENTRY::GetMaxLevel(Skill);
+  if ( (int)v8 < MaxLevel )
+    MaxLevel = (int)v8;
+  return MaxLevel <= 0 ? 0 : MaxLevel;
+}

@@ -1,0 +1,48 @@
+import { WzPackage } from '../wz/WzPackage.js';
+export declare class NameService {
+    private static readonly EquipTypes;
+    private _stringWz;
+    private _questWz?;
+    private _items;
+    private _itemDescs;
+    private _quests;
+    private _maps;
+    private _mapStreets;
+    private _mapNames;
+    private _mobs;
+    private _npcs;
+    private _npcStrings;
+    private _skills;
+    constructor(stringWzProvider: () => WzPackage | null, questWzProvider?: () => WzPackage | null);
+    ItemName(id: number): string | undefined;
+    ItemDesc(id: number): string | undefined;
+    SkillName(id: number): string | undefined;
+    MapName(id: number): string | undefined;
+    MapStreetName(id: number): string | undefined;
+    MapShortName(id: number): string | undefined;
+    MobName(id: number): string | undefined;
+    NpcName(id: number): string | undefined;
+    QuestName(id: number): string | undefined;
+    NpcText(id: number, key: string): string | undefined;
+    private _itemsGet;
+    private _itemDescsGet;
+    private _mapsGet;
+    private _mapStreetsGet;
+    private _mapNamesGet;
+    private _mobsGet;
+    private _npcsGet;
+    private _npcStringsGet;
+    private _skillsGet;
+    private _questsGet;
+    private _loadQuests;
+    private _loadItemStrings;
+    private _loadMaps;
+    private _loadMapStreets;
+    private _loadMapNames;
+    private _loadNpcs;
+    private _loadNpcStrings;
+    private _loadSkills;
+    private _loadFlatImage;
+    private _addNames;
+}
+//# sourceMappingURL=NameService.d.ts.map

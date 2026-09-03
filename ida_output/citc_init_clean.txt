@@ -1,0 +1,202 @@
+void __thiscall CITC::Init(CITC *this, void *pParam)
+{
+  char *m_pStr; // eax
+  void (__stdcall *v4)(VARIANTARG *); // edi
+  HRESULT v5; // eax
+  HRESULT v6; // eax
+  StringPool *Instance; // eax
+  Ztl_variant_t *ObjectA; // eax
+  IUnknown *Unknown; // eax
+  HRESULT v10; // eax
+  HRESULT v11; // eax
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzGr2DLayer *v13; // edi
+  IWzGr2DLayer *v14; // edi
+  HRESULT v15; // eax
+  IWzGr2DLayer *v16; // edi
+  HRESULT v17; // eax
+  StringPool *v18; // eax
+  wchar_t *v19; // eax
+  Ztl_bstr_t v20; // [esp+4h] [ebp-8Ch] BYREF
+  const Ztl_variant_t *p_pvargDest; // [esp+8h] [ebp-88h]
+  const Ztl_variant_t *v22; // [esp+Ch] [ebp-84h]
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v23; // [esp+10h] [ebp-80h]
+  unsigned int p_pvarg; // [esp+14h] [ebp-7Ch]
+  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > pCanvas; // [esp+2Ch] [ebp-64h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v26; // [esp+30h] [ebp-60h] BYREF
+  VARIANTARG pvargDest; // [esp+34h] [ebp-5Ch] BYREF
+  VARIANTARG pvarg; // [esp+44h] [ebp-4Ch] BYREF
+  Ztl_variant_t vCanvas; // [esp+54h] [ebp-3Ch] BYREF
+  VARIANTARG v30; // [esp+64h] [ebp-2Ch] BYREF
+  Ztl_variant_t result; // [esp+74h] [ebp-1Ch] BYREF
+  int v32; // [esp+8Ch] [ebp-4h]
+
+  CWvsContext::ClearFieldUI((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr);
+  this->_ZtlSecureTear_m_nNexonCash_CS = _ZtlSecureTear<long>(0, this->_ZtlSecureTear_m_nNexonCash);
+  this->_ZtlSecureTear_m_nMaplePoint_CS = _ZtlSecureTear<long>(0, this->_ZtlSecureTear_m_nMaplePoint);
+  this->m_nCurCategory = 1;
+  this->m_nCurCategorySub = 0;
+  this->m_nCurPage = 0;
+  this->m_nCurrentCategoryItemCnt = 0;
+  this->m_nCurrentPageItemCnt = 0;
+  this->m_bSearch = 0;
+  this->m_nSearchCategory = 0;
+  this->m_nSearchSubCategory = 0;
+  this->m_nSearchOption = 0;
+  m_pStr = this->m_sSearchCondition._m_pStr;
+  if ( m_pStr )
+  {
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)m_pStr - 1);
+    this->m_sSearchCondition._m_pStr = nullptr;
+  }
+  this->m_bNoticeLimitedList = 1;
+  this->m_nSortType = 1;
+  v4 = VariantInit;
+  p_pvarg = (unsigned int)&pvarg;
+  this->m_nSortColumn = 0;
+  v4((VARIANTARG *)p_pvarg);
+  v5 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing);
+  if ( v5 < 0 )
+    _com_issue_error(v5);
+  v32 = 0;
+  v4(&pvargDest);
+  v6 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing);
+  if ( v6 < 0 )
+    _com_issue_error(v6);
+  p_pvarg = 0;
+  v23 = nullptr;
+  v22 = (const Ztl_variant_t *)&pvarg;
+  p_pvargDest = (const Ztl_variant_t *)&pvargDest;
+  v20.m_Data = (_bstr_t::Data_t *)&pvarg;
+  v26.m_pInterface = (IWzGr2DLayer *)&v20;
+  LOBYTE(v32) = 1;
+  Instance = StringPool::GetInstance();
+  StringPool::GetBSTR(Instance, &v20, 0x127Eu);
+  LOBYTE(v32) = 2;
+  if ( !g_rm.m_pInterface )
+    _com_issue_error(-2147467261);
+  LOBYTE(v32) = 1;
+  ObjectA = IWzResMan::GetObjectA(g_rm.m_pInterface, &result, v20, p_pvargDest, v22);
+  LOBYTE(v32) = 3;
+  Unknown = Ztl_variant_t::GetUnknown(ObjectA, (bool)v23, p_pvarg);
+  pCanvas.m_pInterface = nullptr;
+  v10 = _com_ptr_t<_com_IIID<IWzCanvas,&__s_GUID const _GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e>>::_QueryInterface<IUnknown *>(
+          &pCanvas,
+          Unknown);
+  if ( v10 < 0 && v10 != -2147467262 )
+    _com_issue_error(v10);
+  LOBYTE(v32) = 5;
+  if ( result.vt == 8 )
+  {
+    result.vt = 0;
+    if ( result.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(result.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&result);
+  }
+  LOBYTE(v32) = 6;
+  if ( pvargDest.vt == 8 )
+  {
+    pvargDest.vt = 0;
+    if ( pvargDest.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&pvargDest);
+  }
+  LOBYTE(v32) = 7;
+  if ( pvarg.vt == 8 )
+  {
+    pvarg.vt = 0;
+    if ( pvarg.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&pvarg);
+  }
+  v4(&v30);
+  v11 = ZComAPI::ZComVariantCopy(&v30, &vtMissing);
+  if ( v11 < 0 )
+    _com_issue_error(v11);
+  LOBYTE(v32) = 8;
+  vCanvas.vt = 13;
+  *(_com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > *)&vCanvas.boolVal = pCanvas;
+  if ( pCanvas.m_pInterface )
+    pCanvas.m_pInterface->AddRef(pCanvas.m_pInterface);
+  LOBYTE(v32) = 9;
+  if ( !g_gr.m_pInterface )
+    _com_issue_error(-2147467261);
+  m_pInterface = IWzGr2D::CreateLayer(g_gr.m_pInterface, &v26, 0, 0, 0, 0, 0, &vCanvas, (const Ztl_variant_t *)&v30)->m_pInterface;
+  v13 = this->m_pLayer.m_pInterface;
+  if ( v13 != m_pInterface )
+  {
+    this->m_pLayer.m_pInterface = m_pInterface;
+    if ( m_pInterface )
+      m_pInterface->AddRef(m_pInterface);
+    if ( v13 )
+      v13->Release(v13);
+  }
+  if ( v26.m_pInterface )
+    v26.m_pInterface->Release(v26.m_pInterface);
+  LOBYTE(v32) = 8;
+  if ( vCanvas.vt == 8 )
+  {
+    vCanvas.vt = 0;
+    if ( vCanvas.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(vCanvas.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&vCanvas);
+  }
+  LOBYTE(v32) = 7;
+  if ( v30.vt == 8 )
+  {
+    v30.vt = 0;
+    if ( v30.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(v30.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&v30);
+  }
+  v14 = this->m_pLayer.m_pInterface;
+  if ( !v14 )
+    _com_issue_error(-2147467261);
+  v15 = v14->put_z(v14, -1);
+  if ( v15 < 0 )
+    _com_issue_errorex(v15, v14, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf);
+  v16 = this->m_pLayer.m_pInterface;
+  if ( !v16 )
+    _com_issue_error(-2147467261);
+  v17 = v16->put_color(v16, -1u);
+  if ( v17 < 0 )
+    _com_issue_errorex(v17, v16, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf);
+  CWnd::CreateWnd(&this->m_wndChar, 0, 0, 256, 200, 0, 1, this, 1, Origin_LT);
+  CWnd::CreateWnd(&this->m_wndSale, 0, 200, 256, 110, 0, 1, this, 1, Origin_LT);
+  CWnd::CreateWnd(&this->m_wndPurchase, 0, 310, 256, 108, 0, 1, this, 1, Origin_LT);
+  CWnd::CreateWnd(&this->m_wndInventory, 0, 418, 256, 180, 0, 1, this, 1, Origin_LT);
+  CWnd::CreateWnd(&this->m_wndTab, 272, 17, 509, 78, 10, 1, this, 1, Origin_LT);
+  CWnd::CreateWnd(&this->m_wndSubTab, 273, 98, 509, 48, 0, 1, this, 1, Origin_LT);
+  CWnd::CreateWnd(&this->m_wndList, 273, 145, 509, 365, 0, 1, this, 1, Origin_LT);
+  CWnd::CreateWnd(&this->m_wndStatus, 255, 531, 545, 56, 0, 1, this, 1, Origin_LT);
+  CItemInfo::LoadNPTExceptionItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr);
+  CInputSystem::ShowCursor(TSingleton<CInputSystem>::ms_pInstance, 1);
+  p_pvarg = 1290;
+  v23 = &v26;
+  v18 = StringPool::GetInstance();
+  v19 = StringPool::GetStringW(v18, (ZXString<unsigned short> *)v23, p_pvarg)->_m_pStr;
+  LOBYTE(v32) = 10;
+  CSoundMan::PlayBGM(TSingleton<CSoundMan>::ms_pInstance, v19, 1, 0, 0, 0);
+  LOBYTE(v32) = 7;
+  if ( v26.m_pInterface )
+    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&v26.m_pInterface[-3]);
+  CStage::FadeIn(this);
+  v32 = -1;
+  if ( pCanvas.m_pInterface )
+    pCanvas.m_pInterface->Release(pCanvas.m_pInterface);
+}

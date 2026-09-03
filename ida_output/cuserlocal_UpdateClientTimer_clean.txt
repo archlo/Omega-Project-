@@ -1,0 +1,104 @@
+// cuserlocal::UpdateClientTimer
+
+void __thiscall CUserLocal::UpdateClientTimer(CUserLocal *this, int tCur)
+{
+  ZMap<long,long,long> *p_m_mClientTimerSkill; // edi
+  __POSITION *HeadPosition; // eax
+  int v4; // ebx
+  __POSITION *v5; // ebp
+  int v6; // esi
+  int *v7; // eax
+  int *a; // ebx
+  int v9; // ebp
+  int i; // esi
+  unsigned int v11; // eax
+  int v12; // edi
+  unsigned int v13; // edx
+  unsigned int v14; // eax
+  int v15; // edi
+  unsigned int v16; // edx
+  ZArray<long> aCancleList; // [esp+14h] [ebp-24h] BYREF
+  __POSITION *pos; // [esp+18h] [ebp-20h] BYREF
+  COutPacket oPacket; // [esp+1Ch] [ebp-1Ch] BYREF
+  int v20; // [esp+34h] [ebp-4h]
+
+  aCancleList.a = nullptr; /*0x90e6f9*/
+  p_m_mClientTimerSkill = &this->m_mClientTimerSkill; /*0x90e6fd*/
+  v20 = 0; /*0x90e705*/
+  HeadPosition = ZMap<long,long,long>::GetHeadPosition(&this->m_mClientTimerSkill); /*0x90e709*/
+  pos = HeadPosition; /*0x90e70e*/
+  if ( HeadPosition ) /*0x90e714*/
+  {
+    v4 = tCur; /*0x90e71a*/
+    do /*0x90e76e*/
+    {
+      v5 = HeadPosition; /*0x90e722*/
+      tCur = 0; /*0x90e730*/
+      v6 = *ZMap<long,long,long>::GetNext(p_m_mClientTimerSkill, &pos, &tCur); /*0x90e739*/
+      if ( v6 <= v4 ) /*0x90e73d*/
+      {
+        v7 = ZArray<long>::InsertBefore(&aCancleList, -1); /*0x90e745*/
+        *v7 = tCur; /*0x90e754*/
+        *ZArray<long>::InsertBefore(&aCancleList, -1) = v6; /*0x90e761*/
+        ZMap<long,long,long>::RemoveKey(p_m_mClientTimerSkill, (const int *)&v5[8]); /*0x90e763*/
+      }
+      HeadPosition = pos; /*0x90e768*/
+    }
+    while ( pos ); /*0x90e76e*/
+    a = aCancleList.a; /*0x90e770*/
+    if ( aCancleList.a ) /*0x90e776*/
+    {
+      v9 = *(aCancleList.a - 1); /*0x90e77c*/
+      if ( v9 ) /*0x90e781*/
+      {
+        COutPacket::COutPacket(&oPacket, 133); /*0x90e790*/
+        LOBYTE(v20) = 1; /*0x90e7a1*/
+        COutPacket::Encode4(&oPacket, v9 / 2); /*0x90e7a6*/
+        for ( i = 0; i < v9; i += 2 ) /*0x90e7af*/
+        {
+          v11 = (unsigned int)oPacket.m_aSendBuff.a; /*0x90e7b5*/
+          v12 = a[i]; /*0x90e7b9*/
+          if ( oPacket.m_aSendBuff.a ) /*0x90e7be*/
+            v13 = *((_DWORD *)oPacket.m_aSendBuff.a - 1); /*0x90e7c4*/
+          else
+            v13 = 0; /*0x90e7c0*/
+          if ( oPacket.m_uOffset + 4 > v13 ) /*0x90e7d0*/
+          {
+            if ( oPacket.m_aSendBuff.a ) /*0x90e7d4*/
+              v11 = *((_DWORD *)oPacket.m_aSendBuff.a - 1); /*0x90e7d6*/
+            do /*0x90e7e4*/
+              v11 *= 2; /*0x90e7e0*/
+            while ( oPacket.m_uOffset + 4 > v11 ); /*0x90e7e4*/
+            ZArray<unsigned char>::_Realloc(&oPacket.m_aSendBuff, v11, 0, (const ZAllocHelper *)&tCur); /*0x90e7f2*/
+            v11 = (unsigned int)oPacket.m_aSendBuff.a; /*0x90e7f7*/
+          }
+          *(_DWORD *)(v11 + oPacket.m_uOffset) = v12; /*0x90e7ff*/
+          oPacket.m_uOffset += 4; /*0x90e802*/
+          v14 = (unsigned int)oPacket.m_aSendBuff.a; /*0x90e807*/
+          v15 = a[i + 1]; /*0x90e80b*/
+          if ( oPacket.m_aSendBuff.a ) /*0x90e811*/
+            v16 = *((_DWORD *)oPacket.m_aSendBuff.a - 1); /*0x90e817*/
+          else
+            v16 = 0; /*0x90e813*/
+          if ( oPacket.m_uOffset + 4 > v16 ) /*0x90e823*/
+          {
+            if ( oPacket.m_aSendBuff.a ) /*0x90e827*/
+              v14 = *((_DWORD *)oPacket.m_aSendBuff.a - 1); /*0x90e829*/
+            do /*0x90e834*/
+              v14 *= 2; /*0x90e830*/
+            while ( oPacket.m_uOffset + 4 > v14 ); /*0x90e834*/
+            ZArray<unsigned char>::_Realloc(&oPacket.m_aSendBuff, v14, 0, (const ZAllocHelper *)&tCur); /*0x90e842*/
+            v14 = (unsigned int)oPacket.m_aSendBuff.a; /*0x90e847*/
+          }
+          *(_DWORD *)(v14 + oPacket.m_uOffset) = v15; /*0x90e84f*/
+          oPacket.m_uOffset += 4; /*0x90e852*/
+        }
+        CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket); /*0x90e86d*/
+        LOBYTE(v20) = 0; /*0x90e876*/
+        ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff); /*0x90e87b*/
+      }
+    }
+  }
+  v20 = -1; /*0x90e884*/
+  ZArray<long>::RemoveAll(&aCancleList); /*0x90e88c*/
+}

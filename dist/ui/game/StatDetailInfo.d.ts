@@ -1,0 +1,60 @@
+import { GamePanel } from './GamePanel.js';
+import { WzTextureLoader } from '../../render/WzTextureLoader.js';
+import { WzPackage } from '../../wz/WzPackage.js';
+import { BuiltInFont } from '../BuiltInFont.js';
+import { StatInputs } from './StatDerived.js';
+export interface StatPair {
+    dwStatFlag: number;
+    nValue: number;
+}
+export declare class StatDetailInfo extends GamePanel {
+    Inputs: StatInputs;
+    private _loader;
+    private _font;
+    private _bg;
+    private _bg2;
+    private _bg3;
+    private _btHpUp;
+    private _bgSprite;
+    private _bg2Sprite;
+    private _bg3Sprite;
+    private _statTexts;
+    buffStr: number;
+    buffDex: number;
+    buffInt: number;
+    buffLuk: number;
+    buffPad: number;
+    buffMad: number;
+    buffPdd: number;
+    buffMdd: number;
+    buffAcc: number;
+    buffEva: number;
+    secPdd: number;
+    secPddBuff: number;
+    secMdd: number;
+    secMddBuff: number;
+    secAcc: number;
+    secAccBuff: number;
+    secEva: number;
+    secEvaBuff: number;
+    secSpeed: number;
+    secSpeedBuff: number;
+    constructor(loader: WzTextureLoader, ui: WzPackage | null, font: BuiltInFont | null);
+    update(_dt: number): void;
+    draw(): void;
+    handleMouseButton(x: number, y: number, down: boolean): boolean;
+    getCriticalProp(): number;
+    private _getSkillCritical;
+    private _getComboAbilityCritical;
+    _weaponOptionCritical: number;
+    _sharpEyesCrit: number;
+    _thornsEffect: number;
+    _comboAbilityCritical: number;
+    _passiveSkillCritical: number;
+    _isWildHunterJaguar: boolean;
+    _jaguarCritical: number;
+    _evanCritical: number;
+    _skillCriticalProp: number;
+}
+export declare function getIdealStatUp(jobId: number, level: number, str: number, dex: number, intStat: number, luk: number, bWantToBeInfighter: boolean): StatPair[];
+//# sourceMappingURL=StatDetailInfo.d.ts.map

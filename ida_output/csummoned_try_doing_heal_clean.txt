@@ -1,0 +1,51 @@
+int __thiscall CSummoned::TryDoingHeal(CSummoned *this, int tCur)
+{
+  char *m_pStr; // ebx
+  CharacterData *p; // ebp
+  volatile LONG *p_m_uTableSize; // edi
+  int SkillLevel; // edi
+  int v7; // ebx
+  const SKILLLEVELDATA *LevelData; // edi
+  char v9; // al
+  unsigned int m_dwSummonedID; // [esp-4h] [ebp-3Ch]
+  ZRef<CharacterData> result; // [esp+14h] [ebp-24h] BYREF
+  COutPacket oPacket; // [esp+1Ch] [ebp-1Ch] BYREF
+  int v14; // [esp+34h] [ebp-4h]
+
+  if ( this->m_nAssistType != 2 ) /*0x74adc0*/
+    return 0; /*0x74adc0*/
+  m_pStr = TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x74adc6*/
+  p = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &result)->p; /*0x74addc*/
+  if ( result.p ) /*0x74ade1*/
+  {
+    p_m_uTableSize = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x74ade3*/
+    if ( !InterlockedDecrement((volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount) ) /*0x74adea*/
+    {
+      InterlockedIncrement(p_m_uTableSize + 1); /*0x74adf8*/
+      if ( p_m_uTableSize ) /*0x74ae00*/
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)((char *)p_m_uTableSize, 1); /*0x74ae0a*/
+    }
+    result.p = nullptr; /*0x74ae0c*/
+  }
+  SkillLevel = CSkillInfo::GetSkillLevel(TSingleton<CSkillInfo>::ms_pInstance, p, 1320008, (int)&s_pHealing); /*0x74ae2a*/
+  if ( SkillLevel <= 0 ) /*0x74ae2e*/
+    return 0; /*0x74ae2e*/
+  v7 = _ZtlSecureFuse<long>((const int *)m_pStr + 2124, *((_DWORD *)m_pStr + 2126)); /*0x74ae4f*/
+  if ( v7 <= _ZtlSecureFuse<long>(p->characterStat._ZtlSecureTear_nHP, p->characterStat._ZtlSecureTear_nHP_CS) ) /*0x74ae5b*/
+    return 0; /*0x74af2c*/
+  LevelData = SKILLENTRY::GetLevelData((SKILLENTRY *)s_pHealing, SkillLevel); /*0x74ae76*/
+  COutPacket::COutPacket(&oPacket, 210); /*0x74ae78*/
+  m_dwSummonedID = this->m_dwSummonedID; /*0x74ae83*/
+  v14 = 0; /*0x74ae88*/
+  COutPacket::Encode4(&oPacket, m_dwSummonedID); /*0x74ae90*/
+  COutPacket::Encode4(&oPacket, 0x142448u); /*0x74ae9e*/
+  v9 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nMoveAction, this->_ZtlSecureTear_m_nMoveAction_CS); /*0x74aeb1*/
+  COutPacket::Encode1(&oPacket, (v9 << 7) | 7); /*0x74aec6*/
+  CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket); /*0x74aed6*/
+  this->m_tNextHeal = tCur + 1000 * _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nX, LevelData->_ZtlSecureTear_nX_CS); /*0x74aeff*/
+  CSummoned::SetAttackAction(this, 7); /*0x74af05*/
+  this->m_nSuspend = 1; /*0x74af0e*/
+  v14 = -1; /*0x74af18*/
+  ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff); /*0x74af20*/
+  return 1; /*0x74af2e*/
+}

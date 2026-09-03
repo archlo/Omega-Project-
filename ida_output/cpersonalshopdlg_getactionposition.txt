@@ -1,0 +1,14 @@
+// 0x697a90
+void __thiscall CPersonalShopDlg::GetActionPosition(CPersonalShopDlg *this, int nSlot, int *nAction, tagPOINT *pt)
+{
+  pt->y = 127; /*0x697a98*/
+  if ( nSlot ) /*0x697aa1*/
+  {
+    pt->x = 92 * nSlot + 180; /*0x697ab4*/
+    *nAction = 5; /*0x697aba*/
+  }
+  else
+  {
+    pt->x = 53; /*0x697aa3*/
+  }
+}

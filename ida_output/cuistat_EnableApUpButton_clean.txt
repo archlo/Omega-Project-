@@ -1,0 +1,106 @@
+// cuistat::EnableApUpButton
+
+void __thiscall CUIStat::EnableApUpButton(CUIStat *this)
+{
+  CharacterData *p; // ebp
+  char *p_m_uTableSize; // esi
+  volatile LONG *p_m_uCount; // edi
+  BOOL v4; // ebx
+  CCtrlOriginButton **p_p; // esi
+  int v6; // edi
+  unsigned __int8 v7; // bl
+  CCtrlOriginButton **v8; // esi
+  int v9; // edi
+  CCtrlOriginButton **v10; // esi
+  int v11; // edi
+  BOOL v12; // ebx
+  int i; // esi
+  BOOL v15; // edi
+  IUIMsgHandler *v16; // ecx
+  IUIMsgHandler *v17; // ecx
+  int bEnable; // [esp+14h] [ebp-Ch]
+  int bEnablea; // [esp+14h] [ebp-Ch]
+  ZRef<CharacterData> result; // [esp+18h] [ebp-8h] BYREF
+
+  p = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &result)->p; /*0x86187b*/
+  if ( result.p ) /*0x861884*/
+  {
+    p_m_uTableSize = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x861886*/
+    p_m_uCount = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount; /*0x861889*/
+    if ( !InterlockedDecrement(p_m_uCount) ) /*0x86188d*/
+    {
+      InterlockedIncrement(p_m_uCount); /*0x861898*/
+      if ( p_m_uTableSize ) /*0x8618a0*/
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1); /*0x8618aa*/
+    }
+    result.p = nullptr; /*0x8618ac*/
+  }
+  v4 = _ZtlSecureFuse<short>(p->characterStat._ZtlSecureTear_nAP, p->characterStat._ZtlSecureTear_nAP_CS) != 0; /*0x8618d3*/
+  p_p = &this->m_pBtApUp[0].p; /*0x8618d6*/
+  v6 = 6; /*0x8618dc*/
+  bEnable = v4; /*0x8618e1*/
+  do /*0x861908*/
+  {
+    if ( (*p_p)->IsShown(&(*p_p)->IUIMsgHandler) ) /*0x8618ef*/
+      (*p_p)->SetEnable(&(*p_p)->IUIMsgHandler, v4); /*0x861900*/
+    p_p += 2; /*0x861902*/
+    --v6; /*0x861905*/
+  }
+  while ( v6 ); /*0x861908*/
+  if ( v4 ) /*0x86190c*/
+  {
+    v7 = _ZtlSecureFuse<unsigned char>( /*0x86191e*/
+           p->characterStat._ZtlSecureTear_nLevel,
+           p->characterStat._ZtlSecureTear_nLevel_CS);
+    _ZtlSecureFuse<short>(p->characterStat._ZtlSecureTear_nJob, p->characterStat._ZtlSecureTear_nJob_CS); /*0x861925*/
+    if ( v7 < 0x14u ) /*0x861930*/
+    {
+      v8 = &this->m_pBtApUp[0].p; /*0x861936*/
+      v9 = 2; /*0x86193c*/
+      do /*0x861967*/
+      {
+        if ( (*v8)->IsShown(&(*v8)->IUIMsgHandler) ) /*0x86194c*/
+          (*v8)->SetEnable(&(*v8)->IUIMsgHandler, 0); /*0x86195f*/
+        v8 += 2; /*0x861961*/
+        --v9; /*0x861964*/
+      }
+      while ( v9 ); /*0x861967*/
+    }
+    v4 = bEnable; /*0x861969*/
+  }
+  v10 = &this->m_pBtAutoApUp[0].p; /*0x861971*/
+  v11 = 3; /*0x861977*/
+  do /*0x8619a5*/
+  {
+    if ( (*v10)->IsShown(&(*v10)->IUIMsgHandler) ) /*0x86198b*/
+      (*v10)->SetEnable(&(*v10)->IUIMsgHandler, v4); /*0x86199d*/
+    v10 += 2; /*0x86199f*/
+    --v11; /*0x8619a2*/
+  }
+  while ( v11 ); /*0x8619a5*/
+  if ( _ZtlSecureFuse<short>(p->characterStat._ZtlSecureTear_nJob, p->characterStat._ZtlSecureTear_nJob_CS) % 1000 / 100 == 9 /*0x861a08*/
+    || (bEnablea = 1,
+        _ZtlSecureFuse<short>(p->characterStat._ZtlSecureTear_nJob, p->characterStat._ZtlSecureTear_nJob_CS) % 1000
+      / 100 == 8) )
+  {
+    bEnablea = 0; /*0x861a0a*/
+  }
+  v12 = _ZtlSecureFuse<short>(p->characterStat._ZtlSecureTear_nJob, p->characterStat._ZtlSecureTear_nJob_CS) == 500; /*0x861a29*/
+  for ( i = 0; i < 3; ++i )
+  {
+    v15 = false; /*0x861a4a*/
+    if ( bEnablea )
+    {
+      if ( i ? v12 : !v12 )
+        v15 = true; /*0x861a35*/
+    }
+    v16 = &this->m_pBtAutoApUp[i].p->IUIMsgHandler; /*0x861a5e*/
+    if ( v16->IsShown(v16) ) /*0x861a66*/
+    {
+      v17 = &this->m_pBtAutoApUp[i].p->IUIMsgHandler; /*0x861a73*/
+      v17->SetShow(v17, v15); /*0x861a7c*/
+      if ( v15 ) /*0x861a80*/
+        this->m_pBtAutoApUp[i].p->SetAbove(this->m_pBtAutoApUp[i].p, nullptr); /*0x861a90*/
+    }
+  }
+}

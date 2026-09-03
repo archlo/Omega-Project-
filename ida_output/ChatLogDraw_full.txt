@@ -1,0 +1,1479 @@
+﻿void __thiscall CUIStatusBar::ChatLogDraw(CUIStatusBar *this)
+{
+  CUIStatusBar *v1; // ebx
+  ZRef<CUIStatusBar::CChatLog> *a; // edx
+  CUIStatusBar::CChatLog *p; // eax
+  CUIStatusBar::CChatLog *v4; // esi
+  IWzGr2DLayer *m_pInterface; // eax
+  void (__stdcall *v6)(VARIANTARG *); // edi
+  HRESULT v7; // eax
+  HRESULT v8; // eax
+  IWzGr2DLayer *v9; // eax
+  IWzGr2DLayer *v10; // esi
+  IUnknown *v11; // esi
+  HRESULT v12; // eax
+  IWzGr2DLayer *v13; // eax
+  IUnknown *v14; // esi
+  HRESULT v15; // eax
+  IWzGr2DLayer *v16; // eax
+  IUnknown *v17; // esi
+  HRESULT v18; // eax
+  IUnknown *v19; // esi
+  HRESULT v20; // eax
+  HRESULT v21; // eax
+  HRESULT v22; // eax
+  IWzVector2D *v23; // ecx
+  IWzGr2DLayer *v24; // ecx
+  IWzCanvas *v25; // esi
+  HRESULT v26; // eax
+  HRESULT v27; // eax
+  bool v28; // cc
+  CUIStatusBar::CChatLog *v29; // esi
+  char v30; // al
+  int v31; // edi
+  CUIStatusBar::CChatLog *v32; // esi
+  bool v33; // zf
+  unsigned int ZtlSecureTear_m_nType_CS; // edx
+  const wchar_t *m_pStr; // eax
+  _bstr_t::Data_t *v36; // ecx
+  int v37; // edi
+  int m_nChatWndType; // eax
+  HRESULT v39; // eax
+  wchar_t *v40; // eax
+  int v41; // eax
+  _bstr_t::Data_t *v42; // ecx
+  IWzFont *v43; // ecx
+  unsigned int v44; // eax
+  _bstr_t::Data_t *v45; // ecx
+  unsigned int v46; // edx
+  _bstr_t::Data_t *v47; // ecx
+  int Data; // eax
+  char *v49; // eax
+  void *v50; // esp
+  int v51; // eax
+  char *v52; // eax
+  int v53; // kr00_4
+  unsigned __int8 *Buffer; // eax
+  StringPool *Instance; // eax
+  wchar_t *v56; // eax
+  const ZXString<unsigned short> *v57; // eax
+  void (__stdcall *v58)(VARIANTARG *); // edi
+  char *v59; // edi
+  IWzFont *v60; // eax
+  int v61; // ebx
+  StringPool *v62; // eax
+  char *v63; // eax
+  void (__stdcall *v64)(VARIANTARG *); // ebx
+  char *v65; // edi
+  void *v66; // esp
+  _bstr_t::Data_t *v67; // ecx
+  Ztl_variant_t *ObjectA; // eax
+  IUnknown *Unknown; // eax
+  HRESULT (__stdcall *v70)(VARIANTARG *); // ebx
+  int m_nChannelID; // edi
+  StringPool *v72; // eax
+  char *v73; // ecx
+  int v74; // ebx
+  void (__stdcall *v75)(VARIANTARG *); // edi
+  void *v76; // esp
+  _bstr_t::Data_t *v77; // ecx
+  Ztl_variant_t *v78; // eax
+  IUnknown *v79; // eax
+  StringPool *v80; // eax
+  char *v81; // eax
+  void (__stdcall *v82)(VARIANTARG *); // edi
+  wchar_t *v83; // edi
+  void *v84; // esp
+  _bstr_t::Data_t *v85; // ecx
+  Ztl_variant_t *v86; // eax
+  IUnknown *v87; // eax
+  int v88; // ebx
+  int v89; // edi
+  void *v90; // esp
+  void (__stdcall *v91)(VARIANTARG *); // edi
+  unsigned int v92; // edx
+  int v93; // eax
+  int v94; // edi
+  _bstr_t::Data_t *v95; // ecx
+  int v96; // edi
+  int v97; // eax
+  void *v98; // esp
+  const wchar_t *v99; // eax
+  int v100; // ebx
+  void *v101; // esp
+  const wchar_t *v102; // eax
+  int v103; // eax
+  char *v104; // eax
+  void *v105; // esp
+  int v106; // eax
+  char *v107; // eax
+  int v108; // kr04_4
+  unsigned __int8 *v109; // eax
+  _bstr_t::Data_t *v110; // ecx
+  int v111; // eax
+  CUIStatusBar *v112; // ebx
+  IWzFont *v113; // ecx
+  ZXString<unsigned short> *v114; // eax
+  unsigned int v115; // edx
+  _bstr_t::Data_t *v116; // ecx
+  IWzFont *v117; // eax
+  int v118; // ebx
+  unsigned int v119; // ecx
+  IWzFont *v120; // ebx
+  const wchar_t *v121; // eax
+  _bstr_t::Data_t *v122; // ecx
+  unsigned int Lo32; // eax
+  unsigned int v124; // eax
+  IWzFont *v125; // ebx
+  const wchar_t *v126; // eax
+  _bstr_t::Data_t *v127; // ecx
+  unsigned int (__stdcall *Release)(IUnknown *); // edx
+  _bstr_t v129; // [esp-9Ch] [ebp-2CCh] BYREF
+  _bstr_t v130; // [esp-98h] [ebp-2C8h] BYREF
+  IWzFont *v131; // [esp-94h] [ebp-2C4h]
+  _bstr_t v132; // [esp-90h] [ebp-2C0h] BYREF
+  int p_vTabOrg; // [esp-8Ch] [ebp-2BCh]
+  wchar_t v134[76]; // [esp-88h] [ebp-2B8h] BYREF
+  Ztl_variant_t v135; // [esp+10h] [ebp-220h] BYREF
+  Ztl_variant_t vTabOrg; // [esp+20h] [ebp-210h] BYREF
+  Ztl_variant_t v137; // [esp+30h] [ebp-200h] BYREF
+  Ztl_variant_t v138; // [esp+40h] [ebp-1F0h] BYREF
+  Ztl_variant_t v139; // [esp+50h] [ebp-1E0h] BYREF
+  Ztl_variant_t v140; // [esp+60h] [ebp-1D0h] BYREF
+  Ztl_variant_t v141; // [esp+70h] [ebp-1C0h] BYREF
+  Ztl_variant_t v142; // [esp+80h] [ebp-1B0h] BYREF
+  VARIANTARG v143; // [esp+90h] [ebp-1A0h] BYREF
+  VARIANTARG v144; // [esp+A0h] [ebp-190h] BYREF
+  VARIANTARG v145; // [esp+B0h] [ebp-180h] BYREF
+  VARIANTARG v146; // [esp+C0h] [ebp-170h] BYREF
+  VARIANTARG v147; // [esp+D0h] [ebp-160h] BYREF
+  VARIANTARG v148; // [esp+E0h] [ebp-150h] BYREF
+  VARIANTARG v149; // [esp+F0h] [ebp-140h] BYREF
+  VARIANTARG v150; // [esp+100h] [ebp-130h] BYREF
+  VARIANTARG v151; // [esp+110h] [ebp-120h] BYREF
+  VARIANTARG v152; // [esp+120h] [ebp-110h] BYREF
+  VARIANTARG v153; // [esp+130h] [ebp-100h] BYREF
+  Ztl_variant_t nAlpha; // [esp+140h] [ebp-F0h] BYREF
+  VARIANTARG v155; // [esp+150h] [ebp-E0h] BYREF
+  VARIANTARG v156; // [esp+160h] [ebp-D0h] BYREF
+  VARIANTARG v157; // [esp+170h] [ebp-C0h] BYREF
+  VARIANTARG v158; // [esp+180h] [ebp-B0h] BYREF
+  VARIANTARG v159; // [esp+190h] [ebp-A0h] BYREF
+  VARIANTARG v160; // [esp+1A0h] [ebp-90h] BYREF
+  VARIANTARG v161; // [esp+1B0h] [ebp-80h] BYREF
+  VARIANTARG v162; // [esp+1C0h] [ebp-70h] BYREF
+  Ztl_variant_t v163; // [esp+1D0h] [ebp-60h] BYREF
+  Ztl_variant_t vAlpha; // [esp+1E0h] [ebp-50h] BYREF
+  Ztl_variant_t v165; // [esp+1F0h] [ebp-40h] BYREF
+  VARIANTARG v166; // [esp+200h] [ebp-30h] BYREF
+  ZXString<char> v167; // [esp+210h] [ebp-20h] BYREF
+  ZXString<char> result; // [esp+214h] [ebp-1Ch] BYREF
+  ZXString<unsigned short> v169; // [esp+218h] [ebp-18h] BYREF
+  ZXString<char> v170; // [esp+21Ch] [ebp-14h] BYREF
+  ZXString<unsigned short> v171; // [esp+220h] [ebp-10h] BYREF
+  int v172; // [esp+22Ch] [ebp-4h]
+  ZXString<char> v173; // [esp+230h] [ebp+0h] BYREF
+  ZXString<char> v174; // [esp+234h] [ebp+4h] BYREF
+  ZXString<unsigned short> v175; // [esp+238h] [ebp+8h] BYREF
+  ZXString<char> v176; // [esp+23Ch] [ebp+Ch] BYREF
+  ZXString<char> v177; // [esp+240h] [ebp+10h] BYREF
+  CUIStatusBar *v178; // [esp+244h] [ebp+14h]
+  ZXString<unsigned short> sChat; // [esp+248h] [ebp+18h] BYREF
+  ZXString<unsigned short> sCharacterName; // [esp+24Ch] [ebp+1Ch] BYREF
+  VARIANTARG pvarg; // [esp+250h] [ebp+20h] BYREF
+  int idx; // [esp+260h] [ebp+30h]
+  ZXString<unsigned short> sFirstPart; // [esp+264h] [ebp+34h] BYREF
+  int nCharacterStrWidth; // [esp+268h] [ebp+38h]
+  int nTop; // [esp+26Ch] [ebp+3Ch]
+  ZXString<unsigned short> sSecondPart; // [esp+270h] [ebp+40h] BYREF
+  VARIANTARG pvargDest; // [esp+274h] [ebp+44h] BYREF
+  ZXString<char> sUOL; // [esp+284h] [ebp+54h] BYREF
+  ZXString<unsigned short> sSum; // [esp+288h] [ebp+58h] BYREF
+  int lFromBottom; // [esp+28Ch] [ebp+5Ch]
+  ZXString<unsigned short> sItemName; // [esp+290h] [ebp+60h] BYREF
+  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > pCanvasWhisper; // [esp+294h] [ebp+64h] BYREF
+  int nSecondPos; // [esp+298h] [ebp+68h] BYREF
+  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > pCanvas; // [esp+29Ch] [ebp+6Ch] BYREF
+  int nFirstPartWidth; // [esp+2A0h] [ebp+70h] BYREF
+
+  v1 = this; /*0x877b73*/
+  v178 = this; /*0x877b75*/
+  a = CUIStatusBar::m_aChatLog.a; /*0x877b78*/
+  if ( CUIStatusBar::m_aChatLog.a ) /*0x877b80*/
+    p = CUIStatusBar::m_aChatLog.a[-1].p; /*0x877b86*/
+  else
+    p = nullptr; /*0x877b82*/
+  lFromBottom = (int)&p[-1].m_pItem.p + 3; /*0x877b8a*/
+  if ( this->m_pScrChatLog.p->m_nScrollRange > 0 ) /*0x877b98*/
+  {
+    sSecondPart._m_pStr = (wchar_t *)(this->m_pScrChatLog.p->m_nScrollRange - this->m_pScrChatLog.p->m_nCurPos - 1); /*0x877bab*/
+    if ( (int)sSecondPart._m_pStr > 0 ) /*0x877bb0*/
+    {
+      while ( lFromBottom > 0 ) /*0x877bbe*/
+      {
+        v4 = a[lFromBottom].p; /*0x877bc3*/
+        sSum._m_pStr = (wchar_t *)v1->m_dwChatFilterFlag; /*0x877bcd*/
+        if ( !sSum._m_pStr /*0x877c16*/
+          || _ZtlSecureFuse<long>(v4->_ZtlSecureTear_m_nType, v4->_ZtlSecureTear_m_nType_CS) >= 12
+          && _ZtlSecureFuse<long>(v4->_ZtlSecureTear_m_nType, v4->_ZtlSecureTear_m_nType_CS) <= 24
+          || ((1 << _ZtlSecureFuse<long>(v4->_ZtlSecureTear_m_nType, v4->_ZtlSecureTear_m_nType_CS))
+            & (unsigned int)sSum._m_pStr) != 0 )
+        {
+          --sSecondPart._m_pStr; /*0x877c18*/
+        }
+        --lFromBottom; /*0x877c1b*/
+        if ( (int)sSecondPart._m_pStr <= 0 ) /*0x877c22*/
+          break; /*0x877c22*/
+        a = CUIStatusBar::m_aChatLog.a; /*0x877bb4*/
+      }
+    }
+  }
+  if ( v1->m_pLayerChatLog.m_pInterface ) /*0x877c26*/
+  {
+    m_pInterface = v1->m_pLayerChatLog.m_pInterface; /*0x877c2e*/
+    if ( m_pInterface ) /*0x877c36*/
+    {
+      v1->m_pLayerChatLog.m_pInterface = nullptr; /*0x877c38*/
+      ((void (__cdecl *)(IWzGr2DLayer *))m_pInterface->Release)(m_pInterface); /*0x877c44*/
+    }
+  }
+  v6 = VariantInit; /*0x877c46*/
+  VariantInit(&pvarg); /*0x877c50*/
+  v7 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing); /*0x877c5b*/
+  if ( v7 < 0 ) /*0x877c65*/
+LABEL_19:
+    _com_issue_error(v7); /*0x877c67*/
+  v172 = 0; /*0x877c71*/
+  v6(&pvargDest); /*0x877c74*/
+  v8 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing); /*0x877c7f*/
+  if ( v8 < 0 ) /*0x877c89*/
+    _com_issue_error(v8); /*0x877c8c*/
+  LOBYTE(v172) = 1; /*0x877c97*/
+  if ( !g_gr.m_pInterface ) /*0x877c9d*/
+LABEL_23:
+    _com_issue_error(-2147467261); /*0x877c9f*/
+  v9 = IWzGr2D::CreateLayer(
+         g_gr.m_pInterface,
+         (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&sSum,
+         0,
+         0,
+         v1->m_nChatWndType != 1 ? 577 : 502,
+         v1->m_nChatWndHeight,
+         0,
+         (const Ztl_variant_t *)&pvargDest,
+         (const Ztl_variant_t *)&pvarg)->m_pInterface;
+  v10 = v1->m_pLayerChatLog.m_pInterface; /*0x877cdd*/
+  if ( v10 != v9 ) /*0x877ce5*/
+  {
+    v1->m_pLayerChatLog.m_pInterface = v9; /*0x877ce7*/
+    if ( v9 ) /*0x877cef*/
+      ((void (__cdecl *)(IWzGr2DLayer *))v9->AddRef)(v9); /*0x877cf7*/
+    if ( v10 ) /*0x877cfb*/
+      ((void (__cdecl *)(IWzGr2DLayer *))v10->Release)(v10); /*0x877d03*/
+  }
+  if ( sSum._m_pStr ) /*0x877d0a*/
+    (*(void (__cdecl **)(wchar_t *))(*(_DWORD *)sSum._m_pStr + 8))(sSum._m_pStr); /*0x877d12*/
+  LOBYTE(v172) = 0; /*0x877d19*/
+  if ( pvargDest.vt == 8 ) /*0x877d1d*/
+  {
+    pvargDest.vt = 0; /*0x877d24*/
+    if ( pvargDest.decVal.Lo32 ) /*0x877d2a*/
+      ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4)); /*0x877d30*/
+  }
+  else
+  {
+    VariantClear(&pvargDest); /*0x877d3c*/
+  }
+  v172 = -1; /*0x877d47*/
+  if ( pvarg.vt == 8 ) /*0x877d4e*/
+  {
+    pvarg.vt = 0; /*0x877d52*/
+    if ( pvarg.decVal.Lo32 ) /*0x877d5b*/
+      ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x877d61*/
+  }
+  else
+  {
+    VariantClear(&pvarg); /*0x877d6d*/
+  }
+  v11 = v1->m_pLayerChatLog.m_pInterface; /*0x877d73*/
+  if ( !v11 ) /*0x877d7b*/
+    _com_issue_error(-2147467261); /*0x877d82*/
+  v12 = ((int (__cdecl *)(IUnknown *, int))v11->__vftable[18].Release)(v11, -1); /*0x877d92*/
+  if ( v12 < 0 ) /*0x877d96*/
+    _com_issue_errorex(v12, v11, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x877d9f*/
+  v13 = CWnd::GetLayer(v1, (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&sSum)->m_pInterface; /*0x877daf*/
+  v172 = 2; /*0x877db6*/
+  pvargDest.vt = 13; /*0x877dbd*/
+  pvargDest.decVal.Lo32 = (unsigned int)v13; /*0x877dc1*/
+  if ( v13 ) /*0x877dc6*/
+    ((void (__cdecl *)(IWzGr2DLayer *))v13->AddRef)(v13); /*0x877dce*/
+  v14 = v1->m_pLayerChatLog.m_pInterface; /*0x877dd0*/
+  LOBYTE(v172) = 3; /*0x877dd6*/
+  if ( !v14 ) /*0x877ddc*/
+    _com_issue_error(-2147467261); /*0x877de3*/
+  v15 = ((int (__cdecl *)(IUnknown *, _DWORD, unsigned int, unsigned int, unsigned int))v14->__vftable[8].AddRef)( /*0x877e0a*/
+          v14,
+          *(_DWORD *)&pvargDest.vt,
+          pvargDest.decVal.Hi32,
+          pvargDest.decVal.Lo32,
+          pvargDest.decVal.Mid32);
+  if ( v15 < 0 ) /*0x877e0e*/
+    _com_issue_errorex(v15, v14, &_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4); /*0x877e17*/
+  LOBYTE(v172) = 2; /*0x877e21*/
+  if ( pvargDest.vt == 8 ) /*0x877e25*/
+  {
+    pvargDest.vt = 0; /*0x877e2c*/
+    if ( pvargDest.decVal.Lo32 ) /*0x877e32*/
+      ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4)); /*0x877e38*/
+  }
+  else
+  {
+    VariantClear(&pvargDest); /*0x877e44*/
+  }
+  v172 = -1; /*0x877e4d*/
+  if ( sSum._m_pStr ) /*0x877e56*/
+    (*(void (__cdecl **)(wchar_t *))(*(_DWORD *)sSum._m_pStr + 8))(sSum._m_pStr); /*0x877e5e*/
+  v16 = CWnd::GetLayer(v1, (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&sSum)->m_pInterface; /*0x877e6b*/
+  v172 = 4; /*0x877e72*/
+  pvargDest.vt = 13; /*0x877e79*/
+  pvargDest.decVal.Lo32 = (unsigned int)v16; /*0x877e7d*/
+  if ( v16 ) /*0x877e82*/
+    ((void (__cdecl *)(IWzGr2DLayer *))v16->AddRef)(v16); /*0x877e8a*/
+  v17 = v1->m_pLayerChatLog.m_pInterface; /*0x877e8c*/
+  LOBYTE(v172) = 5; /*0x877e92*/
+  if ( !v17 ) /*0x877e98*/
+    _com_issue_error(-2147467261); /*0x877e9f*/
+  v18 = ((int (__cdecl *)(IUnknown *, _DWORD, unsigned int, unsigned int, unsigned int))v17->__vftable[21].QueryInterface)( /*0x877ec9*/
+          v17,
+          *(_DWORD *)&pvargDest.vt,
+          pvargDest.decVal.Hi32,
+          pvargDest.decVal.Lo32,
+          pvargDest.decVal.Mid32);
+  if ( v18 < 0 ) /*0x877ecd*/
+    _com_issue_errorex(v18, v17, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x877ed6*/
+  LOBYTE(v172) = 4; /*0x877ee0*/
+  if ( pvargDest.vt == 8 ) /*0x877ee4*/
+  {
+    pvargDest.vt = 0; /*0x877eeb*/
+    if ( pvargDest.decVal.Lo32 ) /*0x877ef1*/
+      ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4)); /*0x877ef7*/
+  }
+  else
+  {
+    VariantClear(&pvargDest); /*0x877f03*/
+  }
+  v172 = -1; /*0x877f0c*/
+  if ( sSum._m_pStr ) /*0x877f15*/
+    (*(void (__cdecl **)(wchar_t *))(*(_DWORD *)sSum._m_pStr + 8))(sSum._m_pStr); /*0x877f1d*/
+  v19 = v1->m_pLayerChatLog.m_pInterface; /*0x877f1f*/
+  if ( !v19 ) /*0x877f27*/
+    _com_issue_error(-2147467261); /*0x877f2e*/
+  v20 = ((int (__cdecl *)(IUnknown *, int))v19->__vftable[15].QueryInterface)(v19, -1); /*0x877f3e*/
+  if ( v20 < 0 ) /*0x877f42*/
+    _com_issue_errorex(v20, v19, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x877f4b*/
+  v6(&pvargDest); /*0x877f54*/
+  v21 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing); /*0x877f5f*/
+  if ( v21 < 0 ) /*0x877f69*/
+    _com_issue_error(v21); /*0x877f6c*/
+  v172 = 6; /*0x877f75*/
+  v6(&pvarg); /*0x877f7c*/
+  v22 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing); /*0x877f87*/
+  if ( v22 < 0 ) /*0x877f91*/
+    _com_issue_error(v22); /*0x877f94*/
+  v23 = v1->m_pLayerChatLog.m_pInterface; /*0x877f99*/
+  LOBYTE(v172) = 7; /*0x877f9f*/
+  if ( !v23 ) /*0x877fa5*/
+    _com_issue_error(-2147467261); /*0x877fac*/
+  IWzVector2D::RelMove(v23, 0, v1->m_ptChatWnd.y, (const Ztl_variant_t *)&pvarg, (const Ztl_variant_t *)&pvargDest); /*0x877fc2*/
+  LOBYTE(v172) = 6; /*0x877fcc*/
+  if ( pvarg.vt == 8 ) /*0x877fd4*/
+  {
+    pvarg.vt = 0; /*0x877fdb*/
+    if ( pvarg.decVal.Lo32 ) /*0x877fe1*/
+      ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x877fe7*/
+  }
+  else
+  {
+    VariantClear(&pvarg); /*0x877ff3*/
+  }
+  v172 = -1; /*0x877ff9*/
+  if ( pvargDest.vt == 8 ) /*0x878004*/
+  {
+    pvargDest.vt = 0; /*0x878008*/
+    if ( pvargDest.decVal.Lo32 ) /*0x878011*/
+      ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4)); /*0x878017*/
+  }
+  else
+  {
+    VariantClear(&pvargDest); /*0x878023*/
+  }
+  pvarg.vt = 3; /*0x87802e*/
+  pvarg.decVal.Lo32 = 0; /*0x878032*/
+  v24 = v1->m_pLayerChatLog.m_pInterface; /*0x878039*/
+  v172 = 8; /*0x87803f*/
+  if ( !v24 ) /*0x878044*/
+    _com_issue_error(-2147467261); /*0x87804b*/
+  IWzGr2DLayer::Getcanvas(v24, &pCanvas, (const Ztl_variant_t *)&pvarg); /*0x878058*/
+  LOBYTE(v172) = 10; /*0x87805d*/
+  if ( pvarg.vt == 8 ) /*0x878065*/
+  {
+    pvarg.vt = 0; /*0x878069*/
+    if ( pvarg.decVal.Lo32 ) /*0x878072*/
+      ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x878078*/
+  }
+  else
+  {
+    VariantClear(&pvarg); /*0x878084*/
+  }
+  v25 = pCanvas.m_pInterface; /*0x87808a*/
+  if ( !pCanvas.m_pInterface ) /*0x87808f*/
+    _com_issue_error(-2147467261); /*0x878096*/
+  v26 = ((int (__cdecl *)(IWzCanvas *, _DWORD, _DWORD, int, int, _DWORD))pCanvas.m_pInterface->raw_DrawRectangle)( /*0x8780bd*/
+          pCanvas.m_pInterface,
+          0,
+          0,
+          577 - v1->m_nScrWidth,
+          v1->m_nChatWndHeight,
+          0);
+  if ( v26 < 0 ) /*0x8780c1*/
+    _com_issue_errorex(v26, v25, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x8780ca*/
+  if ( v1->m_nChatWndType != 1 ) /*0x8780d6*/
+  {
+    v27 = ((int (__cdecl *)(IWzCanvas *, _DWORD, _DWORD, int, int, unsigned int))v25->raw_DrawRectangle)( /*0x8780fd*/
+            v25,
+            0,
+            0,
+            577 - v1->m_nScrWidth,
+            v1->m_nChatWndHeight,
+            0x80000000);
+    if ( v27 < 0 ) /*0x878101*/
+      _com_issue_errorex(v27, v25, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x87810a*/
+  }
+  v28 = v1->m_nChatWndLineVisible <= 0; /*0x87810f*/
+  idx = 0; /*0x878116*/
+  if ( !v28 )
+  {
+    do
+    {
+      if ( lFromBottom < 0 ) /*0x878127*/
+        break; /*0x878127*/
+      while ( 1 ) /*0x87813f*/
+      {
+        v29 = CUIStatusBar::m_aChatLog.a[lFromBottom].p; /*0x87813f*/
+        nFirstPartWidth = v1->m_dwChatFilterFlag; /*0x878143*/
+        if ( !nFirstPartWidth /*0x87816f*/
+          || _ZtlSecureFuse<long>(v29->_ZtlSecureTear_m_nType, v29->_ZtlSecureTear_m_nType_CS) >= 12
+          && _ZtlSecureFuse<long>(v29->_ZtlSecureTear_m_nType, v29->_ZtlSecureTear_m_nType_CS) <= 24 )
+        {
+          break; /*0x87816f*/
+        }
+        v30 = _ZtlSecureFuse<long>(v29->_ZtlSecureTear_m_nType, v29->_ZtlSecureTear_m_nType_CS); /*0x878176*/
+        if ( ((1 << v30) & nFirstPartWidth) != 0 ) /*0x87818c*/
+          break; /*0x87818c*/
+        if ( --lFromBottom < 0 ) /*0x878192*/
+          goto LABEL_342; /*0x878192*/
+      }
+      v31 = lFromBottom; /*0x878199*/
+      if ( lFromBottom < 0 ) /*0x87819e*/
+        break; /*0x87819e*/
+      v32 = CUIStatusBar::m_aChatLog.a[lFromBottom].p; /*0x8781aa*/
+      pvargDest.decVal.Mid32 = (unsigned int)v32; /*0x8781ae*/
+      if ( v32 ) /*0x8781b3*/
+        InterlockedIncrement(&v32->_m_nRef); /*0x8781b9*/
+      v33 = v32->m_nBack == 0; /*0x8781c0*/
+      LOBYTE(v172) = 11; /*0x8781c4*/
+      lFromBottom = v31 - 1; /*0x8781c8*/
+      if ( !v33 ) /*0x8781cb*/
+      {
+        VariantInit(&v166); /*0x8781d5*/
+        v7 = ZComAPI::ZComVariantCopy(&v166, &vtMissing); /*0x8781e4*/
+        if ( v7 < 0 ) /*0x8781ee*/
+          goto LABEL_19; /*0x8781ee*/
+        vAlpha.vt = 3; /*0x8781f9*/
+        vAlpha.decVal.Lo32 = 0; /*0x8781fd*/
+        ZtlSecureTear_m_nType_CS = v32->_ZtlSecureTear_m_nType_CS; /*0x878204*/
+        p_vTabOrg = (int)&v166; /*0x87820a*/
+        v132.m_Data = (_bstr_t::Data_t *)&vAlpha; /*0x87820e*/
+        LOBYTE(v172) = 13; /*0x878214*/
+        v131 = v1->m_pFontChatLog[_ZtlSecureFuse<long>(v32->_ZtlSecureTear_m_nType, ZtlSecureTear_m_nType_CS)].m_pInterface; /*0x878227*/
+        m_pStr = v32->m_sChat._m_pStr; /*0x878228*/
+        v130.m_Data = v36; /*0x87822b*/
+        nFirstPartWidth = (int)&v130; /*0x87822c*/
+        _bstr_t::_bstr_t(&v130, m_pStr); /*0x878232*/
+        v37 = 13 * idx; /*0x878240*/
+        v129.m_Data = (_bstr_t::Data_t *)(v1->m_nChatWndHeight - 13 * idx - 13); /*0x878248*/
+        LOBYTE(v172) = 13; /*0x878252*/
+        nFirstPartWidth = IWzCanvas::DrawTextA( /*0x878260*/
+                            pCanvas.m_pInterface,
+                            9,
+                            (int)v129.m_Data,
+                            (Ztl_bstr_t)v130.m_Data,
+                            v131,
+                            (const Ztl_variant_t *)v132.m_Data,
+                            (const Ztl_variant_t *)p_vTabOrg);
+        LOBYTE(v172) = 12; /*0x878263*/
+        if ( vAlpha.vt == 8 ) /*0x878267*/
+        {
+          vAlpha.vt = 0; /*0x87826e*/
+          if ( vAlpha.decVal.Lo32 ) /*0x878274*/
+            ZAPI.CoTaskMemFree((void *)(vAlpha.decVal.Lo32 - 4)); /*0x87827a*/
+        }
+        else
+        {
+          VariantClear(&vAlpha); /*0x878286*/
+        }
+        LOBYTE(v172) = 11; /*0x878291*/
+        if ( v166.vt == 8 ) /*0x878295*/
+        {
+          v166.vt = 0; /*0x87829c*/
+          if ( v166.decVal.Lo32 ) /*0x8782a2*/
+            ZAPI.CoTaskMemFree((void *)(v166.decVal.Lo32 - 4)); /*0x8782a8*/
+        }
+        else
+        {
+          VariantClear(&v166); /*0x8782b4*/
+        }
+        m_nChatWndType = v1->m_nChatWndType; /*0x8782ba*/
+        if ( m_nChatWndType > 0 ) /*0x8782c2*/
+        {
+          if ( m_nChatWndType <= 2 ) /*0x8782cb*/
+          {
+            v39 = ((int (__cdecl *)(IWzCanvas *, _DWORD, int, int, int, int))pCanvas.m_pInterface->raw_DrawRectangle)( /*0x878339*/
+                    pCanvas.m_pInterface,
+                    0,
+                    v1->m_nChatWndHeight - v37 - 23,
+                    563 - v1->m_nScrWidth,
+                    v1->m_nChatWndHeight,
+                    v32->m_nBack);
+            if ( v39 < 0 ) /*0x87833d*/
+              _com_issue_errorex(v39, pCanvas.m_pInterface, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x878349*/
+          }
+          else if ( m_nChatWndType == 3 ) /*0x8782d0*/
+          {
+            IWzCanvas::DrawRectangle( /*0x8782fe*/
+              pCanvas.m_pInterface,
+              0,
+              v1->m_nChatWndHeight - v37 - 15,
+              563 - v1->m_nScrWidth,
+              nFirstPartWidth + 2,
+              v32->m_nBack);
+          }
+        }
+      }
+      if ( (_ZtlSecureFuse<long>(v32->_ZtlSecureTear_m_nType, v32->_ZtlSecureTear_m_nType_CS) == 14
+         || _ZtlSecureFuse<long>(v32->_ZtlSecureTear_m_nType, v32->_ZtlSecureTear_m_nType_CS) == 16
+         || _ZtlSecureFuse<long>(v32->_ZtlSecureTear_m_nType, v32->_ZtlSecureTear_m_nType_CS) == 23
+         || _ZtlSecureFuse<long>(v32->_ZtlSecureTear_m_nType, v32->_ZtlSecureTear_m_nType_CS) == 24)
+        && v32->m_bFirstLine )
+      {
+        nTop = v1->m_nChatWndHeight + 13 * (-1 - idx) - (v1->m_nChatWndType != 3 ? 5 : 0);
+        nFirstPartWidth = ZXString<unsigned short>::Find(&v32->m_sChat, 58, 0); /*0x8783d9*/
+        ZXString<unsigned short>::Left(&v32->m_sChat, &sCharacterName, nFirstPartWidth - 1); /*0x8783e4*/
+        v40 = v32->m_sChat._m_pStr; /*0x8783e9*/
+        LOBYTE(v172) = 15; /*0x8783eb*/
+        if ( v40 ) /*0x8783f1*/
+          v41 = *((_DWORD *)v40 - 1) >> 1; /*0x8783f6*/
+        else
+          v41 = 0; /*0x8783fa*/
+        ZXString<unsigned short>::Right(&v32->m_sChat, &sChat, v41 - nFirstPartWidth); /*0x878406*/
+        LOBYTE(v172) = 16; /*0x878412*/
+        VariantInit(&v143); /*0x878416*/
+        v7 = ZComAPI::ZComVariantCopy(&v143, &vtMissing); /*0x878428*/
+        if ( v7 < 0 ) /*0x878432*/
+          goto LABEL_19; /*0x878432*/
+        p_vTabOrg = (int)&v143; /*0x878441*/
+        v132.m_Data = v42; /*0x878442*/
+        nFirstPartWidth = (int)&v132; /*0x878443*/
+        LOBYTE(v172) = 17; /*0x878449*/
+        _bstr_t::_bstr_t(&v132, sCharacterName._m_pStr); /*0x87844d*/
+        v131 = (IWzFont *)v32->_ZtlSecureTear_m_nType_CS; /*0x878455*/
+        LOBYTE(v172) = 18; /*0x87845a*/
+        v43 = v1->m_pFontChatLog[_ZtlSecureFuse<long>(v32->_ZtlSecureTear_m_nType, (unsigned int)v131)].m_pInterface; /*0x878463*/
+        if ( !v43 ) /*0x87846f*/
+          goto LABEL_23; /*0x87846f*/
+        LOBYTE(v172) = 17; /*0x878475*/
+        nCharacterStrWidth = IWzFont::CalcTextWidth(v43, (Ztl_bstr_t)v132.m_Data, (const Ztl_variant_t *)p_vTabOrg); /*0x878486*/
+        LOBYTE(v172) = 16; /*0x878489*/
+        if ( v143.vt == 8 ) /*0x87848d*/
+        {
+          v143.vt = 0; /*0x878497*/
+          if ( v143.decVal.Lo32 ) /*0x8784a0*/
+            ZAPI.CoTaskMemFree((void *)(v143.decVal.Lo32 - 4)); /*0x8784a6*/
+        }
+        else
+        {
+          VariantClear(&v143); /*0x8784b5*/
+        }
+        VariantInit(&v148); /*0x8784c2*/
+        v7 = ZComAPI::ZComVariantCopy(&v148, &vtMissing); /*0x8784d4*/
+        if ( v7 < 0 ) /*0x8784de*/
+          goto LABEL_19; /*0x8784de*/
+        LOBYTE(v172) = 19; /*0x8784e8*/
+        VariantInit(&v162); /*0x8784ec*/
+        v7 = ZComAPI::ZComVariantCopy(&v162, &vtMissing); /*0x8784fb*/
+        if ( v7 < 0 ) /*0x878505*/
+          goto LABEL_19; /*0x878505*/
+        v44 = v32->_ZtlSecureTear_m_nType_CS; /*0x87850b*/
+        p_vTabOrg = (int)&v148; /*0x878514*/
+        v132.m_Data = (_bstr_t::Data_t *)&v162; /*0x878518*/
+        LOBYTE(v172) = 20; /*0x87851b*/
+        v131 = v1->m_pFontChatLog[_ZtlSecureFuse<long>(v32->_ZtlSecureTear_m_nType, v44)].m_pInterface; /*0x878531*/
+        v130.m_Data = v45; /*0x878532*/
+        nFirstPartWidth = (int)&v130; /*0x878533*/
+        _bstr_t::_bstr_t(&v130, sCharacterName._m_pStr); /*0x878539*/
+        LOBYTE(v172) = 20; /*0x87854b*/
+        IWzCanvas::DrawTextA( /*0x87854f*/
+          pCanvas.m_pInterface,
+          9,
+          nTop,
+          (Ztl_bstr_t)v130.m_Data,
+          v131,
+          (const Ztl_variant_t *)v132.m_Data,
+          (const Ztl_variant_t *)p_vTabOrg);
+        LOBYTE(v172) = 19; /*0x878559*/
+        if ( v162.vt == 8 ) /*0x87855d*/
+        {
+          v162.vt = 0; /*0x878564*/
+          if ( v162.decVal.Lo32 ) /*0x87856a*/
+            ZAPI.CoTaskMemFree((void *)(v162.decVal.Lo32 - 4)); /*0x878570*/
+        }
+        else
+        {
+          VariantClear(&v162); /*0x87857c*/
+        }
+        LOBYTE(v172) = 16; /*0x87858a*/
+        if ( v148.vt == 8 ) /*0x87858e*/
+        {
+          v148.vt = 0; /*0x878592*/
+          if ( v148.decVal.Lo32 ) /*0x8785a1*/
+            ZAPI.CoTaskMemFree((void *)(v148.decVal.Lo32 - 4)); /*0x8785a7*/
+        }
+        else
+        {
+          VariantClear(&v148); /*0x8785b6*/
+        }
+        VariantInit(&v144); /*0x8785c3*/
+        v7 = ZComAPI::ZComVariantCopy(&v144, &vtMissing); /*0x8785d5*/
+        if ( v7 < 0 ) /*0x8785df*/
+          goto LABEL_19; /*0x8785df*/
+        LOBYTE(v172) = 22; /*0x8785ec*/
+        VariantInit(&v160); /*0x8785f0*/
+        v7 = ZComAPI::ZComVariantCopy(&v160, &vtMissing); /*0x878602*/
+        if ( v7 < 0 ) /*0x87860c*/
+          goto LABEL_19; /*0x87860c*/
+        v46 = v32->_ZtlSecureTear_m_nType_CS; /*0x878612*/
+        p_vTabOrg = (int)&v144; /*0x87861b*/
+        v132.m_Data = (_bstr_t::Data_t *)&v160; /*0x878622*/
+        LOBYTE(v172) = 23; /*0x878625*/
+        v131 = v1->m_pFontChatLog[_ZtlSecureFuse<long>(v32->_ZtlSecureTear_m_nType, v46)].m_pInterface; /*0x878638*/
+        v130.m_Data = v47; /*0x87863c*/
+        nFirstPartWidth = (int)&v130; /*0x87863d*/
+        _bstr_t::_bstr_t(&v130, sChat._m_pStr); /*0x878643*/
+        LOBYTE(v172) = 23; /*0x87865a*/
+        IWzCanvas::DrawTextA( /*0x87865e*/
+          pCanvas.m_pInterface,
+          nCharacterStrWidth + 45,
+          nTop,
+          (Ztl_bstr_t)v130.m_Data,
+          v131,
+          (const Ztl_variant_t *)v132.m_Data,
+          (const Ztl_variant_t *)p_vTabOrg);
+        LOBYTE(v172) = 22; /*0x87866b*/
+        if ( v160.vt == 8 ) /*0x87866f*/
+        {
+          v160.vt = 0; /*0x878679*/
+          if ( v160.decVal.Lo32 ) /*0x878682*/
+            ZAPI.CoTaskMemFree((void *)(v160.decVal.Lo32 - 4)); /*0x878688*/
+        }
+        else
+        {
+          VariantClear(&v160); /*0x878697*/
+        }
+        LOBYTE(v172) = 16; /*0x8786a5*/
+        if ( v144.vt == 8 ) /*0x8786a9*/
+        {
+          v144.vt = 0; /*0x8786b3*/
+          if ( v144.decVal.Lo32 ) /*0x8786bc*/
+            ZAPI.CoTaskMemFree((void *)(v144.decVal.Lo32 - 4)); /*0x8786c2*/
+        }
+        else
+        {
+          VariantClear(&v144); /*0x8786d1*/
+        }
+        if ( v32->m_pItem.p ) /*0x8786d7*/
+        {
+          Data = TSecType<long>::GetData(&v32->m_pItem.p->nItemID); /*0x8786e7*/
+          v49 = CItemInfo::GetItemName((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, &result, Data)->_m_pStr; /*0x8786fc*/
+          LOBYTE(v172) = 25; /*0x878709*/
+          v50 = alloca(2 * ZAPI.MultiByteToWideChar(0, 0, v49, -1, nullptr, 0)); /*0x878715*/
+          v51 = TSecType<long>::GetData(&v32->m_pItem.p->nItemID); /*0x878722*/
+          v52 = CItemInfo::GetItemName((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, &v167, v51)->_m_pStr; /*0x878737*/
+          LOBYTE(v172) = 26; /*0x878746*/
+          ZAPI.MultiByteToWideChar(0, 0, v52, -1, v134, 0x3FFFFFFF); /*0x87874a*/
+          sItemName._m_pStr = nullptr; /*0x878750*/
+          if ( v134 ) /*0x878759*/
+          {
+            v53 = wcslen(v134); /*0x87875b*/
+            p_vTabOrg = 2 * v53; /*0x878772*/
+            v132.m_Data = (_bstr_t::Data_t *)v134; /*0x878773*/
+            nFirstPartWidth = v53; /*0x87877a*/
+            Buffer = (unsigned __int8 *)ZXString<unsigned short>::GetBuffer(&sItemName, v53, 0); /*0x87877d*/
+            memcpy(Buffer, (unsigned __int8 *)v132.m_Data, p_vTabOrg); /*0x878783*/
+            ZXString<unsigned short>::ReleaseBuffer(&sItemName, nFirstPartWidth); /*0x878792*/
+          }
+          LOBYTE(v172) = 28; /*0x87879c*/
+          if ( v167._m_pStr ) /*0x8787a2*/
+            ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v167._m_pStr - 1); /*0x8787a8*/
+          LOBYTE(v172) = 29; /*0x8787b3*/
+          if ( result._m_pStr ) /*0x8787b9*/
+            ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x8787bf*/
+          nSecondPos = 0; /*0x8787cd*/
+          *(_DWORD *)ZXString<unsigned short>::GetBuffer((ZXString<unsigned short> *)&nSecondPos, 2, 0) = *(_DWORD *)asc_B51ED4; /*0x8787db*/
+          ZXString<unsigned short>::ReleaseBuffer((ZXString<unsigned short> *)&nSecondPos, 2); /*0x8787e2*/
+          sUOL._m_pStr = nullptr; /*0x8787e7*/
+          p_vTabOrg = 4447; /*0x8787ed*/
+          v132.m_Data = (_bstr_t::Data_t *)&v169; /*0x8787f2*/
+          LOBYTE(v172) = 31; /*0x8787f3*/
+          Instance = StringPool::GetInstance(); /*0x8787f7*/
+          v56 = StringPool::GetStringW(Instance, (ZXString<unsigned short> *)v132.m_Data, p_vTabOrg)->_m_pStr; /*0x878806*/
+          LOBYTE(v172) = 32; /*0x878813*/
+          ZXString<unsigned short>::Format((ZXString<unsigned short> *)&sUOL, v56, sItemName._m_pStr, &sDefault); /*0x878817*/
+          LOBYTE(v172) = 31; /*0x878822*/
+          if ( v169._m_pStr ) /*0x878828*/
+            ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)v169._m_pStr - 1); /*0x87882e*/
+          v57 = ZXString<unsigned short>::operator+( /*0x878841*/
+                  (ZXString<unsigned short> *)&nSecondPos,
+                  &v175,
+                  (const ZXString<unsigned short> *)&sUOL);
+          LOBYTE(v172) = 33; /*0x87884a*/
+          ZXString<unsigned short>::operator=((ZXString<unsigned short> *)&sUOL, v57); /*0x87884e*/
+          LOBYTE(v172) = 31; /*0x878856*/
+          if ( v175._m_pStr ) /*0x87885c*/
+            ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)v175._m_pStr - 1); /*0x878862*/
+          v58 = VariantInit; /*0x87886a*/
+          VariantInit(&v146); /*0x878877*/
+          v7 = ZComAPI::ZComVariantCopy(&v146, &vtMissing); /*0x878885*/
+          if ( v7 < 0 ) /*0x87888f*/
+            goto LABEL_19; /*0x87888f*/
+          LOBYTE(v172) = 34; /*0x87889c*/
+          v58(&v158); /*0x8788a0*/
+          v7 = ZComAPI::ZComVariantCopy(&v158, &vtMissing); /*0x8788ae*/
+          if ( v7 < 0 ) /*0x8788b8*/
+            goto LABEL_19; /*0x8788b8*/
+          v59 = sUOL._m_pStr; /*0x8788be*/
+          p_vTabOrg = (int)&v146; /*0x8788c7*/
+          v60 = v1->m_pFontChatLog[17].m_pInterface; /*0x8788c8*/
+          v132.m_Data = (_bstr_t::Data_t *)&v158; /*0x8788d4*/
+          v131 = v60; /*0x8788d5*/
+          v130.m_Data = (_bstr_t::Data_t *)&v158; /*0x8788d6*/
+          nFirstPartWidth = (int)&v130; /*0x8788d7*/
+          LOBYTE(v172) = 35; /*0x8788dd*/
+          _bstr_t::_bstr_t(&v130, (const wchar_t *)sUOL._m_pStr); /*0x8788e1*/
+          LOBYTE(v172) = 35; /*0x8788f8*/
+          IWzCanvas::DrawTextA( /*0x8788fc*/
+            pCanvas.m_pInterface,
+            nCharacterStrWidth + 45,
+            nTop,
+            (Ztl_bstr_t)v130.m_Data,
+            v131,
+            (const Ztl_variant_t *)v132.m_Data,
+            (const Ztl_variant_t *)p_vTabOrg);
+          LOBYTE(v172) = 34; /*0x878909*/
+          if ( v158.vt == 8 ) /*0x87890d*/
+          {
+            v158.vt = 0; /*0x878911*/
+            if ( v158.decVal.Lo32 ) /*0x878920*/
+              ZAPI.CoTaskMemFree((void *)(v158.decVal.Lo32 - 4)); /*0x878926*/
+          }
+          else
+          {
+            VariantClear(&v158); /*0x878935*/
+          }
+          LOBYTE(v172) = 31; /*0x878943*/
+          if ( v146.vt == 8 ) /*0x878947*/
+          {
+            v146.vt = 0; /*0x878951*/
+            if ( v146.decVal.Lo32 ) /*0x87895a*/
+              ZAPI.CoTaskMemFree((void *)(v146.decVal.Lo32 - 4)); /*0x878960*/
+          }
+          else
+          {
+            VariantClear(&v146); /*0x87896f*/
+          }
+          LOBYTE(v172) = 30; /*0x878975*/
+          if ( v59 ) /*0x87897b*/
+            ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)v59 - 1); /*0x878981*/
+          LOBYTE(v172) = 29; /*0x87898c*/
+          if ( nSecondPos ) /*0x878992*/
+            ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(nSecondPos - 12)); /*0x878998*/
+          LOBYTE(v172) = 16; /*0x8789a4*/
+          if ( sItemName._m_pStr ) /*0x8789a8*/
+            ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)sItemName._m_pStr - 1); /*0x8789b1*/
+        }
+        if ( _ZtlSecureFuse<long>(v32->_ZtlSecureTear_m_nType, v32->_ZtlSecureTear_m_nType_CS) == 23 ) /*0x8789cc*/
+        {
+          nFirstPartWidth = 0; /*0x87917a*/
+          LOBYTE(v172) = 66; /*0x879190*/
+          v90 = alloca(2 * ZAPI.MultiByteToWideChar(0, 0, aW2d, -1, nullptr, 0)); /*0x87919c*/
+          ZAPI.MultiByteToWideChar(0, 0, aW2d, -1, v134, 0x3FFFFFFF); /*0x8791b4*/
+          ZXString<unsigned short>::Format((ZXString<unsigned short> *)&nFirstPartWidth, v134, v32->m_nChannelID); /*0x8791c3*/
+          v91 = VariantInit; /*0x8791c8*/
+          VariantInit(&v159); /*0x8791d8*/
+          v7 = ZComAPI::ZComVariantCopy(&v159, &vtMissing); /*0x8791e6*/
+          if ( v7 < 0 ) /*0x8791f0*/
+            goto LABEL_19; /*0x8791f0*/
+          LOBYTE(v172) = 67; /*0x8791fa*/
+          v91(&v161); /*0x8791fe*/
+          v7 = ZComAPI::ZComVariantCopy(&v161, &vtMissing); /*0x879209*/
+          if ( v7 < 0 ) /*0x879213*/
+            goto LABEL_19; /*0x879213*/
+          v92 = v32->_ZtlSecureTear_m_nType_CS; /*0x879219*/
+          p_vTabOrg = (int)&v159; /*0x879222*/
+          v132.m_Data = (_bstr_t::Data_t *)&v161; /*0x879226*/
+          LOBYTE(v172) = 68; /*0x87922c*/
+          v93 = _ZtlSecureFuse<long>(v32->_ZtlSecureTear_m_nType, v92); /*0x879230*/
+          v94 = nFirstPartWidth; /*0x87923c*/
+          v131 = v1->m_pFontChatLog[v93].m_pInterface; /*0x879242*/
+          v130.m_Data = v95; /*0x879243*/
+          pCanvasWhisper.m_pInterface = (IWzCanvas *)&v130; /*0x879244*/
+          _bstr_t::_bstr_t(&v130, (const wchar_t *)nFirstPartWidth); /*0x87924a*/
+          LOBYTE(v172) = 68; /*0x879261*/
+          IWzCanvas::DrawTextA( /*0x879265*/
+            pCanvas.m_pInterface,
+            nCharacterStrWidth + 9,
+            nTop,
+            (Ztl_bstr_t)v130.m_Data,
+            v131,
+            (const Ztl_variant_t *)v132.m_Data,
+            (const Ztl_variant_t *)p_vTabOrg);
+          LOBYTE(v172) = 67; /*0x87926f*/
+          if ( v161.vt == 8 ) /*0x879277*/
+          {
+            v161.vt = 0; /*0x87927e*/
+            if ( v161.decVal.Lo32 ) /*0x879284*/
+              ZAPI.CoTaskMemFree((void *)(v161.decVal.Lo32 - 4)); /*0x87928a*/
+          }
+          else
+          {
+            VariantClear(&v161); /*0x879296*/
+          }
+          LOBYTE(v172) = 66; /*0x87929c*/
+          if ( v159.vt == 8 ) /*0x8792a7*/
+          {
+            v159.vt = 0; /*0x8792b1*/
+            if ( v159.decVal.Lo32 ) /*0x8792ba*/
+              ZAPI.CoTaskMemFree((void *)(v159.decVal.Lo32 - 4)); /*0x8792c0*/
+          }
+          else
+          {
+            VariantClear(&v159); /*0x8792cf*/
+          }
+          LOBYTE(v172) = 16; /*0x8792d5*/
+          if ( v94 ) /*0x8792db*/
+            ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(v94 - 12)); /*0x8792e1*/
+        }
+        else
+        {
+          pCanvasWhisper.m_pInterface = nullptr; /*0x8789d4*/
+          if ( v32->m_nChannelID == 1 ) /*0x8789db*/
+            v61 = 3 - (v32->m_bWhisperIcon != 0); /*0x8789ee*/
+          else
+            v61 = v32->m_bWhisperIcon == 0; /*0x8789e2*/
+          sUOL._m_pStr = nullptr; /*0x8789f1*/
+          p_vTabOrg = 6581; /*0x8789f7*/
+          v132.m_Data = (_bstr_t::Data_t *)&v170; /*0x8789fc*/
+          LOBYTE(v172) = 38; /*0x8789fd*/
+          v62 = StringPool::GetInstance(); /*0x878a01*/
+          v63 = StringPool::GetString(v62, (ZXString<char> *)v132.m_Data, p_vTabOrg)->_m_pStr; /*0x878a0d*/
+          LOBYTE(v172) = 39; /*0x878a15*/
+          ZXString<char>::Format(&sUOL, v63, v61); /*0x878a19*/
+          LOBYTE(v172) = 38; /*0x878a24*/
+          if ( v170._m_pStr ) /*0x878a2a*/
+            ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v170._m_pStr - 1); /*0x878a30*/
+          v64 = VariantInit; /*0x878a38*/
+          VariantInit(&v149); /*0x878a45*/
+          v7 = ZComAPI::ZComVariantCopy(&v149, &vtMissing); /*0x878a53*/
+          if ( v7 < 0 ) /*0x878a5d*/
+            goto LABEL_19; /*0x878a5d*/
+          LOBYTE(v172) = 40; /*0x878a6a*/
+          v64(&v156); /*0x878a6e*/
+          v7 = ZComAPI::ZComVariantCopy(&v156, &vtMissing); /*0x878a7c*/
+          if ( v7 < 0 ) /*0x878a86*/
+            goto LABEL_19; /*0x878a86*/
+          v65 = sUOL._m_pStr; /*0x878a8c*/
+          LOBYTE(v172) = 41; /*0x878a9a*/
+          v66 = alloca(2 * ZAPI.MultiByteToWideChar(0, 0, sUOL._m_pStr, -1, nullptr, 0)); /*0x878aa6*/
+          p_vTabOrg = 0; /*0x878aad*/
+          v132.m_Data = nullptr; /*0x878aaf*/
+          v131 = (IWzFont *)&v149; /*0x878ab7*/
+          v130.m_Data = (_bstr_t::Data_t *)&v156; /*0x878abe*/
+          ZAPI.MultiByteToWideChar(0, 0, v65, -1, v134, 0x3FFFFFFF); /*0x878acc*/
+          v129.m_Data = v67; /*0x878ad2*/
+          nFirstPartWidth = (int)&v129; /*0x878ad3*/
+          _bstr_t::_bstr_t(&v129, v134); /*0x878ad9*/
+          LOBYTE(v172) = 42; /*0x878ae5*/
+          if ( !g_rm.m_pInterface ) /*0x878ae9*/
+            goto LABEL_23; /*0x878ae9*/
+          LOBYTE(v172) = 41; /*0x878af5*/
+          ObjectA = IWzResMan::GetObjectA( /*0x878b00*/
+                      g_rm.m_pInterface,
+                      &v142,
+                      (Ztl_bstr_t)v129.m_Data,
+                      (const Ztl_variant_t *)v130.m_Data,
+                      (const Ztl_variant_t *)v131);
+          LOBYTE(v172) = 43; /*0x878b07*/
+          Unknown = Ztl_variant_t::GetUnknown(ObjectA, (bool)v132.m_Data, p_vTabOrg); /*0x878b0b*/
+          v7 = _com_ptr_t<_com_IIID<IWzCanvas,&__s_GUID const _GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e>>::_QueryInterface<IUnknown *>( /*0x878b14*/
+                 &pCanvasWhisper,
+                 Unknown);
+          if ( v7 < 0 && v7 != -2147467262 ) /*0x878b22*/
+            goto LABEL_19; /*0x878b22*/
+          LOBYTE(v172) = 41; /*0x878b2d*/
+          if ( v142.vt == 8 ) /*0x878b38*/
+          {
+            v142.vt = 0; /*0x878b3c*/
+            if ( v142.decVal.Lo32 ) /*0x878b4b*/
+              ZAPI.CoTaskMemFree((void *)(v142.decVal.Lo32 - 4)); /*0x878b51*/
+            v70 = VariantClear; /*0x878b57*/
+          }
+          else
+          {
+            v70 = VariantClear; /*0x878b89*/
+            VariantClear(&v142); /*0x878b96*/
+          }
+          LOBYTE(v172) = 40; /*0x878b5d*/
+          if ( v156.vt == 8 ) /*0x878b68*/
+          {
+            v156.vt = 0; /*0x878b72*/
+            if ( v156.decVal.Lo32 ) /*0x878b7b*/
+              ZAPI.CoTaskMemFree((void *)(v156.decVal.Lo32 - 4)); /*0x878b81*/
+          }
+          else
+          {
+            v70(&v156); /*0x878ba1*/
+          }
+          LOBYTE(v172) = 38; /*0x878ba3*/
+          if ( v149.vt == 8 ) /*0x878bae*/
+          {
+            v149.vt = 0; /*0x878bb8*/
+            if ( v149.decVal.Lo32 ) /*0x878bc1*/
+              ZAPI.CoTaskMemFree((void *)(v149.decVal.Lo32 - 4)); /*0x878bc7*/
+          }
+          else
+          {
+            v70(&v149); /*0x878bd6*/
+          }
+          nAlpha.vt = 3; /*0x878bdd*/
+          nAlpha.decVal.Lo32 = 255; /*0x878be4*/
+          LOBYTE(v172) = 44; /*0x878c08*/
+          IWzCanvas::Copy(pCanvas.m_pInterface, nCharacterStrWidth + 11, nTop - 1, pCanvasWhisper.m_pInterface, &nAlpha); /*0x878c0c*/
+          LOBYTE(v172) = 38; /*0x878c11*/
+          if ( nAlpha.vt == 8 ) /*0x878c1c*/
+          {
+            nAlpha.vt = 0; /*0x878c26*/
+            if ( nAlpha.decVal.Lo32 ) /*0x878c2f*/
+              ZAPI.CoTaskMemFree((void *)(nAlpha.decVal.Lo32 - 4)); /*0x878c35*/
+          }
+          else
+          {
+            v70(&nAlpha); /*0x878c44*/
+          }
+          m_nChannelID = v32->m_nChannelID; /*0x878c46*/
+          if ( m_nChannelID != 1 ) /*0x878c4c*/
+          {
+            if ( !m_nChannelID ) /*0x878c54*/
+              m_nChannelID = 1; /*0x878c56*/
+            nFirstPartWidth = m_nChannelID; /*0x878c5b*/
+            sItemName._m_pStr = nullptr; /*0x878c5e*/
+            p_vTabOrg = 6582; /*0x878c68*/
+            v132.m_Data = (_bstr_t::Data_t *)&v173; /*0x878c6d*/
+            LOBYTE(v172) = 45; /*0x878c6e*/
+            v72 = StringPool::GetInstance(); /*0x878c72*/
+            v73 = StringPool::GetString(v72, (ZXString<char> *)v132.m_Data, p_vTabOrg)->_m_pStr; /*0x878c7e*/
+            v74 = m_nChannelID / 10; /*0x878c8f*/
+            LOBYTE(v172) = 46; /*0x878c97*/
+            ZXString<char>::Format((ZXString<char> *)&sItemName, v73, m_nChannelID / 10); /*0x878c9b*/
+            LOBYTE(v172) = 45; /*0x878ca6*/
+            if ( v173._m_pStr ) /*0x878cac*/
+              ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v173._m_pStr - 1); /*0x878cb2*/
+            v75 = VariantInit; /*0x878cba*/
+            VariantInit(&v152); /*0x878cc7*/
+            v7 = ZComAPI::ZComVariantCopy(&v152, &vtMissing); /*0x878cd5*/
+            if ( v7 < 0 ) /*0x878cdf*/
+              goto LABEL_19; /*0x878cdf*/
+            LOBYTE(v172) = 47; /*0x878cec*/
+            v75(&v147); /*0x878cf0*/
+            v7 = ZComAPI::ZComVariantCopy(&v147, &vtMissing); /*0x878cfe*/
+            if ( v7 < 0 ) /*0x878d08*/
+              goto LABEL_19; /*0x878d08*/
+            LOBYTE(v172) = 48; /*0x878d1c*/
+            v76 = alloca(2 * ZAPI.MultiByteToWideChar(0, 0, (const char *)sItemName._m_pStr, -1, nullptr, 0)); /*0x878d28*/
+            p_vTabOrg = 0; /*0x878d32*/
+            v132.m_Data = nullptr; /*0x878d34*/
+            v131 = (IWzFont *)&v152; /*0x878d3c*/
+            v130.m_Data = (_bstr_t::Data_t *)&v147; /*0x878d43*/
+            ZAPI.MultiByteToWideChar(0, 0, (const char *)sItemName._m_pStr, -1, v134, 0x3FFFFFFF); /*0x878d51*/
+            v129.m_Data = v77; /*0x878d57*/
+            nSecondPos = (int)&v129; /*0x878d58*/
+            _bstr_t::_bstr_t(&v129, v134); /*0x878d5e*/
+            LOBYTE(v172) = 49; /*0x878d6a*/
+            if ( !g_rm.m_pInterface ) /*0x878d6e*/
+              goto LABEL_23; /*0x878d6e*/
+            LOBYTE(v172) = 48; /*0x878d7a*/
+            v78 = IWzResMan::GetObjectA( /*0x878d85*/
+                    g_rm.m_pInterface,
+                    &v141,
+                    (Ztl_bstr_t)v129.m_Data,
+                    (const Ztl_variant_t *)v130.m_Data,
+                    (const Ztl_variant_t *)v131);
+            LOBYTE(v172) = 50; /*0x878d8c*/
+            v79 = Ztl_variant_t::GetUnknown(v78, (bool)v132.m_Data, p_vTabOrg); /*0x878d90*/
+            nSecondPos = 0; /*0x878d99*/
+            v7 = _com_ptr_t<_com_IIID<IWzCanvas,&__s_GUID const _GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e>>::_QueryInterface<IUnknown *>( /*0x878da0*/
+                   (_com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > *)&nSecondPos,
+                   v79);
+            if ( v7 < 0 && v7 != -2147467262 ) /*0x878dae*/
+              goto LABEL_19; /*0x878dae*/
+            LOBYTE(v172) = 52; /*0x878db9*/
+            if ( v141.vt == 8 ) /*0x878dc4*/
+            {
+              v141.vt = 0; /*0x878dc8*/
+              if ( v141.decVal.Lo32 ) /*0x878dd7*/
+                ZAPI.CoTaskMemFree((void *)(v141.decVal.Lo32 - 4)); /*0x878ddd*/
+            }
+            else
+            {
+              VariantClear(&v141); /*0x878dec*/
+            }
+            LOBYTE(v172) = 53; /*0x878df2*/
+            if ( v147.vt == 8 ) /*0x878dfd*/
+            {
+              v147.vt = 0; /*0x878e07*/
+              if ( v147.decVal.Lo32 ) /*0x878e10*/
+                ZAPI.CoTaskMemFree((void *)(v147.decVal.Lo32 - 4)); /*0x878e16*/
+            }
+            else
+            {
+              VariantClear(&v147); /*0x878e25*/
+            }
+            LOBYTE(v172) = 54; /*0x878e2b*/
+            if ( v152.vt == 8 ) /*0x878e36*/
+            {
+              v152.vt = 0; /*0x878e40*/
+              if ( v152.decVal.Lo32 ) /*0x878e49*/
+                ZAPI.CoTaskMemFree((void *)(v152.decVal.Lo32 - 4)); /*0x878e4f*/
+            }
+            else
+            {
+              VariantClear(&v152); /*0x878e5e*/
+            }
+            p_vTabOrg = 6582; /*0x878e67*/
+            v132.m_Data = (_bstr_t::Data_t *)&v177; /*0x878e6c*/
+            v80 = StringPool::GetInstance(); /*0x878e6d*/
+            v81 = StringPool::GetString(v80, (ZXString<char> *)v132.m_Data, p_vTabOrg)->_m_pStr; /*0x878e79*/
+            LOBYTE(v172) = 55; /*0x878e8d*/
+            ZXString<char>::Format((ZXString<char> *)&sItemName, v81, nFirstPartWidth - 10 * v74); /*0x878e91*/
+            LOBYTE(v172) = 54; /*0x878e9c*/
+            if ( v177._m_pStr ) /*0x878ea2*/
+              ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v177._m_pStr - 1); /*0x878ea8*/
+            v82 = VariantInit; /*0x878eb0*/
+            VariantInit(&v150); /*0x878ebd*/
+            v7 = ZComAPI::ZComVariantCopy(&v150, &vtMissing); /*0x878ecb*/
+            if ( v7 < 0 ) /*0x878ed5*/
+              goto LABEL_19; /*0x878ed5*/
+            LOBYTE(v172) = 56; /*0x878ee2*/
+            v82(&v145); /*0x878ee6*/
+            v7 = ZComAPI::ZComVariantCopy(&v145, &vtMissing); /*0x878ef4*/
+            if ( v7 < 0 ) /*0x878efe*/
+              goto LABEL_19; /*0x878efe*/
+            v83 = sItemName._m_pStr; /*0x878f04*/
+            LOBYTE(v172) = 57; /*0x878f12*/
+            v84 = alloca(2 * ZAPI.MultiByteToWideChar(0, 0, (const char *)sItemName._m_pStr, -1, nullptr, 0)); /*0x878f1e*/
+            p_vTabOrg = 0; /*0x878f25*/
+            v132.m_Data = nullptr; /*0x878f27*/
+            v131 = (IWzFont *)&v150; /*0x878f2f*/
+            v130.m_Data = (_bstr_t::Data_t *)&v145; /*0x878f36*/
+            ZAPI.MultiByteToWideChar(0, 0, (const char *)v83, -1, v134, 0x3FFFFFFF); /*0x878f44*/
+            v129.m_Data = v85; /*0x878f4a*/
+            nFirstPartWidth = (int)&v129; /*0x878f4b*/
+            _bstr_t::_bstr_t(&v129, v134); /*0x878f51*/
+            LOBYTE(v172) = 58; /*0x878f5d*/
+            if ( !g_rm.m_pInterface ) /*0x878f61*/
+              goto LABEL_23; /*0x878f61*/
+            LOBYTE(v172) = 57; /*0x878f6e*/
+            v86 = IWzResMan::GetObjectA( /*0x878f78*/
+                    g_rm.m_pInterface,
+                    &v140,
+                    (Ztl_bstr_t)v129.m_Data,
+                    (const Ztl_variant_t *)v130.m_Data,
+                    (const Ztl_variant_t *)v131);
+            LOBYTE(v172) = 59; /*0x878f7f*/
+            v87 = Ztl_variant_t::GetUnknown(v86, (bool)v132.m_Data, p_vTabOrg); /*0x878f83*/
+            nFirstPartWidth = 0; /*0x878f8c*/
+            v7 = _com_ptr_t<_com_IIID<IWzCanvas,&__s_GUID const _GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e>>::_QueryInterface<IUnknown *>( /*0x878f93*/
+                   (_com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > *)&nFirstPartWidth,
+                   v87);
+            if ( v7 < 0 && v7 != -2147467262 ) /*0x878fa1*/
+              goto LABEL_19; /*0x878fa1*/
+            LOBYTE(v172) = 61; /*0x878fac*/
+            if ( v140.vt == 8 ) /*0x878fb7*/
+            {
+              v140.vt = 0; /*0x878fc1*/
+              if ( v140.decVal.Lo32 ) /*0x878fca*/
+                ZAPI.CoTaskMemFree((void *)(v140.decVal.Lo32 - 4)); /*0x878fd0*/
+            }
+            else
+            {
+              VariantClear(&v140); /*0x878fdf*/
+            }
+            LOBYTE(v172) = 62; /*0x878fe5*/
+            if ( v145.vt == 8 ) /*0x878ff0*/
+            {
+              v145.vt = 0; /*0x878ffa*/
+              if ( v145.decVal.Lo32 ) /*0x879003*/
+                ZAPI.CoTaskMemFree((void *)(v145.decVal.Lo32 - 4)); /*0x879009*/
+            }
+            else
+            {
+              VariantClear(&v145); /*0x879018*/
+            }
+            LOBYTE(v172) = 63; /*0x87901e*/
+            if ( v150.vt == 8 ) /*0x879029*/
+            {
+              v150.vt = 0; /*0x87902d*/
+              if ( v150.decVal.Lo32 ) /*0x87903c*/
+                ZAPI.CoTaskMemFree((void *)(v150.decVal.Lo32 - 4)); /*0x879042*/
+            }
+            else
+            {
+              VariantClear(&v150); /*0x879051*/
+            }
+            v165.vt = 3; /*0x879061*/
+            v165.decVal.Lo32 = 255; /*0x879065*/
+            v88 = nTop + 3; /*0x879072*/
+            LOBYTE(v172) = 64; /*0x879080*/
+            IWzCanvas::Copy(pCanvas.m_pInterface, nCharacterStrWidth + 22, nTop + 3, (IWzCanvas *)nSecondPos, &v165); /*0x879084*/
+            LOBYTE(v172) = 63; /*0x87908e*/
+            if ( v165.vt == 8 ) /*0x879092*/
+            {
+              v165.vt = 0; /*0x879096*/
+              if ( v165.decVal.Lo32 ) /*0x87909f*/
+                ZAPI.CoTaskMemFree((void *)(v165.decVal.Lo32 - 4)); /*0x8790a5*/
+            }
+            else
+            {
+              VariantClear(&v165); /*0x8790b1*/
+            }
+            v163.vt = 3; /*0x8790bc*/
+            v163.decVal.Lo32 = 255; /*0x8790c0*/
+            v89 = nFirstPartWidth; /*0x8790c3*/
+            LOBYTE(v172) = 65; /*0x8790d6*/
+            IWzCanvas::Copy(pCanvas.m_pInterface, nCharacterStrWidth + 27, v88, (IWzCanvas *)nFirstPartWidth, &v163); /*0x8790da*/
+            LOBYTE(v172) = 63; /*0x8790e4*/
+            if ( v163.vt == 8 ) /*0x8790e8*/
+            {
+              v163.vt = 0; /*0x8790ef*/
+              if ( v163.decVal.Lo32 ) /*0x8790f5*/
+                ZAPI.CoTaskMemFree((void *)(v163.decVal.Lo32 - 4)); /*0x8790fb*/
+            }
+            else
+            {
+              VariantClear(&v163); /*0x879107*/
+            }
+            LOBYTE(v172) = 54; /*0x87910d*/
+            if ( v89 ) /*0x879113*/
+              (*(void (__cdecl **)(int))(*(_DWORD *)v89 + 8))(v89); /*0x87911b*/
+            LOBYTE(v172) = 45; /*0x879120*/
+            if ( nSecondPos ) /*0x879126*/
+              (*(void (__cdecl **)(int))(*(_DWORD *)nSecondPos + 8))(nSecondPos); /*0x87912e*/
+            LOBYTE(v172) = 38; /*0x879133*/
+            if ( sItemName._m_pStr ) /*0x879139*/
+              ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sItemName._m_pStr - 1); /*0x87913f*/
+          }
+          LOBYTE(v172) = 37; /*0x87914a*/
+          if ( sUOL._m_pStr ) /*0x879150*/
+            ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sUOL._m_pStr - 1); /*0x879156*/
+          LOBYTE(v172) = 16; /*0x879161*/
+          if ( pCanvasWhisper.m_pInterface ) /*0x879167*/
+            ((void (__cdecl *)(IWzCanvas *))pCanvasWhisper.m_pInterface->Release)(pCanvasWhisper.m_pInterface); /*0x879173*/
+        }
+        LOBYTE(v172) = 15; /*0x8792ec*/
+        if ( sChat._m_pStr ) /*0x8792f2*/
+          ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)sChat._m_pStr - 1); /*0x8792f8*/
+        LOBYTE(v172) = 11; /*0x879303*/
+        if ( sCharacterName._m_pStr ) /*0x879309*/
+          ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)sCharacterName._m_pStr - 1); /*0x879313*/
+      }
+      else
+      {
+        v96 = v1->m_nChatWndHeight + 13 * (-1 - idx) - (v1->m_nChatWndType != 3 ? 5 : 0);
+        if ( _ZtlSecureFuse<long>(v32->_ZtlSecureTear_m_nType, v32->_ZtlSecureTear_m_nType_CS) != 10 || !v32->m_pItem.p ) /*0x87935a*/
+        {
+          VariantInit(&v151); /*0x8798a8*/
+          v7 = ZComAPI::ZComVariantCopy(&v151, &vtMissing); /*0x8798ba*/
+          if ( v7 < 0 ) /*0x8798c4*/
+            goto LABEL_19; /*0x8798c4*/
+          LOBYTE(v172) = 91; /*0x8798d1*/
+          VariantInit(&v153); /*0x8798d5*/
+          v7 = ZComAPI::ZComVariantCopy(&v153, &vtMissing); /*0x8798e7*/
+          if ( v7 < 0 ) /*0x8798f1*/
+            goto LABEL_19; /*0x8798f1*/
+          v124 = v32->_ZtlSecureTear_m_nType_CS; /*0x8798f7*/
+          p_vTabOrg = (int)&v151; /*0x879900*/
+          v132.m_Data = (_bstr_t::Data_t *)&v153; /*0x879907*/
+          LOBYTE(v172) = 92; /*0x87990d*/
+          v125 = v1->m_pFontChatLog[_ZtlSecureFuse<long>(v32->_ZtlSecureTear_m_nType, v124)].m_pInterface; /*0x879916*/
+          v126 = v32->m_sChat._m_pStr; /*0x87991d*/
+          v131 = v125; /*0x879923*/
+          v130.m_Data = v127; /*0x879924*/
+          nFirstPartWidth = (int)&v130; /*0x879925*/
+          _bstr_t::_bstr_t(&v130, v126); /*0x87992b*/
+          LOBYTE(v172) = 92; /*0x87993a*/
+          IWzCanvas::DrawTextA( /*0x87993e*/
+            pCanvas.m_pInterface,
+            9,
+            v96,
+            (Ztl_bstr_t)v130.m_Data,
+            v131,
+            (const Ztl_variant_t *)v132.m_Data,
+            (const Ztl_variant_t *)p_vTabOrg);
+          LOBYTE(v172) = 91; /*0x87994b*/
+          if ( v153.vt == 8 ) /*0x87994f*/
+          {
+            v153.vt = 0; /*0x879959*/
+            if ( v153.decVal.Lo32 ) /*0x879962*/
+              ZAPI.CoTaskMemFree((void *)(v153.decVal.Lo32 - 4)); /*0x879968*/
+          }
+          else
+          {
+            VariantClear(&v153); /*0x879977*/
+          }
+          LOBYTE(v172) = 11; /*0x879985*/
+          if ( v151.vt == 8 ) /*0x879989*/
+          {
+            v151.vt = 0; /*0x87998d*/
+            Lo32 = v151.decVal.Lo32; /*0x879994*/
+LABEL_335:
+            if ( Lo32 ) /*0x87999c*/
+              ZAPI.CoTaskMemFree((void *)(Lo32 - 4)); /*0x8799a2*/
+            goto LABEL_339; /*0x8799a8*/
+          }
+          p_vTabOrg = (int)&v151; /*0x8799b0*/
+          goto LABEL_338; /*0x8799b0*/
+        }
+        nFirstPartWidth = ZXString<unsigned short>::Find(&v32->m_sChat, 123, 0); /*0x879377*/
+        v97 = ZXString<unsigned short>::Find(&v32->m_sChat, 125, 0); /*0x87937a*/
+        nSecondPos = v97; /*0x879383*/
+        if ( nFirstPartWidth == -1 || v97 == -1 ) /*0x87938f*/
+        {
+          VariantInit(&v155); /*0x87979e*/
+          v7 = ZComAPI::ZComVariantCopy(&v155, &vtMissing); /*0x8797b0*/
+          if ( v7 < 0 ) /*0x8797ba*/
+            goto LABEL_19; /*0x8797ba*/
+          LOBYTE(v172) = 70; /*0x8797c7*/
+          VariantInit(&v157); /*0x8797cb*/
+          v7 = ZComAPI::ZComVariantCopy(&v157, &vtMissing); /*0x8797dd*/
+          if ( v7 < 0 ) /*0x8797e7*/
+            goto LABEL_19; /*0x8797e7*/
+          v119 = v32->_ZtlSecureTear_m_nType_CS; /*0x8797ed*/
+          p_vTabOrg = (int)&v155; /*0x8797f6*/
+          v132.m_Data = (_bstr_t::Data_t *)&v157; /*0x8797fd*/
+          LOBYTE(v172) = 71; /*0x879803*/
+          v120 = v1->m_pFontChatLog[_ZtlSecureFuse<long>(v32->_ZtlSecureTear_m_nType, v119)].m_pInterface; /*0x87980c*/
+          v121 = v32->m_sChat._m_pStr; /*0x879813*/
+          v131 = v120; /*0x879819*/
+          v130.m_Data = v122; /*0x87981a*/
+          nFirstPartWidth = (int)&v130; /*0x87981b*/
+          _bstr_t::_bstr_t(&v130, v121); /*0x879821*/
+          LOBYTE(v172) = 71; /*0x879830*/
+          IWzCanvas::DrawTextA( /*0x879834*/
+            pCanvas.m_pInterface,
+            9,
+            v96,
+            (Ztl_bstr_t)v130.m_Data,
+            v131,
+            (const Ztl_variant_t *)v132.m_Data,
+            (const Ztl_variant_t *)p_vTabOrg);
+          LOBYTE(v172) = 70; /*0x879841*/
+          if ( v157.vt == 8 ) /*0x879845*/
+          {
+            v157.vt = 0; /*0x87984f*/
+            if ( v157.decVal.Lo32 ) /*0x879858*/
+              ZAPI.CoTaskMemFree((void *)(v157.decVal.Lo32 - 4)); /*0x87985e*/
+          }
+          else
+          {
+            VariantClear(&v157); /*0x87986d*/
+          }
+          LOBYTE(v172) = 11; /*0x87987b*/
+          if ( v155.vt == 8 ) /*0x87987f*/
+          {
+            Lo32 = v155.decVal.Lo32; /*0x879881*/
+            v155.vt = 0; /*0x879889*/
+            goto LABEL_335; /*0x879890*/
+          }
+          p_vTabOrg = (int)&v155; /*0x87989b*/
+LABEL_338:
+          VariantClear((VARIANTARG *)p_vTabOrg); /*0x8799b1*/
+          goto LABEL_339; /*0x8799b1*/
+        }
+        ZXString<unsigned short>::Left(&v32->m_sChat, &sFirstPart, nFirstPartWidth); /*0x8793a2*/
+        LOBYTE(v172) = 73; /*0x8793b1*/
+        pCanvasWhisper.m_pInterface = nullptr; /*0x8793b5*/
+        ZXString<unsigned short>::Assign<char>((ZXString<unsigned short> *)&pCanvasWhisper, aNull, -1); /*0x8793bc*/
+        nFirstPartWidth = ZXString<unsigned short>::operator==( /*0x8793cd*/
+                            &sFirstPart,
+                            (const ZXString<unsigned short> *)&pCanvasWhisper);
+        if ( pCanvasWhisper.m_pInterface ) /*0x8793d5*/
+          ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&pCanvasWhisper.m_pInterface[-3]); /*0x8793db*/
+        if ( nFirstPartWidth ) /*0x8793e7*/
+        {
+          v98 = alloca(2 * ZAPI.MultiByteToWideChar(0, 0, sStrDefault, -1, nullptr, 0)); /*0x879400*/
+          v99 = ZStrUtil::_Conv(sStrDefault, v134, -1); /*0x87940f*/
+          ZXString<unsigned short>::operator=<unsigned short>(&sFirstPart, v99); /*0x87941b*/
+        }
+        ZXString<unsigned short>::Mid(&v32->m_sChat, &sSecondPart, nSecondPos + 1, -1); /*0x87942d*/
+        LOBYTE(v172) = 74; /*0x87943c*/
+        pCanvasWhisper.m_pInterface = nullptr; /*0x879440*/
+        ZXString<unsigned short>::Assign<char>((ZXString<unsigned short> *)&pCanvasWhisper, aNull, -1); /*0x879447*/
+        v100 = ZXString<unsigned short>::operator==(&sSecondPart, (const ZXString<unsigned short> *)&pCanvasWhisper); /*0x879458*/
+        if ( pCanvasWhisper.m_pInterface ) /*0x87945f*/
+          ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&pCanvasWhisper.m_pInterface[-3]); /*0x879465*/
+        if ( v100 ) /*0x87946f*/
+        {
+          v101 = alloca(2 * ZAPI.MultiByteToWideChar(0, 0, sStrDefault, -1, nullptr, 0)); /*0x879488*/
+          v102 = ZStrUtil::_Conv(sStrDefault, v134, -1); /*0x879497*/
+          ZXString<unsigned short>::operator=<unsigned short>(&sSecondPart, v102); /*0x8794a3*/
+        }
+        v103 = TSecType<long>::GetData(&v32->m_pItem.p->nItemID); /*0x8794ae*/
+        v104 = CItemInfo::GetItemName((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, &v174, v103)->_m_pStr; /*0x8794c3*/
+        LOBYTE(v172) = 75; /*0x8794d0*/
+        v105 = alloca(2 * ZAPI.MultiByteToWideChar(0, 0, v104, -1, nullptr, 0)); /*0x8794dc*/
+        v106 = TSecType<long>::GetData(&v32->m_pItem.p->nItemID); /*0x8794e9*/
+        v107 = CItemInfo::GetItemName((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, &v176, v106)->_m_pStr; /*0x8794fe*/
+        LOBYTE(v172) = 76; /*0x87950d*/
+        ZAPI.MultiByteToWideChar(0, 0, v107, -1, v134, 0x3FFFFFFF); /*0x879511*/
+        nSecondPos = 0; /*0x879517*/
+        if ( v134 ) /*0x879520*/
+        {
+          v108 = wcslen(v134); /*0x879522*/
+          p_vTabOrg = 2 * v108; /*0x879539*/
+          v132.m_Data = (_bstr_t::Data_t *)v134; /*0x87953a*/
+          nFirstPartWidth = v108; /*0x879541*/
+          v109 = (unsigned __int8 *)ZXString<unsigned short>::GetBuffer( /*0x879544*/
+                                      (ZXString<unsigned short> *)&nSecondPos,
+                                      v108,
+                                      0);
+          memcpy(v109, (unsigned __int8 *)v132.m_Data, p_vTabOrg); /*0x87954a*/
+          ZXString<unsigned short>::ReleaseBuffer((ZXString<unsigned short> *)&nSecondPos, nFirstPartWidth); /*0x879559*/
+        }
+        LOBYTE(v172) = 78; /*0x879561*/
+        if ( v176._m_pStr ) /*0x879567*/
+          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v176._m_pStr - 1); /*0x87956d*/
+        LOBYTE(v172) = 79; /*0x879578*/
+        if ( v174._m_pStr ) /*0x87957e*/
+          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v174._m_pStr - 1); /*0x879584*/
+        Ztl_variant_t::Ztl_variant_t(&vTabOrg, &vtMissing); /*0x879597*/
+        p_vTabOrg = (int)&vTabOrg; /*0x8795a5*/
+        v132.m_Data = v110; /*0x8795a6*/
+        nFirstPartWidth = (int)&v132; /*0x8795a7*/
+        LOBYTE(v172) = 80; /*0x8795ad*/
+        _bstr_t::_bstr_t(&v132, sFirstPart._m_pStr); /*0x8795b1*/
+        v131 = (IWzFont *)v32->_ZtlSecureTear_m_nType_CS; /*0x8795b9*/
+        LOBYTE(v172) = 81; /*0x8795be*/
+        v111 = _ZtlSecureFuse<long>(v32->_ZtlSecureTear_m_nType, (unsigned int)v131); /*0x8795c2*/
+        v112 = v178; /*0x8795c7*/
+        v113 = v178->m_pFontChatLog[v111].m_pInterface; /*0x8795ca*/
+        if ( !v113 ) /*0x8795d6*/
+          goto LABEL_23; /*0x8795d6*/
+        LOBYTE(v172) = 80; /*0x8795dc*/
+        nFirstPartWidth = IWzFont::CalcTextWidth(v113, (Ztl_bstr_t)v132.m_Data, (const Ztl_variant_t *)p_vTabOrg); /*0x8795eb*/
+        LOBYTE(v172) = 79; /*0x8795ee*/
+        Ztl_variant_t::~Ztl_variant_t(&vTabOrg); /*0x8795f2*/
+        v114 = ZXString<unsigned short>::operator+(&sFirstPart, &v171, (const ZXString<unsigned short> *)&nSecondPos); /*0x879602*/
+        LOBYTE(v172) = 82; /*0x879611*/
+        ZXString<unsigned short>::operator+(v114, &sSum, &sSecondPart); /*0x879615*/
+        LOBYTE(v172) = 84; /*0x87961d*/
+        if ( v171._m_pStr ) /*0x879623*/
+          ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)v171._m_pStr - 1); /*0x879629*/
+        Ztl_variant_t::Ztl_variant_t(&v138, &vtMissing); /*0x87963c*/
+        LOBYTE(v172) = 85; /*0x87964c*/
+        Ztl_variant_t::Ztl_variant_t(&v139, &vtMissing); /*0x879650*/
+        v115 = v32->_ZtlSecureTear_m_nType_CS; /*0x879655*/
+        p_vTabOrg = (int)&v138; /*0x87965e*/
+        v132.m_Data = (_bstr_t::Data_t *)&v139; /*0x879665*/
+        LOBYTE(v172) = 86; /*0x87966b*/
+        v131 = v112->m_pFontChatLog[_ZtlSecureFuse<long>(v32->_ZtlSecureTear_m_nType, v115)].m_pInterface; /*0x87967e*/
+        v130.m_Data = v116; /*0x879682*/
+        pCanvasWhisper.m_pInterface = (IWzCanvas *)&v130; /*0x879683*/
+        _bstr_t::_bstr_t(&v130, sSum._m_pStr); /*0x879689*/
+        LOBYTE(v172) = 86; /*0x879698*/
+        IWzCanvas::DrawTextA( /*0x87969c*/
+          pCanvas.m_pInterface,
+          9,
+          v96,
+          (Ztl_bstr_t)v130.m_Data,
+          v131,
+          (const Ztl_variant_t *)v132.m_Data,
+          (const Ztl_variant_t *)p_vTabOrg);
+        Ztl_variant_t::~Ztl_variant_t(&v139); /*0x8796a7*/
+        LOBYTE(v172) = 84; /*0x8796b2*/
+        Ztl_variant_t::~Ztl_variant_t(&v138); /*0x8796b6*/
+        Ztl_variant_t::Ztl_variant_t(&v135, &vtMissing); /*0x8796c6*/
+        LOBYTE(v172) = 88; /*0x8796d6*/
+        Ztl_variant_t::Ztl_variant_t(&v137, &vtMissing); /*0x8796da*/
+        v117 = v112->m_pFontChatLog[8].m_pInterface; /*0x8796df*/
+        v118 = nSecondPos; /*0x8796e5*/
+        p_vTabOrg = (int)&v135; /*0x8796ee*/
+        v132.m_Data = (_bstr_t::Data_t *)&v137; /*0x8796f5*/
+        v131 = v117; /*0x8796f6*/
+        v130.m_Data = (_bstr_t::Data_t *)&v135; /*0x8796f7*/
+        pCanvasWhisper.m_pInterface = (IWzCanvas *)&v130; /*0x8796f8*/
+        LOBYTE(v172) = 89; /*0x8796fe*/
+        _bstr_t::_bstr_t(&v130, (const wchar_t *)nSecondPos); /*0x879702*/
+        LOBYTE(v172) = 89; /*0x879716*/
+        IWzCanvas::DrawTextA( /*0x87971a*/
+          pCanvas.m_pInterface,
+          nFirstPartWidth + 9,
+          v96,
+          (Ztl_bstr_t)v130.m_Data,
+          v131,
+          (const Ztl_variant_t *)v132.m_Data,
+          (const Ztl_variant_t *)p_vTabOrg);
+        Ztl_variant_t::~Ztl_variant_t(&v137); /*0x879725*/
+        Ztl_variant_t::~Ztl_variant_t(&v135); /*0x879730*/
+        LOBYTE(v172) = 79; /*0x879738*/
+        if ( sSum._m_pStr ) /*0x87973e*/
+          ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)sSum._m_pStr - 1); /*0x879744*/
+        LOBYTE(v172) = 74; /*0x87974c*/
+        if ( v118 ) /*0x879752*/
+          ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(v118 - 12)); /*0x879758*/
+        LOBYTE(v172) = 73; /*0x879763*/
+        if ( sSecondPart._m_pStr ) /*0x879769*/
+          ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)sSecondPart._m_pStr - 1); /*0x87976f*/
+        LOBYTE(v172) = 11; /*0x87977a*/
+        if ( sFirstPart._m_pStr ) /*0x879780*/
+          ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)sFirstPart._m_pStr - 1); /*0x87978a*/
+      }
+LABEL_339:
+      LOBYTE(v172) = 10; /*0x8799b7*/
+      if ( !InterlockedDecrement(&v32->_m_nRef) ) /*0x8799bf*/
+      {
+        InterlockedIncrement(&v32->_m_nRef); /*0x8799ca*/
+        ((void (__thiscall *)(CUIStatusBar::CChatLog *, int))v32->dtr_ZRefCounted)(v32, 1); /*0x8799d8*/
+      }
+      v1 = v178; /*0x8799dd*/
+      v28 = idx + 1 < v178->m_nChatWndLineVisible; /*0x8799e1*/
+      pvargDest.decVal.Mid32 = 0; /*0x8799e7*/
+      ++idx; /*0x8799ee*/
+    }
+    while ( v28 );
+  }
+LABEL_342:
+  if ( v1->m_pLayerChatBar.m_pInterface ) /*0x8799f7*/
+    CUIStatusBar::_ResetChatBarPos(v1); /*0x879a02*/
+  CWnd::InvalidateRect(v1, nullptr); /*0x879a0b*/
+  Release = pCanvas.m_pInterface->Release; /*0x879a15*/
+  v172 = -1; /*0x879a19*/
+  ((void (__cdecl *)(IWzCanvas *))Release)(pCanvas.m_pInterface); /*0x879a20*/
+}

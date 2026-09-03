@@ -1,0 +1,81 @@
+void __thiscall CMob::OnDoomed(CMob *this, int bDoom)
+{
+  IWzVector2D *m_pInterface; // eax
+  IWzVector2D *v4; // eax
+  const CMobTemplate *MobTemplate; // eax
+  IWzGr2DLayer *v6; // edi
+  IWzVector2D *v7; // eax
+  CVecCtrl *v8; // edi
+  HRESULT v9; // eax
+  IWzVector2D *v10; // eax
+  CVecCtrl *v11; // ebx
+  CMobTemplate *m_pTemplate; // eax
+  CMobTemplate *m_pTemplateByDoom; // eax
+  CMobTemplate *v14; // esi
+  int v15; // eax
+
+  if ( !bDoom ) /*0x64ed49*/
+  {
+    if ( !this->m_pTemplateByDoom ) /*0x64edda*/
+      return; /*0x64edda*/
+    this->m_pTemplateByDoom = nullptr; /*0x64ede0*/
+    goto LABEL_12; /*0x64ede0*/
+  }
+  if ( this->m_bDoomReserved ) /*0x64ed4f*/
+  {
+    m_pInterface = this->m_pvcActive.m_pInterface; /*0x64ed58*/
+    if ( m_pInterface ) /*0x64ed60*/
+      v4 = m_pInterface - 3; /*0x64ed62*/
+    else
+      v4 = nullptr; /*0x64ed67*/
+    CMovePath::SetStatChangedPoint((CMovePath *)&v4[145], this->m_bDoomReservedSN); /*0x64ed77*/
+    this->m_bDoomReserved = 0; /*0x64ed7c*/
+  }
+  if ( !this->m_pTemplateByDoom ) /*0x64ed86*/
+  {
+    MobTemplate = CMobTemplate::GetMobTemplate(0x18705u); /*0x64ed98*/
+    MobStat::SetFromWhenDoom(&this->m_stat, MobTemplate); /*0x64eda7*/
+    this->m_pTemplateByDoom = CMobTemplate::GetMobTemplate(0x18705u); /*0x64edb6*/
+    v6 = this->m_pLayerAction.m_pInterface; /*0x64edbc*/
+    if ( !v6 ) /*0x64edc7*/
+      _com_issue_error(-2147467261); /*0x64edce*/
+    v9 = v6->put_color(v6, (unsigned int)byte_FFFFFF); /*0x64ee07*/
+    if ( v9 < 0 ) /*0x64ee0b*/
+      _com_issue_errorex(v9, v6, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x64ee14*/
+    this->m_tDoomEffectEnd = get_update_time() + 1200; /*0x64ee23*/
+LABEL_12:
+    v7 = this->m_pvc.m_pInterface; /*0x64edea*/
+    if ( v7 ) /*0x64edf2*/
+      v8 = (CVecCtrl *)&v7[-3]; /*0x64edf4*/
+    else
+      v8 = nullptr; /*0x64ee2b*/
+    v10 = this->m_pvcActive.m_pInterface; /*0x64ee2d*/
+    if ( v10 ) /*0x64ee36*/
+      v11 = (CVecCtrl *)&v10[-3]; /*0x64ee38*/
+    else
+      v11 = nullptr; /*0x64ee3d*/
+    if ( !this->m_stat.nDoom_ || (m_pTemplate = this->m_pTemplateByDoom) == nullptr ) /*0x64ee50*/
+      m_pTemplate = this->m_pTemplate; /*0x64ee52*/
+    v8[1].ZRefCounted::__vftable = (CVecCtrl_vtbl *)_ZtlSecureFuse<long>( /*0x64ee68*/
+                                                      m_pTemplate->_ZtlSecureTear_nMoveAbility,
+                                                      m_pTemplate->_ZtlSecureTear_nMoveAbility_CS);
+    if ( !this->m_stat.nDoom_ || (m_pTemplateByDoom = this->m_pTemplateByDoom) == nullptr ) /*0x64ee7f*/
+      m_pTemplateByDoom = this->m_pTemplate; /*0x64ee81*/
+    v11[1].ZRefCounted::__vftable = (CVecCtrl_vtbl *)_ZtlSecureFuse<long>( /*0x64ee99*/
+                                                       m_pTemplateByDoom->_ZtlSecureTear_nMoveAbility,
+                                                       m_pTemplateByDoom->_ZtlSecureTear_nMoveAbility_CS);
+    CMob::SetShoeAttr(this); /*0x64ee9f*/
+    CMob::ClearActionLayer(this); /*0x64eea6*/
+    this->_ZtlSecureTear_m_nOneTimeAction_CS = _ZtlSecureTear<long>(-1, this->_ZtlSecureTear_m_nOneTimeAction); /*0x64eebb*/
+    CMob::PrepareActionLayer(this); /*0x64eec1*/
+    CVecCtrl::ResolveMoveAction(v8); /*0x64eec8*/
+    CVecCtrl::ResolveMoveAction(v11); /*0x64eecf*/
+    CMob::SetMoveAction(this, v8->m_nMoveAction, 1); /*0x64eedf*/
+    if ( this->m_stat.nDoom_ && this->m_pTemplateByDoom ) /*0x64eeee*/
+      v14 = this->m_pTemplateByDoom; /*0x64eef8*/
+    else
+      v14 = this->m_pTemplate; /*0x64eefc*/
+    v15 = _ZtlSecureFuse<long>(v14->_ZtlSecureTear_nMoveAbility, v14->_ZtlSecureTear_nMoveAbility_CS); /*0x64ef0a*/
+    CMovePath::DiscardByInterrupt(&v8->m_path, v15, v8, 0); /*0x64ef1c*/
+  }
+}

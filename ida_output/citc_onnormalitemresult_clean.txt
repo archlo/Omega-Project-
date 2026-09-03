@@ -1,0 +1,113 @@
+void __thiscall CITC::OnNormalItemResult(CITC *this, CInPacket *iPacket)
+{
+  switch ( CInPacket::Decode1(iPacket) )
+  {
+    case 0x15u:
+      CITC::OnGetITCListDone(this, iPacket);
+      break;
+    case 0x16u:
+      CITC::OnGetITCListFailed(this, iPacket);
+      break;
+    case 0x17u:
+      CITC::OnGetSearchITCListDone(this, iPacket);
+      break;
+    case 0x18u:
+      CITC::OnGetSearchITCListFailed(this, iPacket);
+      break;
+    case 0x1Du:
+      CITC::OnNormalItemResRegisterSaleEntryDone(this, iPacket);
+      break;
+    case 0x1Eu:
+      CITC::OnNormalItemResRegisterSaleEntryFailed(this, iPacket);
+      break;
+    case 0x1Fu:
+      CITC::OnSaleCurrentItemToWishDone(this, iPacket);
+      break;
+    case 0x20u:
+      CITC::OnSaleCurrentItemToWishFailed(this, iPacket);
+      break;
+    case 0x21u:
+      CITC::OnGetUserPurchaseItemDone(this, iPacket);
+      break;
+    case 0x22u:
+      CITC::OnGetUserPurchaseItemFailed(this, iPacket);
+      break;
+    case 0x23u:
+      CITC::OnGetUserSaleItemDone(this, iPacket);
+      break;
+    case 0x24u:
+      CITC::OnGetUserSaleItemFailed(this, iPacket);
+      break;
+    case 0x25u:
+      CITC::OnCancelSaleItemDone(this, iPacket);
+      break;
+    case 0x26u:
+      CITC::OnCancelSaleItemFailed(this, iPacket);
+      break;
+    case 0x27u:
+      CITC::OnMoveITCPurchaseItemLtoSDone(this, iPacket);
+      break;
+    case 0x28u:
+      CITC::OnMoveITCPurchaseItemLtoSFailed(this, iPacket);
+      break;
+    case 0x29u:
+      CITC::OnSetZzimDone(this, iPacket);
+      break;
+    case 0x2Au:
+      CITC::OnSetZzimFailed(this, iPacket);
+      break;
+    case 0x2Bu:
+      CITC::OnDeleteZzimDone(this, iPacket);
+      break;
+    case 0x2Cu:
+      CITC::OnDeleteZzimFailed(this, iPacket);
+      break;
+    case 0x2Du:
+      CITC::OnLoadWishSaleListDone(this, iPacket);
+      break;
+    case 0x2Eu:
+      CITC::OnLoadWishSaleListFailed(this, iPacket);
+      break;
+    case 0x2Fu:
+      CITC::OnBuyWishDone(this, iPacket);
+      break;
+    case 0x30u:
+      CITC::OnBuyWishFailed(this, iPacket);
+      break;
+    case 0x31u:
+      CITC::OnCancelWishDone(this, iPacket);
+      break;
+    case 0x32u:
+      CITC::OnCancelWishFailed(this, iPacket);
+      break;
+    case 0x33u:
+      CITC::OnBuyItemDone(this, iPacket);
+      break;
+    case 0x34u:
+      CITC::OnBuyItemFailed(this, iPacket);
+      break;
+    case 0x35u:
+      CITC::OnBuyZzimItemDone(this, iPacket);
+      break;
+    case 0x36u:
+      CITC::OnBuyZzimItemFailed(this, iPacket);
+      break;
+    case 0x37u:
+      CITC::OnRegisterWishItemDone(this, iPacket);
+      break;
+    case 0x38u:
+      CITC::OnRegisterWishItemFailed(this, iPacket);
+      break;
+    case 0x3Cu:
+      CITC::OnBidAuctionFailed(this, iPacket);
+      break;
+    case 0x3Du:
+      CITC::OnNotifyCancelWishResult(this, iPacket);
+      break;
+    case 0x3Eu:
+      CITC::OnSuccessBidInfoResult(this, iPacket);
+      break;
+    default:
+      return;
+  }
+}

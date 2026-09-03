@@ -1,0 +1,3 @@
+// CUserLocal::TryDoingFallDown @ 0x905d90
+
+{"addr":"0x905d90","code":"void __thiscall CUserLocal::TryDoingFallDown(CUserLocal *this)\n{\n  IWzVector2D *m_pInterface; // eax\n  CVecCtrl *v2; // eax\n\n  if ( this->m_falldown.bValid ) /*0x905d90*/\n  {\n    m_pInterface = this->m_pvc.m_pInterface; /*0x905d99*/\n    this->m_falldown.bValid = 0; /*0x905d9f*/\n    if ( m_pInterface ) /*0x905dab*/\n      v2 = (CVecCtrl *)&m_pInterface[-3]; /*0x905dad*/\n    else\n      v2 = nullptr; /*0x905db2*/\n    v2->m_falldownNext.pfhFallStart = this->m_falldown.pfhStart; /*0x905dba*/\n    v2->m_falldownNext.bValid = 1; /*0x905dc4*/\n    CVecCtrl::SetMovePathAttribute(v2, 11); /*0x905dce*/\n  }\n}","refs":[{"addr":"0x52b000","name":"?SetMovePathAttribute@CVecCtrl@@QAEXJ@Z"}]}

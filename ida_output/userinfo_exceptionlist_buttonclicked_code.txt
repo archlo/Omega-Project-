@@ -1,0 +1,65 @@
+void __thiscall CUIUserInfoExceptionList::OnButtonClicked(CUIUserInfoExceptionList *this, unsigned int nId)
+{
+  ZArray<long> *v3; // eax
+  ZArray<long> *v4; // edi
+  unsigned int v5; // esi
+  unsigned int Count; // eax
+  int *a; // ecx
+  int m_nSelected; // eax
+  ZArray<long> v9; // edi
+  unsigned int v10; // ecx
+
+  v3 = *(ZArray<long> **)&TSingleton<CUserLocal>::ms_pInstance.m_Data[987].m_wstr[4 * this->m_nPetIndex + 2]; /*0x8b21d5*/
+  if ( v3 ) /*0x8b21db*/
+  {
+    v4 = v3 + 35; /*0x8b21ed*/
+    switch ( nId ) /*0x8b2201*/
+    {
+      case 0x7D0u: /*0x8b2201*/
+        goto LABEL_2;
+      case 0x7D1u: /*0x8b2201*/
+        v5 = 0; /*0x8b2230*/
+        Count = ZArray<long>::GetCount(v4); /*0x8b2232*/
+        if ( !Count ) /*0x8b2239*/
+          goto LABEL_10; /*0x8b2239*/
+        a = v4->a; /*0x8b223b*/
+        break; /*0x8b223b*/
+      case 0x7D2u: /*0x8b2201*/
+        if ( !this->m_pUIItemSearch.p ) /*0x8b2218*/
+          CUIUserInfoExceptionList::OpenItemSearch(this); /*0x8b2223*/
+        return; /*0x8b222a*/
+      case 0x7D3u: /*0x8b2201*/
+        m_nSelected = this->m_nSelected; /*0x8b2274*/
+        if ( m_nSelected >= 0 ) /*0x8b227c*/
+        {
+          v9.a = v4->a; /*0x8b227e*/
+          if ( v9.a ) /*0x8b2282*/
+            v10 = *(v9.a - 1); /*0x8b2288*/
+          else
+            v10 = 0; /*0x8b2284*/
+          if ( m_nSelected < v10 ) /*0x8b228d*/
+            CUIUserInfoExceptionList::RemoveFromList(this, v9.a[m_nSelected]); /*0x8b2295*/
+        }
+        return; /*0x8b2295*/
+      default:
+        return;
+    }
+    while ( *a != 0x7FFFFFFF ) /*0x8b2246*/
+    {
+      ++v5; /*0x8b2248*/
+      ++a; /*0x8b2249*/
+      if ( v5 >= Count ) /*0x8b224e*/
+      {
+LABEL_10:
+        CUIUserInfoExceptionList::AddToList(this, 0x7FFFFFFF); /*0x8b2250*/
+        return; /*0x8b2257*/
+      }
+    }
+    CUIUserInfoExceptionList::RemoveFromList(this, 0x7FFFFFFF); /*0x8b2269*/
+  }
+  else
+  {
+LABEL_2:
+    CUIUserInfo::ToggleExceptionList(TSingleton<CUIUserInfo>::ms_pInstance); /*0x8b21dd*/
+  }
+}

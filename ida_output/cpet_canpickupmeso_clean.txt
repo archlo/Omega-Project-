@@ -1,0 +1,4 @@
+﻿int __thiscall CPet::CanPickupMeso(CPet *this)
+{
+  return _ZtlSecureFuse<int>(this->_ZtlSecureTear_m_bPickupMeso, this->_ZtlSecureTear_m_bPickupMeso_CS);
+}

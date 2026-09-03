@@ -1,0 +1,7 @@
+// cuistat::OnMouseEnter
+
+void __thiscall CUIStat::OnMouseEnter(CUIStat *this, int bEnter)
+{
+  CWnd::OnMouseEnter(this, bEnter); /*0x861488*/
+  CUIToolTip::ClearToolTip((CUIToolTip *)&this->m_pBtClose.p); /*0x861493*/
+}

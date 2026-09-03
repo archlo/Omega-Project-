@@ -1,0 +1,62 @@
+// cuserlocal::CheckRidingVehicle
+
+int __thiscall CUserLocal::CheckRidingVehicle(CUserLocal *this, char *bJaguarCheckPass)
+{
+  int m_nRidingVehicleID; // esi
+  _DWORD *v4; // eax
+  StringPool *v5; // eax
+  ZXString<char> *v6; // eax
+  char *m_pStr; // eax
+  StringPool *Instance; // eax
+  ZXString<char> *String; // eax
+  StringPool *v10; // eax
+  ZXString<char> *v11; // eax
+  ZXString<char> result; // [esp+8h] [ebp-10h] BYREF
+  int v13; // [esp+14h] [ebp-4h]
+
+  m_nRidingVehicleID = this->m_nRidingVehicleID; /*0x90e122*/
+  if ( !is_vehicle(m_nRidingVehicleID) ) /*0x90e129*/
+    return 0; /*0x90e135*/
+  v4 = (_DWORD *)(RIDING_WILDHUNTER_JAGUAR_189 + 4); /*0x90e14a*/
+  do /*0x90e15c*/
+  {
+    if ( *v4 == m_nRidingVehicleID ) /*0x90e152*/
+    {
+      if ( bJaguarCheckPass ) /*0x90e1c0*/
+        return 0; /*0x90e1c0*/
+      Instance = StringPool::GetInstance(); /*0x90e1d0*/
+      String = StringPool::GetString(Instance, (ZXString<char> *)&bJaguarCheckPass, 0x18CFu); /*0x90e1d7*/
+      v13 = 0; /*0x90e1df*/
+      CHATLOG_ADD(String, 0xCu); /*0x90e1e7*/
+      m_pStr = bJaguarCheckPass; /*0x90e1ec*/
+      goto LABEL_13; /*0x90e1f0*/
+    }
+    ++v4; /*0x90e154*/
+  }
+  while ( (int)v4 < (int)&DB_DATE_19000101_195 ); /*0x90e15c*/
+  if ( m_nRidingVehicleID / 1000 == 1983 ) /*0x90e175*/
+    return 0; /*0x90e175*/
+  if ( m_nRidingVehicleID / 10000 == 190 ) /*0x90e18d*/
+  {
+    v5 = StringPool::GetInstance(); /*0x90e199*/
+    v6 = StringPool::GetString(v5, (ZXString<char> *)&bJaguarCheckPass, 0xF11u); /*0x90e1a0*/
+    v13 = 1; /*0x90e1a8*/
+    CHATLOG_ADD(v6, 0xCu); /*0x90e1b0*/
+    m_pStr = bJaguarCheckPass; /*0x90e1b5*/
+  }
+  else
+  {
+    if ( m_nRidingVehicleID / 10000 != 193 ) /*0x90e1f7*/
+      return 1; /*0x90e1f7*/
+    v10 = StringPool::GetInstance(); /*0x90e203*/
+    v11 = StringPool::GetString(v10, &result, 0xF10u); /*0x90e20a*/
+    v13 = 2; /*0x90e212*/
+    CHATLOG_ADD(v11, 0xCu); /*0x90e21a*/
+    m_pStr = result._m_pStr; /*0x90e21f*/
+  }
+LABEL_13:
+  v13 = -1; /*0x90e223*/
+  if ( m_pStr ) /*0x90e230*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)m_pStr - 1); /*0x90e236*/
+  return 1; /*0x90e137*/
+}

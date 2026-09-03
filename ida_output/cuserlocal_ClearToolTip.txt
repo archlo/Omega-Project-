@@ -1,0 +1,3 @@
+// CUserLocal::ClearToolTip @ 0x907220
+
+{"addr":"0x907220","code":"void __thiscall CUserLocal::ClearToolTip(CUserLocal *this)\n{\n  CUIToolTip::ClearToolTip(&this->m_uiToolTip); /*0x907226*/\n}","refs":[{"addr":"0x880f20","name":"?ClearToolTip@CUIToolTip@@QAEXXZ"}]}

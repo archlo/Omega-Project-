@@ -1,0 +1,46 @@
+﻿int __thiscall CDraggableItem::PutItem(CDraggableItem *this, CUIEnchantDlg *pWnd)
+{
+  IUIMsgHandler *m_pSource; // eax
+  CharacterData *p; // ebp
+  char *p_m_uTableSize; // esi
+  volatile LONG *p_m_uCount; // edi
+  GW_ItemSlotBase *v8; // esi
+  ZRef<GW_ItemSlotBase> v9; // [esp+8h] [ebp-10h] BYREF
+  ZRef<CharacterData> result; // [esp+10h] [ebp-8h] BYREF
+
+  if ( !this->m_pSource ) /*0x500cb6*/
+    return 0; /*0x500cb6*/
+  if ( !this->m_pSource->IsKindOf(this->m_pSource, &CUIItem::ms_RTTI_CUIItem) ) /*0x500cc9*/
+    return 0; /*0x500cc9*/
+  m_pSource = this->m_pSource; /*0x500ccf*/
+  if ( !m_pSource || m_pSource == (IUIMsgHandler *)4 ) /*0x500cd9*/
+    return 0; /*0x500cdb*/
+  p = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &result)->p; /*0x500cf6*/
+  if ( result.p ) /*0x500cff*/
+  {
+    p_m_uTableSize = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x500d02*/
+    p_m_uCount = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount; /*0x500d05*/
+    if ( !InterlockedDecrement(p_m_uCount) ) /*0x500d09*/
+    {
+      InterlockedIncrement(p_m_uCount); /*0x500d14*/
+      if ( p_m_uTableSize ) /*0x500d1c*/
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1); /*0x500d26*/
+    }
+    result.p = nullptr; /*0x500d28*/
+  }
+  v8 = CharacterData::GetItem(p, &v9, this->m_nItemTI, this->m_nSlotPosition)->p; /*0x500d45*/
+  if ( v9.p ) /*0x500d4e*/
+  {
+    if ( !InterlockedDecrement(&v9.p->_m_nRef) ) /*0x500d54*/
+    {
+      InterlockedIncrement(&v9.p->_m_nRef); /*0x500d66*/
+      if ( v9.p ) /*0x500d72*/
+        ((void (__thiscall *)(GW_ItemSlotBase *, int))v9.p->dtr_ZRefCounted)(v9.p, 1); /*0x500d7a*/
+    }
+    v9.p = nullptr; /*0x500d7c*/
+  }
+  if ( this->m_nItemTI == 1 ) /*0x500d88*/
+    return CUIEnchantDlg::PutItem(pWnd, v8, 1, this->m_nSlotPosition); /*0x500da0*/
+  else
+    return 0; /*0x500d8c*/
+}

@@ -1,0 +1,27 @@
+// cuser::ADDITIONALLAYER::ADDITIONALLAYER
+
+CUser::ADDITIONALLAYER *__thiscall CUser::ADDITIONALLAYER::ADDITIONALLAYER(CUser::ADDITIONALLAYER *this)
+{
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzGr2DLayer *v3; // eax
+
+  this->nDataForRepeat = -1; /*0x8e165b*/
+  this->nData = -1; /*0x8e1661*/
+  this->l.pLayer.m_pInterface = nullptr; /*0x8e1668*/
+  this->l2.pLayer.m_pInterface = nullptr; /*0x8e166f*/
+  this->l.bFixed = 1; /*0x8e1672*/
+  m_pInterface = this->l.pLayer.m_pInterface; /*0x8e1679*/
+  if ( m_pInterface ) /*0x8e1683*/
+  {
+    this->l.pLayer.m_pInterface = nullptr; /*0x8e1685*/
+    m_pInterface->Release(m_pInterface); /*0x8e168e*/
+  }
+  this->l2.bFixed = 1; /*0x8e1690*/
+  v3 = this->l2.pLayer.m_pInterface; /*0x8e1697*/
+  if ( v3 ) /*0x8e169c*/
+  {
+    this->l2.pLayer.m_pInterface = nullptr; /*0x8e169e*/
+    v3->Release(v3); /*0x8e16a7*/
+  }
+  return this; /*0x8e16ab*/
+}

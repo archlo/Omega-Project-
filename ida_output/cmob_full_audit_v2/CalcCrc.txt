@@ -1,0 +1,4 @@
+﻿unsigned int __thiscall CMob::CalcCrc(CMob *this)
+{
+  return CMobTemplate::CalcCrc(this->m_pTemplate, TSingleton<CMobPool>::ms_pInstance->m_dwMobCrcKey);
+}

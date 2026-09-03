@@ -1,0 +1,68 @@
+// CUtilDlgEx::OnMouseButton
+// Address: 0x982f30
+
+void __thiscall CUtilDlgEx::OnMouseButton(CUtilDlgEx *this, unsigned int msg, unsigned int wParam, int rx, int ry)
+{
+  char *v6; // edi
+  int m_bKoreanBaseLen; // edx
+  unsigned int i; // ecx
+  int m_nListFocus; // eax
+  int WndWidth; // eax
+  IWzFont *a; // eax
+  int m_wndWidth; // [esp-8h] [ebp-20h]
+  tagRECT rcDialog; // [esp+8h] [ebp-10h] BYREF
+
+  if ( msg == 513 ) /*0x982f40*/
+  {
+    if ( !this->m_nTemplateID ) /*0x982fca*/
+    {
+      m_wndWidth = this->m_wndWidth; /*0x982fe2*/
+      WndWidth = CUtilDlgEx::GetWndWidth((CUtilDlgEx *)((char *)this - 4)); /*0x982fe6*/
+      ZAPI.SetRect(&rcDialog, 0, 0, WndWidth, m_wndWidth); /*0x982ff5*/
+      if ( ZAPI.PtInRect(&rcDialog, (tagPOINT)__PAIR64__(ry, rx)) ) /*0x983002*/
+      {
+        a = (IWzFont *)this->m_apBtnFocus.a; /*0x98300c*/
+        if ( a ) /*0x983014*/
+          a = (IWzFont *)a[-1].__vftable; /*0x983016*/
+        this->m_pFontPet.m_pInterface = a; /*0x983019*/
+      }
+    }
+    if ( this->m_bMsgImage_Img == 4 ) /*0x983026*/
+    {
+      CUtilDlgEx::CheckMousePoint((CUtilDlgEx *)((char *)this - 4), rx, ry); /*0x98302d*/
+      this->m_nSelect = this->m_bKoreanBaseLen; /*0x983038*/
+    }
+    CUIToolTip::ClearToolTip((CUIToolTip *)&this->m_pLayerPetInfo); /*0x983044*/
+  }
+  else if ( msg == 514 && this->m_bMsgImage_Img == 4 ) /*0x982f56*/
+  {
+    v6 = (char *)this - 4; /*0x982f65*/
+    CUtilDlgEx::CheckMousePoint((CUtilDlgEx *)((char *)this - 4), rx, ry); /*0x982f6b*/
+    m_bKoreanBaseLen = this->m_bKoreanBaseLen; /*0x982f70*/
+    if ( m_bKoreanBaseLen == -1 || m_bKoreanBaseLen != this->m_nSelect ) /*0x982f81*/
+    {
+      this->m_nSelect = -1; /*0x982fb9*/
+    }
+    else
+    {
+      for ( i = 0; ; ++i ) /*0x982f83*/
+      {
+        m_nListFocus = this->m_nListFocus; /*0x982f85*/
+        if ( !m_nListFocus || i >= *(_DWORD *)(m_nListFocus - 4) ) /*0x982f92*/
+          break; /*0x982f92*/
+        if ( *(_DWORD *)(*(_DWORD *)(m_nListFocus + 4 * i) + 40) == m_bKoreanBaseLen ) /*0x982f9a*/
+        {
+          this->m_nSelectPrev = i; /*0x982f9f*/
+          break; /*0x982f9f*/
+        }
+      }
+      (*(void (__thiscall **)(char *, int))(*(_DWORD *)v6 + 52))((char *)this - 4, 1); /*0x982fa5*/
+    }
+  }
+}
+
+// References:
+//   ?GetWndWidth@CUtilDlgEx@@IAEJXZ @ 0x97ad40
+//   ?ZAPI@@3U_ZAPIProcAddress@@A @ 0xc6d758
+//   ?CheckMousePoint@CUtilDlgEx@@IAEXJJ@Z @ 0x97e5d0
+//   ?ClearToolTip@CUIToolTip@@QAEXXZ @ 0x880f20

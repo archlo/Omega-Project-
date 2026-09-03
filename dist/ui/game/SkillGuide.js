@@ -1,0 +1,85 @@
+import { Sprite } from 'pixi.js';
+import { GamePanel } from './GamePanel.js';
+import { WzProperty } from '../../wz/WzProperty.js';
+import { WzCanvas } from '../../wz/WzCanvas.js';
+// OG: CWndSkillGuide — static image popup (inherits CWnd)
+// WZ path: UI/UIWindow.img/AranSkillGuide/{nGrade} (grades 1-4)
+// Window size: 800×600 (from CWnd::CreateWnd in constructor)
+// Closes on double-click or Escape key
+// No buttons, no scrollbar, no interactive elements
+export class SkillGuide extends GamePanel {
+    _image = null;
+    _grade = 0;
+    _lastClickTime = 0;
+    _loader = null;
+    _ui = null;
+    constructor(loader, ui) {
+        super();
+        this._loader = loader ?? null;
+        this._ui = ui ?? null;
+        // OG: CWndSkillGuide::CWndSkillGuide — loads UI/UIWindow.img/AranSkillGuide/{nGrade}
+        if (loader && ui) {
+            const guideProp = ui.GetItem('UI/UIWindow.img/AranSkillGuide');
+            const prop = guideProp instanceof WzProperty ? guideProp : null;
+            // Load grade 1 by default (will be replaced in open())
+            const gradeNode = prop?.Get('1');
+            if (gradeNode instanceof WzCanvas) {
+                const ws = loader.Load(gradeNode);
+                if (ws) {
+                    this._image = new Sprite(ws.Texture);
+                    this._root.addChild(this._image);
+                }
+            }
+        }
+    }
+    // OG: OpenSkillGuide — grade 1-4 from button IDs 3001-3004
+    // Also called by CUserLocal::OnOpenSkillGuide (opcode 262)
+    open(grade, _loader, _ui) {
+        this._grade = grade;
+        this.isVisible = true;
+        const loader = _loader ?? this._loader;
+        const ui = _ui ?? this._ui;
+        // Load the grade-specific WZ image
+        if (loader && ui) {
+            const guideProp = ui.GetItem('UI/UIWindow.img/AranSkillGuide');
+            const prop = guideProp instanceof WzProperty ? guideProp : null;
+            const gradeNode = prop?.Get(String(grade));
+            if (gradeNode instanceof WzCanvas) {
+                const ws = loader.Load(gradeNode);
+                if (ws) {
+                    if (this._image) {
+                        this._image.texture = ws.Texture;
+                    }
+                    else {
+                        this._image = new Sprite(ws.Texture);
+                        this._root.addChild(this._image);
+                    }
+                }
+            }
+        }
+    }
+    // OG: CWndSkillGuide::OnMouseButton — close on double-click
+    handleMouseButton(x, y, down) {
+        if (!this.isVisible)
+            return false;
+        if (!down)
+            return true;
+        // OG closes CWndSkillGuide on a double-click, not the first click.
+        const now = performance.now();
+        if (now - this._lastClickTime < 400)
+            this.isVisible = false;
+        this._lastClickTime = this.isVisible ? now : 0;
+        return true;
+    }
+    // OG: CWndSkillGuide::OnKey — close on Escape
+    onKeyPress(key) {
+        if (!this.isVisible)
+            return false;
+        if (key === 'Escape') {
+            this.isVisible = false;
+            return true;
+        }
+        return true;
+    }
+}
+//# sourceMappingURL=SkillGuide.js.map

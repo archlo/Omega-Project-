@@ -1,0 +1,317 @@
+// cuser::SetSetItemBackground
+
+void __thiscall CUser::SetSetItemBackground(
+        CUser *this,
+        const wchar_t *bTeleport,
+        CUser::ADDITIONALLAYER *bSetPetBackgroundEffect)
+{
+  unsigned int m_nPetBackgroundEffectCount; // eax
+  int *p_nDataForRepeat; // ebp
+  int i; // edi
+  CPet *p; // ecx
+  CUser::ADDITIONALLAYER *AdditionalLayer; // ebx
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *p_pLayer; // edi
+  bool v10; // al
+  int update_time; // ebp
+  unsigned int v12; // eax
+  int nData; // eax
+  int nDataForRepeat; // ebp
+  StringPool *Instance; // eax
+  wchar_t *m_pStr; // eax
+  IWzGr2DLayer *v17; // ecx
+  _bstr_t::Data_t *p_l; // ebx
+  _bstr_t::Data_t *v19; // ecx
+  IWzGr2DLayer *v20; // eax
+  unsigned int v21; // eax
+  IWzGr2DLayer *v22; // eax
+  IWzGr2DLayer *v23; // eax
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *v24; // eax
+  IWzVector2D *v25; // eax
+  IWzGr2DLayer *v26; // ebp
+  IWzGr2DLayer *v27; // ecx
+  int *v28; // edi
+  IWzCanvas *v29; // ebx
+  tagPOINT (__thiscall *GetPos)(IVecCtrlOwner *); // edx
+  IVecCtrlOwner *v31; // esi
+  int v32; // edi
+  int v33; // esi
+  int v34; // eax
+  IWzVector2D *v35; // ecx
+  unsigned int (__stdcall *v36)(IUnknown *); // ecx
+  unsigned int (__stdcall *v37)(IUnknown *); // eax
+  IWzGr2DLayer *m_pInterface; // edi
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *v39; // esi
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *v40; // ebx
+  IUnknown *v41; // esi
+  unsigned int (__stdcall *Release)(IUnknown *); // ecx
+  HRESULT v43; // eax
+  IUnknown *v44; // esi
+  HRESULT v45; // eax
+  HRESULT v46; // eax
+  IWzVector2D *v47; // ecx
+  HRESULT (__stdcall *v48)(VARIANTARG *); // esi
+  unsigned int (__stdcall *v49)(IUnknown *); // edx
+  int v50; // eax
+  _bstr_t v51; // [esp-Ch] [ebp-78h] BYREF
+  GR2D_ANITYPE v52; // [esp-8h] [ebp-74h]
+  Ztl_variant_t *p_vDelayRate; // [esp-4h] [ebp-70h]
+  int p_vRepeat; // [esp+0h] [ebp-6Ch]
+  int nRepeatStartIndex[4]; // [esp+18h] [ebp-54h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > pLayer; // [esp+28h] [ebp-44h] BYREF
+  int tCur; // [esp+2Ch] [ebp-40h] BYREF
+  Ztl_variant_t vDelayRate; // [esp+30h] [ebp-3Ch] BYREF
+  Ztl_variant_t vRepeat; // [esp+40h] [ebp-2Ch] BYREF
+  Ztl_variant_t nType; // [esp+50h] [ebp-1Ch] BYREF
+  int v61; // [esp+68h] [ebp-4h]
+
+  if ( !this->m_bDelayedLoad ) /*0x8ed56b*/
+  {
+    if ( bSetPetBackgroundEffect ) /*0x8ed57b*/
+    {
+      bSetPetBackgroundEffect = nullptr; /*0x8ed57d*/
+      m_nPetBackgroundEffectCount = this->m_nPetBackgroundEffectCount; /*0x8ed581*/
+      v61 = 0; /*0x8ed590*/
+      get_random_unique_array((ZArray<long> *)&bSetPetBackgroundEffect, 0, m_nPetBackgroundEffectCount, 3u); /*0x8ed594*/
+      p_nDataForRepeat = &bSetPetBackgroundEffect->nDataForRepeat; /*0x8ed599*/
+      for ( i = 0; i < 3; ++i ) /*0x8ed5a3*/
+      {
+        p = this->m_apPet.a[i].p; /*0x8ed5b6*/
+        if ( !p ) /*0x8ed5bc*/
+          break; /*0x8ed5bc*/
+        CPet::SetSetItemBackground(p, *p_nDataForRepeat++, (int)bTeleport); /*0x8ed5c7*/
+      }
+      v61 = -1; /*0x8ed5db*/
+      ZArray<long>::RemoveAll((ZArray<long> *)&bSetPetBackgroundEffect); /*0x8ed5e3*/
+    }
+    AdditionalLayer = CUser::GetAdditionalLayer(this, 1); /*0x8ed5f1*/
+    p_pLayer = &AdditionalLayer->l.pLayer; /*0x8ed5f7*/
+    v10 = AdditionalLayer->l.pLayer.m_pInterface == nullptr; /*0x8ed5fa*/
+    bSetPetBackgroundEffect = AdditionalLayer; /*0x8ed5fd*/
+    if ( !v10 ) /*0x8ed603*/
+    {
+      update_time = get_update_time(); /*0x8ed60e*/
+      v12 = this->m_nMoveAction & 0xFFFFFFFE; /*0x8ed616*/
+      tCur = update_time; /*0x8ed619*/
+      if ( v12 != 4 || bTeleport ) /*0x8ed62b*/
+      {
+        if ( !AdditionalLayer->nData ) /*0x8ed97e*/
+        {
+          m_pInterface = p_pLayer->m_pInterface; /*0x8ed988*/
+          nRepeatStartIndex[0] = (int)m_pInterface; /*0x8ed98a*/
+          if ( m_pInterface ) /*0x8ed990*/
+            m_pInterface->AddRef(m_pInterface); /*0x8ed998*/
+          v61 = 14; /*0x8ed99a*/
+          if ( !m_pInterface ) /*0x8ed9a4*/
+            _com_issue_error(-2147467261); /*0x8ed9ab*/
+          v39 = IWzGr2DLayer::Getalpha( /*0x8ed9bc*/
+                  m_pInterface,
+                  (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&pLayer);
+          LOBYTE(v61) = 15; /*0x8ed9c5*/
+          v40 = IWzGr2DLayer::Getalpha( /*0x8ed9cf*/
+                  m_pInterface,
+                  (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&tCur);
+          v41 = v39->m_pInterface; /*0x8ed9d1*/
+          LOBYTE(v61) = 16; /*0x8ed9d3*/
+          if ( !v41 ) /*0x8ed9da*/
+            _com_issue_error(-2147467261); /*0x8ed9e1*/
+          Release = v41->__vftable[2].Release; /*0x8ed9e8*/
+          bTeleport = nullptr; /*0x8ed9f1*/
+          v43 = ((int (__stdcall *)(IUnknown *, const wchar_t **))Release)(v41, &bTeleport); /*0x8ed9f9*/
+          if ( v43 < 0 ) /*0x8ed9fd*/
+            _com_issue_errorex(v43, v41, &_GUID_4cfb57c7_eae3_40b3_ac98_4b2750e3642a); /*0x8eda06*/
+          v44 = v40->m_pInterface; /*0x8eda0b*/
+          if ( !v40->m_pInterface ) /*0x8eda0b*/
+            _com_issue_error(-2147467261); /*0x8eda16*/
+          v45 = ((int (__stdcall *)(IUnknown *, const wchar_t *, _DWORD))v44->__vftable[5].AddRef)(v44, bTeleport, 0); /*0x8eda28*/
+          if ( v45 < 0 ) /*0x8eda2c*/
+            _com_issue_errorex(v45, v44, &_GUID_4cfb57c7_eae3_40b3_ac98_4b2750e3642a); /*0x8eda35*/
+          LOBYTE(v61) = 15; /*0x8eda3e*/
+          if ( tCur ) /*0x8eda45*/
+            (*(void (__stdcall **)(int))(*(_DWORD *)tCur + 8))(tCur); /*0x8eda4d*/
+          LOBYTE(v61) = 14; /*0x8eda53*/
+          if ( pLayer.m_pInterface ) /*0x8eda5a*/
+            pLayer.m_pInterface->Release(pLayer.m_pInterface); /*0x8eda62*/
+          VariantInit(&vRepeat); /*0x8eda69*/
+          v46 = ZComAPI::ZComVariantCopy(&vRepeat, &vtMissing); /*0x8eda79*/
+          if ( v46 < 0 ) /*0x8eda83*/
+            _com_issue_error(v46); /*0x8eda86*/
+          vDelayRate.vt = 3; /*0x8eda96*/
+          vDelayRate.decVal.Lo32 = update_time + 500; /*0x8eda9b*/
+          LOBYTE(v61) = 18; /*0x8edaa8*/
+          v47 = IWzGr2DLayer::Getalpha( /*0x8edab1*/
+                  m_pInterface,
+                  (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&tCur)->m_pInterface;
+          LOBYTE(v61) = 19; /*0x8edab3*/
+          if ( !v47 ) /*0x8edaba*/
+            _com_issue_error(-2147467261); /*0x8edac1*/
+          IWzVector2D::RelMove(v47, 0, 0, &vDelayRate, &vRepeat); /*0x8edad4*/
+          LOBYTE(v61) = 18; /*0x8edadd*/
+          if ( tCur ) /*0x8edae3*/
+            (*(void (__stdcall **)(int))(*(_DWORD *)tCur + 8))(tCur); /*0x8edaeb*/
+          v48 = VariantClear; /*0x8edaed*/
+          LOBYTE(v61) = 17; /*0x8edaf8*/
+          if ( vDelayRate.vt == 8 ) /*0x8edb02*/
+          {
+            vDelayRate.vt = 0; /*0x8edb06*/
+            if ( vDelayRate.decVal.Lo32 ) /*0x8edb11*/
+              ZAPI.CoTaskMemFree((void *)(vDelayRate.decVal.Lo32 - 4)); /*0x8edb17*/
+          }
+          else
+          {
+            VariantClear(&vDelayRate); /*0x8edb24*/
+          }
+          LOBYTE(v61) = 14; /*0x8edb26*/
+          if ( vRepeat.vt == 8 ) /*0x8edb30*/
+          {
+            vRepeat.vt = 0; /*0x8edb38*/
+            if ( vRepeat.decVal.Lo32 ) /*0x8edb3f*/
+              ZAPI.CoTaskMemFree((void *)(vRepeat.decVal.Lo32 - 4)); /*0x8edb45*/
+          }
+          else
+          {
+            v48(&vRepeat); /*0x8edb52*/
+          }
+          v49 = m_pInterface->Release; /*0x8edb56*/
+          v61 = -1; /*0x8edb5a*/
+          v49(m_pInterface); /*0x8edb62*/
+          AdditionalLayer = bSetPetBackgroundEffect; /*0x8edb64*/
+        }
+        v50 = update_time; /*0x8edb68*/
+        if ( !update_time ) /*0x8edb6c*/
+          v50 = 1; /*0x8edb6e*/
+        AdditionalLayer->nData = v50; /*0x8edb73*/
+      }
+      else
+      {
+        nData = AdditionalLayer->nData; /*0x8ed631*/
+        if ( nData && update_time - nData > 1500 ) /*0x8ed644*/
+        {
+          nDataForRepeat = AdditionalLayer->nDataForRepeat; /*0x8ed64a*/
+          if ( AdditionalLayer->nDataForRepeat >= 0 ) /*0x8ed64e*/
+          {
+            nRepeatStartIndex[0] = -1; /*0x8ed654*/
+            bTeleport = nullptr; /*0x8ed65c*/
+            v61 = 1; /*0x8ed668*/
+            CUser::RemoveAdditionalLayer(this, 1); /*0x8ed670*/
+            Instance = StringPool::GetInstance(); /*0x8ed67f*/
+            m_pStr = StringPool::GetStringW(Instance, (ZXString<unsigned short> *)&pLayer, 0xBCAu)->_m_pStr; /*0x8ed68b*/
+            LOBYTE(v61) = 2; /*0x8ed694*/
+            ZXString<unsigned short>::Format((ZXString<unsigned short> *)&bTeleport, m_pStr, nDataForRepeat); /*0x8ed699*/
+            LOBYTE(v61) = 1; /*0x8ed6a5*/
+            if ( pLayer.m_pInterface ) /*0x8ed6ac*/
+              ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&pLayer.m_pInterface[-3]); /*0x8ed6b2*/
+            v17 = this->m_pLayerUnderFace.m_pInterface; /*0x8ed6ba*/
+            p_l = (_bstr_t::Data_t *)&AdditionalLayer->l; /*0x8ed6c4*/
+            p_vRepeat = (int)nRepeatStartIndex; /*0x8ed6c7*/
+            p_vDelayRate = (Ztl_variant_t *)p_l; /*0x8ed6c8*/
+            if ( !v17 ) /*0x8ed6cb*/
+              _com_issue_error(-2147467261); /*0x8ed6d2*/
+            v52 = IWzGr2DLayer::Getflip(v17); /*0x8ed6dc*/
+            v51.m_Data = v19; /*0x8ed6e1*/
+            pLayer.m_pInterface = (IWzGr2DLayer *)&v51; /*0x8ed6e2*/
+            _bstr_t::_bstr_t(&v51, bTeleport); /*0x8ed6e9*/
+            if ( CUser::LoadLayer(this, (Ztl_bstr_t)v51.m_Data, v52, (_bstr_t::Data_t *)p_vDelayRate, (int *)p_vRepeat) ) /*0x8ed6f0*/
+            {
+              p_vRepeat = -1; /*0x8ed6fd*/
+              p_l->m_wstr = (wchar_t *)1; /*0x8ed701*/
+              v20 = _com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::operator->(p_pLayer); /*0x8ed707*/
+              IWzGr2DLayer::Putz(v20, p_vRepeat); /*0x8ed70e*/
+              v21 = nRepeatStartIndex[0]; /*0x8ed717*/
+              bSetPetBackgroundEffect->nDataForRepeat = nDataForRepeat; /*0x8ed720*/
+              vRepeat.vt = 3; /*0x8ed722*/
+              vRepeat.decVal.Lo32 = v21; /*0x8ed727*/
+              LOBYTE(v61) = 3; /*0x8ed734*/
+              Ztl_variant_t::Ztl_variant_t(&vDelayRate, &vtMissing); /*0x8ed738*/
+              p_vRepeat = (int)&vRepeat; /*0x8ed741*/
+              p_vDelayRate = &vDelayRate; /*0x8ed746*/
+              v52 = GA_REPEAT; /*0x8ed747*/
+              LOBYTE(v61) = 4; /*0x8ed74b*/
+              v22 = _com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::operator->(p_pLayer); /*0x8ed750*/
+              IWzGr2DLayer::Animate(v22, v52, p_vDelayRate, (const Ztl_variant_t *)p_vRepeat); /*0x8ed757*/
+              Ztl_variant_t::~Ztl_variant_t(&vDelayRate); /*0x8ed760*/
+              LOBYTE(v61) = 1; /*0x8ed769*/
+              Ztl_variant_t::~Ztl_variant_t(&vRepeat); /*0x8ed76e*/
+              p_vRepeat = (int)&pLayer; /*0x8ed777*/
+              v23 = _com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::operator->(p_pLayer); /*0x8ed77a*/
+              v24 = IWzGr2DLayer::Getalpha( /*0x8ed781*/
+                      v23,
+                      (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)p_vRepeat);
+              p_vRepeat = 0; /*0x8ed786*/
+              p_vDelayRate = nullptr; /*0x8ed788*/
+              LOBYTE(v61) = 5; /*0x8ed78c*/
+              v25 = _com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>::operator->(v24); /*0x8ed791*/
+              IWzShape2D::Move(v25, (int)p_vDelayRate, p_vRepeat); /*0x8ed798*/
+              LOBYTE(v61) = 1; /*0x8ed7a1*/
+              if ( pLayer.m_pInterface ) /*0x8ed7a8*/
+                pLayer.m_pInterface->Release(pLayer.m_pInterface); /*0x8ed7b0*/
+            }
+            v61 = -1; /*0x8ed7b6*/
+            if ( bTeleport ) /*0x8ed7c0*/
+              ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)bTeleport - 1); /*0x8ed7c6*/
+            AdditionalLayer = bSetPetBackgroundEffect; /*0x8ed7ce*/
+          }
+          v26 = p_pLayer->m_pInterface; /*0x8ed7d2*/
+          pLayer.m_pInterface = v26; /*0x8ed7d4*/
+          if ( v26 ) /*0x8ed7da*/
+            v26->AddRef(v26); /*0x8ed7e3*/
+          v61 = 7; /*0x8ed7ea*/
+          vRepeat.vt = 3; /*0x8ed7f2*/
+          vRepeat.decVal.Lo32 = 0; /*0x8ed7f7*/
+          if ( !v26 ) /*0x8ed806*/
+            _com_issue_error(-2147467261); /*0x8ed80d*/
+          IWzGr2DLayer::Getcanvas( /*0x8ed81e*/
+            v26,
+            (_com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > *)&bSetPetBackgroundEffect,
+            &vRepeat);
+          LOBYTE(v61) = 9; /*0x8ed827*/
+          Ztl_variant_t::~Ztl_variant_t(&vRepeat); /*0x8ed82c*/
+          v27 = CAvatar::GetLayerUnderFace( /*0x8ed841*/
+                  &this->CAvatar,
+                  (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&bTeleport)->m_pInterface;
+          LOBYTE(v61) = 10; /*0x8ed843*/
+          if ( !v27 ) /*0x8ed84a*/
+            _com_issue_error(-2147467261); /*0x8ed851*/
+          v28 = (int *)IWzGr2DLayer::Getflip(v27); /*0x8ed85b*/
+          LOBYTE(v61) = 9; /*0x8ed861*/
+          if ( bTeleport ) /*0x8ed868*/
+            (*(void (__stdcall **)(const wchar_t *))(*(_DWORD *)bTeleport + 8))(bTeleport); /*0x8ed870*/
+          p_vRepeat = (int)v28; /*0x8ed872*/
+          AdditionalLayer->nData = 0; /*0x8ed875*/
+          IWzGr2DLayer::Putflip(v26, p_vRepeat); /*0x8ed87c*/
+          v29 = (IWzCanvas *)bSetPetBackgroundEffect; /*0x8ed881*/
+          if ( !bSetPetBackgroundEffect ) /*0x8ed887*/
+            _com_issue_error(-2147467261); /*0x8ed88e*/
+          GetPos = this->GetPos; /*0x8ed896*/
+          v31 = &this->IVecCtrlOwner; /*0x8ed899*/
+          v32 = *(_DWORD *)(((int (__thiscall *)(IVecCtrlOwner *, int *))GetPos)(v31, nRepeatStartIndex) + 4); /*0x8ed8a5*/
+          v33 = *(_DWORD *)((int (__thiscall *)(IVecCtrlOwner *, Ztl_variant_t *))v31->GetPos)(v31, &vDelayRate); /*0x8ed8b6*/
+          p_vRepeat = v32 - IWzCanvas::Getcy(v29); /*0x8ed8c1*/
+          v34 = IWzCanvas::Getcx(v29); /*0x8ed8c4*/
+          IWzShape2D::Move(v26, v33 - v34, p_vRepeat); /*0x8ed8ce*/
+          Ztl_variant_t::Ztl_variant_t(&nType, &vtMissing); /*0x8ed8dc*/
+          LOWORD(nRepeatStartIndex[0]) = 3; /*0x8ed8ef*/
+          nRepeatStartIndex[2] = tCur + 500; /*0x8ed8f4*/
+          LOBYTE(v61) = 12; /*0x8ed8ff*/
+          v35 = IWzGr2DLayer::Getalpha( /*0x8ed909*/
+                  v26,
+                  (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&bTeleport)->m_pInterface;
+          LOBYTE(v61) = 13; /*0x8ed90b*/
+          if ( !v35 ) /*0x8ed912*/
+            _com_issue_error(-2147467261); /*0x8ed919*/
+          IWzVector2D::RelMove(v35, 255, 0, (const Ztl_variant_t *)nRepeatStartIndex, &nType); /*0x8ed92f*/
+          LOBYTE(v61) = 12; /*0x8ed938*/
+          if ( bTeleport ) /*0x8ed93f*/
+            (*(void (__stdcall **)(const wchar_t *))(*(_DWORD *)bTeleport + 8))(bTeleport); /*0x8ed947*/
+          Ztl_variant_t::~Ztl_variant_t((Ztl_variant_t *)nRepeatStartIndex); /*0x8ed94d*/
+          Ztl_variant_t::~Ztl_variant_t(&nType); /*0x8ed956*/
+          v36 = v29->Release; /*0x8ed95d*/
+          LOBYTE(v61) = 6; /*0x8ed961*/
+          v36(v29); /*0x8ed966*/
+          v37 = v26->Release; /*0x8ed96b*/
+          v61 = -1; /*0x8ed96f*/
+          v37(v26); /*0x8ed977*/
+        }
+      }
+    }
+  }
+}

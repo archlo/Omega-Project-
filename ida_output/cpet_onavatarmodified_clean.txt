@@ -1,0 +1,7 @@
+﻿void __thiscall CPet::OnAvatarModified(CPet *this)
+{
+  if ( this->m_nOneTimeAction > -1 )
+    this->m_nOneTimeAction = -1;
+  CPet::ClearActionLayer(this);
+  CPet::PrepareActionLayer(this);
+}

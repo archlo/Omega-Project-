@@ -1,0 +1,6 @@
+// cuser::IsAbleToHitByUser
+
+BOOL __thiscall CUser::IsAbleToHitByUser(CUser *this, int nReason)
+{
+  return this->m_bIsAbleToHitByUser && (!nReason || nReason == this->m_nIsAbleToHitByUserReason); /*0x90338e*/
+}

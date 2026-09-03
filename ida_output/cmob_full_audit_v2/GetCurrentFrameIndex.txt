@@ -1,0 +1,7 @@
+﻿int __thiscall CMob::GetCurrentFrameIndex(CMob *this)
+{
+  int CurrentAction; // eax
+
+  CurrentAction = CMob::GetCurrentAction(this, nullptr);
+  return ZList<ZRef<CActionMan::MOBACTIONFRAMEENTRY>>::IndexOf(&this->m_aAction.a[CurrentAction], this->m_posFrame);
+}

@@ -1,0 +1,180 @@
+// cuserlocal::ShowAutoStartQuestList
+
+void __thiscall CUserLocal::ShowAutoStartQuestList(CUserLocal *this)
+{
+  StringPool *Instance; // eax
+  int v2; // eax
+  char *v3; // esi
+  StringPool *v4; // eax
+  char *m_pStr; // eax
+  int v6; // ecx
+  wchar_t v7; // si
+  ZMap<unsigned short,int,unsigned short> *v8; // edi
+  StringPool *v9; // eax
+  char *v10; // eax
+  int v11; // ecx
+  wchar_t v12; // si
+  ZMap<unsigned short,int,unsigned short> *v13; // edi
+  StringPool *v14; // eax
+  char *v15; // eax
+  int v16; // ecx
+  wchar_t v17; // si
+  CUtilDlgEx *v18; // eax
+  CUtilDlgEx *v19; // eax
+  ZRefCounted *v20; // eax
+  CUtilDlgEx *v21; // esi
+  int v22; // eax
+  unsigned int m_nSelect; // esi
+  unsigned __int16 v24; // si
+  char *v25; // edi
+  QuestDemand *StartDemand; // eax
+  ZXString<char> v27; // [esp-Ch] [ebp-4Ch] BYREF
+  int v28; // [esp-8h] [ebp-48h]
+  int v29; // [esp-4h] [ebp-44h]
+  ZXString<char> sMsg; // [esp+10h] [ebp-30h] BYREF
+  ZArray<unsigned short> aQuestList; // [esp+14h] [ebp-2Ch] BYREF
+  ZArray<unsigned short> aPreCompleteQuestList; // [esp+18h] [ebp-28h] BYREF
+  ZArray<unsigned short> aPerformQuestList; // [esp+1Ch] [ebp-24h] BYREF
+  ZArray<unsigned short> aPreStartQuestList; // [esp+20h] [ebp-20h] BYREF
+  __POSITION *pos; // [esp+24h] [ebp-1Ch] BYREF
+  ZXString<char> *v36; // [esp+28h] [ebp-18h]
+  ZRef<CUtilDlgEx> pQDlg; // [esp+2Ch] [ebp-14h] BYREF
+  int v38; // [esp+3Ch] [ebp-4h]
+
+  if ( (_S7 & 1) == 0 ) /*0x90ff1f*/
+  {
+    _S7 |= 1u; /*0x90ff21*/
+    s_pTemplate = CNpcTemplate::GetNpcTemplate((unsigned int)&loc_897B65 + 2); /*0x90ff39*/
+    v38 = -1; /*0x90ff3e*/
+  }
+  Instance = StringPool::GetInstance(); /*0x90ff50*/
+  StringPool::GetString(Instance, &sMsg, 0x1073u); /*0x90ff57*/
+  v38 = 1; /*0x90ff5c*/
+  aQuestList.a = nullptr; /*0x90ff64*/
+  aPreStartQuestList.a = nullptr; /*0x90ff68*/
+  aPerformQuestList.a = nullptr; /*0x90ff6c*/
+  aPreCompleteQuestList.a = nullptr; /*0x90ff70*/
+  v2 = *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 4122); /*0x90ff7a*/
+  v3 = TSingleton<CWvsContext>::ms_pInstance._m_pStr + 16480; /*0x90ff80*/
+  LOBYTE(v38) = 5; /*0x90ff86*/
+  if ( v2 ) /*0x90ff8d*/
+  {
+    v4 = StringPool::GetInstance(); /*0x90ff9d*/
+    m_pStr = StringPool::GetString(v4, (ZXString<char> *)&pos, 0x19BFu)->_m_pStr; /*0x90ffa9*/
+    LOBYTE(v38) = 6; /*0x90ffab*/
+    if ( m_pStr ) /*0x90ffb2*/
+      v6 = *((_DWORD *)m_pStr - 1); /*0x90ffb4*/
+    else
+      v6 = 0; /*0x90ffb9*/
+    ZXString<char>::_Cat(&sMsg, m_pStr, v6); /*0x90ffc1*/
+    LOBYTE(v38) = 5; /*0x90ffca*/
+    if ( pos ) /*0x90ffd1*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&pos[-12]); /*0x90ffd7*/
+    for ( pos = *((__POSITION **)v3 + 3); pos; *ZArray<unsigned short>::InsertBefore(&aPreCompleteQuestList, -1) = v7 ) /*0x90ffe8*/
+      v7 = *ZList<unsigned short>::GetNext(&pos); /*0x90fffa*/
+    AddQuestList(&aQuestList, &sMsg, &aPreCompleteQuestList, 2); /*0x910025*/
+  }
+  v8 = (ZMap<unsigned short,int,unsigned short> *)(TSingleton<CWvsContext>::ms_pInstance._m_pStr + 16376); /*0x910033*/
+  if ( *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 4097) ) /*0x910039*/
+  {
+    v9 = StringPool::GetInstance(); /*0x91004c*/
+    v10 = StringPool::GetString(v9, (ZXString<char> *)&pos, 0x19BDu)->_m_pStr; /*0x910058*/
+    LOBYTE(v38) = 7; /*0x91005a*/
+    if ( v10 ) /*0x910061*/
+      v11 = *((_DWORD *)v10 - 1); /*0x910063*/
+    else
+      v11 = 0; /*0x910068*/
+    ZXString<char>::_Cat(&sMsg, v10, v11); /*0x910070*/
+    LOBYTE(v38) = 5; /*0x910079*/
+    if ( pos ) /*0x910080*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&pos[-12]); /*0x910086*/
+    for ( pos = ZMap<unsigned short,int,unsigned short>::GetHeadPosition(v8); /*0x91009b*/
+          pos;
+          *ZArray<unsigned short>::InsertBefore(&aPreStartQuestList, -1) = v12 )
+    {
+      v12 = *ZMap<unsigned short,int,unsigned short>::GetNext(v8, &pos, nullptr); /*0x9100ad*/
+    }
+    AddQuestList(&aQuestList, &sMsg, &aPreStartQuestList, 0); /*0x9100d4*/
+  }
+  v13 = (ZMap<unsigned short,int,unsigned short> *)(TSingleton<CWvsContext>::ms_pInstance._m_pStr + 16424); /*0x9100e2*/
+  if ( *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 4109) ) /*0x9100e8*/
+  {
+    v14 = StringPool::GetInstance(); /*0x9100fb*/
+    v15 = StringPool::GetString(v14, (ZXString<char> *)&pos, 0x19BEu)->_m_pStr; /*0x910107*/
+    LOBYTE(v38) = 8; /*0x910109*/
+    if ( v15 ) /*0x910110*/
+      v16 = *((_DWORD *)v15 - 1); /*0x910112*/
+    else
+      v16 = 0; /*0x910117*/
+    ZXString<char>::_Cat(&sMsg, v15, v16); /*0x91011f*/
+    LOBYTE(v38) = 5; /*0x910128*/
+    if ( pos ) /*0x91012f*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&pos[-12]); /*0x910135*/
+    for ( pos = ZMap<unsigned short,int,unsigned short>::GetHeadPosition(v13); /*0x91014a*/
+          pos;
+          *ZArray<unsigned short>::InsertBefore(&aPerformQuestList, -1) = v17 )
+    {
+      v17 = *ZMap<unsigned short,int,unsigned short>::GetNext(v13, &pos, nullptr); /*0x91015d*/
+    }
+    AddQuestList(&aQuestList, &sMsg, &aPerformQuestList, 1); /*0x910185*/
+  }
+  pos = (__POSITION *)TSingleton<CQuestMan>::ms_pInstance; /*0x910193*/
+  v18 = (CUtilDlgEx *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0xC50u); /*0x9101a1*/
+  v36 = (ZXString<char> *)v18; /*0x9101a6*/
+  LOBYTE(v38) = 9; /*0x9101aa*/
+  if ( v18 && (v19 = CUtilDlgEx::CUtilDlgEx(v18)) != nullptr && (v20 = &v19->ZRefCounted) != nullptr ) /*0x9101c3*/
+  {
+    v21 = (CUtilDlgEx *)&v20[-1].___u1; /*0x9101c5*/
+    pQDlg.p = (CUtilDlgEx *)&v20[-1].___u1; /*0x9101c8*/
+    if ( v20 != (ZRefCounted *)8 ) /*0x9101ce*/
+      InterlockedIncrement(&v21->_m_nRef); /*0x9101d4*/
+  }
+  else
+  {
+    v21 = nullptr; /*0x910227*/
+    pQDlg.p = nullptr; /*0x910229*/
+  }
+  v29 = 0; /*0x9101da*/
+  v28 = 0; /*0x9101db*/
+  v36 = &v27; /*0x9101e3*/
+  LOBYTE(v38) = 10; /*0x9101e8*/
+  v27._m_pStr = nullptr; /*0x9101ed*/
+  ZXString<char>::operator=(&v27, &sMsg); /*0x9101ef*/
+  CUtilDlgEx::SetUtilDlgEx(v21, 4, (int)&loc_897B65 + 2, v27, v28, v29); /*0x9101fd*/
+  CUtilDlgEx::CreateUtilDlgEx(v21); /*0x910204*/
+  v22 = CDialog::DoModal(v21); /*0x91020b*/
+  if ( v22 == 1 || v22 == 8193 ) /*0x91021a*/
+  {
+    m_nSelect = v21->m_nSelect; /*0x910233*/
+    if ( aQuestList.a && m_nSelect < *((_DWORD *)aQuestList.a - 1) ) /*0x910240*/
+    {
+      v24 = aQuestList.a[m_nSelect]; /*0x910242*/
+      v25 = TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x91024a*/
+      v29 = 1; /*0x910250*/
+      StartDemand = CQuestMan::GetStartDemand((CQuestMan *)pos, v24); /*0x910253*/
+      CWvsContext::StartQuest((CWvsContext *)v25, v24, StartDemand->dwNpcTemplateID, v29); /*0x91025f*/
+      CWvsContext::TryRegisterAutoCompletionAlertQuest((CWvsContext *)v25, v24); /*0x910267*/
+      CWvsContext::UpdateAutoQuestAlertIcon((CWvsContext *)v25); /*0x91026e*/
+    }
+    LOBYTE(v38) = 5; /*0x910273*/
+  }
+  else
+  {
+    LOBYTE(v38) = 5; /*0x91021c*/
+    if ( !v21 ) /*0x910223*/
+      goto LABEL_45; /*0x910223*/
+  }
+  ZRef<CUtilDlgEx>::_ReleaseRaw(&pQDlg, nullptr); /*0x91027d*/
+LABEL_45:
+  LOBYTE(v38) = 4; /*0x910282*/
+  ZArray<unsigned short>::RemoveAll(&aPreCompleteQuestList); /*0x91028b*/
+  LOBYTE(v38) = 3; /*0x910294*/
+  ZArray<unsigned short>::RemoveAll(&aPerformQuestList); /*0x910299*/
+  LOBYTE(v38) = 2; /*0x9102a2*/
+  ZArray<unsigned short>::RemoveAll(&aPreStartQuestList); /*0x9102a7*/
+  LOBYTE(v38) = 1; /*0x9102b0*/
+  ZArray<unsigned short>::RemoveAll(&aQuestList); /*0x9102b5*/
+  v38 = -1; /*0x9102be*/
+  if ( sMsg._m_pStr ) /*0x9102c8*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sMsg._m_pStr - 1); /*0x9102ce*/
+}

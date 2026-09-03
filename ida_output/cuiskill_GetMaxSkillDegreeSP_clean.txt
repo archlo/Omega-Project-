@@ -1,0 +1,40 @@
+// CUISkill::GetMaxSkillDegreeSP
+// Decompiled from v95 IDB
+
+int __thiscall CUISkill::GetMaxSkillDegreeSP(CUISkill *this, int nSkillDegree)
+{
+  CharacterData *p; // esi
+  __int16 v4; // bp
+  __int16 v5; // ax
+  __int16 nSubJob; // di
+  int v7; // esi
+  int v8; // esi
+  int v10; // eax
+  ZRef<CharacterData> result; // [esp+4h] [ebp-8h] BYREF
+  __int16 nSkillDegreea; // [esp+10h] [ebp+4h]
+
+  if ( (unsigned int)(nSkillDegree - 1) > 3 ) /*0x84a87e*/
+    return 0; /*0x84a91d*/
+  p = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &result)->p; /*0x84a897*/
+  ZRef<CharacterData>::~ZRef<CharacterData>(&result); /*0x84a89e*/
+  v4 = _ZtlSecureFuse<short>(p->characterStat._ZtlSecureTear_nJob, p->characterStat._ZtlSecureTear_nJob_CS); /*0x84a8b0*/
+  v5 = _ZtlSecureFuse<short>(p->characterStat._ZtlSecureTear_nJob, p->characterStat._ZtlSecureTear_nJob_CS); /*0x84a8b8*/
+  nSubJob = p->characterStat.nSubJob; /*0x84a8bd*/
+  nSkillDegreea = v5; /*0x84a8d0*/
+  v7 = get_job_change_level(v4, nSubJob, nSkillDegree + 1); /*0x84a8e1*/
+  v8 = v7 - get_job_change_level(nSkillDegreea, nSubJob, nSkillDegree); /*0x84a8e8*/
+  if ( v8 <= 0 ) /*0x84a8ef*/
+    return 0; /*0x84a8f4*/
+  v10 = 3 * v8; /*0x84a8fd*/
+  if ( nSkillDegree == 4 ) /*0x84a903*/
+    return v10 + 3; /*0x84a908*/
+  else
+    return v10 + 1; /*0x84a915*/
+}
+
+// References:
+//   ?GetCharacterData@CWvsContext@@QAE?AV?$ZRef@VCharacterData@@@@XZ @ 0x42b960
+//   ?ms_pInstance@?$TSingleton@VCWvsContext@@@@1PAVCWvsContext@@A @ 0xc64068
+//   ??1?$ZRef@VCharacterData@@@@QAE@XZ @ 0x42b3a0
+//   ??$_ZtlSecureFuse@F@@YAFQBFI@Z @ 0x47d510
+//   ?get_job_change_level@@YAJJFH@Z @ 0x849c00

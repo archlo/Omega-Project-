@@ -1,0 +1,132 @@
+﻿void __thiscall CMob::OnSpecialEffectBySkill(CMob *this, CInPacket *iPacket)
+{
+  CInPacket *v3; // esi
+  int v4; // ebp
+  SKILLENTRY *Skill; // ebx
+  unsigned int v6; // eax
+  int v7; // esi
+  CInPacket *v8; // ebx
+  CMob::HITEFFECT *v9; // esi
+  _bstr_t::Data_t *v10; // ecx
+  StringPool *Instance; // eax
+  wchar_t *m_pStr; // eax
+  tagPOINT (__thiscall *GetPos)(IVecCtrlOwner *); // edx
+  int v14; // eax
+  IWzVector2D **v15; // eax
+  CInPacket *v16; // esi
+  const wchar_t *m_bLoopback; // eax
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v18; // [esp-18h] [ebp-50h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v19; // [esp-14h] [ebp-4Ch] BYREF
+  CUser **v20; // [esp-10h] [ebp-48h]
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v21; // [esp-Ch] [ebp-44h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v22; // [esp-8h] [ebp-40h] BYREF
+  int p_iPacket; // [esp-4h] [ebp-3Ch]
+  _BYTE v24[4]; // [esp+10h] [ebp-28h] BYREF
+  int tDelay[2]; // [esp+14h] [ebp-24h] BYREF
+  CUser *pUser[2]; // [esp+1Ch] [ebp-1Ch] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *v27; // [esp+24h] [ebp-14h] BYREF
+  int v28; // [esp+34h] [ebp-4h]
+
+  v3 = iPacket;
+  v4 = CInPacket::Decode4(iPacket);
+  Skill = (SKILLENTRY *)CSkillInfo::GetSkill(TSingleton<CSkillInfo>::ms_pInstance, v4);
+  v6 = CInPacket::Decode4(v3);
+  pUser[0] = CUserPool::GetUser((CUserPool *)TSingleton<CUserPool>::ms_pInstance.m_pInterface, v6);
+  v7 = CInPacket::Decode2(v3);
+  tDelay[0] = v7;
+  SKILLENTRY::GetSpecialUOL(Skill, (Ztl_bstr_t *)&iPacket, 0);
+  v8 = iPacket;
+  v28 = 0;
+  if ( iPacket )
+  {
+    if ( !iPacket->m_bLoopback || !(*(_DWORD *)(iPacket->m_bLoopback - 4) >> 1) )
+      goto LABEL_7;
+    if ( v4 != 3110001 && v4 != 3210001 )
+    {
+      v9 = ZList<CMob::HITEFFECT>::AddTail(&this->m_lHitEffect);
+      v9->tHit = tDelay[0] + get_update_time();
+      v9->nSkillID = v4;
+      p_iPacket = (int)&iPacket;
+      v9->bLeft = CMob::IsLeft(this);
+      v9->bSfx = 0;
+      Ztl_bstr_t::operator=(&v9->sHitUOL, (const Ztl_bstr_t *)p_iPacket);
+      v9->ptRel = *(tagPOINT *)((int (__thiscall *)(IVecCtrlOwner *, _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > **))this->GetPos)(
+                                 &this->IVecCtrlOwner,
+                                 &v27);
+LABEL_7:
+      v10 = (_bstr_t::Data_t *)v8;
+LABEL_18:
+      _bstr_t::Data_t::Release(v10);
+      return;
+    }
+    if ( pUser[0] )
+    {
+      p_iPacket = -1073343324;
+      tDelay[0] = (int)&v22;
+      v22.m_pInterface = nullptr;
+      v21.m_pInterface = nullptr;
+      v20 = nullptr;
+      v19.m_pInterface = (IWzVector2D *)pUser[0];
+      v27 = &v19;
+      LOBYTE(v28) = 1;
+      CUser::GetVecCtrl(pUser[0], &v19);
+      LOBYTE(v28) = 2;
+      Instance = StringPool::GetInstance();
+      m_pStr = StringPool::GetStringW(Instance, (ZXString<unsigned short> *)pUser, 0x190Fu)->_m_pStr;
+      LOBYTE(v28) = 4;
+      CAnimationDisplayer::Effect_General(
+        TSingleton<CAnimationDisplayer>::ms_pInstance,
+        m_pStr,
+        0,
+        v19,
+        (int)v20,
+        (int)v21.m_pInterface,
+        v22,
+        p_iPacket);
+      LOBYTE(v28) = 0;
+      if ( pUser[0] )
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&pUser[0][-1].m_bRepeatEffect);
+    }
+    _bstr_t::_bstr_t((_bstr_t *)tDelay, a0_32);
+    LOBYTE(v28) = 5;
+    _bstr_t::operator+=((_bstr_t *)&iPacket, (const _bstr_t *)tDelay);
+    if ( tDelay[0] )
+      _bstr_t::Data_t::Release((_bstr_t::Data_t *)tDelay[0]);
+    p_iPacket = v7;
+    v22.m_pInterface = (IWzGr2DLayer *)-1073343324;
+    v27 = (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&v21;
+    v21.m_pInterface = nullptr;
+    GetPos = this->GetPos;
+    v20 = pUser;
+    LOBYTE(v28) = 6;
+    v14 = ((int (__thiscall *)(IVecCtrlOwner *))GetPos)(&this->IVecCtrlOwner);
+    v15 = (IWzVector2D **)((int (__thiscall *)(IVecCtrlOwner *, _BYTE *, _DWORD))this->GetPos)(
+                            &this->IVecCtrlOwner,
+                            v24,
+                            *(_DWORD *)(v14 + 4));
+    v16 = iPacket;
+    v19.m_pInterface = *v15;
+    v27 = &v18;
+    v18.m_pInterface = nullptr;
+    if ( iPacket )
+      m_bLoopback = (const wchar_t *)iPacket->m_bLoopback;
+    else
+      m_bLoopback = nullptr;
+    LOBYTE(v28) = 0;
+    CAnimationDisplayer::Effect_ApplyStartDelay(
+      TSingleton<CAnimationDisplayer>::ms_pInstance,
+      m_bLoopback,
+      0,
+      v18,
+      (int)v19.m_pInterface,
+      (int)v20,
+      v21,
+      (int)v22.m_pInterface,
+      p_iPacket);
+    if ( v16 )
+    {
+      v10 = (_bstr_t::Data_t *)v16;
+      goto LABEL_18;
+    }
+  }
+}

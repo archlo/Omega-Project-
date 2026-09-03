@@ -1,0 +1,24 @@
+const SKILLROOT *__thiscall CSkillInfo::GetSkillRoot(CSkillInfo *this, int nSkillRootID)
+{
+  SKILLROOT *v2; // edi
+  SKILLROOT *v3; // esi
+  ZRef<SKILLROOT> p; // [esp+10h] [ebp-14h] BYREF
+  int v6; // [esp+20h] [ebp-4h]
+
+  p.p = nullptr; /*0x6f1b36*/
+  v6 = 0; /*0x6f1b4b*/
+  ZMap<long,ZRef<SKILLROOT>,long>::GetAt(&this->m_mSkillRoot, &nSkillRootID, &p); /*0x6f1b53*/
+  v2 = p.p; /*0x6f1b58*/
+  v6 = -1; /*0x6f1b5c*/
+  if ( p.p ) /*0x6f1b66*/
+  {
+    v3 = p.p - 1; /*0x6f1b68*/
+    if ( !InterlockedDecrement((volatile LONG *)&p.p[-1].sBookName) ) /*0x6f1b6f*/
+    {
+      InterlockedIncrement((volatile LONG *)&v2[-1].sBookName); /*0x6f1b7a*/
+      if ( v2 != (SKILLROOT *)16 ) /*0x6f1b82*/
+        (*(void (__thiscall **)(SKILLROOT *, int))v3->nSkillRootID)(v2 - 1, 1); /*0x6f1b8c*/
+    }
+  }
+  return v2; /*0x6f1b90*/
+}

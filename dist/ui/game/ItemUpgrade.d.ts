@@ -1,0 +1,70 @@
+import { GamePanel } from './GamePanel.js';
+import type { DragTarget } from '../DragController.js';
+import { BuiltInFont } from '../BuiltInFont.js';
+import { ItemIconLoader } from '../../character/ItemIconLoader.js';
+import { ItemInfoService } from '../../character/ItemInfoService.js';
+import { StringPoolService } from '../../localization/StringPoolService.js';
+import { WzTextureLoader } from '../../render/WzTextureLoader.js';
+import { WzPackage } from '../../wz/WzPackage.js';
+export declare class ItemUpgrade extends GamePanel implements DragTarget {
+    private _bg;
+    private _wzBg;
+    private _loader;
+    private _font;
+    private _icons;
+    private _tooltip;
+    private _viewW;
+    private _viewH;
+    private _slotIcon;
+    private _gradeFrame;
+    private _gaugeBar;
+    private _gaugeBarBack;
+    private _btUpgrade;
+    private _btCancel;
+    private _buttons;
+    private _nPOS;
+    private _nItemID;
+    private _selectedItemId;
+    private _selectedItemName;
+    private _selectedItemGrade;
+    private _nState;
+    private _bRequestSent;
+    private _gaugeProgress;
+    private _gaugeTarget;
+    private _mouseX;
+    private _mouseY;
+    onUpgrade: ((pos: number, itemId: number) => void) | null;
+    onClose: (() => void) | null;
+    constructor(opts: {
+        nPOS: number;
+        nItemID: number;
+        loader?: WzTextureLoader;
+        uiWz?: WzPackage | null;
+        font?: BuiltInFont | null;
+        icons?: ItemIconLoader | null;
+        descOf?: (itemId: number) => string | null;
+        setItemOf?: (itemId: number) => {
+            name: string;
+            effects: Array<{
+                threshold: number;
+                effect: Record<string, number>;
+            }>;
+        } | null;
+        optionOf?: (optionId: number, level: number) => Record<string, number> | null;
+        itemInfo?: ItemInfoService | null;
+        strings?: StringPoolService | null;
+    });
+    private _rebuildBg;
+    private _setItem;
+    private _doUpgrade;
+    private _doClose;
+    showResult(success: boolean): void;
+    putItem(itemId: number): void;
+    handleMouseButton(x: number, y: number, down: boolean): boolean;
+    onMouseMove(x: number, y: number): void;
+    onKeyPress(key: string): boolean;
+    tryAcceptDrag(payload: unknown, x: number, y: number): boolean;
+    update(dt: number): void;
+    onResize(viewW: number, viewH: number): void;
+}
+//# sourceMappingURL=ItemUpgrade.d.ts.map

@@ -1,0 +1,70 @@
+// cuser::GetSummonedByID
+
+ZRef<CSummoned> *__thiscall CUser::GetSummonedByID(CUser *this, ZRef<CSummoned> *result, int dwSummonedID)
+{
+  CSummoned *v3; // esi
+  __POSITION *m_pHead; // eax
+  LONG (__stdcall *v5)(volatile LONG *); // ebp
+  ZRef<CSummoned> *Next; // edi
+  CSummoned *p; // eax
+  ZRefCounted *v8; // esi
+  ZRef<CSummoned> *v9; // edi
+  __POSITION *pos; // [esp+14h] [ebp-20h] BYREF
+  int v12; // [esp+18h] [ebp-1Ch]
+  CUser *v13; // [esp+1Ch] [ebp-18h]
+  ZRef<CSummoned> pSummoned; // [esp+20h] [ebp-14h] BYREF
+  int v15; // [esp+30h] [ebp-4h]
+
+  v13 = this; /*0x8e3697*/
+  v3 = nullptr; /*0x8e369d*/
+  v12 = 0; /*0x8e369f*/
+  pSummoned.p = nullptr; /*0x8e36a3*/
+  m_pHead = (__POSITION *)this->m_lSummoned._m_pHead; /*0x8e36a7*/
+  v15 = 1; /*0x8e36ad*/
+  pos = m_pHead; /*0x8e36b5*/
+  if ( m_pHead ) /*0x8e36bb*/
+  {
+    v5 = InterlockedIncrement; /*0x8e36bd*/
+    while ( 1 ) /*0x8e36cd*/
+    {
+      Next = ZList<ZRef<CSummoned>>::GetNext(&pos); /*0x8e36cd*/
+      p = Next->p; /*0x8e36cf*/
+      if ( p ) /*0x8e36d7*/
+        v5(&p->_m_nRef); /*0x8e36dd*/
+      if ( v3 ) /*0x8e36e1*/
+      {
+        v8 = &v3->ZRefCounted; /*0x8e36e3*/
+        if ( !InterlockedDecrement(&v8->_m_nRef) ) /*0x8e36ea*/
+        {
+          v5(&v8->_m_nRef); /*0x8e36f8*/
+          if ( v8 ) /*0x8e36fc*/
+            ((void (__thiscall *)(ZRefCounted *, int))v8->dtr_ZRefCounted)(v8, 1); /*0x8e3706*/
+        }
+      }
+      v3 = Next->p; /*0x8e3708*/
+      pSummoned.p = v3; /*0x8e370b*/
+      if ( v3 ) /*0x8e3711*/
+      {
+        if ( v3->m_dwSummonedID == dwSummonedID && CUser::IsSamePhaseWithLocalUser(v13) ) /*0x8e3723*/
+          break; /*0x8e3723*/
+      }
+      if ( !pos ) /*0x8e3730*/
+        goto LABEL_13; /*0x8e3730*/
+    }
+    v9 = result; /*0x8e376b*/
+    result->p = v3; /*0x8e376f*/
+    v5(&v3->_m_nRef); /*0x8e3776*/
+    v12 = 1; /*0x8e3778*/
+    LOBYTE(v15) = 0; /*0x8e3780*/
+    goto LABEL_14; /*0x8e3784*/
+  }
+LABEL_13:
+  v9 = result; /*0x8e3732*/
+  result->p = nullptr; /*0x8e3736*/
+  v12 = 1; /*0x8e3739*/
+  LOBYTE(v15) = 0; /*0x8e3741*/
+  if ( v3 ) /*0x8e3747*/
+LABEL_14:
+    ZRef<CSummoned>::_ReleaseRaw(&pSummoned, nullptr); /*0x8e3749*/
+  return v9; /*0x8e3755*/
+}

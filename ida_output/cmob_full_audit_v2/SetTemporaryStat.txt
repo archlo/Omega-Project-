@@ -1,0 +1,46 @@
+﻿void __thiscall CMob::SetTemporaryStat(CMob *this, CInPacket *iPacket, int nCalcDamageIndex)
+{
+  const UINT128 *v4; // eax
+  const UINT128 *v5; // eax
+  UINT128 *v6; // eax
+  const CMobTemplate *MobTemplate; // eax
+  CMobTemplate *m_pTemplate; // eax
+  UINT128 *v9; // eax
+  UINT128 *v10; // eax
+  _BYTE v11[36]; // [esp-24h] [ebp-64h] BYREF
+  UINT128 uFlag; // [esp+10h] [ebp-30h] BYREF
+  UINT128 v13; // [esp+20h] [ebp-20h] BYREF
+  UINT128 result; // [esp+30h] [ebp-10h] BYREF
+
+  *(_DWORD *)&v11[16] = 128;
+  v4 = UINT128::UINT128(&v13, 0);
+  UINT128::UINT128((UINT128 *)v11, v4, 0x80u);
+  v5 = operator~(&result, *(const UINT128 *)v11);
+  UINT128::UINT128((UINT128 *)&v11[20], v5, *(unsigned int *)&v11[16]);
+  MobStat::Reset(&this->m_stat, *(UINT128 *)&v11[20]);
+  MobStat::SetFrom(&this->m_stat, this->m_pTemplate);
+  UINT128::UINT128(&uFlag);
+  CInPacket::DecodeBuffer(iPacket, &uFlag, 0x10u);
+  *(_DWORD *)&v11[32] = get_update_time();
+  *(_DWORD *)&v11[28] = iPacket;
+  UINT128::UINT128((UINT128 *)&v11[12], &uFlag, 0x80u);
+  MobStat::DecodeTemporary(&this->m_stat, *(UINT128 *)&v11[12], *(CInPacket **)&v11[28], *(int *)&v11[32]);
+  v6 = UINT128::operator&(&uFlag, &result, &MobStat::MS_Doom);
+  if ( UINT128::operator bool(v6) )
+  {
+    MobTemplate = CMobTemplate::GetMobTemplate(0x18705u);
+    MobStat::SetFromWhenDoom(&this->m_stat, MobTemplate);
+  }
+  if ( !this->m_stat.nDoom_ || (m_pTemplate = this->m_pTemplateByDoom) == nullptr )
+    m_pTemplate = this->m_pTemplate;
+  MobStat::AdjustDamagedElemAttr(&this->m_stat, this->m_stat.rDamagedElemAttr_, m_pTemplate->aDamagedElemAttr);
+  *(_DWORD *)&v11[32] = 0;
+  this->m_nCalcDamageStatIndex = nCalcDamageIndex;
+  CMob::UpdateAffectedSkillList(this, *(int *)&v11[32]);
+  v9 = UINT128::operator&(&uFlag, &result, &MobStat::MS_Speed);
+  if ( UINT128::operator bool(v9) )
+    CMob::SetShoeAttr(this);
+  v10 = UINT128::operator&(&uFlag, &result, &MobStat::MS_RiseByToss);
+  if ( UINT128::operator bool(v10) )
+    this->m_bWaitingToBeSetTossed = 0;
+}

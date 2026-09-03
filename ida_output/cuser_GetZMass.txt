@@ -1,0 +1,3 @@
+// CUser::GetZMass @ 0x4bc120
+
+{"addr":"0x4bc120","code":"int __thiscall CUser::GetZMass(CUser *this)\n{\n  int m_nPartyHP; // eax\n\n  m_nPartyHP = this->m_nPartyHP; /*0x4bc120*/\n  if ( m_nPartyHP ) /*0x4bc128*/\n    return *(_DWORD *)(m_nPartyHP + 440); /*0x4bc12a*/\n  else\n    return MEMORY[0x1C4]; /*0x4bc133*/\n}"}

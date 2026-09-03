@@ -1,0 +1,10 @@
+// cuser::SetConsumeItemEffect
+
+void __thiscall CUser::SetConsumeItemEffect(CUser *this, CInPacket *iPacket)
+{
+  int v3; // edi
+
+  v3 = CInPacket::Decode4(iPacket); /*0x8f54dd*/
+  CUser::SetConsumeItemEffect(this, v3); /*0x8f54e2*/
+  this->m_nConsumeItemID = v3; /*0x8f54e7*/
+}

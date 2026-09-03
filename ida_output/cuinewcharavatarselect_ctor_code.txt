@@ -1,0 +1,11 @@
+﻿CUINewCharAvatarSelect *TSingleton<CUINewCharAvatarSelect>::DestroyInstance()
+{
+  CUINewCharAvatarSelect *result; // eax
+
+  result = TSingleton<CUINewCharAvatarSelect>::ms_pInstance; /*0x5d1ef0*/
+  if ( TSingleton<CUINewCharAvatarSelect>::ms_pInstance ) /*0x5d1ef7*/
+    return (CUINewCharAvatarSelect *)((int (__thiscall *)(ZRefCounted *, int))TSingleton<CUINewCharAvatarSelect>::ms_pInstance->dtr_ZRefCounted)( /*0x5d1f02*/
+                                       &TSingleton<CUINewCharAvatarSelect>::ms_pInstance->ZRefCounted,
+                                       1);
+  return result; /*0x5d1f04*/
+}

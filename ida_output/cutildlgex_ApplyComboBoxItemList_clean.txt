@@ -1,0 +1,39 @@
+// CUtilDlgEx::ApplyComboBoxItemList
+// Address: 0x98efc0
+
+void __thiscall CUtilDlgEx::ApplyComboBoxItemList(CUtilDlgEx *this, ZList<ZXString<char> > *lsItem)
+{
+  ZList<ZXString<char> > *v3; // edi
+  CCtrlComboBox::ITEM_INFO *Next; // esi
+  ZXString<char> *v5; // eax
+  ZList<CCtrlComboBox::ITEM_INFO> result; // [esp+Ch] [ebp-20h] BYREF
+  int v7; // [esp+28h] [ebp-4h]
+
+  v3 = lsItem; /*0x98efe7*/
+  ZList<ZXString<char>>::RemoveAll(lsItem); /*0x98efed*/
+  CCtrlComboBox::GetItemList(this->m_pCombobox.p, &result); /*0x98effd*/
+  v7 = 0; /*0x98f006*/
+  lsItem = (ZList<ZXString<char> > *)result._m_pHead; /*0x98f00e*/
+  if ( result._m_pHead ) /*0x98f014*/
+  {
+    do /*0x98f039*/
+    {
+      Next = ZList<CCtrlComboBox::ITEM_INFO>::GetNext((__POSITION **)&lsItem); /*0x98f025*/
+      v5 = ZList<ZXString<char>>::AddTail(v3); /*0x98f027*/
+      ZXString<char>::operator=(v5, &Next->sItemName); /*0x98f02f*/
+    }
+    while ( lsItem ); /*0x98f039*/
+  }
+  v7 = -1; /*0x98f03f*/
+  result.__vftable = (ZList<CCtrlComboBox::ITEM_INFO>_vtbl *)&ZList<CCtrlComboBox::ITEM_INFO>::`vftable'; /*0x98f047*/
+  ZList<CCtrlComboBox::ITEM_INFO>::RemoveAll(&result); /*0x98f04f*/
+}
+
+// References:
+//   ?RemoveAll@?$ZList@V?$ZXString@D@@@@QAEXXZ @ 0x4ded60
+//   ?GetItemList@CCtrlComboBox@@QAE?AV?$ZList@UITEM_INFO@CCtrlComboBox@@@@XZ @ 0x98ef80
+//   ?GetNext@?$ZList@UITEM_INFO@CCtrlComboBox@@@@SAAAUITEM_INFO@CCtrlComboBox@@AAPAU__POSITION@@@Z @ 0x4d8910
+//   ?AddTail@?$ZList@V?$ZXString@D@@@@QAEAAV?$ZXString@D@@XZ @ 0x51f8f0
+//   ??4?$ZXString@D@@QAEAAV0@ABV0@@Z @ 0x42d1c0
+//   ??_7?$ZList@UITEM_INFO@CCtrlComboBox@@@@6B@ @ 0xb4a2d4
+//   ?RemoveAll@?$ZList@UITEM_INFO@CCtrlComboBox@@@@QAEXXZ @ 0x4d8940

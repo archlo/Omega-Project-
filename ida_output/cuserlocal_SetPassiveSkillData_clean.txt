@@ -1,0 +1,234 @@
+// cuserlocal::SetPassiveSkillData
+
+void __thiscall CUserLocal::SetPassiveSkillData(CUserLocal *this, __POSITION *pSkill, PassiveSkillData *nSLV)
+{
+  __POSITION *v4; // ebx
+  const SKILLLEVELDATA *LevelData; // esi
+  unsigned int ZtlSecureTear_nMHPr_CS; // ecx
+  int v7; // eax
+  int v8; // eax
+  int v9; // eax
+  int v10; // eax
+  int v11; // eax
+  int v12; // eax
+  int v13; // eax
+  int v14; // eax
+  int v15; // eax
+  int v16; // eax
+  int v17; // eax
+  int v18; // eax
+  int v19; // eax
+  int v20; // eax
+  PassiveSkillData *p; // ebx
+  PassiveSkillData *v22; // ebx
+  PassiveSkillData *v23; // ebx
+  PassiveSkillData *v24; // ebx
+  PassiveSkillData *v25; // ebx
+  PassiveSkillData *v26; // ebx
+  PassiveSkillData *v27; // ebx
+  PassiveSkillData *v28; // ebx
+  PassiveSkillData *v29; // ebx
+  PassiveSkillData *v30; // ebx
+  PassiveSkillData *v31; // ebx
+  PassiveSkillData *v32; // ebx
+  PassiveSkillData *v33; // ebx
+  PassiveSkillData *v34; // ebx
+  PassiveSkillData *v35; // ebx
+  ZMap<long,ZRef<AdditionPsd>,long> *v36; // ebx
+  int v37; // eax
+  AdditionPsd *v38; // ebx
+  AdditionPsd *v39; // edi
+  int v40; // eax
+  int v41; // eax
+  int v42; // eax
+  int v43; // eax
+  int v44; // eax
+  int v45; // eax
+  int *p_nDIPr; // edi
+  int *v47; // ebx
+  unsigned int ZtlSecureTear_nMDr_CS; // [esp-24h] [ebp-58h]
+  unsigned int ZtlSecureTear_nPDr_CS; // [esp-1Ch] [ebp-50h]
+  unsigned int ZtlSecureTear_nMDDr_CS; // [esp-14h] [ebp-48h]
+  unsigned int ZtlSecureTear_nMMPr_CS; // [esp-Ch] [ebp-40h]
+  unsigned int ZtlSecureTear_nEVAr_CS; // [esp-Ch] [ebp-40h]
+  unsigned int ZtlSecureTear_nPDDr_CS; // [esp-Ch] [ebp-40h]
+  unsigned int ZtlSecureTear_nCr_CS; // [esp-4h] [ebp-38h]
+  unsigned int ZtlSecureTear_nCDMin_CS; // [esp-4h] [ebp-38h]
+  unsigned int ZtlSecureTear_nACCr_CS; // [esp-4h] [ebp-38h]
+  unsigned int ZtlSecureTear_nAr_CS; // [esp-4h] [ebp-38h]
+  unsigned int ZtlSecureTear_nEr_CS; // [esp-4h] [ebp-38h]
+  unsigned int ZtlSecureTear_nDIPr_CS; // [esp-4h] [ebp-38h]
+  unsigned int ZtlSecureTear_nPDamr_CS; // [esp-4h] [ebp-38h]
+  unsigned int v61; // [esp-4h] [ebp-38h]
+  int nKey; // [esp+14h] [ebp-20h] BYREF
+  ZRef<AdditionPsd> pApsd; // [esp+18h] [ebp-1Ch] BYREF
+  ZRef<AdditionPsd> pAPsdOffset; // [esp+20h] [ebp-14h] BYREF
+  int v65; // [esp+30h] [ebp-4h]
+
+  v4 = pSkill; /*0x9185c9*/
+  if ( pSkill && (int)nSLV > 0 )
+  {
+    LevelData = SKILLENTRY::GetLevelData((SKILLENTRY *)pSkill, (int)nSLV); /*0x9185eb*/
+    ZtlSecureTear_nMHPr_CS = LevelData->_ZtlSecureTear_nMHPr_CS; /*0x9185ed*/
+    nSLV = this->m_pPassiveSkillData.p; /*0x918601*/
+    v7 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nMHPr, ZtlSecureTear_nMHPr_CS); /*0x918605*/
+    nSLV->nMHPr += v7; /*0x91860e*/
+    ZtlSecureTear_nMMPr_CS = LevelData->_ZtlSecureTear_nMMPr_CS; /*0x91861c*/
+    nSLV = this->m_pPassiveSkillData.p; /*0x918624*/
+    v8 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nMMPr, ZtlSecureTear_nMMPr_CS); /*0x918628*/
+    nSLV->nMMPr += v8; /*0x918631*/
+    if ( !*(_DWORD *)&v4[496] || *(_DWORD *)&v4[16] == 2 ) /*0x918643*/
+    {
+      ZtlSecureTear_nCr_CS = LevelData->_ZtlSecureTear_nCr_CS; /*0x918651*/
+      nSLV = this->m_pPassiveSkillData.p; /*0x918659*/
+      v9 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nCr, ZtlSecureTear_nCr_CS); /*0x91865d*/
+      nSLV->nCr += v9; /*0x918669*/
+    }
+    if ( !*(_DWORD *)&v4[496] || *(_DWORD *)&v4[16] == 2 ) /*0x918678*/
+    {
+      ZtlSecureTear_nCDMin_CS = LevelData->_ZtlSecureTear_nCDMin_CS; /*0x918686*/
+      nSLV = this->m_pPassiveSkillData.p; /*0x91868e*/
+      v10 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nCDMin, ZtlSecureTear_nCDMin_CS); /*0x918692*/
+      nSLV->nCDMin += v10; /*0x91869e*/
+    }
+    ZtlSecureTear_nACCr_CS = LevelData->_ZtlSecureTear_nACCr_CS; /*0x9186ad*/
+    nSLV = this->m_pPassiveSkillData.p; /*0x9186b5*/
+    v11 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nACCr, ZtlSecureTear_nACCr_CS); /*0x9186b9*/
+    nSLV->nACCr += v11; /*0x9186c2*/
+    ZtlSecureTear_nEVAr_CS = LevelData->_ZtlSecureTear_nEVAr_CS; /*0x9186d1*/
+    nSLV = this->m_pPassiveSkillData.p; /*0x9186d9*/
+    v12 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nEVAr, ZtlSecureTear_nEVAr_CS); /*0x9186dd*/
+    nSLV->nEVAr += v12; /*0x9186e6*/
+    if ( !*(_DWORD *)&v4[496] || *(_DWORD *)&v4[16] == 2 ) /*0x9186f8*/
+    {
+      ZtlSecureTear_nAr_CS = LevelData->_ZtlSecureTear_nAr_CS; /*0x918706*/
+      nSLV = this->m_pPassiveSkillData.p; /*0x91870e*/
+      v13 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nAr, ZtlSecureTear_nAr_CS); /*0x918712*/
+      nSLV->nAr += v13; /*0x91871e*/
+    }
+    ZtlSecureTear_nEr_CS = LevelData->_ZtlSecureTear_nEr_CS; /*0x91872d*/
+    nSLV = this->m_pPassiveSkillData.p; /*0x918735*/
+    v14 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nEr, ZtlSecureTear_nEr_CS); /*0x918739*/
+    nSLV->nEr += v14; /*0x918742*/
+    ZtlSecureTear_nPDDr_CS = LevelData->_ZtlSecureTear_nPDDr_CS; /*0x918751*/
+    nSLV = this->m_pPassiveSkillData.p; /*0x918759*/
+    v15 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nPDDr, ZtlSecureTear_nPDDr_CS); /*0x91875d*/
+    nSLV->nPDDr += v15; /*0x918766*/
+    ZtlSecureTear_nMDDr_CS = LevelData->_ZtlSecureTear_nMDDr_CS; /*0x918775*/
+    nSLV = this->m_pPassiveSkillData.p; /*0x91877d*/
+    v16 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nMDDr, ZtlSecureTear_nMDDr_CS); /*0x918781*/
+    nSLV->nMDDr += v16; /*0x91878a*/
+    ZtlSecureTear_nPDr_CS = LevelData->_ZtlSecureTear_nPDr_CS; /*0x918799*/
+    nSLV = this->m_pPassiveSkillData.p; /*0x9187a1*/
+    v17 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nPDr, ZtlSecureTear_nPDr_CS); /*0x9187a5*/
+    nSLV->nPDr += v17; /*0x9187ae*/
+    ZtlSecureTear_nMDr_CS = LevelData->_ZtlSecureTear_nMDr_CS; /*0x9187bd*/
+    nSLV = this->m_pPassiveSkillData.p; /*0x9187c5*/
+    v18 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nMDr, ZtlSecureTear_nMDr_CS); /*0x9187c9*/
+    nSLV->nMDr += v18; /*0x9187d2*/
+    if ( !*(_DWORD *)&v4[496] || *(_DWORD *)&v4[16] == 2 ) /*0x9187e4*/
+    {
+      ZtlSecureTear_nDIPr_CS = LevelData->_ZtlSecureTear_nDIPr_CS; /*0x9187f2*/
+      nSLV = this->m_pPassiveSkillData.p; /*0x9187fa*/
+      v19 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nDIPr, ZtlSecureTear_nDIPr_CS); /*0x9187fe*/
+      nSLV->nDIPr += v19; /*0x91880a*/
+    }
+    if ( !*(_DWORD *)&v4[496] || *(_DWORD *)&v4[16] == 2 ) /*0x918819*/
+    {
+      ZtlSecureTear_nPDamr_CS = LevelData->_ZtlSecureTear_nPDamr_CS; /*0x918827*/
+      nSLV = this->m_pPassiveSkillData.p; /*0x91882f*/
+      v20 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nPDamr, ZtlSecureTear_nPDamr_CS); /*0x918833*/
+      nSLV->nPDamr += v20; /*0x91883f*/
+    }
+    if ( !*(_DWORD *)&v4[496] || *(_DWORD *)&v4[16] == 2 ) /*0x91884e*/
+    {
+      p = this->m_pPassiveSkillData.p; /*0x918856*/
+      p->nMDamr += _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nMDamr, LevelData->_ZtlSecureTear_nMDamr_CS); /*0x91886c*/
+    }
+    v22 = this->m_pPassiveSkillData.p; /*0x918875*/
+    v22->nPADr += _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nPADr, LevelData->_ZtlSecureTear_nPADr_CS); /*0x918888*/
+    v23 = this->m_pPassiveSkillData.p; /*0x918891*/
+    v23->nMADr += _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nMADr, LevelData->_ZtlSecureTear_nMADr_CS); /*0x9188a4*/
+    v24 = this->m_pPassiveSkillData.p; /*0x9188ad*/
+    v24->nEXPr += _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nEXPr, LevelData->_ZtlSecureTear_nEXPr_CS); /*0x9188c0*/
+    v25 = this->m_pPassiveSkillData.p; /*0x9188c9*/
+    v25->nIMPr += _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nIMPr, LevelData->_ZtlSecureTear_nIMPr_CS); /*0x9188dc*/
+    v26 = this->m_pPassiveSkillData.p; /*0x9188e5*/
+    v26->nASRr += _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nASRr, LevelData->_ZtlSecureTear_nASRr_CS); /*0x9188f8*/
+    v27 = this->m_pPassiveSkillData.p; /*0x918901*/
+    v27->nTERr += _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nTERr, LevelData->_ZtlSecureTear_nTERr_CS); /*0x918914*/
+    v28 = this->m_pPassiveSkillData.p; /*0x91891d*/
+    v28->nMESOr += _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nMESOr, LevelData->_ZtlSecureTear_nMESOr_CS); /*0x918930*/
+    v29 = this->m_pPassiveSkillData.p; /*0x918939*/
+    v29->nPADx += _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nPADx, LevelData->_ZtlSecureTear_nPADx_CS); /*0x91894c*/
+    v30 = this->m_pPassiveSkillData.p; /*0x918955*/
+    v30->nMADx += _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nMADx, LevelData->_ZtlSecureTear_nMADx_CS); /*0x91896b*/
+    v31 = this->m_pPassiveSkillData.p; /*0x918974*/
+    v31->nIMDr += _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nIMDr, LevelData->_ZtlSecureTear_nIMDr_CS); /*0x918987*/
+    v32 = this->m_pPassiveSkillData.p; /*0x918990*/
+    v32->nPsdJump += _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nPsdJump, LevelData->_ZtlSecureTear_nPsdJump_CS); /*0x9189a3*/
+    v33 = this->m_pPassiveSkillData.p; /*0x9189ac*/
+    v33->nPsdSpeed += _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nPsdSpeed, LevelData->_ZtlSecureTear_nPsdSpeed_CS); /*0x9189bf*/
+    v34 = this->m_pPassiveSkillData.p; /*0x9189c8*/
+    v34->nOCr += _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nOCr, LevelData->_ZtlSecureTear_nOCr_CS); /*0x9189db*/
+    v35 = this->m_pPassiveSkillData.p; /*0x9189e4*/
+    v35->nDCr += _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nDCr, LevelData->_ZtlSecureTear_nDCr_CS); /*0x9189f7*/
+    if ( *(_DWORD *)&pSkill[496] )
+    {
+      v36 = (ZMap<long,ZRef<AdditionPsd>,long> *)&pSkill[484]; /*0x918a0d*/
+      nSLV = (PassiveSkillData *)&pSkill[484]; /*0x918a15*/
+      pSkill = ZMap<long,ZRef<AdditionPsd>,long>::GetHeadPosition((ZMap<long,ZRef<AdditionPsd>,long> *)&pSkill[484]); /*0x918a1e*/
+      if ( pSkill )
+      {
+        while ( 1 )
+        {
+          pAPsdOffset.p = nullptr; /*0x918a36*/
+          v65 = 0; /*0x918a46*/
+          nKey = *ZMap<long,ZRef<AdditionPsd>,long>::GetNext(v36, &pSkill, &pAPsdOffset); /*0x918a51*/
+          pApsd.p = nullptr; /*0x918a59*/
+          ZRef<AdditionPsd>::_Alloc(&pApsd); /*0x918a5d*/
+          v61 = LevelData->_ZtlSecureTear_nCr_CS; /*0x918a68*/
+          LOBYTE(v65) = 1; /*0x918a70*/
+          v37 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nCr, v61); /*0x918a75*/
+          v38 = pAPsdOffset.p; /*0x918a7a*/
+          v39 = pApsd.p; /*0x918a86*/
+          pApsd.p->nCr = v37 + pAPsdOffset.p->nCr <= 0 ? 0 : v37 + pAPsdOffset.p->nCr;
+          v40 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nCDMin, LevelData->_ZtlSecureTear_nCDMin_CS); /*0x918aa0*/
+          v39->nCDMin = v40 + v38->nCDMin <= 0 ? 0 : v40 + v38->nCDMin;
+          v41 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nAr, LevelData->_ZtlSecureTear_nAr_CS); /*0x918ac5*/
+          v39->nAr = v41 + v38->nAr <= 0 ? 0 : v41 + v38->nAr;
+          v42 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nDIPr, LevelData->_ZtlSecureTear_nDIPr_CS); /*0x918aea*/
+          v39->nDIPr = v42 + v38->nDIPr <= 0 ? 0 : v42 + v38->nDIPr;
+          v43 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nPDamr, LevelData->_ZtlSecureTear_nPDamr_CS); /*0x918b0f*/
+          v39->nPDamr = v43 + v38->nPDamr <= 0 ? 0 : v43 + v38->nPDamr;
+          v44 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nMDamr, LevelData->_ZtlSecureTear_nMDamr_CS); /*0x918b34*/
+          v39->nMDamr = v44 + v38->nMDamr <= 0 ? 0 : v44 + v38->nMDamr;
+          v45 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_nIMPr, LevelData->_ZtlSecureTear_nIMPr_CS); /*0x918b59*/
+          v39->nIMPr = v45 + v38->nIMPr <= 0 ? 0 : v45 + v38->nIMPr;
+          ZMap<long,ZRef<AdditionPsd>,long>::Insert(&this->m_pPassiveSkillData.p->mAdditionPsd, &nKey, &pApsd); /*0x918b86*/
+          p_nDIPr = &v39[-1].nDIPr; /*0x918b8b*/
+          LOBYTE(v65) = 0; /*0x918b92*/
+          if ( !InterlockedDecrement(p_nDIPr + 1) ) /*0x918b97*/
+          {
+            InterlockedIncrement(p_nDIPr + 1); /*0x918ba5*/
+            if ( p_nDIPr ) /*0x918bad*/
+              (*(void (__thiscall **)(int *, int))*p_nDIPr)(p_nDIPr, 1); /*0x918bb7*/
+          }
+          v47 = &v38[-1].nDIPr; /*0x918bb9*/
+          pApsd.p = nullptr; /*0x918bc0*/
+          v65 = -1; /*0x918bc8*/
+          if ( !InterlockedDecrement(v47 + 1) ) /*0x918bd0*/
+          {
+            InterlockedIncrement(v47 + 1); /*0x918bdb*/
+            if ( v47 ) /*0x918be3*/
+              (*(void (__thiscall **)(int *, int))*v47)(v47, 1); /*0x918bed*/
+          }
+          pAPsdOffset.p = nullptr; /*0x918bf4*/
+          if ( !pSkill ) /*0x918bfc*/
+            break; /*0x918bfc*/
+          v36 = (ZMap<long,ZRef<AdditionPsd>,long> *)nSLV; /*0x918a30*/
+        }
+      }
+    }
+  }
+}

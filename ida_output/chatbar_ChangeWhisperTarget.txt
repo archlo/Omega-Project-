@@ -1,0 +1,137 @@
+﻿int __thiscall CUIStatusBar::ChangeWhisperTarget(CUIStatusBar *this)
+{
+  char *v2; // eax
+  char *v3; // ecx
+  CUtilDlgEx *v4; // eax
+  ZRefCounted *v5; // eax
+  CUtilDlgEx *v6; // esi
+  StringPool *Instance; // eax
+  ZXString<char> *v9; // eax
+  StringPool *v10; // eax
+  char *m_pStr; // eax
+  int v12; // eax
+  const char *v13; // eax
+  StringPool *v14; // eax
+  char *v15; // eax
+  ZXString<char> v16; // [esp-Ch] [ebp-3Ch] BYREF
+  ZRef<GW_ItemSlotBase> v17[3]; // [esp-8h] [ebp-38h] BYREF
+  ZXString<char> sResult; // [esp+10h] [ebp-20h] BYREF
+  ZXString<char> result; // [esp+14h] [ebp-1Ch] BYREF
+  GW_ItemSlotBase **p_p; // [esp+18h] [ebp-18h]
+  ZRef<CUtilDlgEx> pDlg; // [esp+1Ch] [ebp-14h] BYREF
+  int v22; // [esp+2Ch] [ebp-4h]
+
+  v2 = (char *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0xC50u);
+  result._m_pStr = v2;
+  v22 = 0;
+  if ( v2 && (v4 = CUtilDlgEx::CUtilDlgEx((CUtilDlgEx *)v2)) != nullptr && (v5 = &v4->ZRefCounted) != nullptr )
+  {
+    v6 = (CUtilDlgEx *)&v5[-1].___u1;
+    pDlg.p = (CUtilDlgEx *)&v5[-1].___u1;
+    if ( v5 != (ZRefCounted *)8 )
+      InterlockedIncrement(&v6->_m_nRef);
+  }
+  else
+  {
+    v6 = nullptr;
+    pDlg.p = nullptr;
+  }
+  v17[0].p = nullptr;
+  *(_DWORD *)&v17[0].gap0 = 1;
+  v16._m_pStr = v3;
+  result._m_pStr = (char *)&v16;
+  v22 = 1;
+  Instance = StringPool::GetInstance();
+  StringPool::GetString(Instance, &v16, 0x31Eu);
+  CUtilDlgEx::SetUtilDlgEx(v6, 7, 0, v16, *(int *)&v17[0].gap0, (int)v17[0].p);
+  CUtilDlgEx::CreateUtilDlgEx(v6);
+  CUtilDlgEx::SetUtilDlgEx_COMBOBOX(v6, &this->m_lsWhisperCandidate);
+  if ( CDialog::DoModal(v6) != 1 )
+  {
+    v22 = -1;
+    if ( v6 )
+      ZRef<CUtilDlgEx>::_ReleaseRaw(&pDlg, nullptr);
+    return 0;
+  }
+  CUtilDlgEx::ApplyComboBoxItemList(v6, &this->m_lsWhisperCandidate);
+  CUtilDlgEx::GetComboBoxStr(v6, &sResult);
+  v17[0].p = nullptr;
+  LOBYTE(v22) = 2;
+  v9 = ZXString<char>::TrimRight(&sResult, nullptr);
+  ZXString<char>::TrimLeft(v9, (const char *)v17[0].p);
+  if ( !sResult._m_pStr || !*sResult._m_pStr )
+  {
+    LOBYTE(v22) = 1;
+    if ( sResult._m_pStr )
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sResult._m_pStr - 1);
+    v22 = -1;
+    if ( v6 )
+      ZRef<CUtilDlgEx>::_ReleaseRaw(&pDlg, nullptr);
+    return 0;
+  }
+  if ( !is_valid_character_name(&sResult, 0) )
+  {
+    p_p = (GW_ItemSlotBase **)v17;
+    v17[0].p = nullptr;
+    v16._m_pStr = (char *)799;
+    LOBYTE(v22) = 3;
+    v10 = StringPool::GetInstance();
+    m_pStr = StringPool::GetString(v10, &result, (unsigned int)v16._m_pStr)->_m_pStr;
+    LOBYTE(v22) = 5;
+    CUIStatusBar::ChatLogAdd(this, m_pStr, 12, -1, 0, v17[0]);
+    LOBYTE(v22) = 2;
+    if ( result._m_pStr )
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1);
+    LOBYTE(v22) = 1;
+    if ( sResult._m_pStr )
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sResult._m_pStr - 1);
+    v22 = -1;
+    if ( v6 )
+    {
+      ZRef<CUtilDlgEx>::_ReleaseRaw(&pDlg, nullptr);
+      return 0;
+    }
+    return 0;
+  }
+  v12 = *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 2099);
+  if ( v12 && (v13 = (const char *)(v12 + 4)) != nullptr && !ZXString<char>::CompareNoCase(&sResult, v13) )
+  {
+    p_p = (GW_ItemSlotBase **)v17;
+    v17[0].p = nullptr;
+    v16._m_pStr = (char *)800;
+    LOBYTE(v22) = 6;
+    v14 = StringPool::GetInstance();
+    v15 = StringPool::GetString(v14, &result, (unsigned int)v16._m_pStr)->_m_pStr;
+    LOBYTE(v22) = 8;
+    CUIStatusBar::ChatLogAdd(this, v15, 12, -1, 0, v17[0]);
+    LOBYTE(v22) = 2;
+    if ( result._m_pStr )
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1);
+    LOBYTE(v22) = 1;
+    if ( sResult._m_pStr )
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sResult._m_pStr - 1);
+    v22 = -1;
+    ZRef<CUtilDlgEx>::~ZRef<CUtilDlgEx>(&pDlg);
+    return 0;
+  }
+  else
+  {
+    p_p = &v17[0].p;
+    v17[0].p = nullptr;
+    ZXString<char>::operator=((ZXString<char> *)&v17[0].p, &sResult);
+    CUIStatusBar::AddWhisperCandidate(this, (ZXString<char>)v17[0].p);
+    v17[0].p = nullptr;
+    p_p = (GW_ItemSlotBase **)v17;
+    *(_DWORD *)&v17[0].gap0 = 0;
+    ZXString<char>::operator=((ZXString<char> *)v17, &sResult);
+    CUIStatusBar::SetWhisperTarget(this, *(ZXString<char> *)&v17[0].gap0, (int)v17[0].p);
+    CUIStatusBar::StartChat(this, nullptr);
+    LOBYTE(v22) = 1;
+    if ( sResult._m_pStr )
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sResult._m_pStr - 1);
+    v22 = -1;
+    if ( v6 )
+      ZRef<CUtilDlgEx>::_ReleaseRaw(&pDlg, nullptr);
+    return 1;
+  }
+}

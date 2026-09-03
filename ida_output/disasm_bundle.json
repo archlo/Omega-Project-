@@ -1,0 +1,13 @@
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Method 'get_disasm' not found"
+      }
+    ],
+    "isError": true
+  },
+  "id": 4
+}

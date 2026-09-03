@@ -1,0 +1,10 @@
+﻿int __thiscall CPet::GetLevel(CPet *this)
+{
+  GW_ItemSlotPet *ItemSlot; // eax
+
+  ItemSlot = CPet::GetItemSlot(this);
+  if ( ItemSlot )
+    return _ZtlSecureFuse<unsigned char>(ItemSlot->_ZtlSecureTear_nLevel, ItemSlot->_ZtlSecureTear_nLevel_CS);
+  else
+    return -1;
+}

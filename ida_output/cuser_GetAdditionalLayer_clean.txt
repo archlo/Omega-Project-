@@ -1,0 +1,66 @@
+// cuser::GetAdditionalLayer
+
+CUser::ADDITIONALLAYER *__thiscall CUser::GetAdditionalLayer(CUser *this, int nType)
+{
+  CUser::ADDITIONALLAYER *result; // eax
+
+  switch ( nType ) /*0x8de11d*/
+  {
+    case 0: /*0x8de11d*/
+      result = this->m_aAdditionalLayer; /*0x8de124*/
+      break; /*0x8de12a*/
+    case 1: /*0x8de11d*/
+      result = &this->m_aAdditionalLayer[1]; /*0x8de12d*/
+      break; /*0x8de133*/
+    case 2: /*0x8de11d*/
+    case 3: /*0x8de11d*/
+      result = &this->m_aAdditionalLayer[2]; /*0x8de136*/
+      break; /*0x8de13c*/
+    case 4: /*0x8de11d*/
+      result = &this->m_aAdditionalLayer[31]; /*0x8de13f*/
+      break; /*0x8de145*/
+    case 5: /*0x8de11d*/
+      result = &this->m_aAdditionalLayer[7]; /*0x8de148*/
+      break; /*0x8de14e*/
+    case 6: /*0x8de11d*/
+      result = &this->m_aAdditionalLayer[19]; /*0x8de151*/
+      break; /*0x8de157*/
+    case 7: /*0x8de11d*/
+      result = &this->m_aAdditionalLayer[4]; /*0x8de15a*/
+      break; /*0x8de160*/
+    case 8: /*0x8de11d*/
+      result = &this->m_aAdditionalLayer[63]; /*0x8de16c*/
+      break; /*0x8de172*/
+    case 9: /*0x8de11d*/
+      result = &this->m_aAdditionalLayer[51]; /*0x8de175*/
+      break; /*0x8de17b*/
+    case 10: /*0x8de11d*/
+      result = &this->m_aAdditionalLayer[52]; /*0x8de17e*/
+      break; /*0x8de184*/
+    case 11: /*0x8de11d*/
+      result = &this->m_aAdditionalLayer[54]; /*0x8de187*/
+      break; /*0x8de18d*/
+    case 12: /*0x8de11d*/
+      result = &this->m_aAdditionalLayer[5]; /*0x8de163*/
+      break; /*0x8de169*/
+    case 13: /*0x8de11d*/
+      result = &this->m_aAdditionalLayer[59]; /*0x8de190*/
+      break; /*0x8de196*/
+    case 15: /*0x8de11d*/
+      result = &this->m_aAdditionalLayer[60]; /*0x8de199*/
+      break; /*0x8de19f*/
+    case 16: /*0x8de11d*/
+      result = &this->m_aAdditionalLayer[61]; /*0x8de1a2*/
+      break; /*0x8de1a8*/
+    case 17: /*0x8de11d*/
+      result = &this->m_aAdditionalLayer[62]; /*0x8de1ab*/
+      break; /*0x8de1b1*/
+    case 18: /*0x8de11d*/
+      result = &this->m_aAdditionalLayer[73]; /*0x8de1b4*/
+      break; /*0x8de1ba*/
+    default:
+      result = nullptr; /*0x8de1bd*/
+      break; /*0x8de1bd*/
+  }
+  return result; /*0x8de12a*/
+}

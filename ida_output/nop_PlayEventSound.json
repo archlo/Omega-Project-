@@ -1,0 +1,13 @@
+[
+  {
+    "query": "0x916d60",
+    "matches": [
+      {
+        "address": "0x916d60",
+        "name": "CUserLocal::OnPlayEventSound(CInPacket &)",
+        "disasm": "push    0FFFFFFFFh\npush    offset __ehhandler$?OnPlayEventSound@CUserLocal@@QAEXAAVCInPacket@@@Z\nmov     eax, large fs:0\npush    eax\npush    this\npush    esi\nmov     eax, ___security_cookie\nxor     eax, esp\npush    eax\nlea     eax, [esp+18h+var_C]\nmov     large fs:0, eax\nmov     this, [esp+18h+sSoundName._m_pStr]; this\nlea     eax, [esp+18h+result]\npush    eax; result\ncall    ?DecodeStr@CInPacket@@QAE?AV?$ZXString@D@@XZ; CInPacket::DecodeStr(void)\nmov     eax, [eax]\npush    0FFFFFFFFh; n\npush    eax; s\nlea     this, [esp+20h+sSoundName]; this\nmov     [esp+20h+var_4], 0\nmov     [esp+20h+sSoundName._m_pStr], 0\ncall    ??$Assign@D@?$ZXString@G@@QAEXPBDH@Z; ZXString<ushort>::Assign<char>(char const *,int)\nmov     eax, [esp+18h+result._m_pStr]\nmov     byte ptr [esp+18h+var_4], 2\ntest    eax, eax\njz      short loc_916DC7\nadd     eax, 0FFFFFFF4h\npush    eax; pData\ncall    ?_Release@?$ZXString@D@@KAXPAU_ZXStringData@1@@Z; ZXString<char>::_Release(ZXString<char>::_ZXStringData *)\nadd     esp, 4\nmov     esi, [esp+18h+sSoundName._m_pStr]\npush    64h ; 'd'; uVol\npush    esi; sName\ncall    ?play_field_sound@@YAXPBGI@Z; play_field_sound(ushort const *,uint)\nadd     esp, 8\nmov     [esp+18h+var_4], 0FFFFFFFFh\ntest    esi, esi\njz      short loc_916DEE\nadd     esi, 0FFFFFFF4h\npush    esi; pData\ncall    ?_Release@?$ZXString@G@@KAXPAU_ZXStringData@1@@Z; ZXString<ushort>::_Release(ZXString<ushort>::_ZXStringData *)\nadd     esp, 4\nmov     this, [esp+18h+var_C]\nmov     large fs:0, this\npop     this\npop     esi\nadd     esp, 10h\nretn    4",
+        "pseudocode": "void __thiscall CUserLocal::OnPlayEventSound(CUserLocal *this, CInPacket *iPacket)\n{\n  CInPacket *v2; // esi\n  char *m_pStr; // [esp-8h] [ebp-20h]\n  ZXString<char> result; // [esp+8h] [ebp-10h] BYREF\n  int v5; // [esp+14h] [ebp-4h]\n\n  m_pStr = CInPacket::DecodeStr(iPacket, &result)->_m_pStr;\n  v5 = 0;\n  iPacket = nullptr;\n  ZXString<unsigned short>::Assign<char>((ZXString<unsigned short> *)&iPacket, m_pStr, -1);\n  LOBYTE(v5) = 2;\n  if ( result._m_pStr )\n    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1);\n  v2 = iPacket;\n  play_field_sound((const wchar_t *)iPacket, 0x64u);\n  v5 = -1;\n  if ( v2 )\n    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&v2[-1].m_uLength);\n}\n"
+      }
+    ]
+  }
+]

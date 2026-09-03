@@ -1,0 +1,5 @@
+﻿int __fastcall CMob::_ZtlSecurePut_m_nOneTimeAction(CMob *this, int t)
+{
+  this->_ZtlSecureTear_m_nOneTimeAction_CS = _ZtlSecureTear<long>(t, this->_ZtlSecureTear_m_nOneTimeAction);
+  return t;
+}

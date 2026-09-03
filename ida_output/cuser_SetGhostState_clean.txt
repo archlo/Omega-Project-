@@ -1,0 +1,38 @@
+// cuser::SetGhostState
+
+void __thiscall CUser::SetGhostState(CUser *this, int nGhostIndex, int bOnCreate)
+{
+  int v3; // ebp
+  IWzVector2D *m_pInterface; // eax
+  IWzVector2D *v6; // edi
+  BOOL v7; // eax
+  int m_nCurrentEffectItemID; // eax
+
+  v3 = nGhostIndex; /*0x8f5e71*/
+  if ( nGhostIndex ) /*0x8f5e7a*/
+    this->GetUpFromPortableChair(this, 0); /*0x8f5e83*/
+  m_pInterface = CUser::GetVecCtrl( /*0x8f5e93*/
+                   this,
+                   (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&nGhostIndex)->m_pInterface;
+  if ( m_pInterface ) /*0x8f5e97*/
+    v6 = m_pInterface - 3; /*0x8f5e99*/
+  else
+    v6 = nullptr; /*0x8f5e9e*/
+  if ( nGhostIndex ) /*0x8f5ea6*/
+    (*(void (__stdcall **)(int))(*(_DWORD *)nGhostIndex + 8))(nGhostIndex); /*0x8f5eae*/
+  v7 = _ZtlSecureFuse<CLadderOrRope *>((CLadderOrRope *const *)&v6[109], (unsigned int)v6[111].__vftable) /*0x8f5f0e*/
+    && _ZtlSecureFuse<CLadderOrRope *>((CLadderOrRope *const *)&v6[109], (unsigned int)v6[111].__vftable)->bLadder
+    || _ZtlSecureFuse<CLadderOrRope *>((CLadderOrRope *const *)&v6[109], (unsigned int)v6[111].__vftable)
+    && !_ZtlSecureFuse<CLadderOrRope *>((CLadderOrRope *const *)&v6[109], (unsigned int)v6[111].__vftable)->bLadder;
+  if ( !bOnCreate && this->m_nGhostIndex != v3 ) /*0x8f5f22*/
+    CUser::ShowMorphEffect(this, v7, 1); /*0x8f5f29*/
+  CAvatar::SetGhostState(&this->CAvatar, v3); /*0x8f5f35*/
+  if ( this->IsLocalUser(this) ) /*0x8f5f41*/
+    m_nCurrentEffectItemID = *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 3456); /*0x8f5f4d*/
+  else
+    m_nCurrentEffectItemID = this->m_nCurrentEffectItemID; /*0x8f5f55*/
+  CUser::SetActiveEffectItem(this, m_nCurrentEffectItemID); /*0x8f5f5e*/
+  CUser::SetSetItemEffect(this); /*0x8f5f65*/
+  CUser::SetCarryItemEffect(this, this->m_nChocoCount); /*0x8f5f73*/
+  CUser::SetConsumeItemEffect(this, this->m_nConsumeItemID); /*0x8f5f81*/
+}

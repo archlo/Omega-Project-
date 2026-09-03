@@ -1,0 +1,123 @@
+import { Stage, MouseButton } from '../app/Stage.js';
+import { MapleClaudeGame } from '../MapleClaudeGame.js';
+import { WzPackage } from '../wz/WzPackage.js';
+export declare class CharSelectStage extends Stage {
+    private _ui;
+    private _map;
+    private _sound;
+    private _charWz;
+    private _itemWz;
+    private _baseWz;
+    private _worldId;
+    private _channelId;
+    private _cameraStart;
+    private _cameraOffset;
+    private _loader;
+    private _scene;
+    private _renderer;
+    private _commonFrame;
+    private _commonFrameSprite;
+    private _stepIndicator;
+    private _stepIndicatorSprite;
+    private _chLabel;
+    private _chLabelSprite;
+    private _charEmpty;
+    private _charInfo;
+    private _charInfoNoRank;
+    private _effectSelected;
+    private _pageL;
+    private _pageR;
+    private readonly _platforms;
+    private readonly _scrollFrames;
+    private _rankUp;
+    private _rankDown;
+    private _rankSame;
+    private _btSelect;
+    private _btNew;
+    private _btDelete;
+    private _btBack;
+    private _notice;
+    private _softKey;
+    private _sysNotice;
+    private _rollDown;
+    private _selectedSlot;
+    private _page;
+    private _scrollAnimT;
+    private _walkAnimT;
+    private _lastClickSlot;
+    private _lastClickTime;
+    private _scrollT;
+    private _charSlots;
+    private readonly _slotsContainer;
+    private readonly _overlayContainer;
+    private readonly _scrollContainer;
+    private readonly _arrowContainer;
+    private readonly _nameContainer;
+    private _bg;
+    private _chContainer;
+    constructor();
+    constructor(ui: WzPackage, map: WzPackage | null, sound: WzPackage | null, charWz: WzPackage | null, itemWz: WzPackage | null, baseWz: WzPackage | null, worldId: number, channelId: number, cameraStart: {
+        x: number;
+        y: number;
+    }, loginCameraOffset: {
+        x: number;
+        y: number;
+    });
+    onEnter(game: MapleClaudeGame): void;
+    onExit(): void;
+    update(dt: number): void;
+    draw(): void;
+    private _updateCharSlots;
+    onMouseButton(x: number, y: number, down: boolean, button: MouseButton): void;
+    onKeyPress(key: string): void;
+    onTextInput(character: string): void;
+    private _loadMapScene;
+    private _loadAssets;
+    private _buildButtons;
+    private _buildCharSlots;
+    private _rebuildCharLooks;
+    private _loadSounds;
+    private _selectSlot;
+    private _clearSelection;
+    private _onSelectClicked;
+    private _sendSelectCharacter;
+    private _sendCheckSpw;
+    private _sendEnableSpw;
+    private _beginRegisterPic;
+    private _askNewPic;
+    private _onCheckSpwFailed;
+    /** CLogin::OnEnableSPWResult (decompile/5D2290.c, verified against v95_dump
+     *  0x5d2290). code=0 success → Notice(39) if flag set else Notice(40);
+     *  code 6/9 → Error(18), 0x14 → Error(93), 0x16 → Error(91), 0x17 → Error(92),
+     *  any other code shows nothing. OG updates m_bLoginOpt to (flag==0)+1.
+     *  TODO_AUDIT.md CLoginUtilDlg pass: these codes index Login.img/Notice/text/N
+     *  (all present in UI.nx), so render the real WZ notice images via
+     *  SystemNoticeOverlay instead of ad-hoc English strings. */
+    private _onEnableSpwResult;
+    private _onNewClicked;
+    private _onDeleteClicked;
+    private _onPageL;
+    private _onPageR;
+    private _onSelectCharacterResult;
+    private _onDeleteCharacterResult;
+    private _deleteFailMessage;
+    private _goBack;
+    private _slotScreen;
+    private _mapToScreen;
+    private _applyLayout;
+    private _renderStatScroll;
+    private _drawCardStats;
+    private _drawRankArrow;
+    private _jobName;
+    private _renderPageArrows;
+    private _renderNameTags;
+    private _hitSprite;
+    private _jobGroup;
+    private _playRollDown;
+    private _playClick;
+    private _loadCanvas;
+    private _makeButton;
+    private _lerp;
+    private _smoothStep;
+}
+//# sourceMappingURL=CharSelectStage.d.ts.map

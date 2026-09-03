@@ -1,0 +1,31 @@
+﻿void __thiscall ZRef<CUITransferWorldLicenseNotice>::_ReleaseRaw(
+        ZRef<CUITransferWorldLicenseNotice> *this,
+        ZRefCounted *__formal)
+{
+  CUITransferWorldLicenseNotice *p; // eax
+  ZRefCounted *v4; // eax
+  CUITransferWorldLicenseNotice *v5; // eax
+  ZRefCounted *v6; // eax
+  CUITransferWorldLicenseNotice *v7; // eax
+
+  p = this->p; /*0x493d93*/
+  if ( p ) /*0x493d98*/
+    v4 = &p->ZRefCounted; /*0x493d9a*/
+  else
+    v4 = nullptr; /*0x493d9f*/
+  if ( !InterlockedDecrement(&v4->_m_nRef) ) /*0x493da5*/
+  {
+    v5 = this->p; /*0x493daf*/
+    if ( v5 ) /*0x493db4*/
+      v6 = &v5->ZRefCounted; /*0x493db6*/
+    else
+      v6 = nullptr; /*0x493dbb*/
+    InterlockedIncrement(&v6->_m_nRef); /*0x493dc1*/
+    v7 = this->p; /*0x493dc7*/
+    if ( v7 ) /*0x493dcc*/
+    {
+      if ( v7 != (CUITransferWorldLicenseNotice *)-8 ) /*0x493dd3*/
+        ((void (__thiscall *)(ZRefCounted *, int))v7->dtr_ZRefCounted)(&v7->ZRefCounted, 1); /*0x493de2*/
+    }
+  }
+}

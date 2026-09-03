@@ -1,0 +1,358 @@
+void __thiscall CMob::SetFrameInfo(CMob *this, ZList<ZRef<CActionMan::MOBACTIONFRAMEENTRY> > *l, __POSITION *pos)
+{
+  CActionMan::MOBACTIONFRAMEENTRY *v4; // edi
+  void (__stdcall *v5)(VARIANTARG *); // ebp
+  HRESULT v6; // eax
+  HRESULT v7; // eax
+  IWzGr2DLayer *m_pInterface; // ecx
+  IWzVector2D *v9; // ecx
+  HRESULT v10; // eax
+  IWzGr2DLayer *v11; // esi
+  HRESULT (__stdcall *get_currentTime)(IWzVector2D *, int *); // edx
+  HRESULT v13; // eax
+  char *v14; // eax
+  IWzGr2DLayer *v15; // ecx
+  IWzVector2D *v16; // ecx
+  int v17; // eax
+  int v18; // eax
+  IWzVector2D *v19; // eax
+  IWzVector2D *v20; // esi
+  HRESULT v21; // eax
+  IWzGr2DLayer *v22; // esi
+  HRESULT (__stdcall *get_flip)(IWzGr2DLayer *, int *); // edx
+  HRESULT v24; // eax
+  HRESULT v25; // eax
+  HRESULT v26; // eax
+  IWzVector2D *v27; // ecx
+  HRESULT v28; // eax
+  HRESULT v29; // eax
+  IWzVector2D *v30; // ecx
+  int v31; // eax
+  unsigned int a; // eax
+  unsigned int v33; // eax
+  int v34; // ebp
+  tagRECT *v35; // eax
+  char *v36; // esi
+  tagRECT *v37; // edi
+  unsigned int v38; // eax
+  ZArray<tagRECT> *p_m_arcMultiBody; // esi
+  SECRECT *v40; // eax
+  int v41; // ebp
+  unsigned int ZtlSecureTear_bottom_CS; // eax
+  int v43; // ebx
+  SECRECT *v44; // esi
+  unsigned int ZtlSecureTear_left_CS; // ecx
+  SECRECT *v46; // esi
+  tagRECT *v47; // edi
+  CActionMan::MOBACTIONFRAMEENTRY *pe; // [esp+44h] [ebp-38h]
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > result; // [esp+48h] [ebp-34h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v50; // [esp+4Ch] [ebp-30h] BYREF
+  VARIANTARG pvargDest; // [esp+50h] [ebp-2Ch] BYREF
+  VARIANTARG pvarg; // [esp+60h] [ebp-1Ch] BYREF
+  int v53; // [esp+78h] [ebp-4h]
+  ZList<ZRef<CActionMan::MOBACTIONFRAMEENTRY> > *la; // [esp+80h] [ebp+4h]
+  ZArray<tagRECT> *lb; // [esp+80h] [ebp+4h]
+
+  v4 = *(CActionMan::MOBACTIONFRAMEENTRY **)&pos[4]; /*0x64258d*/
+  v5 = VariantInit; /*0x642590*/
+  pe = v4; /*0x64259c*/
+  if ( v4->a0 > -1 ) /*0x6425a0*/
+  {
+    VariantInit(&pvarg); /*0x6425ab*/
+    v6 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing); /*0x6425b7*/
+    if ( v6 < 0 ) /*0x6425c1*/
+      _com_issue_error(v6); /*0x6425c4*/
+    v53 = 0; /*0x6425ce*/
+    v5(&pvargDest); /*0x6425d6*/
+    v7 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing); /*0x6425e2*/
+    if ( v7 < 0 ) /*0x6425ec*/
+      _com_issue_error(v7); /*0x6425ef*/
+    m_pInterface = this->m_pLayerAction.m_pInterface; /*0x6425f4*/
+    LOBYTE(v53) = 1; /*0x6425fa*/
+    if ( !m_pInterface ) /*0x642601*/
+      _com_issue_error(-2147467261); /*0x642608*/
+    v9 = IWzGr2DLayer::Getalpha(m_pInterface, &result)->m_pInterface; /*0x642617*/
+    LOBYTE(v53) = 2; /*0x642619*/
+    if ( !v9 ) /*0x642620*/
+      _com_issue_error(-2147467261); /*0x642627*/
+    IWzVector2D::RelMove(v9, v4->a0, 0, (const Ztl_variant_t *)&pvargDest, (const Ztl_variant_t *)&pvarg); /*0x64263c*/
+    LOBYTE(v53) = 1; /*0x642645*/
+    if ( result.m_pInterface ) /*0x64264c*/
+      result.m_pInterface->Release(result.m_pInterface); /*0x642654*/
+    LOBYTE(v53) = 0; /*0x64265c*/
+    if ( pvargDest.vt == 8 ) /*0x642661*/
+    {
+      pvargDest.vt = 0; /*0x642665*/
+      if ( pvargDest.decVal.Lo32 ) /*0x642670*/
+        ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4)); /*0x642676*/
+    }
+    else
+    {
+      VariantClear(&pvargDest); /*0x642683*/
+    }
+    v53 = -1; /*0x64268f*/
+    if ( pvarg.vt == 8 ) /*0x642693*/
+    {
+      pvarg.vt = 0; /*0x64269b*/
+      if ( pvarg.decVal.Lo32 ) /*0x6426a2*/
+        ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x6426a8*/
+    }
+    else
+    {
+      VariantClear(&pvarg); /*0x6426b5*/
+    }
+  }
+  if ( v4->a1 > -1 ) /*0x6426be*/
+  {
+    v5(&pvargDest); /*0x6426c9*/
+    v10 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing); /*0x6426d5*/
+    if ( v10 < 0 ) /*0x6426df*/
+      _com_issue_error(v10); /*0x6426e2*/
+    v11 = this->m_pLayerAction.m_pInterface; /*0x6426e7*/
+    v53 = 3; /*0x6426ed*/
+    if ( !v11 ) /*0x6426f7*/
+      _com_issue_error(-2147467261); /*0x6426fe*/
+    get_currentTime = v11->get_currentTime; /*0x642705*/
+    result.m_pInterface = nullptr; /*0x64270e*/
+    v13 = get_currentTime(v11, (int *)&result); /*0x642716*/
+    if ( v13 < 0 ) /*0x64271a*/
+      _com_issue_errorex(v13, v11, &_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4); /*0x642723*/
+    v14 = (char *)result.m_pInterface + v4->tDelay; /*0x64272b*/
+    pvarg.vt = 3; /*0x642734*/
+    pvarg.decVal.Lo32 = (unsigned int)v14; /*0x642739*/
+    v15 = this->m_pLayerAction.m_pInterface; /*0x64273d*/
+    LOBYTE(v53) = 4; /*0x642743*/
+    if ( !v15 ) /*0x64274a*/
+      _com_issue_error(-2147467261); /*0x642751*/
+    v16 = IWzGr2DLayer::Getalpha(v15, &v50)->m_pInterface; /*0x642760*/
+    LOBYTE(v53) = 5; /*0x642762*/
+    if ( !v16 ) /*0x642769*/
+      _com_issue_error(-2147467261); /*0x642770*/
+    IWzVector2D::RelMove(v16, v4->a1, 0, (const Ztl_variant_t *)&pvarg, (const Ztl_variant_t *)&pvargDest); /*0x642785*/
+    LOBYTE(v53) = 4; /*0x64278e*/
+    if ( v50.m_pInterface ) /*0x642795*/
+      v50.m_pInterface->Release(v50.m_pInterface); /*0x64279d*/
+    LOBYTE(v53) = 3; /*0x6427a4*/
+    if ( pvarg.vt == 8 ) /*0x6427ae*/
+    {
+      pvarg.vt = 0; /*0x6427b2*/
+      if ( pvarg.decVal.Lo32 ) /*0x6427bd*/
+        ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x6427c3*/
+    }
+    else
+    {
+      VariantClear(&pvarg); /*0x6427d0*/
+    }
+    v53 = -1; /*0x6427d6*/
+    if ( pvargDest.vt == 8 ) /*0x6427e3*/
+    {
+      pvargDest.vt = 0; /*0x6427eb*/
+      if ( pvargDest.decVal.Lo32 ) /*0x6427f2*/
+        ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4)); /*0x6427f8*/
+    }
+    else
+    {
+      VariantClear(&pvargDest); /*0x642805*/
+    }
+  }
+  if ( pos == (__POSITION *)l->_m_pHead ) /*0x642816*/
+  {
+    v17 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_tActionDelay, this->_ZtlSecureTear_m_tActionDelay_CS); /*0x642826*/
+    this->_ZtlSecureTear_m_tNextFramesRemain_CS = _ZtlSecureTear<long>(v17, this->_ZtlSecureTear_m_tNextFramesRemain); /*0x64283b*/
+  }
+  v18 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_tNextFramesRemain, this->_ZtlSecureTear_m_tNextFramesRemain_CS); /*0x64284f*/
+  this->_ZtlSecureTear_m_tNextFramesRemain_CS = _ZtlSecureTear<long>( /*0x642863*/
+                                                  v18 - v4->tDelay,
+                                                  this->_ZtlSecureTear_m_tNextFramesRemain);
+  this->_ZtlSecureTear_m_tCurFrameRemain_CS = _ZtlSecureTear<long>(v4->tDelay, this->_ZtlSecureTear_m_tCurFrameRemain); /*0x642877*/
+  v19 = this->m_pvc.m_pInterface; /*0x64287d*/
+  pvargDest.vt = 13; /*0x642888*/
+  pvargDest.decVal.Lo32 = (unsigned int)v19; /*0x64288d*/
+  if ( v19 ) /*0x642893*/
+    v19->AddRef(v19); /*0x64289b*/
+  v20 = this->m_pvcHead.m_pInterface; /*0x64289d*/
+  v53 = 6; /*0x6428a3*/
+  if ( !v20 ) /*0x6428ad*/
+    _com_issue_error(-2147467261); /*0x6428b4*/
+  v21 = ((int (__stdcall *)(IWzVector2D *, _DWORD, unsigned int, unsigned int, unsigned int))v20->put_origin)( /*0x6428df*/
+          v20,
+          *(_DWORD *)&pvargDest.vt,
+          pvargDest.decVal.Hi32,
+          pvargDest.decVal.Lo32,
+          pvargDest.decVal.Mid32);
+  if ( v21 < 0 ) /*0x6428e3*/
+    _com_issue_errorex(v21, v20, &_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4); /*0x6428ec*/
+  v53 = -1; /*0x6428f7*/
+  if ( pvargDest.vt == 8 ) /*0x6428ff*/
+  {
+    pvargDest.vt = 0; /*0x642907*/
+    if ( pvargDest.decVal.Lo32 ) /*0x64290e*/
+      ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4)); /*0x642914*/
+  }
+  else
+  {
+    VariantClear(&pvargDest); /*0x642921*/
+  }
+  v22 = this->m_pLayerAction.m_pInterface; /*0x642927*/
+  if ( !v22 ) /*0x64292f*/
+    _com_issue_error(-2147467261); /*0x642936*/
+  get_flip = v22->get_flip; /*0x64293d*/
+  pos = nullptr; /*0x642949*/
+  v24 = get_flip(v22, (int *)&pos); /*0x642951*/
+  if ( v24 < 0 ) /*0x642955*/
+    _com_issue_errorex(v24, v22, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x64295e*/
+  if ( !pos ) /*0x642968*/
+  {
+    v5(&pvargDest); /*0x642973*/
+    v25 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing); /*0x64297f*/
+    if ( v25 < 0 ) /*0x642989*/
+      _com_issue_error(v25); /*0x64298c*/
+    v53 = 7; /*0x642996*/
+    v5(&pvarg); /*0x64299e*/
+    v26 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing); /*0x6429aa*/
+    if ( v26 < 0 ) /*0x6429b4*/
+      _com_issue_error(v26); /*0x6429b7*/
+    v27 = this->m_pvcHead.m_pInterface; /*0x6429bc*/
+    LOBYTE(v53) = 8; /*0x6429c2*/
+    if ( !v27 ) /*0x6429c9*/
+      _com_issue_error(-2147467261); /*0x6429d0*/
+    IWzVector2D::RelMove( /*0x6429e7*/
+      v27,
+      v4->ptHead.x,
+      v4->ptHead.y,
+      (const Ztl_variant_t *)&pvarg,
+      (const Ztl_variant_t *)&pvargDest);
+    LOBYTE(v53) = 7; /*0x6429f1*/
+    if ( pvarg.vt == 8 ) /*0x6429fb*/
+    {
+      pvarg.vt = 0; /*0x642a03*/
+      if ( pvarg.decVal.Lo32 ) /*0x642a0a*/
+        ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x642a10*/
+    }
+    else
+    {
+      VariantClear(&pvarg); /*0x642a1d*/
+    }
+    v53 = -1; /*0x642a23*/
+    if ( pvargDest.vt == 8 ) /*0x642a30*/
+    {
+      pvargDest.vt = 0; /*0x642a34*/
+      goto LABEL_83; /*0x642a39*/
+    }
+LABEL_85:
+    VariantClear(&pvargDest); /*0x642b29*/
+    goto LABEL_86; /*0x642b2e*/
+  }
+  v5(&pvargDest); /*0x642a4d*/
+  v28 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing); /*0x642a59*/
+  if ( v28 < 0 ) /*0x642a63*/
+    _com_issue_error(v28); /*0x642a66*/
+  v53 = 9; /*0x642a70*/
+  v5(&pvarg); /*0x642a78*/
+  v29 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing); /*0x642a84*/
+  if ( v29 < 0 ) /*0x642a8e*/
+    _com_issue_error(v29); /*0x642a91*/
+  v30 = this->m_pvcHead.m_pInterface; /*0x642a96*/
+  LOBYTE(v53) = 10; /*0x642a9c*/
+  if ( !v30 ) /*0x642aa3*/
+    _com_issue_error(-2147467261); /*0x642aaa*/
+  IWzVector2D::RelMove( /*0x642ac3*/
+    v30,
+    -v4->ptHead.x,
+    v4->ptHead.y,
+    (const Ztl_variant_t *)&pvarg,
+    (const Ztl_variant_t *)&pvargDest);
+  LOBYTE(v53) = 9; /*0x642acd*/
+  if ( pvarg.vt == 8 ) /*0x642ad7*/
+  {
+    pvarg.vt = 0; /*0x642adb*/
+    if ( pvarg.decVal.Lo32 ) /*0x642ae6*/
+      ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x642aec*/
+  }
+  else
+  {
+    VariantClear(&pvarg); /*0x642af9*/
+  }
+  v53 = -1; /*0x642aff*/
+  if ( pvargDest.vt != 8 ) /*0x642b0c*/
+    goto LABEL_85; /*0x642b0c*/
+  pvargDest.vt = 0; /*0x642b10*/
+LABEL_83:
+  if ( pvargDest.decVal.Lo32 ) /*0x642b1b*/
+    ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4)); /*0x642b21*/
+LABEL_86:
+  this->m_rcBody.left = _ZtlSecureFuse<long>(v4->rcBody._ZtlSecureTear_left, v4->rcBody._ZtlSecureTear_left_CS); /*0x642b34*/
+  this->m_rcBody.top = _ZtlSecureFuse<long>(v4->rcBody._ZtlSecureTear_top, v4->rcBody._ZtlSecureTear_top_CS); /*0x642b54*/
+  this->m_rcBody.right = _ZtlSecureFuse<long>(v4->rcBody._ZtlSecureTear_right, v4->rcBody._ZtlSecureTear_right_CS); /*0x642b67*/
+  v31 = _ZtlSecureFuse<long>(v4->rcBody._ZtlSecureTear_bottom, v4->rcBody._ZtlSecureTear_bottom_CS); /*0x642b75*/
+  this->m_rcBody.bottom = v31; /*0x642b7d*/
+  ZAPI.SetRect(&this->m_rcBodyFlip, -this->m_rcBody.right, this->m_rcBody.top, -this->m_rcBody.left, v31); /*0x642ba6*/
+  a = (unsigned int)v4->arcAttackOnlyBody.a; /*0x642bac*/
+  if ( a ) /*0x642bb1*/
+    a = *(_DWORD *)(a - 4); /*0x642bb3*/
+  ZArray<tagRECT>::_Alloc(&this->m_arcAttackBody, a, (const ZAllocHelper *)&pos); /*0x642bc2*/
+  v33 = (unsigned int)v4->arcAttackOnlyBody.a; /*0x642bc7*/
+  if ( v33 ) /*0x642bcc*/
+    v33 = *(_DWORD *)(v33 - 4); /*0x642bce*/
+  ZArray<tagRECT>::_Alloc(&this->m_arcAttackBodyFlip, v33, (const ZAllocHelper *)&pos); /*0x642bdd*/
+  v34 = 0; /*0x642be2*/
+  pos = nullptr; /*0x642be4*/
+  for ( la = nullptr; ; la = (ZList<ZRef<CActionMan::MOBACTIONFRAMEENTRY> > *)((char *)la + 48) ) /*0x642be8*/
+  {
+    v35 = this->m_arcAttackBody.a; /*0x642bf0*/
+    if ( !v35 || (unsigned int)pos >= v35[-1].bottom ) /*0x642c05*/
+      break; /*0x642c05*/
+    v36 = (char *)la + (unsigned int)pe->arcAttackOnlyBody.a; /*0x642c12*/
+    v37 = &this->m_arcAttackBody.a[v34]; /*0x642c1d*/
+    v37->left = _ZtlSecureFuse<long>((const int *)v36, *((_DWORD *)v36 + 2)); /*0x642c24*/
+    v37->top = _ZtlSecureFuse<long>((const int *)v36 + 3, *((_DWORD *)v36 + 5)); /*0x642c33*/
+    v37->right = _ZtlSecureFuse<long>((const int *)v36 + 6, *((_DWORD *)v36 + 8)); /*0x642c43*/
+    v37->bottom = _ZtlSecureFuse<long>((const int *)v36 + 9, *((_DWORD *)v36 + 11)); /*0x642c53*/
+    ZAPI.SetRect( /*0x642c7f*/
+      &this->m_arcAttackBodyFlip.a[v34],
+      -this->m_arcAttackBody.a[v34].right,
+      this->m_arcAttackBody.a[v34].top,
+      -this->m_arcAttackBody.a[v34].left,
+      this->m_arcAttackBody.a[v34].bottom);
+    ++pos; /*0x642c85*/
+    v4 = pe; /*0x642c8e*/
+    ++v34; /*0x642c92*/
+  }
+  v38 = (unsigned int)v4->arcMultiBody.a; /*0x642c9a*/
+  if ( v38 ) /*0x642c9f*/
+    v38 = *(_DWORD *)(v38 - 4); /*0x642ca1*/
+  p_m_arcMultiBody = &this->m_arcMultiBody; /*0x642ca9*/
+  lb = &this->m_arcMultiBody; /*0x642cb2*/
+  ZArray<tagRECT>::_Alloc(&this->m_arcMultiBody, v38, (const ZAllocHelper *)&pos); /*0x642cb6*/
+  v40 = v4->arcMultiBody.a; /*0x642cbb*/
+  v41 = 0; /*0x642cbe*/
+  if ( v40 ) /*0x642cc2*/
+    ZtlSecureTear_bottom_CS = v40[-1]._ZtlSecureTear_bottom_CS; /*0x642cc8*/
+  else
+    ZtlSecureTear_bottom_CS = 0; /*0x642cc4*/
+  v50.m_pInterface = (IWzVector2D *)&this->m_arcMultiBodyFlip; /*0x642cd7*/
+  ZArray<tagRECT>::_Alloc(&this->m_arcMultiBodyFlip, ZtlSecureTear_bottom_CS, (const ZAllocHelper *)&pos); /*0x642cdb*/
+  pos = nullptr; /*0x642ce0*/
+  v43 = 0; /*0x642ce4*/
+  while ( p_m_arcMultiBody->a && (unsigned int)pos < p_m_arcMultiBody->a[-1].bottom ) /*0x642cf7*/
+  {
+    v44 = pe->arcMultiBody.a; /*0x642d01*/
+    ZtlSecureTear_left_CS = v44[v43]._ZtlSecureTear_left_CS; /*0x642d04*/
+    v46 = &v44[v43]; /*0x642d0e*/
+    v47 = &lb->a[v41]; /*0x642d12*/
+    v47->left = _ZtlSecureFuse<long>(v46->_ZtlSecureTear_left, ZtlSecureTear_left_CS); /*0x642d19*/
+    v47->top = _ZtlSecureFuse<long>(v46->_ZtlSecureTear_top, v46->_ZtlSecureTear_top_CS); /*0x642d28*/
+    v47->right = _ZtlSecureFuse<long>(v46->_ZtlSecureTear_right, v46->_ZtlSecureTear_right_CS); /*0x642d38*/
+    v47->bottom = _ZtlSecureFuse<long>(v46->_ZtlSecureTear_bottom, v46->_ZtlSecureTear_bottom_CS); /*0x642d4c*/
+    ZAPI.SetRect( /*0x642d74*/
+      (tagRECT *)((char *)v50.m_pInterface->__vftable + v41 * 16),
+      -lb->a[v41].right,
+      lb->a[v41].top,
+      -lb->a[v41].left,
+      lb->a[v41].bottom);
+    ++pos; /*0x642d7a*/
+    p_m_arcMultiBody = lb; /*0x642d7e*/
+    ++v43; /*0x642d82*/
+    ++v41; /*0x642d85*/
+  }
+}

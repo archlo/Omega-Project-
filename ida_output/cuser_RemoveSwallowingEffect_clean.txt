@@ -1,0 +1,13 @@
+// cuser::RemoveSwallowingEffect
+
+void __thiscall CUser::RemoveSwallowingEffect(CUser *this)
+{
+  IWzGr2DLayer *m_pInterface; // eax
+
+  m_pInterface = this->m_pLayerSwallowing.m_pInterface; /*0x8e1320*/
+  if ( m_pInterface ) /*0x8e1328*/
+  {
+    this->m_pLayerSwallowing.m_pInterface = nullptr; /*0x8e132a*/
+    m_pInterface->Release(m_pInterface); /*0x8e133a*/
+  }
+}

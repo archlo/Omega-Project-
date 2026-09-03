@@ -1,0 +1,49 @@
+int __thiscall CMob::SetBallDestPoint(CMob *this, tagPOINT pt1, tagPOINT pt2, int bLeft, int nRange, int nRangea)
+{
+  int y; // ebx
+  int v8; // esi
+  int x; // edi
+  int v10; // ecx
+  double v11; // st7
+  double v12; // st6
+  long double v13; // st7
+  int dy; // [esp+20h] [ebp+10h]
+  int bLefta; // [esp+28h] [ebp+18h]
+
+  y = pt2.y; /*0x63a139*/
+  if ( nRange ) /*0x63a142*/
+    v8 = pt1.y - pt2.y; /*0x63a146*/
+  else
+    v8 = pt2.y - pt1.y; /*0x63a14c*/
+  x = bLeft; /*0x63a150*/
+  v10 = bLeft - pt2.x; /*0x63a15a*/
+  bLefta = v8; /*0x63a15c*/
+  dy = bLeft - pt2.x; /*0x63a160*/
+  if ( v8 <= 0 ) /*0x63a166*/
+  {
+    y = pt1.y - 1; /*0x63a168*/
+    if ( !nRange ) /*0x63a16d*/
+      y = pt1.y + 1; /*0x63a16f*/
+    v8 = 1; /*0x63a172*/
+    v10 = 0; /*0x63a177*/
+    x = pt2.x; /*0x63a179*/
+    bLefta = 1; /*0x63a17b*/
+    dy = 0; /*0x63a17f*/
+  }
+  v11 = (double)bLefta; /*0x63a183*/
+  v12 = DOUBLE_0_6; /*0x63a199*/
+  if ( DOUBLE_0_6 < fabs((double)dy / v11) ) /*0x63a19e*/
+  {
+    if ( v10 <= 0 ) /*0x63a1a2*/
+    {
+      v11 = DOUBLE_0_6; /*0x63a1a6*/
+      v12 = (double)-v8; /*0x63a1ae*/
+    }
+    x = (int)(v11 * v12 + (double)pt2.x); /*0x63a1bd*/
+    v10 = x - pt2.x; /*0x63a1c1*/
+  }
+  v13 = (double)nRangea / sqrt((double)(v8 * v8 + v10 * v10)); /*0x63a1ea*/
+  *(_DWORD *)pt1.x = (int)((double)(y - pt1.y) * v13 + (double)pt1.y); /*0x63a223*/
+  *(_DWORD *)(pt1.x + 4) = (int)(v13 * (double)(x - pt2.x) + (double)pt2.x); /*0x63a227*/
+  return pt1.x; /*0x63a222*/
+}

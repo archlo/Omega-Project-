@@ -1,0 +1,35 @@
+﻿void __thiscall CUIKarmaDlg::OnCreate(CUIKarmaDlg *this, void *pData)
+{
+  CLayoutMan *p_m_lm; // esi
+  StringPool *Instance; // eax
+  ZXString<unsigned short> *StringW; // eax
+  const wchar_t *m_pStr; // [esp-14h] [ebp-40h]
+  int v7; // [esp-Ch] [ebp-38h]
+  ZXString<unsigned short> v8; // [esp+Ch] [ebp-20h] BYREF
+  ZRef<CCtrlOriginButton> v9; // [esp+10h] [ebp-1Ch] BYREF
+  ZRef<CCtrlOriginButton> result; // [esp+18h] [ebp-14h] BYREF
+  int v11; // [esp+28h] [ebp-4h]
+
+  p_m_lm = &this->m_lm; /*0x7d7aab*/
+  CLayoutMan::Init(&this->m_lm, this, 0, 0); /*0x7d7ab4*/
+  CLayoutMan::AddButton(p_m_lm, &result, L"UI/UIWindow2.img/KarmaScissors/BtOk", 1u, 0, 0, nullptr); /*0x7d7acd*/
+  if ( result.p ) /*0x7d7ad7*/
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&result, nullptr); /*0x7d7adf*/
+  CLayoutMan::AddButton(p_m_lm, &result, L"UI/UIWindow2.img/KarmaScissors/BtCancel", 2u, 0, 0, nullptr); /*0x7d7af8*/
+  if ( result.p ) /*0x7d7b02*/
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&result, nullptr); /*0x7d7b0a*/
+  Instance = StringPool::GetInstance(); /*0x7d7b19*/
+  StringW = StringPool::GetStringW(Instance, &v8, 0x1962u); /*0x7d7b20*/
+  v7 = this->m_width - 22; /*0x7d7b31*/
+  m_pStr = StringW->_m_pStr; /*0x7d7b34*/
+  v11 = 0; /*0x7d7b3c*/
+  CLayoutMan::AddButton(p_m_lm, &v9, m_pStr, 8u, v7, 5, nullptr); /*0x7d7b44*/
+  if ( v9.p ) /*0x7d7b4e*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&v9, nullptr); /*0x7d7b56*/
+    v9.p = nullptr; /*0x7d7b5b*/
+  }
+  v11 = -1; /*0x7d7b67*/
+  if ( v8._m_pStr ) /*0x7d7b71*/
+    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)v8._m_pStr - 1); /*0x7d7b77*/
+}

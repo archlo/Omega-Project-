@@ -1,0 +1,19 @@
+// CUtilDlgEx::OnChildNotify
+// Address: 0x97afb0
+
+void __thiscall CUtilDlgEx::OnChildNotify(CUtilDlgEx *this, unsigned int nId, unsigned int param1, unsigned int param2)
+{
+  if ( nId == 1001 && param1 >= 0x12C && param1 <= 0x130 ) /*0x97afd3*/
+  {
+    this->m_nScrollPos = 8 * param2; /*0x97afe0*/
+    CUIToolTip::ClearToolTip(&this->m_uiToolTip); /*0x97afec*/
+    this->m_nSelect = -1; /*0x97aff5*/
+    CWnd::InvalidateRect(this, nullptr); /*0x97afff*/
+  }
+  if ( param1 == 100 ) /*0x97b007*/
+    this->OnButtonClicked(this, nId); /*0x97b011*/
+}
+
+// References:
+//   ?ClearToolTip@CUIToolTip@@QAEXXZ @ 0x880f20
+//   ?InvalidateRect@CWnd@@QAEXPBUtagRECT@@@Z @ 0x9ad3f0

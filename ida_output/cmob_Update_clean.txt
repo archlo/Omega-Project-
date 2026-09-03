@@ -1,0 +1,35 @@
+void __thiscall CMob::Update(CMob *this)
+{
+  unsigned int m_dwTargetMobID; // eax
+  int update_time; // eax
+  int tSkillDelayTime; // ecx
+  unsigned int v5; // eax
+  CMob::ATTACKENTRY *Next; // eax
+  MobAttackInfo *AttackInfo; // eax
+  __POSITION *nPoison; // eax
+  bool v9; // zf
+  CharacterData *p; // edi
+  SKILLENTRY *Skill; // ebx
+  _bstr_t::Data_t *v12; // ebx
+  CMob::HITEFFECT *v13; // edi
+  int v14; // edi
+  __POSITION *nVenom; // eax
+  __POSITION *nAmbush; // eax
+  MobStat::BURNED_INFO *m_pHead; // eax
+  MobStat::BURNED_INFO *v18; // eax
+  int *v19; // ebx
+  int nDotCount; // eax
+  int IsVulnerableTo; // eax
+  int v22; // ecx
+  CMob::AFFECTEDSKILLENTRY *bottom; // edi
+  __POSITION *v24; // eax
+  CMob::AFFECTEDSKILLENTRY *v25; // edi
+  volatile LONG *p_m_uTableSize; // edi
+  unsigned int v27; // eax
+  int v28; // eax
+  unsigned int v29; // eax
+  void (__stdcall *v30)(VARIANTARG *); // edi
+  HRESULT v31; // eax
+  HRESULT v32; // eax
+  IWzGr2DLayer *m_pInterface; // ecx
+  IWzVector... [59047 chars total]

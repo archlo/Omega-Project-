@@ -1,0 +1,103 @@
+void __thiscall CMob::~CMob(CMob *this)
+{
+  ZList<ZRef<CMob::MobBullet> > *p_m_lList; // ecx
+  TSecData<int> *m_secdata; // eax
+  CAttrShoe *p; // eax
+  CAttrShoe *v5; // ecx
+  IWzCanvas *m_pInterface; // eax
+  IWzGr2DLayer *v7; // eax
+  IWzGr2DLayer *v8; // eax
+  IWzGr2DLayer *v9; // eax
+  IWzGr2DLayer *v10; // eax
+  IWzVector2D *v11; // eax
+  IWzVector2D *v12; // eax
+  IWzVector2D *v13; // eax
+  _bstr_t::Data_t *m_Data; // ecx
+
+  this->CLife::IGObj::__vftable = (CMob_vtbl *)&CMob::`vftable'{for `IGObj'}; /*0x64d078*/
+  this->CLife::IVecCtrlOwner::__vftable = (IVecCtrlOwner_vtbl *)&CMob::`vftable'{for `IVecCtrlOwner'}; /*0x64d07e*/
+  this->CLife::ZRefCounted::__vftable = (ZRefCounted_vtbl *)&CMob::`vftable'{for `ZRefCounted'}; /*0x64d085*/
+  p_m_lList = &this->m_Bullets.m_lList; /*0x64d08c*/
+  this->m_Bullets.__vftable = (CMob::MobBullet::Container_vtbl *)&BulletContainer<CMob::MobBullet>::`vftable'; /*0x64d092*/
+  p_m_lList->__vftable = (ZList<ZRef<CMob::MobBullet> >_vtbl *)&ZList<ZRef<CMob::MobBullet>>::`vftable'; /*0x64d0a4*/
+  ZList<ZRef<CMob::MobBullet>>::RemoveAll(p_m_lList); /*0x64d0aa*/
+  m_secdata = this->m_bChasing.m_secdata; /*0x64d0af*/
+  if ( m_secdata ) /*0x64d0bc*/
+    ZAllocEx<ZAllocAnonSelector>::Free(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, m_secdata); /*0x64d0c4*/
+  this->m_lpStatChangeReserved.__vftable = (ZList<ZRef<CMob::ReservedPacket> >_vtbl *)&ZList<ZRef<CMob::ReservedPacket>>::`vftable'; /*0x64d0d4*/
+  ZList<ZRef<CMob::ReservedPacket>>::RemoveAll(&this->m_lpStatChangeReserved); /*0x64d0da*/
+  ZArray<long>::RemoveAll(&this->m_aRandTimeforAreaAttack); /*0x64d0ea*/
+  ZArray<tagPOINT>::RemoveAll(&this->m_aMultiTargetForBall); /*0x64d0fa*/
+  SECPOINT::~SECPOINT(&this->m_ptPosPrev); /*0x64d10a*/
+  SECPOINT::~SECPOINT(&this->m_ptPos); /*0x64d11a*/
+  p = this->m_pAttrShoe.p; /*0x64d11f*/
+  if ( p ) /*0x64d12c*/
+  {
+    if ( !InterlockedDecrement(&p->_m_nRef) ) /*0x64d132*/
+    {
+      InterlockedIncrement(&this->m_pAttrShoe.p->_m_nRef); /*0x64d146*/
+      v5 = this->m_pAttrShoe.p; /*0x64d14c*/
+      if ( v5 ) /*0x64d154*/
+        ((void (__thiscall *)(CAttrShoe *, int))v5->dtr_ZRefCounted)(v5, 1); /*0x64d15c*/
+    }
+    this->m_pAttrShoe.p = nullptr; /*0x64d15e*/
+  }
+  ZArray<ZArray<_com_ptr_t<_com_IIID<IWzCanvas,&__s_GUID const _GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e>>>>::RemoveAll(&this->m_pCanvasAngerIndicatorArray); /*0x64d173*/
+  ZArray<long>::RemoveAll(&this->m_pCanvasAngerIndicatorArrayCount); /*0x64d183*/
+  this->m_mDelayedHPIndicator.__vftable = (ZMap<long,long,long>_vtbl *)&ZMap<long,long,long>::`vftable'; /*0x64d193*/
+  ZMap<long,long,long>::RemoveAll(&this->m_mDelayedHPIndicator); /*0x64d199*/
+  m_pInterface = this->m_pCanvasHPIndicator.m_pInterface; /*0x64d19e*/
+  if ( m_pInterface ) /*0x64d1ab*/
+    m_pInterface->Release(m_pInterface); /*0x64d1b3*/
+  v7 = this->m_pLayerAngerTag.m_pInterface; /*0x64d1b5*/
+  if ( v7 ) /*0x64d1c2*/
+    v7->Release(v7); /*0x64d1ca*/
+  v8 = this->m_pEffectLayer.m_pInterface; /*0x64d1cc*/
+  if ( v8 ) /*0x64d1d9*/
+    v8->Release(v8); /*0x64d1e1*/
+  v9 = this->m_pLayerHPTag.m_pInterface; /*0x64d1e3*/
+  if ( v9 ) /*0x64d1f0*/
+    v9->Release(v9); /*0x64d1f8*/
+  v10 = this->m_pLayerAction.m_pInterface; /*0x64d1fa*/
+  if ( v10 ) /*0x64d207*/
+    v10->Release(v10); /*0x64d20f*/
+  this->m_lDropPickUpLog.__vftable = (ZList<CMob::DROPPICKUP>_vtbl *)&ZList<CMob::DROPPICKUP>::`vftable'; /*0x64d21c*/
+  ZList<CMob::DROPPICKUP>::RemoveAll(&this->m_lDropPickUpLog); /*0x64d222*/
+  this->m_lHitEffect.__vftable = (ZList<CMob::HITEFFECT>_vtbl *)&ZList<CMob::HITEFFECT>::`vftable'; /*0x64d232*/
+  ZList<CMob::HITEFFECT>::RemoveAll(&this->m_lHitEffect); /*0x64d238*/
+  this->m_lDamageInfo.__vftable = (ZList<CMob::DAMAGEINFO>_vtbl *)&ZList<CMob::DAMAGEINFO>::`vftable'; /*0x64d248*/
+  ZList<CMob::DAMAGEINFO>::RemoveAll(&this->m_lDamageInfo); /*0x64d24e*/
+  this->m_ldwRevive.__vftable = (ZList<unsigned long>_vtbl *)&ZList<unsigned long>::`vftable'; /*0x64d25e*/
+  ZList<unsigned long>::RemoveAll(&this->m_ldwRevive); /*0x64d264*/
+  ZArray<ZList<ZRef<CActionMan::MOBACTIONFRAMEENTRY>>>::RemoveAll(&this->m_aAction); /*0x64d274*/
+  ZArray<tagRECT>::RemoveAll(&this->m_arcAttackBodyFlip); /*0x64d284*/
+  ZArray<tagRECT>::RemoveAll(&this->m_arcAttackBody); /*0x64d294*/
+  ZArray<tagRECT>::RemoveAll(&this->m_arcMultiBodyFlip); /*0x64d2a4*/
+  ZArray<tagRECT>::RemoveAll(&this->m_arcMultiBody); /*0x64d2b4*/
+  this->m_stat.lBurnedInfo.__vftable = (ZList<MobStat::BURNED_INFO>_vtbl *)&ZList<MobStat::BURNED_INFO>::`vftable'; /*0x64d2c4*/
+  ZList<MobStat::BURNED_INFO>::RemoveAll(&this->m_stat.lBurnedInfo); /*0x64d2ca*/
+  v11 = this->m_pvcHead.m_pInterface; /*0x64d2cf*/
+  if ( v11 ) /*0x64d2dc*/
+    v11->Release(v11); /*0x64d2e4*/
+  v12 = this->m_pvcActive.m_pInterface; /*0x64d2e6*/
+  if ( v12 ) /*0x64d2f3*/
+    v12->Release(v12); /*0x64d2fb*/
+  v13 = this->m_pvc.m_pInterface; /*0x64d2fd*/
+  if ( v13 ) /*0x64d30a*/
+    v13->Release(v13); /*0x64d312*/
+  this->m_lpLayerASIcon.__vftable = (ZList<_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > >_vtbl *)&ZList<_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>>::`vftable'; /*0x64d31f*/
+  ZList<_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>>::RemoveAll(&this->m_lpLayerASIcon); /*0x64d325*/
+  this->m_lpLayerASAni.__vftable = (ZList<_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > >_vtbl *)&ZList<_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>>::`vftable'; /*0x64d335*/
+  ZList<_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>>::RemoveAll(&this->m_lpLayerASAni); /*0x64d33b*/
+  this->m_lAttackEntry.__vftable = (ZList<CMob::ATTACKENTRY>_vtbl *)&ZList<CMob::ATTACKENTRY>::`vftable'; /*0x64d34b*/
+  ZList<CMob::ATTACKENTRY>::RemoveAll(&this->m_lAttackEntry); /*0x64d351*/
+  this->m_lAffectedSkillEntry.__vftable = (ZList<CMob::AFFECTEDSKILLENTRY>_vtbl *)&ZList<CMob::AFFECTEDSKILLENTRY>::`vftable'; /*0x64d361*/
+  ZList<CMob::AFFECTEDSKILLENTRY>::RemoveAll(&this->m_lAffectedSkillEntry); /*0x64d367*/
+  m_Data = this->m_effectAttack.sEffect.m_Data; /*0x64d36c*/
+  if ( m_Data ) /*0x64d374*/
+  {
+    _bstr_t::Data_t::Release(m_Data); /*0x64d376*/
+    this->m_effectAttack.sEffect.m_Data = nullptr; /*0x64d37b*/
+  }
+  CLife::~CLife(this); /*0x64d38f*/
+}

@@ -1,0 +1,119 @@
+// cuser::SetAbilityEquip
+
+void __thiscall CUser::SetAbilityEquip(CUser *this)
+{
+  int *ZtlSecureTear_m_nNameTagType; // esi
+  unsigned int v3; // eax
+  IWzProperty *v4; // esi
+  int *v5; // eax
+  IWzProperty *v6; // eax
+  IWzProperty *m_pInterface; // eax
+  _bstr_t::Data_t *v8; // ecx
+  IWzProperty *v9; // edi
+  StringPool *Instance; // eax
+  Ztl_variant_t *v11; // eax
+  _bstr_t::Data_t *v12; // ecx
+  int int32; // edi
+  StringPool *v14; // eax
+  Ztl_variant_t *v15; // eax
+  int v16; // edi
+  int v17; // eax
+  Ztl_bstr_t v18; // [esp-8h] [ebp-5Ch] BYREF
+  int v19; // [esp-4h] [ebp-58h]
+  int *v20; // [esp+14h] [ebp-40h]
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pInfo; // [esp+18h] [ebp-3Ch]
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > result; // [esp+1Ch] [ebp-38h] BYREF
+  int nOldNameTagType; // [esp+20h] [ebp-34h]
+  Ztl_bstr_t *v24; // [esp+24h] [ebp-30h]
+  Ztl_variant_t v25; // [esp+28h] [ebp-2Ch] BYREF
+  Ztl_variant_t v26; // [esp+38h] [ebp-1Ch] BYREF
+  int v27; // [esp+50h] [ebp-4h]
+
+  ZtlSecureTear_m_nNameTagType = this->_ZtlSecureTear_m_nNameTagType; /*0x8eb610*/
+  nOldNameTagType = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nNameTagType, this->_ZtlSecureTear_m_nNameTagType_CS); /*0x8eb627*/
+  this->_ZtlSecureTear_m_nChatBalloonType_CS = _ZtlSecureTear<long>(0, this->_ZtlSecureTear_m_nChatBalloonType); /*0x8eb634*/
+  v3 = _ZtlSecureTear<long>(0, ZtlSecureTear_m_nNameTagType); /*0x8eb63a*/
+  v4 = nullptr; /*0x8eb641*/
+  this->_ZtlSecureTear_m_nNameTagType_CS = v3; /*0x8eb643*/
+  pInfo.m_pInterface = nullptr; /*0x8eb649*/
+  v5 = g_anRingBodyPart; /*0x8eb64d*/
+  v27 = 0; /*0x8eb652*/
+  v20 = g_anRingBodyPart; /*0x8eb656*/
+  do /*0x8eb7ed*/
+  {
+    v6 = (IWzProperty *)this->m_avatarLook.anHairEquip[*v5]; /*0x8eb662*/
+    if ( v6 ) /*0x8eb66b*/
+    {
+      m_pInterface = CItemInfo::GetItemInfo((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, &result, v6)->m_pInterface; /*0x8eb682*/
+      if ( v4 != m_pInterface ) /*0x8eb686*/
+      {
+        v9 = v4; /*0x8eb688*/
+        v4 = m_pInterface; /*0x8eb68a*/
+        pInfo.m_pInterface = m_pInterface; /*0x8eb68c*/
+        if ( m_pInterface ) /*0x8eb692*/
+          m_pInterface->AddRef(m_pInterface); /*0x8eb69a*/
+        if ( v9 ) /*0x8eb69e*/
+          v9->Release(v9); /*0x8eb6a6*/
+      }
+      if ( result.m_pInterface ) /*0x8eb6ae*/
+        result.m_pInterface->Release(result.m_pInterface); /*0x8eb6b6*/
+      if ( v4 ) /*0x8eb6bf*/
+      {
+        v19 = 0; /*0x8eb6c5*/
+        v18.m_Data = v8; /*0x8eb6c6*/
+        v24 = &v18; /*0x8eb6c9*/
+        Instance = StringPool::GetInstance(); /*0x8eb6d3*/
+        StringPool::GetBSTR(Instance, &v18, 0x99Du); /*0x8eb6da*/
+        LOBYTE(v27) = 0; /*0x8eb6f3*/
+        v11 = IWzProperty::Getitem(v4, &v25, v18); /*0x8eb6f7*/
+        LOBYTE(v27) = 2; /*0x8eb6fd*/
+        int32 = get_int32(v11, v19); /*0x8eb710*/
+        LOBYTE(v27) = 0; /*0x8eb712*/
+        if ( v25.vt == 8 ) /*0x8eb716*/
+        {
+          v25.vt = 0; /*0x8eb71e*/
+          if ( v25.decVal.Lo32 ) /*0x8eb725*/
+            ZAPI.CoTaskMemFree((void *)(v25.decVal.Lo32 - 4)); /*0x8eb72b*/
+        }
+        else
+        {
+          VariantClear(&v25); /*0x8eb738*/
+        }
+        if ( int32 ) /*0x8eb740*/
+          this->_ZtlSecureTear_m_nChatBalloonType_CS = _ZtlSecureTear<long>( /*0x8eb74f*/
+                                                         int32,
+                                                         this->_ZtlSecureTear_m_nChatBalloonType);
+        v19 = 0; /*0x8eb755*/
+        v18.m_Data = v12; /*0x8eb756*/
+        v24 = &v18; /*0x8eb759*/
+        v14 = StringPool::GetInstance(); /*0x8eb763*/
+        StringPool::GetBSTR(v14, &v18, 0x99Eu); /*0x8eb76a*/
+        LOBYTE(v27) = 0; /*0x8eb77b*/
+        v15 = IWzProperty::Getitem(v4, &v26, v18); /*0x8eb77f*/
+        LOBYTE(v27) = 4; /*0x8eb785*/
+        v16 = get_int32(v15, v19); /*0x8eb798*/
+        LOBYTE(v27) = 0; /*0x8eb79a*/
+        if ( v26.vt == 8 ) /*0x8eb79e*/
+        {
+          v26.vt = 0; /*0x8eb7a2*/
+          if ( v26.decVal.Lo32 ) /*0x8eb7ad*/
+            ZAPI.CoTaskMemFree((void *)(v26.decVal.Lo32 - 4)); /*0x8eb7b3*/
+        }
+        else
+        {
+          VariantClear(&v26); /*0x8eb7c0*/
+        }
+        if ( v16 ) /*0x8eb7c8*/
+          this->_ZtlSecureTear_m_nNameTagType_CS = _ZtlSecureTear<long>(v16, this->_ZtlSecureTear_m_nNameTagType); /*0x8eb7d7*/
+      }
+    }
+    v5 = ++v20; /*0x8eb7e1*/
+  }
+  while ( (int)v20 < (int)g_anPetAbilBodyPart ); /*0x8eb7ed*/
+  v17 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nNameTagType, this->_ZtlSecureTear_m_nNameTagType_CS); /*0x8eb801*/
+  if ( v17 != nOldNameTagType || this->m_nMedalItemID != this->m_avatarLook.anHairEquip[49] ) /*0x8eb81b*/
+    CUser::DrawNameTags(this); /*0x8eb81f*/
+  v27 = -1; /*0x8eb824*/
+  if ( v4 ) /*0x8eb82e*/
+    v4->Release(v4); /*0x8eb836*/
+}

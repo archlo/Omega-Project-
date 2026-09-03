@@ -1,0 +1,3 @@
+// CUser::GetDragon @ 0x9f2860
+
+{"addr":"0x9f2860","code":"ZRef<CDragon> *__thiscall CUser::GetDragon(CUser *this, ZRef<CDragon> *result)\n{\n  CDragon *p; // eax\n\n  p = this->m_pDragon.p; /*0x9f2861*/\n  result->p = p; /*0x9f2874*/\n  if ( p ) /*0x9f2879*/\n    InterlockedIncrement(&p->_m_nRef); /*0x9f287f*/\n  return result; /*0x9f2887*/\n}","refs":[{"addr":"0xb14074","name":"__imp__InterlockedIncrement@4"}]}

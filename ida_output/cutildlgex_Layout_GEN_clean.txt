@@ -1,0 +1,92 @@
+// CUtilDlgEx::Layout_GEN
+// Address: 0x97b060
+
+void __thiscall CUtilDlgEx::Layout_GEN(CUtilDlgEx *this, int bAvatar)
+{
+  int m_ctHeight; // esi
+  CUtilDlgEx *v3; // ecx
+  int CTHeight_Max; // eax
+  CUtilDlgEx *v5; // ecx
+  int CTHeight_Min; // eax
+  int v7; // eax
+  int v8; // eax
+  int v9; // eax
+  int m_scrHeight; // eax
+  int v11; // eax
+  int WndWidth; // eax
+  CUtilDlgEx *v13; // ecx
+  int WndHeight; // eax
+  int v15; // ecx
+
+  m_ctHeight = this->m_ctHeight; /*0x97b061*/
+  if ( m_ctHeight <= CUtilDlgEx::GetCTHeight_Max(this) || (m_ctHeight - CUtilDlgEx::GetCTHeight_Max(v3)) / 8 <= 1 ) /*0x97b088*/
+  {
+    if ( m_ctHeight >= CUtilDlgEx::GetCTHeight_Min(v3) ) /*0x97b0a8*/
+    {
+      v5->m_scrHeight = m_ctHeight; /*0x97b0b7*/
+    }
+    else
+    {
+      CTHeight_Min = CUtilDlgEx::GetCTHeight_Min(v5); /*0x97b0aa*/
+      v5->m_scrHeight = CTHeight_Min; /*0x97b0af*/
+    }
+    v5->m_bScrollBar = 0; /*0x97b0bd*/
+  }
+  else
+  {
+    CTHeight_Max = CUtilDlgEx::GetCTHeight_Max(v3); /*0x97b08a*/
+    v5->m_scrHeight = CTHeight_Max; /*0x97b08f*/
+    v5->m_bScrollBar = 1; /*0x97b095*/
+  }
+  if ( bAvatar )
+  {
+    v7 = CUtilDlgEx::GetCTHeight_Max(v5); /*0x97b0cf*/
+    v5->m_scrHeight = v7; /*0x97b0d8*/
+    if ( m_ctHeight <= v7 || (m_ctHeight - v7) / 8 <= -1 ) /*0x97b0f0*/
+    {
+      v5->m_bScrollBar = 0; /*0x97b106*/
+      v8 = 95; /*0x97b10c*/
+    }
+    else
+    {
+      v5->m_bScrollBar = 1; /*0x97b0f7*/
+      v8 = 95; /*0x97b0fd*/
+    }
+  }
+  else
+  {
+    v8 = v5->m_bSpeakerOnRight != 0 ? 23 : 158;
+  }
+  v5->m_ctLeft = v8 + (v5->m_bScrollBar != 0 ? 0xFFFFFFFC : 0);
+  if ( bAvatar ) /*0x97b13e*/
+  {
+    v9 = 30; /*0x97b140*/
+  }
+  else
+  {
+    m_scrHeight = v5->m_scrHeight; /*0x97b147*/
+    if ( m_ctHeight <= m_scrHeight ) /*0x97b14f*/
+      v11 = (m_scrHeight - m_ctHeight + 6) / 2; /*0x97b160*/
+    else
+      v11 = -6; /*0x97b151*/
+    v9 = v11 + 22; /*0x97b162*/
+  }
+  v5->m_ctTop = v9; /*0x97b165*/
+  WndWidth = CUtilDlgEx::GetWndWidth(v5); /*0x97b16b*/
+  v13->m_wndWidth = WndWidth; /*0x97b173*/
+  if ( bAvatar ) /*0x97b17a*/
+  {
+    WndHeight = CUtilDlgEx::GetWndHeight(v13); /*0x97b17c*/
+    *(_DWORD *)(v15 + 184) = WndHeight; /*0x97b181*/
+  }
+  else
+  {
+    v13->m_wndHeight = v13->m_scrHeight + 80; /*0x97b193*/
+  }
+}
+
+// References:
+//   ?GetCTHeight_Min@CUtilDlgEx@@IAEJXZ @ 0x97ae90
+//   ?GetCTHeight_Max@CUtilDlgEx@@IAEJXZ @ 0x97ae40
+//   ?GetWndWidth@CUtilDlgEx@@IAEJXZ @ 0x97ad40
+//   ?GetWndHeight@CUtilDlgEx@@IAEJXZ @ 0x97ada0

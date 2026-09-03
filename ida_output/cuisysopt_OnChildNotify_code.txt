@@ -1,0 +1,62 @@
+﻿void __thiscall CUISysOpt::OnChildNotify(CUISysOpt *this, unsigned int nId, unsigned int param1, unsigned int param2)
+{
+  char *m_pStr; // edi
+  CCtrlCheckBox *p; // ecx
+
+  m_pStr = TSingleton<CConfig>::ms_pInstance._m_pStr; /*0x969833*/
+  if ( param1 == 200 ) /*0x96983b*/
+  {
+    switch ( nId ) /*0x96989b*/
+    {
+      case 0x3F2u: /*0x96989b*/
+        CCtrlCheckBox::SetChecked(this->m_pCBScreen800.p, 1); /*0x9698aa*/
+        CCtrlCheckBox::SetChecked(this->m_pCBScreen1024.p, 0); /*0x9698b7*/
+        goto LABEL_17; /*0x9698b7*/
+      case 0x3F3u: /*0x96989b*/
+        CCtrlCheckBox::SetChecked(this->m_pCBScreen800.p, 0); /*0x9698c1*/
+        p = this->m_pCBScreen1024.p; /*0x9698c6*/
+        goto LABEL_16; /*0x9698cc*/
+      case 0x3F5u: /*0x96989b*/
+        CCtrlCheckBox::SetChecked(this->m_pCBWindowed.p, 0); /*0x9698d6*/
+        p = this->m_pCBFullScreen.p; /*0x9698db*/
+        goto LABEL_16; /*0x9698e1*/
+      case 0x3F6u: /*0x96989b*/
+        CCtrlCheckBox::SetChecked(this->m_pCBWindowed.p, 1); /*0x9698eb*/
+        CCtrlCheckBox::SetChecked(this->m_pCBFullScreen.p, 0); /*0x9698f8*/
+        goto LABEL_17; /*0x9698f8*/
+      case 0x3F7u: /*0x96989b*/
+        CCtrlCheckBox::SetChecked(this->m_pCBMinimapSimpleMode.p, 0); /*0x969919*/
+        p = this->m_pCBMinimapNormalMode.p; /*0x96991e*/
+LABEL_16:
+        CCtrlCheckBox::SetChecked(p, 1); /*0x969924*/
+        break; /*0x969926*/
+      case 0x3F8u: /*0x96989b*/
+        CCtrlCheckBox::SetChecked(this->m_pCBMinimapSimpleMode.p, 1); /*0x969902*/
+        CCtrlCheckBox::SetChecked(this->m_pCBMinimapNormalMode.p, 0); /*0x96990f*/
+        break; /*0x96990f*/
+      default:
+        goto LABEL_17;
+    }
+    goto LABEL_17;
+  }
+  if ( param1 != 600 ) /*0x969842*/
+  {
+    if ( param1 != 700 ) /*0x969847*/
+      goto LABEL_18; /*0x969847*/
+LABEL_17:
+    CUISysOpt::GetSysOptFromCtrl(this); /*0x96992b*/
+    goto LABEL_18; /*0x96992d*/
+  }
+  if ( nId == 1005 ) /*0x969859*/
+  {
+    this->m_sysOptCur.nSysOpt_ScreenShot = this->m_pCBScreenShot.p->m_nSelect; /*0x969881*/
+  }
+  else if ( nId == 1012 ) /*0x96985e*/
+  {
+    this->m_sysOptCur.nSysOpt_MobInfo = this->m_pCBMobInfo.p->m_nSelect; /*0x96986d*/
+  }
+LABEL_18:
+  CConfig::ApplySysOpt((CConfig *)m_pStr, &this->m_sysOptCur, 0); /*0x969932*/
+  if ( param1 == 100 ) /*0x969945*/
+    this->OnButtonClicked(this, nId); /*0x96994f*/
+}

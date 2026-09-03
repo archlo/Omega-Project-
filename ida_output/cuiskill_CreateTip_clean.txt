@@ -1,0 +1,299 @@
+// CUISkill::CreateTip
+// Decompiled from v95 IDB
+
+void __thiscall CUISkill::CreateTip(CUISkill *this)
+{
+  StringPool *Instance; // eax
+  ZXString<char> *v3; // eax
+  StringPool *v4; // eax
+  ZXString<char> *v5; // eax
+  StringPool *v6; // eax
+  ZXString<char> *v7; // eax
+  StringPool *v8; // eax
+  ZXString<char> *v9; // eax
+  IWzGr2DLayer *v10; // ecx
+  IWzFont *m_pInterface; // eax
+  IWzGr2DLayer *v12; // eax
+  IWzGr2DLayer *v13; // edi
+  StringPool *v14; // eax
+  ZXString<char> *v15; // eax
+  StringPool *v16; // eax
+  ZXString<char> *v17; // eax
+  StringPool *v18; // eax
+  ZXString<char> *v19; // eax
+  StringPool *v20; // eax
+  ZXString<char> *v21; // eax
+  IWzGr2DLayer *v22; // ecx
+  IWzFont *v23; // eax
+  IWzGr2DLayer *v24; // eax
+  IWzGr2DLayer *v25; // edi
+  StringPool *v26; // eax
+  ZXString<char> *v27; // eax
+  StringPool *v28; // eax
+  ZXString<char> *v29; // eax
+  StringPool *v30; // eax
+  ZXString<char> *v31; // eax
+  StringPool *v32; // eax
+  ZXString<char> *v33; // eax
+  IWzGr2DLayer *v34; // ecx
+  IWzFont *v35; // eax
+  IWzGr2DLayer *v36; // eax
+  IWzGr2DLayer *v37; // edi
+  _com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> > v38; // [esp+8h] [ebp-40h] BYREF
+  int v39; // [esp+Ch] [ebp-3Ch]
+  int v40; // [esp+10h] [ebp-38h]
+  int v41; // [esp+14h] [ebp-34h]
+  ZArray<ZXString<char> > *p_aContents; // [esp+18h] [ebp-30h]
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v43[5]; // [esp+1Ch] [ebp-2Ch] BYREF
+  ZArray<ZXString<char> > aContents; // [esp+30h] [ebp-18h] BYREF
+  ZXString<char> result; // [esp+34h] [ebp-14h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v46; // [esp+38h] [ebp-10h]
+  int v47; // [esp+44h] [ebp-4h]
+
+  aContents.a = nullptr; /*0x84fdfa*/
+  v47 = 0; /*0x84fe02*/
+  ZArray<ZXString<char>>::RemoveAll(&aContents); /*0x84fe06*/
+  Instance = StringPool::GetInstance(); /*0x84fe15*/
+  v43[0].m_pInterface = (IWzGr2DLayer *)StringPool::GetString(Instance, &result, 0x10F5u); /*0x84fe21*/
+  LOBYTE(v47) = 1; /*0x84fe28*/
+  v3 = ZArray<ZXString<char>>::InsertBefore(&aContents, -1); /*0x84fe2d*/
+  ZXString<char>::operator=(v3, (const ZXString<char> *)v43[0].m_pInterface); /*0x84fe34*/
+  LOBYTE(v47) = 0; /*0x84fe3d*/
+  if ( result._m_pStr ) /*0x84fe43*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x84fe49*/
+  v4 = StringPool::GetInstance(); /*0x84fe5b*/
+  v43[0].m_pInterface = (IWzGr2DLayer *)StringPool::GetString(v4, &result, 0x10F6u); /*0x84fe67*/
+  LOBYTE(v47) = 2; /*0x84fe6e*/
+  v5 = ZArray<ZXString<char>>::InsertBefore(&aContents, -1); /*0x84fe73*/
+  ZXString<char>::operator=(v5, (const ZXString<char> *)v43[0].m_pInterface); /*0x84fe7a*/
+  LOBYTE(v47) = 0; /*0x84fe83*/
+  if ( result._m_pStr ) /*0x84fe89*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x84fe8f*/
+  v6 = StringPool::GetInstance(); /*0x84fea1*/
+  v43[0].m_pInterface = (IWzGr2DLayer *)StringPool::GetString(v6, &result, 0x10F7u); /*0x84fead*/
+  LOBYTE(v47) = 3; /*0x84feb4*/
+  v7 = ZArray<ZXString<char>>::InsertBefore(&aContents, -1); /*0x84feb9*/
+  ZXString<char>::operator=(v7, (const ZXString<char> *)v43[0].m_pInterface); /*0x84fec0*/
+  LOBYTE(v47) = 0; /*0x84fec9*/
+  if ( result._m_pStr ) /*0x84fecf*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x84fed5*/
+  v8 = StringPool::GetInstance(); /*0x84fee7*/
+  v43[0].m_pInterface = (IWzGr2DLayer *)StringPool::GetString(v8, &result, 0x10F8u); /*0x84fef3*/
+  LOBYTE(v47) = 4; /*0x84fefa*/
+  v9 = ZArray<ZXString<char>>::InsertBefore(&aContents, -1); /*0x84feff*/
+  ZXString<char>::operator=(v9, (const ZXString<char> *)v43[0].m_pInterface); /*0x84ff06*/
+  LOBYTE(v47) = 0; /*0x84ff0f*/
+  if ( result._m_pStr ) /*0x84ff15*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x84ff1b*/
+  v43[0].m_pInterface = v10; /*0x84ff23*/
+  result._m_pStr = (char *)v43; /*0x84ff26*/
+  CWnd::GetLayer(this, v43); /*0x84ff2d*/
+  m_pInterface = this->m_pFont.m_pInterface; /*0x84ff32*/
+  p_aContents = &aContents; /*0x84ff3c*/
+  v41 = 97; /*0x84ff3d*/
+  v40 = 14; /*0x84ff3f*/
+  v39 = 1; /*0x84ff41*/
+  v46 = (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v38; /*0x84ff46*/
+  v38.m_pInterface = m_pInterface; /*0x84ff4a*/
+  if ( m_pInterface ) /*0x84ff4e*/
+    m_pInterface->AddRef(m_pInterface); /*0x84ff56*/
+  v12 = UIHelper::MakeBalloonTip( /*0x84ff62*/
+          (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&result,
+          v38,
+          v39,
+          v40,
+          v41,
+          p_aContents,
+          v43[0])->m_pInterface;
+  v13 = this->m_pLayerTip[0].m_pInterface; /*0x84ff64*/
+  if ( v13 != v12 ) /*0x84ff6f*/
+  {
+    this->m_pLayerTip[0].m_pInterface = v12; /*0x84ff71*/
+    if ( v12 ) /*0x84ff79*/
+      v12->AddRef(v12); /*0x84ff81*/
+    if ( v13 ) /*0x84ff85*/
+      v13->Release(v13); /*0x84ff8d*/
+  }
+  if ( result._m_pStr ) /*0x84ff95*/
+    (*(void (__stdcall **)(char *))(*(_DWORD *)result._m_pStr + 8))(result._m_pStr); /*0x84ff9d*/
+  ZArray<ZXString<char>>::RemoveAll(&aContents); /*0x84ffa3*/
+  v43[0].m_pInterface = (IWzGr2DLayer *)4345; /*0x84ffac*/
+  p_aContents = (ZArray<ZXString<char> > *)&result; /*0x84ffb1*/
+  v14 = StringPool::GetInstance(); /*0x84ffb2*/
+  v43[0].m_pInterface = (IWzGr2DLayer *)StringPool::GetString( /*0x84ffbe*/
+                                          v14,
+                                          (ZXString<char> *)p_aContents,
+                                          (unsigned int)v43[0].m_pInterface);
+  LOBYTE(v47) = 5; /*0x84ffc5*/
+  v15 = ZArray<ZXString<char>>::InsertBefore(&aContents, -1); /*0x84ffca*/
+  ZXString<char>::operator=(v15, (const ZXString<char> *)v43[0].m_pInterface); /*0x84ffd1*/
+  LOBYTE(v47) = 0; /*0x84ffda*/
+  if ( result._m_pStr ) /*0x84ffe0*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x84ffe6*/
+  v43[0].m_pInterface = (IWzGr2DLayer *)4346; /*0x84fff2*/
+  p_aContents = (ZArray<ZXString<char> > *)&result; /*0x84fff7*/
+  v16 = StringPool::GetInstance(); /*0x84fff8*/
+  v43[0].m_pInterface = (IWzGr2DLayer *)StringPool::GetString( /*0x850004*/
+                                          v16,
+                                          (ZXString<char> *)p_aContents,
+                                          (unsigned int)v43[0].m_pInterface);
+  LOBYTE(v47) = 6; /*0x85000b*/
+  v17 = ZArray<ZXString<char>>::InsertBefore(&aContents, -1); /*0x850010*/
+  ZXString<char>::operator=(v17, (const ZXString<char> *)v43[0].m_pInterface); /*0x850017*/
+  LOBYTE(v47) = 0; /*0x850020*/
+  if ( result._m_pStr ) /*0x850026*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x85002c*/
+  v43[0].m_pInterface = (IWzGr2DLayer *)4347; /*0x850038*/
+  p_aContents = (ZArray<ZXString<char> > *)&result; /*0x85003d*/
+  v18 = StringPool::GetInstance(); /*0x85003e*/
+  v43[0].m_pInterface = (IWzGr2DLayer *)StringPool::GetString( /*0x85004a*/
+                                          v18,
+                                          (ZXString<char> *)p_aContents,
+                                          (unsigned int)v43[0].m_pInterface);
+  LOBYTE(v47) = 7; /*0x850051*/
+  v19 = ZArray<ZXString<char>>::InsertBefore(&aContents, -1); /*0x850056*/
+  ZXString<char>::operator=(v19, (const ZXString<char> *)v43[0].m_pInterface); /*0x85005d*/
+  LOBYTE(v47) = 0; /*0x850066*/
+  if ( result._m_pStr ) /*0x85006c*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x850072*/
+  v43[0].m_pInterface = (IWzGr2DLayer *)4348; /*0x85007e*/
+  p_aContents = (ZArray<ZXString<char> > *)&result; /*0x850083*/
+  v20 = StringPool::GetInstance(); /*0x850084*/
+  v43[0].m_pInterface = (IWzGr2DLayer *)StringPool::GetString( /*0x850090*/
+                                          v20,
+                                          (ZXString<char> *)p_aContents,
+                                          (unsigned int)v43[0].m_pInterface);
+  LOBYTE(v47) = 8; /*0x850097*/
+  v21 = ZArray<ZXString<char>>::InsertBefore(&aContents, -1); /*0x85009c*/
+  ZXString<char>::operator=(v21, (const ZXString<char> *)v43[0].m_pInterface); /*0x8500a3*/
+  LOBYTE(v47) = 0; /*0x8500ac*/
+  if ( result._m_pStr ) /*0x8500b2*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x8500b8*/
+  v43[0].m_pInterface = v22; /*0x8500c0*/
+  v46 = v43; /*0x8500c3*/
+  CWnd::GetLayer(this, v43); /*0x8500ca*/
+  p_aContents = &aContents; /*0x8500d3*/
+  v23 = this->m_pFont.m_pInterface; /*0x8500d4*/
+  v41 = 119; /*0x8500da*/
+  v40 = 147; /*0x8500dc*/
+  v39 = 2; /*0x8500e1*/
+  v46 = (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v38; /*0x8500e6*/
+  v38.m_pInterface = v23; /*0x8500ea*/
+  if ( v23 ) /*0x8500ee*/
+    v23->AddRef(v23); /*0x8500f6*/
+  v24 = UIHelper::MakeBalloonTip( /*0x850102*/
+          (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&result,
+          v38,
+          v39,
+          v40,
+          v41,
+          p_aContents,
+          v43[0])->m_pInterface;
+  v25 = this->m_pLayerTip[1].m_pInterface; /*0x850104*/
+  if ( v25 != v24 ) /*0x85010f*/
+  {
+    this->m_pLayerTip[1].m_pInterface = v24; /*0x850111*/
+    if ( v24 ) /*0x850119*/
+      v24->AddRef(v24); /*0x850121*/
+    if ( v25 ) /*0x850125*/
+      v25->Release(v25); /*0x85012d*/
+  }
+  if ( result._m_pStr ) /*0x850135*/
+    (*(void (__stdcall **)(char *))(*(_DWORD *)result._m_pStr + 8))(result._m_pStr); /*0x85013d*/
+  ZArray<ZXString<char>>::RemoveAll(&aContents); /*0x850143*/
+  v43[0].m_pInterface = (IWzGr2DLayer *)4349; /*0x85014c*/
+  p_aContents = (ZArray<ZXString<char> > *)&result; /*0x850151*/
+  v26 = StringPool::GetInstance(); /*0x850152*/
+  v43[0].m_pInterface = (IWzGr2DLayer *)StringPool::GetString( /*0x85015e*/
+                                          v26,
+                                          (ZXString<char> *)p_aContents,
+                                          (unsigned int)v43[0].m_pInterface);
+  LOBYTE(v47) = 9; /*0x850165*/
+  v27 = ZArray<ZXString<char>>::InsertBefore(&aContents, -1); /*0x85016a*/
+  ZXString<char>::operator=(v27, (const ZXString<char> *)v43[0].m_pInterface); /*0x850171*/
+  LOBYTE(v47) = 0; /*0x85017a*/
+  if ( result._m_pStr ) /*0x850180*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x850186*/
+  v43[0].m_pInterface = (IWzGr2DLayer *)4350; /*0x850192*/
+  p_aContents = (ZArray<ZXString<char> > *)&result; /*0x850197*/
+  v28 = StringPool::GetInstance(); /*0x850198*/
+  v43[0].m_pInterface = (IWzGr2DLayer *)StringPool::GetString( /*0x8501a4*/
+                                          v28,
+                                          (ZXString<char> *)p_aContents,
+                                          (unsigned int)v43[0].m_pInterface);
+  LOBYTE(v47) = 10; /*0x8501ab*/
+  v29 = ZArray<ZXString<char>>::InsertBefore(&aContents, -1); /*0x8501b0*/
+  ZXString<char>::operator=(v29, (const ZXString<char> *)v43[0].m_pInterface); /*0x8501b7*/
+  LOBYTE(v47) = 0; /*0x8501c0*/
+  if ( result._m_pStr ) /*0x8501c6*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x8501cc*/
+  v43[0].m_pInterface = (IWzGr2DLayer *)4351; /*0x8501d8*/
+  p_aContents = (ZArray<ZXString<char> > *)&result; /*0x8501dd*/
+  v30 = StringPool::GetInstance(); /*0x8501de*/
+  v43[0].m_pInterface = (IWzGr2DLayer *)StringPool::GetString( /*0x8501ea*/
+                                          v30,
+                                          (ZXString<char> *)p_aContents,
+                                          (unsigned int)v43[0].m_pInterface);
+  LOBYTE(v47) = 11; /*0x8501f1*/
+  v31 = ZArray<ZXString<char>>::InsertBefore(&aContents, -1); /*0x8501f6*/
+  ZXString<char>::operator=(v31, (const ZXString<char> *)v43[0].m_pInterface); /*0x8501fd*/
+  LOBYTE(v47) = 0; /*0x850206*/
+  if ( result._m_pStr ) /*0x85020c*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x850212*/
+  v43[0].m_pInterface = (IWzGr2DLayer *)4352; /*0x85021e*/
+  p_aContents = (ZArray<ZXString<char> > *)&result; /*0x850223*/
+  v32 = StringPool::GetInstance(); /*0x850224*/
+  v43[0].m_pInterface = (IWzGr2DLayer *)StringPool::GetString( /*0x850230*/
+                                          v32,
+                                          (ZXString<char> *)p_aContents,
+                                          (unsigned int)v43[0].m_pInterface);
+  LOBYTE(v47) = 12; /*0x850237*/
+  v33 = ZArray<ZXString<char>>::InsertBefore(&aContents, -1); /*0x85023c*/
+  ZXString<char>::operator=(v33, (const ZXString<char> *)v43[0].m_pInterface); /*0x850243*/
+  LOBYTE(v47) = 0; /*0x85024c*/
+  if ( result._m_pStr ) /*0x850252*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x850258*/
+  v43[0].m_pInterface = v34; /*0x850260*/
+  v46 = v43; /*0x850263*/
+  CWnd::GetLayer(this, v43); /*0x85026a*/
+  p_aContents = &aContents; /*0x850273*/
+  v35 = this->m_pFont.m_pInterface; /*0x850274*/
+  v41 = 271; /*0x85027a*/
+  v40 = 100; /*0x85027f*/
+  v39 = 0; /*0x850281*/
+  v46 = (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v38; /*0x850285*/
+  v38.m_pInterface = v35; /*0x850289*/
+  if ( v35 ) /*0x85028d*/
+    v35->AddRef(v35); /*0x850295*/
+  v36 = UIHelper::MakeBalloonTip( /*0x8502a1*/
+          (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&result,
+          v38,
+          v39,
+          v40,
+          v41,
+          p_aContents,
+          v43[0])->m_pInterface;
+  v37 = this->m_pLayerTip[2].m_pInterface; /*0x8502a3*/
+  if ( v37 != v36 ) /*0x8502ae*/
+  {
+    this->m_pLayerTip[2].m_pInterface = v36; /*0x8502b0*/
+    if ( v36 ) /*0x8502b8*/
+      v36->AddRef(v36); /*0x8502c0*/
+    if ( v37 ) /*0x8502c4*/
+      v37->Release(v37); /*0x8502cc*/
+  }
+  if ( result._m_pStr ) /*0x8502d4*/
+    (*(void (__stdcall **)(char *))(*(_DWORD *)result._m_pStr + 8))(result._m_pStr); /*0x8502dc*/
+  v47 = -1; /*0x8502e2*/
+  ZArray<ZXString<char>>::RemoveAll(&aContents); /*0x8502ea*/
+}
+
+// References:
+//   ?RemoveAll@?$ZArray@V?$ZXString@D@@@@QAEXXZ @ 0x483cf0
+//   ?GetInstance@StringPool@@SAAAV1@XZ @ 0x7466a0
+//   ?GetString@StringPool@@QAE?AV?$ZXString@D@@I@Z @ 0x403b30
+//   ?InsertBefore@?$ZArray@V?$ZXString@D@@@@QAEAAV?$ZXString@D@@H@Z @ 0x494c20
+//   ??4?$ZXString@D@@QAEAAV0@ABV0@@Z @ 0x42d1c0
+//   ?_Release@?$ZXString@D@@KAXPAU_ZXStringData@1@@Z @ 0x403460
+//   ?GetLayer@CWnd@@QAE?AV?$_com_ptr_t@V?$_com_IIID@UIWzGr2DLayer@@$1?_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf@@3U__s_GUID@@B@@@@XZ @ 0x42a270
+//   ?MakeBalloonTip@UIHelper@@SA?AV?$_com_ptr_t@V?$_com_IIID@UIWzGr2DLayer@@$1?_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf@@3U__s_GUID@@B@@@@V?$_com_ptr_t@V?$_com_IIID@UIWzFont@@$1?_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac@@3U__s_GUID@@B@@@@JJJABV?$ZArray@V?$ZXString@D@@@@V2@@Z @ 0x7c9780

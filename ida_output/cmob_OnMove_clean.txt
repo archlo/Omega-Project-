@@ -1,0 +1,222 @@
+void __thiscall CMob::OnMove(CMob *this, CInPacket *iPacket)
+{
+  int v4; // ebp
+  int v5; // edi
+  IWzVector2D *m_pInterface; // eax
+  IWzVector2D *v7; // eax
+  IWzVector2D *v8; // ecx
+  CMobTemplate *m_pTemplate; // eax
+  int v10; // eax
+  int v11; // eax
+  unsigned int v12; // edi
+  unsigned int v13; // ebp
+  tagPOINT *v14; // eax
+  bool v15; // zf
+  int v16; // eax
+  int v17; // ebp
+  int v18; // edi
+  CMobTemplate *m_pTemplateByDoom; // eax
+  int v20; // eax
+  int v21; // edi
+  unsigned int v22; // eax
+  unsigned int ZtlSecureTear_m_nMoveAction_CS; // edx
+  int v24; // eax
+  int v25; // eax
+  int ActionDelay; // eax
+  int v27; // eax
+  tagPOINT (__thiscall *GetPos)(IVecCtrlOwner *); // edx
+  int v29; // eax
+  unsigned int sound_volume_by_pos; // eax
+  int m_Data_low; // edi
+  int v32; // ebp
+  const MOBSKILLENTRY *MobSkill; // eax
+  const MobSkillInfo *v34; // edi
+  MOBSKILLLEVELDATA *a; // ecx
+  _bstr_t::Data_t *m_Data; // ebp
+  int update_time; // eax
+  int tEffectAfter; // edx
+  CVecCtrlMob *pvc; // [esp+24h] [ebp-30h]
+  int v40; // [esp+28h] [ebp-2Ch] BYREF
+  int bNotChangeAction; // [esp+30h] [ebp-24h] BYREF
+  Ztl_bstr_t sEffect; // [esp+38h] [ebp-1Ch] BYREF
+  int bNotForceLandingWhenDiscard; // [esp+3Ch] [ebp-18h]
+  const MobSkillInfo *p; // [esp+40h] [ebp-14h]
+  int bNextAttackPossible; // [esp+44h] [ebp-10h]
+  int v46; // [esp+50h] [ebp-4h]
+  unsigned __int8 bLeft; // [esp+58h] [ebp+4h]
+  IWzGr2DLayer *bLefta; // [esp+58h] [ebp+4h]
+
+  v4 = CInPacket::Decode1(iPacket); /*0x652214*/
+  bNotForceLandingWhenDiscard = v4; /*0x652219*/
+  bNotChangeAction = CInPacket::Decode1(iPacket); /*0x652227*/
+  v5 = CInPacket::Decode1(iPacket); /*0x652230*/
+  bNextAttackPossible = v5; /*0x652235*/
+  bLeft = CInPacket::Decode1(iPacket); /*0x652244*/
+  if ( _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nMobCtrlState, this->_ZtlSecureTear_m_nMobCtrlState_CS) != 1 /*0x65226e*/
+    || v5
+    || (bLeft >> 1) - 13 <= 8u )
+  {
+    p = (const MobSkillInfo *)get_update_time(); /*0x652279*/
+    m_pInterface = this->m_pvc.m_pInterface; /*0x65227d*/
+    if ( m_pInterface ) /*0x652285*/
+      pvc = (CVecCtrlMob *)&m_pInterface[-3]; /*0x65228a*/
+    else
+      pvc = nullptr; /*0x652290*/
+    if ( CMob::IsActive(this) ) /*0x65229a*/
+    {
+      v7 = this->m_pvcActive.m_pInterface; /*0x6522a3*/
+      if ( v7 ) /*0x6522ab*/
+        v8 = v7 - 3; /*0x6522ad*/
+      else
+        v8 = nullptr; /*0x6522b2*/
+      ((void (__thiscall *)(IWzVector2D *, _DWORD, _DWORD, _DWORD, _DWORD, _DWORD, _DWORD, _DWORD))v8->AddRef)( /*0x6522c7*/
+        v8,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0);
+      if ( !this->m_stat.nDoom_ || (m_pTemplate = this->m_pTemplateByDoom) == nullptr ) /*0x6522da*/
+        m_pTemplate = this->m_pTemplate; /*0x6522dc*/
+      v10 = _ZtlSecureFuse<long>(m_pTemplate->_ZtlSecureTear_nMoveAbility, m_pTemplate->_ZtlSecureTear_nMoveAbility_CS); /*0x6522ea*/
+      CMovePath::DiscardByInterrupt(&pvc->m_path, v10, pvc, v4); /*0x6522ff*/
+    }
+    sEffect.m_Data = (_bstr_t::Data_t *)CInPacket::Decode4(iPacket); /*0x652311*/
+    ZArray<tagPOINT>::RemoveAll(&this->m_aMultiTargetForBall); /*0x652315*/
+    v11 = CInPacket::Decode4(iPacket); /*0x65231c*/
+    if ( v11 > 0 ) /*0x652323*/
+    {
+      v40 = v11; /*0x652325*/
+      do /*0x652359*/
+      {
+        v12 = CInPacket::Decode4(iPacket); /*0x652339*/
+        v13 = CInPacket::Decode4(iPacket); /*0x652348*/
+        v14 = ZArray<tagPOINT>::InsertBefore(&this->m_aMultiTargetForBall, -1); /*0x65234a*/
+        v15 = v40-- == 1; /*0x65234f*/
+        v14->x = v12; /*0x652354*/
+        v14->y = v13; /*0x652356*/
+      }
+      while ( !v15 ); /*0x652359*/
+    }
+    v16 = CInPacket::Decode4(iPacket); /*0x65235d*/
+    if ( v16 > 0 ) /*0x652364*/
+    {
+      v17 = v16; /*0x652366*/
+      do /*0x652383*/
+      {
+        v18 = CInPacket::Decode4(iPacket); /*0x652377*/
+        --v17; /*0x65237e*/
+        *ZArray<long>::InsertBefore(&this->m_aRandTimeforAreaAttack, -1) = v18; /*0x652381*/
+      }
+      while ( v17 ); /*0x652383*/
+    }
+    if ( (bLeft & 0x80u) == 0 ) /*0x65238a*/
+    {
+      if ( !this->m_stat.nDoom_ || (m_pTemplateByDoom = this->m_pTemplateByDoom) == nullptr ) /*0x6523a1*/
+        m_pTemplateByDoom = this->m_pTemplate; /*0x6523a3*/
+      v20 = _ZtlSecureFuse<long>( /*0x6523b1*/
+              m_pTemplateByDoom->_ZtlSecureTear_nMoveAbility,
+              m_pTemplateByDoom->_ZtlSecureTear_nMoveAbility_CS);
+      CMovePath::DiscardByInterrupt(&pvc->m_path, v20, pvc, bNotForceLandingWhenDiscard); /*0x6523ca*/
+      v21 = bLeft >> 1; /*0x6523e7*/
+      bLefta = (IWzGr2DLayer *)(bLeft & 1); /*0x6523e9*/
+      if ( ((unsigned int)(_ZtlSecureFuse<long>( /*0x652422*/
+                             this->_ZtlSecureTear_m_nOneTimeAction,
+                             this->_ZtlSecureTear_m_nOneTimeAction_CS)
+                         - 13) > 8
+         && (unsigned int)(_ZtlSecureFuse<long>(
+                             this->_ZtlSecureTear_m_nOneTimeAction,
+                             this->_ZtlSecureTear_m_nOneTimeAction_CS)
+                         - 22) > 0x10
+         || (unsigned int)(v21 - 7) > 2)
+        && !bNotChangeAction )
+      {
+        v22 = _ZtlSecureTear<long>(v21, this->_ZtlSecureTear_m_nOneTimeAction); /*0x652428*/
+        ZtlSecureTear_m_nMoveAction_CS = this->_ZtlSecureTear_m_nMoveAction_CS; /*0x65242d*/
+        this->_ZtlSecureTear_m_nOneTimeAction_CS = v22; /*0x652433*/
+        v24 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nMoveAction, ZtlSecureTear_m_nMoveAction_CS); /*0x652441*/
+        this->_ZtlSecureTear_m_nMoveAction_CS = _ZtlSecureTear<long>( /*0x652461*/
+                                                  v24 ^ ((unsigned __int8)bLefta ^ (unsigned __int8)v24) & 1,
+                                                  this->_ZtlSecureTear_m_nMoveAction);
+        CMob::PrepareActionLayer(this); /*0x652467*/
+      }
+      if ( (unsigned int)(v21 - 13) > 8 || bNotChangeAction ) /*0x652479*/
+      {
+        if ( (unsigned int)(v21 - 7) > 2 ) /*0x6524a8*/
+        {
+          if ( (unsigned int)(v21 - 22) <= 0x10 ) /*0x6524d4*/
+          {
+            v27 = _ZtlSecureFuse<unsigned long>( /*0x6524e8*/
+                    this->m_pTemplate->_ZtlSecureTear_dwTemplateID,
+                    this->m_pTemplate->_ZtlSecureTear_dwTemplateID_CS);
+            GetPos = this->GetPos; /*0x6524f0*/
+            bNotForceLandingWhenDiscard = v27; /*0x6524f6*/
+            p = (const MobSkillInfo *)((int (__thiscall *)(IVecCtrlOwner *, int *))GetPos)( /*0x652506*/
+                                        &this->IVecCtrlOwner,
+                                        &bNotChangeAction);
+            v29 = ((int (__thiscall *)(IVecCtrlOwner *, int *))this->GetPos)(&this->IVecCtrlOwner, &v40); /*0x652517*/
+            sound_volume_by_pos = get_sound_volume_by_pos((int)p->__vftable, *(_DWORD *)(v29 + 4)); /*0x652524*/
+            play_mob_sound(bNotForceLandingWhenDiscard, (SE_TYPE)(v21 - 2), sound_volume_by_pos); /*0x652533*/
+            m_Data_low = LOBYTE(sEffect.m_Data); /*0x652542*/
+            v32 = BYTE1(sEffect.m_Data); /*0x65254c*/
+            p = CMobTemplate::GetSkillInfo(this->m_pTemplate, LOBYTE(sEffect.m_Data)); /*0x65255b*/
+            MobSkill = CSkillInfo::GetMobSkill(TSingleton<CSkillInfo>::ms_pInstance, m_Data_low); /*0x65255f*/
+            v34 = p; /*0x652564*/
+            if ( p ) /*0x65256a*/
+            {
+              if ( MobSkill && v32 > 0 ) /*0x65257a*/
+              {
+                a = MobSkill->aLevelData.a; /*0x652580*/
+                if ( a ) /*0x652585*/
+                  a = (MOBSKILLLEVELDATA *)a[-1].adwTemplateID.a; /*0x652587*/
+                if ( v32 <= (unsigned int)a ) /*0x65258c*/
+                {
+                  MOBSKILLLEVELDATA::GetEffectUOL(&MobSkill->aLevelData.a[v32 - 1], &sEffect); /*0x6525a1*/
+                  m_Data = sEffect.m_Data; /*0x6525a6*/
+                  v46 = 0; /*0x6525aa*/
+                  if ( sEffect.m_Data ) /*0x6525b4*/
+                  {
+                    if ( sEffect.m_Data->m_wstr ) /*0x6525b6*/
+                    {
+                      if ( *((_DWORD *)sEffect.m_Data->m_wstr - 1) >> 1 ) /*0x6525c6*/
+                      {
+                        Ztl_bstr_t::operator=(&this->m_effectAttack.sEffect, &sEffect); /*0x6525d5*/
+                        this->m_effectAttack.bLeft = (int)bLefta; /*0x6525de*/
+                        update_time = get_update_time(); /*0x6525e4*/
+                        tEffectAfter = v34->tEffectAfter; /*0x6525e9*/
+                        this->m_effectAttack.tStart = tEffectAfter + update_time; /*0x6525ee*/
+                        if ( !(tEffectAfter + update_time) ) /*0x6525ec*/
+                          this->m_effectAttack.tStart = 1; /*0x6525f6*/
+                      }
+                    }
+                  }
+                  v46 = -1; /*0x652600*/
+                  if ( m_Data ) /*0x65260a*/
+                    _bstr_t::Data_t::Release(m_Data); /*0x65260e*/
+                }
+              }
+            }
+          }
+        }
+        else
+        {
+          ActionDelay = CMob::GetActionDelay(this, v21); /*0x6524ad*/
+          this->_ZtlSecureTear_m_tHitExpire_CS = _ZtlSecureTear<long>( /*0x6524c3*/
+                                                   (int)p + ActionDelay,
+                                                   this->_ZtlSecureTear_m_tHitExpire);
+        }
+      }
+      else
+      {
+        v25 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nOneTimeAction, this->_ZtlSecureTear_m_nOneTimeAction_CS); /*0x652483*/
+        CMob::DoAttack(this, v25, bLefta, (CMob::TARGETINFO)sEffect.m_Data); /*0x652498*/
+      }
+    }
+    CMovePath::OnMovePacket(&pvc->m_path, iPacket, 0); /*0x652620*/
+    this->_ZtlSecureTear_m_nMobCtrlState_CS = _ZtlSecureTear<long>( /*0x65263b*/
+                                                -(bNextAttackPossible != 0) - 2,
+                                                this->_ZtlSecureTear_m_nMobCtrlState);
+  }
+}

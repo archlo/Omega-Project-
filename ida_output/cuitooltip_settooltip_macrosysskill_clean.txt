@@ -1,0 +1,236 @@
+void __thiscall CUIToolTip::SetToolTip_MacroSysSkill(CUIToolTip *this, int x, int y, int nMacroIdx)
+{
+  IWzCanvas *v5; // ecx
+  IWzFont *v6; // ecx
+  StringPool *Instance; // eax
+  char *v8; // eax
+  int m_nWidth; // edx
+  StringPool *v10; // eax
+  char *v11; // eax
+  void (__stdcall *v12)(VARIANTARG *); // edi
+  HRESULT v13; // eax
+  HRESULT v14; // eax
+  char *v15; // ebx
+  void *v16; // esp
+  _bstr_t::Data_t *v17; // ecx
+  Ztl_variant_t *ObjectA; // eax
+  IUnknown *Unknown; // eax
+  HRESULT v20; // eax
+  HRESULT (__stdcall *v21)(VARIANTARG *); // edi
+  int v22; // edi
+  int Macro; // eax
+  IWzFont *v24; // ecx
+  const SKILLENTRY *Skill; // eax
+  ZXString<char> *v26; // eax
+  const ZXString<char> *v27; // eax
+  char *v28; // edi
+  _bstr_t v29; // [esp-14h] [ebp-7Ch] BYREF
+  _com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> > v30; // [esp-10h] [ebp-78h] BYREF
+  int p_pvarg; // [esp-Ch] [ebp-74h]
+  char *m_pStr; // [esp-8h] [ebp-70h]
+  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > v33; // [esp-4h] [ebp-6Ch] BYREF
+  wchar_t v34[8]; // [esp+0h] [ebp-68h] BYREF
+  ZXString<char> sFormat; // [esp+10h] [ebp-58h]
+  Ztl_variant_t result; // [esp+14h] [ebp-54h] BYREF
+  VARIANTARG pvarg; // [esp+24h] [ebp-44h] BYREF
+  VARIANTARG pvargDest; // [esp+34h] [ebp-34h] BYREF
+  ZXString<char> v39; // [esp+44h] [ebp-24h] BYREF
+  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > pCanvas; // [esp+48h] [ebp-20h] BYREF
+  ZXString<char> sMsg; // [esp+4Ch] [ebp-1Ch] BYREF
+  ZXString<char> v42; // [esp+50h] [ebp-18h] BYREF
+  ZXString<char> sUOL; // [esp+54h] [ebp-14h] BYREF
+  int v44; // [esp+64h] [ebp-4h]
+
+  if ( !this->m_pLayer.m_pInterface || this->m_nLastX != x || this->m_nLastY != y ) /*0x89e23b*/
+  {
+    CUIToolTip::SetBasicInfo(this, 11, 290, 142, 125); /*0x89e24f*/
+    sFormat._m_pStr = nullptr; /*0x89e256*/
+    v44 = 0; /*0x89e264*/
+    CUIToolTip::MakeLayer(this, &pCanvas, x, y, 1, 0, 0, 0xCC0E395A, 0); /*0x89e26e*/
+    v33.m_pInterface = v5; /*0x89e273*/
+    v42._m_pStr = (char *)&v33; /*0x89e276*/
+    LOBYTE(v44) = 1; /*0x89e27e*/
+    CUIToolTip::GetFontByType( /*0x89e282*/
+      this,
+      (_com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> > *)&v33,
+      1);
+    LOBYTE(v44) = 2; /*0x89e295*/
+    m_pStr = CMacroSysMan::GetMacroName( /*0x89e2a4*/
+               (CMacroSysMan *)TSingleton<CMacroSysMan>::ms_pInstance._m_pStr,
+               &sUOL,
+               nMacroIdx)->_m_pStr;
+    LOBYTE(v44) = 4; /*0x89e2a9*/
+    CUIToolTip::DrawTextCenter( /*0x89e2ad*/
+      this,
+      10,
+      m_pStr,
+      (_com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> >)v33.m_pInterface);
+    LOBYTE(v44) = 1; /*0x89e2b5*/
+    if ( sUOL._m_pStr ) /*0x89e2bb*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sUOL._m_pStr - 1); /*0x89e2c1*/
+    v33.m_pInterface = (IWzCanvas *)1; /*0x89e2c9*/
+    m_pStr = nullptr; /*0x89e2cb*/
+    p_pvarg = 1; /*0x89e2cd*/
+    v30.m_pInterface = v6; /*0x89e2cf*/
+    v42._m_pStr = (char *)&v30; /*0x89e2d2*/
+    CUIToolTip::GetFontByType(this, &v30, 10); /*0x89e2da*/
+    LOBYTE(v44) = 5; /*0x89e2e8*/
+    Instance = StringPool::GetInstance(); /*0x89e2ec*/
+    v8 = StringPool::GetString(Instance, &sUOL, 0x1101u)->_m_pStr; /*0x89e2f8*/
+    LOBYTE(v44) = 6; /*0x89e2fa*/
+    m_nWidth = this->m_nWidth; /*0x89e2fe*/
+    LOBYTE(v44) = 7; /*0x89e30c*/
+    CUIToolTip::DrawTextSepartedLine( /*0x89e310*/
+      this,
+      15,
+      m_nWidth - 20,
+      27,
+      v8,
+      v30,
+      p_pvarg,
+      (int *)m_pStr,
+      (int)v33.m_pInterface);
+    LOBYTE(v44) = 1; /*0x89e318*/
+    if ( sUOL._m_pStr ) /*0x89e31e*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sUOL._m_pStr - 1); /*0x89e324*/
+    sUOL._m_pStr = nullptr; /*0x89e32c*/
+    v33.m_pInterface = (IWzCanvas *)4201; /*0x89e336*/
+    m_pStr = (char *)&sMsg; /*0x89e33b*/
+    LOBYTE(v44) = 8; /*0x89e33c*/
+    v10 = StringPool::GetInstance(); /*0x89e340*/
+    v11 = StringPool::GetString(v10, (ZXString<char> *)m_pStr, (unsigned int)v33.m_pInterface)->_m_pStr; /*0x89e34c*/
+    LOBYTE(v44) = 9; /*0x89e354*/
+    ZXString<char>::Format(&sUOL, v11, nMacroIdx); /*0x89e358*/
+    LOBYTE(v44) = 8; /*0x89e363*/
+    if ( sMsg._m_pStr ) /*0x89e369*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sMsg._m_pStr - 1); /*0x89e36f*/
+    v12 = VariantInit; /*0x89e377*/
+    VariantInit(&pvarg); /*0x89e381*/
+    v13 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing); /*0x89e38c*/
+    if ( v13 < 0 ) /*0x89e396*/
+      _com_issue_error(v13); /*0x89e399*/
+    LOBYTE(v44) = 10; /*0x89e3a2*/
+    v12(&pvargDest); /*0x89e3a6*/
+    v14 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing); /*0x89e3b1*/
+    if ( v14 < 0 ) /*0x89e3bb*/
+      _com_issue_error(v14); /*0x89e3be*/
+    v15 = sUOL._m_pStr; /*0x89e3c3*/
+    LOBYTE(v44) = 11; /*0x89e3d1*/
+    v16 = alloca(2 * ZAPI.MultiByteToWideChar(0, 0, sUOL._m_pStr, -1, nullptr, 0)); /*0x89e3dd*/
+    v33.m_pInterface = nullptr; /*0x89e3e4*/
+    m_pStr = nullptr; /*0x89e3e6*/
+    p_pvarg = (int)&pvarg; /*0x89e3eb*/
+    v30.m_pInterface = (IWzFont *)&pvargDest; /*0x89e3ef*/
+    ZAPI.MultiByteToWideChar(0, 0, v15, -1, v34, 0x3FFFFFFF); /*0x89e3fd*/
+    v29.m_Data = v17; /*0x89e403*/
+    v42._m_pStr = (char *)&v29; /*0x89e404*/
+    _bstr_t::_bstr_t(&v29, v34); /*0x89e40a*/
+    LOBYTE(v44) = 12; /*0x89e416*/
+    if ( !g_rm.m_pInterface ) /*0x89e41a*/
+      _com_issue_error(-2147467261); /*0x89e421*/
+    LOBYTE(v44) = 11; /*0x89e429*/
+    ObjectA = IWzResMan::GetObjectA( /*0x89e434*/
+                g_rm.m_pInterface,
+                &result,
+                (Ztl_bstr_t)v29.m_Data,
+                (const Ztl_variant_t *)v30.m_pInterface,
+                (const Ztl_variant_t *)p_pvarg);
+    LOBYTE(v44) = 13; /*0x89e43b*/
+    Unknown = Ztl_variant_t::GetUnknown(ObjectA, (bool)m_pStr, (bool)v33.m_pInterface); /*0x89e43f*/
+    v42._m_pStr = (char *)&v33; /*0x89e447*/
+    v33.m_pInterface = nullptr; /*0x89e44b*/
+    v20 = _com_ptr_t<_com_IIID<IWzCanvas,&__s_GUID const _GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e>>::_QueryInterface<IUnknown *>( /*0x89e451*/
+            &v33,
+            Unknown);
+    if ( v20 < 0 && v20 != -2147467262 ) /*0x89e45f*/
+      _com_issue_error(v20); /*0x89e462*/
+    CUIToolTip::DrawCanvasIcon(this, 10, 57, v33); /*0x89e46d*/
+    v21 = VariantClear; /*0x89e472*/
+    LOBYTE(v44) = 11; /*0x89e47d*/
+    if ( result.vt == 8 ) /*0x89e485*/
+    {
+      result.vt = 0; /*0x89e489*/
+      if ( result.decVal.Lo32 ) /*0x89e492*/
+        ZAPI.CoTaskMemFree((void *)(result.decVal.Lo32 - 4)); /*0x89e498*/
+    }
+    else
+    {
+      VariantClear(&result); /*0x89e4a4*/
+    }
+    LOBYTE(v44) = 10; /*0x89e4a6*/
+    if ( pvargDest.vt == 8 ) /*0x89e4ae*/
+    {
+      pvargDest.vt = 0; /*0x89e4b5*/
+      if ( pvargDest.decVal.Lo32 ) /*0x89e4bb*/
+        ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4)); /*0x89e4c1*/
+    }
+    else
+    {
+      v21(&pvargDest); /*0x89e4cd*/
+    }
+    LOBYTE(v44) = 8; /*0x89e4cf*/
+    if ( pvarg.vt == 8 ) /*0x89e4d6*/
+    {
+      pvarg.vt = 0; /*0x89e4dd*/
+      if ( pvarg.decVal.Lo32 ) /*0x89e4e3*/
+        ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x89e4e9*/
+    }
+    else
+    {
+      v21(&pvarg); /*0x89e4f5*/
+    }
+    v22 = 0; /*0x89e4f7*/
+    sMsg._m_pStr = nullptr; /*0x89e4f9*/
+    LOBYTE(v44) = 14; /*0x89e4fc*/
+    do /*0x89e584*/
+    {
+      Macro = CMacroSysMan::GetMacro((CMacroSysMan *)TSingleton<CMacroSysMan>::ms_pInstance._m_pStr, nMacroIdx, v22); /*0x89e50d*/
+      if ( Macro ) /*0x89e514*/
+      {
+        Skill = CSkillInfo::GetSkill(TSingleton<CSkillInfo>::ms_pInstance, Macro); /*0x89e51d*/
+        v26 = ZXString<char>::operator+(&sMsg, &v42, &Skill->sName); /*0x89e52d*/
+        LOBYTE(v44) = 15; /*0x89e53d*/
+        v27 = ZXString<char>::operator+(v26, &v39, aN_9); /*0x89e541*/
+        LOBYTE(v44) = 16; /*0x89e54a*/
+        ZXString<char>::operator=(&sMsg, v27); /*0x89e54d*/
+        LOBYTE(v44) = 15; /*0x89e555*/
+        if ( v39._m_pStr ) /*0x89e55b*/
+          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v39._m_pStr - 1); /*0x89e561*/
+        LOBYTE(v44) = 14; /*0x89e56c*/
+        if ( v42._m_pStr ) /*0x89e572*/
+          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v42._m_pStr - 1); /*0x89e578*/
+      }
+      ++v22; /*0x89e580*/
+    }
+    while ( v22 < 3 ); /*0x89e584*/
+    v28 = sMsg._m_pStr; /*0x89e58a*/
+    if ( sMsg._m_pStr ) /*0x89e58f*/
+    {
+      v33.m_pInterface = (IWzCanvas *)1; /*0x89e591*/
+      m_pStr = nullptr; /*0x89e593*/
+      p_pvarg = 1; /*0x89e595*/
+      v30.m_pInterface = v24; /*0x89e597*/
+      v42._m_pStr = (char *)&v30; /*0x89e59a*/
+      CUIToolTip::GetFontByType(this, &v30, 13); /*0x89e5a2*/
+      CUIToolTip::DrawTextSepartedLine( /*0x89e5b5*/
+        this,
+        92,
+        this->m_nWidth - 20,
+        57,
+        v28,
+        v30,
+        p_pvarg,
+        (int *)m_pStr,
+        (int)v33.m_pInterface);
+    }
+    LOBYTE(v44) = 8; /*0x89e5ba*/
+    if ( v28 ) /*0x89e5c0*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v28 - 1); /*0x89e5c6*/
+    LOBYTE(v44) = 1; /*0x89e5d1*/
+    if ( sUOL._m_pStr ) /*0x89e5d7*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sUOL._m_pStr - 1); /*0x89e5dd*/
+    LOBYTE(v44) = 0; /*0x89e5e8*/
+    if ( pCanvas.m_pInterface ) /*0x89e5ee*/
+      pCanvas.m_pInterface->Release(pCanvas.m_pInterface); /*0x89e5f6*/
+  }
+}

@@ -1,0 +1,91 @@
+// cuser::ShowEffectRocketBooster
+
+void __thiscall CUser::ShowEffectRocketBooster(CUser *this, SKILLENTRY *pSkill, _bstr_t::Data_t *nSLV)
+{
+  SKILLENTRY *v4; // ebp
+  CAvatar *v5; // esi
+  unsigned int v6; // eax
+  _bstr_t::Data_t *v7; // esi
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzVector2D *v9; // ecx
+  IWzGr2DLayer *v10; // edi
+  HRESULT (__stdcall *get_flip)(IWzGr2DLayer *, int *); // ecx
+  HRESULT v12; // eax
+  const wchar_t *m_wstr; // eax
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v14; // [esp-20h] [ebp-44h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v15; // [esp-1Ch] [ebp-40h] BYREF
+  int v16; // [esp-18h] [ebp-3Ch]
+  int v17; // [esp-14h] [ebp-38h]
+  int v18; // [esp-10h] [ebp-34h]
+  int v19; // [esp-Ch] [ebp-30h]
+  int v20; // [esp-8h] [ebp-2Ch]
+  int v21; // [esp-4h] [ebp-28h]
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v22; // [esp+10h] [ebp-14h]
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *v23; // [esp+14h] [ebp-10h]
+  int v24; // [esp+20h] [ebp-4h]
+
+  v4 = pSkill; /*0x8ef688*/
+  if ( pSkill )
+  {
+    v5 = &this->CAvatar; /*0x8ef694*/
+    if ( CAvatar::GetOneTimeAction(&this->CAvatar) > -1 ) /*0x8ef6a6*/
+    {
+      this->m_nOneTimeAction = -1; /*0x8ef6a8*/
+      this->m_nTamingMobOneTimeAction = -1; /*0x8ef6ae*/
+      CAvatar::ClearActionLayer(&this->CAvatar, 1); /*0x8ef6b8*/
+    }
+    v6 = this->m_nMechanicMode != 35121005 ? 0xFFFFFFCA : 0;
+    v21 = 0; /*0x8ef6d4*/
+    this->m_nOneTimeAction = v6 + 263; /*0x8ef6d6*/
+    v5->PrepareActionLayer(&this->CAvatar, 6, 100, v21); /*0x8ef6e7*/
+    SKILLENTRY::GetEffectUOL(v4, (Ztl_bstr_t *)&nSLV, (unsigned __int8)nSLV); /*0x8ef6f5*/
+    v7 = nSLV; /*0x8ef6fa*/
+    v24 = 0; /*0x8ef6fe*/
+    if ( nSLV ) /*0x8ef708*/
+    {
+      if ( nSLV->m_wstr && *((_DWORD *)nSLV->m_wstr - 1) >> 1 ) /*0x8ef724*/
+      {
+        m_pInterface = this->m_pLayerUnderFace.m_pInterface; /*0x8ef72c*/
+        v21 = 0; /*0x8ef732*/
+        v20 = 0; /*0x8ef734*/
+        v19 = 0; /*0x8ef736*/
+        v18 = 3; /*0x8ef738*/
+        v17 = 0x7FFFFFFF; /*0x8ef73a*/
+        v16 = 1000; /*0x8ef73f*/
+        v9 = (IWzVector2D *)&v15; /*0x8ef745*/
+        v22 = &v15; /*0x8ef747*/
+        v15.m_pInterface = m_pInterface; /*0x8ef74b*/
+        if ( m_pInterface ) /*0x8ef74f*/
+          m_pInterface->AddRef(m_pInterface); /*0x8ef757*/
+        v14.m_pInterface = v9; /*0x8ef759*/
+        v23 = &v14; /*0x8ef75c*/
+        LOBYTE(v24) = 1; /*0x8ef763*/
+        CUser::GetVecCtrl(this, &v14); /*0x8ef768*/
+        v10 = this->m_pLayerUnderFace.m_pInterface; /*0x8ef76d*/
+        LOBYTE(v24) = 2; /*0x8ef773*/
+        if ( !v10 ) /*0x8ef77a*/
+          _com_issue_error(-2147467261); /*0x8ef781*/
+        get_flip = v10->get_flip; /*0x8ef788*/
+        pSkill = nullptr; /*0x8ef794*/
+        v12 = get_flip(v10, (int *)&pSkill); /*0x8ef79c*/
+        if ( v12 < 0 ) /*0x8ef7a0*/
+          _com_issue_errorex(v12, v10, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x8ef7a9*/
+        m_wstr = v7->m_wstr; /*0x8ef7b2*/
+        LOBYTE(v24) = 0; /*0x8ef7b5*/
+        CAnimationDisplayer::Effect_SkillUse( /*0x8ef7c1*/
+          TSingleton<CAnimationDisplayer>::ms_pInstance,
+          m_wstr,
+          (int)pSkill,
+          v14,
+          v15,
+          v16,
+          v17,
+          v18,
+          v19,
+          v20,
+          v21);
+      }
+      _bstr_t::Data_t::Release(v7); /*0x8ef7c8*/
+    }
+  }
+}

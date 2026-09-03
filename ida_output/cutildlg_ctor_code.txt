@@ -1,0 +1,26 @@
+﻿CUtilDlg *__thiscall CUtilDlg::CUtilDlg(CUtilDlg *this)
+{
+  CDialog::CDialog(this); /*0x7b9b53*/
+  this->m_bMsgImage = 0; /*0x7b9b5a*/
+  this->m_bMsgImage_Img = 0; /*0x7b9b60*/
+  this->m_bFixedW = 0; /*0x7b9b66*/
+  this->m_bLine = 0; /*0x7b9b6c*/
+  this->m_bComboBox = 0; /*0x7b9b72*/
+  this->m_bCheckBox = 0; /*0x7b9b78*/
+  this->m_nCheckBox_S = 0; /*0x7b9b7e*/
+  this->CDialog::CWnd::IGObj::__vftable = (CUtilDlg_vtbl *)&CUtilDlg::`vftable'{for `IGObj'}; /*0x7b9b84*/
+  this->CDialog::CWnd::IUIMsgHandler::__vftable = (IUIMsgHandler_vtbl *)&CUtilDlg::`vftable'{for `IUIMsgHandler'}; /*0x7b9b8a*/
+  this->CDialog::CWnd::ZRefCounted::__vftable = (ZRefCounted_vtbl *)&CUtilDlg::`vftable'{for `ZRefCounted'}; /*0x7b9b91*/
+  this->m_bCenter = 1; /*0x7b9b98*/
+  this->m_sCheckBoxMsg._m_pStr = nullptr; /*0x7b9ba2*/
+  this->m_sMsgDefault._m_pStr = nullptr; /*0x7b9ba8*/
+  this->m_pEditInput.p = nullptr; /*0x7b9bae*/
+  this->m_pBtOK.p = nullptr; /*0x7b9bb4*/
+  this->m_pBtYes.p = nullptr; /*0x7b9bba*/
+  this->m_pBtNo.p = nullptr; /*0x7b9bc0*/
+  this->m_pComboBox.p = nullptr; /*0x7b9bc6*/
+  this->m_pCheckBox.p = nullptr; /*0x7b9bcc*/
+  this->m_aMsg.a = nullptr; /*0x7b9bd2*/
+  this->m_bNoEnterInput = 0; /*0x7b9bd8*/
+  return this; /*0x7b9be0*/
+}

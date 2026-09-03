@@ -1,0 +1,7 @@
+// cuserlocal::TryDoingSitdownHealing
+
+void __thiscall CUserLocal::TryDoingSitdownHealing(CUserLocal *this)
+{
+  if ( (this->m_nMoveAction & 0xFFFFFFFE) == 0xA ) /*0x903d6c*/
+    CUserPool::DoHealNearHealingRobot((CUserPool *)TSingleton<CUserPool>::ms_pInstance.m_pInterface); /*0x903d74*/
+}

@@ -1,0 +1,40 @@
+// cuiuserlist::SetFriendViewItem
+
+void __thiscall CUIUserList::SetFriendViewItem(CUIUserList *this)
+{
+  CTabFriend *m_pTabFriend; // esi
+  int a; // eax
+  CTabFriend::FRIENDITEM *v4; // ebx
+  int i; // edi
+  ZPair<CTabFriend::GROUPITEM,ZArray<CTabFriend::FRIENDITEM> > *v6; // eax
+  const ZArray<CTabFriend::FRIENDITEM> *v7; // eax
+  const ZArray<CTabFriend::FRIENDITEM> *v8; // ecx
+  int FriendCount; // eax
+
+  m_pTabFriend = this->m_pTabFriend; /*0x8b9ca5*/
+  a = (int)m_pTabFriend->m_aFriends.a; /*0x8b9cab*/
+  if ( a ) /*0x8b9cb4*/
+    a = *(_DWORD *)(a - 4); /*0x8b9cb6*/
+  v4 = nullptr; /*0x8b9cb9*/
+  this->m_nViewItem = a; /*0x8b9cbb*/
+  for ( i = 0; ; ++i ) /*0x8b9cc1*/
+  {
+    v6 = m_pTabFriend->m_aFriends.a; /*0x8b9cc3*/
+    if ( !v6 || v4 >= v6[-1].second.a ) /*0x8b9cd0*/
+      break; /*0x8b9cd0*/
+    v7 = (const ZArray<CTabFriend::FRIENDITEM> *)&v6[i]; /*0x8b9cd2*/
+    if ( !v7[5].a ) /*0x8b9cd4*/
+    {
+      v8 = v7 + 7; /*0x8b9cda*/
+      FriendCount = (int)v7[7].a; /*0x8b9cdd*/
+      if ( FriendCount ) /*0x8b9ce1*/
+        FriendCount = *(_DWORD *)(FriendCount - 4); /*0x8b9ce3*/
+      if ( m_pTabFriend->m_bShowOnlineOnly ) /*0x8b9ce6*/
+        FriendCount = CTabFriend::GetFriendCount(m_pTabFriend, v8, 1); /*0x8b9cf4*/
+      if ( FriendCount <= 1 ) /*0x8b9cfc*/
+        FriendCount = 1; /*0x8b9cfe*/
+      this->m_nViewItem += FriendCount / 2 + (FriendCount & 1); /*0x8b9d19*/
+    }
+    v4 = (CTabFriend::FRIENDITEM *)((char *)v4 + 1); /*0x8b9d1f*/
+  }
+}

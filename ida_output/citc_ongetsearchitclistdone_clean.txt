@@ -1,0 +1,69 @@
+void __thiscall CITC::OnGetSearchITCListDone(CITC *this, CInPacket *iPacket)
+{
+  int v4; // ebp
+  int v5; // edi
+  ZRef<ITCITEM> *v6; // edi
+  ITCITEM *p; // eax
+  ITCITEM *v8; // ecx
+  unsigned int nSubCategory; // [esp+14h] [ebp-1Ch]
+  unsigned int nPage; // [esp+18h] [ebp-18h]
+  ZRef<ITCITEM> ii; // [esp+1Ch] [ebp-14h] BYREF
+  int v12; // [esp+2Ch] [ebp-4h]
+  unsigned int nCategorya; // [esp+34h] [ebp+4h]
+  int nCategory; // [esp+34h] [ebp+4h]
+
+  v4 = CInPacket::Decode4(iPacket);
+  v5 = CInPacket::Decode4(iPacket);
+  nCategorya = CInPacket::Decode4(iPacket);
+  nSubCategory = CInPacket::Decode4(iPacket);
+  nPage = CInPacket::Decode4(iPacket);
+  this->m_nCurCategory = nCategorya;
+  CITCWnd_Tab::ChangeCategory(&this->m_wndTab);
+  this->m_nCurCategorySub = nSubCategory;
+  CITCWnd_SubTab::ChangeSubCategory(&this->m_wndSubTab);
+  CITCWnd_List::ChangeCategorySub(&this->m_wndList);
+  this->m_nCurPage = nPage;
+  this->m_nCurrentCategoryItemCnt = v4;
+  this->m_nCurrentPageItemCnt = v5;
+  ZArray<ZRef<ITCITEM>>::RemoveAll(&this->m_aCurrentPageItem);
+  if ( v5 > 0 )
+  {
+    nCategory = v5;
+    do
+    {
+      ITCITEM::Decode(&ii, iPacket);
+      v12 = 0;
+      v6 = ZArray<ZRef<ITCITEM>>::InsertBefore(&this->m_aCurrentPageItem, -1);
+      if ( ii.p )
+        InterlockedIncrement(&ii.p->_m_nRef);
+      p = v6->p;
+      if ( p )
+      {
+        if ( !InterlockedDecrement(&p->_m_nRef) )
+        {
+          InterlockedIncrement(&v6->p->_m_nRef);
+          v8 = v6->p;
+          if ( v8 )
+            ((void (__thiscall *)(ITCITEM *, int))v8->dtr_ZRefCounted)(v8, 1);
+        }
+        v6->p = nullptr;
+      }
+      v6->p = ii.p;
+      v12 = -1;
+      if ( ii.p )
+      {
+        if ( !InterlockedDecrement(&ii.p->_m_nRef) )
+        {
+          InterlockedIncrement(&ii.p->_m_nRef);
+          if ( ii.p )
+            ((void (__thiscall *)(ITCITEM *, int))ii.p->dtr_ZRefCounted)(ii.p, 1);
+        }
+        ii.p = nullptr;
+      }
+      --nCategory;
+    }
+    while ( nCategory );
+  }
+  CITCWnd_List::OnGetNewList(&this->m_wndList);
+  this->m_bITCRequestSent = 0;
+}

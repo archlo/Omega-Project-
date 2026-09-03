@@ -1,0 +1,301 @@
+void __thiscall CVecCtrl::CalcWalk(CVecCtrl *this, int tElapse)
+{
+  CAttrFoothold *v3; // ebx
+  CStaticFoothold *m_pfh; // eax
+  TSecType<double> *p_walkAcc; // ebx
+  CONSTANTS *v6; // edi
+  long double Data; // st7
+  long double v8; // st6
+  long double v9; // st7
+  long double v10; // st7
+  long double v11; // st6
+  CAttrFoothold *v12; // eax
+  CONSTANTS *v13; // ebx
+  CAttrShoe *v14; // edi
+  long double v15; // st7
+  long double v16; // st7
+  long double v17; // st7
+  TSecType<double> *p_walkDrag; // edi
+  long double v19; // st7
+  double dMaxFriction; // st7
+  CONSTANTS *v21; // ecx
+  int m_nSlideCount; // ecx
+  long double m_dShortDrag; // st5
+  CONSTANTS *v24; // ecx
+  long double v25; // st5
+  long double v26; // st4
+  long double vMax; // st7
+  double v28; // st3
+  long double v29; // rt1
+  long double v30; // st3
+  long double v31; // st6
+  long double v32; // st7
+  long double v33; // st6
+  CONSTANTS *v34; // eax
+  double v35; // st7
+  RelPos *p_m_rp; // edi
+  long double v37; // st7
+  RelPos *p_m_rpLast; // esi
+  long double v39; // st7
+  long double v40; // st7
+  unsigned int v41; // eax
+  long double op; // [esp+18h] [ebp-10Ch]
+  char drag2; // [esp+64h] [ebp-C0h]
+  int hd; // [esp+70h] [ebp-B4h]
+  TSecType<double> *pAttrFoothold; // [esp+74h] [ebp-B0h]
+  double pAttrFootholda; // [esp+74h] [ebp-B0h]
+  double pAttrFootholdb; // [esp+74h] [ebp-B0h]
+  int fSlip; // [esp+7Ch] [ebp-A8h]
+  double fSlipa; // [esp+7Ch] [ebp-A8h]
+  double fSlipb; // [esp+7Ch] [ebp-A8h]
+  int tSec; // [esp+84h] [ebp-A0h]
+  int tSeca; // [esp+84h] [ebp-A0h]
+  int tSecb; // [esp+84h] [ebp-A0h]
+  int tSecc; // [esp+84h] [ebp-A0h]
+  TSecType<double> *vSlip; // [esp+8Ch] [ebp-98h]
+  long double vSlipc; // [esp+8Ch] [ebp-98h]
+  double vSlipa; // [esp+8Ch] [ebp-98h]
+  double vSlipb; // [esp+8Ch] [ebp-98h]
+  long double v; // [esp+94h] [ebp-90h] BYREF
+  long double f; // [esp+9Ch] [ebp-88h] BYREF
+  void *p; // [esp+A4h] [ebp-80h]
+  long double footholdforce; // [esp+ACh] [ebp-78h]
+  long double mass; // [esp+B4h] [ebp-70h]
+  long double vMaxL; // [esp+BCh] [ebp-68h]
+  long double drag; // [esp+C4h] [ebp-60h]
+  long double sin1; // [esp+CCh] [ebp-58h]
+  TSecType<double> v67; // [esp+D8h] [ebp-4Ch] BYREF
+  int v68; // [esp+120h] [ebp-4h]
+
+  drag2 = 0; /*0x992bd6*/
+  v3 = this->m_pfh->m_pAttrFoothold.p; /*0x992be0*/
+  pAttrFoothold = (TSecType<double> *)v3; /*0x992bec*/
+  mass = TSecType<double>::GetData(&this->m_pCurAttrShoe.p->mass); /*0x992bf5*/
+  m_pfh = this->m_pfh; /*0x992bfc*/
+  hd = 1; /*0x992c05*/
+  sin1 = fabs(m_pfh->m_uvy); /*0x992c0f*/
+  vMaxL = sin1 * sin1; /*0x992c18*/
+  if ( m_pfh->m_uvy >= 0.0 ) /*0x992c2b*/
+    hd = -1; /*0x992c2d*/
+  v = _ZtlSecureFuse<double>(this->m_rp._ZtlSecureTear_v, this->m_rp._ZtlSecureTear_v_CS); /*0x992c48*/
+  vSlip = &v3->drag; /*0x992c52*/
+  if ( TSecType<double>::GetData(&v3->drag) == DOUBLE_1_0 && TSecType<double>::GetData(&v3->force) == DOUBLE_0_0 ) /*0x992c7b*/
+  {
+    fSlip = 1; /*0x992c83*/
+    p_walkAcc = &this->m_pCurAttrShoe.p->walkAcc; /*0x992c8b*/
+  }
+  else
+  {
+    fSlip = 0; /*0x992c9f*/
+    p_walkAcc = TSecType<double>::TSecType<double>((TSecType<double> *)&f, 1.0); /*0x992ca8*/
+    v68 = 0; /*0x992caa*/
+    drag2 = 1; /*0x992cb1*/
+  }
+  v6 = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p; /*0x992cc2*/
+  drag = TSecType<double>::GetData(pAttrFoothold + 1); /*0x992ccd*/
+  footholdforce = TSecType<double>::GetData(&this->m_pAttrField->walk); /*0x992cdf*/
+  Data = TSecType<double>::GetData(p_walkAcc); /*0x992ce8*/
+  v8 = v6->dWalkForce * drag; /*0x992cf4*/
+  v68 = -1; /*0x992cfb*/
+  drag = Data * (v8 * footholdforce); /*0x992d0f*/
+  if ( (drag2 & 1) != 0 ) /*0x992d16*/
+  {
+    drag2 &= ~1u; /*0x992d1f*/
+    if ( p ) /*0x992d26*/
+      ZAllocEx<ZAllocAnonSelector>::Free(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, p); /*0x992d2e*/
+  }
+  tSec = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, this->_ZtlSecureTear_m_nInputX_CS); /*0x992d46*/
+  f = (double)tSec * drag; /*0x992d5a*/
+  if ( CVecCtrl::IsSwimming(this) ) /*0x992d5e*/
+    f = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p->dSwimSpeedDec * f; /*0x992d7a*/
+  footholdforce = TSecType<double>::GetData(pAttrFoothold + 3); /*0x992d8a*/
+  if ( 0.0 == footholdforce ) /*0x992d9a*/
+  {
+    tSecb = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, this->_ZtlSecureTear_m_nInputX_CS); /*0x992e13*/
+    v10 = 0.0; /*0x992e2a*/
+    if ( (double)tSecb * f > 0.0 ) /*0x992e2f*/
+      v10 = f; /*0x992e35*/
+  }
+  else if ( _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, this->_ZtlSecureTear_m_nInputX_CS) ) /*0x992da4*/
+  {
+    tSeca = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, this->_ZtlSecureTear_m_nInputX_CS); /*0x992dbd*/
+    v9 = fabs(footholdforce); /*0x992ddb*/
+    if ( (double)tSeca * footholdforce <= DOUBLE_0_0 ) /*0x992de0*/
+      v10 = DOUBLE_0_2 / v9 * f; /*0x992df0*/
+    else
+      v10 = (v9 + v9) * f; /*0x992de4*/
+  }
+  else
+  {
+    v10 = footholdforce * drag; /*0x992dfd*/
+  }
+  if ( hd <= 0 ) /*0x992e3c*/
+    v11 = vMaxL + DOUBLE_1_0; /*0x992e50*/
+  else
+    v11 = 1.0 - vMaxL; /*0x992e40*/
+  v12 = this->m_pfh->m_pAttrFoothold.p; /*0x992e64*/
+  v13 = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p; /*0x992e67*/
+  f = v10 * v11; /*0x992e6a*/
+  v14 = this->m_pCurAttrShoe.p; /*0x992e6e*/
+  drag = TSecType<double>::GetData(&v12->walk); /*0x992e7c*/
+  v15 = TSecType<double>::GetData(&v14->walkSpeed); /*0x992e86*/
+  pAttrFootholda = v15 * (v13->dWalkSpeed * drag); /*0x992e99*/
+  if ( CVecCtrl::IsSwimming(this) ) /*0x992e9d*/
+    pAttrFootholda = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p->dSwimSpeedDec * pAttrFootholda; /*0x992eb9*/
+  if ( 0.0 != footholdforce ) /*0x992ecb*/
+  {
+    if ( _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, this->_ZtlSecureTear_m_nInputX_CS) ) /*0x992edb*/
+    {
+      tSecc = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, this->_ZtlSecureTear_m_nInputX_CS); /*0x992ef4*/
+      v16 = fabs(footholdforce); /*0x992f12*/
+      if ( (double)tSecc * footholdforce <= DOUBLE_0_0 ) /*0x992f17*/
+        v17 = DOUBLE_0_2 / v16; /*0x992f1d*/
+      else
+        v17 = v16 + v16; /*0x992f19*/
+    }
+    else
+    {
+      v17 = fabs(footholdforce); /*0x992f2c*/
+    }
+    pAttrFootholda = v17 * pAttrFootholda; /*0x992f32*/
+  }
+  if ( fSlip ) /*0x992f40*/
+  {
+    p_walkDrag = &this->m_pCurAttrShoe.p->walkDrag; /*0x992f48*/
+  }
+  else
+  {
+    p_walkDrag = TSecType<double>::TSecType<double>(&v67, 1.0); /*0x992f61*/
+    drag2 |= 2u; /*0x992f63*/
+    v68 = 1; /*0x992f67*/
+  }
+  vSlipc = TSecType<double>::GetData(vSlip); /*0x992f7b*/
+  drag = TSecType<double>::GetData(&this->m_pAttrField->drag); /*0x992f8d*/
+  v19 = TSecType<double>::GetData(p_walkDrag); /*0x992f96*/
+  v68 = -1; /*0x992fa6*/
+  dMaxFriction = v19 * (drag * vSlipc); /*0x992fb1*/
+  vSlipa = dMaxFriction; /*0x992fb3*/
+  if ( (drag2 & 2) != 0 && v67.m_secdata ) /*0x992fc6*/
+    ZAllocEx<ZAllocAnonSelector>::Free(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, v67.m_secdata); /*0x992fd0*/
+  v21 = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p; /*0x992fdf*/
+  if ( dMaxFriction > v21->dMaxFriction ) /*0x992fea*/
+  {
+    dMaxFriction = v21->dMaxFriction; /*0x992fee*/
+    vSlipa = dMaxFriction; /*0x992ff1*/
+  }
+  if ( dMaxFriction < v21->dMinFriction ) /*0x993000*/
+  {
+    dMaxFriction = v21->dMinFriction; /*0x993004*/
+    vSlipa = dMaxFriction; /*0x99300a*/
+  }
+  if ( dMaxFriction < 1.0 ) /*0x993017*/
+  {
+    vSlipa = dMaxFriction * DOUBLE_0_5; /*0x993021*/
+    dMaxFriction = vSlipa; /*0x993025*/
+  }
+  m_nSlideCount = this->m_nSlideCount; /*0x993027*/
+  if ( m_nSlideCount > 0 ) /*0x99302f*/
+  {
+    m_dShortDrag = this->m_dShortDrag; /*0x993031*/
+    if ( m_dShortDrag < dMaxFriction ) /*0x99303e*/
+    {
+      vSlipa = m_dShortDrag; /*0x993048*/
+      dMaxFriction = m_dShortDrag; /*0x99304c*/
+    }
+    this->m_nSlideCount = m_nSlideCount - tElapse; /*0x993051*/
+  }
+  v24 = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p; /*0x99305e*/
+  v25 = dMaxFriction * v24->dWalkDrag; /*0x993061*/
+  drag = v25; /*0x993064*/
+  if ( 0.0 == dMaxFriction ) /*0x993078*/
+    v25 = v24->dWalkDrag * DOUBLE_0_2; /*0x99307f*/
+  v26 = (double)tElapse / DOUBLE_1000_0; /*0x99308c*/
+  if ( 0.0 == sin1 ) /*0x9930a4*/
+  {
+    DecSpeed(&v, v25, mass, pAttrFootholda, v26); /*0x9930d5*/
+    if ( _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, this->_ZtlSecureTear_m_nInputX_CS) /*0x993102*/
+      || (vMax = 0.0, 0.0 != footholdforce) )
+    {
+      AccSpeed(&v, f, mass, pAttrFootholda, v26); /*0x993173*/
+      goto LABEL_81; /*0x993173*/
+    }
+    goto LABEL_53; /*0x993102*/
+  }
+  fSlipa = pAttrFootholda; /*0x99317e*/
+  v28 = pAttrFootholda; /*0x993182*/
+  if ( pAttrFootholda < 0.0 ) /*0x99318b*/
+  {
+    fSlipa = 0.0; /*0x993191*/
+    v28 = 0.0; /*0x993195*/
+  }
+  v29 = v28; /*0x9931a2*/
+  v30 = (vMaxL + 1.0) * pAttrFootholda; /*0x9931a2*/
+  v31 = v29; /*0x9931a2*/
+  vMaxL = v30; /*0x9931a4*/
+  if ( v30 < 0.0 ) /*0x9931b2*/
+  {
+    v30 = 0.0; /*0x9931b6*/
+    vMaxL = 0.0; /*0x9931b8*/
+  }
+  pAttrFootholdb = (double)hd; /*0x9931c3*/
+  if ( pAttrFootholdb * v <= 0.0 ) /*0x9931d4*/
+    v31 = v30; /*0x9931e0*/
+  DecSpeed(&v, v25, mass, v31, v26); /*0x993205*/
+  v32 = TSecType<double>::GetData(&this->m_pCurAttrShoe.p->walkSlant); /*0x993216*/
+  if ( sin1 > v32 ) /*0x99322b*/
+  {
+    v34 = TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p; /*0x9932e6*/
+    fSlipb = v34->dSlipForce * sin1 * (double)-hd; /*0x99330e*/
+    vSlipb = sin1 * v34->dSlipSpeed; /*0x993315*/
+    if ( hd * _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, this->_ZtlSecureTear_m_nInputX_CS) <= 0 ) /*0x993326*/
+    {
+      if ( !_ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, this->_ZtlSecureTear_m_nInputX_CS) /*0x993362*/
+        && 0.0 == footholdforce )
+      {
+        goto LABEL_78; /*0x993362*/
+      }
+      fSlipb = fSlipb + f; /*0x99336c*/
+      v35 = vSlipb + vMaxL; /*0x993374*/
+    }
+    else
+    {
+      fSlipb = fSlipb * DOUBLE_0_5; /*0x993336*/
+      v35 = DOUBLE_0_5 * vSlipb; /*0x99333a*/
+    }
+    vSlipb = v35; /*0x99337b*/
+LABEL_78:
+    if ( pAttrFootholdb * v > 0.0 ) /*0x993392*/
+      DecSpeed(&v, v25, mass, 0.0, v26); /*0x9933bd*/
+    AccSpeed(&v, fSlipb, mass, vSlipb, v26); /*0x9933f9*/
+    goto LABEL_81; /*0x9933f9*/
+  }
+  if ( 0.0 == vSlipa ) /*0x99323c*/
+    f = f - sin1 * TSingleton<CWvsPhysicalSpace2D>::ms_pInstance->m_constants.p->dSlipForce * pAttrFootholdb; /*0x993251*/
+  vMax = 0.0; /*0x99326c*/
+  if ( !_ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nInputX, this->_ZtlSecureTear_m_nInputX_CS) /*0x99328c*/
+    && 0.0 != vSlipa
+    && 0.0 == footholdforce )
+  {
+LABEL_53:
+    DecSpeed(&v, drag, mass, vMax, v26); /*0x993104*/
+    goto LABEL_81; /*0x993135*/
+  }
+  if ( pAttrFootholdb * f <= 0.0 ) /*0x9932a7*/
+    v33 = vMaxL; /*0x9932af*/
+  else
+    v33 = fSlipa; /*0x9932a9*/
+  AccSpeed(&v, f, mass, v33, v26); /*0x9932db*/
+LABEL_81:
+  p_m_rp = &this->m_rp; /*0x9933fe*/
+  v37 = _ZtlSecureFuse<double>(this->m_rp._ZtlSecureTear_pos, this->m_rp._ZtlSecureTear_pos_CS); /*0x99340f*/
+  p_m_rpLast = &this->m_rpLast; /*0x993417*/
+  p_m_rpLast->_ZtlSecureTear_pos_CS = _ZtlSecureTear<double>(v37, p_m_rpLast->_ZtlSecureTear_pos); /*0x993424*/
+  v39 = _ZtlSecureFuse<double>(p_m_rp->_ZtlSecureTear_v, p_m_rp->_ZtlSecureTear_v_CS); /*0x99342f*/
+  p_m_rpLast->_ZtlSecureTear_v_CS = _ZtlSecureTear<double>(v39, p_m_rpLast->_ZtlSecureTear_v); /*0x99343f*/
+  sin1 = _ZtlSecureFuse<double>(p_m_rp->_ZtlSecureTear_pos, p_m_rp->_ZtlSecureTear_pos_CS); /*0x99344c*/
+  v40 = _ZtlSecureFuse<double>(p_m_rp->_ZtlSecureTear_v, p_m_rp->_ZtlSecureTear_v_CS); /*0x99345b*/
+  v41 = _ZtlSecureTear<double>((v40 + v) * DOUBLE_0_5 * v26 + sin1, p_m_rp->_ZtlSecureTear_pos); /*0x993480*/
+  op = v; /*0x99348f*/
+  p_m_rp->_ZtlSecureTear_pos_CS = v41; /*0x993492*/
+  p_m_rp->_ZtlSecureTear_v_CS = _ZtlSecureTear<double>(op, p_m_rp->_ZtlSecureTear_v); /*0x99349a*/
+}

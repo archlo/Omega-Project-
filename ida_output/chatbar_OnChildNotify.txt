@@ -1,0 +1,37 @@
+﻿void __thiscall CUIStatusBar::OnChildNotify(
+        CUIStatusBar *this,
+        unsigned int nId,
+        unsigned int param1,
+        unsigned int param2)
+{
+  if ( nId == 1010 )
+  {
+    if ( param1 >= 0x12C && param1 <= 0x130 )
+    {
+      CUIStatusBar::ChatLogDraw(this);
+      this->m_dwLastScrolled = ZAPI.timeGetTime();
+    }
+    goto LABEL_5;
+  }
+  if ( nId == 1012 )
+  {
+    if ( param1 == 600 )
+    {
+      CUIStatusBar::SetChatTarget(this, param2);
+      return;
+    }
+    goto LABEL_5;
+  }
+  if ( nId - 2000 > 3 )
+  {
+LABEL_5:
+    if ( param1 == 100 )
+      this->OnButtonClicked(this, nId);
+    return;
+  }
+  if ( param1 == 100 )
+  {
+    CUIStatusBar::SetButtonBlink(this, nId - 2000, 0);
+    this->OnButtonClicked(this, nId);
+  }
+}

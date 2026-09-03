@@ -1,0 +1,4 @@
+// CUIUserList::OnExpeditionChanged @ 0x8b70d0
+// Decompiled from v95 IDB
+
+{"addr":"0x8b70d0","code":"void __thiscall CUIUserList::OnExpeditionChanged(CUIUserList *this)\n{\n  if ( this->m_nCurTab == 2 ) /*0x8b70d7*/\n    TabExpedition::OnExpeditionChanged(this->m_pTabExpedition); /*0x8b70df*/\n}","refs":[{"addr":"0x7b0870","name":"?OnExpeditionChanged@TabExpedition@@QAEXXZ"}]}

@@ -1,0 +1,37 @@
+// ctrltab::OnMouseButton
+
+void __thiscall CCtrlTab::OnMouseButton(CCtrlTab *this, __POSITION *msg, unsigned int wParam, int rx, int ry)
+{
+  __POSITION *m_uCount; // eax
+  int v7; // esi
+  int v8; // edi
+  CCtrlTab::TABINFO *Next; // eax
+  StringPool *Instance; // eax
+  ZXString<unsigned short> *StringW; // eax
+
+  if ( msg == (__POSITION *)513 && ry >= 4 ) /*0x4ee3e9*/
+  {
+    m_uCount = (__POSITION *)this->m_lTabInfo._m_uCount; /*0x4ee3ef*/
+    msg = m_uCount; /*0x4ee3f2*/
+    if ( m_uCount ) /*0x4ee3f8*/
+    {
+      v7 = rx; /*0x4ee3fe*/
+      while ( 1 ) /*0x4ee40d*/
+      {
+        v8 = ZList<CCtrlTab::TABINFO>::IndexOf((ZList<CCtrlTab::TABINFO> *)&this->m_nCurTab, m_uCount); /*0x4ee40d*/
+        Next = ZList<CCtrlTab::TABINFO>::GetNext(&msg); /*0x4ee414*/
+        if ( Next->nStart - 2 <= v7 && v7 <= Next->nEnd + 2 && Next->bEnabled ) /*0x4ee430*/
+          break; /*0x4ee430*/
+        m_uCount = msg; /*0x4ee436*/
+        if ( !msg ) /*0x4ee43c*/
+          return; /*0x4ee43c*/
+      }
+      Instance = StringPool::GetInstance(); /*0x4ee44a*/
+      StringW = StringPool::GetStringW(Instance, (ZXString<unsigned short> *)&msg, 0x4F7u); /*0x4ee451*/
+      play_ui_sound(StringW->_m_pStr); /*0x4ee461*/
+      if ( msg ) /*0x4ee477*/
+        ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)&msg[-12]); /*0x4ee47d*/
+      CCtrlTab::SetTab((CCtrlTab *)((char *)this - 4), v8); /*0x4ee489*/
+    }
+  }
+}

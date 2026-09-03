@@ -1,0 +1,40 @@
+// CSkillInfo::GetSkillLevel(CharacterData const &,SecondaryStat const &,long,SKILLENTRY const * *)
+
+int __thiscall CSkillInfo::GetSkillLevel(
+        CSkillInfo *this,
+        const CharacterData *c,
+        const SecondaryStat *ss,
+        int nSkillID,
+        const SKILLENTRY **ppSkillEntry)
+{
+  int result; // eax
+
+  if ( nSkillID > 20001067 )
+  {
+    if ( nSkillID > 30001067 || nSkillID < 30001066 && (nSkillID < 20011066 || nSkillID > 20011067) )
+      return CSkillInfo::GetSkillLevel(this, c, nSkillID, (int)ppSkillEntry);
+  }
+  else if ( nSkillID < 20001066
+         && (nSkillID > (int)&loc_989AAB || nSkillID < (int)&loc_989AAA && (nSkillID < 1066 || nSkillID > 1067)) )
+  {
+    return CSkillInfo::GetSkillLevel(this, c, nSkillID, (int)ppSkillEntry);
+  }
+  if ( ppSkillEntry )
+    *ppSkillEntry = CSkillInfo::GetSkill(this, nSkillID);
+  switch ( _ZtlSecureFuse<long>(ss->_ZtlSecureTear_nMorph_, ss->_ZtlSecureTear_nMorph__CS) )
+  {
+    case 'A':
+      result = 2;
+      break;
+    case 'B':
+      result = 3;
+      break;
+    case 'C':
+      result = 4;
+      break;
+    default:
+      result = 1;
+      break;
+  }
+  return result;
+}

@@ -1,0 +1,35 @@
+﻿void __thiscall CNpcPool::OnNpcEnterField(CNpcPool *this, CInPacket *iPacket)
+{
+  CInPacket *v2; // ebx
+  CInPacket *v4; // ebp
+  CNpcPool::NPCENTRY *v5; // esi
+  unsigned int v6; // eax
+  CNpcTemplate *NpcTemplate; // eax
+  CNpc *Npc; // eax
+  __POSITION *value; // [esp+Ch] [ebp-Ch] BYREF
+  unsigned int dwNpcId; // [esp+10h] [ebp-8h] BYREF
+  ZMap<unsigned long,__POSITION *,unsigned long> *p_m_mNpc; // [esp+14h] [ebp-4h]
+
+  v2 = iPacket; /*0x679684*/
+  v4 = (CInPacket *)CInPacket::Decode4(iPacket); /*0x679693*/
+  dwNpcId = (unsigned int)v4; /*0x6796a2*/
+  iPacket = v4; /*0x6796a6*/
+  p_m_mNpc = &this->m_mNpc; /*0x6796aa*/
+  if ( ZMap<unsigned long,__POSITION *,unsigned long>::GetAt(&this->m_mNpc, (const unsigned int *)&iPacket, &value) /*0x6796bd*/
+    && value )
+  {
+    *(_BYTE *)&value[24] |= 1u; /*0x6796bf*/
+  }
+  else
+  {
+    v5 = ZList<CNpcPool::NPCENTRY>::AddTail(&this->m_lNpc); /*0x6796d7*/
+    v6 = CInPacket::Decode4(v2); /*0x6796d9*/
+    NpcTemplate = CNpcTemplate::GetNpcTemplate(v6); /*0x6796e1*/
+    Npc = CreateNpc(NpcTemplate, 0); /*0x6796ea*/
+    ZRef<CNpc>::operator=(&v5->pNpc, Npc); /*0x6796f6*/
+    v5->bFlag = 1; /*0x6796fe*/
+    v5->posList = (__POSITION *)this->m_lNpc._m_pTail; /*0x67970a*/
+    ZMap<unsigned long,__POSITION *,unsigned long>::Insert(p_m_mNpc, &dwNpcId, &v5->posList); /*0x679711*/
+    CNpc::Init(v5->pNpc.p, (IWzVector2D *)v4, v2); /*0x67971b*/
+  }
+}

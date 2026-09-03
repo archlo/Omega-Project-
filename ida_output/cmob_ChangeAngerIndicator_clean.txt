@@ -1,0 +1,12 @@
+void __thiscall CMob::ChangeAngerIndicator(CMob *this, int nIndicatorIndex)
+{
+  bool v2; // cc
+
+  if ( nIndicatorIndex != this->m_nCurrIndicatorIndex ) /*0x63a10a*/
+  {
+    v2 = nIndicatorIndex <= this->m_nGaugeCount; /*0x63a10c*/
+    this->m_nAngerGaugeCount = 0; /*0x63a112*/
+    if ( v2 && nIndicatorIndex >= 0 ) /*0x63a120*/
+      this->m_nCurrIndicatorIndex = nIndicatorIndex; /*0x63a122*/
+  }
+}

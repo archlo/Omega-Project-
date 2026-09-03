@@ -1,0 +1,1 @@
+﻿{"jsonrpc": "2.0", "error": {"code": -32700, "message": "JSON parse error", "data": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}, "id": null}

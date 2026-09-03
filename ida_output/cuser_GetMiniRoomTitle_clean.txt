@@ -1,0 +1,8 @@
+// cuser::GetMiniRoomTitle
+
+ZXString<char> *__thiscall CUser::GetMiniRoomTitle(CUser *this, ZXString<char> *result)
+{
+  result->_m_pStr = nullptr; /*0x9119d7*/
+  ZXString<char>::operator=(result, &this->m_sMiniRoomTitle); /*0x9119dd*/
+  return result; /*0x9119e4*/
+}

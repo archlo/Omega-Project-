@@ -1,0 +1,98 @@
+// cuser::SetMoveAction
+
+void __thiscall CUser::SetMoveAction(CUser *this, int nMA, int bReload)
+{
+  int v4; // ecx
+  _DWORD *v5; // eax
+  int v6; // ebx
+  int v7; // ebp
+  _DWORD *v8; // eax
+  int v9; // eax
+  int v10; // edi
+  int OneTimeAction; // eax
+  int v12; // edi
+  CUser *v13; // edi
+  int v14; // edi
+  int v15; // eax
+  int m_nGameKind; // edi
+
+  v4 = this->m_aAvatarHairEquipForced[54]; /*0x8df545*/
+  v5 = (_DWORD *)(RIDING_WILDHUNTER_JAGUAR_188 + 4); /*0x8df54b*/
+  while ( 1 ) /*0x8df550*/
+  {
+    v6 = nMA; /*0x8df550*/
+    v7 = bReload; /*0x8df554*/
+    if ( *v5 == v4 ) /*0x8df55a*/
+      break; /*0x8df55a*/
+    if ( (int)++v5 >= (int)&DB_DATE_19000101_194 ) /*0x8df564*/
+    {
+      if ( !bReload && nMA == this->m_tNextBlink ) /*0x8df570*/
+        return; /*0x8df570*/
+      break; /*0x8df570*/
+    }
+  }
+  v8 = (_DWORD *)(RIDING_WILDHUNTER_JAGUAR_188 + 4); /*0x8df576*/
+  while ( *v8 != v4 ) /*0x8df582*/
+  {
+    if ( (int)++v8 >= (int)&DB_DATE_19000101_194 ) /*0x8df58c*/
+      goto LABEL_14; /*0x8df58c*/
+  }
+  if ( !bReload ) /*0x8df592*/
+  {
+    v9 = CAvatar::MoveAction2RawAction((CAvatar *)this, nMA, &nMA); /*0x8df59c*/
+    v10 = CAvatar::ConvertCharacterAction((CAvatar *)this, v9); /*0x8df5b0*/
+    if ( v10 == CAvatar::GetCurCharacterAction((CAvatar *)this, &bReload) /*0x8df5d4*/
+      && nMA == bReload
+      && CAvatar::MoveAction2RawAction((CAvatar *)this, v6, nullptr) == this->_ZtlSecureTear_m_nWeaponAttackSpeed_CS )
+    {
+      return; /*0x8df5d4*/
+    }
+  }
+LABEL_14:
+  CAvatar::SetMoveAction((CAvatar *)this, v6, v7); /*0x8df5da*/
+  if ( this->m_aAvatarHairEquipForced[44] ) /*0x8df5e3*/
+  {
+    OneTimeAction = 2; /*0x8df5ec*/
+  }
+  else
+  {
+    v12 = CAvatar::MoveAction2RawAction((CAvatar *)this, this->m_tNextBlink, nullptr); /*0x8df605*/
+    if ( CAvatar::GetOneTimeAction((CAvatar *)this) <= -1 ) /*0x8df60f*/
+      OneTimeAction = v12; /*0x8df61a*/
+    else
+      OneTimeAction = CAvatar::GetOneTimeAction((CAvatar *)this); /*0x8df613*/
+  }
+  CItemEffectManager::ChangeAction((CItemEffectManager *)&this->m_aAdditionalLayer[74].l2.pLayer, OneTimeAction); /*0x8df623*/
+  v13 = (CUser *)((char *)this - 136); /*0x8df628*/
+  if ( this->m_KeywordEffect.m_mKeywordItemIDs._m_uAutoGrowLimit ) /*0x8df630*/
+    v13->m_bRepeatEffectRemove = 0; /*0x8df638*/
+  v13->m_bRepeatEffect = 0; /*0x8df63e*/
+  if ( (this->m_tNextBlink & 0xFFFFFFFE) == 0x12 ) /*0x8df650*/
+    v13->OnSetDead((CUser *)((char *)this - 136), v7 == 0); /*0x8df661*/
+  if ( this->m_pSpectrumAniState.p && (this->m_tNextBlink & 0xFFFFFFFE) != 0x12 ) /*0x8df677*/
+    v13->OnRevive((CUser *)((char *)this - 136)); /*0x8df680*/
+  if ( this->m_nGameKind ) /*0x8df682*/
+  {
+    v14 = CAvatar::MoveAction2RawAction((CAvatar *)this, this->m_tNextBlink, nullptr); /*0x8df69b*/
+    if ( CAvatar::GetOneTimeAction((CAvatar *)this) <= -1 ) /*0x8df6a5*/
+      v15 = v14; /*0x8df6b0*/
+    else
+      v15 = CAvatar::GetOneTimeAction((CAvatar *)this); /*0x8df6a9*/
+    switch ( v15 ) /*0x8df6c1*/
+    {
+      case 2: /*0x8df6c1*/
+      case 3: /*0x8df6c1*/
+      case 4: /*0x8df6c1*/
+      case 42: /*0x8df6c1*/
+      case 47: /*0x8df6c1*/
+      case 48: /*0x8df6c1*/
+      case 55: /*0x8df6c1*/
+        *(_DWORD *)(this->m_nGameKind + 4) = 1; /*0x8df6d1*/
+        break; /*0x8df6d9*/
+      default:
+        m_nGameKind = this->m_nGameKind; /*0x8df6dc*/
+        *(_DWORD *)(m_nGameKind + 4) = CAvatar::IsOnPlayingRotateAction((CAvatar *)this); /*0x8df6e9*/
+        break; /*0x8df6e9*/
+    }
+  }
+}

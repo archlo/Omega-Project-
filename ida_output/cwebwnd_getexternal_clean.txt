@@ -1,0 +1,1 @@
+{"addr":"0x9a4150","code":"HRESULT __stdcall CWebWnd::GetExternal(CWebWnd *this, IDispatch **ppDispatch)\n{\n  *ppDispatch = nullptr; /*0x9a4154*/\n  return -2147467263; /*0x9a415f*/\n}"}

@@ -1,0 +1,3 @@
+// CUser::GetShoeAttr @ 0x8eb5c0
+
+{"addr":"0x8eb5c0","code":"const ZRef<CAttrShoe> *__thiscall CUser::GetShoeAttr(CUser *this, const ZRef<CAttrShoe> *result)\n{\n  result->p = nullptr; /*0x8eb5ca*/\n  return result; /*0x8eb5ce*/\n}"}

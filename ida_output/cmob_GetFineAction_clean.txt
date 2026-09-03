@@ -1,0 +1,60 @@
+int __thiscall CMob::GetFineAction(CMob *this, int nAction)
+{
+  CMobTemplate *m_pTemplate; // eax
+  unsigned int v4; // eax
+  int v5; // edi
+  int v6; // ebx
+  __POSITION *v7; // eax
+  int v9; // edi
+  __POSITION *v10; // eax
+  int nFineAction; // [esp+Ch] [ebp-8h] BYREF
+  int key; // [esp+10h] [ebp-4h] BYREF
+
+  if ( (_S4_1 & 1) == 0 ) /*0x64927f*/
+  {
+    _S4_1 |= 1u; /*0x649281*/
+    sMobActionErrata.__vftable = (ZMap<long,ZMap<long,long,long>,long>_vtbl *)&ZMap<long,ZMap<long,long,long>,long>::`vftable'; /*0x64928f*/
+    sMobActionErrata._m_apTable = nullptr; /*0x649299*/
+    sMobActionErrata._m_uTableSize = 31; /*0x6492a3*/
+    sMobActionErrata._m_uCount = 0; /*0x6492ad*/
+    ZMap<long,ZMap<long,long,long>,long>::_CalcAutoGrow(&sMobActionErrata, 0x64u); /*0x6492b7*/
+    atexit(CMob::GetFineAction_::_2_::_dynamic_atexit_destructor_for__sMobActionErrata__); /*0x6492c1*/
+  }
+  if ( !this->m_stat.nDoom_ || (m_pTemplate = this->m_pTemplateByDoom) == nullptr ) /*0x6492da*/
+    m_pTemplate = this->m_pTemplate; /*0x6492dc*/
+  v4 = _ZtlSecureFuse<unsigned long>( /*0x6492ea*/
+         m_pTemplate->_ZtlSecureTear_dwTemplateID,
+         m_pTemplate->_ZtlSecureTear_dwTemplateID_CS);
+  v5 = nAction; /*0x6492ef*/
+  v6 = v4; /*0x6492f9*/
+  nFineAction = nAction; /*0x6492fb*/
+  if ( CMob::LoadMobAction(this, nAction) ) /*0x6492ff*/
+    return v5; /*0x649306*/
+  key = v6; /*0x649313*/
+  v7 = ZMap<long,ZMap<long,long,long>,long>::Insert(&sMobActionErrata, &key, nullptr); /*0x649317*/
+  if ( ZMap<long,long,long>::GetAt((ZMap<long,long,long> *)&v7[12], &nAction, &nFineAction) ) /*0x649329*/
+  {
+    v5 = nFineAction; /*0x649334*/
+    CMob::LoadMobAction(this, nFineAction); /*0x649339*/
+    return v5; /*0x649346*/
+  }
+  if ( CMob::LoadMobAction(this, 1) ) /*0x64934b*/
+  {
+    v9 = 1; /*0x649354*/
+  }
+  else
+  {
+    if ( !CMob::LoadMobAction(this, 3) ) /*0x649366*/
+    {
+      CMSException::CMSException((CMSException *)&nAction, 570425350); /*0x6493ac*/
+      key = nAction; /*0x6493bf*/
+      _CxxThrowException(&key, &_TI3_AVCTerminateException__); /*0x6493c3*/
+    }
+    v9 = 3; /*0x649368*/
+  }
+  nFineAction = v9; /*0x649379*/
+  key = v6; /*0x64937d*/
+  v10 = ZMap<long,ZMap<long,long,long>,long>::Insert(&sMobActionErrata, &key, nullptr); /*0x649381*/
+  ZMap<long,long,long>::Insert((ZMap<long,long,long> *)&v10[12], &nAction, &nFineAction); /*0x649393*/
+  return v9; /*0x649340*/
+}

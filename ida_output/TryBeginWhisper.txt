@@ -1,0 +1,54 @@
+﻿void __thiscall CUIStatusBar::TryShowMemoListDlg(CUIStatusBar *this, unsigned int rx, unsigned int ry)
+{
+  ZList<GW_Memo> *m_pStr; // esi
+  CMemoListDlg *v5; // eax
+  CMemoListDlg *v6; // eax
+  ZRefCounted *v7; // eax
+  CDialog *v8; // esi
+  ZRef<CMemoListDlg> pDlg; // [esp+10h] [ebp-38h] BYREF
+  tagRECT rc; // [esp+18h] [ebp-30h] BYREF
+  ZList<GW_Memo> lMemo; // [esp+28h] [ebp-20h] BYREF
+  int v12; // [esp+44h] [ebp-4h]
+
+  rc.left = 610; /*0x877a27*/
+  rc.top = 516; /*0x877a2f*/
+  rc.right = 642; /*0x877a37*/
+  rc.bottom = 530; /*0x877a3f*/
+  if ( ZAPI.PtInRect(&rc, (tagPOINT)__PAIR64__(ry, rx)) ) /*0x877a47*/
+  {
+    lMemo.__vftable = (ZList<GW_Memo>_vtbl *)&ZList<GW_Memo>::`vftable'; /*0x877a57*/
+    memset(&lMemo._m_uCount, 0, 12); /*0x877a5f*/
+    m_pStr = (ZList<GW_Memo> *)TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x877a6b*/
+    v12 = 0; /*0x877a75*/
+    ZList<GW_Memo>::RemoveAll(&lMemo); /*0x877a79*/
+    m_pStr = (ZList<GW_Memo> *)((char *)m_pStr + 16172); /*0x877a7e*/
+    ZList<GW_Memo>::AddTail(&lMemo, m_pStr); /*0x877a89*/
+    ZList<GW_Memo>::RemoveAll(m_pStr); /*0x877a90*/
+    if ( lMemo._m_uCount ) /*0x877a99*/
+    {
+      CWnd::InvalidateRect(this, nullptr); /*0x877a9e*/
+      v5 = (CMemoListDlg *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0xD8u); /*0x877aad*/
+      LOBYTE(v12) = 1; /*0x877ab6*/
+      if ( v5 && (v6 = CMemoListDlg::CMemoListDlg(v5, &lMemo)) != nullptr && (v7 = &v6->ZRefCounted) != nullptr ) /*0x877ad4*/
+      {
+        v8 = (CDialog *)&v7[-1].___u1; /*0x877ad6*/
+        pDlg.p = (CMemoListDlg *)&v7[-1].___u1; /*0x877ad9*/
+        if ( v7 != (ZRefCounted *)8 ) /*0x877adf*/
+          InterlockedIncrement(&v8->_m_nRef); /*0x877ae5*/
+      }
+      else
+      {
+        v8 = nullptr; /*0x877b37*/
+        pDlg.p = nullptr; /*0x877b39*/
+      }
+      LOBYTE(v12) = 2; /*0x877aed*/
+      CDialog::DoModal(v8); /*0x877af2*/
+      LOBYTE(v12) = 0; /*0x877af7*/
+      if ( v8 ) /*0x877afd*/
+        ZRef<CMemoListDlg>::_ReleaseRaw(&pDlg, nullptr); /*0x877b04*/
+    }
+    v12 = -1; /*0x877b0d*/
+    lMemo.__vftable = (ZList<GW_Memo>_vtbl *)&ZList<GW_Memo>::`vftable'; /*0x877b15*/
+    ZList<GW_Memo>::RemoveAll(&lMemo); /*0x877b1d*/
+  }
+}

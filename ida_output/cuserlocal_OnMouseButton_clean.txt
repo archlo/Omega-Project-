@@ -1,0 +1,23 @@
+// cuserlocal::OnMouseButton
+
+void __thiscall CUserLocal::OnMouseButton(CUserLocal *this, unsigned int msg, unsigned int wParam, int rx, int ry)
+{
+  CUIToolTip::ClearToolTip(&this->m_uiToolTip); /*0x9372c9*/
+  switch ( msg ) /*0x9372dc*/
+  {
+    case 0x201u: /*0x9372dc*/
+      CUserLocal::HandleLButtonDown(this); /*0x9372e5*/
+      break; /*0x9372eb*/
+    case 0x202u: /*0x9372dc*/
+      CUserLocal::HandleLButtonClk(this); /*0x9372f0*/
+      break; /*0x9372f6*/
+    case 0x203u: /*0x9372dc*/
+      CUserLocal::HandleLButtonDblClk(this); /*0x9372fb*/
+      break; /*0x937301*/
+    case 0x205u: /*0x9372dc*/
+      CUserLocal::HandleRButtonClk(this); /*0x937306*/
+      break; /*0x937306*/
+    default:
+      return;
+  }
+}

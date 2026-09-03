@@ -1,0 +1,5 @@
+﻿CMob::TARGETINFO *__thiscall CMob::TARGETINFO::TARGETINFO(CMob::TARGETINFO *this)
+{
+  this->dwTargetInfo = 0;
+  return this;
+}

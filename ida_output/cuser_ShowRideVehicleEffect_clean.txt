@@ -1,0 +1,179 @@
+// cuser::ShowRideVehicleEffect
+
+void __thiscall CUser::ShowRideVehicleEffect(CUser *this, Ztl_bstr_t nVehicleID)
+{
+  int m_Data; // ebp
+  SKILLENTRY *Skill; // edi
+  int (*GetJobCode)(void); // edx
+  CSkillInfo *v6; // edi
+  int v7; // eax
+  int novice_skill_as_race; // eax
+  SecondaryStat *v9; // eax
+  bool v10; // zf
+  CUser_vtbl *v11; // eax
+  int v12; // ebx
+  CSkillInfo *v13; // edi
+  int skill_id_from_vehicle_id; // eax
+  int v15; // eax
+  SecondaryStat *v16; // eax
+  SecondaryStat *v17; // eax
+  unsigned __int8 v18; // al
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzVector2D *v20; // ecx
+  _bstr_t::Data_t *v21; // edi
+  int m_nMoveAction; // eax
+  const wchar_t *m_wstr; // ecx
+  SecondaryStat *v24; // eax
+  IWzGr2DLayer *v25; // eax
+  IWzVector2D *v26; // ecx
+  _bstr_t::Data_t *v27; // eax
+  int v28; // esi
+  const wchar_t *v29; // eax
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v30; // [esp-20h] [ebp-4Ch] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v31; // [esp-1Ch] [ebp-48h] BYREF
+  int v32; // [esp-18h] [ebp-44h]
+  int v33; // [esp-14h] [ebp-40h]
+  int v34; // [esp-10h] [ebp-3Ch]
+  int v35; // [esp-Ch] [ebp-38h]
+  int v36; // [esp-8h] [ebp-34h]
+  int v37; // [esp-4h] [ebp-30h]
+  _bstr_t result; // [esp+14h] [ebp-18h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v39; // [esp+18h] [ebp-14h]
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *v40; // [esp+1Ch] [ebp-10h]
+  int v41; // [esp+28h] [ebp-4h]
+
+  m_Data = (int)nVehicleID.m_Data; /*0x8ece29*/
+  Skill = nullptr; /*0x8ece3e*/
+  if ( (int)nVehicleID.m_Data / 10000 == 190 ) /*0x8ece45*/
+  {
+    GetJobCode = (int (*)(void))this->GetJobCode; /*0x8ece49*/
+    this->m_tRideVehicleLeft = 240; /*0x8ece4c*/
+    v6 = TSingleton<CSkillInfo>::ms_pInstance; /*0x8ece56*/
+    v7 = GetJobCode(); /*0x8ece5c*/
+    novice_skill_as_race = get_novice_skill_as_race(1004, v7); /*0x8ece64*/
+    Skill = (SKILLENTRY *)CSkillInfo::GetSkill(v6, novice_skill_as_race); /*0x8ece74*/
+  }
+  else
+  {
+    if ( (int)nVehicleID.m_Data / 10000 != 193 ) /*0x8ece80*/
+      return; /*0x8ece80*/
+    v9 = (SecondaryStat *)this->GetSecondaryStat(this); /*0x8ece8b*/
+    v10 = SecondaryStat::IsEventVehicle(v9) == 0; /*0x8ece94*/
+    v11 = this->CLife::IGObj::__vftable; /*0x8ece96*/
+    if ( v10 ) /*0x8ece9a*/
+    {
+      v16 = (SecondaryStat *)v11->GetSecondaryStat(this); /*0x8ecee2*/
+      if ( SecondaryStat::IsWildhunterJaguarVehicle(v16) /*0x8ecefa*/
+        || (v17 = (SecondaryStat *)this->GetSecondaryStat(this), SecondaryStat::IsMechanicVehicle(v17)) )
+      {
+        this->m_tRideVehicleLeft = 1; /*0x8ecf21*/
+        Skill = nullptr; /*0x8ecf2b*/
+      }
+      else
+      {
+        Skill = (SKILLENTRY *)CSkillInfo::GetSkill(TSingleton<CSkillInfo>::ms_pInstance, 5221006); /*0x8ecf13*/
+        this->m_tRideVehicleLeft = 540; /*0x8ecf15*/
+      }
+    }
+    else
+    {
+      v12 = v11->GetJobCode(this); /*0x8ecea2*/
+      if ( is_event_vehicle_type2(m_Data) ) /*0x8ecea4*/
+      {
+        v13 = TSingleton<CSkillInfo>::ms_pInstance; /*0x8eceb0*/
+        skill_id_from_vehicle_id = get_skill_id_from_vehicle_id(m_Data); /*0x8eceb8*/
+        v15 = get_novice_skill_as_race(skill_id_from_vehicle_id, v12); /*0x8ecec1*/
+        Skill = (SKILLENTRY *)CSkillInfo::GetSkill(v13, v15); /*0x8eced1*/
+      }
+      this->m_tRideVehicleLeft = 240; /*0x8eced3*/
+    }
+  }
+  if ( !this->m_bDelayedLoad && Skill ) /*0x8ecf3c*/
+  {
+    v18 = this->GetCharacterLevel(this); /*0x8ecf49*/
+    SKILLENTRY::GetEffectUOL(Skill, &nVehicleID, v18); /*0x8ecf56*/
+    m_pInterface = this->m_pLayerUnderFace.m_pInterface; /*0x8ecf5b*/
+    v37 = 0; /*0x8ecf61*/
+    v36 = 0; /*0x8ecf63*/
+    v35 = 0; /*0x8ecf65*/
+    v34 = 3; /*0x8ecf67*/
+    v33 = 0x7FFFFFFF; /*0x8ecf69*/
+    v32 = 1000; /*0x8ecf6e*/
+    v20 = (IWzVector2D *)&v31; /*0x8ecf74*/
+    v41 = 0; /*0x8ecf76*/
+    result.m_Data = (_bstr_t::Data_t *)&v31; /*0x8ecf7e*/
+    v31.m_pInterface = m_pInterface; /*0x8ecf82*/
+    if ( m_pInterface ) /*0x8ecf86*/
+      m_pInterface->AddRef(m_pInterface); /*0x8ecf8e*/
+    v30.m_pInterface = v20; /*0x8ecf90*/
+    v39 = (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v30; /*0x8ecf93*/
+    LOBYTE(v41) = 1; /*0x8ecf9a*/
+    CUser::GetVecCtrl(this, &v30); /*0x8ecf9f*/
+    v21 = nVehicleID.m_Data; /*0x8ecfa4*/
+    m_nMoveAction = this->m_nMoveAction; /*0x8ecfa8*/
+    if ( nVehicleID.m_Data ) /*0x8ecfb0*/
+      m_wstr = nVehicleID.m_Data->m_wstr; /*0x8ecfb2*/
+    else
+      m_wstr = nullptr; /*0x8ecfb6*/
+    LOBYTE(v41) = 0; /*0x8ecfbf*/
+    CAnimationDisplayer::Effect_SkillUse( /*0x8ecfca*/
+      TSingleton<CAnimationDisplayer>::ms_pInstance,
+      m_wstr,
+      (m_nMoveAction & 1) == 0,
+      v30,
+      v31,
+      v32,
+      v33,
+      v34,
+      v35,
+      v36,
+      v37);
+    v24 = (SecondaryStat *)this->GetSecondaryStat(this); /*0x8ecfd6*/
+    if ( SecondaryStat::IsRidingSkillVehicle(v24) ) /*0x8ecfda*/
+    {
+      v25 = this->m_pLayerUnderFace.m_pInterface; /*0x8ecfe7*/
+      v37 = 0; /*0x8ecfed*/
+      v36 = 0; /*0x8ecfef*/
+      v35 = 0; /*0x8ecff1*/
+      v34 = 3; /*0x8ecff3*/
+      v33 = 0x7FFFFFFF; /*0x8ecff5*/
+      v32 = 1000; /*0x8ecffa*/
+      v26 = (IWzVector2D *)&v31; /*0x8ed000*/
+      v39 = &v31; /*0x8ed002*/
+      v31.m_pInterface = v25; /*0x8ed006*/
+      if ( v25 ) /*0x8ed00a*/
+        v25->AddRef(v25); /*0x8ed012*/
+      v30.m_pInterface = v26; /*0x8ed014*/
+      v40 = &v30; /*0x8ed017*/
+      LOBYTE(v41) = 2; /*0x8ed01e*/
+      CUser::GetVecCtrl(this, &v30); /*0x8ed023*/
+      LOBYTE(v41) = 3; /*0x8ed036*/
+      v27 = Ztl_bstr_t::operator+(&nVehicleID, &result, L"0")->m_Data; /*0x8ed040*/
+      v28 = this->m_nMoveAction; /*0x8ed042*/
+      LOBYTE(v41) = 4; /*0x8ed048*/
+      if ( v27 ) /*0x8ed04f*/
+        v29 = v27->m_wstr; /*0x8ed051*/
+      else
+        v29 = nullptr; /*0x8ed055*/
+      LOBYTE(v41) = 5; /*0x8ed05d*/
+      CAnimationDisplayer::Effect_SkillUse( /*0x8ed069*/
+        TSingleton<CAnimationDisplayer>::ms_pInstance,
+        v29,
+        (v28 & 1) == 0,
+        v30,
+        v31,
+        v32,
+        v33,
+        v34,
+        v35,
+        v36,
+        v37);
+      LOBYTE(v41) = 0; /*0x8ed072*/
+      if ( result.m_Data ) /*0x8ed079*/
+        _bstr_t::Data_t::Release(result.m_Data); /*0x8ed07b*/
+      play_skill_sound(5221006, SE_SKILL_USE, 0); /*0x8ed089*/
+    }
+    if ( v21 ) /*0x8ed093*/
+      _bstr_t::Data_t::Release(v21); /*0x8ed097*/
+  }
+}

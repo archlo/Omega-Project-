@@ -1,0 +1,3 @@
+// CUserLocal::OnIncComboResponse @ 0x91a970
+
+{"addr":"0x91a970","code":"void __thiscall CUserLocal::OnIncComboResponse(CUserLocal *this, CInPacket *iPacket)\n{\n  this->m_nCombo = CInPacket::Decode4(iPacket); /*0x91a97c*/\n  this->m_tLastSetCombo = get_update_time(); /*0x91a989*/\n  CUserLocal::DrawCombo(this); /*0x91a98f*/\n}","refs":[{"addr":"0x409870","name":"?Decode4@CInPacket@@QAEKXZ"},{"addr":"0x95b290","name":"?get_update_time@@YAJXZ"},{"addr":"0x917040","name":"?DrawCombo@CUserLocal@@QAEXXZ"}]}

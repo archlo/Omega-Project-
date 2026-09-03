@@ -1,0 +1,14 @@
+BOOL __cdecl CSkillInfo::IsMobChaseAttack(const SKILLENTRY *pSkill)
+{
+  char *nSkillID; // eax
+  BOOL result; // eax
+
+  result = true; /*0x9031af*/
+  if ( pSkill ) /*0x903196*/
+  {
+    nSkillID = (char *)pSkill->nSkillID; /*0x903198*/
+    if ( pSkill->nSkillID == 4001002 || nSkillID == (char *)&loc_4FAA91 || nSkillID == &byte_D5A36A ) /*0x9031ad*/
+      return false; /*0x903196*/
+  }
+  return result; /*0x9031b1*/
+}

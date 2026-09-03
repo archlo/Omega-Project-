@@ -1,0 +1,23 @@
+﻿void __thiscall CMob::OnDamaged(CMob *this, CInPacket *iPacket)
+{
+  int v3; // ebx
+  int v4; // eax
+  int v5; // ebp
+  unsigned int v6; // ebx
+  signed int v7; // eax
+
+  v3 = CInPacket::Decode1(iPacket);
+  v4 = CInPacket::Decode4(iPacket);
+  v5 = v4;
+  if ( v3 != 2 )
+    CMob::ShowDamage(this, v4, 0, 0, 0, 0, 0);
+  if ( this->m_pTemplate->bDamagedByMob )
+  {
+    if ( v3 != 2 )
+      CMob::ShowHitEffect(this, v5);
+    v6 = CInPacket::Decode4(iPacket);
+    v7 = CInPacket::Decode4(iPacket);
+    CMob::CreateHPIndicator(this, (int)(100 * v6) / v7, 0xFFFF0000);
+    CMob::ShowHPIndicator(this);
+  }
+}

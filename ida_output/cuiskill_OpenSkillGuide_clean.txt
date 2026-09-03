@@ -1,0 +1,44 @@
+// CUISkill::OpenSkillGuide
+// Decompiled from v95 IDB
+
+void __thiscall CUISkill::OpenSkillGuide(CUISkill *this, _bstr_t *nGrade)
+{
+  CWndSkillGuide *v3; // eax
+  CWndSkillGuide *v4; // eax
+  ZRefCounted *v5; // eax
+  CWndSkillGuide *v6; // esi
+  CWndSkillGuide *p; // eax
+  ZRef<CWndSkillGuide> v8; // [esp+Ch] [ebp-14h] BYREF
+  int v9; // [esp+1Ch] [ebp-4h]
+
+  v3 = (CWndSkillGuide *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0x80u); /*0x851401*/
+  *(_DWORD *)&v8.gap0 = v3; /*0x851406*/
+  v9 = 0; /*0x85140a*/
+  if ( v3 ) /*0x851414*/
+    v4 = CWndSkillGuide::CWndSkillGuide(v3, nGrade); /*0x85141d*/
+  else
+    v4 = nullptr; /*0x851424*/
+  v9 = -1; /*0x851426*/
+  if ( v4 && (v5 = &v4->ZRefCounted) != nullptr ) /*0x851435*/
+  {
+    v6 = (CWndSkillGuide *)&v5[-1].___u1; /*0x851437*/
+    if ( v5 != (ZRefCounted *)8 ) /*0x85143c*/
+      InterlockedIncrement(&v6->_m_nRef); /*0x851442*/
+  }
+  else
+  {
+    v6 = nullptr; /*0x85147b*/
+  }
+  p = this->m_pWndSkillGuide.p; /*0x851448*/
+  this->m_pWndSkillGuide.p = v6; /*0x85144e*/
+  v8.p = p; /*0x851454*/
+  if ( p ) /*0x85145a*/
+    ZRef<CWndSkillGuide>::_ReleaseRaw(&v8, nullptr); /*0x851462*/
+}
+
+// References:
+//   ?Alloc@?$ZAllocEx@VZAllocAnonSelector@@@@QAEPAXI@Z @ 0x402040
+//   ?_s_alloc@?$ZAllocEx@VZAllocAnonSelector@@@@0V1@A @ 0xc6e67c
+//   ??0CWndSkillGuide@@QAE@J@Z @ 0x850310
+//   __imp__InterlockedIncrement@4 @ 0xb14074
+//   ?_ReleaseRaw@?$ZRef@VCWndSkillGuide@@@@AAEXPAVZRefCounted@@@Z @ 0x84a150

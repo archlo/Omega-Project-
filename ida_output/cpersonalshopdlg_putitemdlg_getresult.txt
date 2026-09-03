@@ -1,0 +1,42 @@
+// 0x69b660
+void __thiscall CPersonalShopDlg::CPutItemDlg::GetResult(
+        CPersonalShopDlg::CPutItemDlg *this,
+        ZXString<char>::_ZXStringData *nCount,
+        int *nPrice,
+        int *nSet)
+{
+  ZXString<char> *Text; // eax
+  int v6; // eax
+  ZXString<char> *v7; // eax
+  int v8; // eax
+  ZXString<char> *v9; // eax
+  int v10; // eax
+  ZXString<char> result; // [esp+4h] [ebp-4h] BYREF
+
+  Text = CCtrlEdit::GetText(this->m_pEditCount.p, &result); /*0x69b66f*/
+  v6 = atoi(Text->_m_pStr); /*0x69b677*/
+  nCount->nRef = v6; /*0x69b680*/
+  if ( result._m_pStr ) /*0x69b68b*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)result._m_pStr - 1); /*0x69b691*/
+  v7 = CCtrlEdit::GetText(this->m_pEditPrice.p, (ZXString<char> *)&nCount); /*0x69b6a4*/
+  v8 = atoi(v7->_m_pStr); /*0x69b6ac*/
+  *nPrice = v8; /*0x69b6b5*/
+  if ( nCount ) /*0x69b6c0*/
+    ZXString<char>::_Release(nCount - 1); /*0x69b6c6*/
+  if ( this->m_bSet ) /*0x69b6ce*/
+  {
+    *nSet = this->m_nNumber; /*0x69b6e1*/
+  }
+  else if ( this->m_pChkBoxSet.p->m_bChecked ) /*0x69b6ee*/
+  {
+    v9 = CCtrlEdit::GetText(this->m_pEditSet.p, (ZXString<char> *)&nCount); /*0x69b6ff*/
+    v10 = atoi(v9->_m_pStr); /*0x69b707*/
+    *nSet = v10; /*0x69b710*/
+    if ( nCount ) /*0x69b71b*/
+      ZXString<char>::_Release(nCount - 1); /*0x69b721*/
+  }
+  else
+  {
+    *nSet = 1; /*0x69b732*/
+  }
+}

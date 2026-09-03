@@ -1,0 +1,7 @@
+// cuistat::OnMouseButton
+
+void __thiscall CUIStat::OnMouseButton(CUIStat *this, unsigned int msg, unsigned int wParam, int rx, int ry)
+{
+  if ( msg == 513 ) /*0x8614a8*/
+    CUIToolTip::ClearToolTip((CUIToolTip *)&this->m_pBtClose.p); /*0x8614b0*/
+}

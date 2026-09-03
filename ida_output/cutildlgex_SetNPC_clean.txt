@@ -1,0 +1,54 @@
+// CUtilDlgEx::SetNPC
+// Address: 0x98c9b0
+
+void __thiscall CUtilDlgEx::SetNPC(CUtilDlgEx *this)
+{
+  int m_dlgType; // eax
+  HRESULT v3; // eax
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzGr2DLayer *v5; // esi
+  IWzGr2DLayer *v6; // eax
+  IWzGr2DLayer *v7; // esi
+  HRESULT v8; // eax
+  IWzGr2DLayer *v9; // eax
+  IWzGr2DLayer *v10; // esi
+  HRESULT v11; // eax
+  IWzGr2DLayer *v12; // esi
+  HRESULT v13; // eax
+  IWzGr2DLayer *v14; // esi
+  HRESULT v15; // eax
+  StringPool *Instance; // eax
+  char *m_pStr; // eax
+  void (__stdcall *v18)(VARIANTARG *); // esi
+  HRESULT v19; // eax
+  HRESULT v20; // eax
+  char *v21; // ebx
+  void *v22; // esp
+  _bstr_t::Data_t *v23; // ecx
+  Ztl_variant_t *ObjectA; // eax
+  IUnknown *Unknown; // eax
+  HRESULT v26; // eax
+  IWzGr2DLayer *v27; // ebx
+  CNpc *NpcByTemplateID; // eax
+  bool v29; // zf
+  IWzCanvas *v30; // edi
+  CNpc *v31; // esi
+  IWzGr2DLayer *v32; // eax
+  HRESULT v33; // eax
+  IWzGr2DLayer *v34; // eax
+  HRESULT v35; // eax
+  CAvatar *v36; // ecx
+  CNpcTemplate *v37; // ecx
+  IWzGr2DLay... [76016 chars total]
+
+// References:
+//   __imp__VariantInit@4 @ 0xb14290
+//   ?ZComVariantCopy@ZComAPI@@YAJPAUtagVARIANT@@0@Z @ 0x401730
+//   ?vtMissing@@3V_variant_t@@A @ 0xc626e8
+//   ?_com_issue_error@@YGXJ@Z @ 0xa2fd00
+//   ?g_gr@@3V?$_com_ptr_t@V?$_com_IIID@UIWzGr2D@@$1?_GUID_e576ea33_d465_4f08_aab1_e78df73ee6d9@@3U__s_GUID@@B@@@@A @ 0xc6f430
+//   ?CreateLayer@IWzGr2D@@QAE?AV?$_com_ptr_t@V?$_com_IIID@UIWzGr2DLayer@@$1?_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf@@3U__s_GUID@@B@@@@JJKKJABVZtl_variant_t@@0@Z @ 0x42a3d0
+//   ?ZAPI@@3U_ZAPIProcAddress@@A @ 0xc6d758
+//   __imp__VariantClear@4 @ 0xb1428c
+//   ?GetLayer@CWnd@@QAE?AV?$_com_ptr_t@V?$_com_IIID@UIWzGr2DLayer@@$1?_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf@@3U__s_GUID@@B@@@@XZ @ 0x42a270
+//   ?_com_issue_errorex@@YGXJPAUIUnknown@@ABU_GUID@@@Z @ 0xa2fd20

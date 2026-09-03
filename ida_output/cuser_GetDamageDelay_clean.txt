@@ -1,0 +1,62 @@
+// cuser::GetDamageDelay
+
+int __thiscall CUser::GetDamageDelay(CUser *this, char *nSkillID, int nDamageIdx, int nDamagePerMob)
+{
+  const int *v5; // ecx
+  int v6; // esi
+  int v8; // ecx
+  const SecondaryStat *v9; // esi
+  int v10; // eax
+  ZFatalSection *p; // ebp
+  int v13; // esi
+  int v14; // ebx
+  int AuraBooster; // eax
+  int nDamageIdxa; // [esp+14h] [ebp+8h]
+  int nDefaultDelay; // [esp+18h] [ebp+Ch]
+
+  if ( (int)nSkillID <= (int)&byte_E6935C ) /*0x8e1007*/
+  {
+    if ( nSkillID == &byte_E6935C || nSkillID == (char *)&loc_4E23EC + 3 ) /*0x8e1011*/
+    {
+      v5 = aDelay_Fist; /*0x8e1027*/
+      v6 = 6; /*0x8e102c*/
+      goto LABEL_14; /*0x8e1031*/
+    }
+    if ( nSkillID == (char *)&word_D72A0E ) /*0x8e1019*/
+    {
+      v5 = aDelay_Vampire; /*0x8e101b*/
+      v6 = 4; /*0x8e1020*/
+      goto LABEL_14; /*0x8e1025*/
+    }
+    return -1; /*0x8e1041*/
+  }
+  if ( nSkillID != (char *)33121001 ) /*0x8e1039*/
+    return -1; /*0x8e1039*/
+  if ( nDamageIdx == nDamagePerMob - 1 ) /*0x8e1049*/
+    v8 = 1680; /*0x8e104b*/
+  else
+    v8 = 120 * nDamageIdx; /*0x8e105d*/
+  v6 = nDamagePerMob; /*0x8e105f*/
+  if ( v8 != -1 ) /*0x8e1064*/
+  {
+    nDefaultDelay = v8; /*0x8e107d*/
+    goto LABEL_16; /*0x8e107d*/
+  }
+  v5 = (const int *)33121001; /*0x8e1066*/
+LABEL_14:
+  nDefaultDelay = v5[nDamageIdx / (nDamagePerMob / v6)]; /*0x8e106a*/
+LABEL_16:
+  v9 = this->GetSecondaryStat(this); /*0x8e1081*/
+  v10 = _ZtlSecureFuse<long>(v9->_ZtlSecureTear_nFrozen_, v9->_ZtlSecureTear_nFrozen__CS); /*0x8e109b*/
+  p = (ZFatalSection *)v9->aTemporaryStat[4].p; /*0x8e10a0*/
+  nDamageIdxa = v10; /*0x8e10ae*/
+  ZFatalSection::Lock(p + 3); /*0x8e10b2*/
+  if ( p != (ZFatalSection *)-24 && p[3]._m_nRef-- == 1 ) /*0x8e10bb*/
+    p[3]._m_pTIB = nullptr; /*0x8e10c1*/
+  v13 = _ZtlSecureFuse<long>(v9->_ZtlSecureTear_nBooster_, v9->_ZtlSecureTear_nBooster__CS); /*0x8e10da*/
+  v14 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nWeaponAttackSpeed, this->_ZtlSecureTear_m_nWeaponAttackSpeed_CS); /*0x8e10f9*/
+  AuraBooster = CUser::GetAuraBooster(this); /*0x8e10fb*/
+  return nDefaultDelay /*0x8e103b*/
+       * (get_attack_speed_degree(v14, (int)nSkillID, v13, p[1]._m_nRef, AuraBooster, nDamageIdxa) + 10)
+       / 16;
+}

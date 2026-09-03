@@ -1,0 +1,23 @@
+void __thiscall CSummoned::OnSkill(CSummoned *this, CInPacket *iPacket)
+{
+  _bstr_t::Data_t *m_Data; // eax
+  unsigned __int8 v4; // al
+
+  if ( this->m_bOwnerIsLocal ) /*0x74a943*/
+    m_Data = TSingleton<CUserLocal>::ms_pInstance.m_Data; /*0x74a94c*/
+  else
+    m_Data = (_bstr_t::Data_t *)CUserPool::GetUser( /*0x74a960*/
+                                  (CUserPool *)TSingleton<CUserPool>::ms_pInstance.m_pInterface,
+                                  this->m_dwCharacterID);
+  if ( !m_Data || !m_Data[132].m_RefCount ) /*0x74a969*/
+  {
+    get_update_time(); /*0x74a973*/
+    if ( _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nOneTimeAction, this->_ZtlSecureTear_m_nOneTimeAction_CS) > -1 ) /*0x74a991*/
+    {
+      this->_ZtlSecureTear_m_nOneTimeAction_CS = _ZtlSecureTear<long>(-1, this->_ZtlSecureTear_m_nOneTimeAction); /*0x74a99f*/
+      CSummoned::PrepareActionLayer(this); /*0x74a9a5*/
+    }
+    v4 = CInPacket::Decode1(iPacket); /*0x74a9ae*/
+    CSummoned::SetAttackAction(this, v4 & 0x7F); /*0x74a9bc*/
+  }
+}

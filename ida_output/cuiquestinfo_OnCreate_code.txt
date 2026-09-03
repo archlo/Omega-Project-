@@ -1,0 +1,32 @@
+﻿// bad sp value at call has been detected, the output may be wrong!
+void __thiscall CUIQuestInfo::OnCreate(CUIQuestInfo *this, void *pData)
+{
+  unsigned __int8 *Buffer; // eax
+  ZArray<ZRef<CCtrlButton> > *m_apBtMax; // esi
+  int v5; // ebx
+  ZXString<char> *a; // eax
+  ZXString<char> *m_pStr; // eax
+  void (__stdcall *v8)(VARIANTARG *); // esi
+  HRESULT v9; // eax
+  HRESULT v10; // eax
+  StringPool *Instance; // eax
+  Ztl_variant_t *ObjectA; // eax
+  IUnknown *Unknown; // eax
+  HRESULT v14; // esi
+  IWzProperty *m_pInterface; // eax
+  IWzProperty *v16; // ebx
+  IWzProperty *v17; // eax
+  HRESULT (__stdcall *v18)(VARIANTARG *); // esi
+  void (__stdcall *v19)(VARIANTARG *); // esi
+  HRESULT v20; // eax
+  HRESULT v21; // eax
+  Ztl_variant_t *v22; // eax
+  IUnknown *v23; // eax
+  HRESULT v24; // esi
+  IWzCanvas *v25; // eax
+  IWzCanvas *v26; // ebx
+  IWzCanvas *v27; // eax
+  void (__stdcall *v28)(VARIANTARG *); // esi
+  HRESULT v29; // eax
+  HRESULT v30; // eax
+  Ztl_variant_t *v31; // ea... [61686 chars total]

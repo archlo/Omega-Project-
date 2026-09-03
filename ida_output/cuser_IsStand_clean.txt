@@ -1,0 +1,23 @@
+// cuser::IsStand
+
+BOOL __thiscall CUser::IsStand(CUser *this)
+{
+  IWzVector2D *m_pInterface; // eax
+  IWzVector2D *v2; // ecx
+  CVecCtrl *v3; // ecx
+  BOOL result; // eax
+
+  m_pInterface = this->m_pvc.m_pInterface; /*0x903b60*/
+  if ( m_pInterface ) /*0x903b68*/
+    v2 = m_pInterface - 3; /*0x903b6a*/
+  else
+    v2 = nullptr; /*0x903b6f*/
+  result = false; /*0x903b8e*/
+  if ( v2[104].__vftable )
+  {
+    v3 = m_pInterface ? (CVecCtrl *)&m_pInterface[-3] : nullptr;
+    if ( CVecCtrl::IsStopped(v3) ) /*0x903b85*/
+      return true; /*0x903b78*/
+  }
+  return result; /*0x903b93*/
+}

@@ -1,0 +1,3 @@
+// CUser::GetPhase @ 0x4332f0
+
+{"addr":"0x4332f0","code":"int __thiscall CUser::GetPhase(CUser *this)\n{\n  return this->m_nPhase; /*0x4332f6*/\n}"}

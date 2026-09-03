@@ -1,0 +1,3 @@
+﻿=== 0x46d450 ===
+{"addr":"0x46d450","code":"void __thiscall CAvatar::SetAvatarLook(CAvatar *this, const AvatarLook *al)\n{\n  AvatarLook::operator=(&this->m_avatarLook, al); /*0x46d45b*/\n  CAvatar::NotifyAvatarModified(this, 0); /*0x46d464*/\n}","refs":[{"addr":"0x45f2a0","name":"??4AvatarLook@@QAEAAU0@ABU0@@Z"},{"addr":"0x46bb20","name":"?NotifyAvatarModified@CAvatar@@QAEXH@Z"}]}
+

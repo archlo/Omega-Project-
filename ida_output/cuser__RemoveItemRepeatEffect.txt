@@ -1,0 +1,3 @@
+// CUser::_RemoveItemRepeatEffect @ 0x8e1170
+
+{"addr":"0x8e1170","code":"void __thiscall CUser::_RemoveItemRepeatEffect(CUser *this)\n{\n  IWzGr2DLayer *m_pInterface; // eax\n\n  m_pInterface = this->m_pLayerBuffRepeateEffect.m_pInterface; /*0x8e1170*/\n  if ( m_pInterface ) /*0x8e1178*/\n  {\n    this->m_pLayerBuffRepeateEffect.m_pInterface = nullptr; /*0x8e117a*/\n    m_pInterface->Release(m_pInterface); /*0x8e118a*/\n  }\n}"}

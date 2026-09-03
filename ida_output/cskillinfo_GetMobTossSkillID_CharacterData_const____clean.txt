@@ -1,0 +1,40 @@
+// CSkillInfo::GetMobTossSkillID(CharacterData const &)
+
+int __thiscall CSkillInfo::GetMobTossSkillID(CSkillInfo *this, const CharacterData *c)
+{
+  int v3; // esi
+  __POSITION *pos; // [esp+14h] [ebp-24h] BYREF
+  ZList<long> lSkillID; // [esp+18h] [ebp-20h] BYREF
+  int v7; // [esp+34h] [ebp-4h]
+
+  lSkillID.__vftable = (ZList<long>_vtbl *)&ZList<long>::`vftable';
+  memset(&lSkillID._m_uCount, 0, 12);
+  v7 = 0;
+  *ZList<long>::AddTail(&lSkillID) = 21110003;
+  *ZList<long>::AddTail(&lSkillID) = (int)&loc_4215FC;
+  *ZList<long>::AddTail(&lSkillID) = 35101003;
+  pos = (__POSITION *)lSkillID._m_pHead;
+  if ( lSkillID._m_pHead )
+  {
+    while ( 1 )
+    {
+      v3 = *ZList<long>::GetNext(&pos);
+      if ( CSkillInfo::GetSkillLevel(this, c, v3, 0) > 0 )
+        break;
+      if ( !pos )
+        goto LABEL_4;
+    }
+    v7 = -1;
+    lSkillID.__vftable = (ZList<long>_vtbl *)&ZList<long>::`vftable';
+    ZList<long>::RemoveAll(&lSkillID);
+    return v3;
+  }
+  else
+  {
+LABEL_4:
+    v7 = -1;
+    lSkillID.__vftable = (ZList<long>_vtbl *)&ZList<long>::`vftable';
+    ZList<long>::RemoveAll(&lSkillID);
+    return 0;
+  }
+}

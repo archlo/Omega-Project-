@@ -1,0 +1,46 @@
+// cuiuserlist::OnChildNotify
+
+void __thiscall CUIUserList::OnChildNotify(
+        CUIUserList *this,
+        unsigned int nId,
+        unsigned int param1,
+        unsigned int param2)
+{
+  StringPool *Instance; // eax
+  ZXString<char> v6; // [esp-4h] [ebp-14h] BYREF
+
+  if ( nId == 2001 && param1 == 500 ) /*0x8dc6fc*/
+  {
+    CUIUserList::OnTabChanged(this, param2); /*0x8dc703*/
+    return; /*0x8dc70c*/
+  }
+  if ( this->m_nCurTab == 2 ) /*0x8dc71a*/
+    this->m_pTabExpedition->OnChildNotify(this->m_pTabExpedition, nId, param1, param2); /*0x8dc72a*/
+  if ( this->m_nCurTab != 1 || nId != 2207 ) /*0x8dc73b*/
+  {
+    if ( nId == 2000 && param1 >= 0x12C && param1 <= 0x130 ) /*0x8dc790*/
+    {
+      CUIUserList::DestroyGuildButton(this, -1); /*0x8dc796*/
+      CUIUserList::DestroyAllianceButton(this, -1); /*0x8dc79f*/
+      CWnd::InvalidateRect(this, nullptr); /*0x8dc7a8*/
+    }
+    goto LABEL_17; /*0x8dc7a8*/
+  }
+  if ( param1 != 101 ) /*0x8dc740*/
+    goto LABEL_12; /*0x8dc740*/
+  if ( param2 == 1 ) /*0x8dc745*/
+  {
+    v6._m_pStr = (char *)this; /*0x8dc747*/
+    Instance = StringPool::GetInstance(); /*0x8dc754*/
+    StringPool::GetString(Instance, &v6, 0x1656u); /*0x8dc75b*/
+    CUIUserList::SetTooltipStr(this, v6); /*0x8dc762*/
+    goto LABEL_17; /*0x8dc767*/
+  }
+  if ( !param2 ) /*0x8dc76b*/
+LABEL_12:
+    CUIToolTip::ClearToolTip(&this->m_uiToolTip); /*0x8dc773*/
+LABEL_17:
+  CWnd::InvalidateRect(this, nullptr); /*0x8dc7ad*/
+  if ( param1 == 100 ) /*0x8dc7b9*/
+    this->OnButtonClicked(this, nId); /*0x8dc7c3*/
+}

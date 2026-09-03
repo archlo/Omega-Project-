@@ -1,0 +1,162 @@
+void __thiscall CUIUserInfoExceptionList::OnCreate(CUIUserInfoExceptionList *this, void *pData)
+{
+  CCtrlButton *v3; // ebx
+  CLayoutMan *p_m_lm; // edi
+  _bstr_t::Data_t *v5; // ecx
+  CCtrlOriginButton *p; // eax
+  LONG (__stdcall *v7)(volatile LONG *); // ebp
+  ZRefCounted *v8; // eax
+  CCtrlButton *v9; // eax
+  CCtrlScrollBar *v10; // eax
+  CCtrlScrollBar *v11; // eax
+  ZRefCounted *v12; // eax
+  CCtrlScrollBar *v13; // edi
+  CCtrlButton *v14; // eax
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzGr2DLayer *v16; // edi
+  HRESULT v17; // eax
+  IWzGr2DLayer *v18; // edi
+  HRESULT v19; // eax
+  int v20; // eax
+  int v21; // eax
+  _bstr_t v22; // [esp+18h] [ebp-5Ch] BYREF
+  int v23; // [esp+1Ch] [ebp-58h]
+  int v24; // [esp+20h] [ebp-54h]
+  int v25; // [esp+24h] [ebp-50h]
+  int v26; // [esp+28h] [ebp-4Ch]
+  int v27; // [esp+2Ch] [ebp-48h]
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v28; // [esp+44h] [ebp-30h] BYREF
+  ZRef<CCtrlOriginButton> result; // [esp+48h] [ebp-2Ch] BYREF
+  ZRef<CCtrlButton> v30; // [esp+50h] [ebp-24h] BYREF
+  VARIANTARG pvarg; // [esp+58h] [ebp-1Ch] BYREF
+  int v32; // [esp+70h] [ebp-4h]
+
+  v3 = nullptr; /*0x8ae4f9*/
+  p_m_lm = &this->m_lm; /*0x8ae4fd*/
+  CLayoutMan::Init(&this->m_lm, this, 0, 0); /*0x8ae506*/
+  v27 = 0; /*0x8ae50b*/
+  v26 = 0; /*0x8ae50c*/
+  v25 = 1; /*0x8ae50d*/
+  v24 = 0; /*0x8ae50f*/
+  v23 = 0; /*0x8ae510*/
+  v22.m_Data = v5; /*0x8ae511*/
+  *(_DWORD *)&result.gap0 = &v22; /*0x8ae512*/
+  _bstr_t::_bstr_t(&v22, L"UI/UIWindow2.img/UserInfo/exception/backgrnd"); /*0x8ae51d*/
+  CWnd::SetBackgrnd(this, (Ztl_bstr_t)v22.m_Data, v23, v24, v25, v26, v27); /*0x8ae524*/
+  p = CLayoutMan::AddButton(p_m_lm, &result, L"UI/UIWindow2.img/UserInfo/exception/BtMeso", 0x7D1u, 0, 0, nullptr)->p; /*0x8ae542*/
+  v7 = InterlockedIncrement; /*0x8ae545*/
+  v32 = 0; /*0x8ae54b*/
+  if ( p ) /*0x8ae551*/
+  {
+    v8 = &p->ZRefCounted; /*0x8ae553*/
+    if ( v8 ) /*0x8ae558*/
+    {
+      v3 = (CCtrlButton *)&v8[-1].___u1; /*0x8ae55a*/
+      if ( v8 != (ZRefCounted *)8 ) /*0x8ae55f*/
+        InterlockedIncrement(&v3->_m_nRef); /*0x8ae565*/
+    }
+  }
+  v9 = this->m_pBtMeso.p; /*0x8ae567*/
+  this->m_pBtMeso.p = v3; /*0x8ae56d*/
+  v30.p = v9; /*0x8ae573*/
+  if ( v9 ) /*0x8ae579*/
+    ZRef<CCtrlButton>::_ReleaseRaw(&v30, nullptr); /*0x8ae581*/
+  v32 = -1; /*0x8ae58e*/
+  if ( result.p ) /*0x8ae592*/
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&result, nullptr); /*0x8ae59a*/
+  CLayoutMan::AddButton(p_m_lm, &result, L"UI/UIWindow2.img/UserInfo/exception/BtRegist", 0x7D2u, 0, 0, nullptr); /*0x8ae5b6*/
+  if ( result.p ) /*0x8ae5c0*/
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&result, nullptr); /*0x8ae5c8*/
+  CLayoutMan::AddButton(p_m_lm, &result, L"UI/UIWindow2.img/UserInfo/exception/BtDelete", 0x7D3u, 0, 0, nullptr); /*0x8ae5e4*/
+  if ( result.p ) /*0x8ae5ee*/
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&result, nullptr); /*0x8ae5f6*/
+  v10 = (CCtrlScrollBar *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0x74u); /*0x8ae602*/
+  *(_DWORD *)&v30.gap0 = v10; /*0x8ae607*/
+  v32 = 1; /*0x8ae60b*/
+  if ( v10 ) /*0x8ae615*/
+    v11 = CCtrlScrollBar::CCtrlScrollBar(v10); /*0x8ae619*/
+  else
+    v11 = nullptr; /*0x8ae620*/
+  v32 = -1; /*0x8ae622*/
+  if ( v11 && (v12 = &v11->ZRefCounted) != nullptr ) /*0x8ae631*/
+  {
+    v13 = (CCtrlScrollBar *)&v12[-1].___u1; /*0x8ae637*/
+    if ( v12 != (ZRefCounted *)8 ) /*0x8ae63c*/
+      v7(&v13->_m_nRef); /*0x8ae642*/
+  }
+  else
+  {
+    v13 = nullptr; /*0x8ae6ed*/
+  }
+  v14 = (CCtrlButton *)this->m_pScrollBar.p; /*0x8ae644*/
+  this->m_pScrollBar.p = v13; /*0x8ae64a*/
+  v30.p = v14; /*0x8ae650*/
+  if ( v14 ) /*0x8ae656*/
+    ZRef<CCtrlScrollBar>::_ReleaseRaw((ZRef<CCtrlScrollBar> *)&v30, nullptr); /*0x8ae65e*/
+  this->m_pScrollBar.p->CreateCtrl_2(this->m_pScrollBar.p, this, 1000u, 1, 8, 152, 27, 96, nullptr); /*0x8ae683*/
+  this->m_pScrollBar.p->m_nWheelRange = 144; /*0x8ae68f*/
+  m_pInterface = CWnd::GetLayer( /*0x8ae6a2*/
+                   TSingleton<CUIUserInfo>::ms_pInstance,
+                   (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&result)->m_pInterface;
+  v32 = 2; /*0x8ae6a9*/
+  pvarg.vt = 13; /*0x8ae6b1*/
+  pvarg.decVal.Lo32 = (unsigned int)m_pInterface; /*0x8ae6b6*/
+  if ( m_pInterface ) /*0x8ae6bc*/
+    m_pInterface->AddRef(m_pInterface); /*0x8ae6c4*/
+  LOBYTE(v32) = 3; /*0x8ae6cf*/
+  v16 = CWnd::GetLayer(this, &v28)->m_pInterface; /*0x8ae6d8*/
+  LOBYTE(v32) = 4; /*0x8ae6da*/
+  if ( !v16 ) /*0x8ae6e1*/
+    _com_issue_error(-2147467261); /*0x8ae6e8*/
+  v17 = ((int (__stdcall *)(IWzGr2DLayer *, _DWORD, unsigned int, unsigned int, unsigned int))v16->put_overlay)( /*0x8ae71d*/
+          v16,
+          *(_DWORD *)&pvarg.vt,
+          pvarg.decVal.Hi32,
+          pvarg.decVal.Lo32,
+          pvarg.decVal.Mid32);
+  if ( v17 < 0 ) /*0x8ae721*/
+    _com_issue_errorex(v17, v16, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x8ae72a*/
+  LOBYTE(v32) = 3; /*0x8ae733*/
+  if ( v28.m_pInterface ) /*0x8ae739*/
+    v28.m_pInterface->Release(v28.m_pInterface); /*0x8ae741*/
+  LOBYTE(v32) = 2; /*0x8ae749*/
+  if ( pvarg.vt == 8 ) /*0x8ae74e*/
+  {
+    pvarg.vt = 0; /*0x8ae752*/
+    if ( pvarg.decVal.Lo32 ) /*0x8ae75d*/
+      ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x8ae763*/
+  }
+  else
+  {
+    VariantClear(&pvarg); /*0x8ae770*/
+  }
+  v32 = -1; /*0x8ae77d*/
+  if ( *(_DWORD *)&result.gap0 ) /*0x8ae783*/
+    (*(void (__stdcall **)(_DWORD))(**(_DWORD **)&result.gap0 + 8))(*(_DWORD *)&result.gap0); /*0x8ae78b*/
+  v18 = CWnd::GetLayer(this, (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v30)->m_pInterface; /*0x8ae799*/
+  v32 = 5; /*0x8ae79b*/
+  if ( !v18 ) /*0x8ae7a5*/
+    _com_issue_error(-2147467261); /*0x8ae7ac*/
+  v19 = v18->put_z(v18, -2); /*0x8ae7bc*/
+  if ( v19 < 0 ) /*0x8ae7c0*/
+    _com_issue_errorex(v19, v18, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x8ae7c9*/
+  v32 = -1; /*0x8ae7d2*/
+  if ( *(_DWORD *)&v30.gap0 ) /*0x8ae7d8*/
+    (*(void (__stdcall **)(_DWORD))(**(_DWORD **)&v30.gap0 + 8))(*(_DWORD *)&v30.gap0); /*0x8ae7e0*/
+  this->m_nMouseOver = -1; /*0x8ae7e2*/
+  this->m_nSelected = -1; /*0x8ae7e8*/
+  if ( TSingleton<CUserLocal>::ms_pInstance.m_Data /*0x8ae809*/
+    && (v20 = *(_DWORD *)&TSingleton<CUserLocal>::ms_pInstance.m_Data[987].m_wstr[4 * this->m_nPetIndex + 2]) != 0 )
+  {
+    v21 = *(_DWORD *)(v20 + 140); /*0x8ae80b*/
+    if ( v21 ) /*0x8ae813*/
+      v27 = *(_DWORD *)(v21 - 4) - 6; /*0x8ae823*/
+    else
+      v27 = -6; /*0x8ae81a*/
+  }
+  else
+  {
+    v27 = 0; /*0x8ae826*/
+  }
+  CCtrlScrollBar::SetScrollRange(this->m_pScrollBar.p, v27); /*0x8ae82e*/
+}

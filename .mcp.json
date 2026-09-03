@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ida": {
+      "type": "sse",
+      "url": "http://127.0.0.1:13337/sse"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp", "--headless"]
+    }
+  }
+}

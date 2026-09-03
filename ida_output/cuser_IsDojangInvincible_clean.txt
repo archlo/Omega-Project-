@@ -1,0 +1,9 @@
+// cuser::IsDojangInvincible
+
+BOOL __thiscall CUser::IsDojangInvincible(CUser *this)
+{
+  const SecondaryStat *v1; // eax
+
+  v1 = this->GetSecondaryStat(this); /*0x903b05*/
+  return _ZtlSecureFuse<long>(v1->_ZtlSecureTear_nDojangInvincible_, v1->_ZtlSecureTear_nDojangInvincible__CS) != 0; /*0x903b22*/
+}

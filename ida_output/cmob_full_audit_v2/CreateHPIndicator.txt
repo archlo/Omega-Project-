@@ -1,0 +1,226 @@
+﻿void __thiscall CMob::CreateHPIndicator(CMob *this, int nPercent, unsigned int dwColor)
+{
+  HRESULT v4; // eax
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzGr2DLayer *v6; // esi
+  HRESULT (__stdcall *v7)(VARIANTARG *); // ebp
+  IWzGr2DLayer *v8; // eax
+  IWzGr2DLayer *v9; // esi
+  HRESULT v10; // eax
+  IWzVector2D *v11; // eax
+  IWzGr2DLayer *v12; // esi
+  HRESULT v13; // eax
+  IWzGr2DLayer *v14; // esi
+  HRESULT v15; // eax
+  int v16; // ebp
+  HRESULT v17; // eax
+  HRESULT v18; // eax
+  IWzCanvas *v19; // ecx
+  IWzCanvas *v20; // esi
+  HRESULT v21; // eax
+  IWzCanvas *v22; // esi
+  HRESULT v23; // eax
+  IWzCanvas *v24; // esi
+  HRESULT v25; // eax
+  IWzCanvas *v26; // esi
+  HRESULT v27; // eax
+  IWzCanvas *v28; // esi
+  HRESULT v29; // eax
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > result; // [esp+40h] [ebp-50h] BYREF
+  Ztl_variant_t vCanvas; // [esp+44h] [ebp-4Ch] BYREF
+  VARIANTARG pvarg; // [esp+54h] [ebp-3Ch] BYREF
+  VARIANTARG v33; // [esp+64h] [ebp-2Ch] BYREF
+  VARIANTARG pvargDest; // [esp+74h] [ebp-1Ch] BYREF
+  int v35; // [esp+8Ch] [ebp-4h]
+
+  if ( !this->m_pLayerHPTag.m_pInterface )
+  {
+    VariantInit(&pvarg);
+    v4 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing);
+    if ( v4 < 0 )
+      _com_issue_error(v4);
+    v35 = 1;
+    vCanvas.vt = 3;
+    vCanvas.decVal.Lo32 = 0;
+    if ( !g_gr.m_pInterface )
+      _com_issue_error(-2147467261);
+    m_pInterface = IWzGr2D::CreateLayer(
+                     g_gr.m_pInterface,
+                     &result,
+                     0,
+                     0,
+                     0x34u,
+                     0xAu,
+                     0,
+                     &vCanvas,
+                     (const Ztl_variant_t *)&pvarg)->m_pInterface;
+    v6 = this->m_pLayerHPTag.m_pInterface;
+    if ( v6 != m_pInterface )
+    {
+      this->m_pLayerHPTag.m_pInterface = m_pInterface;
+      if ( m_pInterface )
+        m_pInterface->AddRef(m_pInterface);
+      if ( v6 )
+        v6->Release(v6);
+    }
+    if ( result.m_pInterface )
+      result.m_pInterface->Release(result.m_pInterface);
+    LOBYTE(v35) = 0;
+    if ( vCanvas.vt == 8 )
+    {
+      vCanvas.vt = 0;
+      if ( vCanvas.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(vCanvas.decVal.Lo32 - 4));
+      v7 = VariantClear;
+    }
+    else
+    {
+      v7 = VariantClear;
+      VariantClear(&vCanvas);
+    }
+    v35 = -1;
+    if ( pvarg.vt == 8 )
+    {
+      pvarg.vt = 0;
+      if ( pvarg.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4));
+    }
+    else
+    {
+      v7(&pvarg);
+    }
+    v8 = this->m_pLayerAction.m_pInterface;
+    vCanvas.vt = 13;
+    vCanvas.decVal.Lo32 = (unsigned int)v8;
+    if ( v8 )
+      v8->AddRef(v8);
+    v9 = this->m_pLayerHPTag.m_pInterface;
+    v35 = 2;
+    if ( !v9 )
+      _com_issue_error(-2147467261);
+    v10 = ((int (__stdcall *)(IWzGr2DLayer *, _DWORD, unsigned int, unsigned int, unsigned int))v9->put_overlay)(
+            v9,
+            *(_DWORD *)&vCanvas.vt,
+            vCanvas.decVal.Hi32,
+            vCanvas.decVal.Lo32,
+            vCanvas.decVal.Mid32);
+    if ( v10 < 0 )
+      _com_issue_errorex(v10, v9, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf);
+    v35 = -1;
+    if ( vCanvas.vt == 8 )
+    {
+      vCanvas.vt = 0;
+      if ( vCanvas.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(vCanvas.decVal.Lo32 - 4));
+    }
+    else
+    {
+      v7(&vCanvas);
+    }
+    v11 = this->m_pvc.m_pInterface;
+    vCanvas.vt = 13;
+    vCanvas.decVal.Lo32 = (unsigned int)v11;
+    if ( v11 )
+      v11->AddRef(v11);
+    v12 = this->m_pLayerHPTag.m_pInterface;
+    v35 = 3;
+    if ( !v12 )
+      _com_issue_error(-2147467261);
+    v13 = ((int (__stdcall *)(IWzGr2DLayer *, _DWORD, unsigned int, unsigned int, unsigned int))v12->put_origin)(
+            v12,
+            *(_DWORD *)&vCanvas.vt,
+            vCanvas.decVal.Hi32,
+            vCanvas.decVal.Lo32,
+            vCanvas.decVal.Mid32);
+    if ( v13 < 0 )
+      _com_issue_errorex(v13, v12, &_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4);
+    v35 = -1;
+    if ( vCanvas.vt == 8 )
+    {
+      vCanvas.vt = 0;
+      if ( vCanvas.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(vCanvas.decVal.Lo32 - 4));
+    }
+    else
+    {
+      v7(&vCanvas);
+    }
+    v14 = this->m_pLayerHPTag.m_pInterface;
+    if ( !v14 )
+      _com_issue_error(-2147467261);
+    v15 = v14->put_color(v14, -1u);
+    if ( v15 < 0 )
+      _com_issue_errorex(v15, v14, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf);
+    CMob::AdjustHPIndicatorPosition(this);
+  }
+  if ( this->m_pLayerHPTag.m_pInterface )
+  {
+    v16 = 46 * nPercent / 100;
+    VariantInit(&pvargDest);
+    v17 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing);
+    if ( v17 < 0 )
+      _com_issue_error(v17);
+    v35 = 4;
+    VariantInit(&v33);
+    v18 = ZComAPI::ZComVariantCopy(&v33, &vtMissing);
+    if ( v18 < 0 )
+      _com_issue_error(v18);
+    v19 = this->m_pCanvasHPIndicator.m_pInterface;
+    LOBYTE(v35) = 5;
+    if ( !v19 )
+      _com_issue_error(-2147467261);
+    IWzCanvas::Create(v19, 0x34u, 0xAu, (const Ztl_variant_t *)&v33, (const Ztl_variant_t *)&pvargDest);
+    LOBYTE(v35) = 4;
+    if ( v33.vt == 8 )
+    {
+      v33.vt = 0;
+      if ( v33.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(v33.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&v33);
+    }
+    v35 = -1;
+    if ( pvargDest.vt == 8 )
+    {
+      pvargDest.vt = 0;
+      if ( pvargDest.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&pvargDest);
+    }
+    v20 = this->m_pCanvasHPIndicator.m_pInterface;
+    if ( !v20 )
+      _com_issue_error(-2147467261);
+    v21 = v20->raw_DrawRectangle(v20, 0, 0, 52u, 10u, -16777216u);
+    if ( v21 < 0 )
+      _com_issue_errorex(v21, v20, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e);
+    v22 = this->m_pCanvasHPIndicator.m_pInterface;
+    if ( !v22 )
+      _com_issue_error(-2147467261);
+    v23 = v22->raw_DrawRectangle(v22, 1, 1, 50u, 8u, -1u);
+    if ( v23 < 0 )
+      _com_issue_errorex(v23, v22, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e);
+    v24 = this->m_pCanvasHPIndicator.m_pInterface;
+    if ( !v24 )
+      _com_issue_error(-2147467261);
+    v25 = v24->raw_DrawRectangle(v24, 2, 2, 48u, 6u, -16777216u);
+    if ( v25 < 0 )
+      _com_issue_errorex(v25, v24, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e);
+    v26 = this->m_pCanvasHPIndicator.m_pInterface;
+    if ( !v26 )
+      _com_issue_error(-2147467261);
+    v27 = v26->raw_DrawRectangle(v26, 3, 3, v16, 4u, dwColor);
+    if ( v27 < 0 )
+      _com_issue_errorex(v27, v26, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e);
+    v28 = this->m_pCanvasHPIndicator.m_pInterface;
+    if ( !v28 )
+      _com_issue_error(-2147467261);
+    v29 = v28->raw_DrawRectangle(v28, 3, 6, v16, 1u, -6290688u);
+    if ( v29 < 0 )
+      _com_issue_errorex(v29, v28, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e);
+  }
+}

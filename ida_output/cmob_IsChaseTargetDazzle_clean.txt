@@ -1,0 +1,21 @@
+BOOL __thiscall CMob::IsChaseTargetDazzle(CMob *this)
+{
+  int v1; // ecx
+  int v2; // eax
+  int v3; // eax
+  int v4; // esi
+
+  if ( !CMob::IsActive(this) || !*(_DWORD *)(v1 + 1464) ) /*0x63b839*/
+    return 0; /*0x63b897*/
+  v2 = *(_DWORD *)(v1 + 264); /*0x63b842*/
+  if ( v2 ) /*0x63b84a*/
+    v3 = v2 - 12; /*0x63b84c*/
+  else
+    v3 = 0; /*0x63b851*/
+  v4 = *(_DWORD *)(v3 + 768); /*0x63b854*/
+  return v4 /*0x63b890*/
+      && (**(int (__thiscall ***)(int))v4)(v4) == 1
+      && (*(int (__thiscall **)(int, CRTTI *))(*(_DWORD *)v4 + 32))(v4, &CMob::ms_RTTI_CMob)
+      && v4 != 4
+      && *(_DWORD *)(v4 - 4 + 784) != 0;
+}

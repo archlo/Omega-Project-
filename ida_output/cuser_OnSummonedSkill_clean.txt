@@ -1,0 +1,23 @@
+// cuser::OnSummonedSkill
+
+void __thiscall CUser::OnSummonedSkill(CUser *this, CInPacket *iPacket)
+{
+  CInPacket *v3; // edi
+  ZRef<CSummoned> pSummoned; // [esp+Ch] [ebp-14h] BYREF
+  int v5; // [esp+1Ch] [ebp-4h]
+
+  v3 = iPacket; /*0x8e39a7*/
+  iPacket = (CInPacket *)CInPacket::Decode4(iPacket); /*0x8e39b2*/
+  pSummoned.p = nullptr; /*0x8e39b6*/
+  v5 = 0; /*0x8e39ce*/
+  ZMap<unsigned long,ZRef<CSummoned>,unsigned long>::GetAt( /*0x8e39d6*/
+    &this->m_mSummoned,
+    (const unsigned int *)&iPacket,
+    &pSummoned);
+  if ( pSummoned.p ) /*0x8e39e1*/
+  {
+    CSummoned::OnSkill(pSummoned.p, v3); /*0x8e39e4*/
+    v5 = -1; /*0x8e39ef*/
+    ZRef<CSummoned>::_ReleaseRaw(&pSummoned, nullptr); /*0x8e39f7*/
+  }
+}

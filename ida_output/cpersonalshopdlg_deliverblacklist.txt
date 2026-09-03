@@ -1,0 +1,35 @@
+// 0x69b0d0
+void __thiscall CPersonalShopDlg::DeliverBlackList(CPersonalShopDlg *this)
+{
+  int v1; // eax
+  signed __int16 v2; // di
+  int i; // esi
+  int v4; // edx
+  ZXString<char> v5[5]; // [esp-4h] [ebp-30h] BYREF
+  COutPacket oPacket; // [esp+10h] [ebp-1Ch] BYREF
+  int v7; // [esp+28h] [ebp-4h]
+
+  if ( this->m_nItem ) /*0x69b0f5*/
+  {
+    COutPacket::COutPacket(&oPacket, 144); /*0x69b10b*/
+    v7 = 0; /*0x69b116*/
+    COutPacket::Encode1(&oPacket, 0x1Eu); /*0x69b11e*/
+    v1 = *((_DWORD *)TSingleton<CConfig>::ms_pInstance._m_pStr + 62); /*0x69b128*/
+    if ( v1 ) /*0x69b130*/
+      v2 = *(_WORD *)(v1 - 4); /*0x69b136*/
+    else
+      v2 = 0; /*0x69b132*/
+    COutPacket::Encode2(&oPacket, v2); /*0x69b13f*/
+    for ( i = 0; i < v2; ++i ) /*0x69b14b*/
+    {
+      v4 = *((_DWORD *)TSingleton<CConfig>::ms_pInstance._m_pStr + 62); /*0x69b156*/
+      v5[4]._m_pStr = (char *)v5; /*0x69b162*/
+      v5[0]._m_pStr = nullptr; /*0x69b167*/
+      ZXString<char>::operator=(v5, (const ZXString<char> *)(v4 + 4 * i)); /*0x69b16d*/
+      COutPacket::EncodeStr(&oPacket, v5[0]); /*0x69b176*/
+    }
+    CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket); /*0x69b18b*/
+    v7 = -1; /*0x69b194*/
+    ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff); /*0x69b19c*/
+  }
+}

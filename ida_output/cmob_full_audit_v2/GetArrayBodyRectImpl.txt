@@ -1,0 +1,52 @@
+﻿void __thiscall CMob::GetArrayBodyRectImpl(
+        CMob *this,
+        ZArray<tagRECT> *originBodyRect,
+        ZArray<tagRECT> *originBodyRectFlip,
+        ZArray<tagRECT> *arcRect,
+        int bContinuous)
+{
+  ZArray<tagRECT> *v5; // ebx
+  int v6; // edi
+  tagRECT *v8; // esi
+  tagRECT *v9; // eax
+  int v10; // eax
+  tagRECT *v11; // eax
+  int v12; // eax
+  int Data; // [esp-8h] [ebp-24h]
+  int v14; // [esp-8h] [ebp-24h]
+  tagRECT rcPrev; // [esp+Ch] [ebp-10h] BYREF
+  unsigned int i; // [esp+20h] [ebp+4h]
+
+  v5 = originBodyRect;
+  v6 = 0;
+  if ( originBodyRect->a && originBodyRect->a[-1].bottom )
+  {
+    ZArray<tagRECT>::_Alloc(arcRect, 0, (const ZAllocHelper *)&arcRect);
+    if ( !this->m_pTemplate->bNoFlip )
+      _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nMoveAction, this->_ZtlSecureTear_m_nMoveAction_CS);
+    if ( !this->m_pTemplate->bNoFlip
+      && (_ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nMoveAction, this->_ZtlSecureTear_m_nMoveAction_CS) & 1) == 0 )
+    {
+      v5 = originBodyRectFlip;
+    }
+    for ( i = 0; i < ZArray<tagRECT>::GetCount(v5); ++v6 )
+    {
+      v8 = ZArray<tagRECT>::InsertBefore(arcRect, -1);
+      v9 = &v5->a[v6];
+      *v8 = *v9;
+      Data = TSecType<long>::GetData(&this->m_ptPos.y);
+      v10 = TSecType<long>::GetData(&this->m_ptPos.x);
+      ZAPI.OffsetRect(v8, v10, Data);
+      if ( bContinuous )
+      {
+        v11 = &v5->a[v6];
+        rcPrev = *v11;
+        v14 = TSecType<long>::GetData(&this->m_ptPosPrev.y);
+        v12 = TSecType<long>::GetData(&this->m_ptPosPrev.x);
+        ZAPI.OffsetRect(&rcPrev, v12, v14);
+        ZAPI.UnionRect(v8, v8, &rcPrev);
+      }
+      ++i;
+    }
+  }
+}

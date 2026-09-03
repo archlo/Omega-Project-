@@ -1,0 +1,14 @@
+// cuser::IsOnLadderOrRope
+
+BOOL __thiscall CUser::IsOnLadderOrRope(CUser *this)
+{
+  IWzVector2D *m_pInterface; // eax
+  IWzVector2D *v2; // eax
+
+  m_pInterface = this->m_pvc.m_pInterface; /*0x4bbea0*/
+  if ( m_pInterface ) /*0x4bbea8*/
+    v2 = m_pInterface - 3; /*0x4bbeaa*/
+  else
+    v2 = nullptr; /*0x4bbeaf*/
+  return _ZtlSecureFuse<CLadderOrRope *>((CLadderOrRope *const *)&v2[109], (unsigned int)v2[111].__vftable) != nullptr; /*0x4bbecc*/
+}

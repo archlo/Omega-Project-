@@ -1,0 +1,60 @@
+﻿void __thiscall CMob::TryFirstSelfDestruction(CMob *this)
+{
+  int v2; // esi
+  CMobTemplate *CurTemplate; // eax
+  MobAttackInfo *AttackInfo; // ebx
+  int v5; // ebp
+  int v6; // esi
+  tagRECT *v7; // eax
+  unsigned int v8; // eax
+  unsigned int ZtlSecureTear_m_dwMobID_CS; // [esp-4h] [ebp-80h]
+  int i; // [esp+18h] [ebp-64h]
+  _BYTE v11[8]; // [esp+1Ch] [ebp-60h] BYREF
+  _BYTE v12[8]; // [esp+24h] [ebp-58h] BYREF
+  COutPacket oPacket; // [esp+2Ch] [ebp-50h] BYREF
+  tagRECT rcLocalUser; // [esp+3Ch] [ebp-40h] BYREF
+  tagRECT rcRange; // [esp+4Ch] [ebp-30h] BYREF
+  tagRECT rcIntersect; // [esp+5Ch] [ebp-20h] BYREF
+  int v17; // [esp+78h] [ebp-4h]
+
+  if ( _ZtlSecureFuse<int>(
+         this->m_pTemplate->_ZtlSecureTear_bSelfDestruction,
+         this->m_pTemplate->_ZtlSecureTear_bSelfDestruction_CS) )
+  {
+    if ( _ZtlSecureFuse<int>(
+           this->m_pTemplate->_ZtlSecureTear_bFirstSelfDestruction,
+           this->m_pTemplate->_ZtlSecureTear_bFirstSelfDestruction_CS) )
+    {
+      if ( ((int)TSingleton<CUserLocal>::ms_pInstance.m_Data[133].m_str & 0xFFFFFFFE) != 0x12 )
+      {
+        CAvatar::GetBodyRect((CAvatar *)&TSingleton<CUserLocal>::ms_pInstance.m_Data[11].m_str, &rcLocalUser, 0);
+        v2 = 0;
+        for ( i = 0; v2 < CMob::GetCurTemplate(this)->nAttackCount; i = ++v2 )
+        {
+          CurTemplate = CMob::GetCurTemplate(this);
+          AttackInfo = CMobTemplate::GetAttackInfo(CurTemplate, v2);
+          if ( !AttackInfo->nType )
+          {
+            v5 = *(_DWORD *)(((int (__thiscall *)(IVecCtrlOwner *, _BYTE *))this->GetPos)(&this->IVecCtrlOwner, v11) + 4);
+            v6 = *(_DWORD *)((int (__thiscall *)(IVecCtrlOwner *, _BYTE *))this->GetPos)(&this->IVecCtrlOwner, v12);
+            v7 = operator<<(&rcRange, &AttackInfo->rcRange);
+            ZAPI.OffsetRect(v7, v6, v5);
+            if ( ZAPI.IntersectRect(&rcIntersect, &rcRange, &rcLocalUser) )
+            {
+              COutPacket::COutPacket(&oPacket, 232);
+              ZtlSecureTear_m_dwMobID_CS = this->_ZtlSecureTear_m_dwMobID_CS;
+              v17 = 0;
+              v8 = _ZtlSecureFuse<unsigned long>(this->_ZtlSecureTear_m_dwMobID, ZtlSecureTear_m_dwMobID_CS);
+              COutPacket::Encode4(&oPacket, v8);
+              CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket);
+              v17 = -1;
+              ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff);
+              return;
+            }
+            v2 = i;
+          }
+        }
+      }
+    }
+  }
+}

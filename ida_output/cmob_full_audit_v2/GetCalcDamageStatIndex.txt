@@ -1,0 +1,4 @@
+﻿int __thiscall CMob::GetCalcDamageStatIndex(CMob *this)
+{
+  return this->m_nCalcDamageStatIndex;
+}

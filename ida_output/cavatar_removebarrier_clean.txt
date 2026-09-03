@@ -1,0 +1,3 @@
+﻿=== 0x461480 ===
+{"addr":"0x461480","code":"void __thiscall CAvatar::RemoveBarrier(CAvatar *this)\n{\n  IWzGr2DLayer *m_pInterface; // eax\n\n  m_pInterface = this->m_pLayerBarrier.m_pInterface; /*0x461480*/\n  if ( m_pInterface ) /*0x461488*/\n  {\n    this->m_pLayerBarrier.m_pInterface = nullptr; /*0x46148a*/\n    m_pInterface->Release(m_pInterface); /*0x46149a*/\n  }\n}"}
+

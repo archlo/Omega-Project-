@@ -1,0 +1,421 @@
+// cuserlocal::ViewAutoQuestAlert
+
+void __thiscall CUserLocal::ViewAutoQuestAlert(CUserLocal *this)
+{
+  char *m_pStr; // esi
+  int v2; // eax
+  StringPool *Instance; // eax
+  ZXString<char> *String; // eax
+  StringPool *v5; // eax
+  wchar_t *v6; // eax
+  ZRef<CActionMan::TAMINGMOBACTIONFRAMEENTRY> *a; // eax
+  __POSITION *v8; // eax
+  unsigned __int16 v9; // ax
+  void *v10; // esp
+  StringPool *v11; // eax
+  ZXString<unsigned short> *StringW; // edi
+  unsigned int v13; // ecx
+  wchar_t *v14; // esi
+  void (__stdcall *v15)(VARIANTARG *); // esi
+  HRESULT v16; // eax
+  IWzGr2DLayer_vtbl *v17; // edx
+  IWzGr2DLayer *v18; // esi
+  HRESULT v19; // eax
+  unsigned int v20; // edi
+  IWzGr2DLayer *v21; // eax
+  IWzGr2DLayer *v22; // esi
+  wchar_t *v23; // eax
+  int v24; // ecx
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v25; // esi
+  bool v26; // bl
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzGr2DLayer *v28; // ecx
+  IWzGr2DLayer *v29; // eax
+  CWvsContext *v30; // esi
+  IWzGr2DLayer *v31; // esi
+  HRESULT (__stdcall *get_animationState)(IWzGr2DLayer *, int *); // edx
+  HRESULT v33; // eax
+  wchar_t *v34; // eax
+  int v35; // ecx
+  CUser *v36; // edi
+  bool v37; // bl
+  unsigned int v38; // eax
+  ZRef<CActionMan::TAMINGMOBACTIONFRAMEENTRY> *v39; // esi
+  void (__stdcall *v40)(VARIANTARG *); // esi
+  HRESULT v41; // eax
+  IWzGr2DLayer *v42; // ecx
+  HRESULT (__stdcall *v43)(VARIANTARG *); // ebx
+  unsigned int Mid32; // [esp-14h] [ebp-94h]
+  VARIANTARG v45; // [esp-10h] [ebp-90h] BYREF
+  wchar_t v46[8]; // [esp+0h] [ebp-80h] BYREF
+  Ztl_variant_t vDelayRate; // [esp+10h] [ebp-70h] BYREF
+  __POSITION *pos; // [esp+20h] [ebp-60h] BYREF
+  unsigned int nMaxDelay; // [esp+24h] [ebp-5Ch]
+  VARIANTARG pvargDest; // [esp+28h] [ebp-58h] BYREF
+  CWvsContext *pCtx; // [esp+38h] [ebp-48h]
+  VARIANTARG pvarg; // [esp+3Ch] [ebp-44h] BYREF
+  USERLAYER ul; // [esp+4Ch] [ebp-34h] BYREF
+  ZXString<char> sShowEffect; // [esp+58h] [ebp-28h] BYREF
+  unsigned int *p_Hi32; // [esp+5Ch] [ebp-24h]
+  ZXString<unsigned short> sShowEffectUOL; // [esp+60h] [ebp-20h] BYREF
+  ZXString<unsigned short> result; // [esp+64h] [ebp-1Ch] BYREF
+  CUser *v58; // [esp+68h] [ebp-18h]
+  int bShowBasicEffect; // [esp+6Ch] [ebp-14h] BYREF
+  int v60; // [esp+7Ch] [ebp-4h]
+
+  v58 = this; /*0x91662b*/
+  m_pStr = TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x91662e*/
+  v2 = *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 3604); /*0x916634*/
+  pCtx = (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x91663c*/
+  if ( !v2 /*0x91664f*/
+    && (*((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 4112)
+     || *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 4125)) )
+  {
+    Instance = StringPool::GetInstance(); /*0x916664*/
+    String = StringPool::GetString(Instance, (ZXString<char> *)&bShowBasicEffect, 0x100Au); /*0x91666b*/
+    v60 = 0; /*0x916673*/
+    if ( TSingleton<CUIStatusBar>::ms_pInstance._m_pStr ) /*0x91667c*/
+    {
+      result._m_pStr = &v45.uiVal; /*0x916683*/
+      v45.decVal.Mid32 = 0; /*0x916688*/
+      CUIStatusBar::ChatLogAdd( /*0x916696*/
+        (CUIStatusBar *)TSingleton<CUIStatusBar>::ms_pInstance._m_pStr,
+        String->_m_pStr,
+        7,
+        -1,
+        0,
+        (ZRef<GW_ItemSlotBase>)v45.decVal.Lo32);
+    }
+    v60 = -1; /*0x91669e*/
+    if ( bShowBasicEffect ) /*0x9166a3*/
+      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(bShowBasicEffect - 12)); /*0x9166a9*/
+    v45.decVal.Mid32 = 4150; /*0x9166b4*/
+    v45.decVal.Lo32 = (unsigned int)&bShowBasicEffect; /*0x9166b9*/
+    v5 = StringPool::GetInstance(); /*0x9166ba*/
+    v6 = StringPool::GetStringW(v5, (ZXString<unsigned short> *)v45.decVal.Lo32, v45.decVal.Mid32)->_m_pStr; /*0x9166c6*/
+    v60 = 1; /*0x9166cb*/
+    play_game_sound(v6, 0x64u); /*0x9166d2*/
+    v60 = -1; /*0x9166dd*/
+    if ( bShowBasicEffect ) /*0x9166e2*/
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(bShowBasicEffect - 12)); /*0x9166e8*/
+    a = v58[1].m_aiAction[0].aaTamingMobAction[96].a; /*0x9166f3*/
+    bShowBasicEffect = 1; /*0x9166ff*/
+    if ( a ) /*0x916708*/
+    {
+      v58[1].m_aiAction[0].aaTamingMobAction[96].a = nullptr; /*0x91670a*/
+      (*(void (__stdcall **)(ZRef<CActionMan::TAMINGMOBACTIONFRAMEENTRY> *))(*(_DWORD *)&a->gap0 + 8))(a); /*0x916712*/
+    }
+    v8 = *((__POSITION **)m_pStr + 4116); /*0x91671a*/
+    nMaxDelay = 0; /*0x91671d*/
+    pos = v8; /*0x916720*/
+    if ( !v8 ) /*0x916725*/
+      goto LABEL_56; /*0x916725*/
+    while ( 1 ) /*0x916739*/
+    {
+      v9 = *ZList<unsigned short>::GetNext(&pos); /*0x916739*/
+      sShowEffect._m_pStr = nullptr; /*0x91673f*/
+      v60 = 2; /*0x916759*/
+      sShowEffectUOL._m_pStr = (wchar_t *)v9; /*0x916760*/
+      if ( ZMap<unsigned short,ZXString<char>,unsigned short>::GetAt( /*0x916763*/
+             &TSingleton<CQuestMan>::ms_pInstance->m_mShowEffect,
+             (const unsigned __int16 *)&sShowEffectUOL,
+             &sShowEffect) )
+      {
+        ul.pLayer.m_pInterface = nullptr; /*0x916770*/
+        sShowEffectUOL._m_pStr = nullptr; /*0x916773*/
+        LOBYTE(v60) = 4; /*0x916780*/
+        v10 = alloca(2 * ZAPI.MultiByteToWideChar(0, 0, sShowEffect._m_pStr, -1, nullptr, 0)); /*0x91678c*/
+        v45.decVal.Mid32 = 6054; /*0x916796*/
+        v45.decVal.Lo32 = (unsigned int)&result; /*0x91679b*/
+        v11 = StringPool::GetInstance(); /*0x91679c*/
+        StringW = StringPool::GetStringW(v11, (ZXString<unsigned short> *)v45.decVal.Lo32, v45.decVal.Mid32); /*0x9167a8*/
+        LOBYTE(v60) = 5; /*0x9167b8*/
+        ZAPI.MultiByteToWideChar(0, 0, sShowEffect._m_pStr, -1, v46, 0x3FFFFFFF); /*0x9167bc*/
+        ZXString<unsigned short>::Format(&sShowEffectUOL, StringW->_m_pStr, v46); /*0x9167ca*/
+        LOBYTE(v60) = 4; /*0x9167d5*/
+        if ( result._m_pStr ) /*0x9167db*/
+          ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)result._m_pStr - 1); /*0x9167e1*/
+        v14 = sShowEffectUOL._m_pStr; /*0x9167e9*/
+        v45.decVal.Mid32 = 0; /*0x9167ec*/
+        v45.decVal.Lo32 = (unsigned int)&ul; /*0x9167f0*/
+        *(_QWORD *)&v45.vt = v13; /*0x9167f2*/
+        p_Hi32 = (unsigned int *)&v45; /*0x9167f3*/
+        _bstr_t::_bstr_t((_bstr_t *)&v45, sShowEffectUOL._m_pStr); /*0x9167f9*/
+        if ( !CUser::LoadLayer( /*0x916808*/
+                v58,
+                *(Ztl_bstr_t *)&v45.vt,
+                v45.decVal.Hi32,
+                (USERLAYER *)v45.decVal.Lo32,
+                (int *)v45.decVal.Mid32) )
+        {
+          LOBYTE(v60) = 3; /*0x9169fc*/
+          if ( v14 ) /*0x916a02*/
+            ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)v14 - 1); /*0x916a08*/
+          LOBYTE(v60) = 2; /*0x916a13*/
+          if ( ul.pLayer.m_pInterface ) /*0x916a19*/
+            ul.pLayer.m_pInterface->Release(ul.pLayer.m_pInterface); /*0x916a21*/
+          v60 = -1; /*0x916a26*/
+          if ( sShowEffect._m_pStr ) /*0x916a2f*/
+            ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sShowEffect._m_pStr - 1); /*0x916a35*/
+LABEL_55:
+          if ( bShowBasicEffect ) /*0x916a40*/
+          {
+LABEL_56:
+            if ( !v58[1].m_aiAction[0].aaTamingMobAction[95].a ) /*0x916a4b*/
+            {
+              ul.pLayer.m_pInterface = nullptr; /*0x916a57*/
+              v45.decVal.Mid32 = 0; /*0x916a5e*/
+              v45.decVal.Lo32 = (unsigned int)&ul; /*0x916a63*/
+              v45.decVal.Hi32 = 0; /*0x916a67*/
+              v60 = 8; /*0x916a6d*/
+              v23 = CWvsContext::GetAutoQuestIconAppearUOL(pCtx, &result)->_m_pStr; /*0x916a79*/
+              *(_DWORD *)&v45.vt = v24; /*0x916a7b*/
+              p_Hi32 = (unsigned int *)&v45; /*0x916a7c*/
+              LOBYTE(v60) = 9; /*0x916a82*/
+              _bstr_t::_bstr_t((_bstr_t *)&v45, v23); /*0x916a86*/
+              v25 = (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)v58; /*0x916a8b*/
+              v26 = CUser::LoadLayer( /*0x916a9a*/
+                      v58,
+                      *(Ztl_bstr_t *)&v45.vt,
+                      v45.decVal.Hi32,
+                      (USERLAYER *)v45.decVal.Lo32,
+                      (int *)v45.decVal.Mid32) == 0;
+              LOBYTE(v60) = 8; /*0x916a9d*/
+              if ( result._m_pStr ) /*0x916aa3*/
+                ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)result._m_pStr - 1); /*0x916aa9*/
+              if ( v26 ) /*0x916ab3*/
+              {
+                m_pInterface = ul.pLayer.m_pInterface; /*0x916ab5*/
+                goto LABEL_97; /*0x916ab8*/
+              }
+              _com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::operator=( /*0x916ac9*/
+                v25 + 4540,
+                &ul.pLayer);
+              Ztl_variant_t::Ztl_variant_t((Ztl_variant_t *)&pvarg, &vtMissing); /*0x916ad6*/
+              LOBYTE(v60) = 10; /*0x916ae3*/
+              Ztl_variant_t::Ztl_variant_t(&vDelayRate, &vtMissing); /*0x916ae7*/
+              v28 = v25[4540].m_pInterface; /*0x916aec*/
+              LOBYTE(v60) = 11; /*0x916aee*/
+              if ( !v28 ) /*0x916af4*/
+LABEL_62:
+                _com_issue_error(-2147467261); /*0x916af6*/
+              IWzGr2DLayer::Animate(v28, GA_STOP, &vDelayRate, (const Ztl_variant_t *)&pvarg); /*0x916b0a*/
+              Ztl_variant_t::~Ztl_variant_t(&vDelayRate); /*0x916b12*/
+              Ztl_variant_t::~Ztl_variant_t((Ztl_variant_t *)&pvarg); /*0x916b1a*/
+              v29 = ul.pLayer.m_pInterface; /*0x916b1f*/
+              v25[4539].m_pInterface = (IWzGr2DLayer *)1; /*0x916b22*/
+              v60 = -1; /*0x916b2c*/
+              if ( v29 ) /*0x916b35*/
+                v29->Release(v29); /*0x916b3d*/
+            }
+          }
+          v30 = pCtx; /*0x916b3f*/
+          ZList<unsigned short>::RemoveAll(&pCtx->m_lNewPreStartQuestIDs); /*0x916b48*/
+          v30->m_bNewPreStartQuest = 0; /*0x916b4f*/
+          v30->m_bNewAutoCompletionAlertQuest = 0; /*0x916b55*/
+          return; /*0x916b5b*/
+        }
+        v15 = VariantInit; /*0x91680e*/
+        VariantInit(&pvarg); /*0x916818*/
+        v16 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing); /*0x916823*/
+        if ( v16 < 0 ) /*0x91682d*/
+          goto LABEL_83; /*0x91682d*/
+        LOBYTE(v60) = 6; /*0x916837*/
+        v15(&pvargDest); /*0x91683b*/
+        v16 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing); /*0x916846*/
+        if ( v16 < 0 ) /*0x916850*/
+          goto LABEL_83; /*0x916850*/
+        LOBYTE(v60) = 7; /*0x916859*/
+        if ( !ul.pLayer.m_pInterface ) /*0x91685f*/
+          goto LABEL_62; /*0x91685f*/
+        v17 = ul.pLayer.m_pInterface->__vftable; /*0x916868*/
+        v45 = pvarg; /*0x91686f*/
+        Mid32 = pvargDest.decVal.Mid32; /*0x91689d*/
+        v18 = ul.pLayer.m_pInterface; /*0x9168a7*/
+        v19 = ((int (__stdcall *)(IWzGr2DLayer *, _DWORD, _DWORD, unsigned int, unsigned int, unsigned int, _DWORD, unsigned int, unsigned int, unsigned int))v17->raw_Animate)( /*0x9168a9*/
+                ul.pLayer.m_pInterface,
+                0,
+                *(_DWORD *)&pvargDest.vt,
+                pvargDest.decVal.Hi32,
+                pvargDest.decVal.Lo32,
+                pvargDest.decVal.Mid32,
+                *(_DWORD *)&pvarg.vt,
+                pvarg.decVal.Hi32,
+                pvarg.decVal.Lo32,
+                pvarg.decVal.Mid32);
+        if ( v19 < 0 ) /*0x9168ad*/
+          _com_issue_errorex(v19, v18, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x9168b6*/
+        LOBYTE(v60) = 6; /*0x9168c0*/
+        if ( pvargDest.vt == 8 ) /*0x9168c8*/
+        {
+          pvargDest.vt = 0; /*0x9168cf*/
+          if ( pvargDest.decVal.Lo32 ) /*0x9168d5*/
+            ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4)); /*0x9168db*/
+        }
+        else
+        {
+          VariantClear(&pvargDest); /*0x9168e7*/
+        }
+        LOBYTE(v60) = 4; /*0x9168ed*/
+        if ( pvarg.vt == 8 ) /*0x9168f5*/
+        {
+          pvarg.vt = 0; /*0x9168f9*/
+          if ( pvarg.decVal.Lo32 ) /*0x916902*/
+            ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x916908*/
+        }
+        else
+        {
+          VariantClear(&pvarg); /*0x916914*/
+        }
+        v45.llVal = 0; /*0x916925*/
+        v45.decVal.Hi32 = (unsigned int)ul.pLayer.m_pInterface; /*0x916929*/
+        p_Hi32 = &v45.decVal.Hi32; /*0x91692e*/
+        if ( ul.pLayer.m_pInterface ) /*0x916933*/
+          ul.pLayer.m_pInterface->AddRef(ul.pLayer.m_pInterface); /*0x91693b*/
+        CAnimationDisplayer::RegisterOneTimeAnimation( /*0x916943*/
+          TSingleton<CAnimationDisplayer>::ms_pInstance,
+          *(_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v45.gap0[4],
+          v45.lVal,
+          *(_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)(&v45.__s11 + 1));
+        v45.decVal.Mid32 = (unsigned int)ul.pLayer.m_pInterface; /*0x91694e*/
+        p_Hi32 = &v45.decVal.Mid32; /*0x916953*/
+        if ( ul.pLayer.m_pInterface ) /*0x916958*/
+          ul.pLayer.m_pInterface->AddRef(ul.pLayer.m_pInterface); /*0x916960*/
+        v20 = CAnimationDisplayer::CalcTotalDelay(*(_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)(&v45.__s11 + 1)); /*0x916967*/
+        v21 = ul.pLayer.m_pInterface; /*0x916969*/
+        if ( v20 > nMaxDelay ) /*0x916972*/
+        {
+          v22 = (IWzGr2DLayer *)v58[1].m_aiAction[0].aaTamingMobAction[96].a; /*0x916977*/
+          if ( v22 != ul.pLayer.m_pInterface ) /*0x916985*/
+          {
+            v58[1].m_aiAction[0].aaTamingMobAction[96].a = (ZRef<CActionMan::TAMINGMOBACTIONFRAMEENTRY> *)ul.pLayer.m_pInterface; /*0x916987*/
+            if ( v21 ) /*0x91698b*/
+            {
+              v21->AddRef(v21); /*0x916993*/
+              v21 = ul.pLayer.m_pInterface; /*0x916995*/
+            }
+            if ( v22 ) /*0x91699a*/
+            {
+              v22->Release(v22); /*0x9169a2*/
+              v21 = ul.pLayer.m_pInterface; /*0x9169a4*/
+            }
+          }
+          nMaxDelay = v20; /*0x9169a7*/
+        }
+        bShowBasicEffect = 0; /*0x9169ad*/
+        LOBYTE(v60) = 3; /*0x9169b0*/
+        if ( sShowEffectUOL._m_pStr ) /*0x9169b6*/
+        {
+          ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)sShowEffectUOL._m_pStr - 1); /*0x9169bc*/
+          v21 = ul.pLayer.m_pInterface; /*0x9169c1*/
+        }
+        LOBYTE(v60) = 2; /*0x9169c7*/
+        if ( v21 ) /*0x9169cd*/
+          v21->Release(v21); /*0x9169d5*/
+      }
+      v60 = -1; /*0x9169da*/
+      if ( sShowEffect._m_pStr ) /*0x9169e3*/
+        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sShowEffect._m_pStr - 1); /*0x9169e9*/
+      if ( !pos ) /*0x9169f4*/
+        goto LABEL_55; /*0x9169f4*/
+    }
+  }
+  if ( !this->m_pLayerPreCompleteQuest.m_pInterface ) /*0x916b60*/
+    goto LABEL_72; /*0x916b60*/
+  v31 = this->m_pLayerPreCompleteQuest.m_pInterface; /*0x916b6d*/
+  if ( !v31 ) /*0x916b75*/
+    _com_issue_error(-2147467261); /*0x916b7c*/
+  get_animationState = v31->get_animationState; /*0x916b83*/
+  bShowBasicEffect = 0; /*0x916b8e*/
+  v33 = get_animationState(v31, &bShowBasicEffect); /*0x916b91*/
+  if ( v33 < 0 ) /*0x916b95*/
+    _com_issue_errorex(v33, v31, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x916b9e*/
+  if ( !bShowBasicEffect ) /*0x916ba6*/
+  {
+LABEL_72:
+    pvargDest.decVal.Mid32 = 0; /*0x916bac*/
+    v45.decVal.Mid32 = 0; /*0x916baf*/
+    v45.decVal.Lo32 = (unsigned int)&pvargDest.decVal.Hi32; /*0x916bb4*/
+    v45.decVal.Hi32 = 0; /*0x916bb5*/
+    v60 = 12; /*0x916bbe*/
+    v34 = CWvsContext::GetAutoQuestIconUOL(pCtx, &result)->_m_pStr; /*0x916bca*/
+    *(_DWORD *)&v45.vt = v35; /*0x916bcc*/
+    p_Hi32 = (unsigned int *)&v45; /*0x916bcd*/
+    LOBYTE(v60) = 13; /*0x916bd3*/
+    _bstr_t::_bstr_t((_bstr_t *)&v45, v34); /*0x916bd7*/
+    v36 = v58; /*0x916bdc*/
+    v37 = CUser::LoadLayer( /*0x916beb*/
+            v58,
+            *(Ztl_bstr_t *)&v45.vt,
+            v45.decVal.Hi32,
+            (USERLAYER *)v45.decVal.Lo32,
+            (int *)v45.decVal.Mid32) == 0;
+    LOBYTE(v60) = 12; /*0x916bee*/
+    if ( result._m_pStr ) /*0x916bf4*/
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)result._m_pStr - 1); /*0x916bfa*/
+    v38 = pvargDest.decVal.Mid32; /*0x916c02*/
+    if ( v37 ) /*0x916c07*/
+    {
+      v60 = -1; /*0x916c09*/
+      if ( pvargDest.decVal.Mid32 ) /*0x916c12*/
+        (*(void (__stdcall **)(unsigned int))(*(_DWORD *)pvargDest.decVal.Mid32 + 8))(pvargDest.decVal.Mid32); /*0x916c1e*/
+    }
+    else
+    {
+      v39 = v36[1].m_aiAction[0].aaTamingMobAction[96].a; /*0x916c25*/
+      if ( v39 != (ZRef<CActionMan::TAMINGMOBACTIONFRAMEENTRY> *)pvargDest.decVal.Mid32 ) /*0x916c2d*/
+      {
+        v36[1].m_aiAction[0].aaTamingMobAction[96].a = (ZRef<CActionMan::TAMINGMOBACTIONFRAMEENTRY> *)pvargDest.decVal.Mid32; /*0x916c2f*/
+        if ( v38 ) /*0x916c37*/
+          (*(void (__stdcall **)(unsigned int))(*(_DWORD *)v38 + 4))(v38); /*0x916c3f*/
+        if ( v39 ) /*0x916c43*/
+          (*(void (__stdcall **)(ZRef<CActionMan::TAMINGMOBACTIONFRAMEENTRY> *))(*(_DWORD *)&v39->gap0 + 8))(v39); /*0x916c4b*/
+      }
+      v40 = VariantInit; /*0x916c4d*/
+      VariantInit(&vDelayRate); /*0x916c57*/
+      v16 = ZComAPI::ZComVariantCopy(&vDelayRate, &vtMissing); /*0x916c62*/
+      if ( v16 < 0 ) /*0x916c6c*/
+LABEL_83:
+        _com_issue_error(v16); /*0x916c6e*/
+      LOBYTE(v60) = 14; /*0x916c7a*/
+      v40(&pvarg); /*0x916c7d*/
+      v41 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing); /*0x916c88*/
+      if ( v41 < 0 ) /*0x916c92*/
+        _com_issue_error(v41); /*0x916c95*/
+      v42 = (IWzGr2DLayer *)v36[1].m_aiAction[0].aaTamingMobAction[96].a; /*0x916c9a*/
+      LOBYTE(v60) = 15; /*0x916ca0*/
+      if ( !v42 ) /*0x916ca6*/
+        _com_issue_error(-2147467261); /*0x916cad*/
+      IWzGr2DLayer::Animate(v42, GA_REPEAT, (const Ztl_variant_t *)&pvarg, &vDelayRate); /*0x916cbc*/
+      LOBYTE(v60) = 14; /*0x916cc6*/
+      v43 = VariantClear; /*0x916cc9*/
+      if ( pvarg.vt == 8 ) /*0x916cd3*/
+      {
+        pvarg.vt = 0; /*0x916cd7*/
+        if ( pvarg.decVal.Lo32 ) /*0x916ce0*/
+          ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x916ce6*/
+      }
+      else
+      {
+        VariantClear(&pvarg); /*0x916cf2*/
+      }
+      LOBYTE(v60) = 12; /*0x916cf4*/
+      if ( vDelayRate.vt == 8 ) /*0x916cfc*/
+      {
+        vDelayRate.vt = 0; /*0x916d03*/
+        if ( vDelayRate.decVal.Lo32 ) /*0x916d09*/
+          ZAPI.CoTaskMemFree((void *)(vDelayRate.decVal.Lo32 - 4)); /*0x916d0f*/
+      }
+      else
+      {
+        v43(&vDelayRate); /*0x916d1b*/
+      }
+      m_pInterface = (IWzGr2DLayer *)pvargDest.decVal.Mid32; /*0x916d1d*/
+      v36[1].m_aiAction[0].aaTamingMobAction[95].a = nullptr; /*0x916d20*/
+LABEL_97:
+      v60 = -1; /*0x916d2a*/
+      if ( m_pInterface ) /*0x916d33*/
+        m_pInterface->Release(m_pInterface); /*0x916d3b*/
+    }
+  }
+}

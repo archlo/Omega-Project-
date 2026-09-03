@@ -1,0 +1,171 @@
+// CSkillInfo::LoadCharLevelData(long,ZArray<CHARLEVELDATA> &,_com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>)
+
+int __thiscall CSkillInfo::LoadCharLevelData(
+        CSkillInfo *this,
+        int nSkillID,
+        ZArray<CHARLEVELDATA> *a,
+        _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > p)
+{
+  IWzProperty *m_pInterface; // eax
+  bool v5; // zf
+  IWzProperty_vtbl *v6; // ecx
+  HRESULT (__stdcall *get_count)(IWzProperty *, unsigned int *); // eax
+  HRESULT v8; // eax
+  _bstr_t::Data_t *v9; // ecx
+  int v10; // edi
+  StringPool *Instance; // eax
+  Ztl_variant_t *v12; // eax
+  BOOL v13; // esi
+  bool v14; // cc
+  int v15; // ebx
+  void *v16; // esp
+  wchar_t *v17; // eax
+  Ztl_variant_t *v18; // eax
+  IUnknown *Unknown; // eax
+  HRESULT v20; // eax
+  IWzProperty *v21; // esi
+  CHARLEVELDATA *v22; // edi
+  void (*AddRef)(void); // ecx
+  _bstr_t v25; // [esp-34h] [ebp-7Ch] BYREF
+  IWzProperty *v26; // [esp-30h] [ebp-78h] BYREF
+  BOOL v27; // [esp-2Ch] [ebp-74h]
+  wchar_t v28; // [esp-28h] [ebp-70h] BYREF
+  Ztl_bstr_t v29; // [esp-10h] [ebp-58h] BYREF
+  int v30; // [esp-Ch] [ebp-54h]
+  IWzProperty *v31; // [esp-8h] [ebp-50h]
+  int *p_pExceptionObject; // [esp-4h] [ebp-4Ch]
+  IWzProperty **v33; // [esp+10h] [ebp-38h]
+  Ztl_variant_t Destination; // [esp+14h] [ebp-34h] BYREF
+  int nCount; // [esp+24h] [ebp-24h]
+  int nLoadCount; // [esp+28h] [ebp-20h]
+  ZAllocHelper _ALLOC; // [esp+2Fh] [ebp-19h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pCharLevelData; // [esp+30h] [ebp-18h] BYREF
+  int pExceptionObject; // [esp+34h] [ebp-14h] BYREF
+  int v40; // [esp+44h] [ebp-4h]
+
+  m_pInterface = p.m_pInterface;
+  v40 = 0;
+  if ( p.m_pInterface )
+  {
+    v6 = p.m_pInterface->__vftable;
+    p_pExceptionObject = &pExceptionObject;
+    v31 = p.m_pInterface;
+    get_count = v6->get_count;
+    pExceptionObject = 0;
+    v8 = ((int (__cdecl *)(IWzProperty *, int *))get_count)(p.m_pInterface, &pExceptionObject);
+    if ( v8 < 0 )
+      _com_issue_errorex(v8, p.m_pInterface, &_GUID_986515d9_0a0b_4929_8b4f_718682177b92);
+    v10 = pExceptionObject;
+    v30 = 0;
+    v29.m_Data = v9;
+    pCharLevelData.m_pInterface = (IWzProperty *)&v29;
+    nCount = pExceptionObject;
+    Instance = StringPool::GetInstance();
+    StringPool::GetBSTR(Instance, &v29, 0x1674u);
+    LOBYTE(v40) = 0;
+    v12 = IWzProperty::Getitem(p.m_pInterface, &Destination, v29);
+    LOBYTE(v40) = 2;
+    v13 = get_int32(v12, v30) != 0;
+    LOBYTE(v40) = 0;
+    if ( Destination.vt == 8 )
+    {
+      Destination.vt = 0;
+      if ( Destination.decVal.Lo32 )
+        ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+    }
+    else
+    {
+      VariantClear(&Destination);
+    }
+    if ( v13 )
+    {
+      nCount = v10 - 1;
+      v14 = v10 - 1 <= 0;
+    }
+    else
+    {
+      v14 = v10 <= 0;
+    }
+    if ( v14 )
+    {
+      pCharLevelData.m_pInterface = (IWzProperty *)-2147467259;
+      _CxxThrowException(&pCharLevelData, &_TI1_AVZException__);
+    }
+    ZArray<CHARLEVELDATA>::_Alloc(a, nCount, &_ALLOC);
+    nLoadCount = 0;
+    v15 = 1;
+    pExceptionObject = 0;
+    do
+    {
+      v16 = alloca(32);
+      v27 = 0;
+      v26 = nullptr;
+      v17 = _itow(v15, &v28, 10);
+      pCharLevelData.m_pInterface = (IWzProperty *)&v25;
+      _bstr_t::_bstr_t(&v25, v17);
+      LOBYTE(v40) = 0;
+      v18 = IWzProperty::Getitem(p.m_pInterface, &Destination, (Ztl_bstr_t)v25.m_Data);
+      LOBYTE(v40) = 4;
+      Unknown = Ztl_variant_t::GetUnknown(v18, (bool)v26, v27);
+      pCharLevelData.m_pInterface = nullptr;
+      v20 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>(
+              &pCharLevelData,
+              Unknown);
+      if ( v20 < 0 && v20 != -2147467262 )
+        _com_issue_error(v20);
+      LOBYTE(v40) = 6;
+      if ( Destination.vt == 8 )
+      {
+        Destination.vt = 0;
+        if ( Destination.decVal.Lo32 )
+          ZAPI.CoTaskMemFree((void *)(Destination.decVal.Lo32 - 4));
+      }
+      else
+      {
+        VariantClear(&Destination);
+      }
+      v21 = pCharLevelData.m_pInterface;
+      if ( pCharLevelData.m_pInterface )
+      {
+        if ( nLoadCount >= nCount )
+        {
+          pExceptionObject = -2147467259;
+          _CxxThrowException(&pExceptionObject, &_TI1_AVZException__);
+        }
+        v22 = (CHARLEVELDATA *)((char *)a->a + pExceptionObject);
+        v27 = v15;
+        v33 = &v26;
+        v26 = pCharLevelData.m_pInterface;
+        AddRef = (void (*)(void))pCharLevelData.m_pInterface->AddRef;
+        v25.m_Data = (_bstr_t::Data_t *)pCharLevelData.m_pInterface;
+        AddRef();
+        CHARLEVELDATA::LoadCharLevelData(
+          v22,
+          nSkillID,
+          (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> >)v25.m_Data,
+          (int)v26);
+        ++nLoadCount;
+        pExceptionObject += 32;
+        LOBYTE(v40) = 0;
+        if ( v21 )
+          v21->Release(v21);
+      }
+      else
+      {
+        LOBYTE(v40) = 0;
+      }
+      ++v15;
+    }
+    while ( v15 <= 200 );
+    m_pInterface = p.m_pInterface;
+    v5 = p.m_pInterface == nullptr;
+  }
+  else
+  {
+    v5 = 1;
+  }
+  v40 = -1;
+  if ( !v5 )
+    ((void (__cdecl *)(IWzProperty *))m_pInterface->Release)(m_pInterface);
+  return 1;
+}

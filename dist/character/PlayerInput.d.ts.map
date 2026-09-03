@@ -1,0 +1,1 @@
+{"version":3,"file":"PlayerInput.d.ts","sourceRoot":"","sources":["../../src/character/PlayerInput.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,WAAW;IAC1B,IAAI,EAAE,OAAO,CAAC;IACd,KAAK,EAAE,OAAO,CAAC;IACf,EAAE,EAAE,OAAO,CAAC;IACZ,IAAI,EAAE,OAAO,CAAC;IACd,WAAW,EAAE,OAAO,CAAC;CACtB;AAED,wBAAgB,iBAAiB,IAAI,WAAW,CAE/C"}

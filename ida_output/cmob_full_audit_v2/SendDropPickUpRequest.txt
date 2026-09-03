@@ -1,0 +1,46 @@
+﻿int __thiscall CMob::SendDropPickUpRequest(CMob *this, unsigned int dwID)
+{
+  int update_time; // esi
+  CMob::DROPPICKUP *Next; // eax
+  int tLastTry; // eax
+  CMob::DROPPICKUP *v7; // eax
+  unsigned int v8; // eax
+  unsigned int ZtlSecureTear_m_dwMobID_CS; // [esp-4h] [ebp-34h]
+  __POSITION *pos; // [esp+10h] [ebp-20h] BYREF
+  COutPacket oPacket; // [esp+14h] [ebp-1Ch] BYREF
+  int v12; // [esp+2Ch] [ebp-4h]
+
+  update_time = get_update_time();
+  pos = (__POSITION *)this->m_lDropPickUpLog._m_pHead;
+  if ( !pos )
+    goto LABEL_8;
+  while ( 1 )
+  {
+    Next = ZList<CMob::DROPPICKUP>::GetNext(&pos);
+    if ( Next->dwDropID == dwID )
+      break;
+    if ( !pos )
+      goto LABEL_8;
+  }
+  tLastTry = Next->tLastTry;
+  if ( update_time - tLastTry < 3000 )
+    return 0;
+  update_time = tLastTry;
+  if ( !pos )
+  {
+LABEL_8:
+    v7 = ZList<CMob::DROPPICKUP>::AddTail(&this->m_lDropPickUpLog);
+    v7->dwDropID = dwID;
+    v7->tLastTry = update_time;
+  }
+  COutPacket::COutPacket(&oPacket, 229);
+  ZtlSecureTear_m_dwMobID_CS = this->_ZtlSecureTear_m_dwMobID_CS;
+  v12 = 0;
+  v8 = _ZtlSecureFuse<unsigned long>(this->_ZtlSecureTear_m_dwMobID, ZtlSecureTear_m_dwMobID_CS);
+  COutPacket::Encode4(&oPacket, v8);
+  COutPacket::Encode4(&oPacket, dwID);
+  CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket);
+  v12 = -1;
+  ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff);
+  return 1;
+}

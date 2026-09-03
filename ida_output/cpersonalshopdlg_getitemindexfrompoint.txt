@@ -1,0 +1,29 @@
+// 0x697b90
+int __thiscall CPersonalShopDlg::GetItemIndexFromPoint(CPersonalShopDlg *this, unsigned int rx, unsigned int ry)
+{
+  int m_nCurPos; // edi
+  int v4; // esi
+  CPersonalShopDlg *v6; // [esp+10h] [ebp-14h]
+  tagRECT rc; // [esp+14h] [ebp-10h] BYREF
+
+  m_nCurPos = this->m_pSBBuy.p->m_nCurPos; /*0x697ba5*/
+  v6 = this; /*0x697ba8*/
+  v4 = 200; /*0x697bac*/
+  while ( 1 ) /*0x697bb1*/
+  {
+    if ( m_nCurPos < 0 || m_nCurPos >= this->m_nItemMaxCount ) /*0x697bbb*/
+      goto LABEL_6; /*0x697bbb*/
+    rc.left = 10; /*0x697bc7*/
+    rc.top = v4 - 39; /*0x697bcf*/
+    rc.right = 208; /*0x697bd3*/
+    rc.bottom = v4; /*0x697bdb*/
+    if ( ZAPI.PtInRect(&rc, (tagPOINT)__PAIR64__(ry, rx)) ) /*0x697bdf*/
+      return m_nCurPos; /*0x697bf9*/
+    this = v6; /*0x697be9*/
+LABEL_6:
+    v4 += 42; /*0x697bed*/
+    ++m_nCurPos; /*0x697bf0*/
+    if ( v4 >= 410 ) /*0x697bf7*/
+      return -1; /*0x697c03*/
+  }
+}

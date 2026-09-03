@@ -1,0 +1,21 @@
+// cuser::OnAvatarModified
+
+void __thiscall CUser::OnAvatarModified(CUser *this)
+{
+  int i; // esi
+  CPet *v3; // ecx
+
+  for ( i = 0; i < 24; i += 8 ) /*0x8f6f04*/
+  {
+    v3 = *(CPet **)((char *)&this->m_secondaryStat.aTemporaryStat[0].p->_m_nRef + i); /*0x8f6f16*/
+    if ( !v3 ) /*0x8f6f1c*/
+      break; /*0x8f6f1c*/
+    CPet::OnAvatarModified(v3); /*0x8f6f1e*/
+  }
+  CUser::SetAbilityEquip((CUser *)((char *)this - 136)); /*0x8f6f33*/
+  CUser::SetSetItemEffect((CUser *)((char *)this - 136)); /*0x8f6f3a*/
+  CUser::UpdateKeywordEffects((CUser *)((char *)this - 136)); /*0x8f6f41*/
+  CItemEffectManager::UpdateEffects( /*0x8f6f50*/
+    (CItemEffectManager *)&this->m_aAdditionalLayer[74].l2.pLayer,
+    (const int *)((char *)&this->m_chatBalloon.m_pLayerAD.m_pInterface + 1));
+}

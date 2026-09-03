@@ -1,0 +1,1 @@
+{"version":3,"file":"AvatarLook.d.ts","sourceRoot":"","sources":["../../src/domain/AvatarLook.ts"],"names":[],"mappings":"AAAA,qBAAa,UAAU;IACrB,MAAM,EAAE,MAAM,CAAK;IACnB,IAAI,EAAE,MAAM,CAAK;IACjB,IAAI,SAAK;IACT,IAAI,SAAK;IACT,SAAS,sBAA6B;IACtC,WAAW,sBAA6B;IACxC,eAAe,SAAK;IACpB,MAAM,EAAE,MAAM,EAAE,CAAa;CAC9B"}

@@ -1,0 +1,59 @@
+void __thiscall CITC::OnGetUserSaleItemDone(CITC *this, CInPacket *iPacket)
+{
+  CITC *v2; // ebx
+  ZArray<ZRef<ITCITEM> > *p_m_aSaleItem; // ebp
+  int v4; // esi
+  LONG (__stdcall *v5)(volatile LONG *); // ebx
+  ZRef<ITCITEM> *v6; // esi
+  ITCITEM *p; // eax
+  ITCITEM *v8; // ecx
+  int v9; // [esp+14h] [ebp-1Ch]
+  ZRef<ITCITEM> ii; // [esp+1Ch] [ebp-14h] BYREF
+  int v12; // [esp+2Ch] [ebp-4h]
+
+  v2 = this;
+  p_m_aSaleItem = &this->m_aSaleItem;
+  v4 = CInPacket::Decode4(iPacket);
+  ZArray<ZRef<ITCITEM>>::RemoveAll(p_m_aSaleItem);
+  if ( v4 > 0 )
+  {
+    v5 = InterlockedIncrement;
+    v9 = v4;
+    do
+    {
+      ITCITEM::Decode(&ii, iPacket);
+      v12 = 0;
+      v6 = ZArray<ZRef<ITCITEM>>::InsertBefore(p_m_aSaleItem, -1);
+      if ( ii.p )
+        v5(&ii.p->_m_nRef);
+      p = v6->p;
+      if ( p )
+      {
+        if ( !InterlockedDecrement(&p->_m_nRef) )
+        {
+          v5(&v6->p->_m_nRef);
+          v8 = v6->p;
+          if ( v8 )
+            ((void (__thiscall *)(ITCITEM *, int))v8->dtr_ZRefCounted)(v8, 1);
+        }
+        v6->p = nullptr;
+      }
+      v6->p = ii.p;
+      v12 = -1;
+      if ( ii.p )
+      {
+        if ( !InterlockedDecrement(&ii.p->_m_nRef) )
+        {
+          v5(&ii.p->_m_nRef);
+          if ( ii.p )
+            ((void (__thiscall *)(ITCITEM *, int))ii.p->dtr_ZRefCounted)(ii.p, 1);
+        }
+        ii.p = nullptr;
+      }
+      --v9;
+    }
+    while ( v9 );
+    v2 = this;
+  }
+  v2->m_wndSale.Draw(&v2->m_wndSale, nullptr);
+}

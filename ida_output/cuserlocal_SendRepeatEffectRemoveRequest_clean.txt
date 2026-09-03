@@ -1,0 +1,13 @@
+// cuserlocal::SendRepeatEffectRemoveRequest
+
+void __thiscall CUserLocal::SendRepeatEffectRemoveRequest(CUserLocal *this)
+{
+  COutPacket oPacket; // [esp+4h] [ebp-1Ch] BYREF
+  int v2; // [esp+1Ch] [ebp-4h]
+
+  COutPacket::COutPacket(&oPacket, 222); /*0x909d9c*/
+  v2 = 0; /*0x909dac*/
+  CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket); /*0x909db4*/
+  v2 = -1; /*0x909dbd*/
+  ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff); /*0x909dc5*/
+}

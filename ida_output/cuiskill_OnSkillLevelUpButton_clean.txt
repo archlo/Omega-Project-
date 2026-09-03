@@ -1,0 +1,461 @@
+// CUISkill::OnSkillLevelUpButton
+// Decompiled from v95 IDB
+
+void __thiscall CUISkill::OnSkillLevelUpButton(CUISkill *this, CUtilDlgEx *nIdx)
+{
+  CUISkill *v2; // ebp
+  CWvsContext *m_pStr; // esi
+  bool v4; // zf
+  char *p; // ebx
+  char *p_m_nOffsetX; // esi
+  volatile LONG *p_m_nOffsetY; // edi
+  int m_nCurTab; // esi
+  __int16 v9; // ax
+  __int16 v10; // ax
+  bool v11; // cc
+  int v12; // esi
+  const SKILLROOT *SkillRootVisible; // eax
+  ZRef<SKILLENTRY> *a; // ecx
+  const SKILLENTRY *v15; // edi
+  int v16; // esi
+  int v17; // eax
+  StringPool *v18; // eax
+  unsigned int v19; // edx
+  int v20; // eax
+  char *v21; // ecx
+  int v22; // eax
+  StringPool *v23; // eax
+  const ZXString<char> *v24; // eax
+  ZXString<char>::_ZXStringData *v25; // eax
+  StringPool *v26; // eax
+  const ZXString<char> *v27; // eax
+  StringPool *v28; // eax
+  const ZXString<char> *v29; // eax
+  StringPool *Instance; // eax
+  int v31; // ecx
+  int v32; // edx
+  StringPool *v33; // eax
+  const ZXString<char> *String; // eax
+  ZXString<char>::_ZXStringData *v35; // eax
+  StringPool *v36; // eax
+  const ZXString<char> *v37; // eax
+  StringPool *v38; // eax
+  const ZXString<char> *v39; // eax
+  __int16 nJob; // ax
+  int v41; // edi
+  ZMap<long,long,long> *v42; // ebx
+  int *v43; // ebp
+  BOOL v44; // eax
+  CUtilDlgEx *v45; // eax
+  char *v46; // ecx
+  CUtilDlgEx *v47; // eax
+  CUtilDlgEx *v48; // esi
+  StringPool *v49; // eax
+  __int16 v50; // ax
+  int v51; // esi
+  int MySkillDegreeSPDualJob; // ebx
+  StringPool *v53; // eax
+  int v54; // ebp
+  int job_level; // esi
+  int v56; // esi
+  int v57; // eax
+  __int16 v58; // ax
+  int v59; // eax
+  __int16 v60; // cx
+  int v61; // edi
+  int v62; // esi
+  __int16 v63; // ax
+  char *v64; // ecx
+  int v65; // esi
+  StringPool *v66; // eax
+  ZXString<char> v67; // [esp-14h] [ebp-60h] BYREF
+  const wchar_t *v68; // [esp-10h] [ebp-5Ch]
+  ZXString<char> v69; // [esp-Ch] [ebp-58h] BYREF
+  int v70; // [esp-8h] [ebp-54h]
+  const SKILLENTRY *v71; // [esp-4h] [ebp-50h]
+  int nCurrentJobLevelSP; // [esp+14h] [ebp-38h]
+  int nMaxSP; // [esp+18h] [ebp-34h] BYREF
+  int nSLV; // [esp+1Ch] [ebp-30h] BYREF
+  __POSITION *pos; // [esp+20h] [ebp-2Ch] BYREF
+  CWvsContext *pCtx; // [esp+24h] [ebp-28h] BYREF
+  ZRef<CUtilDlgEx> pDlg; // [esp+28h] [ebp-24h] BYREF
+  int nSkillId[4]; // [esp+30h] [ebp-1Ch] BYREF
+  int v79; // [esp+48h] [ebp-4h]
+
+  v2 = this; /*0x84d687*/
+  nSLV = (int)this; /*0x84d689*/
+  m_pStr = (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x84d68d*/
+  v4 = *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 2094) == 0; /*0x84d693*/
+  pCtx = (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x84d69a*/
+  if ( !v4 /*0x84d6d2*/
+    || _ZtlSecureFuse<long>(
+         (const int *)(*((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 2099) + 97),
+         *(_DWORD *)(*((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 2099) + 105)) <= 0
+    || get_update_time() - m_pStr->m_tExclRequestSent < 500 )
+  {
+    return; /*0x84d6d2*/
+  }
+  p = (char *)CWvsContext::GetCharacterData(m_pStr, (ZRef<CharacterData> *)&pDlg)->p; /*0x84d6e4*/
+  pos = (__POSITION *)p; /*0x84d6eb*/
+  if ( pDlg.p ) /*0x84d6f1*/
+  {
+    p_m_nOffsetX = (char *)&pDlg.p[-1].m_lm.m_nOffsetX; /*0x84d6f3*/
+    p_m_nOffsetY = &pDlg.p[-1].m_lm.m_nOffsetY; /*0x84d6f6*/
+    if ( !InterlockedDecrement(p_m_nOffsetY) ) /*0x84d6fa*/
+    {
+      InterlockedIncrement(p_m_nOffsetY); /*0x84d705*/
+      if ( p_m_nOffsetX ) /*0x84d70d*/
+        (**(void (__thiscall ***)(char *, int))p_m_nOffsetX)(p_m_nOffsetX, 1); /*0x84d717*/
+    }
+    pDlg.p = nullptr; /*0x84d719*/
+  }
+  m_nCurTab = v2->m_pTab.p->m_nCurTab; /*0x84d727*/
+  if ( !m_nCurTab ) /*0x84d72c*/
+  {
+    v11 = get_novice_skill_point((const CharacterData *)p) <= 0; /*0x84d7a1*/
+LABEL_15:
+    if ( v11 ) /*0x84d7a3*/
+      return; /*0x84d7a3*/
+    goto LABEL_16; /*0x84d7a3*/
+  }
+  v9 = _ZtlSecureFuse<short>((const __int16 *)(p + 57), *(_DWORD *)(p + 61)); /*0x84d736*/
+  if ( is_extendsp_job(v9) && !ExtendSP::Get((ExtendSP *)(p + 205), m_nCurTab) ) /*0x84d75c*/
+    return; /*0x84d75c*/
+  v10 = _ZtlSecureFuse<short>((const __int16 *)(p + 57), *(_DWORD *)(p + 61)); /*0x84d767*/
+  if ( !is_extendsp_job(v10) ) /*0x84d771*/
+  {
+    v11 = _ZtlSecureFuse<short>((const __int16 *)(p + 153), *(_DWORD *)(p + 157)) <= 0; /*0x84d793*/
+    goto LABEL_15; /*0x84d796*/
+  }
+LABEL_16:
+  v12 = (int)nIdx + v2->m_pSBSkill.p->m_nCurPos; /*0x84d7a9*/
+  SkillRootVisible = CUISkill::GetSkillRootVisible(v2, 0); /*0x84d7bc*/
+  if ( !SkillRootVisible ) /*0x84d7c3*/
+    return; /*0x84d7c3*/
+  if ( v12 < 0 ) /*0x84d7cb*/
+    return; /*0x84d7cb*/
+  a = SkillRootVisible->aSkill.a; /*0x84d7d1*/
+  if ( !a ) /*0x84d7d6*/
+    return; /*0x84d7d6*/
+  if ( (SKILLENTRY *)v12 >= a[-1].p ) /*0x84d7df*/
+    return; /*0x84d7df*/
+  v15 = a[v12].p; /*0x84d7e7*/
+  nMaxSP = (int)v15; /*0x84d7f2*/
+  if ( CWvsContext::GetSkillLevelUpState(pCtx, v15) != 1 || v15->bUpButtonDisabled ) /*0x84d804*/
+    return; /*0x84d808*/
+  if ( CWvsContext::IsAdminAccount(pCtx) || pCtx->m_bManagerAccount || CWvsContext::IsTesterAccount(pCtx) ) /*0x84d82b*/
+    goto LABEL_90; /*0x84d832*/
+  v16 = v15->nSkillID / 10000; /*0x84d849*/
+  if ( v16 % 100 && !is_beginner_job(v15->nSkillID / 10000) && !is_extendsp_job(v16) ) /*0x84d87b*/
+  {
+    v17 = is_dual_job(v16); /*0x84d88c*/
+    v71 = v15; /*0x84d894*/
+    if ( v17 ) /*0x84d899*/
+    {
+      if ( !CUISkill::CanSkillUpDualJob(v2, v71) ) /*0x84d9d3*/
+      {
+        Instance = StringPool::GetInstance(); /*0x84d9ea*/
+        StringPool::GetString(Instance, (ZXString<char> *)&nIdx, 0x18B3u); /*0x84d9f1*/
+        v31 = 10; /*0x84da0a*/
+        v32 = v15->nSkillID / 10000 % 10; /*0x84da0f*/
+        v79 = 4; /*0x84da11*/
+        switch ( v32 ) /*0x84da25*/
+        {
+          case 1: /*0x84da25*/
+            v33 = StringPool::GetInstance(); /*0x84da36*/
+            String = StringPool::GetString(v33, (ZXString<char> *)&pCtx, 0x18B9u); /*0x84da3d*/
+            LOBYTE(v79) = 5; /*0x84da47*/
+            ZXString<char>::operator=((ZXString<char> *)&nIdx, String); /*0x84da4c*/
+            v35 = (ZXString<char>::_ZXStringData *)pCtx; /*0x84da51*/
+            goto LABEL_45; /*0x84da55*/
+          case 2: /*0x84da25*/
+          case 3: /*0x84da25*/
+            v36 = StringPool::GetInstance(); /*0x84da61*/
+            v37 = StringPool::GetString(v36, (ZXString<char> *)&pos, 0x18B8u); /*0x84da68*/
+            LOBYTE(v79) = 6; /*0x84da72*/
+            ZXString<char>::operator=((ZXString<char> *)&nIdx, v37); /*0x84da77*/
+            v35 = (ZXString<char>::_ZXStringData *)pos; /*0x84da7c*/
+            goto LABEL_45; /*0x84da80*/
+          case 4: /*0x84da25*/
+            v38 = StringPool::GetInstance(); /*0x84da8c*/
+            v39 = StringPool::GetString(v38, (ZXString<char> *)&nSLV, 0x18DDu); /*0x84da93*/
+            LOBYTE(v79) = 7; /*0x84da9d*/
+            ZXString<char>::operator=((ZXString<char> *)&nIdx, v39); /*0x84daa2*/
+            v35 = (ZXString<char>::_ZXStringData *)nSLV; /*0x84daa7*/
+LABEL_45:
+            LOBYTE(v79) = 4; /*0x84daab*/
+            if ( v35 ) /*0x84dab2*/
+              ZXString<char>::_Release(v35 - 1); /*0x84dab8*/
+            break; /*0x84dab8*/
+          default:
+            break;
+        }
+        v71 = nullptr; /*0x84dac0*/
+        v70 = 1; /*0x84dac2*/
+        v69._m_pStr = nullptr; /*0x84dac4*/
+        v68 = nullptr; /*0x84dac6*/
+        v67._m_pStr = (char *)v31; /*0x84dac8*/
+        pCtx = (CWvsContext *)&v67; /*0x84dacf*/
+        ZXString<char>::ZXString<char>(&v67, (const ZXString<char> *)&nIdx); /*0x84dad4*/
+        CUtilDlg::Notice(v67, v68, (ZRef<CDialog> *)v69._m_pStr, v70, (int)v71); /*0x84dad9*/
+        v79 = -1; /*0x84dae5*/
+        if ( nIdx ) /*0x84daef*/
+        {
+LABEL_39:
+          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&nIdx[-1].m_lm.m_nOffsetY); /*0x84d9c2*/
+          return; /*0x84d9ce*/
+        }
+        return; /*0x84daef*/
+      }
+    }
+    else if ( !CUISkill::CanSkillUp(v2, v71) ) /*0x84d89f*/
+    {
+      v18 = StringPool::GetInstance(); /*0x84d8b6*/
+      StringPool::GetString(v18, (ZXString<char> *)&nIdx, 0x18B3u); /*0x84d8bd*/
+      v19 = (int)((unsigned __int64)(1759218605LL * v15->nSkillID) >> 32) >> 12; /*0x84d8cb*/
+      v79 = 0; /*0x84d8d6*/
+      v20 = get_job_level(v19 + (v19 >> 31)) - 2; /*0x84d8e6*/
+      if ( v20 ) /*0x84d8e9*/
+      {
+        v22 = v20 - 1; /*0x84d8eb*/
+        if ( v22 ) /*0x84d8ee*/
+        {
+          if ( v22 != 1 ) /*0x84d8f3*/
+            goto LABEL_38; /*0x84d8f3*/
+          v23 = StringPool::GetInstance(); /*0x84d903*/
+          v24 = StringPool::GetString(v23, (ZXString<char> *)&pCtx, 0xDD8u); /*0x84d90a*/
+          LOBYTE(v79) = 3; /*0x84d914*/
+          ZXString<char>::operator=((ZXString<char> *)&nIdx, v24); /*0x84d919*/
+          v25 = (ZXString<char>::_ZXStringData *)pCtx; /*0x84d91e*/
+        }
+        else
+        {
+          v26 = StringPool::GetInstance(); /*0x84d92e*/
+          v27 = StringPool::GetString(v26, (ZXString<char> *)&pos, 0xDD6u); /*0x84d935*/
+          LOBYTE(v79) = 2; /*0x84d93f*/
+          ZXString<char>::operator=((ZXString<char> *)&nIdx, v27); /*0x84d944*/
+          v25 = (ZXString<char>::_ZXStringData *)pos; /*0x84d949*/
+        }
+      }
+      else
+      {
+        v28 = StringPool::GetInstance(); /*0x84d959*/
+        v29 = StringPool::GetString(v28, (ZXString<char> *)&nSLV, 0xDD7u); /*0x84d960*/
+        LOBYTE(v79) = 1; /*0x84d96a*/
+        ZXString<char>::operator=((ZXString<char> *)&nIdx, v29); /*0x84d96f*/
+        v25 = (ZXString<char>::_ZXStringData *)nSLV; /*0x84d974*/
+      }
+      LOBYTE(v79) = 0; /*0x84d978*/
+      if ( v25 ) /*0x84d97f*/
+        ZXString<char>::_Release(v25 - 1); /*0x84d985*/
+LABEL_38:
+      v71 = nullptr; /*0x84d98d*/
+      v70 = 1; /*0x84d98f*/
+      v69._m_pStr = nullptr; /*0x84d991*/
+      v68 = nullptr; /*0x84d993*/
+      v67._m_pStr = v21; /*0x84d995*/
+      pCtx = (CWvsContext *)&v67; /*0x84d99c*/
+      ZXString<char>::ZXString<char>(&v67, (const ZXString<char> *)&nIdx); /*0x84d9a1*/
+      CUtilDlg::Notice(v67, v68, (ZRef<CDialog> *)v69._m_pStr, v70, (int)v71); /*0x84d9a6*/
+      v79 = -1; /*0x84d9b2*/
+      if ( !nIdx ) /*0x84d9bc*/
+        return; /*0x84d9bc*/
+      goto LABEL_39; /*0x84d9bc*/
+    }
+  }
+  LOWORD(v71) = *(_WORD *)(p + 247); /*0x84db0d*/
+  nJob = GW_CharacterStat::_ZtlSecureGet_nJob((GW_CharacterStat *)p); /*0x84db10*/
+  if ( is_dual_job_born(nJob, (__int16)v71) ) /*0x84db19*/
+  {
+    if ( !v2->m_bDualRogueSkillWarning /*0x84db57*/
+      && get_job_level(v16) == 1
+      && GW_CharacterStat::_ZtlSecureGet_nJob((GW_CharacterStat *)p) < 431 )
+    {
+      v41 = 0; /*0x84db5d*/
+      nSkillId[0] = 4000000; /*0x84db5f*/
+      nSkillId[1] = 4001002; /*0x84db67*/
+      nSkillId[2] = 4001003; /*0x84db6f*/
+      nSkillId[3] = 4001334; /*0x84db77*/
+      v42 = (ZMap<long,long,long> *)(p + 1341); /*0x84db7f*/
+      v43 = nSkillId; /*0x84db85*/
+      nCurrentJobLevelSP = 4; /*0x84db89*/
+      do /*0x84dbb2*/
+      {
+        nIdx = nullptr; /*0x84db99*/
+        ZMap<long,long,long>::GetAt(v42, v43, (int *)&nIdx); /*0x84dba1*/
+        v41 += (int)nIdx; /*0x84dba6*/
+        ++v43; /*0x84dbaa*/
+        --nCurrentJobLevelSP; /*0x84dbad*/
+      }
+      while ( nCurrentJobLevelSP ); /*0x84dbb2*/
+      v44 = *(_DWORD *)nMaxSP == 4001334 /*0x84dbd8*/
+         && ZMap<long,long,long>::GetAt(v42, (const int *)nMaxSP, (int *)&nIdx)
+         && (int)nIdx >= 10;
+      if ( v44 || v41 >= 15 ) /*0x84dbef*/
+      {
+        v45 = (CUtilDlgEx *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, 0xC50u); /*0x84dbff*/
+        nIdx = v45; /*0x84dc04*/
+        v79 = 8; /*0x84dc08*/
+        if ( v45 && (v47 = CUtilDlgEx::CUtilDlgEx(v45)) != nullptr && v47 != (CUtilDlgEx *)-8 ) /*0x84dc2c*/
+        {
+          v48 = v47; /*0x84dc32*/
+          pDlg.p = v47; /*0x84dc35*/
+          InterlockedIncrement(&v47->_m_nRef); /*0x84dc41*/
+        }
+        else
+        {
+          v48 = nullptr; /*0x84dcb7*/
+          pDlg.p = nullptr; /*0x84dcb9*/
+        }
+        v71 = nullptr; /*0x84dc47*/
+        v70 = 0; /*0x84dc49*/
+        v69._m_pStr = v46; /*0x84dc4b*/
+        nIdx = (CUtilDlgEx *)&v69; /*0x84dc4e*/
+        v79 = 9; /*0x84dc58*/
+        v49 = StringPool::GetInstance(); /*0x84dc60*/
+        StringPool::GetString(v49, &v69, 0x16D2u); /*0x84dc67*/
+        CUtilDlgEx::SetUtilDlgEx(v48, 0, 1057006, v69, v70, (int)v71); /*0x84dc75*/
+        CUtilDlgEx::SetUtilDlgEx_TEXT(v48, 0, 0); /*0x84dc80*/
+        CUtilDlgEx::CreateUtilDlgEx(v48); /*0x84dc87*/
+        CDialog::DoModal(v48); /*0x84dc8e*/
+        *(_DWORD *)(nSLV + 2968) = 1; /*0x84dc97*/
+        v79 = -1; /*0x84dca5*/
+        ZRef<CUtilDlgEx>::~ZRef<CUtilDlgEx>(&pDlg); /*0x84dcad*/
+        return; /*0x84dcb2*/
+      }
+      p = (char *)pos; /*0x84dcbf*/
+      v2 = (CUISkill *)nSLV; /*0x84dcc3*/
+      v15 = (const SKILLENTRY *)nMaxSP; /*0x84dcc7*/
+    }
+    v50 = GW_CharacterStat::_ZtlSecureGet_nJob((GW_CharacterStat *)p); /*0x84dccd*/
+    if ( !is_beginner_job(v50) ) /*0x84dcd6*/
+    {
+      v51 = v16 % 10; /*0x84dcfc*/
+      if ( v51 < 4 ) /*0x84dd01*/
+      {
+        MySkillDegreeSPDualJob = CUISkill::GetMySkillDegreeSPDualJob(v2, v51); /*0x84dd0f*/
+        nMaxSP = 0; /*0x84dd1c*/
+        nSLV = 0; /*0x84dd20*/
+        nIdx = nullptr; /*0x84dd24*/
+        CUISkill::GetMaxSkillDegreeSPDualJob(v2, v51, &nMaxSP, &nSLV, (int *)&nIdx); /*0x84dd31*/
+        if ( MySkillDegreeSPDualJob >= (int)nIdx + nSLV + nMaxSP ) /*0x84dd46*/
+        {
+          v71 = nullptr; /*0x84dd4c*/
+          v70 = 0; /*0x84dd4e*/
+          v69._m_pStr = nullptr; /*0x84dd50*/
+          v68 = nullptr; /*0x84dd52*/
+          v67._m_pStr = (char *)nIdx + nSLV + nMaxSP; /*0x84dd54*/
+          nIdx = (CUtilDlgEx *)&v67; /*0x84dd57*/
+          v53 = StringPool::GetInstance(); /*0x84dd61*/
+          StringPool::GetString(v53, &v67, 0x18E3u); /*0x84dd68*/
+          if ( CUtilDlg::YesNo(v67, v68, (ZRef<CDialog> *)v69._m_pStr, v70, (int)v71) != 6 ) /*0x84dd78*/
+            return; /*0x84dd78*/
+        }
+      }
+    }
+LABEL_90:
+    CWvsContext::SendSkillUpRequest(pCtx, v15->nSkillID); /*0x84deed*/
+    return; /*0x84def4*/
+  }
+  v54 = v15->nSkillID / 10000; /*0x84dd94*/
+  if ( is_beginner_job(v54) ) /*0x84dd97*/
+    goto LABEL_90; /*0x84dd97*/
+  if ( is_extendsp_job(v54) ) /*0x84dda8*/
+    goto LABEL_90; /*0x84dda8*/
+  job_level = get_job_level(v54); /*0x84ddbe*/
+  nIdx = (CUtilDlgEx *)job_level; /*0x84ddc6*/
+  if ( (unsigned int)(job_level - 1) > 2 ) /*0x84ddcd*/
+    goto LABEL_90; /*0x84ddcd*/
+  nCurrentJobLevelSP = 0; /*0x84dddb*/
+  pos = ZMap<long,long,long>::GetHeadPosition((ZMap<long,long,long> *)(p + 1341)); /*0x84dde8*/
+  if ( pos ) /*0x84ddee*/
+  {
+    do /*0x84de45*/
+    {
+      nSLV = 0; /*0x84ddfc*/
+      v56 = *ZMap<long,long,long>::GetNext((ZMap<long,long,long> *)(p + 1341), &pos, &nSLV) / 10000; /*0x84de1a*/
+      if ( !is_beginner_job(v56) ) /*0x84de1d*/
+      {
+        v57 = get_job_level(v56); /*0x84de2a*/
+        if ( (CUtilDlgEx *)v57 == nIdx ) /*0x84de36*/
+          nCurrentJobLevelSP += nSLV; /*0x84de3c*/
+      }
+    }
+    while ( pos ); /*0x84de45*/
+    job_level = (int)nIdx; /*0x84de47*/
+  }
+  LOWORD(v70) = *(_WORD *)(p + 247); /*0x84de54*/
+  v58 = GW_CharacterStat::_ZtlSecureGet_nJob((GW_CharacterStat *)p); /*0x84de57*/
+  v59 = get_job_change_level(v58, v70, job_level + 1); /*0x84de5e*/
+  v60 = *(_WORD *)(p + 247); /*0x84de63*/
+  v61 = (int)nIdx; /*0x84de6a*/
+  v71 = (const SKILLENTRY *)nIdx; /*0x84de71*/
+  LOWORD(v70) = v60; /*0x84de72*/
+  v62 = v59; /*0x84de75*/
+  v63 = GW_CharacterStat::_ZtlSecureGet_nJob((GW_CharacterStat *)p); /*0x84de77*/
+  v65 = 3 * (v62 - get_job_change_level(v63, v70, (int)v71)) + 1; /*0x84de9b*/
+  if ( !(v54 / 1000) && get_job_category(v54) == 3 && v61 == 1 ) /*0x84deb2*/
+    ++v65; /*0x84deb4*/
+  if ( nCurrentJobLevelSP < v65 ) /*0x84deb9*/
+    goto LABEL_89; /*0x84deb9*/
+  v71 = nullptr; /*0x84debb*/
+  v70 = 0; /*0x84debd*/
+  v69._m_pStr = nullptr; /*0x84debf*/
+  v68 = nullptr; /*0x84dec1*/
+  v67._m_pStr = v64; /*0x84dec3*/
+  nIdx = (CUtilDlgEx *)&v67; /*0x84dec6*/
+  v66 = StringPool::GetInstance(); /*0x84ded0*/
+  StringPool::GetString(v66, &v67, 0x18E3u); /*0x84ded7*/
+  if ( CUtilDlg::YesNo(v67, v68, (ZRef<CDialog> *)v69._m_pStr, v70, (int)v71) == 6 ) /*0x84dee7*/
+  {
+LABEL_89:
+    v15 = (const SKILLENTRY *)nMaxSP; /*0x84dee9*/
+    goto LABEL_90; /*0x84dee9*/
+  }
+}
+
+// References:
+//   ?ms_pInstance@?$TSingleton@VCWvsContext@@@@1PAVCWvsContext@@A @ 0xc64068
+//   ??$_ZtlSecureFuse@J@@YAJQBJI@Z @ 0x407520
+//   ?get_update_time@@YAJXZ @ 0x95b290
+//   ?GetCharacterData@CWvsContext@@QAE?AV?$ZRef@VCharacterData@@@@XZ @ 0x42b960
+//   __imp__InterlockedIncrement@4 @ 0xb14074
+//   __imp__InterlockedDecrement@4 @ 0xb14078
+//   ?get_novice_skill_point@@YAJABVCharacterData@@@Z @ 0x6f0c20
+//   ??$_ZtlSecureFuse@F@@YAFQBFI@Z @ 0x47d510
+//   ?is_extendsp_job@@YAHJ@Z @ 0x4f1e30
+//   ?Get@ExtendSP@@QBEEE@Z @ 0x4f44f0
+//   ?GetSkillRootVisible@CUISkill@@IAEPBUSKILLROOT@@H@Z @ 0x84a6f0
+//   ?GetSkillLevelUpState@CWvsContext@@QAEJPBUSKILLENTRY@@@Z @ 0x9d5a40
+//   ?IsAdminAccount@CWvsContext@@QBEHXZ @ 0x482260
+//   ?IsTesterAccount@CWvsContext@@QBEHXZ @ 0x4fef30
+//   ?is_dual_job@@YAHJ@Z @ 0x47cb00
+//   ?GetInstance@StringPool@@SAAAV1@XZ @ 0x7466a0
+//   ?GetString@StringPool@@QAE?AV?$ZXString@D@@I@Z @ 0x403b30
+//   ??4?$ZXString@D@@QAEAAV0@ABV0@@Z @ 0x42d1c0
+//   ?_Release@?$ZXString@D@@KAXPAU_ZXStringData@1@@Z @ 0x403460
+//   ??0?$ZXString@D@@QAE@ABV0@@Z @ 0x42d4b0
+//   ?Notice@CUtilDlg@@SAHV?$ZXString@D@@PBGPAV?$ZRef@VCDialog@@@@HH@Z @ 0x977220
+//   ?CanSkillUpDualJob@CUISkill@@IAEHPBUSKILLENTRY@@@Z @ 0x84ae10
+//   ?get_job_level@@YAJJ@Z @ 0x47cb90
+//   ?CanSkillUp@CUISkill@@IAEHPBUSKILLENTRY@@@Z @ 0x84a930
+//   ?is_beginner_job@@YAHJ@Z @ 0x52a140
+//   ?_ZtlSecureGet_nJob@GW_CharacterStat@@QBIFXZ @ 0x47d960
+//   ?GetAt@?$ZMap@JJJ@@QAEPAJABJAAJ@Z @ 0x47e090
+//   ?Alloc@?$ZAllocEx@VZAllocAnonSelector@@@@QAEPAXI@Z @ 0x402040
+//   ?_s_alloc@?$ZAllocEx@VZAllocAnonSelector@@@@0V1@A @ 0xc6e67c
+//   ??0CUtilDlgEx@@QAE@XZ @ 0x9859c0
+//   ?SetUtilDlgEx@CUtilDlgEx@@QAEXJJV?$ZXString@D@@HH@Z @ 0x98e9f0
+//   ?SetUtilDlgEx_TEXT@CUtilDlgEx@@QAEXHH@Z @ 0x97b420
+//   ?CreateUtilDlgEx@CUtilDlgEx@@QAEXXZ @ 0x97af20
+//   ?DoModal@CDialog@@QAEJXZ @ 0x4fe7a0
+//   ??1?$ZRef@VCUtilDlgEx@@@@QAE@XZ @ 0x42b3e0
+//   ?GetMySkillDegreeSPDualJob@CUISkill@@IAEJJ@Z @ 0x84aac0
+//   ?GetMaxSkillDegreeSPDualJob@CUISkill@@IAEXJAAJ00@Z @ 0x84ac10
+//   ?YesNo@CUtilDlg@@SAHV?$ZXString@D@@PBGPAV?$ZRef@VCDialog@@@@HH@Z @ 0x9773b0
+//   ?SendSkillUpRequest@CWvsContext@@QAEXJ@Z @ 0x9f2e90
+//   ?is_dual_job_born@@YAHJF@Z @ 0x47cb40
+//   ?GetHeadPosition@?$ZMap@JJJ@@QBEPAU__POSITION@@XZ @ 0x4f1d20
+//   ?GetNext@?$ZMap@JJJ@@QBEABJAAPAU__POSITION@@AAJ@Z @ 0x4f2090
+//   ?get_job_change_level@@YAJJFH@Z @ 0x849c00
+//   ?get_job_category@@YAJJ@Z @ 0x47ca50

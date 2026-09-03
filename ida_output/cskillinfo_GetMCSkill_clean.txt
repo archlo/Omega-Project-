@@ -1,0 +1,24 @@
+const MCSKILLENTRY *__thiscall CSkillInfo::GetMCSkill(CSkillInfo *this, int nSkillID)
+{
+  MCSKILLENTRY *v2; // edi
+  int *p_nSpendCP; // esi
+  ZRef<MCSKILLENTRY> p; // [esp+10h] [ebp-14h] BYREF
+  int v6; // [esp+20h] [ebp-4h]
+
+  p.p = nullptr; /*0x6f3186*/
+  v6 = 0; /*0x6f319b*/
+  ZMap<long,ZRef<MCSKILLENTRY>,long>::GetAt(&this->m_mMCSkill, &nSkillID, &p); /*0x6f31a3*/
+  v2 = p.p; /*0x6f31a8*/
+  v6 = -1; /*0x6f31ac*/
+  if ( p.p ) /*0x6f31b6*/
+  {
+    p_nSpendCP = &p.p[-2].nSpendCP; /*0x6f31b8*/
+    if ( !InterlockedDecrement((volatile LONG *)&p.p[-1]) ) /*0x6f31bf*/
+    {
+      InterlockedIncrement((volatile LONG *)&v2[-1]); /*0x6f31ca*/
+      if ( v2 != (MCSKILLENTRY *)16 ) /*0x6f31d2*/
+        (*(void (__thiscall **)(int *, int))*p_nSpendCP)(&v2[-2].nSpendCP, 1); /*0x6f31dc*/
+    }
+  }
+  return v2; /*0x6f31e0*/
+}

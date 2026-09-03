@@ -1,0 +1,12 @@
+[
+  {
+    "query": "0x5bf040",
+    "matches": [
+      {
+        "address": "0x5bf040",
+        "name": "CItemInfo::RegisterGachaponItemInfo",
+        "pseudocode": "{\"addr\":\"0x5bf040\",\"code\":\"void __thiscall CItemInfo::RegisterGachaponItemInfo(CItemInfo *this)\\n{\\n  void (__stdcall *v1)(VARIANTARG *); // esi\\n  HRESULT v2; // eax\\n  HRESULT v3; // eax\\n  Ztl_variant_t *ObjectA; // eax\\n  IUnknown *Unknown; // eax\\n  HRESULT v6; // eax\\n  HRESULT (__stdcall *v7)(VARIANTARG *); // ebp\\n  IWzProperty *m_pInterface; // ebx\\n  IEnumVARIANT *v9; // eax\\n  IEnumVARIANT v10; // edx\\n  HRESULT v11; // eax\\n  void (*v12)(void); // edx\\n  char *m_pStr; // esi\\n  int (__cdecl *v14)(char *); // ecx\\n  ZRefCountedDummy<CItemInfo::GACHAPONITEMINFO> *v15; // eax\\n  CItemInfo::GACHAPONITEMINFO *p_t; // ebp\\n  _bstr_t::Data_t *v17; // esi\\n  Ztl_variant_t *v18; // eax\\n  _bstr_t::Data_t *v19; // eax\\n  IWzProperty *v20; // ebx\\n  int (**m_wstr)(void); // ecx\\n  HRESULT (__stdcall *get_count)(IWzProperty *, unsigned int *); // edx\\n  HRESULT v23; // eax\\n  _bstr_t::Data_t *v24; // ecx\\n  Ztl_variant_t *v25; // eax\\n  IUnknown *v26; // eax\\n  IWzProperty *m_Data; // edi\\n  int (*v28)(void); // edx\\n  HRESULT v29; // eax\\n  ... [45197 chars total]\",\"refs\":[{\"addr\":\"0xb14290\",\"name\":\"__imp__VariantInit@4\"},{\"addr\":\"0x401730\",\"name\":\"?ZComVariantCopy@ZComAPI@@YAJPAUtagVARIANT@@0@Z\"},{\"addr\":\"0xc626e8\",\"name\":\"?vtMissing@@3V_variant_t@@A\"},{\"addr\":\"0xa2fd00\",\"name\":\"?_com_issue_error@@YGXJ@Z\"},{\"addr\":\"0x403260\",\"name\":\"??0_bstr_t@@QAE@PBD@Z\"},{\"addr\":\"0xb4f9a8\",\"name\":\"aEtcIncubatorin\",\"string\":\"Etc/incubatorInfo.img\"},{\"addr\":\"0xc6f434\",\"name\":\"?g_rm@@3V?$_com_ptr_t@V?$_com_IIID@UIWzResMan@@$1?_GUID_57dfe40b_3e20_4dbc_97e8_805a50f381bf@@3U__s_GUID@@B@@@@A\"},{\"addr\":\"0x404aa0\",\"name\":\"?GetObjectA@IWzResMan@@QAE?AVZtl_variant_t@@VZtl_bstr_t@@ABV2@1@Z\"},{\"addr\":\"0x401a60\",\"name\":\"?GetUnknown@Ztl_variant_t@@QBEPAUIUnknown@@_N0@Z\"},{\"addr\":\"0x402c90\",\"name\":\"??$_QueryInterface@PAUIUnknown@@@?$_com_ptr_t@V?$_com_IIID@UIWzProperty@@$1?_GUID_986515d9_0a0b_4929_8b4f_718682177b92@@3U__s_GUID@@B@@@@AAEJPAUIUnknown@@@Z\"}]}\nOutput truncated. Run: curl -o .ida-mcp/c6f3e0cc-23bf-4d0a-8e69-6b5986fd109c.json http://127.0.0.1:13337/output/c6f3e0cc-23bf-4d0a-8e69-6b5986fd109c.json"
+      }
+    ]
+  }
+]

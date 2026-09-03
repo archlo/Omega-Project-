@@ -1,0 +1,7 @@
+// _ZtlSecureGet_bBoss
+// Address: 0x439150
+
+int __fastcall CMobTemplate::_ZtlSecureGet_bBoss(CMobTemplate *this)
+{
+  return _ZtlSecureFuse<int>(this->_ZtlSecureTear_bBoss, this->_ZtlSecureTear_bBoss_CS); /*0x439160*/
+}

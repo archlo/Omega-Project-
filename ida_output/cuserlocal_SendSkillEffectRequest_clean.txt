@@ -1,0 +1,20 @@
+// cuserlocal::SendSkillEffectRequest
+
+void __thiscall CUserLocal::SendSkillEffectRequest(
+        CUserLocal *this,
+        unsigned int nSkillID,
+        unsigned __int8 nSLV,
+        unsigned __int8 bSendLocal)
+{
+  COutPacket oPacket; // [esp+4h] [ebp-1Ch] BYREF
+  int v5; // [esp+1Ch] [ebp-4h]
+
+  COutPacket::COutPacket(&oPacket, 71); /*0x93aed9*/
+  v5 = 0; /*0x93aee7*/
+  COutPacket::Encode4(&oPacket, nSkillID); /*0x93aeef*/
+  COutPacket::Encode1(&oPacket, nSLV); /*0x93aefd*/
+  COutPacket::Encode1(&oPacket, bSendLocal); /*0x93af0b*/
+  CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket); /*0x93af1b*/
+  v5 = -1; /*0x93af24*/
+  ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff); /*0x93af2c*/
+}

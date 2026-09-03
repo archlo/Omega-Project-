@@ -1,0 +1,11 @@
+﻿CUINewCharJobSelect *TSingleton<CUINewCharJobSelect>::DestroyInstance()
+{
+  CUINewCharJobSelect *result; // eax
+
+  result = TSingleton<CUINewCharJobSelect>::ms_pInstance; /*0x5d1ed0*/
+  if ( TSingleton<CUINewCharJobSelect>::ms_pInstance ) /*0x5d1ed7*/
+    return (CUINewCharJobSelect *)((int (__thiscall *)(ZRefCounted *, int))TSingleton<CUINewCharJobSelect>::ms_pInstance->dtr_ZRefCounted)( /*0x5d1ee2*/
+                                    &TSingleton<CUINewCharJobSelect>::ms_pInstance->ZRefCounted,
+                                    1);
+  return result; /*0x5d1ee4*/
+}

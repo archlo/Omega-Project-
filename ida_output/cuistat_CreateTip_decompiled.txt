@@ -1,0 +1,32 @@
+void __thiscall CUIStat::CreateTip(CUIStat *this)
+{
+  StringPool *Instance; // eax
+  ZXString<char> *v3; // eax
+  StringPool *v4; // eax
+  ZXString<char> *v5; // eax
+  IWzGr2DLayer *v6; // ecx
+  IWzGr2DLayer *m_pInterface; // eax
+  _com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> > *p_m_pFont; // ebp
+  void (*AddRef)(void); // edx
+  IWzGr2DLayer *v10; // eax
+  IWzGr2DLayer *v11; // edi
+  int v12; // eax
+  int v13; // eax
+  StringPool *v14; // eax
+  ZXString<char> *v15; // eax
+  StringPool *v16; // eax
+  ZXString<char> *v17; // eax
+  StringPool *v18; // eax
+  ZXString<char> *v19; // eax
+  IWzGr2DLayer *v20; // ecx
+  IWzFont *v21; // ecx
+  const _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v22; // eax
+  void *m_pStr; // eax
+  StringPool *v24; // eax
+  ZXString<char> *v25; // eax
+  StringPool *v26; // eax
+  ZXString<char> *v27; // eax
+  StringPool *v28; // eax
+  ZXString<char> *v29; // eax
+  IWzGr2DLayer *v30; // ecx
+  const _c... [47896 chars total]

@@ -1,0 +1,165 @@
+// CCSWnd_Locker::OnMouseButton @ 0x4be1b0
+// Decompiled from v95 IDB
+
+void __thiscall CCSWnd_Locker::OnMouseButton(
+        CCSWnd_Locker *this,
+        ZArray<GW_CashItemInfo> *msg,
+        unsigned int wParam,
+        int rx,
+        int ry)
+{
+  char *p_m_uTableSize; // edi
+  volatile LONG *p_m_uCount; // ebx
+  int *v8; // edi
+  IWzProperty *LockerIndex; // eax
+  int v10; // edi
+  ZArray<GW_CashItemInfo> *v11; // ebx
+  int v12; // eax
+  ZArray<GW_CashItemInfo> v13; // ebp
+  int v14; // edi
+  int nItemID; // ebx
+  CUICashItemGachapon *v16; // eax
+  CUICashGachapon *v17; // eax
+  char *LowPart; // eax
+  CCashShop *m_nSelectedNo; // ecx
+  int v20; // ebx
+  const tagRECT *EmptySlotPosition; // eax
+  char *HighPart; // ecx
+  char *v23; // edx
+  CCashShop *v24; // ecx
+  char *v25; // ecx
+  StringPool *Instance; // eax
+  ZXString<char> v27[4]; // [esp-14h] [ebp-40h] BYREF
+  const tagRECT *v28; // [esp-4h] [ebp-30h]
+  const CharacterData *cd; // [esp+14h] [ebp-18h]
+  ZRef<CharacterData> result; // [esp+18h] [ebp-14h] BYREF
+  int v31; // [esp+28h] [ebp-4h]
+  ZArray<GW_CashItemInfo> *a; // [esp+30h] [ebp+4h]
+
+  CUIToolTip::ClearToolTip((CUIToolTip *)&this->m_pScrollBar.p); /*0x4be1df*/
+  CCSWnd_Char::EndChat((CCSWnd_Char *)(this->m_nSelectedNo + 1380)); /*0x4be1f0*/
+  cd = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &result)->p; /*0x4be20c*/
+  if ( result.p ) /*0x4be212*/
+  {
+    p_m_uTableSize = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x4be214*/
+    p_m_uCount = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount; /*0x4be217*/
+    if ( !InterlockedDecrement(p_m_uCount) ) /*0x4be21b*/
+    {
+      InterlockedIncrement(p_m_uCount); /*0x4be226*/
+      if ( p_m_uTableSize ) /*0x4be22e*/
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1); /*0x4be238*/
+    }
+    result.p = nullptr; /*0x4be23a*/
+  }
+  if ( msg == (ZArray<GW_CashItemInfo> *)513 ) /*0x4be24b*/
+  {
+    v8 = (int *)(this->m_nSelectedNo + 1164); /*0x4be262*/
+    LockerIndex = (IWzProperty *)CCSWnd_Locker::GetLockerIndex((CCSWnd_Locker *)((char *)this - 4), rx, ry); /*0x4be268*/
+    if ( (int)LockerIndex >= 0 ) /*0x4be26f*/
+    {
+      v10 = *v8; /*0x4be275*/
+      if ( v10 ) /*0x4be279*/
+      {
+        if ( (unsigned int)LockerIndex < *(_DWORD *)(v10 - 4) && this->m_pImgFontNumber.m_pInterface != LockerIndex ) /*0x4be28e*/
+        {
+          v28 = nullptr; /*0x4be294*/
+          this->m_pImgFontNumber.m_pInterface = LockerIndex; /*0x4be298*/
+          CWnd::InvalidateRect((CCSWnd_Locker *)((char *)this - 4), v28); /*0x4be29e*/
+        }
+      }
+    }
+  }
+  else if ( msg == (ZArray<GW_CashItemInfo> *)515 ) /*0x4be2ad*/
+  {
+    v11 = (ZArray<GW_CashItemInfo> *)(this->m_nSelectedNo + 1164); /*0x4be2c3*/
+    a = v11; /*0x4be2cc*/
+    v12 = CCSWnd_Locker::GetLockerIndex((CCSWnd_Locker *)((char *)this - 4), rx, ry); /*0x4be2d0*/
+    if ( v12 >= 0 ) /*0x4be2d7*/
+    {
+      v13.a = v11->a; /*0x4be2dd*/
+      if ( v11->a ) /*0x4be2dd*/
+      {
+        if ( (unsigned int)v12 < v13.a[-1].nDiscountRate ) /*0x4be2ea*/
+        {
+          v14 = v12; /*0x4be2f2*/
+          nItemID = v13.a[v12].nItemID; /*0x4be2f5*/
+          if ( is_random_box_item(nItemID) ) /*0x4be2fa*/
+          {
+            if ( !*(_DWORD *)(this->m_nSelectedNo + 1332) ) /*0x4be30c*/
+            {
+              v16 = (CUICashItemGachapon *)ZAllocEx<ZAllocAnonSelector>::Alloc( /*0x4be323*/
+                                             &ZAllocEx<ZAllocAnonSelector>::_s_alloc,
+                                             0xB50u);
+              v31 = 0; /*0x4be32c*/
+              if ( v16 ) /*0x4be336*/
+                *(_DWORD *)(this->m_nSelectedNo + 1332) = CUICashItemGachapon::CUICashItemGachapon( /*0x4be360*/
+                                                            v16,
+                                                            a->a[v14].liSN,
+                                                            (CCashShop *)this->m_nSelectedNo,
+                                                            a->a[v14].nItemID);
+              else
+                *(_DWORD *)(this->m_nSelectedNo + 1332) = 0; /*0x4be373*/
+            }
+          }
+          else if ( nItemID == 5220012 ) /*0x4be384*/
+          {
+            if ( !*(_DWORD *)(this->m_nSelectedNo + 1336) ) /*0x4be38c*/
+            {
+              v17 = (CUICashGachapon *)ZAllocEx<ZAllocAnonSelector>::Alloc( /*0x4be3a3*/
+                                         &ZAllocEx<ZAllocAnonSelector>::_s_alloc,
+                                         0xB48u);
+              v31 = 1; /*0x4be3ac*/
+              if ( v17 ) /*0x4be3b6*/
+                *(_DWORD *)(this->m_nSelectedNo + 1336) = CUICashGachapon::CUICashGachapon( /*0x4be3dc*/
+                                                            v17,
+                                                            a->a[v14].liSN,
+                                                            (CCashShop *)this->m_nSelectedNo);
+              else
+                *(_DWORD *)(this->m_nSelectedNo + 1336) = 0; /*0x4be3ef*/
+            }
+          }
+          else if ( is_changemaplepoint_item(nItemID) ) /*0x4be3fb*/
+          {
+            LowPart = (char *)v13.a[v14].liSN.LowPart; /*0x4be40b*/
+            m_nSelectedNo = (CCashShop *)this->m_nSelectedNo; /*0x4be40e*/
+            v27[3] = *(ZXString<char> *)((char *)&v13.a[v14].liSN.QuadPart + 4); /*0x4be415*/
+            v27[2]._m_pStr = LowPart; /*0x4be416*/
+            CCashShop::SendChangeMaplePoint(m_nSelectedNo, *(_LARGE_INTEGER *)&v27[2]._m_pStr, nItemID); /*0x4be417*/
+          }
+          else
+          {
+            v20 = nItemID / 1000000; /*0x4be431*/
+            EmptySlotPosition = (const tagRECT *)CharacterData::FindEmptySlotPosition((CharacterData *)cd, v20); /*0x4be434*/
+            if ( EmptySlotPosition ) /*0x4be43b*/
+            {
+              HighPart = (char *)v13.a[v14].liSN.HighPart; /*0x4be43d*/
+              v23 = (char *)v13.a[v14].liSN.LowPart; /*0x4be441*/
+              v28 = EmptySlotPosition; /*0x4be444*/
+              v27[3]._m_pStr = (char *)v20; /*0x4be445*/
+              v27[2]._m_pStr = HighPart; /*0x4be446*/
+              v24 = (CCashShop *)this->m_nSelectedNo; /*0x4be447*/
+              v27[1]._m_pStr = v23; /*0x4be44d*/
+              CCashShop::OnMoveCashItemLtoS(v24, *(_LARGE_INTEGER *)&v27[1]._m_pStr, v20, (int)EmptySlotPosition); /*0x4be44e*/
+              this->m_pImgFontNumber.m_pInterface = (IWzProperty *)-1; /*0x4be453*/
+            }
+            else
+            {
+              CCSWnd_Inventory::SetInventoryTI(TSingleton<CCSWnd_Inventory>::ms_pInstance, v20); /*0x4be466*/
+              v28 = nullptr; /*0x4be46b*/
+              memset(&v27[1], 0, 12); /*0x4be471*/
+              v27[0]._m_pStr = v25; /*0x4be473*/
+              Instance = StringPool::GetInstance(); /*0x4be480*/
+              StringPool::GetString(Instance, v27, 0x1A8Fu); /*0x4be487*/
+              CUtilDlg::Notice( /*0x4be48c*/
+                v27[0],
+                (const wchar_t *)v27[1]._m_pStr,
+                (ZRef<CDialog> *)v27[2]._m_pStr,
+                (int)v27[3]._m_pStr,
+                (int)v28);
+            }
+          }
+        }
+      }
+    }
+  }
+}

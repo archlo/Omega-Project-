@@ -1,0 +1,27 @@
+// cuserlocal::PreprocessOnKey
+
+int __thiscall CUserLocal::PreprocessOnKey(CUserLocal *this, unsigned int *wParam, unsigned int *lParam)
+{
+  unsigned int v3; // eax
+  CDualKeyChecker::State v5; // eax
+  unsigned int v7; // ecx
+  CDualKeyChecker::KeyMsg msg; // [esp+Ch] [ebp-8h] BYREF
+
+  v3 = *wParam; /*0x9199ae*/
+  msg.lParam = *lParam; /*0x9199b8*/
+  msg.wParam = v3; /*0x9199c3*/
+  v5 = CDualKeyChecker::Check(&this->m_DualKeyChecker, &msg); /*0x9199c7*/
+  if ( v5 == State_Dual ) /*0x9199cf*/
+  {
+    if ( CUserLocal::ProcessDualKey(this) ) /*0x9199d3*/
+      return 1; /*0x9199e7*/
+  }
+  else if ( v5 == State_Buffered ) /*0x9199ed*/
+  {
+    return 1; /*0x9199ed*/
+  }
+  v7 = msg.lParam; /*0x9199f3*/
+  *wParam = msg.wParam; /*0x9199f7*/
+  *lParam = v7; /*0x9199fb*/
+  return 0; /*0x9199dc*/
+}

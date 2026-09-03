@@ -1,0 +1,1 @@
+{"version":3,"file":"ClipboardHelper.js","sourceRoot":"","sources":["../../src/platform/ClipboardHelper.ts"],"names":[],"mappings":"AAAA,MAAM,OAAO,eAAe;IAC1B,KAAK,CAAC,IAAI,CAAC,IAAY;QACrB,IAAI,CAAC;YACH,MAAM,SAAS,CAAC,SAAS,CAAC,SAAS,CAAC,IAAI,CAAC,CAAC;QAC5C,CAAC;QAAC,MAAM,CAAC,CAAC,UAAU,CAAC,CAAC;IACxB,CAAC;CACF"}

@@ -1,0 +1,4 @@
+﻿void __thiscall CUIEquip::OnCreate(CUIEquip *this, void *pData)
+{
+  sub_C9E6D4(pData); /*0xdfdfad*/
+}

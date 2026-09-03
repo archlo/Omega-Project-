@@ -1,0 +1,3 @@
+// CUser::GetActivePetItemSlot @ 0x8e3030
+
+{"addr":"0x8e3030","code":"ZRef<GW_ItemSlotPet> *__thiscall CUser::GetActivePetItemSlot(CUser *this, ZRef<GW_ItemSlotPet> *result, int nIndex)\n{\n  CPet *p; // ecx\n  GW_ItemSlotPet *ItemSlot; // eax\n\n  p = this->m_apPet.a[nIndex].p; /*0x8e303b*/\n  if ( p ) /*0x8e3048*/\n    ItemSlot = CPet::GetItemSlot(p); /*0x8e304a*/\n  else\n    ItemSlot = nullptr; /*0x8e3051*/\n  result->p = ItemSlot; /*0x8e3058*/\n  if ( ItemSlot ) /*0x8e305d*/\n    InterlockedIncrement(&ItemSlot->_m_nRef); /*0x8e3063*/\n  return result; /*0x8e306d*/\n}","refs":[{"addr":"0x69ffb0","name":"?GetItemSlot@CPet@@QBEPAUGW_ItemSlotPet@@XZ"},{"addr":"0xb14074","name":"__imp__InterlockedIncrement@4"}]}

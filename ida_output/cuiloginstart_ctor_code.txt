@@ -1,0 +1,26 @@
+﻿CUILoginStart *__thiscall CUILoginStart::CUILoginStart(CUILoginStart *this, CLogin *pLogin)
+{
+  CDialog::CDialog(this); /*0x5ef159*/
+  this->CDialog::CWnd::IGObj::__vftable = (CUILoginStart_vtbl *)&CUILoginStart::`vftable'{for `IGObj'}; /*0x5ef164*/
+  this->CDialog::CWnd::IUIMsgHandler::__vftable = (IUIMsgHandler_vtbl *)&CUILoginStart::`vftable'{for `IUIMsgHandler'}; /*0x5ef16a*/
+  this->CDialog::CWnd::ZRefCounted::__vftable = (ZRefCounted_vtbl *)&CUILoginStart::`vftable'{for `ZRefCounted'}; /*0x5ef171*/
+  this->m_pLogin = pLogin; /*0x5ef178*/
+  this->m_pFont.m_pInterface = nullptr; /*0x5ef182*/
+  this->m_pCanvasChannelName.m_pInterface = nullptr; /*0x5ef188*/
+  `eh vector constructor iterator'( /*0x5ef1a8*/
+    this->m_aBtParam,
+    0x10u,
+    5,
+    (void (__thiscall *)(void *))CCtrlButton::CREATEPARAM::CREATEPARAM,
+    (void (__thiscall *)(void *))CCtrlButton::CREATEPARAM::~CREATEPARAM);
+  `eh vector constructor iterator'( /*0x5ef1c7*/
+    this->m_apButton,
+    8u,
+    5,
+    (void (__thiscall *)(void *))ZRef<CCtrlButton>::ZRef<CCtrlButton>,
+    (void (__thiscall *)(void *))ZRef<CCtrlButton>::~ZRef<CCtrlButton>);
+  this->m_nViewWorldButtonType = 4; /*0x5ef1ec*/
+  this->m_bRequestSent = 0; /*0x5ef1f2*/
+  CDialog::CreateDlg(this, 0, 0, 800, 600, 210, 1, nullptr, Origin_LT); /*0x5ef1f8*/
+  return this; /*0x5ef1ff*/
+}

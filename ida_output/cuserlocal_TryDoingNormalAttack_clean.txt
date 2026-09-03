@@ -1,0 +1,334 @@
+// cuserlocal::TryDoingNormalAttack
+
+void __userpurge CUserLocal::TryDoingNormalAttack(
+        CUserLocal *this@<ecx>,
+        __int32 a2@<ebx>,
+        const tagRECT *a3@<edi>,
+        __int32 a4@<esi>,
+        ZArray<tagRECT> *arcArea,
+        int *tDelay,
+        int bHitReactor)
+{
+  StringPool *Instance; // eax
+  int v8; // eax
+  CSkillInfo *v9; // eax
+  const SKILLENTRY *Skill; // eax
+  int SkillLevel; // eax
+  IWzVector2D *v12; // eax
+  CVecCtrl *v13; // eax
+  CRand32 *ActionRndMan; // eax
+  int MoveAction; // eax
+  int RidingVehicle; // eax
+  int v17; // eax
+  int v18; // eax
+  int WeaponItemID; // eax
+  int weapon_type; // eax
+  TemporaryStatBase<long> *v21; // eax
+  int m_nWeaponAttackSpeed; // eax
+  int v23; // eax
+  _bstr_t::Data_t *v24; // ecx
+  CActionMan *v25; // eax
+  int IsLeft; // eax
+  int *v27; // eax
+  const tagRECT *v28; // eax
+  const tagRECT *v29; // eax
+  int v30; // esi
+  const tagRECT *v31; // eax
+  int v32; // eax
+  int v33; // eax
+  int *v34; // eax
+  CAvatar::ACTIONINFO *ActionInfo; // eax
+  _bstr_t::Data_t *v36; // ecx
+  int v37; // eax
+  __int32 v38; // edx
+  __int32 v39; // ecx
+  int v40; // [esp-1Ch] [ebp-248h]
+  int v41; // [esp-18h] [ebp-244h]
+  int v42; // [esp-14h] [ebp-240h]
+  Ztl_bstr_t v43; // [esp-10h] [ebp-23Ch] BYREF
+  Ztl_bstr_t v44; // [esp-Ch] [ebp-238h] BYREF
+  int *AuraBooster; // [esp-8h] [ebp-234h]
+  int nFrozen; // [esp-4h] [ebp-230h]
+  Ztl_bstr_t *v47; // [esp+Ch] [ebp-220h]
+  Ztl_bstr_t *v48; // [esp+10h] [ebp-21Ch]
+  Ztl_bstr_t *v49; // [esp+14h] [ebp-218h]
+  Ztl_bstr_t *AfterimageUOL; // [esp+18h] [ebp-214h]
+  Ztl_bstr_t *v51; // [esp+1Ch] [ebp-210h]
+  int v52; // [esp+20h] [ebp-20Ch]
+  ZRef<CharacterData> *CharacterData; // [esp+24h] [ebp-208h]
+  ZXString<char> *sString; // [esp+28h] [ebp-204h]
+  CUserLocal *thisa; // [esp+30h] [ebp-1FCh]
+  int v56; // [esp+120h] [ebp-10Ch] BYREF
+  int value[3]; // [esp+124h] [ebp-108h] BYREF
+  _BYTE v58[8]; // [esp+130h] [ebp-FCh] BYREF
+  int nY[3]; // [esp+138h] [ebp-F4h] BYREF
+  int key[2]; // [esp+144h] [ebp-E8h] BYREF
+  _BYTE v61[8]; // [esp+14Ch] [ebp-E0h] BYREF
+  int y; // [esp+154h] [ebp-D8h] BYREF
+  _BYTE v63[8]; // [esp+15Ch] [ebp-D0h] BYREF
+  Ztl_bstr_t *v64; // [esp+164h] [ebp-C8h]
+  int v65; // [esp+168h] [ebp-C4h]
+  Ztl_bstr_t *v66; // [esp+16Ch] [ebp-C0h]
+  ZRef<CharacterData> v67; // [esp+174h] [ebp-B8h] BYREF
+  ZXString<char> result; // [esp+17Ch] [ebp-B0h] BYREF
+  int tCoolEndTime; // [esp+180h] [ebp-ACh] BYREF
+  int i; // [esp+184h] [ebp-A8h]
+  int nSkillID; // [esp+188h] [ebp-A4h]
+  const SecondaryStat *SecondaryStat; // [esp+1A0h] [ebp-8Ch]
+  int nActionSpeed; // [esp+1A4h] [ebp-88h]
+  int nIdx; // [esp+1A8h] [ebp-84h]
+  ActionRandMan RndMan; // [esp+1ACh] [ebp-80h] BYREF
+  int nAttackActionType; // [esp+1B4h] [ebp-78h]
+  tagRECT rcIntersect; // [esp+1BCh] [ebp-70h] BYREF
+  int tCur; // [esp+1DCh] [ebp-50h]
+  int nActionDelay; // [esp+1E0h] [ebp-4Ch]
+  int nMastery; // [esp+1E8h] [ebp-44h]
+  Ztl_bstr_t sAfterimageUOL; // [esp+1ECh] [ebp-40h] BYREF
+  tagRECT rcAttack; // [esp+1F0h] [ebp-3Ch] BYREF
+  const CharacterData *cd; // [esp+200h] [ebp-2Ch]
+  int x; // [esp+204h] [ebp-28h]
+  int nCount; // [esp+208h] [ebp-24h]
+  CWvsContext *pCtx; // [esp+20Ch] [ebp-20h]
+  unsigned int nRandForAction; // [esp+210h] [ebp-1Ch]
+  int nAction; // [esp+214h] [ebp-18h]
+  ACTIONDATA *ad; // [esp+218h] [ebp-14h]
+  int v90; // [esp+228h] [ebp-4h]
+  int savedregs; // [esp+22Ch] [ebp+0h] BYREF
+
+  thisa = this; /*0x9123ea*/
+  if ( CAvatar::GetMechanicMode(&this->CAvatar) != 35111004
+    && CAvatar::GetMechanicMode(&thisa->CAvatar) != 35121005
+    && CAvatar::GetMechanicMode(&thisa->CAvatar) != 35121013 )
+  {
+    pCtx = TSingleton<CWvsContext>::GetInstance(); /*0x912445*/
+    if ( CWvsContext::IsUserGM(pCtx) )
+    {
+      Instance = StringPool::GetInstance(); /*0x912460*/
+      sString = StringPool::GetString(Instance, &result, 0x97u); /*0x912478*/
+      v90 = 0; /*0x91247e*/
+      CHATLOG_ADD(sString, 0xCu); /*0x91248e*/
+      v90 = -1; /*0x912496*/
+      ZXString<char>::~ZXString<char>(&result); /*0x9124a3*/
+    }
+    else if ( !CUserLocal::IsImmovable(thisa)
+           && !CAvatar::IsOnPlayingOneTimeAction(&thisa->CAvatar)
+           && !CUserLocal::IsAttract(thisa)
+           && !CUserLocal::IsPreparingSkill(thisa) )
+    {
+      if ( CUser::IsDarkSight(thisa)
+        && CUserLocal::GetSkillLevel(thisa, (int)byte_D72625) <= 0
+        && CUserLocal::GetSkillLevel(thisa, 4330001) <= 0 )
+      {
+        v8 = thisa->GetJobCode(thisa); /*0x91254e*/
+        nSkillID = is_cygnus_job(v8) != 0 ? (int)&loc_989680 + 4001003 : 4001003;
+        v9 = TSingleton<CSkillInfo>::GetInstance(); /*0x912581*/
+        Skill = CSkillInfo::GetSkill(v9, nSkillID); /*0x912588*/
+        CUser::ShowSkillEffect(thisa, Skill, 1, 6, 0, 0x7FFFFFFF, nullptr); /*0x912594*/
+        SkillLevel = CUserLocal::GetSkillLevel(thisa, nSkillID); /*0x9125a6*/
+        play_skill_sound(nSkillID, SE_SKILL_USE, SkillLevel); /*0x9125b5*/
+        CUserLocal::SendSkillCancelRequest(thisa, nSkillID); /*0x9125ca*/
+      }
+      else if ( CAvatar::IsHideMorphed(&thisa->CAvatar) )
+      {
+        CUserLocal::SendSkillCancelRequest(thisa, (int)&loc_4DD5CF); /*0x9125f7*/
+      }
+      else
+      {
+        v12 = _com_ptr_t<_com_IIID<IWzVector2D,&__s_GUID const _GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4>>::operator IWzVector2D *(&thisa->m_pvc); /*0x912610*/
+        v13 = rc_vc(v12); /*0x912616*/
+        if ( !CVecCtrl::GetLadderOrRope(v13) )
+        {
+          CharacterData = CWvsContext::GetCharacterData(pCtx, &v67); /*0x912640*/
+          cd = ZRef<CharacterData>::operator*(CharacterData); /*0x912651*/
+          ZRef<CharacterData>::~ZRef<CharacterData>(&v67); /*0x91265a*/
+          SecondaryStat = CWvsContext::GetSecondaryStat(pCtx); /*0x912667*/
+          ActionRndMan = CWvsContext::GetActionRndMan(pCtx); /*0x912670*/
+          ActionRandMan::ActionRandMan(&RndMan, ActionRndMan); /*0x912679*/
+          v90 = 1; /*0x91267e*/
+          nRandForAction = ActionRandMan::GetRandom(&RndMan); /*0x91268d*/
+          nAttackActionType = thisa->m_nAttackActionType; /*0x91269c*/
+          MoveAction = CAvatar::GetMoveAction(&thisa->CAvatar); /*0x9126ab*/
+          if ( get_action_from_act_dir(MoveAction) == 5 ) /*0x9126bc*/
+          {
+            if ( nAttackActionType ) /*0x9126c2*/
+            {
+              RidingVehicle = CAvatar::GetRidingVehicle(&thisa->CAvatar); /*0x9126d0*/
+              v52 = pronstab_action_convert_for_jaguar(41, RidingVehicle); /*0x9126e0*/
+            }
+            else
+            {
+              v52 = -1; /*0x9126e8*/
+            }
+            nAction = v52; /*0x9126f8*/
+          }
+          else
+          {
+            v17 = thisa->GetJobCode(thisa); /*0x912711*/
+            if ( is_aran_job(v17) && (v18 = CAvatar::GetWeaponItemID(&thisa->CAvatar), get_weapon_type(v18) == 44) ) /*0x91273d*/
+            {
+              nAction = nRandForAction % 3 + 145; /*0x912751*/
+            }
+            else
+            {
+              nFrozen = nRandForAction; /*0x912759*/
+              WeaponItemID = CAvatar::GetWeaponItemID(&thisa->CAvatar); /*0x91276a*/
+              weapon_type = get_weapon_type(WeaponItemID); /*0x912770*/
+              nAction = get_random_melee_attack_action(nAttackActionType, weapon_type, nullptr, 0, nFrozen); /*0x912785*/
+            }
+          }
+          if ( nAction >= 0 )
+          {
+            nFrozen = SecondaryStat::_ZtlSecureGet_nFrozen_((SecondaryStat *)SecondaryStat); /*0x9127bd*/
+            AuraBooster = (int *)CUser::GetAuraBooster(thisa); /*0x9127c9*/
+            v21 = (TemporaryStatBase<long> *)SecondaryStat::operator[]((SecondaryStat *)SecondaryStat, 4); /*0x9127d2*/
+            v44.m_Data = (_bstr_t::Data_t *)*TemporaryStatBase<long>::GetValue(v21); /*0x9127e0*/
+            v43.m_Data = (_bstr_t::Data_t *)SecondaryStat::_ZtlSecureGet_nBooster_((SecondaryStat *)SecondaryStat); /*0x9127ec*/
+            m_nWeaponAttackSpeed = CAvatar::_ZtlSecureGet_m_nWeaponAttackSpeed(&thisa->CAvatar); /*0x9127fb*/
+            nActionSpeed = get_attack_speed_degree( /*0x912809*/
+                             m_nWeaponAttackSpeed,
+                             0,
+                             (int)v43.m_Data,
+                             (int)v44.m_Data,
+                             (int)AuraBooster,
+                             nFrozen);
+            v23 = CAvatar::GetWeaponItemID(&thisa->CAvatar); /*0x912823*/
+            nMastery = get_weapon_mastery(cd, SecondaryStat, v23, 0, 0, nullptr, nullptr); /*0x91283c*/
+            nFrozen = thisa->GetCharacterLevel(thisa); /*0x912855*/
+            AuraBooster = (int *)nMastery; /*0x912859*/
+            v44.m_Data = (_bstr_t::Data_t *)nFrozen; /*0x912865*/
+            v66 = &v44; /*0x912868*/
+            v51 = Ztl_bstr_t::Ztl_bstr_t(&v44, &thisa->m_sWeaponAfterimage); /*0x912874*/
+            AfterimageUOL = CUser::GetAfterimageUOL(&sAfterimageUOL, nullptr, 0, v44, (int)AuraBooster, nFrozen); /*0x91288a*/
+            LOBYTE(v90) = 2; /*0x912890*/
+            if ( _bstr_t::length(&sAfterimageUOL) )
+            {
+              nFrozen = (int)&rcAttack; /*0x9128d3*/
+              AuraBooster = (int *)nAction; /*0x9128d7*/
+              v44.m_Data = v24; /*0x9128d8*/
+              v64 = &v44; /*0x9128db*/
+              v49 = Ztl_bstr_t::Ztl_bstr_t(&v44, &sAfterimageUOL); /*0x9128ea*/
+              v25 = TSingleton<CActionMan>::GetInstance(); /*0x9128f0*/
+              CActionMan::GetMeleeAttackRange(v25, v44, (int)AuraBooster, (tagRECT *)nFrozen); /*0x9128f7*/
+              IsLeft = CAvatar::IsLeft(&thisa->CAvatar); /*0x912908*/
+              nFrozen = *(_DWORD *)(((int (__thiscall *)(IVecCtrlOwner *, _BYTE *, bool))thisa->GetPos)( /*0x912936*/
+                                      &thisa->IVecCtrlOwner,
+                                      v63,
+                                      IsLeft == 0)
+                                  + 4);
+              AuraBooster = &y; /*0x91293d*/
+              v27 = (int *)((int (__thiscall *)(IVecCtrlOwner *))thisa->GetPos)(&thisa->IVecCtrlOwner); /*0x912953*/
+              adjust_rect(&rcAttack, *v27, (int)AuraBooster, nFrozen); /*0x91295c*/
+              x = *(_DWORD *)((int (__thiscall *)(IVecCtrlOwner *, _BYTE *))thisa->GetPos)(&thisa->IVecCtrlOwner, v61); /*0x912984*/
+              nCount = ZArray<tagRECT>::GetCount(arcArea); /*0x91298f*/
+              nIdx = -1; /*0x912992*/
+              for ( i = 0; i < nCount; ++i )
+              {
+                v28 = ZArray<tagRECT>::operator[]<long>(arcArea, i); /*0x9129d0*/
+                if ( !ZAPI.IsRectEmpty(v28) )
+                {
+                  v29 = ZArray<tagRECT>::operator[]<long>(arcArea, i); /*0x9129ec*/
+                  if ( ZAPI.IntersectRect(&rcIntersect, &rcAttack, v29) )
+                  {
+                    if ( !bHitReactor
+                      || (v30 = CAvatar::IsLeft(&thisa->CAvatar) != 0 ? -1 : 1,
+                          a3 = ZArray<tagRECT>::operator[]<long>(arcArea, i),
+                          v31 = ZArray<tagRECT>::operator[]<long>(arcArea, i),
+                          a4 = (v31->right + a3->left) / 2 * v30 - x,
+                          a4 >= 0) )
+                    {
+                      nIdx = i; /*0x912a61*/
+                      break; /*0x912a67*/
+                    }
+                    nIdx = i; /*0x912a71*/
+                  }
+                }
+              }
+              if ( bHitReactor && nIdx == -1 ) /*0x912a89*/
+              {
+                key[1] = -1; /*0x912a8b*/
+                LOBYTE(v90) = 1; /*0x912a95*/
+                Ztl_bstr_t::~Ztl_bstr_t(&sAfterimageUOL); /*0x912a9c*/
+                v90 = -1; /*0x912aa1*/
+                ActionRandMan::~ActionRandMan(&RndMan); /*0x912aab*/
+              }
+              else
+              {
+                tCur = get_update_time(); /*0x912ac0*/
+                v32 = thisa->GetJobCode(thisa); /*0x912ad4*/
+                if ( is_aran_job(v32) /*0x912b19*/
+                  && (key[0] = 0, ZMap<long,long,long>::GetAt(&thisa->m_mCoolEndTime, key, &tCoolEndTime))
+                  && tCur < tCoolEndTime )
+                {
+                  nY[2] = -1; /*0x912b1b*/
+                  LOBYTE(v90) = 1; /*0x912b25*/
+                  Ztl_bstr_t::~Ztl_bstr_t(&sAfterimageUOL); /*0x912b2c*/
+                  v90 = -1; /*0x912b31*/
+                  ActionRandMan::~ActionRandMan(&RndMan); /*0x912b3b*/
+                }
+                else
+                {
+                  nFrozen = (int)nY; /*0x912b51*/
+                  v33 = ((int (__thiscall *)(IVecCtrlOwner *))thisa->GetPos)(&thisa->IVecCtrlOwner); /*0x912b67*/
+                  v34 = (int *)((int (__thiscall *)(IVecCtrlOwner *, _BYTE *, _DWORD))thisa->GetPos)( /*0x912b89*/
+                                 &thisa->IVecCtrlOwner,
+                                 v58,
+                                 *(_DWORD *)(v33 + 4));
+                  if ( CAntiRepeat::TryRepeat(&thisa->m_antiRepeat, *v34, nFrozen) ) /*0x912b9a*/
+                  {
+                    CUser::SetAttackAction(thisa, nAction, nActionSpeed, nullptr, 0); /*0x912be8*/
+                    ad = (ACTIONDATA *)(&s_aCharacterActionData + 6 * nAction); /*0x912bf8*/
+                    ActionInfo = CAvatar::GetActionInfo(&thisa->CAvatar); /*0x912c07*/
+                    *tDelay = ActionInfo->tTotFrameDelay * ad->tEventDelay / ad->tTotalDelay; /*0x912c22*/
+                    nFrozen = 0; /*0x912c24*/
+                    AuraBooster = nullptr; /*0x912c26*/
+                    v44.m_Data = (_bstr_t::Data_t *)CAvatar::GetWeaponItemID(&thisa->CAvatar); /*0x912c39*/
+                    v43.m_Data = v36; /*0x912c3a*/
+                    value[1] = (int)&v43; /*0x912c3d*/
+                    v48 = Ztl_bstr_t::Ztl_bstr_t(&v43, &sAfterimageUOL); /*0x912c4c*/
+                    v47 = v48; /*0x912c58*/
+                    LOBYTE(v90) = 3; /*0x912c5e*/
+                    v42 = nAction; /*0x912c65*/
+                    v41 = CAvatar::IsLeft(&thisa->CAvatar); /*0x912c77*/
+                    v40 = *tDelay + get_update_time(); /*0x912c82*/
+                    LOBYTE(v90) = 2; /*0x912c83*/
+                    CUser::RegisterAfterimage(thisa, v40, v41, v42, v43, (int)v44.m_Data, (int)AuraBooster, nFrozen); /*0x912c8d*/
+                    v37 = thisa->GetJobCode(thisa); /*0x912ca3*/
+                    if ( is_aran_job(v37) ) /*0x912ca6*/
+                    {
+                      value[0] = tCur + ad->tTotalDelay + 400; /*0x912cc2*/
+                      v56 = 0; /*0x912cc8*/
+                      ZMap<long,long,long>::SetAt(&thisa->m_mCoolEndTime, &v56, value); /*0x912cec*/
+                    }
+                    nActionDelay = GETCRC32Svr<long>((const int *)&pData + 6 * nAction, 0x5Fu); /*0x912d07*/
+                    sub_C9E6D4(nActionDelay, v38, v39, a2, (__int32)&savedregs, (__int32)a3, a4); /*0xe035af*/
+                  }
+                  else
+                  {
+                    value[2] = -1; /*0x912ba3*/
+                    LOBYTE(v90) = 1; /*0x912bad*/
+                    Ztl_bstr_t::~Ztl_bstr_t(&sAfterimageUOL); /*0x912bb4*/
+                    v90 = -1; /*0x912bb9*/
+                    ActionRandMan::~ActionRandMan(&RndMan); /*0x912bc3*/
+                  }
+                }
+              }
+            }
+            else
+            {
+              v65 = -1; /*0x9128a0*/
+              LOBYTE(v90) = 1; /*0x9128aa*/
+              Ztl_bstr_t::~Ztl_bstr_t(&sAfterimageUOL); /*0x9128b1*/
+              v90 = -1; /*0x9128b6*/
+              ActionRandMan::~ActionRandMan(&RndMan); /*0x9128c0*/
+            }
+          }
+          else
+          {
+            v90 = -1; /*0x912798*/
+            ActionRandMan::~ActionRandMan(&RndMan); /*0x9127a2*/
+          }
+        }
+      }
+    }
+  }
+}

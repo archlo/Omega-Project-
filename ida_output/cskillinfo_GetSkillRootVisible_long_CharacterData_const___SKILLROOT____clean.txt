@@ -1,0 +1,80 @@
+// CSkillInfo::GetSkillRootVisible(long,CharacterData const &,SKILLROOT &)
+
+void __thiscall CSkillInfo::GetSkillRootVisible(
+        CSkillInfo *this,
+        const SKILLENTRY *nSkillRootID,
+        const CharacterData *cd,
+        SKILLROOT *SkillRootVisible)
+{
+  const SKILLROOT *SkillRoot; // eax
+  SKILLROOT *v5; // esi
+  const SKILLROOT *v6; // ebx
+  IWzCanvas *m_pInterface; // eax
+  IWzCanvas *v8; // edi
+  unsigned int i; // ebp
+  ZRef<SKILLENTRY> *a; // eax
+  char **p; // eax
+  char *v12; // edx
+  int v13; // esi
+  ZRef<SKILLENTRY> *v14; // edi
+  int v15; // eax
+  SKILLENTRY *v16; // eax
+  Ztl_bstr_t *p_sFinishUOL; // edi
+  volatile LONG *apCanvas; // ebp
+  const SKILLENTRY *v19; // ecx
+  ZArray<ZRef<SKILLENTRY> > *p_aSkill; // [esp+14h] [ebp-4h]
+
+  SkillRoot = CSkillInfo::GetSkillRoot(TSingleton<CSkillInfo>::ms_pInstance, (int)nSkillRootID);
+  v5 = SkillRootVisible;
+  v6 = SkillRoot;
+  SkillRootVisible->nSkillRootID = SkillRoot->nSkillRootID;
+  ZXString<char>::operator=(&v5->sBookName, &SkillRoot->sBookName);
+  m_pInterface = v6->pBookIcon.m_pInterface;
+  v8 = v5->pBookIcon.m_pInterface;
+  if ( v8 != m_pInterface )
+  {
+    v5->pBookIcon.m_pInterface = m_pInterface;
+    if ( m_pInterface )
+      m_pInterface->AddRef(m_pInterface);
+    if ( v8 )
+      v8->Release(v8);
+  }
+  p_aSkill = &v5->aSkill;
+  ZArray<ZRef<SKILLENTRY>>::RemoveAll(&v5->aSkill);
+  for ( i = 0; ; ++i )
+  {
+    a = v6->aSkill.a;
+    SkillRootVisible = (SKILLROOT *)i;
+    if ( !a || (SKILLENTRY *)i >= a[-1].p )
+      break;
+    p = (char **)a[i].p;
+    v12 = *p;
+    nSkillRootID = (const SKILLENTRY *)p;
+    if ( CSkillInfo::IsSkillVisible(this, cd, v12, &nSkillRootID) )
+    {
+      v13 = (int)&v6->aSkill.a[i];
+      v14 = ZArray<ZRef<SKILLENTRY>>::InsertBefore(p_aSkill, -1);
+      v15 = *(_DWORD *)(v13 + 4);
+      nSkillRootID = (const SKILLENTRY *)v14;
+      if ( v15 )
+        InterlockedIncrement((volatile LONG *)(v15 - 12));
+      v16 = v14->p;
+      if ( v16 )
+      {
+        p_sFinishUOL = &v16[-1].sFinishUOL;
+        apCanvas = (volatile LONG *)v16[-1].apCanvas;
+        if ( !InterlockedDecrement(apCanvas) )
+        {
+          InterlockedIncrement(apCanvas);
+          if ( p_sFinishUOL )
+            ((void (__thiscall *)(Ztl_bstr_t *, int))p_sFinishUOL->m_Data->m_wstr)(p_sFinishUOL, 1);
+        }
+        v19 = nSkillRootID;
+        i = (unsigned int)SkillRootVisible;
+        nSkillRootID->sName._m_pStr = nullptr;
+        v14 = (ZRef<SKILLENTRY> *)v19;
+      }
+      v14->p = *(SKILLENTRY **)(v13 + 4);
+    }
+  }
+}

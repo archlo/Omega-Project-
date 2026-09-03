@@ -1,0 +1,1 @@
+{"version":3,"file":"MobSkillRef.d.ts","sourceRoot":"","sources":["../../src/character/MobSkillRef.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,YAAY,EAAE,MAAM,mBAAmB,CAAC;AAEtD,qBAAa,WAAW;aAEJ,IAAI,EAAE,YAAY;aAClB,OAAO,EAAE,MAAM;aACf,KAAK,EAAE,MAAM;gBAFb,IAAI,EAAE,YAAY,EAClB,OAAO,EAAE,MAAM,EACf,KAAK,EAAE,MAAM;CAEhC"}

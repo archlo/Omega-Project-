@@ -1,0 +1,32 @@
+void __thiscall CITC::OnChangedCategory(CITC *this, unsigned int nCategory)
+{
+  ZXString<char> v3[5]; // [esp-4h] [ebp-30h] BYREF
+  COutPacket oPacket; // [esp+10h] [ebp-1Ch] BYREF
+  int v5; // [esp+28h] [ebp-4h]
+
+  if ( !this->m_bITCRequestSent )
+  {
+    v3[4]._m_pStr = (char *)v3;
+    v3[0]._m_pStr = nullptr;
+    ZXString<char>::GetBuffer(v3, 0, 0);
+    ZXString<char>::ReleaseBuffer(v3, 0);
+    CITC::SetSearchCondition(this, 0, 0, 0, 0, v3[0]);
+    COutPacket::COutPacket(&oPacket, 308);
+    v5 = 0;
+    COutPacket::Encode1(&oPacket, 5u);
+    COutPacket::Encode4(&oPacket, nCategory);
+    COutPacket::Encode4(&oPacket, 0);
+    COutPacket::Encode4(&oPacket, 0);
+    COutPacket::Encode1(&oPacket, 1u);
+    COutPacket::Encode1(&oPacket, 1u);
+    COutPacket::Encode4(&oPacket, 1u);
+    v3[0]._m_pStr = nullptr;
+    ZXString<char>::GetBuffer(v3, 0, 0);
+    ZXString<char>::ReleaseBuffer(v3, 0);
+    COutPacket::EncodeStr(&oPacket, v3[0]);
+    CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket);
+    this->m_bITCRequestSent = 1;
+    v5 = -1;
+    ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff);
+  }
+}

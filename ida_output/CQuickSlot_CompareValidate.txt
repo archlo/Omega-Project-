@@ -1,0 +1,194 @@
+﻿int __thiscall CUIStatusBar::CQuickSlot::CompareValidateFuncKeyMappedInfo(CUIStatusBar::CQuickSlot *this)
+{
+  char *m_pStr; // esi
+  char *p_m_uTableSize; // edi
+  volatile LONG *p_m_uCount; // ebp
+  int v5; // eax
+  CUIStatusBar::CQuickSlot::<unnamed_type_m_aFuncKeyMappedInfo> *v6; // ebx
+  CUIStatusBar::CQuickSlot::<unnamed_type_m_aFuncKeyMappedInfo> *i; // ecx
+  char *v9; // esi
+  volatile LONG *v10; // edi
+  CUIStatusBar::CQuickSlot::<unnamed_type_m_aFuncKeyMappedInfo> *m_aFuncKeyMappedInfo; // ebx
+  int *m_aQuickslotKeyMapped; // eax
+  FUNCKEY_MAPPED *v13; // ebp
+  int nID; // esi
+  int v15; // eax
+  int v16; // edi
+  GW_ItemSlotBase *p; // esi
+  int cashslot_item_type; // eax
+  bool v19; // zf
+  int bSame; // [esp+10h] [ebp-30h]
+  int nNumber; // [esp+14h] [ebp-2Ch]
+  CUIStatusBar::CQuickSlot::<unnamed_type_m_aFuncKeyMappedInfo> *v22; // [esp+18h] [ebp-28h]
+  CharacterData *cd; // [esp+1Ch] [ebp-24h]
+  int *v24; // [esp+20h] [ebp-20h]
+  BOOL v25; // [esp+24h] [ebp-1Ch]
+  int v26; // [esp+24h] [ebp-1Ch]
+  CFuncKeyMappedMan *pFkmMan; // [esp+28h] [ebp-18h]
+  int nSlotCount; // [esp+2Ch] [ebp-14h]
+  ZRef<GW_ItemSlotBase> v29; // [esp+30h] [ebp-10h] BYREF
+  ZRef<CharacterData> result; // [esp+38h] [ebp-8h] BYREF
+
+  m_pStr = TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x87100c*/
+  v25 = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &result)->p == nullptr; /*0x87102d*/
+  if ( result.p ) /*0x871033*/
+  {
+    p_m_uTableSize = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x871035*/
+    p_m_uCount = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount; /*0x871038*/
+    if ( !InterlockedDecrement(p_m_uCount) ) /*0x87103c*/
+    {
+      InterlockedIncrement(p_m_uCount); /*0x871047*/
+      if ( p_m_uTableSize ) /*0x87104f*/
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1); /*0x871059*/
+    }
+  }
+  if ( !v25 ) /*0x871060*/
+  {
+    cd = CWvsContext::GetCharacterData((CWvsContext *)m_pStr, &result)->p; /*0x8710b5*/
+    if ( result.p ) /*0x8710bb*/
+    {
+      v9 = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x8710bd*/
+      v10 = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount; /*0x8710c0*/
+      if ( !InterlockedDecrement(v10) ) /*0x8710c4*/
+      {
+        InterlockedIncrement(v10); /*0x8710cf*/
+        if ( v9 ) /*0x8710d7*/
+          (**(void (__thiscall ***)(char *, int))v9)(v9, 1); /*0x8710e1*/
+      }
+      result.p = nullptr; /*0x8710e3*/
+    }
+    pFkmMan = TSingleton<CFuncKeyMappedMan>::ms_pInstance; /*0x8710f0*/
+    m_aFuncKeyMappedInfo = this->m_aFuncKeyMappedInfo; /*0x8710f9*/
+    m_aQuickslotKeyMapped = TSingleton<CQuickslotKeyMappedMan>::ms_pInstance->m_aQuickslotKeyMapped; /*0x8710ff*/
+    bSame = 1; /*0x871102*/
+    v22 = m_aFuncKeyMappedInfo; /*0x87110a*/
+    v24 = TSingleton<CQuickslotKeyMappedMan>::ms_pInstance->m_aQuickslotKeyMapped; /*0x87110e*/
+    v26 = 8; /*0x871112*/
+    while ( 1 ) /*0x87113c*/
+    {
+      v13 = CFuncKeyMappedMan::FuncKeyMapped(pFkmMan, *m_aQuickslotKeyMapped); /*0x871126*/
+      nNumber = 0; /*0x87112f*/
+      switch ( v13->nType ) /*0x87113c*/
+      {
+        case 1u: /*0x87113c*/
+          if ( CSkillInfo::GetSkillLevel(TSingleton<CSkillInfo>::ms_pInstance, cd, v13->nID, 0) <= 0 || !v13->nID ) /*0x871316*/
+            goto LABEL_65; /*0x871319*/
+          if ( *(_DWORD *)&m_aFuncKeyMappedInfo->fkm.nType != *(_DWORD *)&v13->nType /*0x871328*/
+            || HIBYTE(v13->nID) != HIBYTE(m_aFuncKeyMappedInfo->fkm.nID) )
+          {
+            bSame = 0; /*0x87132a*/
+          }
+          *(_DWORD *)&m_aFuncKeyMappedInfo->fkm.nType = *(_DWORD *)&v13->nType; /*0x871331*/
+          HIBYTE(m_aFuncKeyMappedInfo->fkm.nID) = HIBYTE(v13->nID); /*0x871336*/
+          goto LABEL_68; /*0x871339*/
+        case 2u: /*0x87113c*/
+        case 3u: /*0x87113c*/
+        case 7u: /*0x87113c*/
+          nID = v13->nID; /*0x871143*/
+          if ( nID / 1000000 == 2 ) /*0x87115a*/
+          {
+            v15 = nID / 10000; /*0x87116f*/
+            if ( nID / 10000 == 200 /*0x8711bf*/
+              || v15 == 201
+              || v15 == 202
+              || v15 == 205
+              || v15 == 221
+              || v15 == 236
+              || v15 == 238
+              || v15 == 245
+              || v15 == 212
+              || v15 == 226
+              || v15 == 227
+              || is_immediate_mobsummon_item(v13->nID) )
+            {
+              goto LABEL_31; /*0x8711c9*/
+            }
+          }
+          else if ( nID / 1000000 != 5 /*0x8712f1*/
+                 || (cashslot_item_type = get_cashslot_item_type(v13->nID), cashslot_item_type >= 8)
+                 && (cashslot_item_type <= 11 || cashslot_item_type == 39)
+                 && cashslot_item_type == 9
+                 || get_etc_cash_item_type(nID) == 6 )
+          {
+LABEL_31:
+            v16 = 1; /*0x8711cf*/
+            nSlotCount = CharacterData::GetItemSlotCount(cd, 2); /*0x8711e3*/
+            if ( nSlotCount >= 1 ) /*0x8711e7*/
+            {
+              do /*0x871276*/
+              {
+                p = CharacterData::GetItem(cd, &v29, 2, v16)->p; /*0x8711ff*/
+                if ( v29.p ) /*0x871208*/
+                {
+                  if ( !InterlockedDecrement(&v29.p->_m_nRef) ) /*0x87120e*/
+                  {
+                    InterlockedIncrement(&v29.p->_m_nRef); /*0x871220*/
+                    if ( v29.p ) /*0x87122c*/
+                      ((void (__thiscall *)(GW_ItemSlotBase *, int))v29.p->dtr_ZRefCounted)(v29.p, 1); /*0x871234*/
+                  }
+                  v29.p = nullptr; /*0x871236*/
+                }
+                if ( p && TSecType<long>::GetData(&p->nItemID) == v13->nID && !p->IsProtectedItem(p) ) /*0x871256*/
+                {
+                  nNumber += p->GetItemNumber(p); /*0x871265*/
+                  bSame = 0; /*0x871269*/
+                }
+                ++v16; /*0x871271*/
+              }
+              while ( v16 <= nSlotCount ); /*0x871276*/
+            }
+            if ( *(_DWORD *)&v22->fkm.nType != *(_DWORD *)&v13->nType /*0x871296*/
+              || HIBYTE(v13->nID) != HIBYTE(v22->fkm.nID)
+              || v22->nNumber != nNumber )
+            {
+              bSame = 0; /*0x871298*/
+            }
+            m_aFuncKeyMappedInfo = v22; /*0x8712a0*/
+            goto LABEL_47; /*0x8712a0*/
+          }
+          bSame = 0; /*0x8712f7*/
+LABEL_47:
+          *(_DWORD *)&m_aFuncKeyMappedInfo->fkm.nType = *(_DWORD *)&v13->nType; /*0x8712a4*/
+          HIBYTE(m_aFuncKeyMappedInfo->fkm.nID) = HIBYTE(v13->nID); /*0x8712b0*/
+          m_aFuncKeyMappedInfo->nNumber = nNumber; /*0x8712b3*/
+LABEL_68:
+          m_aQuickslotKeyMapped = v24 + 1; /*0x87136b*/
+          ++m_aFuncKeyMappedInfo; /*0x871372*/
+          v19 = v26-- == 1; /*0x871375*/
+          ++v24; /*0x87137a*/
+          v22 = m_aFuncKeyMappedInfo; /*0x87137e*/
+          if ( v19 ) /*0x871382*/
+            return bSame; /*0x871388*/
+          break; /*0x871388*/
+        case 4u: /*0x87113c*/
+        case 5u: /*0x87113c*/
+        case 6u: /*0x87113c*/
+        case 8u: /*0x87113c*/
+          if ( *(_DWORD *)&m_aFuncKeyMappedInfo->fkm.nType != *(_DWORD *)&v13->nType /*0x871348*/
+            || HIBYTE(v13->nID) != HIBYTE(m_aFuncKeyMappedInfo->fkm.nID) )
+          {
+            bSame = 0; /*0x87134a*/
+          }
+          *(_DWORD *)&m_aFuncKeyMappedInfo->fkm.nType = *(_DWORD *)&v13->nType; /*0x871351*/
+          HIBYTE(m_aFuncKeyMappedInfo->fkm.nID) = HIBYTE(v13->nID); /*0x871356*/
+          goto LABEL_68; /*0x871359*/
+        default:
+LABEL_65:
+          if ( m_aFuncKeyMappedInfo->fkm.nType ) /*0x87135b*/
+            bSame = 0; /*0x871360*/
+          m_aFuncKeyMappedInfo->fkm.nType = 0; /*0x871364*/
+          v13->nType = 0; /*0x871367*/
+          goto LABEL_68; /*0x871367*/
+      }
+    }
+  }
+  v5 = 0; /*0x871062*/
+  v6 = this->m_aFuncKeyMappedInfo; /*0x871064*/
+  for ( i = v6; !i->fkm.nType; ++i ) /*0x87106a*/
+  {
+    if ( ++v5 >= 8 ) /*0x87107c*/
+      return 1; /*0x87108a*/
+  }
+  memset(&v6->fkm.nType, 0, 0x60u); /*0x871090*/
+  return 0; /*0x871083*/
+}

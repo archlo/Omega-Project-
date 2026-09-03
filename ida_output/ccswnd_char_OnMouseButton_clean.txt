@@ -1,0 +1,24 @@
+// ccswnd::char::OnMouseButton
+
+void __thiscall CCSWnd_Char::OnMouseButton(
+        CCSWnd_Char *this,
+        unsigned int msg,
+        unsigned int wParam,
+        unsigned int rx,
+        unsigned int ry)
+{
+  int IsControlingUserPreview; // eax
+
+  if ( msg == 513 /*0x4bc3c0*/
+    && (ZAPI.PtInRect(&rtOn, (tagPOINT)__PAIR64__(ry, rx))
+     || ZAPI.PtInRect(&rtOff, (tagPOINT)__PAIR64__(ry, rx))
+     || ZAPI.PtInRect(&rtBG, (tagPOINT)__PAIR64__(ry, rx))) )
+  {
+    IsControlingUserPreview = CCashShop::IsControlingUserPreview((CCashShop *)this->m_nColorLensCommSN); /*0x4bc3d0*/
+    CCashShop::SetUserPreviewControl((CCashShop *)this->m_nColorLensCommSN, IsControlingUserPreview == 0); /*0x4bc3e1*/
+  }
+  else
+  {
+    CCSWnd_Char::EndChat((CCSWnd_Char *)((char *)this - 4)); /*0x4bc3ef*/
+  }
+}

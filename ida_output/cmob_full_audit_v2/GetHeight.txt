@@ -1,0 +1,73 @@
+﻿IWzCanvas *__thiscall CMob::GetHeight(CMob *this)
+{
+  IUnknown *v1; // esi
+  IWzCanvas *v2; // edi
+  IWzGr2DLayer *m_pInterface; // ecx
+  IWzCanvas *v4; // eax
+  unsigned int (__stdcall *AddRef)(IUnknown *); // edx
+  unsigned int (__stdcall *Release)(IUnknown *); // ecx
+  HRESULT v7; // eax
+  unsigned int (__stdcall *v8)(IUnknown *); // ecx
+  HRESULT v9; // eax
+  unsigned int (__stdcall *v10)(IUnknown *); // eax
+  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > result; // [esp+18h] [ebp-24h] BYREF
+  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > pCanvas; // [esp+1Ch] [ebp-20h]
+  Ztl_variant_t vIndex; // [esp+20h] [ebp-1Ch] BYREF
+  int v15; // [esp+38h] [ebp-4h]
+
+  v1 = nullptr;
+  v2 = nullptr;
+  pCanvas.m_pInterface = nullptr;
+  v15 = 0;
+  vIndex.vt = 3;
+  vIndex.decVal.Lo32 = 0;
+  m_pInterface = this->m_pLayerAction.m_pInterface;
+  LOBYTE(v15) = 1;
+  if ( !m_pInterface )
+    _com_issue_error(-2147467261);
+  v4 = IWzGr2DLayer::Getcanvas(m_pInterface, &result, &vIndex)->m_pInterface;
+  if ( v4 )
+  {
+    AddRef = v4->AddRef;
+    v1 = v4;
+    pCanvas.m_pInterface = v4;
+    AddRef(v4);
+  }
+  if ( result.m_pInterface )
+    result.m_pInterface->Release(result.m_pInterface);
+  LOBYTE(v15) = 0;
+  if ( vIndex.vt == 8 )
+  {
+    vIndex.vt = 0;
+    if ( vIndex.decVal.Lo32 )
+      ZAPI.CoTaskMemFree((void *)(vIndex.decVal.Lo32 - 4));
+  }
+  else
+  {
+    VariantClear(&vIndex);
+  }
+  if ( !v1 )
+    _com_issue_error(-2147467261);
+  Release = v1->__vftable[9].Release;
+  result.m_pInterface = nullptr;
+  v7 = ((int (__stdcall *)(IUnknown *, _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > *))Release)(
+         v1,
+         &result);
+  if ( v7 < 0 )
+    _com_issue_errorex(v7, v1, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e);
+  if ( (int)result.m_pInterface > 0 )
+  {
+    v8 = v1->__vftable[9].Release;
+    result.m_pInterface = nullptr;
+    v9 = ((int (__stdcall *)(IUnknown *, _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > *))v8)(
+           v1,
+           &result);
+    if ( v9 < 0 )
+      _com_issue_errorex(v9, v1, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e);
+    v2 = result.m_pInterface;
+  }
+  v10 = v1->Release;
+  v15 = -1;
+  v10(v1);
+  return v2;
+}

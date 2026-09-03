@@ -1,0 +1,220 @@
+﻿void __thiscall CUIStatusBar::~CUIStatusBar(CUIStatusBar *this)
+{
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzGr2DLayer *v3; // eax
+  IWzGr2DLayer *v4; // eax
+  IWzGr2DLayer *v5; // eax
+  IWzGr2DLayer *v6; // eax
+  IWzGr2DLayer *v7; // eax
+  IWzGr2DLayer *v8; // eax
+  IWzGr2DLayer *v9; // eax
+  IWzGr2DLayer *v10; // eax
+  char *m_pStr; // eax
+  IWzGr2DLayer *v12; // eax
+  IWzGr2DLayer *v13; // eax
+  IWzGr2DLayer *v14; // eax
+  IWzGr2DLayer *v15; // eax
+  IWzGr2DLayer *v16; // eax
+  IWzGr2DLayer *v17; // eax
+  IWzGr2DLayer *v18; // eax
+  IWzGr2DLayer *v19; // eax
+  IWzGr2DLayer *v20; // eax
+  char *v21; // eax
+  IWzProperty *v22; // eax
+  IWzProperty *v23; // eax
+  IWzFont *v24; // eax
+  IWzFont *v25; // eax
+  IWzFont *v26; // eax
+  IWzFont *v27; // eax
+  IWzFont *v28; // eax
+  IWzGr2DLayer *v29; // eax
+  _bstr_t::Data_t *m_Data; // ecx
+
+  this->CWnd::IGObj::__vftable = (CUIStatusBar_vtbl *)&CUIStatusBar::`vftable'{for `IGObj'}; /*0x871aaa*/
+  this->CWnd::IUIMsgHandler::__vftable = (IUIMsgHandler_vtbl *)&CUIStatusBar::`vftable'{for `IUIMsgHandler'}; /*0x871ab0*/
+  this->CWnd::ZRefCounted::__vftable = (ZRefCounted_vtbl *)&CUIStatusBar::`vftable'{for `ZRefCounted'}; /*0x871ab7*/
+  `eh vector destructor iterator'( /*0x871ad6*/
+    this->m_apBtChatFilter,
+    8u,
+    6,
+    (void (__thiscall *)(void *))ZRef<CCtrlOriginButton>::~ZRef<CCtrlOriginButton>);
+  CLayoutMan::~CLayoutMan(&this->m_lm); /*0x871ae6*/
+  CUIStatusBar::CQuickSlot::~CQuickSlot(&this->m_QuickSlot); /*0x871af6*/
+  `eh vector destructor iterator'( /*0x871b10*/
+    this->m_pLayerButtonAni,
+    4u,
+    4,
+    (void (__thiscall *)(void *))_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::~_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>);
+  m_pInterface = this->m_pLayerChatCover.m_pInterface; /*0x871b15*/
+  if ( m_pInterface ) /*0x871b24*/
+    m_pInterface->Release(m_pInterface); /*0x871b2c*/
+  v3 = this->m_pLayerChatEnter.m_pInterface; /*0x871b2e*/
+  if ( v3 ) /*0x871b3b*/
+    v3->Release(v3); /*0x871b43*/
+  v4 = this->m_pLayerChatSpace2.m_pInterface; /*0x871b45*/
+  if ( v4 ) /*0x871b52*/
+    v4->Release(v4); /*0x871b5a*/
+  v5 = this->m_pLayerChatSpace.m_pInterface; /*0x871b5c*/
+  if ( v5 ) /*0x871b69*/
+    v5->Release(v5); /*0x871b71*/
+  v6 = this->m_pLayerGaugeText.m_pInterface; /*0x871b73*/
+  if ( v6 ) /*0x871b80*/
+    v6->Release(v6); /*0x871b88*/
+  v7 = this->m_pLayerSkin.m_pInterface; /*0x871b8a*/
+  if ( v7 ) /*0x871b97*/
+    v7->Release(v7); /*0x871b9f*/
+  v8 = this->m_pLayerChatBar.m_pInterface; /*0x871ba1*/
+  if ( v8 ) /*0x871bae*/
+    v8->Release(v8); /*0x871bb6*/
+  v9 = this->m_pLayerChatLog.m_pInterface; /*0x871bb8*/
+  if ( v9 ) /*0x871bc5*/
+    v9->Release(v9); /*0x871bcd*/
+  v10 = this->m_pLayerNoticeMsg.m_pInterface; /*0x871bcf*/
+  if ( v10 ) /*0x871bdc*/
+    v10->Release(v10); /*0x871be4*/
+  CFloatNotice::~CFloatNotice(&this->m_itemMsg); /*0x871bf1*/
+  CFloatNotice::~CFloatNotice(&this->m_quizPanel); /*0x871c01*/
+  CFloatNotice::~CFloatNotice(&this->m_floatNotice); /*0x871c11*/
+  CChatHelper::~CChatHelper(&this->m_chatHelper); /*0x871c21*/
+  m_pStr = this->m_sFriendGroupTarget._m_pStr; /*0x871c26*/
+  if ( m_pStr ) /*0x871c33*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)m_pStr - 1); /*0x871c39*/
+  CBitmapStrNumber::~CBitmapStrNumber(&this->m_GougeNo); /*0x871c4c*/
+  v12 = this->m_GaugeEXP.m_pLayerR.m_pInterface; /*0x871c51*/
+  if ( v12 ) /*0x871c5e*/
+    v12->Release(v12); /*0x871c66*/
+  v13 = this->m_GaugeEXP.m_pLayerC.m_pInterface; /*0x871c68*/
+  if ( v13 ) /*0x871c70*/
+    v13->Release(this->m_GaugeEXP.m_pLayerC.m_pInterface); /*0x871c78*/
+  v14 = this->m_GaugeEXP.m_pLayerL.m_pInterface; /*0x871c7a*/
+  if ( v14 ) /*0x871c82*/
+    v14->Release(this->m_GaugeEXP.m_pLayerL.m_pInterface); /*0x871c8a*/
+  v15 = this->m_GaugeMP.m_pLayerR.m_pInterface; /*0x871c8c*/
+  if ( v15 ) /*0x871c99*/
+    v15->Release(v15); /*0x871ca1*/
+  v16 = this->m_GaugeMP.m_pLayerC.m_pInterface; /*0x871ca3*/
+  if ( v16 ) /*0x871cab*/
+    v16->Release(this->m_GaugeMP.m_pLayerC.m_pInterface); /*0x871cb3*/
+  v17 = this->m_GaugeMP.m_pLayerL.m_pInterface; /*0x871cb5*/
+  if ( v17 ) /*0x871cbd*/
+    v17->Release(this->m_GaugeMP.m_pLayerL.m_pInterface); /*0x871cc5*/
+  v18 = this->m_GaugeHP.m_pLayerR.m_pInterface; /*0x871cc7*/
+  if ( v18 ) /*0x871cd4*/
+    v18->Release(v18); /*0x871cdc*/
+  v19 = this->m_GaugeHP.m_pLayerC.m_pInterface; /*0x871cde*/
+  if ( v19 ) /*0x871ce6*/
+    v19->Release(this->m_GaugeHP.m_pLayerC.m_pInterface); /*0x871cee*/
+  v20 = this->m_GaugeHP.m_pLayerL.m_pInterface; /*0x871cf0*/
+  if ( v20 ) /*0x871cf8*/
+    v20->Release(this->m_GaugeHP.m_pLayerL.m_pInterface); /*0x871d00*/
+  this->m_lsWhisperCandidate.__vftable = (ZList<ZXString<char> >_vtbl *)&ZList<ZXString<char>>::`vftable'; /*0x871d0d*/
+  ZList<ZXString<char>>::RemoveAll(&this->m_lsWhisperCandidate); /*0x871d13*/
+  v21 = this->m_sWhisperTarget._m_pStr; /*0x871d18*/
+  if ( v21 ) /*0x871d25*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v21 - 1); /*0x871d2b*/
+  v22 = this->m_pImgFontMemo.m_pInterface; /*0x871d33*/
+  if ( v22 ) /*0x871d40*/
+    v22->Release(v22); /*0x871d48*/
+  v23 = this->m_pImgFontLevelNo.m_pInterface; /*0x871d4a*/
+  if ( v23 ) /*0x871d57*/
+    v23->Release(v23); /*0x871d5f*/
+  v24 = this->m_pFontJobCategory.m_pInterface; /*0x871d61*/
+  if ( v24 ) /*0x871d6e*/
+    v24->Release(v24); /*0x871d76*/
+  `eh vector destructor iterator'( /*0x871d8d*/
+    this->m_pFontChatLog,
+    4u,
+    27,
+    (void (__thiscall *)(void *))_com_ptr_t<_com_IIID<IWzFont,&__s_GUID const _GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac>>::~_com_ptr_t<_com_IIID<IWzFont,&__s_GUID const _GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac>>);
+  v25 = this->m_pFontWhite.m_pInterface; /*0x871d92*/
+  if ( v25 ) /*0x871d9f*/
+    v25->Release(v25); /*0x871da7*/
+  v26 = this->m_pFontDimGreen.m_pInterface; /*0x871da9*/
+  if ( v26 ) /*0x871db6*/
+    v26->Release(v26); /*0x871dbe*/
+  v27 = this->m_pFontJobTitle.m_pInterface; /*0x871dc0*/
+  if ( v27 ) /*0x871dcd*/
+    v27->Release(v27); /*0x871dd5*/
+  v28 = this->m_pFont.m_pInterface; /*0x871dd7*/
+  if ( v28 ) /*0x871de4*/
+    v28->Release(v28); /*0x871dec*/
+  v29 = this->m_pLayerTempEXP.m_pInterface; /*0x871dee*/
+  if ( v29 ) /*0x871dfb*/
+    v29->Release(v29); /*0x871e03*/
+  CCtrlEdit::CREATEPARAM::~CREATEPARAM(&this->m_paramEdit); /*0x871e10*/
+  m_Data = this->m_paramComboBox.sButtonUOL.m_Data; /*0x871e15*/
+  if ( m_Data ) /*0x871e1d*/
+  {
+    _bstr_t::Data_t::Release(m_Data); /*0x871e1f*/
+    this->m_paramComboBox.sButtonUOL.m_Data = nullptr; /*0x871e24*/
+  }
+  if ( this->m_pCBChatTarget.p ) /*0x871e35*/
+  {
+    ZRef<CCtrlComboBox>::_ReleaseRaw(&this->m_pCBChatTarget, nullptr); /*0x871e3d*/
+    this->m_pCBChatTarget.p = nullptr; /*0x871e42*/
+  }
+  if ( this->m_pEditChatInput.p ) /*0x871e50*/
+  {
+    ZRef<CCtrlEdit>::_ReleaseRaw(&this->m_pEditChatInput, nullptr); /*0x871e58*/
+    this->m_pEditChatInput.p = nullptr; /*0x871e5d*/
+  }
+  if ( this->m_pScrChatLog.p ) /*0x871e6b*/
+  {
+    ZRef<CCtrlScrollBar>::_ReleaseRaw(&this->m_pScrChatLog, nullptr); /*0x871e73*/
+    this->m_pScrChatLog.p = nullptr; /*0x871e78*/
+  }
+  if ( this->m_pBtWhisper.p ) /*0x871e86*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&this->m_pBtWhisper, nullptr); /*0x871e8e*/
+    this->m_pBtWhisper.p = nullptr; /*0x871e93*/
+  }
+  if ( this->m_pBtSkillKey.p ) /*0x871ea1*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&this->m_pBtSkillKey, nullptr); /*0x871ea9*/
+    this->m_pBtSkillKey.p = nullptr; /*0x871eae*/
+  }
+  if ( this->m_pBtStatKey.p ) /*0x871ebc*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&this->m_pBtStatKey, nullptr); /*0x871ec4*/
+    this->m_pBtStatKey.p = nullptr; /*0x871ec9*/
+  }
+  if ( this->m_pBtInvenKey.p ) /*0x871ed7*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&this->m_pBtInvenKey, nullptr); /*0x871edf*/
+    this->m_pBtInvenKey.p = nullptr; /*0x871ee4*/
+  }
+  if ( this->m_pBtEquipKey.p ) /*0x871ef2*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&this->m_pBtEquipKey, nullptr); /*0x871efa*/
+    this->m_pBtEquipKey.p = nullptr; /*0x871eff*/
+  }
+  if ( this->m_pBtMax.p ) /*0x871f0d*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&this->m_pBtMax, nullptr); /*0x871f15*/
+    this->m_pBtMax.p = nullptr; /*0x871f1a*/
+  }
+  if ( this->m_pBtMin.p ) /*0x871f28*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&this->m_pBtMin, nullptr); /*0x871f30*/
+    this->m_pBtMin.p = nullptr; /*0x871f35*/
+  }
+  if ( this->m_pBtSystem.p ) /*0x871f43*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&this->m_pBtSystem, nullptr); /*0x871f4b*/
+    this->m_pBtSystem.p = nullptr; /*0x871f50*/
+  }
+  if ( this->m_pBtMenu.p ) /*0x871f5e*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&this->m_pBtMenu, nullptr); /*0x871f66*/
+    this->m_pBtMenu.p = nullptr; /*0x871f6b*/
+  }
+  if ( this->m_pBtITC.p ) /*0x871f79*/
+  {
+    ZRef<CCtrlButton>::_ReleaseRaw(&this->m_pBtITC, nullptr); /*0x871f81*/
+    this->m_pBtITC.p = nullptr; /*0x871f86*/
+  }
+  CUIToolTip::~CUIToolTip(&this->m_uiItemToolTip); /*0x871f94*/
+  CUIToolTip::~CUIToolTip(&this->m_uiToolTip); /*0x871fa4*/
+  TSingleton<CUIStatusBar>::ms_pInstance._m_pStr = nullptr; /*0x871fab*/
+  CWnd::~CWnd(this); /*0x871fb9*/
+}

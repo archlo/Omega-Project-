@@ -1,0 +1,10 @@
+int __thiscall CAvatar::GetCurrentAction(CAvatar *this, int *pnDir)
+{
+  int v3; // edi
+
+  v3 = CAvatar::MoveAction2RawAction(this, this->m_nMoveAction, pnDir);
+  if ( CAvatar::GetOneTimeAction(this) <= -1 )
+    return v3;
+  else
+    return CAvatar::GetOneTimeAction(this);
+}

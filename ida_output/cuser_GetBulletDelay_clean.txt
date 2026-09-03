@@ -1,0 +1,22 @@
+// cuser::GetBulletDelay
+
+int __cdecl CUser::GetBulletDelay(int nBulletItemID, char *nSkillID, int nDefault)
+{
+  if ( nBulletItemID / 10000 == 207 || nBulletItemID / 1000 == 5021 || nSkillID == (char *)4111004 ) /*0x8de312*/
+    return 120; /*0x8de312*/
+  if ( nSkillID == (char *)3111006 /*0x8de335*/
+    || nSkillID == (char *)3211006
+    || nSkillID == (char *)13111001
+    || nSkillID == (char *)33001000
+    || nSkillID == (char *)33111001 )
+  {
+    return 60; /*0x8de370*/
+  }
+  if ( nSkillID == (char *)35001004 || nSkillID == (char *)35101010 ) /*0x8de343*/
+    return 90; /*0x8de36a*/
+  if ( nSkillID == (_BYTE *)&loc_4FAA8C + 3 ) /*0x8de34a*/
+    return 120; /*0x8de371*/
+  if ( nSkillID == (char *)&loc_4C4F2A + 1 || nSkillID == (char *)&loc_4F7F90 ) /*0x8de358*/
+    return 240; /*0x8de35f*/
+  return nDefault; /*0x8de35e*/
+}

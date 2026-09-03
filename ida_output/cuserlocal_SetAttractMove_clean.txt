@@ -1,0 +1,33 @@
+// cuserlocal::SetAttractMove
+
+void __thiscall CUserLocal::SetAttractMove(CUserLocal *this, int *nPos_X, int *nPos_Y)
+{
+  const SecondaryStat *v4; // eax
+
+  v4 = this->GetSecondaryStat(this); /*0x90deb8*/
+  switch ( _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nAttract_, v4->_ZtlSecureTear_nAttract__CS) ) /*0x90ded5*/
+  {
+    case 1: /*0x90ded5*/
+      *nPos_X = -1; /*0x90dee0*/
+      break; /*0x90dee7*/
+    case 2: /*0x90ded5*/
+      *nPos_X = 1; /*0x90deee*/
+      break; /*0x90def5*/
+    case 3: /*0x90ded5*/
+      goto $LN4_246;
+    case 4: /*0x90ded5*/
+      *nPos_Y = 1; /*0x90defc*/
+      break; /*0x90df03*/
+    case 6: /*0x90ded5*/
+      *nPos_X = -1; /*0x90df0e*/
+      CUserLocal::Jump(this, 1); /*0x90df14*/
+      break; /*0x90df1a*/
+    case 7: /*0x90ded5*/
+      *nPos_X = 1; /*0x90df21*/
+$LN4_246: /*0x90df27*/
+      CUserLocal::Jump(this, 1); /*0x90df27*/
+      break; /*0x90df2b*/
+    default:
+      return;
+  }
+}

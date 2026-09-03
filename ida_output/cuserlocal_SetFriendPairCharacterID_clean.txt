@@ -1,0 +1,94 @@
+// cuserlocal::SetFriendPairCharacterID
+
+void __thiscall CUserLocal::SetFriendPairCharacterID(CUserLocal *this)
+{
+  char *m_pStr; // ebp
+  char *p_m_uTableSize; // esi
+  volatile LONG *p_m_uCount; // edi
+  int *v5; // edi
+  TSecType<long> *v6; // esi
+  int Data; // ecx
+  __POSITION *v8; // esi
+  GW_FriendRecord *Next; // eax
+  int HighPart; // edx
+  unsigned int FakePtr1; // eax
+  __POSITION *pos; // [esp+Ch] [ebp-14h] BYREF
+  _LARGE_INTEGER liSN; // [esp+10h] [ebp-10h]
+  ZRef<CharacterData> result; // [esp+18h] [ebp-8h] BYREF
+
+  if ( this->m_liFriendshipPairItemSN.QuadPart ) /*0x908816*/
+    CUserPool::OnFriendRecordRemove( /*0x908833*/
+      (CUserPool *)TSingleton<CUserPool>::ms_pInstance.m_pInterface,
+      &this->m_liFriendshipItemSN);
+  m_pStr = TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x908839*/
+  pos = (__POSITION *)CWvsContext::GetCharacterData( /*0x90884e*/
+                        (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+                        &result)->p;
+  if ( result.p ) /*0x908858*/
+  {
+    p_m_uTableSize = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x90885a*/
+    p_m_uCount = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount; /*0x90885d*/
+    if ( !InterlockedDecrement(p_m_uCount) ) /*0x908861*/
+    {
+      InterlockedIncrement(p_m_uCount); /*0x90886c*/
+      if ( p_m_uTableSize ) /*0x908874*/
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1); /*0x90887e*/
+    }
+    result.p = nullptr; /*0x908880*/
+  }
+  liSN.QuadPart = 0; /*0x90888a*/
+  v5 = g_anRingBodyPart; /*0x908892*/
+  while ( 1 ) /*0x9088a2*/
+  {
+    v6 = *(TSecType<long> **)&m_pStr[8 * *v5 + 14932]; /*0x9088a2*/
+    if ( v6 ) /*0x9088ab*/
+    {
+      Data = TSecType<long>::GetData(v6 + 1); /*0x9088b5*/
+      if ( Data / 100 == 11128 && Data % 10 <= 2 ) /*0x9088ea*/
+        break; /*0x9088ea*/
+    }
+    if ( (int)++v5 >= (int)g_anPetAbilBodyPart ) /*0x9088f5*/
+    {
+      v8 = pos; /*0x9088f7*/
+      goto LABEL_14; /*0x9088f7*/
+    }
+  }
+  FakePtr1 = v6[2].FakePtr1; /*0x90895e*/
+  liSN.HighPart = v6[2].FakePtr2; /*0x908961*/
+  liSN.LowPart = FakePtr1; /*0x908968*/
+  v8 = (__POSITION *)TSecType<long>::GetData(v6 + 1); /*0x908971*/
+LABEL_14:
+  pos = *(__POSITION **)&pos[1569]; /*0x9088fb*/
+  if ( pos ) /*0x90890c*/
+  {
+    while ( 1 ) /*0x908915*/
+    {
+      Next = ZList<GW_FriendRecord>::GetNext(&pos); /*0x908915*/
+      if ( Next->liSN.LowPart == liSN.LowPart ) /*0x908926*/
+      {
+        HighPart = liSN.HighPart; /*0x90892b*/
+        if ( Next->liSN.HighPart == liSN.HighPart ) /*0x908931*/
+          break; /*0x908931*/
+      }
+      if ( !pos ) /*0x908938*/
+        goto LABEL_18; /*0x908938*/
+    }
+    this->m_liFriendshipItemSN.LowPart = liSN.LowPart; /*0x90897b*/
+    this->m_liFriendshipItemSN.HighPart = HighPart; /*0x90897d*/
+    this->m_liFriendshipPairItemSN.LowPart = Next->liPairSN.LowPart; /*0x908984*/
+    this->m_liFriendshipPairItemSN.HighPart = Next->liPairSN.HighPart; /*0x90898e*/
+    CUserPool::OnFriendRecordAdd( /*0x90899b*/
+      (CUserPool *)TSingleton<CUserPool>::ms_pInstance.m_pInterface,
+      &this->m_liFriendshipItemSN,
+      this,
+      (int)v8);
+  }
+  else
+  {
+LABEL_18:
+    this->m_liFriendshipItemSN.LowPart = 0; /*0x90893a*/
+    this->m_liFriendshipItemSN.HighPart = 0; /*0x908944*/
+    this->m_liFriendshipPairItemSN.LowPart = 0; /*0x90894a*/
+    this->m_liFriendshipPairItemSN.HighPart = 0; /*0x908950*/
+  }
+}

@@ -1,0 +1,37 @@
+// cuserlocal::GetTeslaCoilSummonedID
+
+void __thiscall CUserLocal::GetTeslaCoilSummonedID(CUserLocal *this, ZArray<unsigned long> *ldwTeslaCoilSummonedID)
+{
+  ZArray<unsigned long> *v3; // ebx
+  LONG (__stdcall *v4)(volatile LONG *); // ebp
+  CSummoned *p; // esi
+  unsigned int m_dwSummonedID; // edi
+  ZRefCounted *v7; // esi
+
+  v3 = ldwTeslaCoilSummonedID; /*0x910bb9*/
+  ZArray<unsigned long>::RemoveAll(ldwTeslaCoilSummonedID); /*0x910bbf*/
+  ldwTeslaCoilSummonedID = (ZArray<unsigned long> *)this->m_lSummoned._m_pHead; /*0x910bcc*/
+  if ( ldwTeslaCoilSummonedID ) /*0x910bd2*/
+  {
+    v4 = InterlockedIncrement; /*0x910bd8*/
+    do /*0x910c56*/
+    {
+      p = ZList<ZRef<CSummoned>>::GetNext((__POSITION **)&ldwTeslaCoilSummonedID)->p; /*0x910bea*/
+      if ( p ) /*0x910bf6*/
+        v4(&p->_m_nRef); /*0x910bfc*/
+      if ( p->m_nSkillID == 35111002 ) /*0x910c0c*/
+      {
+        m_dwSummonedID = p->m_dwSummonedID; /*0x910c0e*/
+        *ZArray<unsigned long>::InsertBefore(v3, -1) = m_dwSummonedID; /*0x910c1d*/
+      }
+      v7 = &p->ZRefCounted; /*0x910c21*/
+      if ( !InterlockedDecrement(&v7->_m_nRef) ) /*0x910c30*/
+      {
+        v4(&v7->_m_nRef); /*0x910c3e*/
+        if ( v7 ) /*0x910c42*/
+          ((void (__thiscall *)(ZRefCounted *, int))v7->dtr_ZRefCounted)(v7, 1); /*0x910c4c*/
+      }
+    }
+    while ( ldwTeslaCoilSummonedID ); /*0x910c56*/
+  }
+}

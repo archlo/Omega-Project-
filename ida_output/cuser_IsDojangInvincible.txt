@@ -1,0 +1,3 @@
+// CUser::IsDojangInvincible @ 0x903b00
+
+{"addr":"0x903b00","code":"BOOL __thiscall CUser::IsDojangInvincible(CUser *this)\n{\n  const SecondaryStat *v1; // eax\n\n  v1 = this->GetSecondaryStat(this); /*0x903b05*/\n  return _ZtlSecureFuse<long>(v1->_ZtlSecureTear_nDojangInvincible_, v1->_ZtlSecureTear_nDojangInvincible__CS) != 0; /*0x903b22*/\n}","refs":[{"addr":"0x407520","name":"??$_ZtlSecureFuse@J@@YAJQBJI@Z"}]}

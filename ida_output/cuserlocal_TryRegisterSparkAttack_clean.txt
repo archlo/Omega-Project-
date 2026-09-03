@@ -1,0 +1,18 @@
+// cuserlocal::TryRegisterSparkAttack
+
+void __thiscall CUserLocal::TryRegisterSparkAttack(CUserLocal *this, ATTACKINFO *a, int tReserve)
+{
+  int *v4; // eax
+  _BYTE v5[8]; // [esp+4h] [ebp-8h] BYREF
+
+  if ( _ZtlSecureFuse<long>( /*0x90d388*/
+         (const int *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 2845,
+         *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 2847)) )
+  {
+    ZRef<CMob>::operator=(&this->m_pSparkStartMob, a->pMob); /*0x90d3a2*/
+    v4 = (int *)(*(int (__thiscall **)(unsigned int, _BYTE *))(*(_DWORD *)(a->dwMobID + 4) + 16))(a->dwMobID + 4, v5); /*0x90d3b7*/
+    this->m_ptSparkStart.x = *v4; /*0x90d3bb*/
+    this->m_ptSparkStart.y = v4[1]; /*0x90d3c8*/
+    this->m_tReserveSpark = tReserve; /*0x90d3ce*/
+  }
+}

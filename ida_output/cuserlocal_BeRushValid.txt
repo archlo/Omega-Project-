@@ -1,0 +1,3 @@
+// CUserLocal::BeRushValid @ 0x905d00
+
+{"addr":"0x905d00","code":"void __thiscall CUserLocal::BeRushValid(CUserLocal *this)\n{\n  this->m_rush.bValid = 1; /*0x905d09*/\n  ZList<CUserLocal::RUSH::RUSHELEM>::RemoveAll(&this->m_rush.lElem); /*0x905d13*/\n  ZArray<tagPOINT>::RemoveAll(&this->m_rush.aMobCurPos); /*0x905d1f*/\n}","refs":[{"addr":"0x905890","name":"?RemoveAll@?$ZList@URUSHELEM@RUSH@CUserLocal@@@@QAEXXZ"},{"addr":"0x47f2f0","name":"?RemoveAll@?$ZArray@UtagPOINT@@@@QAEXXZ"}]}

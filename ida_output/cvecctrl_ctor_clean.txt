@@ -1,0 +1,52 @@
+CVecCtrl *__thiscall CVecCtrl::CVecCtrl(CVecCtrl *this)
+{
+  RelPos *p_m_rp; // ebx
+
+  this->_m_nRef = 0; /*0x9913b4*/
+  this->_m_pPrev = nullptr; /*0x9913b9*/
+  this->IWzVector2D::IWzShape2D::IWzSerialize::IUnknown::__vftable = (IWzVector2D_vtbl *)&IWzVector2D::`vftable'; /*0x9913bc*/
+  this->ZRefCounted::__vftable = (CVecCtrl_vtbl *)&CVecCtrl::`vftable'{for `ZRefCounted'}; /*0x9913c3*/
+  this->IWzVector2D::IWzShape2D::IWzSerialize::IUnknown::__vftable = (IWzVector2D_vtbl *)&CVecCtrl::`vftable'{for `IWzVector2D'}; /*0x9913c9*/
+  this->m_cRef = 0; /*0x9913d0*/
+  this->m_pOwner = nullptr; /*0x9913d3*/
+  this->m_bActive = 0; /*0x9913d6*/
+  this->m_pVecAlternate.m_pInterface = nullptr; /*0x9913e0*/
+  p_m_rp = &this->m_rp; /*0x9913e5*/
+  this->m_rp._ZtlSecureTear_pos_CS = _ZtlSecureTear<double>(0.0, this->m_rp._ZtlSecureTear_pos); /*0x99140b*/
+  p_m_rp->_ZtlSecureTear_v_CS = _ZtlSecureTear<double>(0.0, p_m_rp->_ZtlSecureTear_v); /*0x991415*/
+  this->m_rpLast._ZtlSecureTear_pos_CS = _ZtlSecureTear<double>(0.0, this->m_rpLast._ZtlSecureTear_pos); /*0x991436*/
+  this->m_rpLast._ZtlSecureTear_v_CS = _ZtlSecureTear<double>(0.0, this->m_rpLast._ZtlSecureTear_v); /*0x99143e*/
+  this->m_pfh = nullptr; /*0x991441*/
+  this->m_pfhLast = nullptr; /*0x991447*/
+  this->m_pfhFallStart = nullptr; /*0x99144d*/
+  this->m_pfhLandingNext.p = nullptr; /*0x991453*/
+  this->m_lPage = 0; /*0x99145b*/
+  this->m_lZMass = 0; /*0x991461*/
+  this->m_bAttachedObjectChanged = 0; /*0x991467*/
+  this->m_bJumpNext = 0; /*0x99146d*/
+  this->m_bTryJumpedInFly = 0; /*0x991473*/
+  this->m_bWingsNext = 0; /*0x991479*/
+  this->m_bWingsNow = 0; /*0x99147f*/
+  this->m_bWingsPrev = 0; /*0x991485*/
+  this->m_impactNext.vx = 0.0; /*0x99148b*/
+  this->m_impactNext.vy = 0.0; /*0x991491*/
+  this->m_impactNext.bValid = 0; /*0x991497*/
+  this->m_pAttrField = nullptr; /*0x99149d*/
+  this->m_pCurAttrShoe.p = nullptr; /*0x9914a3*/
+  CMovePath::CMovePath(&this->m_path); /*0x9914b7*/
+  this->m_dShortDrag = 0.0; /*0x9914c4*/
+  this->m_nSlideCount = 0; /*0x9914d4*/
+  this->m_bEscortMob = 0; /*0x9914da*/
+  this->_ZtlSecureTear_m_pLadderOrRope_CS = _ZtlSecureTear<CLadderOrRope *>( /*0x9914f3*/
+                                              nullptr,
+                                              this->_ZtlSecureTear_m_pLadderOrRope);
+  this->m_impactNext.bValid = 0; /*0x9914f9*/
+  this->m_falldownNext.bValid = 0; /*0x9914ff*/
+  this->m_apOffset._ZtlSecureTear_x_CS = _ZtlSecureTear<double>(0.0, this->m_apOffset._ZtlSecureTear_x); /*0x991517*/
+  this->m_apOffset._ZtlSecureTear_y_CS = _ZtlSecureTear<double>(0.0, this->m_apOffset._ZtlSecureTear_y); /*0x99152a*/
+  this->m_apOffset._ZtlSecureTear_vx_CS = _ZtlSecureTear<double>(0.0, this->m_apOffset._ZtlSecureTear_vx); /*0x99153d*/
+  this->m_apOffset._ZtlSecureTear_vy_CS = _ZtlSecureTear<double>(0.0, this->m_apOffset._ZtlSecureTear_vy); /*0x991545*/
+  this->m_bBeginUpdateActivePassed = 0; /*0x991548*/
+  this->m_bSetLayerZNext = 0; /*0x99154e*/
+  return this; /*0x991556*/
+}

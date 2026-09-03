@@ -1,0 +1,102 @@
+﻿void __thiscall CUIStatusBar::SendCoupleMessage(CUIStatusBar *this, ZXString<char> *sText)
+{
+  CWvsContext *m_pStr; // edi
+  int v3; // eax
+  const char *v4; // ecx
+  char *v5; // esi
+  unsigned int v6; // esi
+  unsigned __int8 *Buffer; // eax
+  CharacterData *p; // ebp
+  char *p_m_uTableSize; // esi
+  volatile LONG *p_m_uCount; // edi
+  GW_MarriageRecord *m_pHead; // ebp
+  const char *sBrideName; // eax
+  char *v13; // eax
+  StringPool *Instance; // eax
+  char *v15; // [esp-18h] [ebp-60h]
+  ZRef<GW_ItemSlotBase> v16[3]; // [esp-8h] [ebp-50h] BYREF
+  ZXString<char> sCharacterName; // [esp+14h] [ebp-34h] BYREF
+  ZXString<char> sMarried; // [esp+18h] [ebp-30h] BYREF
+  CWvsContext *pCtx; // [esp+1Ch] [ebp-2Ch]
+  CUIStatusBar *p_p; // [esp+20h] [ebp-28h]
+  ZRef<CharacterData> result; // [esp+24h] [ebp-24h] BYREF
+  COutPacket oPacket; // [esp+2Ch] [ebp-1Ch] BYREF
+  int v23; // [esp+44h] [ebp-4h]
+
+  p_p = this; /*0x87b407*/
+  m_pStr = (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x87b40b*/
+  v3 = *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 2099); /*0x87b411*/
+  pCtx = (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x87b419*/
+  if ( v3 ) /*0x87b41f*/
+    v4 = (const char *)(v3 + 4); /*0x87b421*/
+  else
+    v4 = nullptr; /*0x87b426*/
+  v5 = nullptr; /*0x87b428*/
+  sCharacterName._m_pStr = nullptr; /*0x87b42a*/
+  if ( v4 ) /*0x87b430*/
+  {
+    v6 = strlen(v4); /*0x87b434*/
+    *(_DWORD *)&v16[0].gap0 = v4; /*0x87b443*/
+    Buffer = (unsigned __int8 *)ZXString<char>::GetBuffer(&sCharacterName, v6, 0); /*0x87b44a*/
+    memcpy(Buffer, *(unsigned __int8 **)&v16[0].gap0, v6); /*0x87b450*/
+    ZXString<char>::ReleaseBuffer(&sCharacterName, v6); /*0x87b45d*/
+    v5 = sCharacterName._m_pStr; /*0x87b462*/
+  }
+  v23 = 1; /*0x87b466*/
+  sMarried._m_pStr = nullptr; /*0x87b46a*/
+  p = CWvsContext::GetCharacterData(m_pStr, &result)->p; /*0x87b47f*/
+  if ( result.p ) /*0x87b488*/
+  {
+    p_m_uTableSize = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x87b48a*/
+    p_m_uCount = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount; /*0x87b48d*/
+    if ( !InterlockedDecrement(p_m_uCount) ) /*0x87b491*/
+    {
+      InterlockedIncrement(p_m_uCount); /*0x87b49c*/
+      if ( p_m_uTableSize ) /*0x87b4a4*/
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1); /*0x87b4ae*/
+    }
+    v5 = sCharacterName._m_pStr; /*0x87b4b0*/
+    m_pStr = pCtx; /*0x87b4b4*/
+    result.p = nullptr; /*0x87b4b8*/
+  }
+  if ( p->lMarriageRecord._m_uCount ) /*0x87b4bc*/
+  {
+    m_pHead = p->lMarriageRecord._m_pHead; /*0x87b4c8*/
+    sBrideName = m_pHead->sBrideName; /*0x87b4ce*/
+    if ( m_pStr->m_nGender ) /*0x87b4d1*/
+      sBrideName = m_pHead->sGroomName; /*0x87b4d9*/
+    ZXString<char>::operator=<char>(&sMarried, sBrideName); /*0x87b4e1*/
+    COutPacket::COutPacket(&oPacket, 142); /*0x87b4ef*/
+    p_p = (CUIStatusBar *)&v16[0].p; /*0x87b4fb*/
+    LOBYTE(v23) = 5; /*0x87b500*/
+    v16[0].p = nullptr; /*0x87b505*/
+    ZXString<char>::operator=((ZXString<char> *)&v16[0].p, &sMarried); /*0x87b507*/
+    COutPacket::EncodeStr(&oPacket, (ZXString<char>)v16[0].p); /*0x87b510*/
+    p_p = (CUIStatusBar *)&v16[0].p; /*0x87b51c*/
+    v16[0].p = nullptr; /*0x87b521*/
+    ZXString<char>::operator=((ZXString<char> *)&v16[0].p, sText); /*0x87b523*/
+    COutPacket::EncodeStr(&oPacket, (ZXString<char>)v16[0].p); /*0x87b52c*/
+    CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket); /*0x87b53c*/
+    LOBYTE(v23) = 1; /*0x87b545*/
+    ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff); /*0x87b54a*/
+    v13 = sMarried._m_pStr; /*0x87b54f*/
+    LOBYTE(v23) = 0; /*0x87b553*/
+  }
+  else
+  {
+    pCtx = (CWvsContext *)v16; /*0x87b55e*/
+    v16[0].p = nullptr; /*0x87b562*/
+    LOBYTE(v23) = 2; /*0x87b56f*/
+    Instance = StringPool::GetInstance(); /*0x87b574*/
+    v15 = StringPool::GetString(Instance, (ZXString<char> *)&sText, 0xA1u)->_m_pStr; /*0x87b590*/
+    LOBYTE(v23) = 4; /*0x87b591*/
+    CUIStatusBar::ChatLogAdd(p_p, v15, 12, -1, 0, v16[0]); /*0x87b596*/
+    v13 = (char *)sText; /*0x87b59b*/
+    LOBYTE(v23) = 1; /*0x87b59f*/
+  }
+  if ( v13 ) /*0x87b5a6*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v13 - 1); /*0x87b5ac*/
+  v23 = -1; /*0x87b5b4*/
+  if ( v5 ) /*0x87b5be*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v5 - 1); /*0x87b5c4*/
+}

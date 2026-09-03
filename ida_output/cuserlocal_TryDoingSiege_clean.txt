@@ -1,0 +1,59 @@
+// cuserlocal::TryDoingSiege
+
+void __userpurge CUserLocal::TryDoingSiege(CUserLocal *this@<ecx>, __int32 a2@<ebx>, SKILLENTRY *tCur)
+{
+  bool v4; // cc
+  char *m_pStr; // edi
+  CharacterData *p; // ebx
+  int SkillLevel; // ebp
+  int nSkillID; // [esp-10h] [ebp-20h]
+  ZRef<CharacterData> result; // [esp+8h] [ebp-8h] BYREF
+
+  if ( this->m_repeatSkill.bDone ) /*0x93ad89*/
+  {
+    switch ( this->m_repeatSkill.nSkillID ) /*0x93ad9c*/
+    {
+      case 0x217C05C: /*0x93ad9c*/
+        v4 = (int)tCur - this->m_repeatSkill.tAttackStartTime < 180; /*0x93add7*/
+        break;
+      case 0x217E76D: /*0x93ad9c*/
+        v4 = (int)tCur - this->m_repeatSkill.tAttackStartTime < 420; /*0x93adc5*/
+        break;
+      case 0x217E775: /*0x93ad9c*/
+        v4 = (int)tCur - this->m_repeatSkill.tAttackStartTime < 180; /*0x93adb4*/
+        break;
+      default:
+        goto LABEL_10; /*0x93ada8*/
+    }
+    if ( !v4 ) /*0x93addd*/
+      this->m_repeatSkill.bDone = 0; /*0x93addf*/
+LABEL_10:
+    if ( this->m_repeatSkill.bDone ) /*0x93ade5*/
+      return; /*0x93adeb*/
+  }
+  if ( this->m_repeatSkill.nPoint ) /*0x93adf1*/
+  {
+    m_pStr = TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x93adff*/
+    p = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &result)->p; /*0x93ae11*/
+    ZRef<CharacterData>::~ZRef<CharacterData>(&result); /*0x93ae18*/
+    nSkillID = this->m_repeatSkill.nSkillID; /*0x93ae2e*/
+    tCur = nullptr; /*0x93ae30*/
+    SkillLevel = CSkillInfo::GetSkillLevel( /*0x93ae3b*/
+                   TSingleton<CSkillInfo>::ms_pInstance,
+                   p,
+                   nSkillID,
+                   (const SKILLENTRY **)&tCur);
+    if ( CSkillInfo::CheckConsumeForActiveSkill( /*0x93ae65*/
+           TSingleton<CSkillInfo>::ms_pInstance,
+           p,
+           (const BasicStat *)m_pStr + 70,
+           (const SecondaryStat *)(m_pStr + 8520),
+           tCur->nSkillID,
+           nullptr,
+           nullptr) == 1 )
+      CUserLocal::TryDoingShootAttack(this, a2, (__int32)m_pStr, this, tCur, SkillLevel, 0, 0, 0, 0); /*0x93ae77*/
+    this->m_repeatSkill.tAttackStartTime = get_update_time(); /*0x93ae81*/
+    this->m_repeatSkill.bDone = 1; /*0x93ae87*/
+    this->m_repeatSkill.nPoint = 0; /*0x93ae91*/
+  }
+}

@@ -1,0 +1,10 @@
+// CUtilDlgEx::SetUtilDlgEx_YESNO
+// Address: 0x97b480
+
+void __thiscall CUtilDlgEx::SetUtilDlgEx_YESNO(CUtilDlgEx *this)
+{
+  CUtilDlgEx::Layout_GEN(this, 0); /*0x97b482*/
+}
+
+// References:
+//   ?Layout_GEN@CUtilDlgEx@@IAEXH@Z @ 0x97b060

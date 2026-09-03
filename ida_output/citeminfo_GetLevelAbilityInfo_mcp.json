@@ -1,0 +1,12 @@
+[
+  {
+    "query": "0x5c3a60",
+    "matches": [
+      {
+        "address": "0x5c3a60",
+        "name": "CItemInfo::GetLevelAbilityInfo",
+        "pseudocode": "{\"addr\":\"0x5c3a60\",\"code\":\"ZRef<CItemInfo::LevelInfo::Ability> *__thiscall CItemInfo::GetLevelAbilityInfo(\\n        CItemInfo *this,\\n        ZRef<CItemInfo::LevelInfo::Ability> *result,\\n        int nItemID,\\n        int nLevel,\\n        int nLevelUpType)\\n{\\n  CItemInfo::LevelInfo *p; // esi\\n  volatile LONG *p_m_uTableSize; // esi\\n  ZRef<CItemInfo::LevelInfo> pLevelInfo; // [esp+18h] [ebp-14h] BYREF\\n  int v9; // [esp+28h] [ebp-4h]\\n\\n  v9 = 0; /*0x5c3a98*/\\n  CItemInfo::GetLevelInfo(this, &pLevelInfo, nItemID, nLevel); /*0x5c3aa0*/\\n  v9 = 1; /*0x5c3aae*/\\n  result->p = nullptr; /*0x5c3ab2*/\\n  p = pLevelInfo.p; /*0x5c3ab5*/\\n  if ( pLevelInfo.p ) /*0x5c3abf*/\\n    ZMap<long,ZRef<CItemInfo::LevelInfo::Ability>,long>::GetAt(&pLevelInfo.p->mpAbility, &nLevelUpType, result); /*0x5c3aca*/\\n  LOBYTE(v9) = 0; /*0x5c3acf*/\\n  if ( p ) /*0x5c3ad5*/\\n  {\\n    p_m_uTableSize = (volatile LONG *)&p[-1].mpAbility._m_uTableSize; /*0x5c3ad7*/\\n    if ( !InterlockedDecrement(p_m_uTableSize + 1) ) /*0x5c3ade*/\\n    {\\n      InterlockedIncrement(p_m_uTableSize + 1); /*0x5c3ae9*/\\n      if ( p_m_uTableSize ) /*0x5c3af1*/\\n        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)((char *)p_m_uTableSize, 1); /*0x5c3afb*/\\n    }\\n  }\\n  return result; /*0x5c3aff*/\\n}\",\"refs\":[{\"addr\":\"0x5c39d0\",\"name\":\"?GetLevelInfo@CItemInfo@@QAE?AV?$ZRef@ULevelInfo@CItemInfo@@@@JJ@Z\"},{\"addr\":\"0x599990\",\"name\":\"?GetAt@?$ZMap@JV?$ZRef@UAbility@LevelInfo@CItemInfo@@@@J@@QAEPAV?$ZRef@UAbility@LevelInfo@CItemInfo@@@@ABJAAV2@@Z\"},{\"addr\":\"0xb14074\",\"name\":\"__imp__InterlockedIncrement@4\"},{\"addr\":\"0xb14078\",\"name\":\"__imp__InterlockedDecrement@4\"}]}"
+      }
+    ]
+  }
+]

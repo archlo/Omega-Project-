@@ -1,0 +1,12 @@
+_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *__thiscall CAvatar::GetLayerUnderFace(
+        CAvatar *this,
+        _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *result)
+{
+  IWzGr2DLayer *m_pInterface; // eax
+
+  m_pInterface = this->m_pLayerUnderFace.m_pInterface;
+  result->m_pInterface = m_pInterface;
+  if ( m_pInterface )
+    m_pInterface->AddRef(m_pInterface);
+  return result;
+}

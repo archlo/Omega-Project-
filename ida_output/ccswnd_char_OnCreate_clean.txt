@@ -1,0 +1,38 @@
+// CCSWnd_Char::OnCreate @ 0x4c4590
+// Decompiled from v95 IDB
+
+void __thiscall CCSWnd_Char::OnCreate(CCSWnd_Char *this, CCashShop *pData)
+{
+  void (__stdcall *v3)(VARIANTARG *); // esi
+  HRESULT v4; // eax
+  HRESULT v5; // eax
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzGr2DLayer *v7; // esi
+  HRESULT (__stdcall *v8)(VARIANTARG *); // ebx
+  IWzGr2DLayer *v9; // esi
+  HRESULT v10; // eax
+  IWzVector2D *v11; // eax
+  IWzGr2DLayer *v12; // esi
+  HRESULT v13; // eax
+  IWzGr2DLayer *v14; // esi
+  HRESULT v15; // eax
+  void (__stdcall *v16)(VARIANTARG *); // esi
+  HRESULT v17; // eax
+  HRESULT v18; // eax
+  StringPool *Instance; // eax
+  Ztl_variant_t *ObjectA; // eax
+  IUnknown *Unknown; // eax
+  HRESULT v22; // eax
+  void (__stdcall *v23)(VARIANTARG *); // ebx
+  HRESULT v24; // eax
+  HRESULT v25; // eax
+  _bstr_t::Data_t *v26; // ecx
+  StringPool *v27; // eax
+  Ztl_variant_t *v28; // eax
+  IUnknown *v29; // eax
+  HRESULT v30; // eax
+  int IsControlingUserPreview; // eax
+  CCtrlTab *v32; // eax
+  CCtrlTab *v33; // eax
+  ZRefCounted *v34; // eax
+  CCtrlTa... [45517 chars total]

@@ -1,0 +1,32 @@
+// cuserlocal::PetInterActWithUserAction
+
+int __thiscall CUserLocal::PetInterActWithUserAction(CUserLocal *this, int nUserAction, int nPetIndex)
+{
+  int i; // esi
+  CPet *v5; // ecx
+  CPet *p; // ecx
+
+  if ( nPetIndex >= 0 ) /*0x903ec9*/
+  {
+    if ( nPetIndex < 3 && (p = this->m_apPet.a[nPetIndex].p) != nullptr ) /*0x903f0b*/
+    {
+      CPet::DoActionByUserAction(p, nUserAction); /*0x903f12*/
+      return 1; /*0x903f17*/
+    }
+    else
+    {
+      return 0; /*0x903f20*/
+    }
+  }
+  else
+  {
+    for ( i = 0; i < 3; ++i ) /*0x903ed1*/
+    {
+      v5 = this->m_apPet.a[i].p; /*0x903ed9*/
+      if ( !v5 ) /*0x903edf*/
+        break; /*0x903edf*/
+      CPet::DoActionByUserAction(v5, nUserAction); /*0x903ee2*/
+    }
+    return 1; /*0x903ef1*/
+  }
+}

@@ -1,0 +1,53 @@
+﻿void __thiscall CUIKeyConfig::OnDestroy(CUIKeyConfig *this)
+{
+  CFuncKeyMappedMan *v2; // ebx
+  CQuickslotKeyMappedMan *v3; // ebp
+  CDialog *v4; // esi
+  CUIKeyConfig::CNoticeDlg *v5; // eax
+  CUIKeyConfig::CNoticeDlg *v6; // eax
+  ZRefCounted *v7; // eax
+  ZRef<CUIKeyConfig::CNoticeDlg> pDlg; // [esp+14h] [ebp-14h] BYREF
+  int v9; // [esp+24h] [ebp-4h]
+
+  CWvsContext::RemoveFromStackForTab((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, this); /*0x7ddf90*/
+  v2 = TSingleton<CFuncKeyMappedMan>::ms_pInstance; /*0x7ddf95*/
+  v3 = TSingleton<CQuickslotKeyMappedMan>::ms_pInstance; /*0x7ddf9b*/
+  if ( CFuncKeyMappedMan::IsFuncKeyMapModified(TSingleton<CFuncKeyMappedMan>::ms_pInstance) /*0x7ddfae*/
+    || CQuickslotKeyMappedMan::IsQuickslotKeyMapModified(v3) )
+  {
+    v4 = nullptr; /*0x7ddfbb*/
+    if ( !this->m_bForcedDestroy ) /*0x7ddfbd*/
+    {
+      v5 = (CUIKeyConfig::CNoticeDlg *)ZAllocEx<ZAllocAnonSelector>::Alloc( /*0x7ddfd3*/
+                                         &ZAllocEx<ZAllocAnonSelector>::_s_alloc,
+                                         0xAECu);
+      *(_DWORD *)&pDlg.gap0 = v5; /*0x7ddfd8*/
+      v9 = 0; /*0x7ddfdc*/
+      if ( v5 /*0x7ddfff*/
+        && (v6 = CUIKeyConfig::CNoticeDlg::CNoticeDlg(v5, this, 2)) != nullptr
+        && (v7 = &v6->ZRefCounted) != nullptr )
+      {
+        v4 = (CDialog *)&v7[-1].___u1; /*0x7de001*/
+        pDlg.p = (CUIKeyConfig::CNoticeDlg *)&v7[-1].___u1; /*0x7de004*/
+        if ( v7 != (ZRefCounted *)8 ) /*0x7de00a*/
+          InterlockedIncrement(&v4->_m_nRef); /*0x7de010*/
+      }
+      else
+      {
+        pDlg.p = nullptr; /*0x7de080*/
+      }
+      v9 = 1; /*0x7de018*/
+      if ( CDialog::DoModal(v4) == 1 ) /*0x7de028*/
+      {
+        if ( CFuncKeyMappedMan::IsFuncKeyMapModified(v2) ) /*0x7de02c*/
+          CFuncKeyMappedMan::SaveFuncKeyMap(v2); /*0x7de037*/
+        if ( CQuickslotKeyMappedMan::IsQuickslotKeyMapModified(v3) ) /*0x7de03e*/
+          CQuickslotKeyMappedMan::SaveQuickslotKeyMap(v3); /*0x7de049*/
+      }
+      v9 = -1; /*0x7de04e*/
+      if ( v4 ) /*0x7de058*/
+        ZRef<CUIKeyConfig::CNoticeDlg>::_ReleaseRaw(&pDlg, nullptr); /*0x7de060*/
+    }
+  }
+  CUIWnd::OnDestroy(this); /*0x7de067*/
+}

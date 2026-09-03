@@ -1,0 +1,104 @@
+// CUISkill::dtor
+// Decompiled from v95 IDB
+
+void __thiscall CUISkill::~CUISkill(CUISkill *this)
+{
+  IWzFont *m_pInterface; // eax
+  IWzFont *v3; // eax
+  IWzFont *v4; // eax
+  IWzFont *v5; // eax
+  IWzCanvas *v6; // eax
+  IWzCanvas *v7; // eax
+
+  this->CUIWnd::CWnd::IGObj::__vftable = (CUISkill_vtbl *)&CUISkill::`vftable'{for `IGObj'}; /*0x84e4aa*/
+  this->CUIWnd::CWnd::IUIMsgHandler::__vftable = (IUIMsgHandler_vtbl *)&CUISkill::`vftable'{for `IUIMsgHandler'}; /*0x84e4b0*/
+  this->CUIWnd::CWnd::ZRefCounted::__vftable = (ZRefCounted_vtbl *)&CUISkill::`vftable'{for `ZRefCounted'}; /*0x84e4b7*/
+  CLayoutMan::~CLayoutMan(&this->m_lm); /*0x84e4cc*/
+  if ( this->m_pWndSkillGuide.p ) /*0x84e4de*/
+  {
+    ZRef<CWndSkillGuide>::_ReleaseRaw(&this->m_pWndSkillGuide, nullptr); /*0x84e4e6*/
+    this->m_pWndSkillGuide.p = nullptr; /*0x84e4eb*/
+  }
+  `eh vector destructor iterator'( /*0x84e503*/
+    this->m_pBtSkillGuide,
+    8u,
+    5,
+    (void (__thiscall *)(void *))ZRef<CCtrlOriginButton>::~ZRef<CCtrlOriginButton>);
+  if ( this->m_pUIMacroSys.p ) /*0x84e513*/
+  {
+    ZRef<CUIMacroSys>::_ReleaseRaw(&this->m_pUIMacroSys, nullptr); /*0x84e51b*/
+    this->m_pUIMacroSys.p = nullptr; /*0x84e520*/
+  }
+  `eh vector destructor iterator'( /*0x84e538*/
+    this->m_pLayerTip,
+    4u,
+    3,
+    (void (__thiscall *)(void *))_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>::~_com_ptr_t<_com_IIID<IWzGr2DLayer,&__s_GUID const _GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf>>);
+  m_pInterface = this->m_pFontNo.m_pInterface; /*0x84e53d*/
+  if ( m_pInterface ) /*0x84e54a*/
+    m_pInterface->Release(m_pInterface); /*0x84e552*/
+  v3 = this->m_pFontBookName.m_pInterface; /*0x84e554*/
+  if ( v3 ) /*0x84e561*/
+    v3->Release(v3); /*0x84e569*/
+  v4 = this->m_pFontBonus.m_pInterface; /*0x84e56b*/
+  if ( v4 ) /*0x84e578*/
+    v4->Release(v4); /*0x84e580*/
+  v5 = this->m_pFont.m_pInterface; /*0x84e582*/
+  if ( v5 ) /*0x84e58f*/
+    v5->Release(v5); /*0x84e597*/
+  v6 = this->m_pCanvasLine.m_pInterface; /*0x84e599*/
+  if ( v6 ) /*0x84e5a6*/
+    v6->Release(v6); /*0x84e5ae*/
+  v7 = this->m_pCanvasRecommendSkill.m_pInterface; /*0x84e5b0*/
+  if ( v7 ) /*0x84e5bd*/
+    v7->Release(v7); /*0x84e5c5*/
+  `eh vector destructor iterator'( /*0x84e5dc*/
+    this->m_pCanvasSkill,
+    4u,
+    2,
+    (void (__thiscall *)(void *))_com_ptr_t<_com_IIID<IWzCanvas,&__s_GUID const _GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e>>::~_com_ptr_t<_com_IIID<IWzCanvas,&__s_GUID const _GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e>>);
+  SKILLROOT::~SKILLROOT(&this->m_SkillRootVisible); /*0x84e5ec*/
+  if ( this->m_pBtOpenMacroSkill.p ) /*0x84e5fc*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&this->m_pBtOpenMacroSkill, nullptr); /*0x84e604*/
+    this->m_pBtOpenMacroSkill.p = nullptr; /*0x84e609*/
+  }
+  `eh vector destructor iterator'( /*0x84e621*/
+    this->m_apBtUp,
+    8u,
+    4,
+    (void (__thiscall *)(void *))ZRef<CCtrlButton>::~ZRef<CCtrlButton>);
+  if ( this->m_pSBSkill.p ) /*0x84e631*/
+  {
+    ZRef<CCtrlScrollBar>::_ReleaseRaw(&this->m_pSBSkill, nullptr); /*0x84e639*/
+    this->m_pSBSkill.p = nullptr; /*0x84e63e*/
+  }
+  if ( this->m_pTab.p ) /*0x84e64c*/
+  {
+    ZRef<CCtrlTab>::_ReleaseRaw(&this->m_pTab, nullptr); /*0x84e654*/
+    this->m_pTab.p = nullptr; /*0x84e659*/
+  }
+  ZArray<long>::RemoveAll(&this->m_aSkillRoot); /*0x84e667*/
+  TSingleton<CUISkill>::ms_pInstance = nullptr; /*0x84e66e*/
+  CUIWnd::~CUIWnd(this); /*0x84e67c*/
+}
+
+// References:
+//   ??_7CUISkill@@6BIGObj@@@ @ 0xba3494
+//   ??_7CUISkill@@6BIUIMsgHandler@@@ @ 0xba3448
+//   ??_7CUISkill@@6BZRefCounted@@@ @ 0xba3444
+//   ??1CLayoutMan@@QAE@XZ @ 0x5ce660
+//   ?_ReleaseRaw@?$ZRef@VCWndSkillGuide@@@@AAEXPAVZRefCounted@@@Z @ 0x84a150
+//   ??_M@YGXPAXIHP6EX0@Z@Z @ 0xa310c4
+//   ??1?$ZRef@VCCtrlOriginButton@@@@QAE@XZ @ 0x42b380
+//   ?_ReleaseRaw@?$ZRef@VCUIMacroSys@@@@AAEXPAVZRefCounted@@@Z @ 0x84a0f0
+//   ??1?$_com_ptr_t@V?$_com_IIID@UIWzGr2DLayer@@$1?_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf@@3U__s_GUID@@B@@@@QAE@XZ @ 0x407970
+//   ??1?$_com_ptr_t@V?$_com_IIID@UIWzCanvas@@$1?_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e@@3U__s_GUID@@B@@@@QAE@XZ @ 0x402020
+//   ??1SKILLROOT@@QAE@XZ @ 0x6f4320
+//   ?_ReleaseRaw@?$ZRef@VCCtrlOriginButton@@@@AAEXPAVZRefCounted@@@Z @ 0x429e90
+//   ??1?$ZRef@VCCtrlButton@@@@QAE@XZ @ 0x42b2e0
+//   ?_ReleaseRaw@?$ZRef@VCCtrlScrollBar@@@@AAEXPAVZRefCounted@@@Z @ 0x429e30
+//   ?_ReleaseRaw@?$ZRef@VCCtrlTab@@@@AAEXPAVZRefCounted@@@Z @ 0x429dd0
+//   ?RemoveAll@?$ZArray@J@@QAEXXZ @ 0x4609e0
+//   ?ms_pInstance@?$TSingleton@VCUISkill@@@@1PAVCUISkill@@A @ 0xc6f100
+//   ??1CUIWnd@@UAE@XZ @ 0x8dd780

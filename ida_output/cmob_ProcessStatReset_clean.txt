@@ -1,0 +1,64 @@
+void __thiscall CMob::ProcessStatReset(CMob *this, UINT128 uFlagReset, CInPacket *iPacket)
+{
+  CInPacket *v3; // ebx
+  UINT128 *v5; // eax
+  CMobTemplate *m_pTemplate; // eax
+  UINT128 *v7; // eax
+  UINT128 *v8; // eax
+  unsigned __int8 v9; // al
+  UINT128 *v10; // eax
+  unsigned __int8 v11; // al
+  IWzVector2D *m_pInterface; // esi
+  IWzVector2D *v13; // eax
+  _BYTE v14[24]; // [esp-1Ch] [ebp-38h] BYREF
+  CInPacket *v15; // [esp-4h] [ebp-20h]
+  UINT128 result; // [esp+0h] [ebp-1Ch] BYREF
+  _BYTE v17[8]; // [esp+14h] [ebp-8h] BYREF
+
+  v3 = iPacket; /*0x650034*/
+  v15 = iPacket; /*0x65003a*/
+  UINT128::UINT128((UINT128 *)&v14[8], &uFlagReset, 0x80u); /*0x650052*/
+  MobStat::Reset(&this->m_stat, *(UINT128 *)&v14[8], v15); /*0x650059*/
+  v5 = UINT128::operator&(&uFlagReset, (UINT128 *)&result.m_data[3], &MobStat::MS_DamagedElemAttr); /*0x65006c*/
+  if ( UINT128::operator bool(v5) ) /*0x650073*/
+  {
+    if ( !this->m_stat.nDoom_ || (m_pTemplate = this->m_pTemplateByDoom) == nullptr ) /*0x65008d*/
+      m_pTemplate = this->m_pTemplate; /*0x65008f*/
+    MobStat::ResetDamagedElemAttr(&this->m_stat, m_pTemplate->aDamagedElemAttr); /*0x65009d*/
+  }
+  v7 = UINT128::operator&(&uFlagReset, (UINT128 *)&result.m_data[3], &MobStat::MS_Doom); /*0x6500b0*/
+  if ( UINT128::operator bool(v7) ) /*0x6500b7*/
+  {
+    MobStat::SetFrom(&this->m_stat, this->m_pTemplate); /*0x6500c9*/
+    CMob::OnDoomed(this, 0); /*0x6500d2*/
+  }
+  v8 = UINT128::operator&(&uFlagReset, (UINT128 *)&result.m_data[3], &MobStat::MS_Dazzle); /*0x6500e5*/
+  if ( UINT128::operator bool(v8) ) /*0x6500ec*/
+  {
+    CMob::ChaseTarget(this, 0, nullptr, 0); /*0x6500fd*/
+    if ( CMob::IsDazzledMobByMe(this) ) /*0x650104*/
+      CMobPool::CancelChaseTarget(TSingleton<CMobPool>::ms_pInstance, this); /*0x650114*/
+  }
+  v9 = CInPacket::Decode1(v3); /*0x65011b*/
+  *(_DWORD *)&v14[12] = 0; /*0x650123*/
+  this->m_nCalcDamageStatIndex = v9; /*0x650127*/
+  CMob::UpdateAffectedSkillList(this, *(int *)&v14[12]); /*0x65012d*/
+  v10 = UINT128::operator&((UINT128 *)v17, &result, &MobStat::MS_Speed); /*0x650140*/
+  if ( UINT128::operator bool(v10) ) /*0x650147*/
+    CMob::SetShoeAttr(this); /*0x650152*/
+  if ( CMob::IsActive(this) ) /*0x650159*/
+  {
+    UINT128::UINT128((UINT128 *)v14, (const UINT128 *)v17, 0x80u); /*0x650171*/
+    if ( MobStat::IsMovementAffectingStat(*(UINT128 *)v14) ) /*0x650176*/
+    {
+      v11 = CInPacket::Decode1(v3); /*0x650184*/
+      m_pInterface = this->m_pvcActive.m_pInterface; /*0x650189*/
+      LOBYTE(uFlagReset.m_data[1]) = v11; /*0x65018f*/
+      if ( m_pInterface ) /*0x650195*/
+        v13 = m_pInterface - 3; /*0x650197*/
+      else
+        v13 = nullptr; /*0x65019c*/
+      CMovePath::SetStatChangedPoint((CMovePath *)&v13[145], uFlagReset.m_data[1]); /*0x6501a9*/
+    }
+  }
+}

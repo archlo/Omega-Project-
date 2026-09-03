@@ -1,0 +1,27 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"addr\":\"0x52b000\",\"code\":\"void __thiscall CVecCtrl::SetMovePathAttribute(CVecCtrl *this, int nAttr)\\n{\\n  CStaticFoothold *pfhFallStart; // ebp\\n  int m_nMoveAction; // ebx\\n  const CLadderOrRope *v5; // esi\\n  long double v6; // [esp+10h] [ebp-20h]\\n  long double v7; // [esp+18h] [ebp-18h]\\n  long double v8; // [esp+20h] [ebp-10h]\\n  long double v9; // [esp+28h] [ebp-8h]\\n\\n  if ( nAttr == 11 && this->m_falldownNext.bValid ) /*0x52b010*/\\n    pfhFallStart = this->m_falldownNext.pfhFallStart; /*0x52b019*/\\n  else\\n    pfhFallStart = this->m_pfhFallStart; /*0x52b021*/\\n  m_nMoveAction = this->m_nMoveAction; /*0x52b02a*/\\n  v6 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vy, this->m_ap._ZtlSecureTear_vy_CS); /*0x52b03d*/\\n  v7 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vx, this->m_ap._ZtlSecureTear_vx_CS); /*0x52b04e*/\\n  v8 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_y, this->m_ap._ZtlSecureTear_y_CS); /*0x52b05f*/\\n  v9 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_x, this->m_ap._ZtlSecureTear_x_CS); /*0x52b06d*/\\n  v5 = _ZtlSecureFuse<CLadderOrRope *>(this->_ZtlSecureTear_m_pLadderOrRope, this->_ZtlSecureTear_m_pLadderOrRope_CS); /*0x52b092*/\\n  CMovePath::MakeMovePath( /*0x52b0cc*/\\n    &this->m_path,\\n    nAttr,\\n    this->m_pfh,\\n    pfhFallStart,\\n    v5,\\n    (int)v9,\\n    (int)v8,\\n    (int)v7,\\n    (int)v6,\\n    m_nMoveAction,\\n    0,\\n    0,\\n    0);\\n}\",\"refs\":[{\"addr\":\"0x52a210\",\"name\":\"??$_ZtlSecureFuse@N@@YANQBNI@Z\"},{\"addr\":\"0x4bb930\",\"name\":\"??$_ZtlSecureFuse@PAVCLadderOrRope@@@@YAPAVCLadderOrRope@@QBQAV0@I@Z\"},{\"addr\":\"0x667c90\",\"name\":\"?MakeMovePath@CMovePath@@QAEXJPBVCStaticFoothold@@0PBVCLadderOrRope@@JJJJJJJJ@Z\"}]}"
+    }
+  ],
+  "structuredContent": {
+    "addr": "0x52b000",
+    "code": "void __thiscall CVecCtrl::SetMovePathAttribute(CVecCtrl *this, int nAttr)\n{\n  CStaticFoothold *pfhFallStart; // ebp\n  int m_nMoveAction; // ebx\n  const CLadderOrRope *v5; // esi\n  long double v6; // [esp+10h] [ebp-20h]\n  long double v7; // [esp+18h] [ebp-18h]\n  long double v8; // [esp+20h] [ebp-10h]\n  long double v9; // [esp+28h] [ebp-8h]\n\n  if ( nAttr == 11 && this->m_falldownNext.bValid ) /*0x52b010*/\n    pfhFallStart = this->m_falldownNext.pfhFallStart; /*0x52b019*/\n  else\n    pfhFallStart = this->m_pfhFallStart; /*0x52b021*/\n  m_nMoveAction = this->m_nMoveAction; /*0x52b02a*/\n  v6 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vy, this->m_ap._ZtlSecureTear_vy_CS); /*0x52b03d*/\n  v7 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_vx, this->m_ap._ZtlSecureTear_vx_CS); /*0x52b04e*/\n  v8 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_y, this->m_ap._ZtlSecureTear_y_CS); /*0x52b05f*/\n  v9 = _ZtlSecureFuse<double>(this->m_ap._ZtlSecureTear_x, this->m_ap._ZtlSecureTear_x_CS); /*0x52b06d*/\n  v5 = _ZtlSecureFuse<CLadderOrRope *>(this->_ZtlSecureTear_m_pLadderOrRope, this->_ZtlSecureTear_m_pLadderOrRope_CS); /*0x52b092*/\n  CMovePath::MakeMovePath( /*0x52b0cc*/\n    &this->m_path,\n    nAttr,\n    this->m_pfh,\n    pfhFallStart,\n    v5,\n    (int)v9,\n    (int)v8,\n    (int)v7,\n    (int)v6,\n    m_nMoveAction,\n    0,\n    0,\n    0);\n}",
+    "refs": [
+      {
+        "addr": "0x52a210",
+        "name": "??$_ZtlSecureFuse@N@@YANQBNI@Z"
+      },
+      {
+        "addr": "0x4bb930",
+        "name": "??$_ZtlSecureFuse@PAVCLadderOrRope@@@@YAPAVCLadderOrRope@@QBQAV0@I@Z"
+      },
+      {
+        "addr": "0x667c90",
+        "name": "?MakeMovePath@CMovePath@@QAEXJPBVCStaticFoothold@@0PBVCLadderOrRope@@JJJJJJJJ@Z"
+      }
+    ]
+  },
+  "isError": false
+}

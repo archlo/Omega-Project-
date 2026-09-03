@@ -1,0 +1,263 @@
+﻿void __thiscall CUIStatusBar::SendGroupMessage(CUIStatusBar *this, int nChatTarget, const ZXString<char> *sText)
+{
+  CWvsContext *m_pStr; // esi
+  StringPool *v5; // eax
+  char *v6; // eax
+  unsigned __int16 v7; // bp
+  StringPool *v8; // eax
+  char *v9; // eax
+  char *v10; // eax
+  StringPool *Instance; // eax
+  char *v12; // eax
+  StringPool *v13; // eax
+  char *v14; // eax
+  StringPool *v15; // eax
+  char *v16; // eax
+  StringPool *v17; // eax
+  char *v18; // eax
+  StringPool *v19; // eax
+  ZXString<char> *String; // eax
+  CharacterData *p; // esi
+  char *sCharacterName; // ecx
+  unsigned int m_dwChatFilterFlag; // edi
+  StringPool *v24; // eax
+  ZXString<char> *v25; // eax
+  unsigned int update_time; // eax
+  int v27; // ebp
+  int i; // esi
+  unsigned int v29; // edi
+  unsigned __int8 *a; // eax
+  unsigned int v31; // edx
+  unsigned int v32; // eax
+  ZRef<GW_ItemSlotBase> v33[3]; // [esp-8h] [ebp-58h] BYREF
+  ZArray<unsigned long> adwGroupMemberID; // [esp+14h] [ebp-3Ch] BYREF
+  int nMemberCnt; // [esp+18h] [ebp-38h]
+  ZXString<char> sChatText; // [esp+1Ch] [ebp-34h] BYREF
+  ZXString<char> result; // [esp+20h] [ebp-30h] BYREF
+  ZXString<char> v38; // [esp+24h] [ebp-2Ch] BYREF
+  ZXString<char> v39; // [esp+28h] [ebp-28h] BYREF
+  ZXString<char> v40; // [esp+2Ch] [ebp-24h] BYREF
+  ZXString<char> v41; // [esp+30h] [ebp-20h] BYREF
+  COutPacket oPacket; // [esp+34h] [ebp-1Ch] BYREF
+  int v43; // [esp+4Ch] [ebp-4h]
+
+  m_pStr = (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x87f819*/
+  adwGroupMemberID.a = nullptr; /*0x87f821*/
+  v43 = 0; /*0x87f829*/
+  switch ( nChatTarget ) /*0x87f836*/
+  {
+    case 0: /*0x87f836*/
+      CWvsContext::GetOnlineFriendID((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &adwGroupMemberID); /*0x87f933*/
+      if ( adwGroupMemberID.a ) /*0x87f93e*/
+      {
+        nMemberCnt = *(adwGroupMemberID.a - 1); /*0x87f943*/
+        if ( nMemberCnt ) /*0x87f949*/
+          goto LABEL_12; /*0x87f949*/
+      }
+      sText = (const ZXString<char> *)v33; /*0x87f950*/
+      v33[0].p = nullptr; /*0x87f954*/
+      LOBYTE(v43) = 7; /*0x87f961*/
+      Instance = StringPool::GetInstance(); /*0x87f966*/
+      v12 = StringPool::GetString(Instance, &v38, 0xA2u)->_m_pStr; /*0x87f972*/
+      LOBYTE(v43) = 9; /*0x87f981*/
+      CUIStatusBar::ChatLogAdd(this, v12, 12, -1, 0, v33[0]); /*0x87f986*/
+      v10 = v38._m_pStr; /*0x87f98b*/
+      break; /*0x87f98f*/
+    case 1: /*0x87f836*/
+      v33[0].p = (GW_ItemSlotBase *)&adwGroupMemberID; /*0x87f9a6*/
+      *(_DWORD *)&v33[0].gap0 = 0; /*0x87f9b5*/
+      ZXString<char>::operator=((ZXString<char> *)v33, &this->m_sFriendGroupTarget); /*0x87f9b7*/
+      CWvsContext::GetOnlineFriendIDByGroup(m_pStr, *(ZXString<char> *)&v33[0].gap0, (ZArray<unsigned long> *)v33[0].p); /*0x87f9be*/
+      if ( adwGroupMemberID.a ) /*0x87f9c9*/
+      {
+        nMemberCnt = *(adwGroupMemberID.a - 1); /*0x87f9ce*/
+        if ( nMemberCnt ) /*0x87f9d4*/
+        {
+LABEL_12:
+          LOBYTE(nChatTarget) = 0; /*0x87f994*/
+          v7 = 3; /*0x87f998*/
+          goto LABEL_24; /*0x87f99d*/
+        }
+      }
+      sText = (const ZXString<char> *)v33; /*0x87f9db*/
+      v33[0].p = nullptr; /*0x87f9df*/
+      LOBYTE(v43) = 10; /*0x87f9ec*/
+      v13 = StringPool::GetInstance(); /*0x87f9f1*/
+      v14 = StringPool::GetString(v13, &v39, 0xA2u)->_m_pStr; /*0x87f9fd*/
+      LOBYTE(v43) = 12; /*0x87fa0c*/
+      CUIStatusBar::ChatLogAdd(this, v14, 12, -1, 0, v33[0]); /*0x87fa11*/
+      v10 = v39._m_pStr; /*0x87fa16*/
+      break; /*0x87fa1a*/
+    case 2: /*0x87f836*/
+      CWvsContext::GetOnlinePartyMemberID( /*0x87f844*/
+        (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+        &adwGroupMemberID);
+      if ( !adwGroupMemberID.a || (nMemberCnt = *(adwGroupMemberID.a - 1)) == 0 ) /*0x87f85a*/
+      {
+        sText = (const ZXString<char> *)v33; /*0x87f861*/
+        v33[0].p = nullptr; /*0x87f865*/
+        LOBYTE(v43) = 1; /*0x87f872*/
+        v5 = StringPool::GetInstance(); /*0x87f877*/
+        v6 = StringPool::GetString(v5, &sChatText, 0xA0u)->_m_pStr; /*0x87f883*/
+        LOBYTE(v43) = 3; /*0x87f892*/
+        CUIStatusBar::ChatLogAdd(this, v6, 12, -1, 0, v33[0]); /*0x87f897*/
+        goto LABEL_47; /*0x87f89c*/
+      }
+      LOBYTE(nChatTarget) = 1; /*0x87f8a1*/
+      v7 = 2; /*0x87f8a9*/
+      goto LABEL_24; /*0x87f8ae*/
+    case 3: /*0x87f836*/
+      LOBYTE(nChatTarget) = 6; /*0x87f8ba*/
+      v7 = 26; /*0x87f8c2*/
+      CWvsContext::GetOnlineExpeditionMemberID( /*0x87f8c7*/
+        (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+        &adwGroupMemberID);
+      if ( adwGroupMemberID.a ) /*0x87f8d2*/
+      {
+        nMemberCnt = *(adwGroupMemberID.a - 1); /*0x87f8d7*/
+        if ( nMemberCnt ) /*0x87f8dd*/
+          goto LABEL_24; /*0x87f8dd*/
+      }
+      sText = (const ZXString<char> *)v33; /*0x87f8e8*/
+      v33[0].p = nullptr; /*0x87f8ec*/
+      LOBYTE(v43) = 4; /*0x87f8f9*/
+      v8 = StringPool::GetInstance(); /*0x87f8fe*/
+      v9 = StringPool::GetString(v8, &result, 0x18A4u)->_m_pStr; /*0x87f90a*/
+      LOBYTE(v43) = 6; /*0x87f919*/
+      CUIStatusBar::ChatLogAdd(this, v9, 12, -1, 0, v33[0]); /*0x87f91e*/
+      v10 = result._m_pStr; /*0x87f923*/
+      break; /*0x87f927*/
+    case 4: /*0x87f836*/
+      CWvsContext::GetOnlineGuildMemberID( /*0x87fa26*/
+        (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+        &adwGroupMemberID);
+      if ( adwGroupMemberID.a && (nMemberCnt = *(adwGroupMemberID.a - 1)) != 0 ) /*0x87fa3c*/
+      {
+        LOBYTE(nChatTarget) = 2; /*0x87fa87*/
+        v7 = 4; /*0x87fa8f*/
+LABEL_24:
+        sChatText._m_pStr = nullptr; /*0x87fb0f*/
+        v33[0].p = (GW_ItemSlotBase *)1837; /*0x87fb17*/
+        *(_DWORD *)&v33[0].gap0 = &v41; /*0x87fb1c*/
+        LOBYTE(v43) = 19; /*0x87fb1d*/
+        v19 = StringPool::GetInstance(); /*0x87fb22*/
+        String = StringPool::GetString(v19, *(ZXString<char> **)&v33[0].gap0, (unsigned int)v33[0].p); /*0x87fb29*/
+        p = m_pStr->m_pCharacterData.p; /*0x87fb2e*/
+        LOBYTE(v43) = 20; /*0x87fb34*/
+        if ( p ) /*0x87fb3b*/
+          sCharacterName = p->characterStat.sCharacterName; /*0x87fb3d*/
+        else
+          sCharacterName = nullptr; /*0x87fb42*/
+        ZXString<char>::Format(&sChatText, String->_m_pStr, sCharacterName, sText->_m_pStr); /*0x87fb54*/
+        LOBYTE(v43) = 19; /*0x87fb60*/
+        if ( v41._m_pStr ) /*0x87fb67*/
+          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v41._m_pStr - 1); /*0x87fb6d*/
+        if ( TSingleton<CUIStatusBar>::ms_pInstance._m_pStr ) /*0x87fb7b*/
+        {
+          v41._m_pStr = (char *)v33; /*0x87fb86*/
+          CUIStatusBar::ChatLogAdd( /*0x87fb9b*/
+            (CUIStatusBar *)TSingleton<CUIStatusBar>::ms_pInstance._m_pStr,
+            sChatText._m_pStr,
+            v7,
+            -1,
+            0,
+            (ZRef<GW_ItemSlotBase>)*(unsigned int *)&v33[0].gap0);
+        }
+        m_dwChatFilterFlag = this->m_dwChatFilterFlag; /*0x87fba0*/
+        if ( m_dwChatFilterFlag ) /*0x87fba8*/
+        {
+          if ( ((1 << v7) & m_dwChatFilterFlag) == 0 ) /*0x87fbb5*/
+          {
+            v33[0].p = (GW_ItemSlotBase *)6445; /*0x87fbbb*/
+            *(_DWORD *)&v33[0].gap0 = &v41; /*0x87fbc0*/
+            v24 = StringPool::GetInstance(); /*0x87fbc1*/
+            v25 = StringPool::GetString(v24, *(ZXString<char> **)&v33[0].gap0, (unsigned int)v33[0].p); /*0x87fbc8*/
+            LOBYTE(v43) = 21; /*0x87fbd0*/
+            CHATLOG_ADD(v25, 0xCu); /*0x87fbd5*/
+            LOBYTE(v43) = 19; /*0x87fbe1*/
+            if ( v41._m_pStr ) /*0x87fbe8*/
+              ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v41._m_pStr - 1); /*0x87fbee*/
+          }
+        }
+        COutPacket::COutPacket(&oPacket, 140); /*0x87fbff*/
+        LOBYTE(v43) = 22; /*0x87fc04*/
+        update_time = get_update_time(); /*0x87fc09*/
+        COutPacket::Encode4(&oPacket, update_time); /*0x87fc13*/
+        COutPacket::Encode1(&oPacket, nChatTarget); /*0x87fc21*/
+        v27 = nMemberCnt; /*0x87fc26*/
+        COutPacket::Encode1(&oPacket, nMemberCnt); /*0x87fc2f*/
+        for ( i = 0; i < v27; ++i ) /*0x87fc38*/
+        {
+          v29 = adwGroupMemberID.a[i]; /*0x87fc44*/
+          a = oPacket.m_aSendBuff.a; /*0x87fc47*/
+          if ( oPacket.m_aSendBuff.a ) /*0x87fc4d*/
+            v31 = *((_DWORD *)oPacket.m_aSendBuff.a - 1); /*0x87fc53*/
+          else
+            v31 = 0; /*0x87fc4f*/
+          if ( oPacket.m_uOffset + 4 > v31 ) /*0x87fc5f*/
+          {
+            if ( oPacket.m_aSendBuff.a ) /*0x87fc63*/
+              v32 = *((_DWORD *)oPacket.m_aSendBuff.a - 1); /*0x87fc69*/
+            else
+              v32 = 0; /*0x87fc65*/
+            do /*0x87fc74*/
+              v32 *= 2; /*0x87fc70*/
+            while ( oPacket.m_uOffset + 4 > v32 ); /*0x87fc74*/
+            ZArray<unsigned char>::_Realloc(&oPacket.m_aSendBuff, v32, 0, (const ZAllocHelper *)&sText); /*0x87fc81*/
+            a = oPacket.m_aSendBuff.a; /*0x87fc86*/
+          }
+          *(_DWORD *)&a[oPacket.m_uOffset] = v29; /*0x87fc8e*/
+          oPacket.m_uOffset += 4; /*0x87fc91*/
+        }
+        v33[0].p = nullptr; /*0x87fca7*/
+        ZXString<char>::operator=((ZXString<char> *)&v33[0].p, sText); /*0x87fca9*/
+        COutPacket::EncodeStr(&oPacket, (ZXString<char>)v33[0].p); /*0x87fcb2*/
+        CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket); /*0x87fcc2*/
+        LOBYTE(v43) = 19; /*0x87fccb*/
+        ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff); /*0x87fcd0*/
+LABEL_47:
+        v10 = sChatText._m_pStr; /*0x87fcd5*/
+      }
+      else
+      {
+        sText = (const ZXString<char> *)v33; /*0x87fa43*/
+        v33[0].p = nullptr; /*0x87fa47*/
+        LOBYTE(v43) = 13; /*0x87fa54*/
+        v15 = StringPool::GetInstance(); /*0x87fa59*/
+        v16 = StringPool::GetString(v15, &v40, 0xA3u)->_m_pStr; /*0x87fa65*/
+        LOBYTE(v43) = 15; /*0x87fa74*/
+        CUIStatusBar::ChatLogAdd(this, v16, 12, -1, 0, v33[0]); /*0x87fa79*/
+        v10 = v40._m_pStr; /*0x87fa7e*/
+      }
+      break; /*0x87fa82*/
+    case 5: /*0x87f836*/
+      LOBYTE(nChatTarget) = 3; /*0x87fa9d*/
+      v7 = 5; /*0x87faa5*/
+      CWvsContext::GetOnlineAllianceMemberID( /*0x87faaa*/
+        (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,
+        &adwGroupMemberID);
+      if ( adwGroupMemberID.a ) /*0x87fab5*/
+      {
+        nMemberCnt = *(adwGroupMemberID.a - 1); /*0x87faba*/
+        if ( nMemberCnt ) /*0x87fac0*/
+          goto LABEL_24; /*0x87fac0*/
+      }
+      sText = (const ZXString<char> *)v33; /*0x87fac7*/
+      v33[0].p = nullptr; /*0x87facb*/
+      LOBYTE(v43) = 16; /*0x87fad8*/
+      v17 = StringPool::GetInstance(); /*0x87fadd*/
+      v18 = StringPool::GetString(v17, &v41, 0x18A3u)->_m_pStr; /*0x87fae9*/
+      LOBYTE(v43) = 18; /*0x87faf8*/
+      CUIStatusBar::ChatLogAdd(this, v18, 12, -1, 0, v33[0]); /*0x87fafd*/
+      v10 = v41._m_pStr; /*0x87fb02*/
+      break; /*0x87fb06*/
+    default:
+      v7 = (unsigned __int16)sText; /*0x87fb0b*/
+      goto LABEL_24; /*0x87fb0b*/
+  }
+  LOBYTE(v43) = 0; /*0x87fcd9*/
+  if ( v10 ) /*0x87fcdf*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v10 - 1); /*0x87fce5*/
+  v43 = -1; /*0x87fcf1*/
+  ZArray<unsigned long>::RemoveAll(&adwGroupMemberID); /*0x87fcf9*/
+}

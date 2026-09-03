@@ -1,0 +1,7 @@
+﻿const MobAttackInfo *__thiscall CMob::GetAttackInfo(CMob *this, int nAction)
+{
+  if ( (unsigned int)(nAction - 13) <= 8 )
+    return CMobTemplate::GetAttackInfo(this->m_pTemplate, nAction - 13);
+  else
+    return nullptr;
+}

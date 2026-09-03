@@ -1,0 +1,9 @@
+﻿void __thiscall CMob::OnMobSpeaking(CMob *this, CInPacket *iPacket)
+{
+  int v3; // ebx
+  int v4; // eax
+
+  v3 = CInPacket::Decode4(iPacket);
+  v4 = CInPacket::Decode4(iPacket);
+  CMob::TrySpeaking(this, v3, v4);
+}

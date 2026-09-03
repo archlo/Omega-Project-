@@ -1,0 +1,17 @@
+﻿BOOL __thiscall CMob::IsDazzledMobByMe(CMob *this)
+{
+  int nDazzle; // eax
+  BOOL result; // eax
+
+  result = false;
+  if ( TSingleton<CUserLocal>::ms_pInstance.m_Data )
+  {
+    nDazzle = this->m_stat.nDazzle_;
+    if ( nDazzle )
+    {
+      if ( nDazzle == TSingleton<CUserLocal>::ms_pInstance.m_Data[552].m_RefCount )
+        return true;
+    }
+  }
+  return result;
+}

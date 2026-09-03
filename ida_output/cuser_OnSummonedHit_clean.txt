@@ -1,0 +1,23 @@
+// cuser::OnSummonedHit
+
+void __thiscall CUser::OnSummonedHit(CUser *this, CInPacket *iPacket)
+{
+  CInPacket *v3; // edi
+  ZRef<CSummoned> pSummoned; // [esp+Ch] [ebp-14h] BYREF
+  int v5; // [esp+1Ch] [ebp-4h]
+
+  v3 = iPacket; /*0x8e3a37*/
+  iPacket = (CInPacket *)CInPacket::Decode4(iPacket); /*0x8e3a42*/
+  pSummoned.p = nullptr; /*0x8e3a46*/
+  v5 = 0; /*0x8e3a5e*/
+  ZMap<unsigned long,ZRef<CSummoned>,unsigned long>::GetAt( /*0x8e3a66*/
+    &this->m_mSummoned,
+    (const unsigned int *)&iPacket,
+    &pSummoned);
+  if ( pSummoned.p ) /*0x8e3a71*/
+  {
+    CSummoned::OnHit(pSummoned.p, v3); /*0x8e3a74*/
+    v5 = -1; /*0x8e3a7f*/
+    ZRef<CSummoned>::_ReleaseRaw(&pSummoned, nullptr); /*0x8e3a87*/
+  }
+}

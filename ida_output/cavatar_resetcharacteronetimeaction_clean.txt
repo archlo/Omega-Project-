@@ -1,0 +1,3 @@
+﻿=== 0x4667a0 ===
+{"addr":"0x4667a0","code":"void __thiscall CAvatar::ResetCharacterOneTimeAction(CAvatar *this)\n{\n  this->m_nOneTimeAction = -1; /*0x4667a2*/\n  CAvatar::ClearCharacterActionLayer(this, 1); /*0x4667ac*/\n}","refs":[{"addr":"0x464df0","name":"?ClearCharacterActionLayer@CAvatar@@IAEXJ@Z"}]}
+

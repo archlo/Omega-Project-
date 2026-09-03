@@ -1,0 +1,10 @@
+IWzVector2D_vtbl *__thiscall CMob::IsActive(CMob *this)
+{
+  IWzVector2D *m_pInterface; // eax
+
+  m_pInterface = this->m_pvcActive.m_pInterface; /*0x63ab30*/
+  if ( m_pInterface ) /*0x63ab38*/
+    return m_pInterface[3].__vftable; /*0x63ab3a*/
+  else
+    return (IWzVector2D_vtbl *)MEMORY[0x18]; /*0x63ab40*/
+}

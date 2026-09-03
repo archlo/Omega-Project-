@@ -1,0 +1,40 @@
+﻿void __thiscall CMob::UpdateTimeBomb(CMob *this)
+{
+  int m_tTimeBomb; // edi
+  unsigned int v3; // eax
+  unsigned int *v4; // eax
+  int v5; // eax
+  unsigned int ZtlSecureTear_m_dwMobID_CS; // [esp-4h] [ebp-3Ch]
+  tagRECT rcBody; // [esp+Ch] [ebp-2Ch] BYREF
+  COutPacket oPacket; // [esp+1Ch] [ebp-1Ch] BYREF
+  int v9; // [esp+34h] [ebp-4h]
+
+  m_tTimeBomb = this->m_tTimeBomb;
+  if ( get_update_time() >= m_tTimeBomb && m_tTimeBomb )
+  {
+    this->m_tTimeBomb = 0;
+    COutPacket::COutPacket(&oPacket, 235);
+    ZtlSecureTear_m_dwMobID_CS = this->_ZtlSecureTear_m_dwMobID_CS;
+    v9 = 0;
+    v3 = _ZtlSecureFuse<unsigned long>(this->_ZtlSecureTear_m_dwMobID, ZtlSecureTear_m_dwMobID_CS);
+    COutPacket::Encode4(&oPacket, v3);
+    if ( _ZtlSecureFuse<int>(this->m_pTemplate->_ZtlSecureTear_bBoss, this->m_pTemplate->_ZtlSecureTear_bBoss_CS) )
+    {
+      CMob::GetBodyRect(this, &rcBody, 1);
+      COutPacket::Encode4(&oPacket, (rcBody.right + rcBody.left) / 2);
+      COutPacket::Encode4(&oPacket, (rcBody.bottom + rcBody.top) / 2);
+    }
+    v4 = (unsigned int *)(*((int (__thiscall **)(char **, tagRECT *))TSingleton<CUserLocal>::ms_pInstance.m_Data->m_str
+                          + 4))(
+                           &TSingleton<CUserLocal>::ms_pInstance.m_Data->m_str,
+                           &rcBody);
+    COutPacket::Encode4(&oPacket, *v4);
+    v5 = (*((int (__thiscall **)(char **, tagRECT *))TSingleton<CUserLocal>::ms_pInstance.m_Data->m_str + 4))(
+           &TSingleton<CUserLocal>::ms_pInstance.m_Data->m_str,
+           &rcBody);
+    COutPacket::Encode4(&oPacket, *(_DWORD *)(v5 + 4));
+    CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket);
+    v9 = -1;
+    ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff);
+  }
+}

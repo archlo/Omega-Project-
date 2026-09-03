@@ -1,0 +1,112 @@
+import { Texture, BufferImageSource } from 'pixi.js';
+import { WzCanvas } from '../wz/WzCanvas.js';
+import { WzProperty } from '../wz/WzProperty.js';
+import { WzVector } from '../wz/WzVector.js';
+import { WzSprite } from './WzSprite.js';
+import { AnimatedSprite } from './AnimatedSprite.js';
+export class WzTextureLoader {
+    _cache = new Map();
+    _failed = new WeakSet();
+    Load(canvas) {
+        if (canvas === null)
+            return null;
+        if (!(canvas instanceof WzCanvas))
+            return null;
+        const cached = this._cache.get(canvas);
+        if (cached)
+            return cached;
+        if (this._failed.has(canvas))
+            return null;
+        if (canvas.Width <= 0 || canvas.Height <= 0) {
+            this._failed.add(canvas);
+            return null;
+        }
+        let pixels;
+        try {
+            pixels = canvas.DecodeBgra();
+        }
+        catch (e) {
+            this._failed.add(canvas);
+            return null;
+        }
+        let texture;
+        try {
+            const source = new BufferImageSource({
+                resource: pixels,
+                width: canvas.Width,
+                height: canvas.Height,
+            });
+            texture = new Texture({ source });
+        }
+        catch (e) {
+            console.warn('[WzLoader] BufferImageSource threw', e);
+            return null;
+        }
+        let originX = 0, originY = 0;
+        try {
+            const prop = canvas.Property;
+            if (prop) {
+                const origin = prop.Get('origin');
+                if (origin instanceof WzVector) {
+                    originX = origin.X;
+                    originY = origin.Y;
+                }
+            }
+        }
+        catch { /* NX bitmap nodes may not have origin property */ }
+        let lt = null;
+        let rb = null;
+        try {
+            const prop = canvas.Property;
+            if (prop) {
+                const ltV = prop.Get('lt');
+                if (ltV instanceof WzVector)
+                    lt = { x: ltV.X, y: ltV.Y };
+                const rbV = prop.Get('rb');
+                if (rbV instanceof WzVector)
+                    rb = { x: rbV.X, y: rbV.Y };
+            }
+        }
+        catch { /* NX bitmap nodes may not have lt/rb properties */ }
+        const sprite = new WzSprite(texture, originX, originY, lt, rb);
+        this._cache.set(canvas, sprite);
+        return sprite;
+    }
+    LoadAnimation(node) {
+        if (node instanceof WzCanvas) {
+            const s = this.Load(node);
+            return s === null ? null : new AnimatedSprite([s], [100]);
+        }
+        if (node instanceof WzProperty) {
+            const frames = [];
+            const delays = [];
+            for (let i = 0;; i++) {
+                const frame = node.Get(String(i));
+                if (!(frame instanceof WzCanvas))
+                    break;
+                const sprite = this.Load(frame);
+                if (sprite === null)
+                    break;
+                frames.push(sprite);
+                const d = this._readDelay(frame.Property.Get('delay'), 100);
+                delays.push(d <= 0 ? 100 : d);
+            }
+            return frames.length === 0 ? null : new AnimatedSprite(frames, delays);
+        }
+        return null;
+    }
+    _readDelay(v, fallback) {
+        if (typeof v === 'number')
+            return v;
+        if (typeof v === 'bigint')
+            return Number(v);
+        return fallback;
+    }
+    Dispose() {
+        // Do not call texture.destroy() — sprites in the outgoing scene may still
+        // reference these textures during the final render frame after onExit().
+        // PixiJS GCSystem will reclaim GPU memory automatically.
+        this._cache.clear();
+    }
+}
+//# sourceMappingURL=WzTextureLoader.js.map

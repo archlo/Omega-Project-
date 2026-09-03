@@ -1,0 +1,25 @@
+// cuserlocal::SetClientTimer
+
+void __thiscall CUserLocal::SetClientTimer(CUserLocal *this, int nSkillID, int tTime)
+{
+  ZMap<long,long,long> *p_m_mClientTimerSkill; // esi
+  int nBeforeSkillID; // [esp+0h] [ebp-Ch] BYREF
+  __POSITION *pos; // [esp+4h] [ebp-8h] BYREF
+  int nKey; // [esp+8h] [ebp-4h] BYREF
+
+  if ( nSkillID == 4321000 ) /*0x90e8bb*/
+  {
+    p_m_mClientTimerSkill = &this->m_mClientTimerSkill; /*0x90e8be*/
+    pos = ZMap<long,long,long>::GetHeadPosition(&this->m_mClientTimerSkill); /*0x90e8cb*/
+    while ( pos ) /*0x90e8d1*/
+    {
+      nBeforeSkillID = 0; /*0x90e8df*/
+      nKey = *ZMap<long,long,long>::GetNext(p_m_mClientTimerSkill, &pos, &nBeforeSkillID); /*0x90e8f6*/
+      if ( nBeforeSkillID == 4321000 ) /*0x90e8fa*/
+        ZMap<long,long,long>::RemoveKey(p_m_mClientTimerSkill, &nKey); /*0x90e903*/
+    }
+    if ( ZMap<long,long,long>::GetAt(p_m_mClientTimerSkill, &tTime, nullptr) ) /*0x90e918*/
+      ++tTime; /*0x90e930*/
+    ZMap<long,long,long>::Insert(p_m_mClientTimerSkill, &tTime, &nSkillID); /*0x90e936*/
+  }
+}

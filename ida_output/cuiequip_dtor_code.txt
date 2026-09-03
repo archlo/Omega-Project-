@@ -1,0 +1,41 @@
+﻿void __thiscall CUIEquip::~CUIEquip(CUIEquip *this)
+{
+  ZRef<CCtrlOriginButton> *p_m_pBtMechanic; // edi
+  IWzProperty *m_pInterface; // eax
+
+  this->CUIWnd::CWnd::IGObj::__vftable = (CUIEquip_vtbl *)&CUIEquip::`vftable'{for `IGObj'}; /*0x7a534a*/
+  this->CUIWnd::CWnd::IUIMsgHandler::__vftable = (IUIMsgHandler_vtbl *)&CUIEquip::`vftable'{for `IUIMsgHandler'}; /*0x7a5350*/
+  this->CUIWnd::CWnd::ZRefCounted::__vftable = (ZRefCounted_vtbl *)&CUIEquip::`vftable'{for `ZRefCounted'}; /*0x7a5357*/
+  p_m_pBtMechanic = &this->m_pBtMechanic; /*0x7a535e*/
+  if ( this->m_pBtMechanic.p ) /*0x7a536e*/
+  {
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&this->m_pBtMechanic, nullptr); /*0x7a5376*/
+    p_m_pBtMechanic->p = nullptr; /*0x7a537b*/
+  }
+  CLayoutMan::~CLayoutMan(&this->m_lm); /*0x7a5389*/
+  if ( this->m_pBtPetEquipShow.p ) /*0x7a5399*/
+  {
+    ZRef<CCtrlButton>::_ReleaseRaw(&this->m_pBtPetEquipShow, nullptr); /*0x7a53a1*/
+    this->m_pBtPetEquipShow.p = nullptr; /*0x7a53a6*/
+  }
+  if ( this->m_pUIPetEquip.p ) /*0x7a53b4*/
+  {
+    ZRef<CUIPetEquip>::_ReleaseRaw(&this->m_pUIPetEquip, nullptr); /*0x7a53bc*/
+    this->m_pUIPetEquip.p = nullptr; /*0x7a53c1*/
+  }
+  if ( this->m_pUIDragonEquip.p ) /*0x7a53cf*/
+  {
+    ZRef<CUIDragonEquip>::_ReleaseRaw(&this->m_pUIDragonEquip, nullptr); /*0x7a53d7*/
+    this->m_pUIDragonEquip.p = nullptr; /*0x7a53dc*/
+  }
+  if ( this->m_pUIMechanicEquip.p ) /*0x7a53ea*/
+  {
+    ZRef<CUIMechanicEquip>::_ReleaseRaw(&this->m_pUIMechanicEquip, nullptr); /*0x7a53f2*/
+    this->m_pUIMechanicEquip.p = nullptr; /*0x7a53f7*/
+  }
+  m_pInterface = this->m_pImgFontNumber.m_pInterface; /*0x7a53fa*/
+  if ( m_pInterface ) /*0x7a5407*/
+    m_pInterface->Release(m_pInterface); /*0x7a540f*/
+  TSingleton<CUIEquip>::ms_pInstance = nullptr; /*0x7a5413*/
+  CUIWnd::~CUIWnd(this); /*0x7a5421*/
+}

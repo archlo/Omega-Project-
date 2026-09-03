@@ -1,0 +1,10 @@
+﻿void __thiscall CPet::SetPositionContext(CPet *this, int nPositonContext)
+{
+  IWzVector2D *m_pInterface; // eax
+
+  m_pInterface = this->m_pvc.m_pInterface;
+  if ( m_pInterface )
+    CVecCtrlPet::SetPositionContext((CVecCtrlPet *)&m_pInterface[-3], nPositonContext);
+  else
+    CVecCtrlPet::SetPositionContext(nullptr, nPositonContext);
+}

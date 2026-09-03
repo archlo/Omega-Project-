@@ -1,0 +1,31 @@
+export class CharacterStat {
+    characterId = 0;
+    name = '';
+    gender = 0;
+    skin = 0;
+    face = 0;
+    hair = 0;
+    petSn1 = 0;
+    petSn2 = 0;
+    petSn3 = 0;
+    level = 0;
+    job = 0;
+    str = 0;
+    dex = 0;
+    int = 0;
+    luk = 0;
+    hp = 0;
+    maxHp = 0;
+    mp = 0;
+    maxMp = 0;
+    ap = 0;
+    spRaw = new Uint8Array(0);
+    exp = 0;
+    pop = 0;
+    tempExp = 0;
+    posMap = 0;
+    portal = 0;
+    playTime = 0;
+    subJob = 0;
+}
+//# sourceMappingURL=CharacterStat.js.map

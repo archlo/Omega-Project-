@@ -1,0 +1,48 @@
+﻿CUIGameMenu *__thiscall CUIGameMenu::CUIGameMenu(CUIGameMenu *this)
+{
+  _bstr_t::Data_t *v2; // ecx
+  _bstr_t v4; // [esp-10h] [ebp-2Ch] BYREF
+  int v5; // [esp-Ch] [ebp-28h]
+  void (__thiscall *v6)(void *); // [esp-8h] [ebp-24h]
+  void (__thiscall *v7)(void *); // [esp-4h] [ebp-20h]
+  CUIGameMenu *v8; // [esp+8h] [ebp-14h]
+  _bstr_t *v9; // [esp+Ch] [ebp-10h]
+  int v10; // [esp+18h] [ebp-4h]
+
+  v8 = this; /*0x7eeb66*/
+  CFadeWnd::CFadeWnd(this); /*0x7eeb6a*/
+  v10 = 0; /*0x7eeb75*/
+  if ( this == (CUIGameMenu *)-244 ) /*0x7eeb7f*/
+    TSingleton<CUIGameMenu>::ms_pInstance = nullptr; /*0x7eeb8f*/
+  else
+    TSingleton<CUIGameMenu>::ms_pInstance = this; /*0x7eeb87*/
+  v7 = (void (__thiscall *)(void *))ZRef<CCtrlButton>::~ZRef<CCtrlButton>; /*0x7eeb99*/
+  v6 = (void (__thiscall *)(void *))ZRef<CCtrlButton>::ZRef<CCtrlButton>; /*0x7eeb9e*/
+  v5 = 6; /*0x7eeba3*/
+  v4.m_Data = (_bstr_t::Data_t *)8; /*0x7eeba5*/
+  this->CFadeWnd::CDialog::CWnd::IGObj::__vftable = (CUIGameMenu_vtbl *)&CUIGameMenu::`vftable'{for `IGObj'}; /*0x7eebad*/
+  this->CFadeWnd::CDialog::CWnd::IUIMsgHandler::__vftable = (IUIMsgHandler_vtbl *)&CUIGameMenu::`vftable'{for `IUIMsgHandler'}; /*0x7eebb3*/
+  this->CFadeWnd::CDialog::CWnd::ZRefCounted::__vftable = (ZRefCounted_vtbl *)&CUIGameMenu::`vftable'{for `ZRefCounted'}; /*0x7eebba*/
+  `eh vector constructor iterator'(this->m_pBtMenu, (unsigned int)v4.m_Data, v5, v6, v7); /*0x7eebc1*/
+  LOBYTE(v10) = 2; /*0x7eebed*/
+  CFadeWnd::SetOption( /*0x7eebf2*/
+    this,
+    0,
+    255,
+    0,
+    (tagPOINT)0xFFFFFF24000002D1uLL,
+    (tagPOINT)0xFFFFFF24000002D1uLL,
+    (tagPOINT)0xFFFFFF24000002D1uLL,
+    500,
+    0,
+    500);
+  v7 = nullptr; /*0x7eebf7*/
+  v6 = nullptr; /*0x7eebf9*/
+  v5 = 185; /*0x7eebfb*/
+  v4.m_Data = v2; /*0x7eec00*/
+  v9 = &v4; /*0x7eec01*/
+  _bstr_t::_bstr_t(&v4, L"UI/StatusBar2.img/mainBar/System/backgrnd"); /*0x7eec0c*/
+  CWnd::SetBackgrndV(this, (Ztl_bstr_t)v4.m_Data, v5, (int)v6, (int)v7); /*0x7eec13*/
+  CFadeWnd::CreateFadeWnd(this, 79, 185, nullptr, 10, 1, nullptr, 0, Origin_LB); /*0x7eec2d*/
+  return this; /*0x7eec34*/
+}

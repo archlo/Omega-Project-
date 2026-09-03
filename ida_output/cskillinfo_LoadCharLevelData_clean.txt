@@ -1,0 +1,169 @@
+int __thiscall CSkillInfo::LoadCharLevelData(
+        CSkillInfo *this,
+        int nSkillID,
+        ZArray<CHARLEVELDATA> *a,
+        _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > p)
+{
+  IWzProperty *m_pInterface; // eax
+  bool v5; // zf
+  IWzProperty_vtbl *v6; // ecx
+  HRESULT (__stdcall *get_count)(IWzProperty *, unsigned int *); // eax
+  HRESULT v8; // eax
+  _bstr_t::Data_t *v9; // ecx
+  int v10; // edi
+  StringPool *Instance; // eax
+  Ztl_variant_t *v12; // eax
+  BOOL v13; // esi
+  bool v14; // cc
+  int v15; // ebx
+  void *v16; // esp
+  const wchar_t *v17; // eax
+  Ztl_variant_t *v18; // eax
+  IUnknown *Unknown; // eax
+  HRESULT v20; // eax
+  IWzProperty *v21; // esi
+  CHARLEVELDATA *v22; // edi
+  void (*AddRef)(void); // ecx
+  _bstr_t v25; // [esp-14h] [ebp-7Ch] BYREF
+  IWzProperty *v26; // [esp-10h] [ebp-78h] BYREF
+  BOOL v27; // [esp-Ch] [ebp-74h]
+  unsigned __int16 v28; // [esp-8h] [ebp-70h] BYREF
+  Ztl_bstr_t v29; // [esp+10h] [ebp-58h] BYREF
+  int v30; // [esp+14h] [ebp-54h]
+  IWzProperty *v31; // [esp+18h] [ebp-50h]
+  int *p_pExceptionObject; // [esp+1Ch] [ebp-4Ch]
+  IWzProperty **v33; // [esp+30h] [ebp-38h]
+  Ztl_variant_t result; // [esp+34h] [ebp-34h] BYREF
+  int nCount; // [esp+44h] [ebp-24h]
+  int nLoadCount; // [esp+48h] [ebp-20h]
+  ZAllocHelper _ALLOC; // [esp+4Fh] [ebp-19h] BYREF
+  _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pCharLevelData; // [esp+50h] [ebp-18h] BYREF
+  int pExceptionObject; // [esp+54h] [ebp-14h] BYREF
+  int v40; // [esp+64h] [ebp-4h]
+
+  m_pInterface = p.m_pInterface; /*0x7093cb*/
+  v40 = 0; /*0x7093d5*/
+  if ( p.m_pInterface ) /*0x7093da*/
+  {
+    v6 = p.m_pInterface->__vftable; /*0x7093f1*/
+    p_pExceptionObject = &pExceptionObject; /*0x7093f6*/
+    v31 = p.m_pInterface; /*0x7093f9*/
+    get_count = v6->get_count; /*0x7093fa*/
+    pExceptionObject = 0; /*0x7093fd*/
+    v8 = ((int (__cdecl *)(IWzProperty *, int *))get_count)(p.m_pInterface, &pExceptionObject); /*0x709400*/
+    if ( v8 < 0 ) /*0x709404*/
+      _com_issue_errorex(v8, p.m_pInterface, &_GUID_986515d9_0a0b_4929_8b4f_718682177b92); /*0x70940d*/
+    v10 = pExceptionObject; /*0x709412*/
+    v30 = 0; /*0x709415*/
+    v29.m_Data = v9; /*0x709416*/
+    pCharLevelData.m_pInterface = (IWzProperty *)&v29; /*0x709419*/
+    nCount = pExceptionObject; /*0x709422*/
+    Instance = StringPool::GetInstance(); /*0x709425*/
+    StringPool::GetBSTR(Instance, &v29, 0x1674u); /*0x70942c*/
+    LOBYTE(v40) = 0; /*0x70944a*/
+    v12 = IWzProperty::Getitem(p.m_pInterface, &result, v29); /*0x70944e*/
+    LOBYTE(v40) = 2; /*0x709454*/
+    v13 = get_int32(v12, v30) != 0; /*0x709466*/
+    LOBYTE(v40) = 0; /*0x70946d*/
+    if ( result.vt == 8 ) /*0x709471*/
+    {
+      result.vt = 0; /*0x709475*/
+      if ( result.decVal.Lo32 ) /*0x70947e*/
+        ZAPI.CoTaskMemFree((void *)(result.decVal.Lo32 - 4)); /*0x709484*/
+    }
+    else
+    {
+      VariantClear(&result); /*0x709490*/
+    }
+    if ( v13 ) /*0x709498*/
+    {
+      nCount = v10 - 1; /*0x70949d*/
+      v14 = v10 - 1 <= 0; /*0x7094a0*/
+    }
+    else
+    {
+      v14 = v10 <= 0; /*0x7094a4*/
+    }
+    if ( v14 ) /*0x7094a6*/
+    {
+      pCharLevelData.m_pInterface = (IWzProperty *)-2147467259; /*0x7094b1*/
+      _CxxThrowException(&pCharLevelData, &_TI1_AVZException__); /*0x7094b8*/
+    }
+    ZArray<CHARLEVELDATA>::_Alloc(a, nCount, &_ALLOC); /*0x7094c8*/
+    nLoadCount = 0; /*0x7094cd*/
+    v15 = 1; /*0x7094d0*/
+    pExceptionObject = 0; /*0x7094d5*/
+    do /*0x7095e7*/
+    {
+      v16 = alloca(32); /*0x7094e1*/
+      v27 = 0; /*0x7094e8*/
+      v26 = nullptr; /*0x7094ea*/
+      v17 = _itow(v15, &v28, 10); /*0x7094f0*/
+      pCharLevelData.m_pInterface = (IWzProperty *)&v25; /*0x7094f8*/
+      _bstr_t::_bstr_t(&v25, v17); /*0x7094fe*/
+      LOBYTE(v40) = 0; /*0x709516*/
+      v18 = IWzProperty::Getitem(p.m_pInterface, &result, (Ztl_bstr_t)v25.m_Data); /*0x70951a*/
+      LOBYTE(v40) = 4; /*0x709521*/
+      Unknown = Ztl_variant_t::GetUnknown(v18, (bool)v26, v27); /*0x709525*/
+      pCharLevelData.m_pInterface = nullptr; /*0x70952e*/
+      v20 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>( /*0x709535*/
+              &pCharLevelData,
+              Unknown);
+      if ( v20 < 0 && v20 != -2147467262 ) /*0x709543*/
+        _com_issue_error(v20); /*0x70962a*/
+      LOBYTE(v40) = 6; /*0x70954e*/
+      if ( result.vt == 8 ) /*0x709552*/
+      {
+        result.vt = 0; /*0x709556*/
+        if ( result.decVal.Lo32 ) /*0x70955f*/
+          ZAPI.CoTaskMemFree((void *)(result.decVal.Lo32 - 4)); /*0x709565*/
+      }
+      else
+      {
+        VariantClear(&result); /*0x709571*/
+      }
+      v21 = pCharLevelData.m_pInterface; /*0x709577*/
+      if ( pCharLevelData.m_pInterface ) /*0x709581*/
+      {
+        if ( nLoadCount >= nCount ) /*0x70959b*/
+        {
+          pExceptionObject = -2147467259; /*0x709638*/
+          _CxxThrowException(&pExceptionObject, &_TI1_AVZException__); /*0x70963f*/
+        }
+        v22 = (CHARLEVELDATA *)((char *)a->a + pExceptionObject); /*0x7095a6*/
+        v27 = v15; /*0x7095a9*/
+        v33 = &v26; /*0x7095ad*/
+        v26 = pCharLevelData.m_pInterface; /*0x7095b0*/
+        AddRef = (void (*)(void))pCharLevelData.m_pInterface->AddRef; /*0x7095b8*/
+        v25.m_Data = (_bstr_t::Data_t *)pCharLevelData.m_pInterface; /*0x7095bb*/
+        AddRef(); /*0x7095bc*/
+        CHARLEVELDATA::LoadCharLevelData( /*0x7095c4*/
+          v22,
+          nSkillID,
+          (_com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> >)v25.m_Data,
+          (int)v26);
+        ++nLoadCount; /*0x7095c9*/
+        pExceptionObject += 32; /*0x7095cc*/
+        LOBYTE(v40) = 0; /*0x7095d0*/
+        if ( v21 ) /*0x7095d6*/
+          v21->Release(v21); /*0x7095de*/
+      }
+      else
+      {
+        LOBYTE(v40) = 0; /*0x709583*/
+      }
+      ++v15; /*0x7095e0*/
+    }
+    while ( v15 <= 200 ); /*0x7095e7*/
+    m_pInterface = p.m_pInterface; /*0x7095ed*/
+    v5 = p.m_pInterface == nullptr; /*0x7095f0*/
+  }
+  else
+  {
+    v5 = 1; /*0x7093dc*/
+  }
+  v40 = -1; /*0x7095f2*/
+  if ( !v5 ) /*0x7095f9*/
+    ((void (__cdecl *)(IWzProperty *))m_pInterface->Release)(m_pInterface); /*0x709601*/
+  return 1; /*0x70960b*/
+}

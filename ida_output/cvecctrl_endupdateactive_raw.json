@@ -1,0 +1,13 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"addr\":\"0x9915a0\",\"code\":\"void __thiscall CVecCtrl::EndUpdateActive(CVecCtrl *this)\\n{\\n  ; /*0x9915a0*/\\n}\"}"
+    }
+  ],
+  "structuredContent": {
+    "addr": "0x9915a0",
+    "code": "void __thiscall CVecCtrl::EndUpdateActive(CVecCtrl *this)\n{\n  ; /*0x9915a0*/\n}"
+  },
+  "isError": false
+}

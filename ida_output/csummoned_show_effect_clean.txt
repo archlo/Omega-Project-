@@ -1,0 +1,44 @@
+void __thiscall CSummoned::ShowEffect(CSummoned *this, int nType)
+{
+  wchar_t *m_pStr; // esi
+  StringPool *Instance; // eax
+  const ZXString<unsigned short> *StringW; // eax
+  IWzVector2D *m_pInterface; // eax
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v7; // [esp-14h] [ebp-34h] BYREF
+  int v8; // [esp-10h] [ebp-30h]
+  int v9; // [esp-Ch] [ebp-2Ch]
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v10; // [esp-8h] [ebp-28h] BYREF
+  int v11; // [esp-4h] [ebp-24h]
+  ZXString<unsigned short> sEffect; // [esp+Ch] [ebp-14h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v13; // [esp+10h] [ebp-10h]
+  int v14; // [esp+1Ch] [ebp-4h]
+
+  m_pStr = nullptr; /*0x74c2b7*/
+  sEffect._m_pStr = nullptr; /*0x74c2b9*/
+  v14 = 0; /*0x74c2bd*/
+  if ( !nType ) /*0x74c2c5*/
+  {
+    Instance = StringPool::GetInstance(); /*0x74c2d1*/
+    StringW = StringPool::GetStringW(Instance, (ZXString<unsigned short> *)&nType, 0xB6Bu); /*0x74c2d8*/
+    LOBYTE(v14) = 1; /*0x74c2e2*/
+    ZXString<unsigned short>::operator=(&sEffect, StringW); /*0x74c2e7*/
+    LOBYTE(v14) = 0; /*0x74c2f0*/
+    if ( nType ) /*0x74c2f7*/
+      ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)(nType - 12)); /*0x74c2fd*/
+    m_pStr = sEffect._m_pStr; /*0x74c305*/
+  }
+  v11 = -1073343324; /*0x74c309*/
+  v13 = &v10; /*0x74c311*/
+  v9 = 0; /*0x74c315*/
+  v8 = 0; /*0x74c317*/
+  v10.m_pInterface = nullptr; /*0x74c319*/
+  m_pInterface = this->m_pvc.m_pInterface; /*0x74c31f*/
+  v13 = (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v7; /*0x74c328*/
+  v7.m_pInterface = m_pInterface; /*0x74c32c*/
+  if ( m_pInterface ) /*0x74c330*/
+    m_pInterface->AddRef(m_pInterface); /*0x74c338*/
+  CAnimationDisplayer::Effect_General(TSingleton<CAnimationDisplayer>::ms_pInstance, m_pStr, 0, v7, v8, v9, v10, v11); /*0x74c343*/
+  v14 = -1; /*0x74c348*/
+  if ( m_pStr ) /*0x74c352*/
+    ZXString<unsigned short>::_Release((ZXString<unsigned short>::_ZXStringData *)m_pStr - 1); /*0x74c358*/
+}

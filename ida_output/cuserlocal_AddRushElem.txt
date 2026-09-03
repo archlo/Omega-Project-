@@ -1,0 +1,3 @@
+// CUserLocal::AddRushElem @ 0x90f6a0
+
+{"addr":"0x90f6a0","code":"void __thiscall CUserLocal::AddRushElem(\n        CUserLocal *this,\n        CUserLocal::RUSH::RUSHELEM::RUSHSTYLE nState,\n        int nVx,\n        int tDuring,\n        long double dAx)\n{\n  CUserLocal::RUSH::RUSHELEM *v5; // eax\n\n  v5 = ZList<CUserLocal::RUSH::RUSHELEM>::AddTail(&this->m_rush.lElem); /*0x90f6a6*/\n  v5->dVx = (double)nVx; /*0x90f6b7*/\n  v5->nState = nState; /*0x90f6ba*/\n  v5->dAx = dAx; /*0x90f6c4*/\n  v5->nVx = nVx; /*0x90f6c7*/\n  v5->tDuring = tDuring; /*0x90f6ca*/\n}","refs":[{"addr":"0x90f450","name":"?AddTail@?$ZList@URUSHELEM@RUSH@CUserLocal@@@@QAEAAURUSHELEM@RUSH@CUserLocal@@XZ"}]}

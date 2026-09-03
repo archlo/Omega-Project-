@@ -1,0 +1,35 @@
+// cuser::LoadSuddenDeathEffect
+
+void __thiscall CUser::LoadSuddenDeathEffect(CUser *this)
+{
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzGr2DLayer *v3; // eax
+  IWzGr2DLayer *v4; // edi
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v5; // [esp+0h] [ebp-10h] BYREF
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > result; // [esp+Ch] [ebp-4h] BYREF
+
+  if ( !this->m_pLayerSuddenDeathEffect.m_pInterface ) /*0x8f3a14*/
+  {
+    m_pInterface = this->m_pLayerUnderFace.m_pInterface; /*0x8f3a1e*/
+    result.m_pInterface = (IWzGr2DLayer *)&v5; /*0x8f3a27*/
+    v5.m_pInterface = m_pInterface; /*0x8f3a2b*/
+    if ( m_pInterface ) /*0x8f3a2f*/
+      m_pInterface->AddRef(m_pInterface); /*0x8f3a37*/
+    v3 = CUser::LoadSkillRepeatEffect( /*0x8f3a4a*/
+           this,
+           &result,
+           (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> >)((char *)&loc_4215F9 + 2),
+           v5)->m_pInterface;
+    v4 = this->m_pLayerSuddenDeathEffect.m_pInterface; /*0x8f3a4c*/
+    if ( v4 != v3 ) /*0x8f3a54*/
+    {
+      this->m_pLayerSuddenDeathEffect.m_pInterface = v3; /*0x8f3a56*/
+      if ( v3 ) /*0x8f3a5e*/
+        v3->AddRef(v3); /*0x8f3a66*/
+      if ( v4 ) /*0x8f3a6a*/
+        v4->Release(v4); /*0x8f3a72*/
+    }
+    if ( result.m_pInterface ) /*0x8f3a7a*/
+      result.m_pInterface->Release(result.m_pInterface); /*0x8f3a82*/
+  }
+}

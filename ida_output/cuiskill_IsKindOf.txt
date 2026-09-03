@@ -1,0 +1,4 @@
+// CUISkill::IsKindOf @ 0x84e6e0
+// Decompiled from v95 IDB
+
+Invalid params: missing required parameters: ['addr']

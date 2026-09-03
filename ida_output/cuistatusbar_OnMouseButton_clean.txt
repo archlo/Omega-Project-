@@ -1,0 +1,32 @@
+// Address: 0x8803f0
+// Function: ?OnMouseButton@CUIStatusBar@@UAEXIIJJ@Z
+
+void __thiscall CUIStatusBar::OnMouseButton(CUIStatusBar *this, unsigned int msg, unsigned int wParam, int rx, int ry)
+{
+  CUIStatusBar *v6; // esi
+  CUIStatusBar *v7; // esi
+
+  switch ( msg )
+  {
+    case 0x201u:
+      CUIToolTip::ClearToolTip((CUIToolTip *)&this->m_origin);
+      v7 = (CUIStatusBar *)((char *)this - 4);
+      CUIStatusBar::TryBeginDragFuncKeyMappedIcon(v7, rx, ry);
+      CUIStatusBar::TryBeginChangeChatWnd(v7, rx, ry);
+      if ( !CUIStatusBar::TryBeginWhisper(v7, rx, ry) )
+        CUIStatusBar::TryBeginShowItemInfo(v7, rx, ry);
+      break;
+    case 0x202u:
+      if ( this->m_nCurPtY )
+        CWndMan::ReleaseCaptureWnd(
+          TSingleton<CWndMan>::ms_pInstance,
+          this != (CUIStatusBar *)4 ? (IUIMsgHandler *)this : nullptr);
+      this->m_nCurPtY = 0;
+      break;
+    case 0x203u:
+      v6 = (CUIStatusBar *)((char *)this - 4);
+      CUIStatusBar::TryShowMemoListDlg((CUIStatusBar *)((char *)this - 4), rx, ry);
+      CUIStatusBar::TryUseTempExp(v6, rx, ry);
+      break;
+  }
+}

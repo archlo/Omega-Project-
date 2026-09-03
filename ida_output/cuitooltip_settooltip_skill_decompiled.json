@@ -1,0 +1,212 @@
+{
+  "addr": "0x8a2500",
+  "code": "void __thiscall CUIToolTip::SetToolTip_Skill(\n        CUIToolTip *this,\n        ZXString<char> x,\n        const char *y,\n        SKILLENTRY *p,\n        const char *bShowLevel)\n{\n  char v6; // bl\n  bool v7; // zf\n  int v8; // edi\n  int v9; // esi\n  IWzFont *m_pInterface; // edi\n  HRESULT (__stdcall *get_height)(IWzFont *, int *); // ecx\n  HRESULT v12; // eax\n  char *v13; // eax\n  int v14; // esi\n  int v15; // esi\n  unsigned int m_uCount; // eax\n  int v17; // ecx\n  int v18; // eax\n  CharacterData *v19; // eax\n  int SkillLevel; // ebx\n  void (__thiscall ***v21)(_DWORD, int); // esi\n  volatile LONG *v22; // edi\n  StringPool *Instance; // eax\n  char *m_pStr; // eax\n  _bstr_t::Data_t *m_Data; // esi\n  const char *m_str; // ecx\n  unsigned int v27; // esi\n  unsigned __int8 *Buffer; // eax\n  StringPool *v29; // eax\n  char *v30; // eax\n  _bstr_t::Data_t *v31; // esi\n  const char *v32; // ecx\n  unsigned int v33; // esi\n  unsigned __int8 *v34; // eax\n  SecondaryStat *v35; // esi\n  int v36; // edi\n  StringPool *v37; // eax\n  char *v38; // ebp\n  int nSwallowCritical; // eax\n  IWzFont *dwLowDateTime; // eax\n  StringPool *v41; // eax\n  char *v42; // ebp\n  int nSwallowMaxMP; // eax\n  StringPool *v44; // eax\n  char *v45; // ebp\n  int nSwallowAttackDamage; // eax\n  StringPool *v47; // eax\n  char *v48; // ebp\n  int nSwallowDefence; // eax\n  StringPool *v50; // eax\n  char *v51; // ebp\n  int nSwallowEvasion; // eax\n  char *v53; // eax\n  char *v54; // ebp\n  _com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> > *v55; // esi\n  StringPool *v56; // eax\n  char *v57; // eax\n  unsigned int v58; // eax\n  StringPool *v59; // eax\n  ZXString<char> *String; // eax\n  IWzFont *v61; // edx\n  const char *v62; // eax\n  StringPool *v63; // eax\n  char *v64; // eax\n  StringPool *v65; // eax\n  char *v66; // eax\n  StringPool *v67; // eax\n  char *v68; // eax\n  CUIToolTip *v69; // edi\n  CharacterData *v70; // ebx\n  volatile LONG *p_m_uTableSize; // esi\n  int v72; // ebx\n  int i; // ebp\n  const wchar_t *v74; // ecx\n  char *v75; // ecx\n  CMobTemplate *MobTemplate; // esi\n  StringPool *v77; // eax\n  IWzFont *v78; // ecx\n  int SwallowBuffType; // eax\n  CharacterData *v80; // ebx\n  unsigned int v81; // esi\n  int v82; // esi\n  StringPool *v83; // eax\n  ZXString<char> *v84; // eax\n  int v85; // ebp\n  const char *v86; // eax\n  char *v87; // ecx\n  const char *v88; // ebp\n  int v89; // eax\n  CharacterData *v90; // ebx\n  int v91; // esi\n  StringPool *v92; // eax\n  char *v93; // eax\n  char *v94; // ecx\n  CharacterData *v95; // ebx\n  int v96; // esi\n  StringPool *v97; // eax\n  char *v98; // eax\n  int v99; // esi\n  int v100; // eax\n  int v101; // eax\n  StringPool *v102; // eax\n  char *v103; // eax\n  int v104; // eax\n  StringPool *v105; // eax\n  char *v106; // eax\n  int v107; // esi\n  int v108; // eax\n  int v109; // esi\n  unsigned __int8 *v110; // [esp-Ch] [ebp-84h]\n  unsigned int v111; // [esp-8h] [ebp-80h]\n  ZXString<char> v112; // [esp-4h] [ebp-7Ch] BYREF\n  int v113; // [esp+0h] [ebp-78h]\n  int nSkillID; // [esp+4h] [ebp-74h]\n  _com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> > v115[6]; // [esp+8h] [ebp-70h] BYREF\n  ZXString<char> sBuffInfo; // [esp+20h] [ebp-58h] BYREF\n  ZXString<char> sFormat; // [esp+24h] [ebp-54h] BYREF\n  CUIToolTip *v118; // [esp+28h] [ebp-50h]\n  int bShowAddInfo; // [esp+2Ch] [ebp-4Ch] BYREF\n  _com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > pIconCanvas; // [esp+30h] [ebp-48h] BYREF\n  int bNeedMasterLevel; // [esp+34h] [ebp-44h]\n  _com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> > pFont; // [esp+38h] [ebp-40h] BYREF\n  _com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> > result; // [esp+3Ch] [ebp-3Ch] BYREF\n  ZRef<CharacterData> v124; // [esp+40h] [ebp-38h] BYREF\n  _SYSTEMTIME st; // [esp+48h] [ebp-30h] BYREF\n  _FILETIME dateExpire; // [esp+58h] [ebp-20h] BYREF\n  int nCurLevel; // [esp+60h] [ebp-18h] BYREF\n  int v128; // [esp+64h] [ebp-14h]\n  int nReqSkillCount; // [esp+68h] [ebp-10h]\n  int v130; // [esp+74h] [ebp-4h]\n\n  v118 = this; /*0x8a2529*/\n  v6 = 0; /*0x8a252d*/\n  sBuffInfo._m_pStr = nullptr; /*0x8a252f*/\n  v7 = this->m_pLayer.m_pInterface == nullptr; /*0x8a2533*/\n  bShowAddInfo = (int)bShowLevel; /*0x8a253a*/\n  if ( !v7 && (char *)this->m_nLastX == x._m_pStr && (const char *)this->m_nLastY == y ) /*0x8a255a*/\n    return; /*0x8a255a*/\n  v8 = 0; /*0x8a2566*/\n  v115[0] = (_com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> >)p->nSkillID; /*0x8a2568*/\n  bNeedMasterLevel = 0; /*0x8a2569*/\n  if ( is_skill_need_master_level((int)v115[0].m_pInterface) ) /*0x8a256d*/\n  {\n    v8 = 1; /*0x8a2579*/\n    bNeedMasterLevel = 1; /*0x8a257e*/\n  }\n  CUIToolTip::GetFontByType(this, &pFont, 10); /*0x8a258b*/\n  v115[0].m_pInterface = (IWzFont *)1; /*0x8a2594*/\n  nSkillID = 0; /*0x8a2596*/\n  v113 = 0; /*0x8a2597*/\n  v130 = 0; /*0x8a259b*/\n  nReqSkillCount = (int)&v112; /*0x8a259f*/\n  v112._m_pStr = (char *)pFont.m_pInterface; /*0x8a25a3*/\n  if ( pFont.m_pInterface ) /*0x8a25a7*/\n    pFont.m_pInterface->AddRef(pFont.m_pInterface); /*0x8a25af*/\n  v9 = CUIToolTip::DrawTextSepartedLine( /*0x8a25cc*/\n         this,\n         87,\n         270,\n         0,\n         p->sDescription._m_pStr,\n         (_com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> >)v112._m_pStr,\n         v113,\n         (int *)nSkillID,\n         (int)v115[0].m_pInterface);\n  if ( v8 ) /*0x8a25d0*/\n  {\n    m_pInterface = CUIToolTip::GetFontByType(this, &result, 10)->m_pInterface; /*0x8a25e0*/\n    v6 = 1; /*0x8a25e2*/\n    LOBYTE(v130) = 1; /*0x8a25e7*/\n    sBuffInfo._m_pStr = (char *)1; /*0x8a25ec*/\n    if ( !m_pInterface ) /*0x8a25f2*/\n      _com_issue_error(-2147467261); /*0x8a25f9*/\n    get_height = m_pInterface->get_height; /*0x8a2600*/\n    sFormat._m_pStr = nullptr; /*0x8a2609*/\n    v12 = get_height(m_pInterface, (int *)&sFormat); /*0x8a2611*/\n    if ( v12 < 0 ) /*0x8a2615*/\n      _com_issue_errorex(v12, m_pInterface, &_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac); /*0x8a261e*/\n    v13 = sFormat._m_pStr + 4; /*0x8a2627*/\n  }\n  else\n  {\n    v13 = nullptr; /*0x8a262c*/\n  }\n  v14 = (int)&v13[v9]; /*0x8a262e*/\n  v130 = 0; /*0x8a2630*/\n  if ( (v6 & 1) != 0 && result.m_pInterface ) /*0x8a2643*/\n    result.m_pInterface->Release(result.m_pInterface); /*0x8a264b*/\n  if ( v14 <= 68 ) /*0x8a2650*/\n    v15 = 0; /*0x8a2657*/\n  else\n    v15 = v14 - 68; /*0x8a2652*/\n  m_uCount = p->lReqSkill._m_uCount; /*0x8a265d*/\n  nReqSkillCount = m_uCount; /*0x8a2660*/\n  v17 = v15 + 128; /*0x8a2664*/\n  if ( m_uCount ) /*0x8a266c*/\n    v18 = 34 * m_uCount + 20; /*0x8a2675*/\n  else\n    v18 = 0; /*0x8a267b*/\n  if ( (_UNKNOWN *)p->nSkillID == &loc_423D0E ) /*0x8a2683*/\n  {\n    v18 += 18; /*0x8a2685*/\n    v15 += 18; /*0x8a2688*/\n  }\n  CUIToolTip::SetBasicInfo(this, 7, 320, v17 + v18, v15 + 114); /*0x8a269b*/\n  v19 = CWvsContext::GetCharacterData( /*0x8a26b4*/\n          (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,\n          (ZRef<CharacterData> *)&st)->p;\n  v115[0].m_pInterface = (IWzFont *)&p; /*0x8a26bb*/\n  nSkillID = p->nSkillID; /*0x8a26c4*/\n  LOBYTE(v130) = 2; /*0x8a26c6*/\n  SkillLevel = CSkillInfo::GetSkillLevel(TSingleton<CSkillInfo>::ms_pInstance, v19, nSkillID, (int)&p); /*0x8a26d0*/\n  nCurLevel = SkillLevel; /*0x8a26d6*/\n  LOBYTE(v130) = 0; /*0x8a26da*/\n  if ( *(_DWORD *)&st.wDayOfWeek ) /*0x8a26e1*/\n  {\n    v21 = (void (__thiscall ***)(_DWORD, int))(*(_DWORD *)&st.wDayOfWeek - 16); /*0x8a26e3*/\n    v22 = (volatile LONG *)(*(_DWORD *)&st.wDayOfWeek - 16 + 4); /*0x8a26e6*/\n    if ( !InterlockedDecrement(v22) ) /*0x8a26ea*/\n    {\n      InterlockedIncrement(v22); /*0x8a26f5*/\n      if ( v21 ) /*0x8a26fd*/\n        (**v21)(v21, 1); /*0x8a2707*/\n    }\n    *(_DWORD *)&st.wDayOfWeek = 0; /*0x8a2709*/\n  }\n  sFormat._m_pStr = nullptr; /*0x8a2711*/\n  LOBYTE(v130) = 3; /*0x8a271e*/\n  if ( bShowLevel ) /*0x8a2723*/\n  {\n    if ( SkillLevel > 0 ) /*0x8a272b*/\n    {\n      v115[0].m_pInterface = (IWzFont *)691; /*0x8a2735*/\n      nSkillID = (int)&result; /*0x8a273a*/\n      Instance = StringPool::GetInstance(); /*0x8a273b*/\n      m_pStr = StringPool::GetString(Instance, (ZXString<char> *)nSkillID, (unsigned int)v115[0].m_pInterface)->_m_pStr; /*0x8a2747*/\n      LOBYTE(v130) = 4; /*0x8a2750*/\n      ZXString<char>::Format(&sFormat, m_pStr, SkillLevel); /*0x8a2755*/\n      LOBYTE(v130) = 3; /*0x8a2761*/\n      if ( result.m_pInterface ) /*0x8a2768*/\n        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&result.m_pInterface[-3]); /*0x8a276e*/\n      v115[0].m_pInterface = nullptr; /*0x8a2776*/\n      nSkillID = 1001; /*0x8a2778*/\n      v113 = 1; /*0x8a277d*/\n      dateExpire.dwLowDateTime = (unsigned int)&v112; /*0x8a2786*/\n      v112._m_pStr = nullptr; /*0x8a278b*/\n      ZXString<char>::operator=(&v112, &sFormat); /*0x8a2791*/\n      CUIToolTip::AddInfo(this, 24, v112, v113, nSkillID, (int)v115[0].m_pInterface); /*0x8a279a*/\n      v115[0].m_pInterface = (IWzFont *)1; /*0x8a27a3*/\n      nSkillID = 1001; /*0x8a27a5*/\n      v113 = 0; /*0x8a27aa*/\n      m_Data = SKILLENTRY::GetLevelData(p, SkillLevel)->sHelp.m_Data; /*0x8a27b2*/\n      if ( m_Data ) /*0x8a27b6*/\n      {\n        if ( !m_Data->m_str ) /*0x8a27b8*/\n          m_Data->m_str = _com_util::ZtlConvertBSTRToString(m_Data->m_wstr); /*0x8a27c6*/\n        m_str = m_Data->m_str; /*0x8a27c9*/\n      }\n      else\n      {\n        m_str = nullptr; /*0x8a27ce*/\n      }\n      dateExpire.dwLowDateTime = (unsigned int)&v112; /*0x8a27d3*/\n      v112._m_pStr = nullptr; /*0x8a27d7*/\n      if ( m_str ) /*0x8a27df*/\n      {\n        v27 = strlen(m_str); /*0x8a27e3*/\n        v110 = (unsigned __int8 *)m_str; /*0x8a27f2*/\n        Buffer = (unsigned __int8 *)ZXString<char>::GetBuffer(&v112, v27, 0); /*0x8a27f8*/\n        memcpy(Buffer, v110, v27); /*0x8a27fe*/\n        ZXString<char>::ReleaseBuffer(&v112, v27); /*0x8a2809*/\n      }\n      CUIToolTip::AddInfo(this, 25, v112, v113, nSkillID, (int)v115[0].m_pInterface); /*0x8a2812*/\n    }\n    if ( SkillLevel < SKILLENTRY::GetMaxLevel(p) ) /*0x8a2822*/\n    {\n      v115[0].m_pInterface = (IWzFont *)692; /*0x8a282c*/\n      nSkillID = (int)&result; /*0x8a2831*/\n      v29 = StringPool::GetInstance(); /*0x8a2832*/\n      v30 = StringPool::GetString(v29, (ZXString<char> *)nSkillID, (unsigned int)v115[0].m_pInterface)->_m_pStr; /*0x8a283e*/\n      LOBYTE(v130) = 5; /*0x8a284a*/\n      ZXString<char>::Format(&sFormat, v30, SkillLevel + 1); /*0x8a284f*/\n      LOBYTE(v130) = 3; /*0x8a285b*/\n      if ( result.m_pInterface ) /*0x8a2862*/\n        ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&result.m_pInterface[-3]); /*0x8a2868*/\n      v115[0].m_pInterface = nullptr; /*0x8a2870*/\n      nSkillID = 1001; /*0x8a2872*/\n      v113 = 1; /*0x8a2877*/\n      dateExpire.dwLowDateTime = (unsigned int)&v112; /*0x8a2880*/\n      v112._m_pStr = nullptr; /*0x8a2885*/\n      ZXString<char>::operator=(&v112, &sFormat); /*0x8a288b*/\n      CUIToolTip::AddInfo(this, 24, v112, v113, nSkillID, (int)v115[0].m_pInterface); /*0x8a2894*/\n      v115[0].m_pInterface = (IWzFont *)1; /*0x8a289d*/\n      nSkillID = 1001; /*0x8a289f*/\n      v113 = 0; /*0x8a28a4*/\n      v31 = SKILLENTRY::GetLevelData(p, SkillLevel + 1)->sHelp.m_Data; /*0x8a28ac*/\n      if ( v31 ) /*0x8a28b0*/\n      {\n        if ( !v31->m_str ) /*0x8a28b2*/\n          v31->m_str = _com_util::ZtlConvertBSTRToString(v31->m_wstr); /*0x8a28c0*/\n        v32 = v31->m_str; /*0x8a28c3*/\n      }\n      else\n      {\n        v32 = nullptr; /*0x8a28c8*/\n      }\n      dateExpire.dwLowDateTime = (unsigned int)&v112; /*0x8a28cd*/\n      v112._m_pStr = nullptr; /*0x8a28d1*/\n      if ( v32 ) /*0x8a28d9*/\n      {\n        v33 = strlen(v32); /*0x8a28dd*/\n        v110 = (unsigned __int8 *)v32; /*0x8a28ec*/\n        v34 = (unsigned __int8 *)ZXString<char>::GetBuffer(&v112, v33, 0); /*0x8a28f2*/\n        memcpy(v34, v110, v33); /*0x8a28f8*/\n        ZXString<char>::ReleaseBuffer(&v112, v33); /*0x8a2903*/\n      }\n      CUIToolTip::AddInfo(this, 25, v112, v113, nSkillID, (int)v115[0].m_pInterface); /*0x8a290c*/\n    }\n  }\n  if ( p->nSkillID == 33101006 ) /*0x8a291b*/\n  {\n    sBuffInfo._m_pStr = nullptr; /*0x8a2921*/\n    v35 = (SecondaryStat *)(TSingleton<CWvsContext>::ms_pInstance._m_pStr + 8520); /*0x8a2935*/\n    v115[0] = *(_com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> > *)(TSingleton<CWvsContext>::ms_pInstance._m_pStr /*0x8a293b*/\n                                                                                             + 13056);\n    LOBYTE(v130) = 6; /*0x8a2945*/\n    v36 = _ZtlSecureFuse<long>( /*0x8a2957*/\n            (const int *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 3262,\n            (unsigned int)v115[0].m_pInterface);\n    switch ( CWvsContext::GetSwallowBuffType((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr) ) /*0x8a2968*/\n    {\n      case 1: /*0x8a2968*/\n        v115[0].m_pInterface = (IWzFont *)6252; /*0x8a2973*/\n        nSkillID = (int)&result; /*0x8a2978*/\n        v37 = StringPool::GetInstance(); /*0x8a2979*/\n        v38 = StringPool::GetString(v37, (ZXString<char> *)nSkillID, (unsigned int)v115[0].m_pInterface)->_m_pStr; /*0x8a2985*/\n        LOBYTE(v130) = 7; /*0x8a2989*/\n        nSwallowCritical = SecondaryStat::_ZtlSecureGet_nSwallowCritical_(v35); /*0x8a298e*/\n        ZXString<char>::Format(&sBuffInfo, v38, v36, nSwallowCritical); /*0x8a299b*/\n        dwLowDateTime = result.m_pInterface; /*0x8a29a0*/\n        goto LABEL_61; /*0x8a29a4*/\n      case 2: /*0x8a2968*/\n        v115[0].m_pInterface = (IWzFont *)5901; /*0x8a29ad*/\n        nSkillID = (int)&bShowAddInfo; /*0x8a29b2*/\n        v41 = StringPool::GetInstance(); /*0x8a29b3*/\n        v42 = StringPool::GetString(v41, (ZXString<char> *)nSkillID, (unsigned int)v115[0].m_pInterface)->_m_pStr; /*0x8a29bf*/\n        LOBYTE(v130) = 8; /*0x8a29c3*/\n        nSwallowMaxMP = SecondaryStat::_ZtlSecureGet_nSwallowMaxMP_(v35); /*0x8a29c8*/\n        ZXString<char>::Format(&sBuffInfo, v42, v36, nSwallowMaxMP); /*0x8a29d5*/\n        dwLowDateTime = (IWzFont *)bShowAddInfo; /*0x8a29da*/\n        goto LABEL_61; /*0x8a29de*/\n      case 3: /*0x8a2968*/\n        v115[0].m_pInterface = (IWzFont *)5898; /*0x8a29e7*/\n        nSkillID = (int)&v124; /*0x8a29ec*/\n        v44 = StringPool::GetInstance(); /*0x8a29ed*/\n        v45 = StringPool::GetString(v44, (ZXString<char> *)nSkillID, (unsigned int)v115[0].m_pInterface)->_m_pStr; /*0x8a29f9*/\n        LOBYTE(v130) = 9; /*0x8a29fd*/\n        nSwallowAttackDamage = SecondaryStat::_ZtlSecureGet_nSwallowAttackDamage_(v35); /*0x8a2a02*/\n        ZXString<char>::Format(&sBuffInfo, v45, v36, nSwallowAttackDamage); /*0x8a2a0f*/\n        dwLowDateTime = *(IWzFont **)&v124.gap0; /*0x8a2a14*/\n        goto LABEL_61; /*0x8a2a18*/\n      case 4: /*0x8a2968*/\n        v115[0].m_pInterface = (IWzFont *)5899; /*0x8a2a1e*/\n        nSkillID = (int)&st; /*0x8a2a23*/\n        v47 = StringPool::GetInstance(); /*0x8a2a24*/\n        v48 = StringPool::GetString(v47, (ZXString<char> *)nSkillID, (unsigned int)v115[0].m_pInterface)->_m_pStr; /*0x8a2a30*/\n        LOBYTE(v130) = 10; /*0x8a2a34*/\n        nSwallowDefence = SecondaryStat::_ZtlSecureGet_nSwallowDefence_(v35); /*0x8a2a39*/\n        ZXString<char>::Format(&sBuffInfo, v48, v36, nSwallowDefence); /*0x8a2a46*/\n        dwLowDateTime = *(IWzFont **)&st.wYear; /*0x8a2a4b*/\n        goto LABEL_61; /*0x8a2a4f*/\n      case 5: /*0x8a2968*/\n        v115[0].m_pInterface = (IWzFont *)5900; /*0x8a2a55*/\n        nSkillID = (int)&dateExpire; /*0x8a2a5a*/\n        v50 = StringPool::GetInstance(); /*0x8a2a5b*/\n        v51 = StringPool::GetString(v50, (ZXString<char> *)nSkillID, (unsigned int)v115[0].m_pInterface)->_m_pStr; /*0x8a2a67*/\n        LOBYTE(v130) = 11; /*0x8a2a6b*/\n        nSwallowEvasion = SecondaryStat::_ZtlSecureGet_nSwallowEvasion_(v35); /*0x8a2a70*/\n        ZXString<char>::Format(&sBuffInfo, v51, v36, nSwallowEvasion); /*0x8a2a7d*/\n        dwLowDateTime = (IWzFont *)dateExpire.dwLowDateTime; /*0x8a2a82*/\nLABEL_61:\n        LOBYTE(v130) = 6; /*0x8a2a86*/\n        if ( dwLowDateTime ) /*0x8a2a8f*/\n          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)&dwLowDateTime[-3]); /*0x8a2a95*/\n        break; /*0x8a2a95*/\n      default:\n        break;\n    }\n    v115[0].m_pInterface = nullptr; /*0x8a2a9d*/\n    nSkillID = 1001; /*0x8a2a9f*/\n    v113 = 0; /*0x8a2aa4*/\n    dateExpire.dwLowDateTime = (unsigned int)&v112; /*0x8a2aad*/\n    v112._m_pStr = nullptr; /*0x8a2ab2*/\n    ZXString<char>::operator=(&v112, &sBuffInfo); /*0x8a2ab8*/\n    CUIToolTip::AddInfo(v118, 10, v112, v113, nSkillID, (int)v115[0].m_pInterface); /*0x8a2ac3*/\n    bShowAddInfo = 1; /*0x8a2acc*/\n    LOBYTE(v130) = 3; /*0x8a2ad4*/\n    if ( sBuffInfo._m_pStr ) /*0x8a2adb*/\n      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sBuffInfo._m_pStr - 1); /*0x8a2ae1*/\n  }\n  v53 = (char *)p->nSkillID; /*0x8a2aed*/\n  if ( (_UNKNOWN *)p->nSkillID == (_UNKNOWN *)((char *)&loc_4DFCDD + 2) /*0x8a2b02*/\n    || v53 == (char *)&loc_4F837D + 2\n    || v53 == (char *)35111013 )\n  {\n    v54 = nullptr; /*0x8a2b08*/\n    sBuffInfo._m_pStr = nullptr; /*0x8a2b0a*/\n    LOBYTE(v130) = 12; /*0x8a2b14*/\n    v55 = (_com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> > *)(TSingleton<CWvsContext>::ms_pInstance._m_pStr /*0x8a2b19*/\n                                                                                        + 8520);\n    switch ( CWvsContext::GetDiceBuffType((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr) ) /*0x8a2b2e*/\n    {\n      case 1: /*0x8a2b2e*/\n        v115[0].m_pInterface = (IWzFont *)6326; /*0x8a2b39*/\n        nSkillID = (int)&dateExpire; /*0x8a2b3e*/\n        v56 = StringPool::GetInstance(); /*0x8a2b3f*/\n        v57 = StringPool::GetString(v56, (ZXString<char> *)nSkillID, (unsigned int)v115[0].m_pInterface)->_m_pStr; /*0x8a2b51*/\n        v115[0] = v55[1188]; /*0x8a2b53*/\n        LOBYTE(v130) = 13; /*0x8a2b5a*/\n        ZXString<char>::Format(&sBuffInfo, v57, v115[0].m_pInterface); /*0x8a2b5f*/\n        v58 = dateExpire.dwLowDateTime; /*0x8a2b64*/\n        goto LABEL_74; /*0x8a2b68*/\n      case 2: /*0x8a2b2e*/\n        v115[0].m_pInterface = (IWzFont *)6370; /*0x8a2b71*/\n        nSkillID = (int)&st; /*0x8a2b76*/\n        v59 = StringPool::GetInstance(); /*0x8a2b77*/\n        String = StringPool::GetString(v59, (ZXString<char> *)nSkillID, (unsigned int)v115[0].m_pInterface); /*0x8a2b7e*/\n        v61 = v55[1180].m_pInterface; /*0x8a2b89*/\n        v62 = String->_m_pStr; /*0x8a2b8f*/\n        v115[0] = v55[1181]; /*0x8a2b91*/\n        LOBYTE(v130) = 14; /*0x8a2b99*/\n        ZXString<char>::Format(&sBuffInfo, v62, v61, v115[0].m_pInterface); /*0x8a2b9e*/\n        v58 = *(_DWORD *)&st.wYear; /*0x8a2ba3*/\n        goto LABEL_74; /*0x8a2baa*/\n      case 3: /*0x8a2b2e*/\n        v115[0].m_pInterface = (IWzFont *)6343; /*0x8a2bb3*/\n        nSkillID = (int)&v124; /*0x8a2bb8*/\n        v63 = StringPool::GetInstance(); /*0x8a2bb9*/\n        v64 = StringPool::GetString(v63, (ZXString<char> *)nSkillID, (unsigned int)v115[0].m_pInterface)->_m_pStr; /*0x8a2bcb*/\n        v115[0] = v55[1182]; /*0x8a2bcd*/\n        LOBYTE(v130) = 15; /*0x8a2bd4*/\n        ZXString<char>::Format(&sBuffInfo, v64, v115[0].m_pInterface); /*0x8a2bd9*/\n        v58 = *(_DWORD *)&v124.gap0; /*0x8a2bde*/\n        goto LABEL_74; /*0x8a2be2*/\n      case 4: /*0x8a2b2e*/\n        v115[0].m_pInterface = (IWzFont *)6311; /*0x8a2be8*/\n        nSkillID = (int)&result; /*0x8a2bed*/\n        v65 = StringPool::GetInstance(); /*0x8a2bee*/\n        v66 = StringPool::GetString(v65, (ZXString<char> *)nSkillID, (unsigned int)v115[0].m_pInterface)->_m_pStr; /*0x8a2c00*/\n        v115[0] = v55[1192]; /*0x8a2c02*/\n        LOBYTE(v130) = 16; /*0x8a2c09*/\n        ZXString<char>::Format(&sBuffInfo, v66, v115[0].m_pInterface); /*0x8a2c0e*/\n        v58 = (unsigned int)result.m_pInterface; /*0x8a2c13*/\n        goto LABEL_74; /*0x8a2c17*/\n      case 5: /*0x8a2b2e*/\n        v115[0].m_pInterface = (IWzFont *)6310; /*0x8a2c1d*/\n        nSkillID = (int)&bShowAddInfo; /*0x8a2c22*/\n        v67 = StringPool::GetInstance(); /*0x8a2c23*/\n        v68 = StringPool::GetString(v67, (ZXString<char> *)nSkillID, (unsigned int)v115[0].m_pInterface)->_m_pStr; /*0x8a2c35*/\n        v115[0] = v55[1197]; /*0x8a2c37*/\n        LOBYTE(v130) = 17; /*0x8a2c3e*/\n        ZXString<char>::Format(&sBuffInfo, v68, v115[0].m_pInterface); /*0x8a2c43*/\n        v58 = bShowAddInfo; /*0x8a2c48*/\nLABEL_74:\n        LOBYTE(v130) = 12; /*0x8a2c4f*/\n        if ( v58 ) /*0x8a2c56*/\n          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(v58 - 12)); /*0x8a2c5c*/\n        v54 = sBuffInfo._m_pStr; /*0x8a2c64*/\n        if ( !sBuffInfo._m_pStr || !*sBuffInfo._m_pStr ) /*0x8a2c6c*/\n          goto LABEL_79; /*0x8a2c70*/\n        v115[0].m_pInterface = nullptr; /*0x8a2c72*/\n        nSkillID = 1001; /*0x8a2c74*/\n        v113 = 0; /*0x8a2c79*/\n        dateExpire.dwLowDateTime = (unsigned int)&v112; /*0x8a2c82*/\n        v112._m_pStr = nullptr; /*0x8a2c87*/\n        ZXString<char>::operator=(&v112, &sBuffInfo); /*0x8a2c8d*/\n        v69 = v118; /*0x8a2c92*/\n        CUIToolTip::AddInfo(v118, 10, v112, v113, nSkillID, (int)v115[0].m_pInterface); /*0x8a2c9a*/\n        break; /*0x8a2c9f*/\n      default:\nLABEL_79:\n        v69 = v118; /*0x8a2ca1*/\n        break; /*0x8a2ca1*/\n    }\n    bShowAddInfo = 1; /*0x8a2ca5*/\n    LOBYTE(v130) = 3; /*0x8a2cad*/\n    if ( v54 ) /*0x8a2cb4*/\n      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v54 - 1); /*0x8a2cba*/\n  }\n  else\n  {\n    v69 = v118; /*0x8a2cc4*/\n  }\n  if ( p->nSkillID == 30001061 || p->nSkillID == 30001062 ) /*0x8a2cda*/\n  {\n    v70 = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &v124)->p; /*0x8a2cf4*/\n    dateExpire.dwLowDateTime = (unsigned int)v70; /*0x8a2cf7*/\n    if ( v124.p ) /*0x8a2cfd*/\n    {\n      p_m_uTableSize = (volatile LONG *)&v124.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x8a2cff*/\n      if ( !InterlockedDecrement((volatile LONG *)&v124.p[-1].m_mVisitorQuestLog._m_uCount) ) /*0x8a2d06*/\n      {\n        InterlockedIncrement(p_m_uTableSize + 1); /*0x8a2d11*/\n        if ( p_m_uTableSize ) /*0x8a2d19*/\n          (**(void (__thiscall ***)(char *, int))p_m_uTableSize)((char *)p_m_uTableSize, 1); /*0x8a2d23*/\n      }\n      v124.p = nullptr; /*0x8a2d25*/\n    }\n    if ( v70->pWildHunterInfo.p ) /*0x8a2d2d*/\n    {\n      v72 = 1; /*0x8a2d3a*/\n      for ( i = 0; i < 5; ++i ) /*0x8a2d3f*/\n      {\n        v74 = *(const wchar_t **)(*(_DWORD *)(dateExpire.dwLowDateTime + 1741) /*0x8a2d58*/\n                                + 4 * ((i + *(_DWORD *)(*(_DWORD *)(dateExpire.dwLowDateTime + 1741) + 21)) % 5)\n                                + 1);\n        if ( v74 ) /*0x8a2d5e*/\n        {\n          MobTemplate = CMobTemplate::GetMobTemplate(v74); /*0x8a2d66*/\n          if ( MobTemplate ) /*0x8a2d6d*/\n          {\n            if ( v72 ) /*0x8a2d71*/\n            {\n              v115[0].m_pInterface = nullptr; /*0x8a2d73*/\n              nSkillID = 1001; /*0x8a2d75*/\n              v113 = 0; /*0x8a2d7a*/\n              v112._m_pStr = v75; /*0x8a2d7c*/\n              *(_DWORD *)&st.wYear = &v112; /*0x8a2d7f*/\n              v111 = 6357; /*0x8a2d83*/\n              v110 = (unsigned __int8 *)&v112; /*0x8a2d88*/\n              v77 = StringPool::GetInstance(); /*0x8a2d89*/\n              StringPool::GetString(v77, (ZXString<char> *)v110, v111); /*0x8a2d90*/\n              CUIToolTip::AddInfo(v69, 14, v112, v113, nSkillID, (int)v115[0].m_pInterface); /*0x8a2d99*/\n              v72 = 0; /*0x8a2d9e*/\n              bShowAddInfo = 1; /*0x8a2da0*/\n            }\n            v115[0].m_pInterface = nullptr; /*0x8a2da8*/\n            nSkillID = 1001; /*0x8a2daa*/\n            v113 = 0; /*0x8a2daf*/\n            *(_DWORD *)&st.wYear = &v112; /*0x8a2db4*/\n            v112._m_pStr = nullptr; /*0x8a2dbc*/\n            ZXString<char>::operator=(&v112, &MobTemplate->sName); /*0x8a2dc2*/\n            CUIToolTip::AddInfo(v69, 14, v112, v113, nSkillID, (int)v115[0].m_pInterface); /*0x8a2dcb*/\n          }\n        }\n      }\n    }\n  }\n  CUIToolTip::MakeLayer( /*0x8a2dfb*/\n    v69,\n    (_com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> > *)&y,\n    (int)x._m_pStr,\n    (int)y,\n    1,\n    0,\n    0,\n    0xCC0E395A,\n    0);\n  if ( y ) /*0x8a2e06*/\n    (*(void (__stdcall **)(const char *))(*(_DWORD *)y + 8))(y); /*0x8a2e0e*/\n  v115[0].m_pInterface = v78; /*0x8a2e10*/\n  y = (const char *)v115; /*0x8a2e13*/\n  CUIToolTip::GetFontByType(v69, v115, 1); /*0x8a2e1c*/\n  CUIToolTip::DrawTextItemName(v69, 10, p->sName._m_pStr, v115[0]); /*0x8a2e2d*/\n  if ( p->nSkillID == 33101006 ) /*0x8a2e3c*/\n    SwallowBuffType = CWvsContext::GetSwallowBuffType((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr); /*0x8a2e44*/\n  else\n    SwallowBuffType = 0; /*0x8a2e4b*/\n  SKILLENTRY::GetIconCanvas(p, &pIconCanvas, SwallowBuffType); /*0x8a2e57*/\n  v115[0].m_pInterface = (IWzFont *)pIconCanvas.m_pInterface; /*0x8a2e63*/\n  LOBYTE(v130) = 18; /*0x8a2e69*/\n  y = (const char *)v115; /*0x8a2e6e*/\n  if ( pIconCanvas.m_pInterface ) /*0x8a2e74*/\n    pIconCanvas.m_pInterface->AddRef(pIconCanvas.m_pInterface); /*0x8a2e7c*/\n  CUIToolTip::DrawCanvasIcon( /*0x8a2e84*/\n    v69,\n    10,\n    32,\n    (_com_ptr_t<_com_IIID<IWzCanvas,&_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e> >)v115[0].m_pInterface);\n  x._m_pStr = (char *)32; /*0x8a2e8e*/\n  if ( bNeedMasterLevel ) /*0x8a2e96*/\n  {\n    v80 = CWvsContext::GetCharacterData( /*0x8a2eb0*/\n            (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,\n            (ZRef<CharacterData> *)&dateExpire)->p;\n    if ( dateExpire.dwHighDateTime ) /*0x8a2eb5*/\n    {\n      v81 = dateExpire.dwHighDateTime - 16; /*0x8a2eb7*/\n      if ( !InterlockedDecrement((volatile LONG *)(dateExpire.dwHighDateTime - 16 + 4)) ) /*0x8a2ebe*/\n      {\n        InterlockedIncrement((volatile LONG *)(v81 + 4)); /*0x8a2ec9*/\n        if ( v81 ) /*0x8a2ed1*/\n          (**(void (__thiscall ***)(unsigned int, int))v81)(v81, 1); /*0x8a2edb*/\n      }\n      dateExpire.dwHighDateTime = 0; /*0x8a2edd*/\n    }\n    v82 = 0; /*0x8a2eee*/\n    y = nullptr; /*0x8a2ef7*/\n    ZMap<long,long,long>::GetAt(&v80->mSkillMasterLev, &p->nSkillID, (int *)&y); /*0x8a2efb*/\n    x._m_pStr = nullptr; /*0x8a2f00*/\n    v115[0].m_pInterface = (IWzFont *)3894; /*0x8a2f08*/\n    nSkillID = (int)&dateExpire; /*0x8a2f0f*/\n    LOBYTE(v130) = 19; /*0x8a2f10*/\n    v83 = StringPool::GetInstance(); /*0x8a2f14*/\n    v84 = StringPool::GetString(v83, (ZXString<char> *)nSkillID, (unsigned int)v115[0].m_pInterface); /*0x8a2f1b*/\n    v85 = (int)y; /*0x8a2f20*/\n    v86 = v84->_m_pStr; /*0x8a2f24*/\n    LOBYTE(v130) = 20; /*0x8a2f2d*/\n    ZXString<char>::Format(&x, v86, y); /*0x8a2f32*/\n    LOBYTE(v130) = 19; /*0x8a2f3e*/\n    if ( dateExpire.dwLowDateTime ) /*0x8a2f44*/\n      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(dateExpire.dwLowDateTime - 12)); /*0x8a2f4a*/\n    v7 = v85 == 0; /*0x8a2f52*/\n    v88 = x._m_pStr; /*0x8a2f54*/\n    if ( !v7 || bShowLevel ) /*0x8a2f5f*/\n    {\n      v115[0].m_pInterface = (IWzFont *)1; /*0x8a2f61*/\n      nSkillID = 0; /*0x8a2f63*/\n      v113 = 1; /*0x8a2f65*/\n      v112._m_pStr = v87; /*0x8a2f67*/\n      bShowLevel = (const char *)&v112; /*0x8a2f6a*/\n      CUIToolTip::GetFontByType( /*0x8a2f76*/\n        v69,\n        (_com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> > *)&v112,\n        10);\n      CUIToolTip::DrawTextSepartedLine( /*0x8a2f89*/\n        v69,\n        87,\n        v69->m_nWidth - 20,\n        32,\n        v88,\n        (_com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> >)v112._m_pStr,\n        v113,\n        (int *)nSkillID,\n        (int)v115[0].m_pInterface);\n      v82 = 15; /*0x8a2f8e*/\n    }\n    x._m_pStr = (char *)(v82 + 32); /*0x8a2f96*/\n    LOBYTE(v130) = 18; /*0x8a2f9a*/\n    if ( v88 ) /*0x8a2fa1*/\n      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v88 - 1); /*0x8a2fa7*/\n  }\n  v89 = p->nSkillID; /*0x8a2fb3*/\n  if ( (p->nSkillID == 12 || v89 == 10000012 || v89 == 20000012 || v89 == 20010012 || v89 == 30000012) && nCurLevel )\n  {\n    bShowLevel = nullptr; /*0x8a2fe5*/\n    LOBYTE(v130) = 21; /*0x8a2ff8*/\n    v90 = CWvsContext::GetCharacterData( /*0x8a3006*/\n            (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,\n            (ZRef<CharacterData> *)&nCurLevel)->p;\n    if ( v128 ) /*0x8a300b*/\n    {\n      v91 = v128 - 16; /*0x8a300d*/\n      if ( !InterlockedDecrement((volatile LONG *)(v128 - 16 + 4)) ) /*0x8a3014*/\n      {\n        InterlockedIncrement((volatile LONG *)(v91 + 4)); /*0x8a301f*/\n        if ( v91 ) /*0x8a3027*/\n          (**(void (__thiscall ***)(int, int))v91)(v91, 1); /*0x8a3031*/\n      }\n      v128 = 0; /*0x8a3033*/\n    }\n    v115[0].m_pInterface = (IWzFont *)5219; /*0x8a303f*/\n    nSkillID = (int)&y; /*0x8a3044*/\n    v92 = StringPool::GetInstance(); /*0x8a3045*/\n    v93 = StringPool::GetString(v92, (ZXString<char> *)nSkillID, (unsigned int)v115[0].m_pInterface)->_m_pStr; /*0x8a3057*/\n    nSkillID = (int)v90->sLinkedCharacter._m_pStr; /*0x8a305c*/\n    LOBYTE(v130) = 22; /*0x8a3066*/\n    ZXString<char>::Format((ZXString<char> *)&bShowLevel, v93, nSkillID, nSkillID); /*0x8a306b*/\n    LOBYTE(v130) = 21; /*0x8a307a*/\n    if ( !y ) /*0x8a3081*/\n      goto LABEL_165; /*0x8a3081*/\n    v115[0].m_pInterface = (IWzFont *)(y - 12); /*0x8a308a*/\n  }\n  else\n  {\n    bShowLevel = nullptr; /*0x8a309b*/\n    ZXString<char>::operator=((ZXString<char> *)&bShowLevel, &p->sDescription); /*0x8a30a6*/\n    v7 = p->bTimeLimited == 0; /*0x8a30af*/\n    LOBYTE(v130) = 23; /*0x8a30b3*/\n    if ( !v7 ) /*0x8a30b8*/\n    {\n      v95 = CWvsContext::GetCharacterData( /*0x8a30d2*/\n              (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr,\n              (ZRef<CharacterData> *)&nCurLevel)->p;\n      if ( v128 ) /*0x8a30d7*/\n      {\n        v96 = v128 - 16; /*0x8a30d9*/\n        if ( !InterlockedDecrement((volatile LONG *)(v128 - 16 + 4)) ) /*0x8a30e0*/\n        {\n          InterlockedIncrement((volatile LONG *)(v96 + 4)); /*0x8a30eb*/\n          if ( v96 ) /*0x8a30f3*/\n            (**(void (__thiscall ***)(int, int))v96)(v96, 1); /*0x8a30fd*/\n        }\n        v128 = 0; /*0x8a30ff*/\n      }\n      dateExpire = DB_DATE_20790101_28; /*0x8a3113*/\n      if ( ZMap<long,_FILETIME,long>::GetAt(&v95->mSkillExpired, &p->nSkillID, &dateExpire) /*0x8a314a*/\n        && ZAPI.CompareFileTime(&dateExpire, &DB_DATE_20790101_28) < 0 )\n      {\n        ZAPI.FileTimeToSystemTime(&dateExpire, &st); /*0x8a315a*/\n        y = nullptr; /*0x8a3160*/\n        v115[0].m_pInterface = (IWzFont *)5490; /*0x8a316c*/\n        nSkillID = (int)&nCurLevel; /*0x8a3171*/\n        LOBYTE(v130) = 24; /*0x8a3172*/\n        v97 = StringPool::GetInstance(); /*0x8a3177*/\n        v98 = StringPool::GetString(v97, (ZXString<char> *)nSkillID, (unsigned int)v115[0].m_pInterface)->_m_pStr; /*0x8a318d*/\n        LOBYTE(v130) = 25; /*0x8a31ac*/\n        ZXString<char>::Format((ZXString<char> *)&y, v98, st.wMonth, st.wDay, st.wYear, st.wHour, st.wMinute); /*0x8a31b4*/\n        LOBYTE(v130) = 24; /*0x8a31c0*/\n        if ( nCurLevel ) /*0x8a31c7*/\n          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(nCurLevel - 12)); /*0x8a31cd*/\n        v99 = (int)y; /*0x8a31d5*/\n        if ( y ) /*0x8a31db*/\n          v100 = *((_DWORD *)y - 1); /*0x8a31dd*/\n        else\n          v100 = 0; /*0x8a31e2*/\n        ZXString<char>::_Cat((ZXString<char> *)&bShowLevel, y, v100); /*0x8a31ed*/\n        LOBYTE(v130) = 23; /*0x8a31f2*/\n        if ( v99 ) /*0x8a31f9*/\n          ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(v99 - 12)); /*0x8a31ff*/\n      }\n    }\n    if ( !TSingleton<CDamageMeter>::ms_pInstance || p->nSkillID != 1006 ) /*0x8a321a*/\n    {\n      v94 = (char *)p; /*0x8a321c*/\n      v101 = p->nSkillID; /*0x8a3220*/\n      if ( p->nSkillID != 10001006 && v101 != 20001006 && v101 != 20011006 && v101 != 30001006 ) /*0x8a323c*/\n        goto LABEL_165; /*0x8a323c*/\n    }\n    ZXString<char>::_Cat((ZXString<char> *)&bShowLevel, asc_B48EDC, 2); /*0x8a3250*/\n    y = nullptr; /*0x8a3255*/\n    v115[0].m_pInterface = (IWzFont *)6677; /*0x8a3261*/\n    nSkillID = (int)&nCurLevel; /*0x8a3268*/\n    LOBYTE(v130) = 26; /*0x8a3269*/\n    v102 = StringPool::GetInstance(); /*0x8a326d*/\n    v103 = StringPool::GetString(v102, (ZXString<char> *)nSkillID, (unsigned int)v115[0].m_pInterface)->_m_pStr; /*0x8a3282*/\n    v115[0] = (_com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> >)TSingleton<CDamageMeter>::ms_pInstance->m_nMaxAverageDamage; /*0x8a3284*/\n    LOBYTE(v130) = 27; /*0x8a328b*/\n    ZXString<char>::Format((ZXString<char> *)&y, v103, v115[0].m_pInterface); /*0x8a3290*/\n    LOBYTE(v130) = 26; /*0x8a329c*/\n    if ( nCurLevel ) /*0x8a32a2*/\n      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(nCurLevel - 12)); /*0x8a32a8*/\n    if ( y ) /*0x8a32b6*/\n      v104 = *((_DWORD *)y - 1); /*0x8a32b8*/\n    else\n      v104 = 0; /*0x8a32bd*/\n    ZXString<char>::_Cat((ZXString<char> *)&bShowLevel, y, v104); /*0x8a32c8*/\n    ZXString<char>::_Cat((ZXString<char> *)&bShowLevel, asc_B49104, 3); /*0x8a32db*/\n    v115[0].m_pInterface = (IWzFont *)6677; /*0x8a32e4*/\n    nSkillID = (int)&nCurLevel; /*0x8a32e9*/\n    v105 = StringPool::GetInstance(); /*0x8a32ea*/\n    v106 = StringPool::GetString(v105, (ZXString<char> *)nSkillID, (unsigned int)v115[0].m_pInterface)->_m_pStr; /*0x8a32ff*/\n    v115[0] = (_com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> >)TSingleton<CDamageMeter>::ms_pInstance->m_nAverageDamage; /*0x8a3301*/\n    LOBYTE(v130) = 28; /*0x8a3308*/\n    ZXString<char>::Format((ZXString<char> *)&y, v106, v115[0].m_pInterface); /*0x8a330d*/\n    LOBYTE(v130) = 26; /*0x8a3319*/\n    if ( nCurLevel ) /*0x8a331f*/\n      ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(nCurLevel - 12)); /*0x8a3325*/\n    v107 = (int)y; /*0x8a332d*/\n    v108 = y ? *((_DWORD *)y - 1) : 0;\n    ZXString<char>::_Cat((ZXString<char> *)&bShowLevel, y, v108); /*0x8a3345*/\n    LOBYTE(v130) = 23; /*0x8a334a*/\n    if ( !v107 ) /*0x8a3351*/\n      goto LABEL_165; /*0x8a3351*/\n    v115[0].m_pInterface = (IWzFont *)(v107 - 12); /*0x8a3356*/\n  }\n  ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v115[0].m_pInterface); /*0x8a3357*/\nLABEL_165:\n  v115[0].m_pInterface = (IWzFont *)1; /*0x8a335f*/\n  nSkillID = 0; /*0x8a3361*/\n  v113 = 1; /*0x8a3363*/\n  v112._m_pStr = v94; /*0x8a3365*/\n  y = (const char *)&v112; /*0x8a3368*/\n  CUIToolTip::GetFontByType( /*0x8a3374*/\n    v69,\n    (_com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> > *)&v112,\n    10);\n  v109 = (int)bShowLevel; /*0x8a3379*/\n  CUIToolTip::DrawTextSepartedLine( /*0x8a3394*/\n    v69,\n    87,\n    v69->m_nWidth - 20,\n    (int)x._m_pStr,\n    bShowLevel,\n    (_com_ptr_t<_com_IIID<IWzFont,&_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac> >)v112._m_pStr,\n    v113,\n    (int *)nSkillID,\n    (int)v115[0].m_pInterface);\n  LOBYTE(v130) = 18; /*0x8a3399*/\n  if ( v109 ) /*0x8a33a0*/\n    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)(v109 - 12)); /*0x8a33a6*/\n  if ( bShowAddInfo ) /*0x8a33b3*/\n    CUIToolTip::DrawInfo(v69, 0); /*0x8a33b9*/\n  CUIToolTip::DrawReqSkill(v69, nReqSkillCount, p); /*0x8a33ca*/\n  LOBYTE(v130) = 3; /*0x8a33d3*/\n  if ( pIconCanvas.m_pInterface ) /*0x8a33da*/\n    pIconCanvas.m_pInterface->Release(pIconCanvas.m_pInterface); /*0x8a33e2*/\n  LOBYTE(v130) = 0; /*0x8a33e8*/\n  if ( sFormat._m_pStr ) /*0x8a33ef*/\n    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)sFormat._m_pStr - 1); /*0x8a33f5*/\n  v130 = -1; /*0x8a3401*/\n  if ( pFont.m_pInterface ) /*0x8a340b*/\n    pFont.m_pInterface->Release(pFont.m_pInterface); /*0x8a3413*/\n}",
+  "refs": [
+    {
+      "addr": "0x47ccb0",
+      "name": "?is_skill_need_master_level@@YAHJ@Z"
+    },
+    {
+      "addr": "0x881d40",
+      "name": "?GetFontByType@CUIToolTip@@IAE?AV?$_com_ptr_t@V?$_com_IIID@UIWzFont@@$1?_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac@@3U__s_GUID@@B@@@@J@Z"
+    },
+    {
+      "addr": "0x894a40",
+      "name": "?DrawTextSepartedLine@CUIToolTip@@IAEJJJJPBDV?$_com_ptr_t@V?$_com_IIID@UIWzFont@@$1?_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac@@3U__s_GUID@@B@@@@HPAJH@Z"
+    },
+    {
+      "addr": "0xa2fd00",
+      "name": "?_com_issue_error@@YGXJ@Z"
+    },
+    {
+      "addr": "0xa2fd20",
+      "name": "?_com_issue_errorex@@YGXJPAUIUnknown@@ABU_GUID@@@Z"
+    },
+    {
+      "addr": "0xb47160",
+      "name": "__GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac"
+    },
+    {
+      "addr": "0x423d0e",
+      "name": "loc_423D0E"
+    },
+    {
+      "addr": "0x880f90",
+      "name": "?SetBasicInfo@CUIToolTip@@QAEXJJJJ@Z"
+    },
+    {
+      "addr": "0x42b960",
+      "name": "?GetCharacterData@CWvsContext@@QAE?AV?$ZRef@VCharacterData@@@@XZ"
+    },
+    {
+      "addr": "0xc64068",
+      "name": "?ms_pInstance@?$TSingleton@VCWvsContext@@@@1PAVCWvsContext@@A"
+    },
+    {
+      "addr": "0x6f1d10",
+      "name": "?GetSkillLevel@CSkillInfo@@QAEJABVCharacterData@@JPAPBUSKILLENTRY@@@Z"
+    },
+    {
+      "addr": "0xc63ea8",
+      "name": "?ms_pInstance@?$TSingleton@VCSkillInfo@@@@1PAVCSkillInfo@@A"
+    },
+    {
+      "addr": "0xb14074",
+      "name": "__imp__InterlockedIncrement@4"
+    },
+    {
+      "addr": "0xb14078",
+      "name": "__imp__InterlockedDecrement@4"
+    },
+    {
+      "addr": "0x7466a0",
+      "name": "?GetInstance@StringPool@@SAAAV1@XZ"
+    },
+    {
+      "addr": "0x403b30",
+      "name": "?GetString@StringPool@@QAE?AV?$ZXString@D@@I@Z"
+    },
+    {
+      "addr": "0x443c70",
+      "name": "?Format@?$ZXString@D@@QAAAAV1@PBDZZ"
+    },
+    {
+      "addr": "0x403460",
+      "name": "?_Release@?$ZXString@D@@KAXPAU_ZXStringData@1@@Z"
+    },
+    {
+      "addr": "0x42d1c0",
+      "name": "??4?$ZXString@D@@QAEAAV0@ABV0@@Z"
+    },
+    {
+      "addr": "0x89e620",
+      "name": "?AddInfo@CUIToolTip@@IAEXJV?$ZXString@D@@HJH@Z"
+    },
+    {
+      "addr": "0x708e10",
+      "name": "?GetLevelData@SKILLENTRY@@QBEABUSKILLLEVELDATA@@J@Z"
+    },
+    {
+      "addr": "0x52c670",
+      "name": "?ZtlConvertBSTRToString@_com_util@@YGPADPAG@Z"
+    },
+    {
+      "addr": "0x42c880",
+      "name": "?GetBuffer@?$ZXString@D@@QAEPADHH@Z"
+    },
+    {
+      "addr": "0xa2fde0",
+      "name": "_memcpy"
+    },
+    {
+      "addr": "0x42a080",
+      "name": "?ReleaseBuffer@?$ZXString@D@@QAEXH@Z"
+    },
+    {
+      "addr": "0x50a020",
+      "name": "?GetMaxLevel@SKILLENTRY@@QBEJXZ"
+    },
+    {
+      "addr": "0x407520",
+      "name": "??$_ZtlSecureFuse@J@@YAJQBJI@Z"
+    },
+    {
+      "addr": "0x722da0",
+      "name": "?_ZtlSecureGet_nSwallowCritical_@SecondaryStat@@QBIJXZ"
+    },
+    {
+      "addr": "0x4fff00",
+      "name": "?_ZtlSecureGet_nSwallowMaxMP_@SecondaryStat@@QBIJXZ"
+    },
+    {
+      "addr": "0x722ba0",
+      "name": "?_ZtlSecureGet_nSwallowAttackDamage_@SecondaryStat@@QBIJXZ"
+    },
+    {
+      "addr": "0x722e00",
+      "name": "?_ZtlSecureGet_nSwallowDefence_@SecondaryStat@@QBIJXZ"
+    },
+    {
+      "addr": "0x722e40",
+      "name": "?_ZtlSecureGet_nSwallowEvasion_@SecondaryStat@@QBIJXZ"
+    },
+    {
+      "addr": "0x9ccfc0",
+      "name": "?GetSwallowBuffType@CWvsContext@@QAEJXZ"
+    },
+    {
+      "addr": "0x9cd070",
+      "name": "?GetDiceBuffType@CWvsContext@@QAEJXZ"
+    },
+    {
+      "addr": "0x4dfcdd",
+      "name": "loc_4DFCDD"
+    },
+    {
+      "addr": "0x4f837d",
+      "name": "loc_4F837D"
+    },
+    {
+      "addr": "0x6611f0",
+      "name": "?GetMobTemplate@CMobTemplate@@SAPAV1@K@Z"
+    },
+    {
+      "addr": "0x8814b0",
+      "name": "?MakeLayer@CUIToolTip@@IAE?AV?$_com_ptr_t@V?$_com_IIID@UIWzCanvas@@$1?_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e@@3U__s_GUID@@B@@@@JJHHHKH@Z"
+    },
+    {
+      "addr": "0x88ca40",
+      "name": "?DrawTextItemName@CUIToolTip@@IAEXJPBDV?$_com_ptr_t@V?$_com_IIID@UIWzFont@@$1?_GUID_2bef046d_ccd6_445a_88c4_929fc35d30ac@@3U__s_GUID@@B@@@@@Z"
+    },
+    {
+      "addr": "0x6f7d40",
+      "name": "?GetIconCanvas@SKILLENTRY@@QBE?AV?$_com_ptr_t@V?$_com_IIID@UIWzCanvas@@$1?_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e@@3U__s_GUID@@B@@@@J@Z"
+    },
+    {
+      "addr": "0x882200",
+      "name": "?DrawCanvasIcon@CUIToolTip@@IAEXJJV?$_com_ptr_t@V?$_com_IIID@UIWzCanvas@@$1?_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e@@3U__s_GUID@@B@@@@@Z"
+    },
+    {
+      "addr": "0x47e090",
+      "name": "?GetAt@?$ZMap@JJJ@@QAEPAJABJAAJ@Z"
+    },
+    {
+      "addr": "0xba5a44",
+      "name": "DB_DATE_20790101_28"
+    },
+    {
+      "addr": "0xc6d758",
+      "name": "?ZAPI@@3U_ZAPIProcAddress@@A"
+    },
+    {
+      "addr": "0x42d020",
+      "name": "?_Cat@?$ZXString@D@@IAEAAV1@PBDH@Z"
+    },
+    {
+      "addr": "0x4f20f0",
+      "name": "?GetAt@?$ZMap@JU_FILETIME@@J@@QAEPAU_FILETIME@@ABJAAU2@@Z"
+    },
+    {
+      "addr": "0xc6ab58",
+      "name": "?ms_pInstance@?$TSingleton@VCDamageMeter@@@@1PAVCDamageMeter@@A"
+    },
+    {
+      "addr": "0xb48edc",
+      "name": "asc_B48EDC",
+      "string": "\r\n"
+    },
+    {
+      "addr": "0xb49104",
+      "name": "asc_B49104",
+      "string": " / "
+    },
+    {
+      "addr": "0x89e8b0",
+      "name": "?DrawInfo@CUIToolTip@@IAEJJ@Z"
+    },
+    {
+      "addr": "0x88b320",
+      "name": "?DrawReqSkill@CUIToolTip@@IAEXJPBUSKILLENTRY@@@Z"
+    }
+  ]
+}

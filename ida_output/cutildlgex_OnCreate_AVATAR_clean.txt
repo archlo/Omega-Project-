@@ -1,0 +1,410 @@
+// CUtilDlgEx::OnCreate_AVATAR
+// Address: 0x9846c0
+
+void __thiscall CUtilDlgEx::OnCreate_AVATAR(CUtilDlgEx *this)
+{
+  CLayoutMan *p_m_lm; // ebx
+  CCtrlOriginButton *p; // eax
+  ZRefCounted *v4; // eax
+  CCtrlButton *v5; // edi
+  CCtrlButton *v6; // eax
+  CCtrlOriginButton *v7; // eax
+  ZRefCounted *v8; // eax
+  CCtrlButton *v9; // edi
+  CCtrlButton *v10; // eax
+  CCtrlOriginButton *v11; // eax
+  ZRefCounted *v12; // eax
+  CCtrlButton *v13; // edi
+  CCtrlButton *v14; // eax
+  CCtrlOriginButton *v15; // eax
+  ZRefCounted *v16; // eax
+  CCtrlButton *v17; // edi
+  CCtrlButton *v18; // eax
+  CCtrlOriginButton *v19; // eax
+  ZRefCounted *v20; // eax
+  CCtrlButton *v21; // edi
+  CCtrlButton *v22; // eax
+  CCtrlOriginButton *v23; // eax
+  ZRefCounted *v24; // eax
+  CCtrlButton *v25; // edi
+  CCtrlButton *v26; // eax
+  CCtrlOriginButton *v27; // eax
+  ZRefCounted *v28; // eax
+  CCtrlButton *v29; // edi
+  CCtrlButton *v30; // eax
+  CCtrlButton *v31; // ecx
+  void (__stdcall *v32)(VARIANTARG *); // ebp
+  HRESULT v33; // eax
+  HRESULT v34; // eax
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzGr2DLayer *v36; // edi
+  IWzGr2DLayer *v37; // eax
+  IWzGr2DLayer *v38; // edi
+  HRESULT v39; // eax
+  IWzGr2DLayer *v40; // eax
+  IWzGr2DLayer *v41; // edi
+  HRESULT v42; // eax
+  IWzGr2DLayer *v43; // edi
+  HRESULT v44; // eax
+  HRESULT v45; // eax
+  HRESULT v46; // eax
+  IWzGr2DLayer *v47; // ecx
+  AvatarLook *v48; // eax
+  ZRef<AvatarLook> v49; // [esp+54h] [ebp-74h] BYREF
+  ZRef<CCtrlOriginButton> result; // [esp+70h] [ebp-58h] BYREF
+  tagVARIANT v51; // [esp+78h] [ebp-50h] BYREF
+  VARIANTARG pvarg; // [esp+88h] [ebp-40h] BYREF
+  VARIANTARG v53; // [esp+98h] [ebp-30h] BYREF
+  VARIANTARG pvargDest; // [esp+A8h] [ebp-20h] BYREF
+  int v55; // [esp+C4h] [ebp-4h]
+
+  p_m_lm = &this->m_lm; /*0x984703*/
+  p = CLayoutMan::AddButton(&this->m_lm, &result, L"UI/UIWindow2.img/UtilDlgEx_Avatar/BtPrev", 0x2000u, 0, 0, nullptr)->p; /*0x984711*/
+  v55 = 0; /*0x984714*/
+  if ( p && (v4 = &p->ZRefCounted) != nullptr ) /*0x984727*/
+  {
+    v5 = (CCtrlButton *)&v4[-1].___u1; /*0x98472d*/
+    if ( v4 != (ZRefCounted *)8 ) /*0x984732*/
+      InterlockedIncrement(&v5->_m_nRef); /*0x984738*/
+  }
+  else
+  {
+    v5 = nullptr; /*0x984b40*/
+  }
+  v6 = this->m_apButton[0].p; /*0x98473e*/
+  this->m_apButton[0].p = v5; /*0x984744*/
+  v51.decVal.Hi32 = (unsigned int)v6; /*0x98474a*/
+  if ( v6 ) /*0x984750*/
+    ZRef<CCtrlButton>::_ReleaseRaw((ZRef<CCtrlButton> *)&v51, nullptr); /*0x984758*/
+  v55 = -1; /*0x984765*/
+  if ( result.p ) /*0x984769*/
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&result, nullptr); /*0x984771*/
+  v7 = CLayoutMan::AddButton(p_m_lm, &result, L"UI/UIWindow2.img/UtilDlgEx_Avatar/BtNext", 0x2001u, 0, 0, nullptr)->p; /*0x984792*/
+  v55 = 1; /*0x984795*/
+  if ( v7 && (v8 = &v7->ZRefCounted) != nullptr ) /*0x9847a8*/
+  {
+    v9 = (CCtrlButton *)&v8[-1].___u1; /*0x9847ae*/
+    if ( v8 != (ZRefCounted *)8 ) /*0x9847b3*/
+      InterlockedIncrement(&v9->_m_nRef); /*0x9847b9*/
+  }
+  else
+  {
+    v9 = nullptr; /*0x984b47*/
+  }
+  v10 = this->m_apButton[1].p; /*0x9847bf*/
+  this->m_apButton[1].p = v9; /*0x9847c5*/
+  v51.decVal.Hi32 = (unsigned int)v10; /*0x9847cb*/
+  if ( v10 ) /*0x9847d1*/
+    ZRef<CCtrlButton>::_ReleaseRaw((ZRef<CCtrlButton> *)&v51, nullptr); /*0x9847d9*/
+  v55 = -1; /*0x9847e3*/
+  if ( result.p ) /*0x9847e7*/
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&result, nullptr); /*0x9847ef*/
+  v11 = CLayoutMan::AddButton(p_m_lm, &result, L"UI/UIWindow2.img/UtilDlgEx_Avatar/BtOK", 1u, 0, 0, nullptr)->p; /*0x98480d*/
+  v55 = 2; /*0x984815*/
+  if ( v11 && (v12 = &v11->ZRefCounted) != nullptr ) /*0x984824*/
+  {
+    v13 = (CCtrlButton *)&v12[-1].___u1; /*0x98482a*/
+    if ( v12 != (ZRefCounted *)8 ) /*0x98482f*/
+      InterlockedIncrement(&v13->_m_nRef); /*0x984835*/
+  }
+  else
+  {
+    v13 = nullptr; /*0x984b4e*/
+  }
+  v14 = this->m_apButton[2].p; /*0x98483b*/
+  this->m_apButton[2].p = v13; /*0x984841*/
+  v51.decVal.Hi32 = (unsigned int)v14; /*0x984847*/
+  if ( v14 ) /*0x98484d*/
+    ZRef<CCtrlButton>::_ReleaseRaw((ZRef<CCtrlButton> *)&v51, nullptr); /*0x984855*/
+  v55 = -1; /*0x98485f*/
+  if ( result.p ) /*0x984867*/
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&result, nullptr); /*0x98486f*/
+  v15 = CLayoutMan::AddButton(p_m_lm, &result, L"UI/UIWindow2.img/UtilDlgEx_Avatar/BtCancle", 2u, 0, 0, nullptr)->p; /*0x98488c*/
+  v55 = 3; /*0x98488f*/
+  if ( v15 && (v16 = &v15->ZRefCounted) != nullptr ) /*0x9848a2*/
+  {
+    v17 = (CCtrlButton *)&v16[-1].___u1; /*0x9848a8*/
+    if ( v16 != (ZRefCounted *)8 ) /*0x9848ad*/
+      InterlockedIncrement(&v17->_m_nRef); /*0x9848b3*/
+  }
+  else
+  {
+    v17 = nullptr; /*0x984b55*/
+  }
+  v18 = this->m_apButton[3].p; /*0x9848b9*/
+  this->m_apButton[3].p = v17; /*0x9848bf*/
+  v51.decVal.Hi32 = (unsigned int)v18; /*0x9848c5*/
+  if ( v18 ) /*0x9848cb*/
+    ZRef<CCtrlButton>::_ReleaseRaw((ZRef<CCtrlButton> *)&v51, nullptr); /*0x9848d3*/
+  v55 = -1; /*0x9848dd*/
+  if ( result.p ) /*0x9848e5*/
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&result, nullptr); /*0x9848ed*/
+  v19 = CLayoutMan::AddButton(p_m_lm, &result, L"UI/UIWindow2.img/UtilDlgEx_Avatar/BtExit", 2u, 0, 0, nullptr)->p; /*0x98490a*/
+  v55 = 4; /*0x98490d*/
+  if ( v19 && (v20 = &v19->ZRefCounted) != nullptr ) /*0x984920*/
+  {
+    v21 = (CCtrlButton *)&v20[-1].___u1; /*0x984926*/
+    if ( v20 != (ZRefCounted *)8 ) /*0x98492b*/
+      InterlockedIncrement(&v21->_m_nRef); /*0x984931*/
+  }
+  else
+  {
+    v21 = nullptr; /*0x984b5c*/
+  }
+  v22 = this->m_apButton[4].p; /*0x984937*/
+  this->m_apButton[4].p = v21; /*0x98493d*/
+  v51.decVal.Hi32 = (unsigned int)v22; /*0x984943*/
+  if ( v22 ) /*0x984949*/
+    ZRef<CCtrlButton>::_ReleaseRaw((ZRef<CCtrlButton> *)&v51, nullptr); /*0x984951*/
+  v55 = -1; /*0x98495b*/
+  if ( result.p ) /*0x984963*/
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&result, nullptr); /*0x98496b*/
+  v23 = CLayoutMan::AddButton(p_m_lm, &result, L"UI/UIWindow2.img/UtilDlgEx_Avatar/BtOff", 0x2002u, 0, 0, nullptr)->p; /*0x98498c*/
+  v55 = 5; /*0x98498f*/
+  if ( v23 && (v24 = &v23->ZRefCounted) != nullptr ) /*0x9849a2*/
+  {
+    v25 = (CCtrlButton *)&v24[-1].___u1; /*0x9849a8*/
+    if ( v24 != (ZRefCounted *)8 ) /*0x9849ad*/
+      InterlockedIncrement(&v25->_m_nRef); /*0x9849b3*/
+  }
+  else
+  {
+    v25 = nullptr; /*0x984b63*/
+  }
+  v26 = this->m_apButton[5].p; /*0x9849b9*/
+  this->m_apButton[5].p = v25; /*0x9849bf*/
+  v51.decVal.Hi32 = (unsigned int)v26; /*0x9849c5*/
+  if ( v26 ) /*0x9849cb*/
+    ZRef<CCtrlButton>::_ReleaseRaw((ZRef<CCtrlButton> *)&v51, nullptr); /*0x9849d3*/
+  v55 = -1; /*0x9849dd*/
+  if ( result.p ) /*0x9849e5*/
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&result, nullptr); /*0x9849ed*/
+  v27 = CLayoutMan::AddButton(p_m_lm, &result, L"UI/UIWindow2.img/UtilDlgEx_Avatar/BtOn", 0x2003u, 0, 0, nullptr)->p; /*0x984a0e*/
+  v55 = 6; /*0x984a11*/
+  if ( v27 && (v28 = &v27->ZRefCounted) != nullptr ) /*0x984a24*/
+  {
+    v29 = (CCtrlButton *)&v28[-1].___u1; /*0x984a2a*/
+    if ( v28 != (ZRefCounted *)8 ) /*0x984a2f*/
+      InterlockedIncrement(&v29->_m_nRef); /*0x984a35*/
+  }
+  else
+  {
+    v29 = nullptr; /*0x984b6a*/
+  }
+  v30 = this->m_apButton[6].p; /*0x984a3b*/
+  this->m_apButton[6].p = v29; /*0x984a41*/
+  v51.decVal.Hi32 = (unsigned int)v30; /*0x984a47*/
+  if ( v30 ) /*0x984a4d*/
+    ZRef<CCtrlButton>::_ReleaseRaw((ZRef<CCtrlButton> *)&v51, nullptr); /*0x984a55*/
+  v55 = -1; /*0x984a5f*/
+  if ( result.p ) /*0x984a67*/
+    ZRef<CCtrlOriginButton>::_ReleaseRaw(&result, nullptr); /*0x984a6f*/
+  this->m_apButton[5].p->SetShow(&this->m_apButton[5].p->IUIMsgHandler, this->m_bEquipPreview); /*0x984a8a*/
+  this->m_apButton[5].p->SetEnable(&this->m_apButton[5].p->IUIMsgHandler, this->m_bEquipPreview); /*0x984aa1*/
+  this->m_apButton[6].p->SetShow(&this->m_apButton[6].p->IUIMsgHandler, this->m_bEquipPreview == 0); /*0x984abe*/
+  this->m_apButton[6].p->SetEnable(&this->m_apButton[6].p->IUIMsgHandler, this->m_bEquipPreview == 0); /*0x984ada*/
+  v31 = this->m_apButton[6 - (this->m_bEquipPreview != 0)].p; /*0x984aed*/
+  v31->SetAbove(v31, this->m_apButton[(this->m_bEquipPreview != 0) + 5].p); /*0x984b09*/
+  if ( this->m_nAvatarType != 2 ) /*0x984b11*/
+  {
+    v32 = VariantInit; /*0x984b17*/
+    VariantInit(&pvarg); /*0x984b22*/
+    v33 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing); /*0x984b2e*/
+    if ( v33 < 0 ) /*0x984b38*/
+      _com_issue_error(v33); /*0x984b3b*/
+    v55 = 7; /*0x984b7b*/
+    v32(&v51); /*0x984b7f*/
+    v34 = ZComAPI::ZComVariantCopy(&v51, &vtMissing); /*0x984b8b*/
+    if ( v34 < 0 ) /*0x984b95*/
+      _com_issue_error(v34); /*0x984b98*/
+    LOBYTE(v55) = 8; /*0x984ba3*/
+    if ( !g_gr.m_pInterface ) /*0x984baa*/
+      _com_issue_error(-2147467261); /*0x984bb1*/
+    m_pInterface = IWzGr2D::CreateLayer( /*0x984bd7*/
+                     g_gr.m_pInterface,
+                     (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&result,
+                     0,
+                     0,
+                     0xACu,
+                     0x10u,
+                     5,
+                     (const Ztl_variant_t *)&v51,
+                     (const Ztl_variant_t *)&pvarg)->m_pInterface;
+    v36 = this->m_pLayerNameTag.m_pInterface; /*0x984bd9*/
+    if ( v36 != m_pInterface ) /*0x984be1*/
+    {
+      this->m_pLayerNameTag.m_pInterface = m_pInterface; /*0x984be3*/
+      if ( m_pInterface ) /*0x984beb*/
+        m_pInterface->AddRef(m_pInterface); /*0x984bf3*/
+      if ( v36 ) /*0x984bf7*/
+        v36->Release(v36); /*0x984bff*/
+    }
+    if ( *(_DWORD *)&result.gap0 ) /*0x984c07*/
+      (*(void (__stdcall **)(_DWORD))(**(_DWORD **)&result.gap0 + 8))(*(_DWORD *)&result.gap0); /*0x984c0f*/
+    LOBYTE(v55) = 7; /*0x984c17*/
+    if ( v51.vt == 8 ) /*0x984c1b*/
+    {
+      v51.vt = 0; /*0x984c23*/
+      if ( v51.decVal.Lo32 ) /*0x984c2a*/
+        ZAPI.CoTaskMemFree((void *)(v51.decVal.Lo32 - 4)); /*0x984c30*/
+    }
+    else
+    {
+      VariantClear(&v51); /*0x984c3d*/
+    }
+    v55 = -1; /*0x984c49*/
+    if ( pvarg.vt == 8 ) /*0x984c51*/
+    {
+      pvarg.vt = 0; /*0x984c55*/
+      if ( pvarg.decVal.Lo32 ) /*0x984c60*/
+        ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x984c66*/
+    }
+    else
+    {
+      VariantClear(&pvarg); /*0x984c73*/
+    }
+    v37 = CWnd::GetLayer( /*0x984c85*/
+            this,
+            (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&result)->m_pInterface;
+    v55 = 9; /*0x984c91*/
+    v51.vt = 13; /*0x984c95*/
+    v51.decVal.Lo32 = (unsigned int)v37; /*0x984c9a*/
+    if ( v37 ) /*0x984ca0*/
+      v37->AddRef(v37); /*0x984ca8*/
+    v38 = this->m_pLayerNameTag.m_pInterface; /*0x984caa*/
+    LOBYTE(v55) = 10; /*0x984cb0*/
+    if ( !v38 ) /*0x984cb7*/
+      _com_issue_error(-2147467261); /*0x984cbe*/
+    v39 = ((int (__stdcall *)(IWzGr2DLayer *, _DWORD, unsigned int, unsigned int, unsigned int))v38->put_origin)( /*0x984ce9*/
+            v38,
+            *(_DWORD *)&v51.vt,
+            v51.decVal.Hi32,
+            v51.decVal.Lo32,
+            v51.decVal.Mid32);
+    if ( v39 < 0 ) /*0x984ced*/
+      _com_issue_errorex(v39, v38, &_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4); /*0x984cf6*/
+    LOBYTE(v55) = 9; /*0x984d01*/
+    if ( v51.vt == 8 ) /*0x984d05*/
+    {
+      v51.vt = 0; /*0x984d0d*/
+      if ( v51.decVal.Lo32 ) /*0x984d14*/
+        ZAPI.CoTaskMemFree((void *)(v51.decVal.Lo32 - 4)); /*0x984d1a*/
+    }
+    else
+    {
+      VariantClear(&v51); /*0x984d27*/
+    }
+    v55 = -1; /*0x984d31*/
+    if ( *(_DWORD *)&result.gap0 ) /*0x984d3b*/
+      (*(void (__stdcall **)(_DWORD))(**(_DWORD **)&result.gap0 + 8))(*(_DWORD *)&result.gap0); /*0x984d43*/
+    v40 = CWnd::GetLayer( /*0x984d51*/
+            this,
+            (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&result)->m_pInterface;
+    v55 = 11; /*0x984d5d*/
+    v51.vt = 13; /*0x984d61*/
+    v51.decVal.Lo32 = (unsigned int)v40; /*0x984d66*/
+    if ( v40 ) /*0x984d6c*/
+      v40->AddRef(v40); /*0x984d74*/
+    v41 = this->m_pLayerNameTag.m_pInterface; /*0x984d76*/
+    LOBYTE(v55) = 12; /*0x984d7c*/
+    if ( !v41 ) /*0x984d83*/
+      _com_issue_error(-2147467261); /*0x984d8a*/
+    v42 = ((int (__stdcall *)(IWzGr2DLayer *, _DWORD, unsigned int, unsigned int, unsigned int))v41->put_overlay)( /*0x984db8*/
+            v41,
+            *(_DWORD *)&v51.vt,
+            v51.decVal.Hi32,
+            v51.decVal.Lo32,
+            v51.decVal.Mid32);
+    if ( v42 < 0 ) /*0x984dbc*/
+      _com_issue_errorex(v42, v41, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x984dc5*/
+    LOBYTE(v55) = 11; /*0x984dd0*/
+    if ( v51.vt == 8 ) /*0x984dd4*/
+    {
+      v51.vt = 0; /*0x984ddc*/
+      if ( v51.decVal.Lo32 ) /*0x984de3*/
+        ZAPI.CoTaskMemFree((void *)(v51.decVal.Lo32 - 4)); /*0x984de9*/
+    }
+    else
+    {
+      VariantClear(&v51); /*0x984df6*/
+    }
+    v55 = -1; /*0x984e00*/
+    if ( *(_DWORD *)&result.gap0 ) /*0x984e0a*/
+      (*(void (__stdcall **)(_DWORD))(**(_DWORD **)&result.gap0 + 8))(*(_DWORD *)&result.gap0); /*0x984e12*/
+    v43 = this->m_pLayerNameTag.m_pInterface; /*0x984e14*/
+    if ( !v43 ) /*0x984e1c*/
+      _com_issue_error(-2147467261); /*0x984e23*/
+    v44 = v43->put_color(v43, -1u); /*0x984e33*/
+    if ( v44 < 0 ) /*0x984e37*/
+      _com_issue_errorex(v44, v43, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x984e40*/
+    v32(&pvargDest); /*0x984e4a*/
+    v45 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing); /*0x984e56*/
+    if ( v45 < 0 ) /*0x984e60*/
+      _com_issue_error(v45); /*0x984e63*/
+    v55 = 13; /*0x984e6d*/
+    v32(&v53); /*0x984e75*/
+    v46 = ZComAPI::ZComVariantCopy(&v53, &vtMissing); /*0x984e81*/
+    if ( v46 < 0 ) /*0x984e8b*/
+      _com_issue_error(v46); /*0x984e8e*/
+    v47 = this->m_pLayerNameTag.m_pInterface; /*0x984e93*/
+    LOBYTE(v55) = 14; /*0x984e99*/
+    if ( !v47 ) /*0x984ea0*/
+      _com_issue_error(-2147467261); /*0x984ea7*/
+    IWzVector2D::RelMove(v47, 98, 208, (const Ztl_variant_t *)&v53, (const Ztl_variant_t *)&pvargDest); /*0x984ebd*/
+    LOBYTE(v55) = 13; /*0x984ec7*/
+    if ( v53.vt == 8 ) /*0x984ed1*/
+    {
+      v53.vt = 0; /*0x984ed5*/
+      if ( v53.decVal.Lo32 ) /*0x984ee0*/
+        ZAPI.CoTaskMemFree((void *)(v53.decVal.Lo32 - 4)); /*0x984ee6*/
+    }
+    else
+    {
+      VariantClear(&v53); /*0x984ef3*/
+    }
+    v55 = -1; /*0x984ef9*/
+    if ( pvargDest.vt == 8 ) /*0x984f06*/
+    {
+      pvargDest.vt = 0; /*0x984f0e*/
+      if ( pvargDest.decVal.Lo32 ) /*0x984f15*/
+        ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4)); /*0x984f1b*/
+    }
+    else
+    {
+      VariantClear(&pvargDest); /*0x984f28*/
+    }
+  }
+  v48 = this->m_pAvatarLook.p; /*0x984f2e*/
+  *(_DWORD *)&result.gap0 = &v49; /*0x984f39*/
+  v49.p = v48; /*0x984f3d*/
+  if ( v48 ) /*0x984f42*/
+    InterlockedIncrement(&v48->_m_nRef); /*0x984f48*/
+  CUtilDlgEx::MakeAvatar(this, v49); /*0x984f50*/
+}
+
+// References:
+//   ?AddButton@CLayoutMan@@QAE?AV?$ZRef@VCCtrlOriginButton@@@@PBGIJJPAUCREATEPARAM@CCtrlButton@@@Z @ 0x5cf210
+//   aUiUiwindow2Img_247 @ 0xbab7d8  "䥕唯坉湩潤㉷椮杭唯楴䑬杬硅䅟慶慴⽲瑂牐癥"
+//   __imp__InterlockedIncrement@4 @ 0xb14074
+//   ?_ReleaseRaw@?$ZRef@VCCtrlButton@@@@AAEXPAVZRefCounted@@@Z @ 0x429d70
+//   ?_ReleaseRaw@?$ZRef@VCCtrlOriginButton@@@@AAEXPAVZRefCounted@@@Z @ 0x429e90
+//   aUiUiwindow2Img_173 @ 0xbab780  "䥕唯坉湩潤㉷椮杭唯楴䑬杬硅䅟慶慴⽲瑂敎瑸"
+//   aUiUiwindow2Img_300 @ 0xbab730  "䥕唯坉湩潤㉷椮杭唯楴䑬杬硅䅟慶慴⽲瑂䭏"
+//   aUiUiwindow2Img_269 @ 0xbab6d8  "䥕唯坉湩潤㉷椮杭唯楴䑬杬硅䅟慶慴⽲瑂慃据敬"
+//   aUiUiwindow2Img_451 @ 0xbab680  "䥕唯坉湩潤㉷椮杭唯楴䑬杬硅䅟慶慴⽲瑂硅瑩"
+//   aUiUiwindow2Img_583 @ 0xbab630  "䥕唯坉湩潤㉷椮杭唯楴䑬杬硅䅟慶慴⽲瑂晏�"
+//   aUiUiwindow2Img_312 @ 0xbab5e0  "䥕唯坉湩潤㉷椮杭唯楴䑬杬硅䅟慶慴⽲瑂湏"
+//   __imp__VariantInit@4 @ 0xb14290
+//   ?ZComVariantCopy@ZComAPI@@YAJPAUtagVARIANT@@0@Z @ 0x401730
+//   ?vtMissing@@3V_variant_t@@A @ 0xc626e8
+//   ?_com_issue_error@@YGXJ@Z @ 0xa2fd00
+//   ?g_gr@@3V?$_com_ptr_t@V?$_com_IIID@UIWzGr2D@@$1?_GUID_e576ea33_d465_4f08_aab1_e78df73ee6d9@@3U__s_GUID@@B@@@@A @ 0xc6f430
+//   ?CreateLayer@IWzGr2D@@QAE?AV?$_com_ptr_t@V?$_com_IIID@UIWzGr2DLayer@@$1?_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf@@3U__s_GUID@@B@@@@JJKKJABVZtl_variant_t@@0@Z @ 0x42a3d0
+//   ?ZAPI@@3U_ZAPIProcAddress@@A @ 0xc6d758
+//   __imp__VariantClear@4 @ 0xb1428c
+//   ?GetLayer@CWnd@@QAE?AV?$_com_ptr_t@V?$_com_IIID@UIWzGr2DLayer@@$1?_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf@@3U__s_GUID@@B@@@@XZ @ 0x42a270
+//   ?_com_issue_errorex@@YGXJPAUIUnknown@@ABU_GUID@@@Z @ 0xa2fd20
+//   __GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4 @ 0xb469e8
+//   __GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf @ 0xb46cb4
+//   ?RelMove@IWzVector2D@@QAEJJJABVZtl_variant_t@@0@Z @ 0x4063a0
+//   ?MakeAvatar@CUtilDlgEx@@IAEXV?$ZRef@UAvatarLook@@@@@Z @ 0x981e10

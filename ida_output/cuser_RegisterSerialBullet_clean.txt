@@ -1,0 +1,126 @@
+// cuser::RegisterSerialBullet
+
+void __thiscall CUser::RegisterSerialBullet(
+        CUser *this,
+        char *nSkillID,
+        ATTACKINFO *a,
+        const tagPOINT *pt0,
+        CMob *pPrevMob,
+        unsigned int tCur,
+        unsigned int *tPrevDelay,
+        const Ztl_bstr_t *sBulletEffectUOL)
+{
+  int y; // eax
+  int v9; // ebp
+  CMob *dwMobID; // ecx
+  int v11; // edi
+  int v12; // esi
+  long double v13; // st7
+  int v14; // ebx
+  _bstr_t::Data_t *v15; // eax
+  IWzGr2DLayer *v16; // eax
+  HRESULT (__stdcall *get_z)(IWzGr2DLayer *, int *); // edx
+  HRESULT v18; // eax
+  _bstr_t::Data_t *m_Data; // eax
+  IWzGr2DLayer *m_pInterface; // eax
+  HRESULT v21; // eax
+  IWzVector2D *v22; // ecx
+  int v23; // eax
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v24; // [esp-10h] [ebp-4Ch] BYREF
+  const Ztl_bstr_t *v25; // [esp-Ch] [ebp-48h]
+  Ztl_bstr_t v26; // [esp-8h] [ebp-44h]
+  int v27; // [esp-4h] [ebp-40h]
+  CUser *v28; // [esp+14h] [ebp-28h]
+  tagPOINT ptStart; // [esp+18h] [ebp-24h]
+  tagRECT rcMob; // [esp+20h] [ebp-1Ch] BYREF
+  int v31; // [esp+38h] [ebp-4h]
+  IUnknown *pt0a; // [esp+48h] [ebp+Ch]
+  IUnknown *pt0b; // [esp+48h] [ebp+Ch]
+  int tDelay2; // [esp+4Ch] [ebp+10h]
+
+  v28 = this; /*0x8ea327*/
+  if ( pPrevMob )
+  {
+    CMob::GetBodyRect(pPrevMob, &rcMob, 1); /*0x8ea35f*/
+    v9 = (rcMob.left + rcMob.right) / 2; /*0x8ea381*/
+    y = (rcMob.bottom + rcMob.top) / 2; /*0x8ea383*/
+  }
+  else
+  {
+    y = pt0->y; /*0x8ea33f*/
+    v9 = ((this->m_nMoveAction & 1) != 0 ? -25 : 25) + pt0->x;
+  }
+  dwMobID = (CMob *)a->dwMobID; /*0x8ea389*/
+  ptStart.y = y; /*0x8ea38b*/
+  CMob::GetBodyRect(dwMobID, &rcMob, 1); /*0x8ea396*/
+  v11 = (rcMob.bottom + rcMob.top) / 2; /*0x8ea3ba*/
+  v12 = (rcMob.left + rcMob.right) / 2; /*0x8ea3c2*/
+  tDelay2 = (v12 - v9) * (v12 - v9) + (v11 - ptStart.y) * (v11 - ptStart.y); /*0x8ea3d4*/
+  v13 = sqrt((double)tDelay2); /*0x8ea3dc*/
+  v14 = tCur + *tPrevDelay; /*0x8ea3eb*/
+  if ( nSkillID == (char *)&loc_4E23E9 + 1 ) /*0x8ea3f4*/
+  {
+    v27 = 1; /*0x8ea4bb*/
+    v26.m_Data = (_bstr_t::Data_t *)(((rcMob.left + rcMob.right) / 2 - v9) * ((rcMob.left + rcMob.right) / 2 - v9)); /*0x8ea4bd*/
+    tDelay2 = (int)(v13 * DOUBLE_1_25); /*0x8ea4be*/
+    m_Data = sBulletEffectUOL->m_Data; /*0x8ea4c2*/
+    v26.m_Data = m_Data; /*0x8ea4ca*/
+    if ( m_Data ) /*0x8ea4ce*/
+      InterlockedIncrement((volatile LONG *)&m_Data->m_RefCount); /*0x8ea4d4*/
+    m_pInterface = v28->m_pLayerUnderFace.m_pInterface; /*0x8ea4de*/
+    v31 = 0; /*0x8ea4e6*/
+    pt0b = m_pInterface; /*0x8ea4ea*/
+    if ( !m_pInterface ) /*0x8ea4f0*/
+      _com_issue_error(-2147467261); /*0x8ea4f7*/
+    sBulletEffectUOL = nullptr; /*0x8ea500*/
+    v21 = m_pInterface->get_z(m_pInterface, (int *)&sBulletEffectUOL); /*0x8ea50e*/
+    if ( v21 < 0 ) /*0x8ea512*/
+      _com_issue_errorex(v21, pt0b, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x8ea51f*/
+    v25 = sBulletEffectUOL; /*0x8ea528*/
+    v24.m_pInterface = v22; /*0x8ea529*/
+    CMob::GetVecCtrl(a->pMob, &v24); /*0x8ea537*/
+    v31 = -1; /*0x8ea54b*/
+    CAnimationDisplayer::RegisterMagicBulletAnimation( /*0x8ea55a*/
+      TSingleton<CAnimationDisplayer>::ms_pInstance,
+      v14,
+      v14 + tDelay2,
+      (tagPOINT)__PAIR64__(ptStart.y, v9),
+      (tagPOINT)__PAIR64__(v11, v12),
+      v24,
+      (int)v25,
+      v26,
+      v27);
+  }
+  else if ( nSkillID == &byte_E6935E ) /*0x8ea3ff*/
+  {
+    tDelay2 = (int)(v13 + v13); /*0x8ea40c*/
+    v15 = sBulletEffectUOL->m_Data; /*0x8ea414*/
+    v27 = 0; /*0x8ea416*/
+    v26.m_Data = v15; /*0x8ea41f*/
+    if ( v15 ) /*0x8ea423*/
+      InterlockedIncrement((volatile LONG *)&v15->m_RefCount); /*0x8ea429*/
+    v16 = v28->m_pLayerUnderFace.m_pInterface; /*0x8ea433*/
+    v31 = 1; /*0x8ea439*/
+    pt0a = v16; /*0x8ea441*/
+    if ( !v16 ) /*0x8ea447*/
+      _com_issue_error(-2147467261); /*0x8ea44e*/
+    get_z = v16->get_z; /*0x8ea455*/
+    sBulletEffectUOL = nullptr; /*0x8ea461*/
+    v18 = get_z(v16, (int *)&sBulletEffectUOL); /*0x8ea469*/
+    if ( v18 < 0 ) /*0x8ea46d*/
+      _com_issue_errorex(v18, pt0a, &_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf); /*0x8ea47a*/
+    v31 = -1; /*0x8ea493*/
+    CAnimationDisplayer::RegisterChainlightningAnimation( /*0x8ea4a2*/
+      TSingleton<CAnimationDisplayer>::ms_pInstance,
+      v14,
+      v14 + tDelay2,
+      (tagPOINT)__PAIR64__(ptStart.y, v9),
+      (tagPOINT)__PAIR64__(v11, v12),
+      (int)sBulletEffectUOL,
+      v26,
+      v27);
+  }
+  v23 = *tPrevDelay + tDelay2; /*0x8ea56d*/
+  a->tDelay = v23; /*0x8ea573*/
+  *tPrevDelay = v23; /*0x8ea576*/
+}

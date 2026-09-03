@@ -1,0 +1,40 @@
+﻿int __thiscall CMob::GetHitPointHeightRand(CMob *this, tagRECT rcAttack, int rcAttack_12)
+{
+  int v3; // esi
+  unsigned int v4; // ecx
+  tagRECT rcIntersect; // [esp+4h] [ebp-20h] BYREF
+  tagRECT rcBody; // [esp+14h] [ebp-10h] BYREF
+
+  *(_DWORD *)rcAttack.left = 0;
+  *(_DWORD *)(rcAttack.left + 4) = 0;
+  if ( CMob::GetBodyRect(this, &rcBody, 0) )
+  {
+    if ( rcAttack.top < rcBody.right )
+    {
+      if ( rcAttack.bottom <= rcBody.left )
+        rcAttack.bottom = rcBody.left + 1;
+    }
+    else
+    {
+      rcAttack.top = rcBody.right - 1;
+    }
+    if ( rcAttack.right < rcBody.bottom )
+    {
+      if ( rcAttack_12 <= rcBody.top )
+        rcAttack_12 = rcBody.top + 1;
+    }
+    else
+    {
+      rcAttack.right = rcBody.bottom - 1;
+    }
+    ZAPI.IntersectRect(&rcIntersect, (const tagRECT *)&rcAttack.top, &rcBody);
+    *(_DWORD *)rcAttack.left = (rcIntersect.right + rcIntersect.left) / 2;
+    v3 = (int)abs32(rcIntersect.bottom - rcIntersect.top) / 2;
+    if ( v3 )
+      v4 = CRand32::Random(&g_rand) % v3;
+    else
+      v4 = 0;
+    *(_DWORD *)(rcAttack.left + 4) = (rcIntersect.top + rcIntersect.bottom) / 2 + 3 * (v4 - v3 / 2);
+  }
+  return rcAttack.left;
+}

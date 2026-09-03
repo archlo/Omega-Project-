@@ -1,0 +1,66 @@
+// cuser::MakeIncDecHPEffect
+
+void __thiscall CUser::MakeIncDecHPEffect(CUser *this, int nDelta, int bGuard)
+{
+  const SecondaryStat *v4; // eax
+  BOOL v6; // eax
+  CAnimationDisplayer *v7; // ebp
+  int *v8; // edi
+  int v9; // eax
+  CAnimationDisplayer *v10; // ebp
+  int *v11; // edi
+  int v12; // eax
+  CAnimationDisplayer *v13; // ebx
+  _DWORD *v14; // ebp
+  int *v15; // edi
+  int v16; // eax
+  CAnimationDisplayer *v17; // ebx
+  _DWORD *v18; // ebp
+  int *v19; // edi
+  int Height; // eax
+  _BYTE v21[8]; // [esp+10h] [ebp-10h] BYREF
+  _BYTE v22[8]; // [esp+18h] [ebp-8h] BYREF
+  _DWORD *nDeltaa; // [esp+24h] [ebp+4h]
+  _DWORD *nDeltab; // [esp+24h] [ebp+4h]
+
+  v4 = this->GetSecondaryStat(this); /*0x8de75e*/
+  v6 = _ZtlSecureFuse<long>(v4->_ZtlSecureTear_nBlessingArmor_, v4->_ZtlSecureTear_nBlessingArmor__CS) > 0; /*0x8de780*/
+  if ( nDelta <= 0 ) /*0x8de784*/
+  {
+    if ( nDelta >= 0 ) /*0x8de7e2*/
+    {
+      if ( bGuard || v6 ) /*0x8de84b*/
+      {
+        v17 = TSingleton<CAnimationDisplayer>::ms_pInstance; /*0x8de8a5*/
+        v18 = (_DWORD *)(((int (__thiscall *)(IVecCtrlOwner *, _BYTE *))this->GetPos)(&this->IVecCtrlOwner, v22) + 4); /*0x8de8b7*/
+        v19 = (int *)((int (__thiscall *)(IVecCtrlOwner *, _BYTE *))this->GetPos)(&this->IVecCtrlOwner, v21); /*0x8de8d0*/
+        Height = CAvatar::GetHeight(&this->CAvatar); /*0x8de8d2*/
+        CAnimationDisplayer::Effect_Guard(v17, *v19, *v18 - Height, 2); /*0x8de8e2*/
+      }
+      else
+      {
+        v13 = TSingleton<CAnimationDisplayer>::ms_pInstance; /*0x8de853*/
+        v14 = (_DWORD *)(((int (__thiscall *)(IVecCtrlOwner *, _BYTE *))this->GetPos)(&this->IVecCtrlOwner, v22) + 4); /*0x8de865*/
+        v15 = (int *)((int (__thiscall *)(IVecCtrlOwner *, _BYTE *))this->GetPos)(&this->IVecCtrlOwner, v21); /*0x8de87e*/
+        v16 = CAvatar::GetHeight(&this->CAvatar); /*0x8de880*/
+        CAnimationDisplayer::Effect_Miss(v13, *v15, *v14 - v16, 2); /*0x8de890*/
+      }
+    }
+    else
+    {
+      v10 = TSingleton<CAnimationDisplayer>::ms_pInstance; /*0x8de7ea*/
+      nDeltab = (_DWORD *)(((int (__thiscall *)(IVecCtrlOwner *, _BYTE *))this->GetPos)(&this->IVecCtrlOwner, v22) + 4); /*0x8de7ff*/
+      v11 = (int *)((int (__thiscall *)(IVecCtrlOwner *, _BYTE *))this->GetPos)(&this->IVecCtrlOwner, v21); /*0x8de81e*/
+      v12 = CAvatar::GetHeight(&this->CAvatar); /*0x8de820*/
+      CAnimationDisplayer::Effect_HP(v10, *v11, *nDeltab - v12, -nDelta, 2, 0); /*0x8de833*/
+    }
+  }
+  else
+  {
+    v7 = TSingleton<CAnimationDisplayer>::ms_pInstance; /*0x8de78c*/
+    nDeltaa = (_DWORD *)(((int (__thiscall *)(IVecCtrlOwner *, _BYTE *))this->GetPos)(&this->IVecCtrlOwner, v21) + 4); /*0x8de7a1*/
+    v8 = (int *)((int (__thiscall *)(IVecCtrlOwner *, _BYTE *))this->GetPos)(&this->IVecCtrlOwner, v22); /*0x8de7be*/
+    v9 = CAvatar::GetHeight(&this->CAvatar); /*0x8de7c0*/
+    CAnimationDisplayer::Effect_HP(v7, *v8, *nDeltaa - v9, nDelta, 1, 0); /*0x8de7d3*/
+  }
+}

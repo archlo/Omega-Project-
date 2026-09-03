@@ -1,0 +1,206 @@
+// CMobTemplate::LoadSpeakInformation
+// Address: 0x65b4b0
+
+void __thiscall CMobTemplate::LoadSpeakInformation(
+        CMobTemplate *this,
+        _com_ptr_t<_com_IIID<IWzProperty,&_GUID_986515d9_0a0b_4929_8b4f_718682177b92> > pInformation,
+        int nAction)
+{
+  MobSpeakInformation *p; // esi
+  _bstr_t::Data_t *v4; // ecx
+  Ztl_variant_t *v5; // eax
+  _bstr_t::Data_t *v6; // ecx
+  HRESULT (__stdcall *v7)(VARIANTARG *); // ebx
+  Ztl_variant_t *v8; // eax
+  _bstr_t::Data_t *v9; // ecx
+  Ztl_variant_t *v10; // eax
+  _bstr_t::Data_t *v11; // ecx
+  Ztl_variant_t *v12; // eax
+  int i; // ebx
+  void *v14; // esp
+  const wchar_t *v15; // eax
+  Ztl_variant_t *v16; // eax
+  const wchar_t *bstrVal; // edi
+  char *m_pStr; // esi
+  int v19; // esi
+  char *Buffer; // eax
+  ZXString<char> *v21; // eax
+  ZRef<MobSpeakInformation> *v22; // eax
+  LONG (__stdcall *v23)(volatile LONG *); // ebx
+  $84DC0C167E88C9AE1D0BFE03B5B31051 *v24; // edi
+  ZRef<MobSpeakInformation> *v25; // esi
+  MobSpeakInformation *v26; // eax
+  MobSpeakInformation *v27; // ecx
+  _bstr_t v28; // [esp-24h] [ebp-64h] BYREF
+  unsigned __int16 v29; // [esp-20h] [ebp-60h] BYREF
+  const wchar_t *v30; // [esp-Ch] [ebp-4Ch]
+  _bstr_t v31; // [esp-8h] [ebp-48h] BYREF
+  int v32; // [esp-4h] [ebp-44h]
+  CMobTemplate *v33; // [esp+10h] [ebp-30h]
+  ZRef<MobSpeakInformation> v34; // [esp+14h] [ebp-2Ch] BYREF
+  Ztl_variant_t result; // [esp+1Ch] [ebp-24h] BYREF
+  ZXString<char> sSpeech; // [esp+2Ch] [ebp-14h] BYREF
+  int v37; // [esp+3Ch] [ebp-4h]
+
+  v33 = this; /*0x65b4db*/
+  v37 = 0; /*0x65b4e3*/
+  v34.p = nullptr; /*0x65b4e6*/
+  ZRef<MobSpeakInformation>::_Alloc(&v34); /*0x65b4e9*/
+  p = v34.p; /*0x65b4f1*/
+  v32 = 0; /*0x65b4f4*/
+  v31.m_Data = v4; /*0x65b4f5*/
+  sSpeech._m_pStr = (char *)&v31; /*0x65b4f6*/
+  v30 = aHp; /*0x65b4fb*/
+  LOBYTE(v37) = 1; /*0x65b500*/
+  v34.p->nAction = nAction; /*0x65b504*/
+  _bstr_t::_bstr_t(&v31, v30); /*0x65b507*/
+  LOBYTE(v37) = 2; /*0x65b50f*/
+  if ( !pInformation.m_pInterface ) /*0x65b515*/
+    _com_issue_error(-2147467261); /*0x65b51c*/
+  LOBYTE(v37) = 1; /*0x65b525*/
+  v5 = IWzProperty::Getitem(pInformation.m_pInterface, &result, (Ztl_bstr_t)v31.m_Data); /*0x65b529*/
+  LOBYTE(v37) = 3; /*0x65b52f*/
+  p->nHP = get_int32(v5, v32); /*0x65b540*/
+  LOBYTE(v37) = 1; /*0x65b543*/
+  if ( result.vt == 8 ) /*0x65b54b*/
+  {
+    result.vt = 0; /*0x65b54f*/
+    if ( result.decVal.Lo32 ) /*0x65b558*/
+      ZAPI.CoTaskMemFree((void *)(result.decVal.Lo32 - 4)); /*0x65b55e*/
+    v7 = VariantClear; /*0x65b564*/
+  }
+  else
+  {
+    v7 = VariantClear; /*0x65b591*/
+    VariantClear(&result); /*0x65b59b*/
+  }
+  v32 = 0; /*0x65b56a*/
+  v31.m_Data = v6; /*0x65b56c*/
+  sSpeech._m_pStr = (char *)&v31; /*0x65b56d*/
+  _bstr_t::_bstr_t(&v31, L"mp"); /*0x65b577*/
+  LOBYTE(v37) = 4; /*0x65b57f*/
+  LOBYTE(v37) = 1; /*0x65b5a3*/
+  v8 = IWzProperty::Getitem(pInformation.m_pInterface, &result, (Ztl_bstr_t)v31.m_Data); /*0x65b5a7*/
+  LOBYTE(v37) = 5; /*0x65b5ad*/
+  p->nMP = get_int32(v8, v32); /*0x65b5b9*/
+  LOBYTE(v37) = 1; /*0x65b5bc*/
+  if ( result.vt == 8 ) /*0x65b5c4*/
+  {
+    result.vt = 0; /*0x65b5c8*/
+    if ( result.decVal.Lo32 ) /*0x65b5d1*/
+      ZAPI.CoTaskMemFree((void *)(result.decVal.Lo32 - 4)); /*0x65b5d7*/
+  }
+  else
+  {
+    v7(&result); /*0x65b5e3*/
+  }
+  v32 = 100; /*0x65b5e5*/
+  v31.m_Data = v9; /*0x65b5e7*/
+  sSpeech._m_pStr = (char *)&v31; /*0x65b5e8*/
+  _bstr_t::_bstr_t(&v31, L"prob"); /*0x65b5f2*/
+  LOBYTE(v37) = 1; /*0x65b610*/
+  v10 = IWzProperty::Getitem(pInformation.m_pInterface, &result, (Ztl_bstr_t)v31.m_Data); /*0x65b614*/
+  LOBYTE(v37) = 7; /*0x65b61a*/
+  p->nProb = get_int32(v10, v32); /*0x65b626*/
+  LOBYTE(v37) = 1; /*0x65b629*/
+  if ( result.vt == 8 ) /*0x65b631*/
+  {
+    result.vt = 0; /*0x65b635*/
+    if ( result.decVal.Lo32 ) /*0x65b63e*/
+      ZAPI.CoTaskMemFree((void *)(result.decVal.Lo32 - 4)); /*0x65b644*/
+  }
+  else
+  {
+    v7(&result); /*0x65b650*/
+  }
+  v32 = 0; /*0x65b652*/
+  v31.m_Data = v11; /*0x65b654*/
+  sSpeech._m_pStr = (char *)&v31; /*0x65b655*/
+  _bstr_t::_bstr_t(&v31, L"widthSize"); /*0x65b65f*/
+  LOBYTE(v37) = 1; /*0x65b67d*/
+  v12 = IWzProperty::Getitem(pInformation.m_pInterface, &result, (Ztl_bstr_t)v31.m_Data); /*0x65b681*/
+  LOBYTE(v37) = 9; /*0x65b687*/
+  p->nWidth = get_int32(v12, v32); /*0x65b693*/
+  LOBYTE(v37) = 1; /*0x65b696*/
+  if ( result.vt == 8 ) /*0x65b69e*/
+  {
+    result.vt = 0; /*0x65b6a2*/
+    if ( result.decVal.Lo32 ) /*0x65b6ab*/
+      ZAPI.CoTaskMemFree((void *)(result.decVal.Lo32 - 4)); /*0x65b6b1*/
+  }
+  else
+  {
+    v7(&result); /*0x65b6bd*/
+  }
+  for ( i = 0; ; ++i ) /*0x65b6bf*/
+  {
+    v14 = alloca(32); /*0x65b6c6*/
+    v15 = _itow(i, &v29, 10); /*0x65b6d1*/
+    sSpeech._m_pStr = (char *)&v28; /*0x65b6d9*/
+    _bstr_t::_bstr_t(&v28, v15); /*0x65b6df*/
+    LOBYTE(v37) = 1; /*0x65b6f7*/
+    v16 = IWzProperty::Getitem(pInformation.m_pInterface, &result, (Ztl_bstr_t)v28.m_Data); /*0x65b6fb*/
+    LOBYTE(v37) = 11; /*0x65b700*/
+    if ( v16->vt == 8 ) /*0x65b707*/
+      bstrVal = v16->bstrVal; /*0x65b709*/
+    else
+      bstrVal = &sDefault; /*0x65b70e*/
+    m_pStr = nullptr; /*0x65b713*/
+    sSpeech._m_pStr = nullptr; /*0x65b715*/
+    if ( bstrVal ) /*0x65b71a*/
+    {
+      v19 = ZAPI.WideCharToMultiByte(0, 0, bstrVal, -1, nullptr, 0, nullptr, nullptr) - 1; /*0x65b72f*/
+      Buffer = ZXString<char>::GetBuffer(&sSpeech, v19, 0); /*0x65b734*/
+      ZAPI.WideCharToMultiByte(0, 0, bstrVal, -1, Buffer, 0x3FFFFFFF, nullptr, nullptr); /*0x65b74a*/
+      ZXString<char>::ReleaseBuffer(&sSpeech, v19); /*0x65b754*/
+      m_pStr = sSpeech._m_pStr; /*0x65b759*/
+    }
+    LOBYTE(v37) = 13; /*0x65b761*/
+    if ( result.vt == 8 ) /*0x65b765*/
+    {
+      result.vt = 0; /*0x65b769*/
+      if ( result.decVal.Lo32 ) /*0x65b772*/
+        ZAPI.CoTaskMemFree((void *)(result.decVal.Lo32 - 4)); /*0x65b778*/
+    }
+    else
+    {
+      VariantClear(&result); /*0x65b784*/
+    }
+    if ( !m_pStr || !*m_pStr ) /*0x65b78e*/
+      break; /*0x65b78e*/
+    v28.m_Data = (_bstr_t::Data_t *)&sSpeech; /*0x65b799*/
+    v21 = ZArray<ZXString<char>>::InsertBefore(&v34.p->asSpeech, -1); /*0x65b79f*/
+    ZXString<char>::operator=(v21, (const ZXString<char> *)v28.m_Data); /*0x65b7a6*/
+    LOBYTE(v37) = 1; /*0x65b7af*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)m_pStr - 1); /*0x65b7b3*/
+  }
+  LOBYTE(v37) = 1; /*0x65b7c6*/
+  if ( m_pStr ) /*0x65b7cc*/
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)m_pStr - 1); /*0x65b7d2*/
+  v22 = ZArray<ZRef<MobSpeakInformation>>::InsertBefore(&v33->apSpeakInformation, -1); /*0x65b7e5*/
+  v23 = InterlockedIncrement; /*0x65b7ed*/
+  v24 = &v34.p->___u1; /*0x65b7f3*/
+  v25 = v22; /*0x65b7f7*/
+  InterlockedIncrement(&v34.p->_m_nRef); /*0x65b7f9*/
+  v26 = v25->p; /*0x65b7fb*/
+  if ( v26 ) /*0x65b800*/
+  {
+    if ( !InterlockedDecrement(&v26->_m_nRef) ) /*0x65b806*/
+    {
+      v23(&v25->p->_m_nRef); /*0x65b817*/
+      v27 = v25->p; /*0x65b819*/
+      if ( v27 ) /*0x65b81e*/
+        ((void (__thiscall *)(MobSpeakInformation *, int))v27->dtr_ZRefCounted)(v27, 1); /*0x65b826*/
+    }
+    v25->p = nullptr; /*0x65b828*/
+  }
+  v25->p = v34.p; /*0x65b833*/
+  LOBYTE(v37) = 0; /*0x65b836*/
+  if ( !InterlockedDecrement(&v24->_m_nRef) ) /*0x65b83a*/
+  {
+    v23(&v24->_m_nRef); /*0x65b845*/
+    ((void (__thiscall *)(MobSpeakInformation *, int))v34.p->dtr_ZRefCounted)(v34.p, 1); /*0x65b850*/
+  }
+  v37 = -1; /*0x65b855*/
+  ((void (__cdecl *)(IWzProperty *))pInformation.m_pInterface->Release)(pInformation.m_pInterface); /*0x65b866*/
+}

@@ -1,0 +1,71 @@
+// cuserlocal::TryDoingSwallowAbsorb
+
+int __thiscall CUserLocal::TryDoingSwallowAbsorb(
+        CUserLocal *this,
+        const SKILLENTRY *pSkill,
+        unsigned __int8 nSLV,
+        int tKeyDown)
+{
+  char *p_m_uTableSize; // esi
+  volatile LONG *p_m_uCount; // edi
+  const SKILLENTRY *v7; // ebx
+  int max_gauge_time; // eax
+  char *m_pStr; // edi
+  CharacterData *p; // esi
+  IWzVector2D *m_pInterface; // eax
+  CVecCtrl *v12; // esi
+  unsigned int update_time; // eax
+  ZRef<CharacterData> result; // [esp+14h] [ebp-24h] BYREF
+  COutPacket oPacket; // [esp+1Ch] [ebp-1Ch] BYREF
+  int v17; // [esp+34h] [ebp-4h]
+
+  CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &result); /*0x93af84*/
+  if ( result.p ) /*0x93af8f*/
+  {
+    p_m_uTableSize = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x93af91*/
+    p_m_uCount = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount; /*0x93af94*/
+    if ( !InterlockedDecrement(p_m_uCount) ) /*0x93af98*/
+    {
+      InterlockedIncrement(p_m_uCount); /*0x93afa3*/
+      if ( p_m_uTableSize ) /*0x93afab*/
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1); /*0x93afb5*/
+    }
+  }
+  if ( !CUserLocal::IsSkillAvailable(this) ) /*0x93afb9*/
+    return 0; /*0x93afb9*/
+  v7 = pSkill; /*0x93afc6*/
+  max_gauge_time = get_max_gauge_time(pSkill->nSkillID); /*0x93afcd*/
+  if ( tKeyDown < max_gauge_time ) /*0x93afd9*/
+    return 0; /*0x93afd9*/
+  m_pStr = TSingleton<CWvsContext>::ms_pInstance._m_pStr; /*0x93afdf*/
+  p = CWvsContext::GetCharacterData((CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr, &result)->p; /*0x93aff1*/
+  ZRef<CharacterData>::~ZRef<CharacterData>(&result); /*0x93aff8*/
+  if ( CSkillInfo::GetSkillLevel(TSingleton<CSkillInfo>::ms_pInstance, p, v7->nSkillID, nullptr) <= 0 /*0x93b022*/
+    || (get_field()->m_dwOption & 2) != 0 )
+  {
+    return 0; /*0x93b022*/
+  }
+  m_pInterface = CUser::GetVecCtrl( /*0x93b034*/
+                   this,
+                   (_com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > *)&pSkill)->m_pInterface;
+  v12 = m_pInterface ? (CVecCtrl *)&m_pInterface[-3] : nullptr;
+  if ( pSkill ) /*0x93b047*/
+    (*(void (__stdcall **)(const SKILLENTRY *))(pSkill->nSkillID + 8))(pSkill); /*0x93b04f*/
+  if ( CVecCtrl::IsOnLadder(v12) /*0x93b07c*/
+    || CVecCtrl::IsOnRope(v12)
+    || !CMobPool::GetMob(TSingleton<CMobPool>::ms_pInstance, this->m_dwSwallowMobID) )
+  {
+    return 0; /*0x93b0f2*/
+  }
+  COutPacket::COutPacket(&oPacket, 103); /*0x93b08b*/
+  v17 = 0; /*0x93b090*/
+  update_time = get_update_time(); /*0x93b098*/
+  COutPacket::Encode4(&oPacket, update_time); /*0x93b0a2*/
+  COutPacket::Encode4(&oPacket, v7->nSkillID); /*0x93b0ae*/
+  COutPacket::Encode1(&oPacket, nSLV); /*0x93b0bc*/
+  CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket); /*0x93b0cc*/
+  CWvsContext::SetExclRequestSent((CWvsContext *)m_pStr, 1); /*0x93b0d5*/
+  v17 = -1; /*0x93b0de*/
+  ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff); /*0x93b0e6*/
+  return 1; /*0x93b0f4*/
+}

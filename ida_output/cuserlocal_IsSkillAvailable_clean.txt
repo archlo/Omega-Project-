@@ -1,0 +1,23 @@
+// cuserlocal::IsSkillAvailable
+
+BOOL __thiscall CUserLocal::IsSkillAvailable(CUserLocal *this)
+{
+  const SecondaryStat *v2; // eax
+  const SecondaryStat *v3; // eax
+  const SecondaryStat *v4; // eax
+  BOOL result; // eax
+
+  v2 = this->GetSecondaryStat(this); /*0x903c68*/
+  result = false; /*0x903cce*/
+  if ( !_ZtlSecureFuse<long>(v2->_ZtlSecureTear_nStun_, v2->_ZtlSecureTear_nStun__CS) ) /*0x903c77*/
+  {
+    v3 = this->GetSecondaryStat(this); /*0x903c8a*/
+    if ( !_ZtlSecureFuse<long>(v3->_ZtlSecureTear_nSeal_, v3->_ZtlSecureTear_nSeal__CS) ) /*0x903c99*/
+    {
+      v4 = this->GetSecondaryStat(this); /*0x903cac*/
+      if ( !_ZtlSecureFuse<long>(v4->_ZtlSecureTear_nAttract_, v4->_ZtlSecureTear_nAttract__CS) ) /*0x903cbb*/
+        return true; /*0x903c81*/
+    }
+  }
+  return result; /*0x903ccc*/
+}

@@ -1,0 +1,4 @@
+void __thiscall CVecCtrl::EndUpdateActive(CVecCtrl *this)
+{
+  ; /*0x9915a0*/
+}

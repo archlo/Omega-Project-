@@ -1,0 +1,37 @@
+﻿void __thiscall CUIStat::Draw(CUIStat *this, const tagRECT *pRect)
+{
+  CharacterData *p; // esi
+  volatile LONG *p_m_uTableSize; // edi
+  int v5; // ecx
+  IWzCanvas *m_pInterface; // ebx
+  void (*AddRef)(void); // eax
+  CLayoutMan *v8; // edi
+  void (*v9)(void); // edx
+  void (__stdcall *v10)(VARIANTARG *); // edi
+  HRESULT v11; // eax
+  HRESULT v12; // eax
+  IWzCanvas *m_wstr; // eax
+  int v14; // eax
+  const char *job_name; // eax
+  HRESULT v16; // eax
+  HRESULT v17; // eax
+  IWzCanvas *v18; // eax
+  StringPool *Instance; // eax
+  ZXString<char> *String; // edi
+  unsigned __int8 v21; // al
+  void (__stdcall *v22)(VARIANTARG *); // edi
+  HRESULT v23; // eax
+  HRESULT v24; // eax
+  char *m_pStr; // edi
+  HRESULT v26; // eax
+  HRESULT v27; // eax
+  IWzCanvas *v28; // eax
+  unsigned __int8 v29; // al
+  StringPool *v30; // eax
+  ZXString<char> *v31; // ebx
+  int v32; // edi
+  int v33; // eax
+  void (__stdcall *v34)(VARIANTARG *); // edi
+  HRESULT v35; // eax
+  HRESULT v36; // eax
+  char *... [48875 chars total]

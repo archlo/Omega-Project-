@@ -1,0 +1,102 @@
+﻿void __thiscall CUIStatusBar::SendCoupleMessage(CUIStatusBar *this, ZXString<char> *sText)
+{
+  CWvsContext *m_pStr; // edi
+  int v3; // eax
+  const char *v4; // ecx
+  char *v5; // esi
+  unsigned int v6; // esi
+  char *Buffer; // eax
+  CharacterData *p; // ebp
+  char *p_m_uTableSize; // esi
+  volatile LONG *p_m_uCount; // edi
+  GW_MarriageRecord *m_pHead; // ebp
+  const char *sBrideName; // eax
+  char *v13; // eax
+  StringPool *Instance; // eax
+  char *v15; // [esp-18h] [ebp-60h]
+  ZRef<GW_ItemSlotBase> v16[3]; // [esp-8h] [ebp-50h] BYREF
+  ZXString<char> sCharacterName; // [esp+14h] [ebp-34h] BYREF
+  ZXString<char> sMarried; // [esp+18h] [ebp-30h] BYREF
+  CWvsContext *pCtx; // [esp+1Ch] [ebp-2Ch]
+  CUIStatusBar *p_p; // [esp+20h] [ebp-28h]
+  ZRef<CharacterData> result; // [esp+24h] [ebp-24h] BYREF
+  COutPacket oPacket; // [esp+2Ch] [ebp-1Ch] BYREF
+  int v23; // [esp+44h] [ebp-4h]
+
+  p_p = this;
+  m_pStr = (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr;
+  v3 = *((_DWORD *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 2099);
+  pCtx = (CWvsContext *)TSingleton<CWvsContext>::ms_pInstance._m_pStr;
+  if ( v3 )
+    v4 = (const char *)(v3 + 4);
+  else
+    v4 = nullptr;
+  v5 = nullptr;
+  sCharacterName._m_pStr = nullptr;
+  if ( v4 )
+  {
+    v6 = strlen(v4);
+    *(_DWORD *)&v16[0].gap0 = v4;
+    Buffer = ZXString<char>::GetBuffer(&sCharacterName, v6, 0);
+    memcpy(Buffer, *(const void **)&v16[0].gap0, v6);
+    ZXString<char>::ReleaseBuffer(&sCharacterName, v6);
+    v5 = sCharacterName._m_pStr;
+  }
+  v23 = 1;
+  sMarried._m_pStr = nullptr;
+  p = CWvsContext::GetCharacterData(m_pStr, &result)->p;
+  if ( result.p )
+  {
+    p_m_uTableSize = (char *)&result.p[-1].m_mVisitorQuestLog._m_uTableSize;
+    p_m_uCount = (volatile LONG *)&result.p[-1].m_mVisitorQuestLog._m_uCount;
+    if ( !InterlockedDecrement(p_m_uCount) )
+    {
+      InterlockedIncrement(p_m_uCount);
+      if ( p_m_uTableSize )
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1);
+    }
+    v5 = sCharacterName._m_pStr;
+    m_pStr = pCtx;
+    result.p = nullptr;
+  }
+  if ( p->lMarriageRecord._m_uCount )
+  {
+    m_pHead = p->lMarriageRecord._m_pHead;
+    sBrideName = m_pHead->sBrideName;
+    if ( m_pStr->m_nGender )
+      sBrideName = m_pHead->sGroomName;
+    ZXString<char>::operator=<char>(&sMarried, sBrideName);
+    COutPacket::COutPacket(&oPacket, 142);
+    p_p = (CUIStatusBar *)&v16[0].p;
+    LOBYTE(v23) = 5;
+    v16[0].p = nullptr;
+    ZXString<char>::operator=((ZXString<char> *)&v16[0].p, &sMarried);
+    COutPacket::EncodeStr(&oPacket, (ZXString<char>)v16[0].p);
+    p_p = (CUIStatusBar *)&v16[0].p;
+    v16[0].p = nullptr;
+    ZXString<char>::operator=((ZXString<char> *)&v16[0].p, sText);
+    COutPacket::EncodeStr(&oPacket, (ZXString<char>)v16[0].p);
+    CClientSocket::SendPacket(TSingleton<CClientSocket>::ms_pInstance, &oPacket);
+    LOBYTE(v23) = 1;
+    ZArray<unsigned char>::RemoveAll(&oPacket.m_aSendBuff);
+    v13 = sMarried._m_pStr;
+    LOBYTE(v23) = 0;
+  }
+  else
+  {
+    pCtx = (CWvsContext *)v16;
+    v16[0].p = nullptr;
+    LOBYTE(v23) = 2;
+    Instance = StringPool::GetInstance();
+    v15 = StringPool::GetString(Instance, (ZXString<char> *)&sText, 0xA1u)->_m_pStr;
+    LOBYTE(v23) = 4;
+    CUIStatusBar::ChatLogAdd(p_p, v15, 12, -1, 0, v16[0]);
+    v13 = (char *)sText;
+    LOBYTE(v23) = 1;
+  }
+  if ( v13 )
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v13 - 1);
+  v23 = -1;
+  if ( v5 )
+    ZXString<char>::_Release((ZXString<char>::_ZXStringData *)v5 - 1);
+}

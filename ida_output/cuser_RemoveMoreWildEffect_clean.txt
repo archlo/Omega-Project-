@@ -1,0 +1,23 @@
+// cuser::RemoveMoreWildEffect
+
+void __thiscall CUser::RemoveMoreWildEffect(CUser *this)
+{
+  IWzGr2DLayer *m_pInterface; // eax
+  IWzGr2DLayer *v3; // eax
+
+  if ( this->m_pLayerMoreWildEffect.m_pInterface ) /*0x8fb886*/
+    CUser::LoadMoreWildFinishEffect(this); /*0x8fb88e*/
+  m_pInterface = this->m_pLayerMoreWildEffect.m_pInterface; /*0x8fb893*/
+  if ( m_pInterface ) /*0x8fb89b*/
+  {
+    this->m_pLayerMoreWildEffect.m_pInterface = nullptr; /*0x8fb89d*/
+    m_pInterface->Release(m_pInterface); /*0x8fb8a9*/
+  }
+  v3 = this->m_pLayerMoreWildEffect0.m_pInterface; /*0x8fb8ab*/
+  if ( v3 ) /*0x8fb8b3*/
+  {
+    this->m_pLayerMoreWildEffect0.m_pInterface = nullptr; /*0x8fb8b5*/
+    v3->Release(v3); /*0x8fb8c1*/
+  }
+  this->m_tDelayMoreWildEffect = 0; /*0x8fb8c3*/
+}

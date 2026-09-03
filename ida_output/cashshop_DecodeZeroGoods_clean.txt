@@ -1,0 +1,19 @@
+// cashshop::DecodeZeroGoods
+
+int __thiscall CCashShop::DecodeZeroGoods(CCashShop *this, CInPacket *iPacket)
+{
+  CInPacket *v2; // ebx
+  unsigned __int16 v4; // ax
+  int v5; // esi
+  ZArray<CS_ZEROGOODS> *p_m_aZeroGoods; // edi
+
+  v2 = iPacket; /*0x482e41*/
+  v4 = CInPacket::Decode2(iPacket); /*0x482e4b*/
+  v5 = v4; /*0x482e50*/
+  if ( !v4 ) /*0x482e55*/
+    return 0; /*0x482e59*/
+  p_m_aZeroGoods = &this->m_aZeroGoods; /*0x482e66*/
+  ZArray<CS_ZEROGOODS>::_Realloc(p_m_aZeroGoods, v4, 1, (const ZAllocHelper *)&iPacket); /*0x482e6f*/
+  CInPacket::DecodeBuffer(v2, p_m_aZeroGoods->a, 68 * v5); /*0x482e85*/
+  return 1; /*0x482e57*/
+}

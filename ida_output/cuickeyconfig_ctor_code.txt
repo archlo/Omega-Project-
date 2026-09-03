@@ -1,0 +1,142 @@
+﻿CUIKeyConfig *__thiscall CUIKeyConfig::CUIKeyConfig(CUIKeyConfig *this)
+{
+  void (__stdcall *v2)(VARIANTARG *); // ebx
+  HRESULT v3; // eax
+  HRESULT v4; // eax
+  Ztl_variant_t *ObjectA; // eax
+  IUnknown *Unknown; // eax
+  HRESULT v7; // eax
+  HRESULT (__stdcall *v8)(VARIANTARG *); // ebx
+  CQuickslotKeyMappedMan *v9; // ebx
+  IWzCanvas *m_pInterface; // ebx
+  HRESULT (__stdcall *get_height)(IWzCanvas *, unsigned int *); // eax
+  HRESULT v12; // eax
+  IWzCanvas *v13; // ebx
+  int v14; // ebp
+  HRESULT (__stdcall *get_width)(IWzCanvas *, unsigned int *); // eax
+  HRESULT v16; // eax
+  _bstr_t v18; // [esp-8h] [ebp-70h] BYREF
+  const Ztl_variant_t *p_pvargDest; // [esp-4h] [ebp-6Ch]
+  const Ztl_variant_t *v20; // [esp+0h] [ebp-68h]
+  BOOL v21; // [esp+4h] [ebp-64h]
+  VARIANTARG *p_pvarg; // [esp+8h] [ebp-60h]
+  int h; // [esp+20h] [ebp-48h] BYREF
+  int w[2]; // [esp+24h] [ebp-44h] BYREF
+  VARIANTARG pvargDest; // [esp+2Ch] [ebp-3Ch] BYREF
+  VARIANTARG pvarg; // [esp+3Ch] [ebp-2Ch] BYREF
+  Ztl_variant_t result; // [esp+4Ch] [ebp-1Ch] BYREF
+  int v28; // [esp+64h] [ebp-4h]
+
+  w[1] = (int)this; /*0x7d9729*/
+  CUIWnd::CUIWnd(this, 5, 5, 600, 6, L"UI/UIWindow2.img/KeyConfig/backgrnd", 0, 0, 1); /*0x7d9743*/
+  v28 = 0; /*0x7d974e*/
+  if ( this == (CUIKeyConfig *)-2824 ) /*0x7d9754*/
+    TSingleton<CUIKeyConfig>::ms_pInstance = nullptr; /*0x7d9764*/
+  else
+    TSingleton<CUIKeyConfig>::ms_pInstance = this; /*0x7d975c*/
+  this->CUIWnd::CWnd::IGObj::__vftable = (CUIKeyConfig_vtbl *)&CUIKeyConfig::`vftable'{for `IGObj'}; /*0x7d976a*/
+  this->CUIWnd::CWnd::IUIMsgHandler::__vftable = (IUIMsgHandler_vtbl *)&CUIKeyConfig::`vftable'{for `IUIMsgHandler'}; /*0x7d9770*/
+  this->CUIWnd::CWnd::ZRefCounted::__vftable = (ZRefCounted_vtbl *)&CUIKeyConfig::`vftable'{for `ZRefCounted'}; /*0x7d9777*/
+  this->m_pImgFontNumber.m_pInterface = nullptr; /*0x7d977e*/
+  this->m_pKeyConfig.m_pInterface = nullptr; /*0x7d978a*/
+  this->m_pLayerKey.m_pInterface = nullptr; /*0x7d978d*/
+  this->m_pLayerMap.m_pInterface = nullptr; /*0x7d9793*/
+  this->m_pLayerPalette.m_pInterface = nullptr; /*0x7d9799*/
+  this->m_lm.m_pWnd = nullptr; /*0x7d979f*/
+  this->m_lm.m_nOffsetX = 0; /*0x7d97a5*/
+  this->m_lm.m_nOffsetY = 0; /*0x7d97ab*/
+  this->m_lm.m_aLayer.a = nullptr; /*0x7d97b1*/
+  this->m_lm.m_aButton.a = nullptr; /*0x7d97b7*/
+  LOBYTE(v28) = 7; /*0x7d97c4*/
+  memset(&this->m_aFuncKeyMappedInfo[0].fkm.nType, 0, 0x42Cu); /*0x7d97c9*/
+  memset(&this->m_aBasicKeyMappedInfo[0].fkm.nType, 0, 0x288u); /*0x7d97db*/
+  v2 = VariantInit; /*0x7d97e0*/
+  p_pvarg = &pvarg; /*0x7d97ed*/
+  this->m_bForcedDestroy = 0; /*0x7d97ee*/
+  v2(p_pvarg); /*0x7d97f4*/
+  v3 = ZComAPI::ZComVariantCopy(&pvarg, &vtMissing); /*0x7d9800*/
+  if ( v3 < 0 ) /*0x7d980a*/
+    _com_issue_error(v3); /*0x7d980d*/
+  LOBYTE(v28) = 8; /*0x7d9817*/
+  v2(&pvargDest); /*0x7d981c*/
+  v4 = ZComAPI::ZComVariantCopy(&pvargDest, &vtMissing); /*0x7d9828*/
+  if ( v4 < 0 ) /*0x7d9832*/
+    _com_issue_error(v4); /*0x7d9835*/
+  p_pvarg = nullptr; /*0x7d983a*/
+  v21 = 0; /*0x7d983b*/
+  v20 = (const Ztl_variant_t *)&pvarg; /*0x7d9840*/
+  p_pvargDest = (const Ztl_variant_t *)&pvargDest; /*0x7d9845*/
+  v18.m_Data = (_bstr_t::Data_t *)&pvarg; /*0x7d9846*/
+  w[0] = (int)&v18; /*0x7d9847*/
+  LOBYTE(v28) = 9; /*0x7d9854*/
+  _bstr_t::_bstr_t(&v18, L"UI/UIWindow2.img/KeyConfig"); /*0x7d9858*/
+  LOBYTE(v28) = 10; /*0x7d985d*/
+  if ( !g_rm.m_pInterface ) /*0x7d9868*/
+    _com_issue_error(-2147467261); /*0x7d986f*/
+  LOBYTE(v28) = 9; /*0x7d9878*/
+  ObjectA = IWzResMan::GetObjectA(g_rm.m_pInterface, &result, (Ztl_bstr_t)v18.m_Data, p_pvargDest, v20); /*0x7d9883*/
+  LOBYTE(v28) = 11; /*0x7d988a*/
+  Unknown = Ztl_variant_t::GetUnknown(ObjectA, v21, (bool)p_pvarg); /*0x7d988f*/
+  v7 = _com_ptr_t<_com_IIID<IWzProperty,&__s_GUID const _GUID_986515d9_0a0b_4929_8b4f_718682177b92>>::_QueryInterface<IUnknown *>( /*0x7d9897*/
+         &this->m_pKeyConfig,
+         Unknown);
+  if ( v7 < 0 && v7 != -2147467262 ) /*0x7d98a5*/
+    _com_issue_error(v7); /*0x7d98a8*/
+  LOBYTE(v28) = 9; /*0x7d98b2*/
+  v8 = VariantClear; /*0x7d98b6*/
+  if ( result.vt == 8 ) /*0x7d98c1*/
+  {
+    result.vt = 0; /*0x7d98c9*/
+    if ( result.decVal.Lo32 ) /*0x7d98d0*/
+      ZAPI.CoTaskMemFree((void *)(result.decVal.Lo32 - 4)); /*0x7d98d6*/
+  }
+  else
+  {
+    VariantClear(&result); /*0x7d98e3*/
+  }
+  LOBYTE(v28) = 8; /*0x7d98e5*/
+  if ( pvargDest.vt == 8 ) /*0x7d98ef*/
+  {
+    pvargDest.vt = 0; /*0x7d98f3*/
+    if ( pvargDest.decVal.Lo32 ) /*0x7d98fe*/
+      ZAPI.CoTaskMemFree((void *)(pvargDest.decVal.Lo32 - 4)); /*0x7d9904*/
+  }
+  else
+  {
+    v8(&pvargDest); /*0x7d9911*/
+  }
+  LOBYTE(v28) = 7; /*0x7d9913*/
+  if ( pvarg.vt == 8 ) /*0x7d991d*/
+  {
+    pvarg.vt = 0; /*0x7d9925*/
+    if ( pvarg.decVal.Lo32 ) /*0x7d992c*/
+      ZAPI.CoTaskMemFree((void *)(pvarg.decVal.Lo32 - 4)); /*0x7d9932*/
+  }
+  else
+  {
+    v8(&pvarg); /*0x7d993f*/
+  }
+  v9 = TSingleton<CQuickslotKeyMappedMan>::ms_pInstance; /*0x7d9947*/
+  CFuncKeyMappedMan::SaveFuncKeyMap(TSingleton<CFuncKeyMappedMan>::ms_pInstance); /*0x7d994d*/
+  CQuickslotKeyMappedMan::SaveQuickslotKeyMap(v9); /*0x7d9954*/
+  m_pInterface = this->m_pBackgrnd.m_pInterface; /*0x7d9959*/
+  if ( !m_pInterface ) /*0x7d995e*/
+    _com_issue_error(-2147467261); /*0x7d9965*/
+  get_height = m_pInterface->get_height; /*0x7d996c*/
+  h = 0; /*0x7d9975*/
+  v12 = get_height(m_pInterface, (unsigned int *)&h); /*0x7d9979*/
+  if ( v12 < 0 ) /*0x7d997d*/
+    _com_issue_errorex(v12, m_pInterface, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x7d9986*/
+  v13 = this->m_pBackgrnd.m_pInterface; /*0x7d998b*/
+  v14 = h; /*0x7d998e*/
+  if ( !v13 ) /*0x7d9994*/
+    _com_issue_error(-2147467261); /*0x7d999b*/
+  get_width = v13->get_width; /*0x7d99a2*/
+  w[0] = 0; /*0x7d99ab*/
+  v16 = get_width(v13, (unsigned int *)w); /*0x7d99af*/
+  if ( v16 < 0 ) /*0x7d99b3*/
+    _com_issue_errorex(v16, v13, &_GUID_7600dc6c_9328_4bff_9624_5b0f5c01179e); /*0x7d99bc*/
+  CUIWnd::CreateUIWndPosSaved(this, w[0], v14, 10); /*0x7d99cb*/
+  CUIKeyConfig::CalcKeyIconPosInfo(this); /*0x7d99d2*/
+  return this; /*0x7d99d9*/
+}

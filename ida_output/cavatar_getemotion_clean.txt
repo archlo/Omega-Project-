@@ -1,0 +1,4 @@
+int __thiscall CAvatar::GetEmotion(CAvatar *this)
+{
+  return _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nEmotion, this->_ZtlSecureTear_m_nEmotion_CS);
+}

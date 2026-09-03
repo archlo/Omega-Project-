@@ -1,0 +1,363 @@
+import { WzCanvas } from '../wz/WzCanvas.js';
+import { WzUol } from '../wz/WzUol.js';
+/**
+Resolves an item's inventory icon (the 32x32-ish cell sprite) from the WZ files.
+Equips (1xxxxxx) live in `Character.wz` at
+`<Category>/<itemId:D8>.img/info/icon` — the same image that holds
+the avatar sprite; the category folder is derived from the item-id prefix
+(`itemId / 10000`). Consumables, setup, etc and
+cash items (2..5xxxxxx) live in `Item.wz` at
+`<Cat>/<itemId/10000:D4>.img/<itemId:D8>/info/icon`.
+
+Pendant/Belt/Medal and the face/eye/earring accessories all share the
+`Accessory` folder in v95; Rings, Shields, Capes and Weapons have their
+own folders. Every lookup falls back from `icon` to `iconRaw` and resolves
+UOL nodes. Loaded sprites (and misses) are cached by item id so repeated
+draws never re-walk the WZ tree.
+*/
+export class ItemIconLoader {
+    _loader;
+    _characterWz;
+    _itemWz;
+    _cache = new Map();
+    _petCache = new Map();
+    _attrCache = new Map();
+    _runtimeItems = new Map();
+    _cashTag = null;
+    _cashTagLoaded = false;
+    constructor(_loader, _characterWz, _itemWz = null) {
+        this._loader = _loader;
+        this._characterWz = _characterWz;
+        this._itemWz = _itemWz;
+    }
+    /** The inventory icon for an item, or null if the id isn't a
+        recognised item or the asset is missing (caller falls back to a placeholder). */
+    LoadIcon(itemId) {
+        let cached = this._cache.get(itemId);
+        if (cached !== undefined)
+            return cached;
+        let sprite = null;
+        try {
+            // OG CItemInfo::GetItemProp: equips (1xxxxxx) and cash equips (5xxxxxx where group!=500)
+            // load from Character.wz; everything else from Item.wz
+            const invType = Math.floor(itemId / 1_000_000);
+            if (invType === 1) {
+                sprite = this._loadEquipIcon(itemId);
+            }
+            else if (invType === 5 && Math.floor(itemId / 10000) !== 500) {
+                // Cash equip — OG slot type 2, loads from Character.wz like regular equips
+                sprite = this._loadEquipIcon(itemId);
+            }
+            else {
+                sprite = this._loadItemIcon(itemId);
+            }
+        }
+        catch {
+            sprite = null;
+        }
+        this._cache.set(itemId, sprite);
+        return sprite;
+    }
+    /** OG: CItemInfo::DrawItemIconForSlot cash tag overlay — small "CASH" indicator
+        drawn in the bottom-right corner of cash items. Loaded from UIWindow2.img/Item/cash
+        or similar WZ path. Returns null if the cash tag asset isn't available. */
+    GetCashTag() {
+        if (this._cashTagLoaded)
+            return this._cashTag?.NewSprite() ?? null;
+        this._cashTagLoaded = true;
+        if (!this._itemWz)
+            return null;
+        // Try common WZ paths for the cash tag icon
+        const paths = [
+            'UIWindow2.img/Item/cash',
+            'UIWindow2.img/Item/Cash',
+        ];
+        for (const p of paths) {
+            const node = this._itemWz.GetItem(p);
+            if (node instanceof WzCanvas) {
+                this._cashTag = this._loader.Load(node);
+                break;
+            }
+            if (node instanceof WzUol) {
+                const resolved = node.Resolve();
+                if (resolved instanceof WzCanvas) {
+                    this._cashTag = this._loader.Load(resolved);
+                    break;
+                }
+            }
+        }
+        return this._cashTag?.NewSprite() ?? null;
+    }
+    /** Pet icon from `Item.wz/Pet/<id:D8>.img/info/icon`. Pets live in their own
+        `Pet` folder (NOT under `Cash`), so the character-profile pet row needs
+        this dedicated lookup. Cached per id (misses too). */
+    LoadPetIcon(templateId) {
+        let cached = this._petCache.get(templateId);
+        if (cached !== undefined)
+            return cached;
+        let sprite = null;
+        try {
+            if (this._itemWz !== null)
+                sprite = this._resolve(this._itemWz, `Pet/${templateId.toString().padStart(8, '0')}.img/info`);
+        }
+        catch {
+            sprite = null;
+        }
+        this._petCache.set(templateId, sprite);
+        return sprite;
+    }
+    /** Parsed item attributes for the tooltip (requirements + bonuses), read from the
+        item's `info` node. Equips -> Character.wz; consumables/etc -> Item.wz. Returns
+        null when the item has no info node (caller shows just the name). Cached per id (misses too). */
+    LoadAttr(itemId) {
+        let cached = this._attrCache.get(itemId);
+        if (cached !== undefined)
+            return this._withRuntime(itemId, cached);
+        let attr = null;
+        try {
+            const info = this._infoNode(itemId);
+            if (info !== null) {
+                const isEquip = Math.floor(itemId / 1_000_000) === 1;
+                attr = {
+                    IsEquip: isEquip,
+                    Category: Math.floor(itemId / 10000),
+                    ReqLevel: I(info, 'reqLevel'),
+                    ReqStr: I(info, 'reqSTR'),
+                    ReqDex: I(info, 'reqDEX'),
+                    ReqInt: I(info, 'reqINT'),
+                    ReqLuk: I(info, 'reqLUK'),
+                    ReqFame: I(info, 'reqPOP'),
+                    ReqJob: I(info, 'reqJob'),
+                    IncStr: I(info, 'incSTR'),
+                    IncDex: I(info, 'incDEX'),
+                    IncInt: I(info, 'incINT'),
+                    IncLuk: I(info, 'incLUK'),
+                    IncPad: I(info, 'incPAD'),
+                    IncMad: I(info, 'incMAD'),
+                    IncPdd: I(info, 'incPDD'),
+                    IncMdd: I(info, 'incMDD'),
+                    IncMhp: I(info, 'incMHP'),
+                    IncMmp: I(info, 'incMMP'),
+                    IncAcc: I(info, 'incACC'),
+                    IncEva: I(info, 'incEVA'),
+                    IncCraft: I(info, 'incCraft'),
+                    Knockback: I(info, 'knockback'),
+                    IncSpeed: I(info, 'incSpeed'),
+                    IncJump: I(info, 'incJump'),
+                    IncMHPr: I(info, 'incMHPr'),
+                    IncMMPr: I(info, 'incMMPr'),
+                    AttackSpeed: I(info, 'attackSpeed'),
+                    Upgrades: I(info, 'tuc'),
+                    Price: I(info, 'price'),
+                    Cash: I(info, 'cash') !== 0,
+                    Only: I(info, 'only') !== 0,
+                    SetItemId: I(info, 'setItemID'),
+                    // OG: CItemInfo::GetMaxLevel (0x5C09B0) — highest info/level/<n> node.
+                    // Growth items (135xxx) carry per-level data; used by the tooltip to
+                    // pick the "max" glyph vs level/percent digits.
+                    MaxLevel: ItemIconLoader._maxLevel(info),
+                    // OG: DrawToolTip_Equip durability = 100*cur/max. info/durability is
+                    // the max; per-instance current durability comes from the item slot.
+                    DurabilityMax: I(info, 'durability'),
+                };
+            }
+        }
+        catch {
+            attr = null;
+        }
+        this._attrCache.set(itemId, attr);
+        return this._withRuntime(itemId, attr);
+    }
+    /**
+     * Attach the decoded instance values used by the equip tooltip. WZ data is
+     * immutable and cached by item id; this overlay is deliberately separate so
+     * two instances of the same item do not rewrite the template attributes.
+     */
+    SetRuntimeItem(item) {
+        if (item.equip)
+            this.SetRuntimeEquip(item.itemId, item.equip, item.attribute);
+        else
+            this.ClearRuntimeItem(item.itemId);
+    }
+    /** Attach decoded equip fields while preserving the existing LoadAttr API. */
+    SetRuntimeEquip(itemId, equip, attribute = equip.attribute) {
+        this._runtimeItems.set(itemId, { equip, attribute });
+    }
+    ClearRuntimeItem(itemId) {
+        this._runtimeItems.delete(itemId);
+    }
+    _withRuntime(itemId, attr) {
+        const runtime = this._runtimeItems.get(itemId);
+        if (!runtime)
+            return attr;
+        const equip = runtime.equip;
+        const result = attr ? { ...attr } : {
+            IsEquip: true,
+            Category: Math.floor(itemId / 10000),
+            ReqLevel: 0, ReqStr: 0, ReqDex: 0, ReqInt: 0, ReqLuk: 0, ReqFame: 0, ReqJob: 0,
+            IncStr: 0, IncDex: 0, IncInt: 0, IncLuk: 0,
+            IncPad: 0, IncMad: 0, IncPdd: 0, IncMdd: 0, IncMhp: 0, IncMmp: 0,
+            IncAcc: 0, IncEva: 0, IncSpeed: 0, IncJump: 0, IncMHPr: 0, IncMMPr: 0,
+            IncCraft: 0, Knockback: 0, AttackSpeed: 0, Upgrades: 0, Price: 0,
+            Cash: false, Only: false, SetItemId: 0,
+        };
+        // Equip packet fields override the WZ template for this instance.
+        result.IncStr = equip.incStr;
+        result.IncDex = equip.incDex;
+        result.IncInt = equip.incInt;
+        result.IncLuk = equip.incLuk;
+        result.IncMhp = equip.incMhp;
+        result.IncMmp = equip.incMmp;
+        result.IncPad = equip.incPad;
+        result.IncMad = equip.incMad;
+        result.IncPdd = equip.incPdd;
+        result.IncMdd = equip.incMdd;
+        result.IncAcc = equip.incAcc;
+        result.IncEva = equip.incEva;
+        result.IncSpeed = equip.incSpeed;
+        result.IncJump = equip.incJump;
+        result.ProtectionType = runtime.attribute & 3;
+        result.Durability = equip.durability;
+        result.Level = equip.level;
+        result.StarForce = equip.iuc;
+        result.Ruc = equip.ruc;
+        result.CUC = equip.cuc;
+        result.Iuc = equip.iuc;
+        result.Option1 = equip.option1;
+        result.Option2 = equip.option2;
+        result.Option3 = equip.option3;
+        result.Socket1 = equip.socket1;
+        result.Socket2 = equip.socket2;
+        result.Attribute = runtime.attribute;
+        const nextExp = this._growthNextExp(itemId, equip.level);
+        result.Exp = equip.exp;
+        result.expPct = nextExp > 0 ? Math.max(0, Math.min(99, Math.floor(100 * equip.exp / nextExp))) : 0;
+        return result;
+    }
+    _growthNextExp(itemId, level) {
+        const info = this._infoNode(itemId);
+        const levels = info?.Get('level');
+        if (!levels || typeof levels !== 'object')
+            return 0;
+        const next = levels[String(level + 1)];
+        if (!next || typeof next !== 'object')
+            return 0;
+        return I(next, 'exp');
+    }
+    // Count of info/level/<n> children == the growth item's max level (0 = not growth).
+    static _maxLevel(info) {
+        const levelNode = info.Get('level');
+        if (!levelNode || typeof levelNode !== 'object')
+            return 0;
+        const obj = levelNode;
+        let max = 0;
+        for (let i = 1;; i++) {
+            if (!(String(i) in obj))
+                break;
+            max = i;
+        }
+        return max;
+    }
+    _infoNode(itemId) {
+        if (Math.floor(itemId / 1_000_000) === 1) {
+            const category = ItemIconLoader._category(itemId);
+            if (category === null || this._characterWz === null)
+                return null;
+            const node = this._characterWz.GetItem(`${category}/${itemId.toString().padStart(8, '0')}.img/info`);
+            return node instanceof Object ? node : null;
+        }
+        if (this._itemWz === null)
+            return null;
+        const folder = (() => {
+            switch (Math.floor(itemId / 1_000_000)) {
+                case 2: return 'Consume';
+                case 3: return 'Install';
+                case 4: return 'Etc';
+                case 5: return 'Cash';
+                default: return null;
+            }
+        })();
+        if (folder === null)
+            return null;
+        const node = this._itemWz.GetItem(`${folder}/${Math.floor(itemId / 10000).toString().padStart(4, '0')}.img/${itemId.toString().padStart(8, '0')}/info`);
+        return node instanceof Object ? node : null;
+    }
+    // Equip (1xxxxxx): Character.wz/<Category>/<id:D8>.img/info/icon
+    _loadEquipIcon(itemId) {
+        const category = ItemIconLoader._category(itemId);
+        if (category === null || this._characterWz === null)
+            return null;
+        return this._resolve(this._characterWz, `${category}/${itemId.toString().padStart(8, '0')}.img/info`);
+    }
+    // Consume/Install/Etc/Cash (2..5xxxxxx): Item.wz/<Cat>/<id/10000:D4>.img/<id:D8>/info/icon
+    _loadItemIcon(itemId) {
+        if (this._itemWz === null)
+            return null;
+        const folder = (() => {
+            switch (Math.floor(itemId / 1_000_000)) {
+                case 2: return 'Consume';
+                case 3: return 'Install';
+                case 4: return 'Etc';
+                case 5: return 'Cash';
+                default: return null;
+            }
+        })();
+        if (folder === null)
+            return null;
+        const img = Math.floor(itemId / 10000);
+        return this._resolve(this._itemWz, `${folder}/${img.toString().padStart(4, '0')}.img/${itemId.toString().padStart(8, '0')}/info`);
+    }
+    // icon (preferred) -> iconRaw (fallback), resolving a UOL and uploading the canvas.
+    _resolve(wz, infoPath) {
+        let node = wz.GetItem(`${infoPath}/icon`) ?? wz.GetItem(`${infoPath}/iconRaw`);
+        if (node instanceof WzUol)
+            node = node.Resolve();
+        return node instanceof WzCanvas ? this._loader.Load(node) : null;
+    }
+    // Character.wz folder for an equip id, by the 4-digit category (itemId / 10000).
+    // Mapped from OG CItemInfo::get_equip_data_path (0x5A6060).
+    // StringPool IDs: 0x93E=Unknown, 0x93F=Consume, 0x940=Install, 0x941=Cap,
+    // 0x942=Accessory, 0x943=Coat, 0x944=Longcoat, 0x945=Pants, 0x946=Shoes,
+    // 0x947=Glove, 0x948=Shield, 0x949=Cape, 0x94A=Ring, 0x94B=PetEquip,
+    // 0x94C=Weapon, 0x94D=TamingMob, 0x94F=Dragon, 0x18FA=Mechanic
+    static _category(itemId) {
+        const cat = Math.floor(itemId / 10000);
+        // OG get_equip_data_path (0x5A6060) — explicit cases first, then weapon default
+        switch (true) {
+            case cat === 100: return 'Cap';
+            case cat >= 101 && cat <= 103: return 'Accessory';
+            case cat === 104: return 'Coat';
+            case cat === 105: return 'Longcoat';
+            case cat === 106: return 'Pants';
+            case cat === 107: return 'Shoes';
+            case cat === 108: return 'Glove';
+            case cat === 109 || cat === 119: return 'Shield';
+            case cat === 110: return 'Cape';
+            case cat === 111: return 'Ring';
+            case cat >= 112 && cat <= 115: return 'Accessory';
+            case cat >= 116 && cat <= 118: return null;
+            case cat >= 180 && cat <= 183: return 'PetEquip';
+            case cat >= 190 && cat <= 191 || cat === 193 || cat === 198: return 'TamingMob';
+            case cat >= 194 && cat <= 197: return 'Dragon';
+            default: {
+                // OG default: cat/10 in {13,14,16,17} → Weapon (130-139, 140-149, 160-169, 170-179)
+                // Mechanic (161-165) is checked INSIDE the weapon default since it's within the weapon range
+                const tens = Math.floor(cat / 10);
+                if (cat >= 161 && cat <= 165)
+                    return 'Mechanic';
+                if (tens === 13 || tens === 14 || tens === 16 || tens === 17)
+                    return 'Weapon';
+                return null;
+            }
+        }
+    }
+}
+function I(p, key) {
+    const v = p.Get(key);
+    if (typeof v === 'number')
+        return v;
+    if (typeof v === 'bigint')
+        return Number(v);
+    return 0;
+}
+//# sourceMappingURL=ItemIconLoader.js.map

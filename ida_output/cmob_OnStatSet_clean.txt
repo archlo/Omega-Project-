@@ -1,0 +1,36 @@
+void __thiscall CMob::OnStatSet(CMob *this, CInPacket *iPacket)
+{
+  CMob::ReservedPacket *p; // esi
+  UINT128 *p_uFlag; // ecx
+  ZRef<CMob::ReservedPacket> *v5; // eax
+  _BYTE v6[20]; // [esp-14h] [ebp-48h] BYREF
+  ZRef<CMob::ReservedPacket> reservedPacket; // [esp+10h] [ebp-24h] BYREF
+  UINT128 uFlagSet; // [esp+18h] [ebp-1Ch] BYREF
+  int v9; // [esp+30h] [ebp-4h]
+
+  UINT128::UINT128(&uFlagSet); /*0x65268c*/
+  CInPacket::DecodeBuffer(iPacket, &uFlagSet, 0x10u); /*0x65269e*/
+  UINT128::UINT128((UINT128 *)&v6[4], &uFlagSet, 0x80u); /*0x6526b6*/
+  if ( MobStat::IsMovementAffectingStat(*(UINT128 *)&v6[4]) && this->m_bDoomReserved ) /*0x6526c9*/
+  {
+    reservedPacket.p = nullptr; /*0x6526d5*/
+    ZRef<CMob::ReservedPacket>::_Alloc(&reservedPacket); /*0x6526d9*/
+    v9 = 0; /*0x6526de*/
+    p = reservedPacket.p; /*0x6526e2*/
+    *(_DWORD *)&v6[16] = &uFlagSet; /*0x6526ea*/
+    p_uFlag = &reservedPacket.p->uFlag; /*0x6526eb*/
+    reservedPacket.p->bSet = 1; /*0x6526ee*/
+    UINT128::setValue(p_uFlag, *(const UINT128 **)&v6[16]); /*0x6526f4*/
+    CInPacket::operator=(&p->iPacket, iPacket); /*0x6526fd*/
+    v5 = ZList<ZRef<CMob::ReservedPacket>>::AddTail(&this->m_lpStatChangeReserved); /*0x652708*/
+    ZRef<CMob::ReservedPacket>::operator=(v5, &reservedPacket); /*0x652714*/
+    v9 = -1; /*0x65271d*/
+    ZRef<CMob::ReservedPacket>::~ZRef<CMob::ReservedPacket>(&reservedPacket); /*0x652725*/
+  }
+  else
+  {
+    *(_DWORD *)&v6[16] = iPacket; /*0x65273f*/
+    UINT128::UINT128((UINT128 *)v6, &uFlagSet, 0x80u); /*0x652753*/
+    CMob::ProcessStatSet(this, *(UINT128 *)v6, *(CInPacket **)&v6[16]); /*0x65275a*/
+  }
+}

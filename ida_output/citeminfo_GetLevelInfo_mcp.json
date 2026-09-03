@@ -1,0 +1,12 @@
+[
+  {
+    "query": "0x5c39d0",
+    "matches": [
+      {
+        "address": "0x5c39d0",
+        "name": "CItemInfo::GetLevelInfo",
+        "pseudocode": "{\"addr\":\"0x5c39d0\",\"code\":\"ZRef<CItemInfo::LevelInfo> *__thiscall CItemInfo::GetLevelInfo(\\n        CItemInfo *this,\\n        ZRef<CItemInfo::LevelInfo> *result,\\n        int nItemID,\\n        int nLevel)\\n{\\n  const CItemInfo::EQUIPITEM *EquipItem; // ebx\\n\\n  if ( CItemInfo::IsGrowthItem(this, nItemID) ) /*0x5c39e1*/\\n  {\\n    EquipItem = CItemInfo::GetEquipItem(this, nItemID); /*0x5c39f3*/\\n    if ( EquipItem ) /*0x5c39f7*/\\n    {\\n      if ( nLevel <= 0 || nLevel > (int)CItemInfo::GetMaxLevel(this, nItemID) ) /*0x5c3a1a*/\\n      {\\n        result->p = nullptr; /*0x5c3a43*/\\n        return result; /*0x5c3a3c*/\\n      }\\n      else\\n      {\\n        ZRef<CItemInfo::LevelInfo>::ZRef<CItemInfo::LevelInfo>(result, &EquipItem->apLevelInfo.a[nLevel - 1]); /*0x5c3a2d*/\\n        return result; /*0x5c3a34*/\\n      }\\n    }\\n    else\\n    {\\n      result->p = nullptr; /*0x5c3a00*/\\n      return result; /*0x5c39f9*/\\n    }\\n  }\\n  else\\n  {\\n    result->p = nullptr; /*0x5c3a55*/\\n    return result; /*0x5c3a4f*/\\n  }\\n}\",\"refs\":[{\"addr\":\"0x5c0820\",\"name\":\"?GetEquipItem@CItemInfo@@QAEPBUEQUIPITEM@1@J@Z\"},{\"addr\":\"0x598730\",\"name\":\"??0?$ZRef@ULevelInfo@CItemInfo@@@@QAE@ABV0@@Z\"},{\"addr\":\"0x5c09b0\",\"name\":\"?GetMaxLevel@CItemInfo@@QAEJJ@Z\"},{\"addr\":\"0x5c39b0\",\"name\":\"?IsGrowthItem@CItemInfo@@QAEHJ@Z\"}]}"
+      }
+    ]
+  }
+]

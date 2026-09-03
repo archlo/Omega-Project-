@@ -1,0 +1,9 @@
+// cuserlocal::IsAttract
+
+BOOL __thiscall CUserLocal::IsAttract(CUserLocal *this)
+{
+  const SecondaryStat *v1; // eax
+
+  v1 = this->GetSecondaryStat(this); /*0x903c05*/
+  return _ZtlSecureFuse<long>(v1->_ZtlSecureTear_nAttract_, v1->_ZtlSecureTear_nAttract__CS) != 0; /*0x903c22*/
+}

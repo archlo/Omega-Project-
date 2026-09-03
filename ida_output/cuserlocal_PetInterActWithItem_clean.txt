@@ -1,0 +1,56 @@
+// cuserlocal::PetInterActWithItem
+
+int __thiscall CUserLocal::PetInterActWithItem(CUserLocal *this, int nItemID)
+{
+  ZRef<CPet> *a; // eax
+  CPet *p; // eax
+  ZArray<long> *m_pTemplate; // ebx
+  unsigned int Count; // eax
+  int *v7; // esi
+  int v8; // edi
+  unsigned int v9; // eax
+  int *v10; // esi
+  int v11; // eax
+  int nUserAction; // [esp+Ch] [ebp+4h]
+
+  if ( this->m_nLastPointedItem == nItemID ) /*0x903e00*/
+    return 0; /*0x903e00*/
+  a = this->m_apPet.a; /*0x903e06*/
+  this->m_nLastPointedItem = nItemID; /*0x903e0c*/
+  p = a->p; /*0x903e12*/
+  nUserAction = 3; /*0x903e15*/
+  if ( !p ) /*0x903e1f*/
+    return 0; /*0x903eb7*/
+  m_pTemplate = (ZArray<long> *)p->m_pTemplate; /*0x903e26*/
+  Count = ZArray<long>::GetCount(m_pTemplate + 22); /*0x903e33*/
+  if ( Count ) /*0x903e3a*/
+  {
+    v7 = m_pTemplate[22].a; /*0x903e3c*/
+    do /*0x903e52*/
+    {
+      if ( nItemID == *v7 ) /*0x903e42*/
+        nUserAction = 4; /*0x903e44*/
+      ++v7; /*0x903e4c*/
+      --Count; /*0x903e4f*/
+    }
+    while ( Count ); /*0x903e52*/
+  }
+  v8 = 0; /*0x903e59*/
+  v9 = ZArray<long>::GetCount(m_pTemplate + 23); /*0x903e5b*/
+  if ( v9 ) /*0x903e65*/
+  {
+    v10 = m_pTemplate[23].a; /*0x903e67*/
+    v8 = v9; /*0x903e69*/
+    do /*0x903e7e*/
+    {
+      if ( nItemID == *v10 ) /*0x903e72*/
+        nUserAction = 5; /*0x903e74*/
+      ++v10; /*0x903e78*/
+      --v9; /*0x903e7b*/
+    }
+    while ( v9 ); /*0x903e7e*/
+  }
+  if ( (int *)nItemID == m_pTemplate->a || (v11 = 5, nItemID / 10000 != 500) ) /*0x903e9c*/
+    v11 = nUserAction; /*0x903e9e*/
+  return this->PetInterActWithUserAction(this, v11, v8); /*0x903eb2*/
+}

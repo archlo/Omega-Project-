@@ -1,0 +1,25 @@
+﻿void __thiscall CMob::SetTimeBombTime(CMob *this, int nSkillID)
+{
+  _bstr_t::Data_t *m_Data; // esi
+  SKILLENTRY *Skill; // edi
+  int SkillLevel; // eax
+  const SKILLLEVELDATA *LevelData; // eax
+  int v7; // esi
+
+  m_Data = TSingleton<CUserLocal>::ms_pInstance.m_Data;
+  Skill = (SKILLENTRY *)CSkillInfo::GetSkill(TSingleton<CSkillInfo>::ms_pInstance, nSkillID);
+  SkillLevel = CUserLocal::GetSkillLevel((CUserLocal *)m_Data, nSkillID);
+  if ( m_Data && Skill && SkillLevel >= 1 )
+  {
+    if ( nSkillID == 4341003 )
+    {
+      LevelData = SKILLENTRY::GetLevelData(Skill, SkillLevel);
+      v7 = _ZtlSecureFuse<long>(LevelData->_ZtlSecureTear_tTime, LevelData->_ZtlSecureTear_tTime_CS);
+      this->m_tTimeBomb = 1000 * v7 + get_update_time();
+    }
+    else
+    {
+      this->m_tTimeBomb = get_update_time() + 3000;
+    }
+  }
+}

@@ -1,0 +1,62 @@
+int __thiscall CMob::GetBodyRect(CMob *this, tagRECT *rc, int bContinuous)
+{
+  tagRECT *p_m_rcBody; // ebp
+  int v6; // ebx
+  tagRECT *p_m_rcBodyFlip; // eax
+  char v8; // al
+  int v9; // eax
+  tagRECT *v10; // eax
+  int top; // edx
+  int right; // ecx
+  int bottom; // edx
+  int v14; // eax
+  int Data; // [esp-Ch] [ebp-24h]
+  int v16; // [esp-Ch] [ebp-24h]
+  tagRECT rcPrev; // [esp+8h] [ebp-10h] BYREF
+
+  p_m_rcBody = &this->m_rcBody; /*0x642147*/
+  if ( ZAPI.IsRectEmpty(&this->m_rcBody) ) /*0x64214e*/
+  {
+    ZAPI.SetRectEmpty(rc); /*0x64215d*/
+    return 0; /*0x642164*/
+  }
+  else
+  {
+    if ( this->m_pTemplate->bNoFlip ) /*0x642173*/
+    {
+      v6 = 1; /*0x64217e*/
+      p_m_rcBodyFlip = p_m_rcBody; /*0x642183*/
+    }
+    else
+    {
+      v8 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nMoveAction, this->_ZtlSecureTear_m_nMoveAction_CS); /*0x642195*/
+      v6 = v8 & 1; /*0x64219f*/
+      if ( (v8 & 1) != 0 ) /*0x6421a2*/
+        p_m_rcBodyFlip = p_m_rcBody; /*0x6421a4*/
+      else
+        p_m_rcBodyFlip = &this->m_rcBodyFlip; /*0x6421a8*/
+    }
+    *rc = *p_m_rcBodyFlip; /*0x6421b4*/
+    Data = TSecType<long>::GetData(&this->m_ptPos.y); /*0x6421d3*/
+    v9 = TSecType<long>::GetData(&this->m_ptPos.x); /*0x6421da*/
+    ZAPI.OffsetRect(rc, v9, Data); /*0x6421e1*/
+    if ( bContinuous ) /*0x6421ec*/
+    {
+      v10 = p_m_rcBody; /*0x6421ee*/
+      if ( !v6 ) /*0x6421f2*/
+        v10 = &this->m_rcBodyFlip; /*0x6421f4*/
+      top = v10->top; /*0x6421fc*/
+      rcPrev.left = v10->left; /*0x6421ff*/
+      right = v10->right; /*0x642203*/
+      rcPrev.top = top; /*0x642206*/
+      bottom = v10->bottom; /*0x64220a*/
+      rcPrev.right = right; /*0x64220d*/
+      rcPrev.bottom = bottom; /*0x642217*/
+      v16 = TSecType<long>::GetData(&this->m_ptPosPrev.y); /*0x642220*/
+      v14 = TSecType<long>::GetData(&this->m_ptPosPrev.x); /*0x642227*/
+      ZAPI.OffsetRect(&rcPrev, v14, v16); /*0x642232*/
+      ZAPI.UnionRect(rc, rc, &rcPrev); /*0x64223f*/
+    }
+    return 1; /*0x642248*/
+  }
+}

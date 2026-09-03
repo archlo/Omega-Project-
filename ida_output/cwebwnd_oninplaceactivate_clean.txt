@@ -1,0 +1,1 @@
+{"addr":"0x9a4070","code":"HRESULT __stdcall CWebWnd::OnInPlaceActivate(CWebWnd *this)\n{\n  return 0; /*0x9a4072*/\n}"}

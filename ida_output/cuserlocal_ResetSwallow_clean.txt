@@ -1,0 +1,9 @@
+// cuserlocal::ResetSwallow
+
+void __thiscall CUserLocal::ResetSwallow(CUserLocal *this)
+{
+  this->m_dwSwallowMobID = 0; /*0x93a0e2*/
+  this->m_dwSwallowMobTemplateID = 0; /*0x93a0e8*/
+  this->m_bSwallowed = 0; /*0x93a0ee*/
+  CUser::RemoveSwallowingEffect(this); /*0x93a0f4*/
+}

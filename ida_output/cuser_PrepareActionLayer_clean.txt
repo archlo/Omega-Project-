@@ -1,0 +1,69 @@
+// cuser::PrepareActionLayer
+
+void __thiscall CUser::PrepareActionLayer(CUser *this, int nActionSpeed, int nWalkSpeed, int bKeyDown)
+{
+  CUser *v4; // esi
+  char v5; // bl
+  SecondaryStat *v6; // ebp
+  volatile LONG *p_m_uTableSize; // edi
+  volatile LONG *v8; // edi
+  int Speed; // edi
+  int Height; // eax
+  char v11; // [esp+13h] [ebp-11h]
+  int nPsdSpeed; // [esp+14h] [ebp-10h]
+  ZRef<PassiveSkillData> result; // [esp+1Ch] [ebp-8h] BYREF
+
+  v4 = (CUser *)((char *)this - 136); /*0x8e307f*/
+  v5 = 0; /*0x8e3089*/
+  v6 = (SecondaryStat *)(*(int (__thiscall **)(char *))(*((_DWORD *)this - 34) + 8))((char *)this - 136); /*0x8e3094*/
+  nPsdSpeed = 0; /*0x8e309d*/
+  if ( !v4->IsLocalUser(v4) /*0x8e30b7*/
+    || (v5 = 1,
+        v11 = 1,
+        !CUserLocal::GetPassiveSkillData((CUserLocal *)TSingleton<CUserLocal>::ms_pInstance.m_Data, &result)->p) )
+  {
+    v11 = 0; /*0x8e30c6*/
+  }
+  if ( (v5 & 1) != 0 ) /*0x8e30ce*/
+  {
+    if ( result.p ) /*0x8e30d6*/
+    {
+      p_m_uTableSize = (volatile LONG *)&result.p[-1].mAdditionPsd._m_uTableSize; /*0x8e30d8*/
+      if ( !InterlockedDecrement((volatile LONG *)&result.p[-1].mAdditionPsd._m_uCount) ) /*0x8e30df*/
+      {
+        InterlockedIncrement(p_m_uTableSize + 1); /*0x8e30ea*/
+        if ( p_m_uTableSize ) /*0x8e30f2*/
+          (**(void (__thiscall ***)(char *, int))p_m_uTableSize)((char *)p_m_uTableSize, 1); /*0x8e30fc*/
+      }
+    }
+  }
+  if ( v11 ) /*0x8e3103*/
+  {
+    nPsdSpeed = CUserLocal::GetPassiveSkillData((CUserLocal *)TSingleton<CUserLocal>::ms_pInstance.m_Data, &result)->p->nPsdSpeed; /*0x8e311f*/
+    if ( result.p ) /*0x8e3125*/
+    {
+      v8 = (volatile LONG *)&result.p[-1].mAdditionPsd._m_uTableSize; /*0x8e3127*/
+      if ( !InterlockedDecrement((volatile LONG *)&result.p[-1].mAdditionPsd._m_uCount) ) /*0x8e312e*/
+      {
+        InterlockedIncrement(v8 + 1); /*0x8e3139*/
+        if ( v8 ) /*0x8e3141*/
+          (**(void (__thiscall ***)(char *, int))v8)((char *)v8, 1); /*0x8e314b*/
+      }
+    }
+  }
+  Speed = SecondaryStat::GetSpeed(v6, nPsdSpeed); /*0x8e3167*/
+  if ( _ZtlSecureFuse<long>(v6->_ZtlSecureTear_nSlow_, v6->_ZtlSecureTear_nSlow__CS) ) /*0x8e3169*/
+    Speed = _ZtlSecureFuse<long>(v6->_ZtlSecureTear_nSlow_, v6->_ZtlSecureTear_nSlow__CS); /*0x8e3185*/
+  if ( _ZtlSecureFuse<long>(v6->_ZtlSecureTear_nFrozen_, v6->_ZtlSecureTear_nFrozen__CS) ) /*0x8e3195*/
+    Speed += (int)((double)(Speed * _ZtlSecureFuse<long>(v6->_ZtlSecureTear_nFrozen_, v6->_ZtlSecureTear_nFrozen__CS)) /*0x8e31c7*/
+                 / DOUBLE_N100_0);
+  if ( !this->m_sWeaponAfterimage.m_Data ) /*0x8e31cd*/
+  {
+    CAvatar::PrepareActionLayer((CAvatar *)this, nActionSpeed, Speed, bKeyDown); /*0x8e31e3*/
+    CUser::PrepareShadowPartnerActionLayer(v4); /*0x8e31ea*/
+    CUser::PrepareMirrorActionLayer(v4); /*0x8e31f1*/
+    Height = CAvatar::GetHeight((CAvatar *)this); /*0x8e31f8*/
+    CChatBalloon::AdjustCoordY((CChatBalloon *)((char *)this - 116), Height); /*0x8e3201*/
+    CUser::UpdateAdditionalLayer(v4); /*0x8e3208*/
+  }
+}

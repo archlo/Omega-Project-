@@ -1,0 +1,42 @@
+import { Overlay } from '../Overlay.js';
+import { WzTextureLoader } from '../../render/WzTextureLoader.js';
+import { WzPackage } from '../../wz/WzPackage.js';
+import { BuiltInFont } from '../BuiltInFont.js';
+export declare class GameMenu extends Overlay {
+    onChannel: (() => void) | null;
+    onSkin: (() => void) | null;
+    onGameOption: (() => void) | null;
+    onSystemOption: (() => void) | null;
+    onQuit: (() => void) | null;
+    private _backgrnd;
+    private _hover;
+    private _hoverSprites;
+    private _backSprite;
+    private _font;
+    private _viewW;
+    private _viewH;
+    private _selected;
+    private _alpha;
+    private _lastMouse;
+    private _mouseX;
+    private _mouseY;
+    constructor(loader: WzTextureLoader, ui: WzPackage | null, font?: BuiltInFont | null);
+    private _loadState;
+    private get _panelWidth();
+    private get _panelHeight();
+    private get _topLeft();
+    private get _panelBounds();
+    private _itemRect;
+    private _hitTest;
+    Open(): void;
+    private _close;
+    Relayout(viewWidth: number, viewHeight: number): void;
+    update(_dt: number): void;
+    private _updateHover;
+    draw(): void;
+    handleMouseButton(x: number, y: number, down: boolean): boolean;
+    onKeyPress(key: string): boolean;
+    SetMouse(x: number, y: number): void;
+    private _activate;
+}
+//# sourceMappingURL=GameMenu.d.ts.map

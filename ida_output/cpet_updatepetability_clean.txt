@@ -1,0 +1,135 @@
+﻿void __thiscall CPet::UpdatePetAbility(CPet *this)
+{
+  char *v2; // ebp
+  int v3; // ebx
+  int *v4; // edi
+  TSecType<long> *v5; // eax
+  int Data; // eax
+  const CItemInfo::EQUIPITEM *EquipItem; // eax
+  int v8; // ecx
+  int m_nPetIndex; // edx
+  int v10; // eax
+  int v11; // eax
+  unsigned int ZtlSecureTear_m_bLongRange_CS; // edx
+  unsigned int v13; // eax
+  const ZRef<GW_ItemSlotBase> *v14; // ecx
+  IWzVector2D *m_pInterface; // eax
+  int nNameTag; // ecx
+  IWzGr2DLayer *v17; // eax
+  int v18; // eax
+  int v19; // eax
+  int v20; // eax
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > v21; // [esp-20h] [ebp-44h] BYREF
+  _com_ptr_t<_com_IIID<IWzVector2D,&_GUID_f28bd1ed_3deb_4f92_9eec_10ef5a1c3fb4> > v22; // [esp-1Ch] [ebp-40h] BYREF
+  int v23; // [esp-18h] [ebp-3Ch]
+  int v24; // [esp-14h] [ebp-38h]
+  int v25; // [esp-10h] [ebp-34h]
+  unsigned int ZtlSecureTear_m_bPickupOthers_CS; // [esp-Ch] [ebp-30h]
+  int v27; // [esp-8h] [ebp-2Ch]
+  int v28; // [esp-4h] [ebp-28h]
+  const ZRef<GW_ItemSlotBase> *aRealEquip2; // [esp+10h] [ebp-14h]
+  int bSweepForDrop; // [esp+14h] [ebp-10h]
+  int bPickupOthers; // [esp+18h] [ebp-Ch]
+  int bLongRange; // [esp+1Ch] [ebp-8h]
+  _com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *v33; // [esp+20h] [ebp-4h]
+
+  if ( !this->m_pOwner )
+    return;
+  v2 = TSingleton<CWvsContext>::ms_pInstance._m_pStr + 14928;
+  aRealEquip2 = (const ZRef<GW_ItemSlotBase> *)(TSingleton<CWvsContext>::ms_pInstance._m_pStr + 14928);
+  v3 = 0;
+  v4 = g_anPetAbilBodyPart;
+  do
+  {
+    v5 = *(TSecType<long> **)&v2[8 * *v4 + 4];
+    if ( v5 )
+    {
+      Data = TSecType<long>::GetData(v5 + 1);
+      EquipItem = CItemInfo::GetEquipItem((CItemInfo *)TSingleton<CItemInfo>::ms_pInstance._m_pStr, Data);
+      if ( EquipItem )
+      {
+        if ( (v8 = *v4, *v4 == 24)
+          || v8 == 25
+          || (m_nPetIndex = this->m_nPetIndex) == 0 && (v8 >= 21 && v8 <= 29 || v8 == 46)
+          || m_nPetIndex == 1 && (v8 >= 31 && v8 <= 37 || v8 == 47)
+          || m_nPetIndex == 2 && (v8 >= 39 && v8 <= 45 || v8 == 48) )
+        {
+          v3 |= EquipItem->dwPetAbilityFlag;
+        }
+      }
+    }
+    ++v4;
+  }
+  while ( (int)v4 < (int)g_anPetRingBodyPart );
+  v10 = _ZtlSecureFuse<int>(this->_ZtlSecureTear_m_bSweepForDrop, this->_ZtlSecureTear_m_bSweepForDrop_CS);
+  ZtlSecureTear_m_bPickupOthers_CS = this->_ZtlSecureTear_m_bPickupOthers_CS;
+  bSweepForDrop = v10;
+  v11 = _ZtlSecureFuse<int>(this->_ZtlSecureTear_m_bPickupOthers, ZtlSecureTear_m_bPickupOthers_CS);
+  ZtlSecureTear_m_bLongRange_CS = this->_ZtlSecureTear_m_bLongRange_CS;
+  bPickupOthers = v11;
+  bLongRange = _ZtlSecureFuse<int>(this->_ZtlSecureTear_m_bLongRange, ZtlSecureTear_m_bLongRange_CS);
+  this->_ZtlSecureTear_m_bPickupMeso_CS = _ZtlSecureTear<int>((v3 & 1) != 0, this->_ZtlSecureTear_m_bPickupMeso);
+  this->_ZtlSecureTear_m_bPickupItem_CS = _ZtlSecureTear<int>((v3 & 2) != 0, this->_ZtlSecureTear_m_bPickupItem);
+  this->_ZtlSecureTear_m_bPickupOthers_CS = _ZtlSecureTear<int>((v3 & 4) != 0, this->_ZtlSecureTear_m_bPickupOthers);
+  this->_ZtlSecureTear_m_bLongRange_CS = _ZtlSecureTear<int>((v3 & 8) != 0, this->_ZtlSecureTear_m_bLongRange);
+  this->_ZtlSecureTear_m_bSweepForDrop_CS = _ZtlSecureTear<int>((v3 & 0x10) != 0, this->_ZtlSecureTear_m_bSweepForDrop);
+  this->_ZtlSecureTear_m_bConsumeHP_CS = _ZtlSecureTear<int>((v3 & 0x20) != 0, this->_ZtlSecureTear_m_bConsumeHP);
+  this->_ZtlSecureTear_m_bConsumeMP_CS = _ZtlSecureTear<int>((v3 & 0x40) != 0, this->_ZtlSecureTear_m_bConsumeMP);
+  v13 = _ZtlSecureTear<int>((v3 & 0x80u) != 0, this->_ZtlSecureTear_m_bIgnoreItems);
+  v14 = aRealEquip2;
+  this->_ZtlSecureTear_m_bIgnoreItems_CS = v13;
+  if ( !v14[g_anPetRingBodyPart[2 * this->m_nPetIndex]].p
+    && _ZtlSecureFuse<int>(this->_ZtlSecureTear_m_bNameTag, this->_ZtlSecureTear_m_bNameTag_CS) )
+  {
+    v28 = 0;
+    v27 = 0;
+    ZtlSecureTear_m_bPickupOthers_CS = 0;
+    v25 = 0;
+    v24 = 0;
+    v23 = 1003;
+    this->_ZtlSecureTear_m_bNameTag_CS = _ZtlSecureTear<int>(0, this->_ZtlSecureTear_m_bNameTag);
+    m_pInterface = this->m_pvc.m_pInterface;
+    v33 = (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v22;
+    v22.m_pInterface = m_pInterface;
+    if ( m_pInterface )
+      goto LABEL_28;
+    goto LABEL_29;
+  }
+  if ( aRealEquip2[g_anPetRingBodyPart[2 * this->m_nPetIndex]].p
+    && !_ZtlSecureFuse<int>(this->_ZtlSecureTear_m_bNameTag, this->_ZtlSecureTear_m_bNameTag_CS) )
+  {
+    v28 = 0;
+    v27 = 0;
+    this->_ZtlSecureTear_m_bNameTag_CS = _ZtlSecureTear<int>(1, this->_ZtlSecureTear_m_bNameTag);
+    nNameTag = this->m_pTemplate->nNameTag;
+    m_pInterface = this->m_pvc.m_pInterface;
+    ZtlSecureTear_m_bPickupOthers_CS = 0;
+    v25 = 0;
+    v24 = nNameTag;
+    v23 = 1003;
+    v33 = (_com_ptr_t<_com_IIID<IWzGr2DLayer,&_GUID_6dc8c7ce_8e81_4420_b4f6_4b60b7d5fcdf> > *)&v22;
+    v22.m_pInterface = m_pInterface;
+    if ( m_pInterface )
+LABEL_28:
+      m_pInterface->AddRef(m_pInterface);
+LABEL_29:
+    v17 = this->m_pLayerAction.m_pInterface;
+    v21.m_pInterface = v17;
+    v33 = &v21;
+    if ( v17 )
+      v17->AddRef(v17);
+    CLife::MakeNameTag(this, this->m_sName._m_pStr, v21, v22, v23, v24, v25, ZtlSecureTear_m_bPickupOthers_CS, v27, v28);
+  }
+  this->_ZtlSecureTear_m_bChatBalloon_CS = _ZtlSecureTear<int>(
+                                             aRealEquip2[dword_C562A4[2 * this->m_nPetIndex]].p != nullptr,
+                                             this->_ZtlSecureTear_m_bChatBalloon);
+  v18 = _ZtlSecureFuse<int>(this->_ZtlSecureTear_m_bSweepForDrop, this->_ZtlSecureTear_m_bSweepForDrop_CS);
+  if ( bSweepForDrop != v18
+    || (v19 = _ZtlSecureFuse<int>(this->_ZtlSecureTear_m_bPickupOthers, this->_ZtlSecureTear_m_bPickupOthers_CS),
+        bPickupOthers != v19)
+    || (v20 = _ZtlSecureFuse<int>(this->_ZtlSecureTear_m_bLongRange, this->_ZtlSecureTear_m_bLongRange_CS),
+        bLongRange != v20) )
+  {
+    this->m_bItemSoltChange = 0;
+  }
+}

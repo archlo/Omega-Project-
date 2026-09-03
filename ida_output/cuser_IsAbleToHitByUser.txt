@@ -1,0 +1,3 @@
+// CUser::IsAbleToHitByUser @ 0x903370
+
+{"addr":"0x903370","code":"BOOL __thiscall CUser::IsAbleToHitByUser(CUser *this, int nReason)\n{\n  return this->m_bIsAbleToHitByUser && (!nReason || nReason == this->m_nIsAbleToHitByUserReason); /*0x90338e*/\n}"}

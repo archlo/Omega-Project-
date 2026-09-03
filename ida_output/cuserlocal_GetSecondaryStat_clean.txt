@@ -1,0 +1,6 @@
+// cuserlocal::GetSecondaryStat
+
+const SecondaryStat *__thiscall CUserLocal::GetSecondaryStat(CUserLocal *this)
+{
+  return (const SecondaryStat *)(TSingleton<CWvsContext>::ms_pInstance._m_pStr + 8520); /*0x90729a*/
+}

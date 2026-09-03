@@ -1,0 +1,120 @@
+// CUtilDlgEx::SetUtilDlgEx_AVATAR
+// Address: 0x97dae0
+
+void __thiscall CUtilDlgEx::SetUtilDlgEx_AVATAR(
+        CUtilDlgEx *this,
+        ZArray<long> *aCandidate,
+        ZRef<CharacterData> pCharacterData)
+{
+  unsigned int v4; // edi
+  AvatarLook *v5; // eax
+  AvatarLook *v6; // eax
+  AvatarLook *v7; // eax
+  ZArray<long> *v8; // ebp
+  unsigned int v9; // eax
+  int v10; // eax
+  int v11; // eax
+  LONG (__stdcall *v12)(volatile LONG *); // ebx
+  AvatarLook *p; // eax
+  char *p_m_uTableSize; // esi
+  volatile LONG *p_m_uCount; // edi
+  ZRef<AvatarLook> v16; // [esp-8h] [ebp-2Ch] BYREF
+  AvatarLook *v17; // [esp+14h] [ebp-10h]
+  int v18; // [esp+20h] [ebp-4h]
+
+  v4 = 0; /*0x97db0b*/
+  v18 = 0; /*0x97db14*/
+  ZRef<CharacterData>::operator=(&this->m_pCharacterData, &pCharacterData); /*0x97db18*/
+  v16.p = (AvatarLook *)517; /*0x97db1d*/
+  if ( TSingleton<CWvsContext>::ms_pInstance._m_pStr ) /*0x97db2d*/
+  {
+    v7 = (AvatarLook *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, (unsigned int)v16.p); /*0x97db51*/
+    v17 = v7; /*0x97db56*/
+    LOBYTE(v18) = 2; /*0x97db5a*/
+    if ( v7 ) /*0x97db61*/
+    {
+      v6 = AvatarLook::AvatarLook( /*0x97db80*/
+             v7,
+             &this->m_pCharacterData.p->characterStat,
+             (const ZRef<GW_ItemSlotBase> *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 1806,
+             (const ZRef<GW_ItemSlotBase> *)TSingleton<CWvsContext>::ms_pInstance._m_pStr + 1866);
+      goto LABEL_7; /*0x97db85*/
+    }
+  }
+  else
+  {
+    v5 = (AvatarLook *)ZAllocEx<ZAllocAnonSelector>::Alloc(&ZAllocEx<ZAllocAnonSelector>::_s_alloc, (unsigned int)v16.p); /*0x97db2f*/
+    v17 = v5; /*0x97db34*/
+    LOBYTE(v18) = 1; /*0x97db38*/
+    if ( v5 ) /*0x97db3f*/
+    {
+      v6 = AvatarLook::AvatarLook(v5, this->m_pCharacterData.p); /*0x97db4a*/
+      goto LABEL_7; /*0x97db4f*/
+    }
+  }
+  v6 = nullptr; /*0x97db87*/
+LABEL_7:
+  LOBYTE(v18) = 0; /*0x97db89*/
+  ZRef<AvatarLook>::operator=(&this->m_pAvatarLook, v6); /*0x97db95*/
+  v8 = aCandidate; /*0x97dba0*/
+  this->m_pAvatarLook.p->nWeaponStickerID = 0; /*0x97dba4*/
+  this->m_pAvatarLook.p->anHairEquip[11] = 0; /*0x97dbad*/
+  this->m_pAvatarLook.p->anUnseenEquip[11] = 0; /*0x97dbb6*/
+  this->m_bEquipPreview = 1; /*0x97dbbc*/
+  if ( v8->a ) /*0x97dbc6*/
+    v9 = *(v8->a - 1); /*0x97dbd1*/
+  else
+    v9 = 0; /*0x97dbcd*/
+  ZArray<long>::_Alloc(&this->m_aAvatarCandidate, v9, (const ZAllocHelper *)&aCandidate); /*0x97dbe2*/
+  if ( ZArray<long>::GetCount(v8) ) /*0x97dbe9*/
+  {
+    do /*0x97dc07*/
+    {
+      this->m_aAvatarCandidate.a[v4] = v8->a[v4]; /*0x97dbfa*/
+      ++v4; /*0x97dbff*/
+    }
+    while ( v4 < ZArray<long>::GetCount(v8) ); /*0x97dc07*/
+  }
+  v10 = *v8->a / 10000; /*0x97dc1d*/
+  if ( v10 == 2 ) /*0x97dc22*/
+    v11 = 0; /*0x97dc24*/
+  else
+    v11 = (v10 != 3) + 1; /*0x97dc31*/
+  v12 = InterlockedIncrement; /*0x97dc33*/
+  this->m_nAvatarType = v11; /*0x97dc3c*/
+  p = this->m_pAvatarLook.p; /*0x97dc42*/
+  this->m_nAvatarIndex = 0; /*0x97dc4a*/
+  aCandidate = (ZArray<long> *)&v16; /*0x97dc54*/
+  v16.p = p; /*0x97dc58*/
+  if ( p ) /*0x97dc5d*/
+    v12(&p->_m_nRef); /*0x97dc63*/
+  CUtilDlgEx::SetAvatar(this, v16); /*0x97dc67*/
+  CUtilDlgEx::Layout_GEN(this, 1); /*0x97dc70*/
+  v18 = -1; /*0x97dc79*/
+  if ( pCharacterData.p ) /*0x97dc83*/
+  {
+    p_m_uTableSize = (char *)&pCharacterData.p[-1].m_mVisitorQuestLog._m_uTableSize; /*0x97dc85*/
+    p_m_uCount = (volatile LONG *)&pCharacterData.p[-1].m_mVisitorQuestLog._m_uCount; /*0x97dc88*/
+    if ( !InterlockedDecrement(p_m_uCount) ) /*0x97dc8c*/
+    {
+      v12(p_m_uCount); /*0x97dc97*/
+      if ( p_m_uTableSize ) /*0x97dc9b*/
+        (**(void (__thiscall ***)(char *, int))p_m_uTableSize)(p_m_uTableSize, 1); /*0x97dca5*/
+    }
+  }
+}
+
+// References:
+//   ??4?$ZRef@VCharacterData@@@@QAEAAV0@ABV0@@Z @ 0x719b10
+//   ?Alloc@?$ZAllocEx@VZAllocAnonSelector@@@@QAEPAXI@Z @ 0x402040
+//   ?_s_alloc@?$ZAllocEx@VZAllocAnonSelector@@@@0V1@A @ 0xc6e67c
+//   ??0AvatarLook@@QAE@ABUGW_CharacterStat@@QBV?$ZRef@UGW_ItemSlotBase@@@@1@Z @ 0x97acd0
+//   ?ms_pInstance@?$TSingleton@VCWvsContext@@@@1PAVCWvsContext@@A @ 0xc64068
+//   ??0AvatarLook@@QAE@ABVCharacterData@@@Z @ 0x429bc0
+//   ??4?$ZRef@UAvatarLook@@@@QAEAAV0@PAUAvatarLook@@@Z @ 0x97cfa0
+//   ?_Alloc@?$ZArray@J@@AAEPAJIABVZAllocHelper@@@Z @ 0x52c720
+//   ?GetCount@?$ZArray@J@@QBEIXZ @ 0x4607c0
+//   __imp__InterlockedIncrement@4 @ 0xb14074
+//   ?SetAvatar@CUtilDlgEx@@IAEXV?$ZRef@UAvatarLook@@@@@Z @ 0x97c290
+//   ?Layout_GEN@CUtilDlgEx@@IAEXH@Z @ 0x97b060
+//   __imp__InterlockedDecrement@4 @ 0xb14078

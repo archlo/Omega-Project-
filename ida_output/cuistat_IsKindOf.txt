@@ -1,0 +1,4 @@
+// CUIStat::IsKindOf @ 0x8679c0
+// Decompiled from v95 IDB
+
+{"addr":"0x8679c0","code":"CRTTI __thiscall CUIStat::IsKindOf(CUIStat *this, const CRTTI *pRTTI)\n{\n  CRTTI result; // eax\n\n  result.m_pPrev = &CUIStat::ms_RTTI_CUIStat; /*0x8679c4*/\n  while ( result.m_pPrev != pRTTI ) /*0x8679d2*/\n  {\n    result.m_pPrev = result.m_pPrev->m_pPrev; /*0x8679d4*/\n    if ( !result.m_pPrev ) /*0x8679d8*/\n      return result; /*0x8679d8*/\n  }\n  return (CRTTI)1; /*0x8679da*/\n}","refs":[{"addr":"0xc61878","name":"?ms_RTTI_CUIStat@CUIStat@@0VCRTTI@@A"}]}

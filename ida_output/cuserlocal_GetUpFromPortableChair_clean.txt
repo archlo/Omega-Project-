@@ -1,0 +1,25 @@
+// cuserlocal::GetUpFromPortableChair
+
+void __thiscall CUserLocal::GetUpFromPortableChair(CUserLocal *this, int bOnInit)
+{
+  unsigned int v3; // eax
+  int v4; // eax
+  IWzVector2D *m_pInterface; // esi
+
+  this->_ZtlSecureTear_m_bSit_CS = _ZtlSecureTear<int>(0, this->_ZtlSecureTear_m_bSit); /*0x90606b*/
+  v3 = _ZtlSecureTear<long>(0, this->_ZtlSecureTear_m_nPortableChairID); /*0x906071*/
+  this->_ZtlSecureTear_m_nPortableChairID_CS = v3; /*0x906078*/
+  v4 = _ZtlSecureFuse<long>(this->_ZtlSecureTear_m_nPortableChairID, v3); /*0x90607e*/
+  CAvatar::SetChairHeight(&this->CAvatar, v4); /*0x90608d*/
+  this->_ZtlSecureTear_m_nSittingTime_CS = _ZtlSecureTear<long>(0, this->_ZtlSecureTear_m_nSittingTime); /*0x9060a3*/
+  this->m_bPortableChairStatSetSent = 0; /*0x9060a9*/
+  CUser::SetActivePortableChair(this, 0); /*0x9060b3*/
+  if ( !bOnInit ) /*0x9060bd*/
+  {
+    m_pInterface = this->m_pvc.m_pInterface; /*0x9060bf*/
+    if ( m_pInterface ) /*0x9060c7*/
+      CVecCtrl::SetMovePathAttribute((CVecCtrl *)&m_pInterface[-3], 10); /*0x9060d6*/
+    else
+      CVecCtrl::SetMovePathAttribute(nullptr, 10); /*0x9060e7*/
+  }
+}

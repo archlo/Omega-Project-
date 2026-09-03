@@ -1,0 +1,22 @@
+﻿void __thiscall CUIStatusBar::StartChat(CUIStatusBar *this, const char *sText)
+{
+  CCtrlEdit *p; // eax
+  IUIMsgHandler *v4; // eax
+
+  if ( this->m_nChatWndType == 1 )
+  {
+    CUIStatusBar::SetChatType(this, (IWzCanvas *)2);
+  }
+  else if ( !this->m_pEditChatInput.p )
+  {
+    return;
+  }
+  CWnd::SetFocusChild(this, this->m_pEditChatInput.p);
+  p = this->m_pEditChatInput.p;
+  if ( p )
+    v4 = &p->IUIMsgHandler;
+  else
+    v4 = nullptr;
+  CWndMan::SetFocus(TSingleton<CWndMan>::ms_pInstance, v4);
+  CCtrlEdit::SetText(this->m_pEditChatInput.p, sText);
+}

@@ -1,0 +1,12 @@
+// cuser::GetZMass
+
+int __thiscall CUser::GetZMass(CUser *this)
+{
+  int m_nPartyHP; // eax
+
+  m_nPartyHP = this->m_nPartyHP; /*0x4bc120*/
+  if ( m_nPartyHP ) /*0x4bc128*/
+    return *(_DWORD *)(m_nPartyHP + 440); /*0x4bc12a*/
+  else
+    return MEMORY[0x1C4]; /*0x4bc133*/
+}
