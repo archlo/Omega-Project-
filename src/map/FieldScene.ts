@@ -61,7 +61,11 @@ export const DEFAULT_PHYSICS: PhysicsConstants = {
 
 interface ObjDraw {
   info: ObjInfo;
-  sprite: AnimatedSprite | null;
+  /** Per-state layers from the Obj.wz node's s0/s1/... children (OG
+      CMapLoadable::CHANGING_OBJECT::aState). Single-state objs hold exactly
+      one entry. */
+  states: AnimatedSprite[];
+  stateIndex: number;
 }
 
 interface TileDraw {
@@ -100,12 +104,20 @@ export class FieldScene {
   // WzProperty sub-tree (unlike ladderRope's {l,uf,x,y1,y2,page} shape).
   private _seats: { x: number; y: number }[] = [];
   private _loadedMapId = -1;
+  private _lastRoot: WzProperty | null = null;
   private _bounds = { left: -3000, top: -2000, right: 3000, bottom: 2000 };
   private _miniMap: MiniMapData | null = null;
 
   // Render data
   private _tileLayers: TileDraw[][] = [];
   private _objLayers: ObjDraw[][] = [];
+  /** Named multi-state objs by map-entry `name` (OG CMapLoadable::m_mNamedObj).
+      The stored layer index + reference lets SetObjectState flip states. */
+  private _namedObjs = new Map<string, { layer: number; draw: ObjDraw }>();
+  /** Safe-zone rects from `obstacle`-flagged Obj.wz nodes with
+      `safeZoneByMob` set (OG CMapLoadable::OBSTACLE_INFO, rect from the obj
+      canvas lt/rb at the placed position). */
+  private _safeZones: { left: number; top: number; right: number; bottom: number }[] = [];
 
   // Portal animation cache
   private _portalPv: AnimatedSprite | null = null;
@@ -177,6 +189,7 @@ export class FieldScene {
       return;
     }
     const root = item.Root;
+    this._lastRoot = root;
 
     this._loadPhysics();
 
@@ -189,7 +202,11 @@ export class FieldScene {
     try { this._mapScene.Load(root); } catch (ex) { console.warn('MapScene backdrop load failed', ex); }
 
     this._bgContainer.removeChildren();
-    if (this._mapScene?.container) this._bgContainer.addChild(this._mapScene.container);
+    this._fgContainer.removeChildren();
+    if (this._mapScene) {
+      this._bgContainer.addChild(this._mapScene.backgroundContainer);
+      this._fgContainer.addChild(this._mapScene.foregroundContainer);
+    }
 
     this._loadInfo(root);
     this._loadMiniMap(root);
@@ -548,6 +565,8 @@ export class FieldScene {
   private _loadLayers(root: WzProperty): void {
     this._tileLayers = Array.from({ length: LayerCount }, () => []);
     this._objLayers = Array.from({ length: LayerCount }, () => []);
+    this._namedObjs.clear();
+    this._safeZones = [];
 
     for (let layer = 0; layer < LayerCount; layer++) {
       const lp = root.Get(String(layer));
@@ -597,12 +616,61 @@ export class FieldScene {
           if (!(value instanceof WzProperty)) continue;
           const info = ObjInfo.From(value);
           const node = this._mapWz?.GetItem(`Obj/${info.Os}.img/${info.L0}/${info.L1}/${info.L2}`);
-          this._objLayers[layer].push({ info, sprite: this._loader.LoadAnimation(node) });
+          const draw: ObjDraw = { info, states: this._loadObjStates(node), stateIndex: 0 };
+          if (draw.states.length === 0) continue;
+          this._objLayers[layer].push(draw);
+          // OG CMapLoadable::MakeObj — a non-empty map-entry `name` registers
+          // the obj in m_mNamedObj with its s0/s1/... state layers.
+          if (info.Name.length > 0 && !this._namedObjs.has(info.Name)) {
+            this._namedObjs.set(info.Name, { layer, draw });
+          }
+          // OG CMapLoadable::MakeObstacles — an `obstacle` flag on the Obj.wz
+          // node attaches collision/safe-zone data to the placed layer.
+          if (node instanceof WzProperty && this._readInt(node, 'obstacle') !== 0) {
+            this._recordObstacleRect(node, draw, info);
+          }
         }
         // OG: objects within same layer sort by their z sub-key first, then
         // by Y position (lower on screen draws in front).
         this._objLayers[layer].sort((a, b) => a.info.Z - b.info.Z || a.info.Y - b.info.Y);
       }
+    }
+  }
+
+  /** OG CMapLoadable::MakeObj state sweep — s0/s1/... children of the Obj.wz
+      node are the per-state layers (format string "s%d"). Falls back to the
+      whole node as a single state (previous behavior). */
+  private _loadObjStates(node: unknown): AnimatedSprite[] {
+    if (node instanceof WzProperty) {
+      const states: AnimatedSprite[] = [];
+      for (let i = 0; ; i++) {
+        const child = node.Get(`s${i}`);
+        if (!(child instanceof WzProperty) && !(child instanceof WzCanvas)) break;
+        const anim = this._loader.LoadAnimation(child);
+        if (anim) states.push(anim);
+      }
+      if (states.length > 0) return states;
+    }
+    const single = this._loader.LoadAnimation(node);
+    return single ? [single] : [];
+  }
+
+  /** OG CMapLoadable::UpdateObstacleInfo rect — the obj canvas lt/rb at the
+      placed position. Only `safeZoneByMob` rects are kept: touch-damage and
+      mob-skill fields are server-driven, while IsInSafeZone is a pure
+      client rect query. */
+  private _recordObstacleRect(node: WzProperty, draw: ObjDraw, info: ObjInfo): void {
+    if (this._readInt(node, 'safeZoneByMob') === 0) return;
+    const first = draw.states[0]?.Current;
+    if (!first) return;
+    const baseX = info.X - first.OriginX;
+    const baseY = info.Y - first.OriginY;
+    const left = baseX + (first.Lt?.x ?? 0);
+    const top = baseY + (first.Lt?.y ?? 0);
+    const right = baseX + (first.Rb?.x ?? first.Width);
+    const bottom = baseY + (first.Rb?.y ?? first.Height);
+    if (right > left && bottom > top) {
+      this._safeZones.push({ left, top, right, bottom });
     }
   }
 
@@ -628,7 +696,7 @@ export class FieldScene {
     this._mapScene?.update(dtMs);
     this._mapScene?.SetCamera({ x: this.Camera.Position.x, y: this.Camera.Position.y }, screenW, screenH);
     for (const layer of this._objLayers) {
-      for (const o of layer) o.sprite?.Update(dtMs);
+      for (const o of layer) for (const s of o.states) s.Update(dtMs);
     }
     this._portalPv?.Update(dtMs);
     for (const [, anim] of this._portalPh) anim?.Update(dtMs);
@@ -664,11 +732,13 @@ export class FieldScene {
 
       // OG draw order: objs FIRST (behind), then tiles ON TOP of objs.
       // This means tiles render in front of objects within the same layer.
+      // Named objs render their currently-selected state layer.
       for (const o of this._objLayers[layer]) {
-        if (!o.sprite) continue;
+        const sprite = o.states[o.stateIndex] ?? o.states[0];
+        if (!sprite) continue;
         const dx = o.info.X - this.Camera.Position.x + cx;
         const dy = o.info.Y - this.Camera.Position.y + cy;
-        const pixi = o.sprite.Draw(dx, dy, o.info.Flip);
+        const pixi = sprite.Draw(dx, dy, o.info.Flip);
         lc.addChild(pixi);
       }
 
@@ -1089,24 +1159,50 @@ export class FieldScene {
 
   // ── OG CMapLoadable methods — map life system ──────────────────────────
 
-  /** OG: CMapLoadable::RestoreBack — restores background after temporary effect */
-  RestoreBack(): void {
-    // OG: restores background after temporary visual effect (e.g., town portal)
+  /** OG CMapLoadable::SetObjectState — flips a named obj to one of its
+      s0/s1/... state layers and restarts that layer's animation. Out-of-range
+      states and unknown names are rejected (OG returns 0). Per-state field
+      sounds (bsSfx) are not modeled — the WZ key wasn't recoverable from the
+      decompile without guessing. */
+  SetObjectState(name: string, state: number): boolean {
+    const entry = this._namedObjs.get(name);
+    if (!entry) return false;
+    if (state < 0 || state >= entry.draw.states.length) return false;
+    if (entry.draw.stateIndex === state) return true;
+    entry.draw.stateIndex = state;
+    entry.draw.states[state]?.Restart();
+    return true;
   }
 
-  /** OG: CMapLoadable::RestoreTile — restores tiles after temporary effect */
-  RestoreTile(): void {
-    // OG: restores tiles after temporary visual effect
+  /** OG CField::OnFieldObstacleAllReset — every obstacle-named obj back to
+      state 0. Only named objs can carry obstacle data, so this resets the
+      named registry (plain objs have a single state 0 already). */
+  ResetObstacleStates(): void {
+    for (const [, entry] of this._namedObjs) {
+      if (entry.draw.states.length === 0) continue;
+      entry.draw.stateIndex = 0;
+      entry.draw.states[0]?.Restart();
+    }
   }
 
-  /** OG: CMapLoadable::RestoreObj — restores objects after temporary effect */
-  RestoreObj(): void {
-    // OG: restores objects after temporary visual effect
+  /** OG CMapLoadable::SetFieldMagLevel — the SysOpt video-detail slider
+      rebuilds obj + back layers at the new mag level (fresh WZ layers; named
+      obj states reset like OG's RemoveAll + RestoreObj path). Footholds,
+      portals and minimap data are mag-independent and kept. */
+  RefreshMagLevel(): void {
+    if (!this._loaded || !this._lastRoot) return;
+    try { this._mapScene?.Load(this._lastRoot); } catch (ex) { console.warn('MapScene mag refresh failed', ex); }
+    this._loadLayers(this._lastRoot);
   }
 
-  /** OG: CMapLoadable::IsInSafeZone — checks if position is in safe zone (PVP protection) */
-  IsInSafeZone(_rect: { x: number; y: number; w: number; h: number }): boolean {
-    // OG: checks if rectangle intersects with safe zone
+  /** OG CMapLoadable::IsInSafeZone — true when the rect intersects any
+      `safeZoneByMob` obstacle rect. */
+  IsInSafeZone(rect: { x: number; y: number; w: number; h: number }): boolean {
+    const r1 = rect.x + rect.w;
+    const b1 = rect.y + rect.h;
+    for (const z of this._safeZones) {
+      if (rect.x < z.right && r1 > z.left && rect.y < z.bottom && b1 > z.top) return true;
+    }
     return false;
   }
 

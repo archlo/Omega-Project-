@@ -201,6 +201,10 @@ export class ItemScrollDialog extends GamePanel implements DragTarget {
     if (!this.isVisible || this._state !== 0 || this._requestSent) return false;
     if (!payload || typeof payload !== 'object' || !('itemId' in payload)) return false;
     const p = payload as ItemDragPayload;
+    // OG ModifyEquipItem target: the scroll dialog's drop target is an Equip
+    // (server TI 1) — scrolls/consumables as "target" are rejected here, not
+    // at send time.
+    if (p.invType !== 1) return false;
     this._targetItemId = p.itemId;
     this._targetSlotPos = p.slotPos;
     if (this._btUpgrade) this._btUpgrade.enabled = true;

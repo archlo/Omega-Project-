@@ -96,7 +96,7 @@ import { KillCountHud } from '../ui/game/KillCountHud.js';
 import { MassacreGaugeHud } from '../ui/game/MassacreGaugeHud.js';
 import { QuestTimerHud } from '../ui/game/QuestTimerHud.js';
 import { EquipInventory } from '../ui/game/EquipInventory.js';
-import { ItemInventory, ItemDragPayload } from '../ui/game/ItemInventory.js';
+import { ItemInventory, ItemDragPayload, INVTYPE_TO_TAB, TAB_TO_INVTYPE, InvItem } from '../ui/game/ItemInventory.js';
 import { SkillBook, SkillRow } from '../ui/game/SkillBook.js';
 import { StatsInfo } from '../ui/game/StatsInfo.js';
 import { QuestLog } from '../ui/game/QuestLog.js';
@@ -238,7 +238,7 @@ export class GameStage extends Stage {
   // Server applies stat bonuses via TemporaryStat packets upon pairing.
   onCoupleChairPairChanged: ((paired: boolean, charId: number, pairCharId: number, itemId: number) => void) | null = null;
   /** One-shot field effects (e.g. Summon.img animations at world positions). */
-  private _fieldFx: { frames: AnimFrame[]; frameIndex: number; frameTimer: number; x: number; y: number; done: boolean }[] = [];
+  private _fieldFx: { frames: AnimFrame[]; frameIndex: number; frameTimer: number; x: number; y: number; flip?: boolean; done: boolean }[] = [];
   private _fieldFxLayer: Container = new Container();
   private _fearEffect = new FearEffect();
 
@@ -406,6 +406,7 @@ export class GameStage extends Stage {
   }[] = [];
 
   protected _field: FieldScene | null = null;
+  private _lastVideoQuality = -1;
   protected _mapWz: WzPackage | null = null;
   protected _characterWz: WzPackage | null = null;
   protected _itemWz: WzPackage | null = null;
@@ -696,7 +697,7 @@ export class GameStage extends Stage {
           }
           const other = this._otherChars.get(charId);
           return other ? { ...this._camera.WorldToScreen(other.Position.x, other.Position.y), facingLeft: other.FacingLeft } : null;
-        });
+        }, (wx, wy) => this._camera.WorldToScreen(wx, wy));
         this._moveChildren(this._skillEffectLayer, rebuilt);
         rebuilt.destroy();
 
@@ -736,7 +737,7 @@ export class GameStage extends Stage {
         if (fx.done) continue;
         const p = this._camera.WorldToScreen(fx.x, fx.y);
         const fi = Math.min(fx.frameIndex, fx.frames.length - 1);
-        const sprite = fx.frames[fi].sprite.NewSprite(false);
+        const sprite = fx.frames[fi].sprite.NewSprite(fx.flip ?? false);
         sprite.position.set(p.x, p.y);
         this._fieldFxLayer.addChild(sprite);
       }
@@ -859,8 +860,19 @@ export class GameStage extends Stage {
         }
       }
     } else if (fk.type === FuncKeyType.Menu) {
-      // OG: CUserLocal::UseFuncKeyMapped â€” Menu type dispatch
+      // OG: CUserLocal::UseFuncKeyMapped — Menu type dispatch
       this._executeMenuAction(fk.id);
+    } else if (fk.type === FuncKeyType.Item) {
+      // OG UseFuncKeyMapped case 2 — route through the same per-category
+      // use chain as double-clicking the item in the inventory.
+      const found = this._findBoundItemSlot(fk.id);
+      if (found && this.game.session.isConnected) {
+        const visualTab = INVTYPE_TO_TAB[found.invType] ?? 0;
+        this._item.onUseItem?.(new InvItem(fk.id, '', 1, visualTab, found.slot));
+      }
+    } else if (fk.type === FuncKeyType.Effect) {
+      // OG UseFuncKeyMapped case 7 — toggle-style effect items.
+      if (this.game.session.isConnected) this.game.session.send(GameSender.ActiveEffectItemChange(fk.id));
     }
     // Fallback: Pickup/Sit/Tab shortcuts from handleKeyDown
     this.handleKeyDown(key);
@@ -1007,6 +1019,17 @@ export class GameStage extends Stage {
       const payload = this._dragController.payload;
       const visible = this._panels.filter((p) => p?.isVisible).reverse() as unknown as DragTarget[];
       const claimed = this._dragController.endDrag(visible, x, y);
+      // OG CDraggableSkill::MapMacro(bOnlyDelete=1) — a macro skill dragged
+      // onto the field (no panel claims it) clears its macro slot. Plain
+      // skill drags (SkillBook) have no origin and vanish, matching OG.
+      if (!claimed && payload && typeof payload === 'object' && 'skillId' in payload) {
+        const p = payload as { macroSlot?: unknown; macroIndex?: unknown };
+        if (typeof p.macroSlot === 'number' && typeof p.macroIndex === 'number'
+          && !this._pointOverVisiblePanel(x, y)) {
+          this._skillMacro?.clearSlot(p.macroSlot, p.macroIndex);
+        }
+        return;
+      }
       // TODO_AUDIT.md item-drag-and-drop TODO: dragging a worn equip slot
       // with nothing claiming the drop (no upgrade/protect/scissors dialog
       // open) falls back to the original immediate-unequip behavior.
@@ -1014,29 +1037,42 @@ export class GameStage extends Stage {
         const p = payload as ItemDragPayload;
         const invType = p.invType;
         // TODO_AUDIT.md item-drag-and-drop TODO (drop-to-field): a real inventory
-        // item (positive slotPos) released over the field â€” i.e. not over any
-        // visible panel â€” is dropped, matching CDraggableItem::OnDropped when the
-        // drop point lies outside every UI window. Worn slots (negative slotPos)
+        // item (positive slotPos) released over the field — i.e. not over any
+        // visible panel — is dropped, matching CDraggableItem::OnDropped when the
+        // drop point lies outside every UI window. Worn equips (negative
+        // slotPos) dropped over the field are thrown directly (OG ThrowItem
+        // takes the dragged TI/slot as-is with newPos 0); over a panel they
         // keep the unequip fallback below instead.
-        if (p.slotPos > 0 && !this._pointOverVisiblePanel(x, y)) {
-          // OG: ThrowItem shows quantity dialog for stackable items with quantity > 1
-          const item = this._item.itemAt(invType, p.slotPos);
-          const qty = item?.quantity ?? 1;
-          if (qty > 1) {
-            this._utilDlg?.SetUtilDlgEx(UtilDlgType.INPUT, 0, true, false);
-            this._utilDlg?.SetUtilDlgEx_INPUT_STR(String(qty), 1, qty, false, 0);
-            this._utilDlg!.onResult = (r) => {
-              if (r.type === 'ok') {
-                const amount = this._utilDlg!.GetInputNo_Result();
-                if (amount > 0) this.game.session.send(GameSender.DropItem(invType, p.slotPos, amount));
-              }
-            };
-            this._utilDlg?.show();
-          } else {
+        if (!this._pointOverVisiblePanel(x, y)) {
+          if (p.slotPos > 0) {
+            // OG: ThrowItem shows quantity dialog for stackable items with quantity > 1
+            const item = this._item.itemAt(invType, p.slotPos);
+            const qty = item?.quantity ?? 1;
+            if (qty > 1) {
+              // OG CDraggableItem::ThrowItem → AskItemCount (numeric INPUT_NO
+              // modal, range 1..qty), not a free-text string input.
+              this._utilDlg?.SetUtilDlgEx(UtilDlgType.INPUT, 0, true, false);
+              this._utilDlg?.SetUtilDlgEx_INPUT_NO(qty, 1, qty, 0, 10, false);
+              this._utilDlg!.onResult = (r) => {
+                if (r.type === 'ok') {
+                  const amount = this._utilDlg!.GetInputNo_Result();
+                  if (amount > 0) this.game.session.send(GameSender.DropItem(invType, p.slotPos, amount));
+                }
+              };
+              this._utilDlg?.show();
+            } else {
+              this.game.session.send(GameSender.DropItem(invType, p.slotPos, 1));
+            }
+          } else if (invType === InventoryType.Equip || invType === InventoryType.Cash) {
+            // OG ThrowItem from the equip panel — worn slot thrown directly
+            // (newPos 0; the server resolves equipped positions). Equips never
+            // stack, so no quantity dialog.
             this.game.session.send(GameSender.DropItem(invType, p.slotPos, 1));
           }
         } else if (invType === InventoryType.Equip || invType === InventoryType.Cash) {
-          const tab = invType === InventoryType.Equip ? 0 : 1;
+          // OG GetOffEquipItem — free slot is in the payload's own visual tab
+          // (INVTYPE_TO_TAB: Cash TI 5 → tab 4, not tab 1).
+          const tab = INVTYPE_TO_TAB[invType] ?? 0;
           const free = this._item.firstFreeSlot?.(tab) ?? 0;
           if (free > 0) this.game.session.send(GameSender.ChangeSlotPosition(invType, p.slotPos, free, 1));
         }
@@ -1484,11 +1520,20 @@ export class GameStage extends Stage {
     this._keyConfig.onOpenQuickSlot = () => { this._quickSlotConfig!.isVisible = !this._quickSlotConfig!.isVisible; };
     this._keyConfig.skillIconResolver = (skillId) => this._skillIcon(skillId);
     this._keyConfig.itemIconResolver = (itemId) => this._itemIcons?.LoadIcon(itemId) ?? null;
+    this._keyConfig.isBindableItem = (itemId, invType) => this._isBindableItem(itemId, invType);
+    this._keyConfig.itemTypeFor = (itemId, invType) => this._funcKeyItemType(itemId, invType);
     this._keyConfig.onSaveToServer = (changed) => {
       this.game.session.send(GameSender.FuncKeyMappedModified(changed.map((c) => ({ keyIndex: c.index, type: c.fk.type, actionId: c.fk.id }))));
     };
     this._quickSlotConfig.keysOf = () => this._quickSlots?.GetKeys() ?? null;
-    this._quickSlotConfig.onConfirm = (keys) => { this._quickSlots?.SetKeys(keys); };
+    this._quickSlotConfig.onConfirm = (keys) => {
+      this._quickSlots?.SetKeys(keys);
+      // OG persists the 8-key quickslot map server-side (opcode 216); the
+      // confirm was local-only with no sender call-site.
+      if (keys.length === 8 && this.game.session.isConnected) {
+        this.game.session.send(GameSender.QuickslotKeyMappedModified(keys));
+      }
+    };
     this._quickSlotConfig.bindingAt = (scancode) => this._keyConfig.bindingAt(scancode);
     this._quickSlotConfig.skillIcon = (skillId) => this._skillIcon(skillId);
     this._quickSlotConfig.itemIcon = (itemId) => this._itemIcons?.LoadIcon(itemId) ?? null;
@@ -1506,7 +1551,8 @@ export class GameStage extends Stage {
       () => this._itemIcons?.GetCashTag() ?? null,
       (itemId) => this._item.countItem(itemId),
     );
-    this._quickSlots.bindItemToKey = (scancode, itemId) => this._keyConfig.bindItemToKey(scancode, itemId);
+    this._quickSlots.bindItemToKey = (scancode, itemId, invType = 0) =>
+      this._keyConfig.bindItemToKey(scancode, itemId, this._funcKeyItemType(itemId, invType));
     // OG CUIStatusBar owns CQuickSlot as child layer at (881,2) — force attached
     // so the bar is always ON the status bar, not as a floating popup.
     this._quickSlots.setAttached(true);
@@ -2622,10 +2668,12 @@ export class GameStage extends Stage {
       this.game.session.send(GameSender.UseItem(item.slot, item.id));
     };
     this._item.onItemSelected = (item) => {
+      // OG tab swap: visual tab → server TI via TAB_TO_INVTYPE (tab+1 is
+      // wrong for Setup/Etc tabs).
       if (this._tradingRoom?.isVisible) {
-        this._tradingRoom.pendingItem = { invType: item.tab + 1, position: item.slot, itemId: item.id, quantity: item.quantity };
+        this._tradingRoom.pendingItem = { invType: TAB_TO_INVTYPE[item.tab] ?? item.tab + 1, position: item.slot, itemId: item.id, quantity: item.quantity };
       } else if (this._personalShop?.isVisible) {
-        this._personalShop.pendingItem = { invType: item.tab + 1, position: item.slot, stackSize: item.quantity };
+        this._personalShop.pendingItem = { invType: TAB_TO_INVTYPE[item.tab] ?? item.tab + 1, position: item.slot, stackSize: item.quantity };
       }
     };
     this._statusBar.onSkills = () => {
@@ -2902,7 +2950,18 @@ export class GameStage extends Stage {
       const action = cast?.Actions[0];
       if (action) this._player?.PlayOneTimeAction(action);
       const effect = cast?.Effect ?? cast?.Effect0;
-      if (effect) this._skillEffects?.PlayAtCaster(effect, this._localCharId, this._physics?.FacingLeft ?? true);
+      if (effect) {
+        // OG CUser::ShowSkillEffect anchors shoot-skill effects at the muzzle
+        // (m_pLayerMuzzle via CAvatar::GetSuitableMuzzleOrigin); everything
+        // else plays at the character position (feet origin).
+        const facingLeft = this._physics?.FacingLeft ?? true;
+        if (action === 'shoot' && this._player) {
+          const muzzle = this._player.MuzzlePosition;
+          this._skillEffects?.PlayAtPosition(effect, muzzle.x, muzzle.y, facingLeft);
+        } else {
+          this._skillEffects?.PlayAtCaster(effect, this._localCharId, facingLeft);
+        }
+      }
       if (cast?.Screen) this._skillEffects?.PlayFullScreen(cast.Screen);
       // OG CUserLocal::DoAttack â€” attack skills execute the hit client-side
       // (damage roll + attack packet with skillId); buff skills just cast.
@@ -2972,6 +3031,7 @@ export class GameStage extends Stage {
     this._statusBar.mpFlash = savedSettings.mpFlash;
     this.game.audioPlayer.Volume = savedSettings.bgmVolume / 100;
     this.game.audioPlayer.SfxVolume = savedSettings.sfxVolume / 100;
+    this._lastVideoQuality = this._optionMenu.VideoQuality;
     this._optionMenu.onSettingsChanged = () => {
       this.game.audioPlayer.Volume = this._optionMenu.BgmVolume / 100;
       this.game.audioPlayer.SfxVolume = this._optionMenu.SfxVolume / 100;
@@ -2983,6 +3043,13 @@ export class GameStage extends Stage {
       this._statusBar.hpFlash = s.hpFlash;
       this._statusBar.mpFlash = s.mpFlash;
       settingsStore.save(s);
+      // OG CMapLoadable::SetFieldMagLevel — the SysOpt video-detail slider
+      // rebuilds the field's obj + back layers at the new mag level.
+      const video = this._optionMenu.VideoQuality;
+      if (video !== this._lastVideoQuality) {
+        this._lastVideoQuality = video;
+        this._field?.RefreshMagLevel();
+      }
     };
 
     this._blackList = new Set(savedSettings.blackList);
@@ -4993,12 +5060,15 @@ this._dmgNumbers?.Update(dt);
     fh.onSummonItemInavailable = () => {
       this._statusMessenger.showLoot('[Summon] Item not available');
     };
+    // OG CField::OnFieldObstacleOnOff / OnSetObjectState — both decode to
+    // (name, state) pairs driving CMapLoadable::SetObjectState (verified by
+    // live IDB decompile: identical str+int4 decode, same call).
     fh.onFieldObstacleOnOff = (entries) => {
-      this._chatBar.addLine(`[Obstacle] ${entries.length} entries`);
+      for (const e of entries) this._field?.SetObjectState(e.name, e.state);
     };
     fh.onFieldObstacleAllReset = () => {
       this._field?.ApplyFootHoldState([]);
-      this._chatBar.addLine('[Obstacle] All reset');
+      this._field?.ResetObstacleStates();
     };
     fh.onQuiz = ({ isQuestion, category, problemId }) => {
       if (isQuestion) this._statusMessenger.showLoot(`[Quiz] Q${problemId} (cat ${category})`);
@@ -5011,7 +5081,7 @@ this._dmgNumbers?.Update(dt);
       this._statusMessenger.showLoot('[Quest] All quests cleared');
     };
     fh.onSetObjectState = (entries) => {
-      this._chatBar.addLine(`[Object State] ${entries.length} entries`);
+      for (const e of entries) this._field?.SetObjectState(e.name, e.state);
     };
     // OG: CField::OnStalkResult (decompile/539910.c) feeds CUIMiniMap's
     // m_mStalkee â€” the followed players tracked on the minimap. Entries
@@ -6950,7 +7020,9 @@ this._localCharId = args.characterId ?? 0;
       }
     }
 
-    // TODO_AUDIT.md Hundred-and-forty-ninth pass: send and render the same basic-attack action.
+    // Local render plays `attackAction` (picked above); the wire carries
+    // AttackAction.CodeFor(name) in the same v95 code space, so remote clients
+    // (FromCode) render the identical pose — see AttackAction.CodeToAction.
     const actionAndDir = (facingLeft ? 0x8000 : 0x0000) | AttackAction.CodeFor(attackAction);
     const blob = MeleeAttackEncoder.Encode(
       this._fieldKey, actionAndDir, 6, pos.x, pos.y, targets, 1);
@@ -7091,9 +7163,9 @@ this._localCharId = args.characterId ?? 0;
       const mob = this._mobs.get(t.mobId);
       if (mob) {
         mob.ShowHitEffect();
-        this._playSkillHit(skillId, mob.Position.x, mob.Position.y - 40);
-        this._mobSounds?.PlayDamage(mob.TemplateId);
         const ctl = this._mobCtl.get(t.mobId);
+        this._playSkillHit(skillId, mob.Position.x, mob.Position.y, ctl?.FacingLeft ?? true);
+        this._mobSounds?.PlayDamage(mob.TemplateId);
         ctl?.OnDamagedByPlayer();
         ctl?.ApplyHitKnockback(mob.Position.x >= pos.x ? 25 : -25);
       }
@@ -7758,8 +7830,9 @@ this._localCharId = args.characterId ?? 0;
         || cat === 212 || cat === 226 || cat === 227 || cat === 210;
     }
     if (invType === 5) {
-      // Cash items: only 524, 530, or etc_cash type 6
-      return cat === 524 || cat === 530;
+      // Cash items: 524/530, 501s, or etc_cash type 6 (no client helper for
+      // the latter — not yet gated, documented miss).
+      return cat === 524 || cat === 530 || cat === 501;
     }
     if (invType === 4) {
       // Etc items: only non_cash_effect (429)
@@ -7770,6 +7843,28 @@ this._localCharId = args.characterId ?? 0;
       return cat === 301;
     }
     return false;
+  }
+
+  // OG MapFuncKey nType selector: Effect 7 for toggle-style items (non-cash
+  // effect 429, cash 501s → SendActiveEffectItemChange on press), Item 2 for
+  // everything else bindable.
+  private _funcKeyItemType(itemId: number, invType: number): FuncKeyType {
+    const cat = Math.floor(itemId / 10000);
+    if (invType === 4 && cat === 429) return FuncKeyType.Effect;
+    if (invType === 5 && cat === 501) return FuncKeyType.Effect;
+    return FuncKeyType.Item;
+  }
+
+  // OG UseFuncKeyMapped case 2 — first inventory slot holding the bound item
+  // (chairs live in TI 3, cash food/morph in TI 5, rest in TI 2).
+  private _findBoundItemSlot(itemId: number): { invType: number; slot: number } | null {
+    const cat = Math.floor(itemId / 10000);
+    const order = cat === 301 ? [3, 2, 5] : [2, 5, 3];
+    for (const ti of order) {
+      const found = this._item.findItemSlot(itemId, ti);
+      if (found) return found;
+    }
+    return null;
   }
 
   private _pendingMobControllers: Array<{ mobId: number; mob: MobLook }> = [];
@@ -9625,6 +9720,16 @@ this._localCharId = args.characterId ?? 0;
       this._playStatEffect('BasicEff.img/JobChanged', 'Game.img/JobChanged', args);
       return;
     }
+    // OG CUser::OnEffect cases 1/2/3 (SkillUse / SkillAffected /
+    // SkillAffected_Select) â€” caster-side cast/affected flash. Wire: type 1
+    // = int skillId + byte charLevel + byte skillLevel (+ per-skill extras
+    // we ignore); type 2 = int skillId + byte skillLevel; type 3 = int info
+    // + int skillId + byte skillLevel. Play the skill's effect node at the
+    // character, exactly like the local cast path (onSkillUse) does.
+    if (args.effectType === 1 || args.effectType === 2 || args.effectType === 3) {
+      this._playSkillCastEffect(args);
+      return;
+    }
     if (args.effectType !== 14 && args.effectType !== 20 && args.effectType !== 25) return;
     // OG CUser::OnEffect: 14 = SquibEffect, 20 = ReservedEffect, 25 =
     // AvatarOriented (Effect_AvatarOriented — the UI/tutorial.img tip cards
@@ -9650,14 +9755,54 @@ this._localCharId = args.characterId ?? 0;
     this._skillEffects?.PlayAtCaster(node, charId, facingLeft);
   }
 
-  private _playSkillHit(skillId: number, x: number, y: number): void {
+  /** OG CUser::OnEffect cases 1/2/3 (SkillUse / SkillAffected /
+   *  SkillAffected_Select) — caster-side cast/affected skill flash for
+   *  remote characters. Decodes the wire the server Effect.encode writes
+   *  (type 1 = int skillId + byte charLevel + byte skillLevel (+ ignored
+   *  per-skill extras); type 2 = int skillId + byte skillLevel; type 3 =
+   *  int info + int skillId + byte skillLevel, where the `info` int is
+   *  discarded) and plays the skill's own effect node at the character —
+   *  the same resolution the local cast path (onSkillUse) uses, so remote
+   *  buff/cast visuals match the caster's own. */
+  private _playSkillCastEffect(args: UserEffectArgs): void {
+    let skillId: number;
+    try {
+      const p = new InPacket(args.payload);
+      if (args.effectType === 3) p.readInt();
+      skillId = p.readInt();
+    } catch {
+      return;
+    }
+    if (skillId <= 0) return;
+    const cast = this._skillService?.GetCastInfo(skillId);
+    const effect = cast?.Effect ?? cast?.Effect0;
+    if (!effect) return;
+    const charId = args.isLocal ? this._localCharId : args.charId;
+    const facingLeft = args.isLocal ? (this._physics?.FacingLeft ?? true) : (this._otherChars.get(args.charId)?.FacingLeft ?? true);
+    // OG anchors shoot-skill effects at the muzzle (see onSkillUse); remote
+    // casts take the same path so their visuals match the caster's own.
+    const action = cast?.Actions[0];
+    if (action === 'shoot') {
+      const muzzle = args.isLocal ? this._player?.MuzzlePosition : this._otherChars.get(args.charId)?.MuzzlePosition;
+      if (muzzle) {
+        this._skillEffects?.PlayAtPosition(effect, muzzle.x, muzzle.y, facingLeft);
+        return;
+      }
+    }
+    this._skillEffects?.PlayAtCaster(effect, charId, facingLeft);
+  }
+
+  /** OG mob-side hit splash: `CMob::Update` drains its HITEFFECT queue, playing
+   *  one indexed `hit` variant (`SKILLENTRY::GetHitUOLByIndex`) at the mob's
+   *  own position flipped by the mob's facing — not above the head. The frame
+   *  origins baked into the WZ canvases carry the visual offset. */
+  private _playSkillHit(skillId: number, x: number, y: number, facingLeft = true, variantIndex = 0): void {
     if (skillId <= 0) return;
     const hit = this._skillService?.GetCastInfo(skillId)?.Hit;
     if (!hit) return;
-    const frames = loadFrameSequence(this._loader, hit);
+    const frames = loadFrameSequence(this._loader, SkillEffectOverlay.resolveHitVariant(hit, variantIndex));
     if (frames.length === 0) return;
-    // TODO_AUDIT.md Hundred-and-forty-ninth pass: target-side skill hit splash via existing field FX layer.
-    this._fieldFx.push({ frames, frameIndex: 0, frameTimer: 0, x, y, done: false });
+    this._fieldFx.push({ frames, frameIndex: 0, frameTimer: 0, x, y, flip: !facingLeft, done: false });
   }
 
   // OG: CUserRemote::OnAttack (live IDA decompile, Maplestory95.exe.i64
@@ -9703,7 +9848,9 @@ this._localCharId = args.characterId ?? 0;
   private _onUserAttack(args: UserAttackArgs): void {
     const attacker = this._otherChars.get(args.charId);
     attacker?.SetFacing(args.facingLeft);
-    // TODO_AUDIT.md Hundred-and-forty-ninth pass: prefer the decoded packet action over local random-pick fallback.
+    // The packet action is decoded first (PlayAttackCode -> FromCode maps the
+    // v95 code space to the pose); only an unmapped code falls back to a local
+    // random pick.
     if (attacker && !attacker.PlayAttackCode(args.action)) attacker.Attack();
 
     // OG: CUserRemote::OnAttack plays the remote player's skill sound
@@ -9755,14 +9902,14 @@ this._localCharId = args.characterId ?? 0;
       if (!mob || mob.IsDead) continue;
       mob.ShowHitEffect();
       this._mobSounds?.PlayDamage(mob.TemplateId);
-      this._playSkillHit(args.skillId, mob.Position.x, mob.Position.y - 40);
+      const ctl = this._mobCtl.get(target.mobId);
+      this._playSkillHit(args.skillId, mob.Position.x, mob.Position.y, ctl?.FacingLeft ?? true);
       for (let i = 0; i < target.damage.length; i++) {
         const dmg = target.damage[i];
         this._dmgNumbers?.Add(dmg, mob.HeadPosition.x, mob.HeadPosition.y, DamageKind.MobDamage, i);
         this._battleRecord?.AddDamage(dmg, false, false);
         this._skill.setDamageMeterSummary(this._battleRecord?.getDamageMeterSummary() ?? null);
       }
-      const ctl = this._mobCtl.get(target.mobId);
       ctl?.OnDamagedByPlayer();
       const attackerX = attacker?.Position.x ?? mob.Position.x;
       ctl?.ApplyHitKnockback(mob.Position.x >= attackerX ? 25 : -25);

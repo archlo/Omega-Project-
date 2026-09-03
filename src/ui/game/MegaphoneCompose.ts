@@ -68,7 +68,8 @@ export class MegaphoneCompose extends GamePanel implements DragTarget {
   tryAcceptDrag(payload: unknown, _x: number, _y: number): boolean {
     if (!this.isVisible || !payload || typeof payload !== 'object' || !('itemId' in payload)) return false;
     const p = payload as ItemDragPayload;
-    this._targetTI = p.itemId;
+    // OG stores nTI (inventory type), not the item id — cf. KarmaScissors.
+    this._targetTI = p.invType;
     this._targetPOS = p.slotPos;
     return true;
   }

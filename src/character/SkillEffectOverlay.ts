@@ -1,4 +1,5 @@
 import { Container } from 'pixi.js';
+import { WzProperty } from '../wz/WzProperty.js';
 import { WzTextureLoader } from '../render/WzTextureLoader.js';
 import { AnimFrame, loadFrameSequence, totalDurationMs } from './WzFrameAnimation.js';
 
@@ -43,6 +44,7 @@ interface Anim {
 interface WorldEntry {
   Animation: Anim;
   CharId: number;
+  Pos: { x: number; y: number } | null;
   Key: string | null;
   FacingLeft: boolean;
   FrameIndex: number;
@@ -76,7 +78,18 @@ export class SkillEffectOverlay {
   PlayAtCaster(node: unknown, charId: number, facingLeft = true): void {
     const anim = this._buildAnim(node);
     if (anim === null) return;
-    this._worldEntries.push({ Animation: anim, CharId: charId, Key: null, FacingLeft: facingLeft, FrameIndex: 0, FrameTimerMs: 0, TotalAgeMs: 0, Hold: false, Repeat: false });
+    this._worldEntries.push({ Animation: anim, CharId: charId, Pos: null, Key: null, FacingLeft: facingLeft, FrameIndex: 0, FrameTimerMs: 0, TotalAgeMs: 0, Hold: false, Repeat: false });
+  }
+
+  /** Plays an effect node at an explicit world position instead of a
+      character's feet. OG `CUser::ShowSkillEffect` anchors most skill effects
+      at the character position, but shoot skills load theirs into
+      `m_pLayerMuzzle` at `CAvatar::GetSuitableMuzzleOrigin` — GameStage routes
+      `shoot`-action casts here with the caster's muzzle position. */
+  PlayAtPosition(node: unknown, x: number, y: number, facingLeft = true): void {
+    const anim = this._buildAnim(node);
+    if (anim === null) return;
+    this._worldEntries.push({ Animation: anim, CharId: -1, Pos: { x, y }, Key: null, FacingLeft: facingLeft, FrameIndex: 0, FrameTimerMs: 0, TotalAgeMs: 0, Hold: false, Repeat: false });
   }
 
   /** Persistent keyed caster effect, used for stateful item effects that stay
@@ -85,7 +98,7 @@ export class SkillEffectOverlay {
     this.CancelLoopAtCaster(key, charId);
     const anim = this._buildAnim(node);
     if (anim === null) return;
-    this._worldEntries.push({ Animation: anim, CharId: charId, Key: key, FacingLeft: facingLeft, FrameIndex: 0, FrameTimerMs: 0, TotalAgeMs: 0, Hold: false, Repeat: true });
+    this._worldEntries.push({ Animation: anim, CharId: charId, Pos: null, Key: key, FacingLeft: facingLeft, FrameIndex: 0, FrameTimerMs: 0, TotalAgeMs: 0, Hold: false, Repeat: true });
   }
 
   CancelLoopAtCaster(key: string, charId: number): void {
@@ -115,7 +128,7 @@ export class SkillEffectOverlay {
   PlayHoldAtCaster(node: unknown, charId: number, facingLeft = true): void {
     const anim = this._buildAnim(node);
     if (anim === null) return;
-    this._worldEntries.push({ Animation: anim, CharId: charId, Key: null, FacingLeft: facingLeft, FrameIndex: 0, FrameTimerMs: 0, TotalAgeMs: 0, Hold: true, Repeat: false });
+    this._worldEntries.push({ Animation: anim, CharId: charId, Pos: null, Key: null, FacingLeft: facingLeft, FrameIndex: 0, FrameTimerMs: 0, TotalAgeMs: 0, Hold: true, Repeat: false });
   }
 
   /** Removes the hold animation for a given character, matching OG
@@ -180,10 +193,20 @@ export class SkillEffectOverlay {
   /** Rebuild the world-anchored layer. `charScreenPos` resolves a charId to
       its current head/body anchor in screen space (null if that character
       is no longer present, e.g. left the field mid-effect). */
-  RebuildWorldDisplay(charScreenPos: (charId: number) => CasterDisplay | null): Container {
+  RebuildWorldDisplay(
+    charScreenPos: (charId: number) => CasterDisplay | null,
+    worldToScreen: ((wx: number, wy: number) => { x: number; y: number }) | null = null,
+  ): Container {
     const root = new Container();
     for (const e of this._worldEntries) {
-      const screen = charScreenPos(e.CharId);
+      let screen: CasterDisplay | null;
+      if (e.Pos !== null) {
+        // Explicit world anchor (e.g. muzzle) — project through the camera
+        // every frame like the charId-tracked entries.
+        screen = worldToScreen ? { ...worldToScreen(e.Pos.x, e.Pos.y), facingLeft: e.FacingLeft } : null;
+      } else {
+        screen = charScreenPos(e.CharId);
+      }
       if (screen === null) continue;
       const frame = e.Animation.Frames[Math.min(e.FrameIndex, e.Animation.Frames.length - 1)];
       // TODO_AUDIT.md Hundred-and-seventy-first pass: OG ONETIMEINFO mirrors
@@ -206,6 +229,27 @@ export class SkillEffectOverlay {
       root.addChild(sprite);
     }
     return root;
+  }
+
+  /** Resolves one indexed hit-splash variant from a skill `hit` node.
+      OG `SKILLENTRY::GetHitUOLByIndex` reads the per-level `asHitUOL` array
+      (level data first, char-level data as fallback); the mob-side queue
+      (`CMob::Update` HITEFFECT list) plays exactly one variant at the mob's
+      own position, flipped by the mob's facing. This WZ set carries the
+      variants at the common `hit/<index>` node, so the index selects among
+      its numeric children (wrapping); a bare canvas/single-frame node plays
+      as-is. */
+  static resolveHitVariant(hit: unknown, index: number): unknown {
+    if (!(hit instanceof WzProperty)) return hit;
+    const keys = Object.keys(hit.Items)
+      .map((k) => parseInt(k, 10))
+      .filter((n) => !isNaN(n))
+      .sort((a, b) => a - b);
+    const variants = keys
+      .map((k) => hit.Get(k.toString()))
+      .filter((v) => v instanceof WzProperty);
+    if (variants.length === 0) return hit;
+    return variants[((index % variants.length) + variants.length) % variants.length];
   }
 
   private _buildAnim(node: unknown): Anim | null {

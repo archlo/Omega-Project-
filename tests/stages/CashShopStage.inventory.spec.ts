@@ -126,8 +126,8 @@ describe('CashShopStage inventory (CCSWnd_Inventory)', () => {
 
   describe('expansion gating (EnableExButton @0x4BD9D0)', () => {
     it('blocks slot expansion past the 96-slot cap without sending', () => {
-      // The (176,54) button sends IncSlotCount for inventory type 2 (Setup)
-      stage._characterData.installInventory = Array.from({ length: 97 }, (_, i) => consumeItem(i + 1, 2060000));
+      // The (176,54) button sends IncSlotCount for inventory type 2 (Consume).
+      stage._characterData.consumeInventory = Array.from({ length: 97 }, (_, i) => consumeItem(i + 1, 2060000));
       stage.onMouseButton(176 + 5, 426 + 54 + 5, true, 0);
       expect(sent.length).toBe(0);
     });

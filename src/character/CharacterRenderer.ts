@@ -200,7 +200,6 @@ export class CharacterRenderer {
     let cape: AvatarPart | null = null, coat: AvatarPart | null = null, coatArm: AvatarPart | null = null;
     let pants: AvatarPart | null = null, shoes: AvatarPart | null = null;
     let gloves: AvatarPart | null = null, cap: AvatarPart | null = null, weapon: AvatarPart | null = null;
-    // TODO_AUDIT.md Hundred-and-forty-ninth pass: render decoded accessory/shield/cash weapon slots instead of dropping them.
     let shield: AvatarPart | null = null, faceAcc: AvatarPart | null = null, eyeAcc: AvatarPart | null = null, earAcc: AvatarPart | null = null;
 
     for (const [slot, itemId] of look.hairEquip) {

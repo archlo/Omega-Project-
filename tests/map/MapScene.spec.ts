@@ -41,7 +41,7 @@ describe('MapScene auto-scroll seamless loop', () => {
     for (let t = 0; t < 400; t++) {
       scene.update(1000 / 60); // ~0.5px scroll per frame at 30px/s
       scene._rebuildDisplay();
-      const xs = scene.container.children.map((c: any) => c.x as number).sort((a, b) => a - b);
+      const xs = scene.backgroundContainer.children.map((c: any) => c.x as number).sort((a, b) => a - b);
       if (prevXs.length) {
         for (let i = 0; i < xs.length; i++) {
           const prev = prevXs[i];
@@ -64,7 +64,7 @@ describe('MapScene auto-scroll seamless loop', () => {
     for (let t = 0; t < 400; t++) {
       scene.update(1000 / 60);
       scene._rebuildDisplay();
-      const xs = scene.container.children.map((c: any) => c.x as number).sort((a, b) => a - b);
+      const xs = scene.backgroundContainer.children.map((c: any) => c.x as number).sort((a, b) => a - b);
       const left = xs[0];
       const right = xs[xs.length - 1] + 128;
       expect(left, `left gap at t=${t}`).toBeLessThanOrEqual(0);
@@ -72,16 +72,34 @@ describe('MapScene auto-scroll seamless loop', () => {
     }
   });
 
-  it('HMoveB scrolls right instead of left', () => {
-    const scene = makeScene() as any;
+  it('HMoveB scrolls right instead of left', () => {    const scene = makeScene() as any;
     const info = hmoveBackdrop(128);
     info.Type = BackType.HMoveB;
     scene._backgrounds = [{ info, sprite: spriteOf(128, 64), anim: null }];
     scene._rebuildDisplay();
-    const before = scene.container.children.map((c: any) => c.x as number).sort((a, b) => a - b);
+    const before = scene.backgroundContainer.children.map((c: any) => c.x as number).sort((a, b) => a - b);
     scene.update(1000 / 60);
     scene._rebuildDisplay();
-    const after = scene.container.children.map((c: any) => c.x as number).sort((a, b) => a - b);
+    const after = scene.backgroundContainer.children.map((c: any) => c.x as number).sort((a, b) => a - b);
     expect(after[0]).toBeGreaterThan(before[0]);
+  });
+
+  it('routes backdrops and foregrounds to separate containers in order', () => {
+    const scene = makeScene() as any;
+    const bg = hmoveBackdrop(128);
+    bg.Type = BackType.Normal;
+    const fg = hmoveBackdrop(128);
+    fg.Type = BackType.Normal;
+    fg.Front = true;
+    scene._backgrounds = [{ info: bg, sprite: spriteOf(128, 64), anim: null }];
+    scene._foregrounds = [{ info: fg, sprite: spriteOf(64, 32), anim: null }];
+    scene._rebuildDisplay();
+    // Foregrounds must not render behind the field: bg and fg live in
+    // separate containers so FieldScene can mount fg above tiles/objs.
+    expect(scene.backgroundContainer.children.length).toBe(1);
+    expect(scene.foregroundContainer.children.length).toBe(1);
+    expect(scene.objectContainer.children.length).toBe(0);
+    const order = scene.container.children.map((c: any) => c);
+    expect(order).toEqual([scene.backgroundContainer, scene.objectContainer, scene.foregroundContainer]);
   });
 });

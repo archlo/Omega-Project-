@@ -15,6 +15,23 @@ function payload(pkt: { toArray(): Uint8Array }): Uint8Array {
 }
 
 describe('GameSender', () => {
+  it('CashShopBuy writes the v95 payment and event fields', () => {
+    const body = payload(GameSender.CashShopBuy(12345678, 2, true, 87654321));
+    expect(Array.from(body)).toEqual([
+      3, 1,
+      2, 0, 0, 0,
+      0x4e, 0x61, 0xbc, 0x00,
+      1,
+      0xb1, 0x7f, 0x39, 0x05,
+    ]);
+  });
+
+  it('CashShopQueryCash uses the dedicated opcode 274 with no body', () => {
+    const pkt = GameSender.CashShopQueryCash();
+    expect(opcode(pkt)).toBe(274);
+    expect(payload(pkt).length).toBe(0);
+  });
+
   it('AliveAck sends opcode 25 with no body', () => {
     const pkt = GameSender.AliveAck();
     expect(opcode(pkt)).toBe(InHeader.AliveAck);

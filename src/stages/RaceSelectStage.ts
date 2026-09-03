@@ -260,10 +260,13 @@ export class RaceSelectStage extends Stage {
     this._pendingRace = -1;
     this._playClick();
 
+    // OG CLogin::InitNewCharEquip seeds m_nGender from the account gender —
+    // the creation avatar starts on the account's gender, not always male.
+    const isMale = this.game.session.account.gender !== 1;
     this.stageDirector.replace(new CharCreationStage(
       this._ui, this._map, this._sound,
       this._worldId, this._channelId,
-      true, uiRace,
+      isMale, uiRace,
       this._cameraStart, this._loginCameraOffset,
     ));
   }

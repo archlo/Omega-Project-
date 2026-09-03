@@ -114,6 +114,9 @@ export class OptionMenu extends GamePanel {
   get SfxVolume(): number { return this.config.seMute ? 0 : this._ogToPct(this.config.seVol); }
   get HpFlash(): number { return this.config.hpFlash; }
   get MpFlash(): number { return this.config.mpFlash; }
+  /** OG CUISysOpt video-detail slider (range 4) — drives
+      CMapLoadable::SetFieldMagLevel's obj/back layer rebuild. */
+  get VideoQuality(): number { return this.config.video; }
 
   constructor() {
     super();

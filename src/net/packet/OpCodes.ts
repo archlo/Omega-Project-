@@ -378,6 +378,10 @@ export enum InHeader {
   // OG: CWvsContext::SendRequestSessionValue (0x9e1a90) — string byte(1).
   // Requests a session value. Opcode TBD.
   UserSessionValueRequest   = 140,
+  // CCashShop::TrySendQueryCashRequest @0x481BC0 writes opcode 274 with no
+  // payload. The same numeric value is OutHeader.QuestGuideResult in the
+  // opposite direction, so it belongs in this client-request enum as well.
+  CashShopQueryCashRequest  = 274,
 }
 
 export enum OutHeader {

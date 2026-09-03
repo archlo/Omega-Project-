@@ -40,11 +40,21 @@ export interface MacroRowData { slot: number; skills: number[]; name?: string; m
 // OnMouseMove/OnMouseButton/OnButtonClicked/SetShow/Draw. Distinct from the
 // unrelated CUIAntiMacro/CUIAdminAntiMacro (anti-macro "are you human"
 // challenge popup) and CUIAntiMacroNotice — don't conflate.
+// OG CDraggableSkill::MapMacro — macro drags carry their origin slot so a
+// drop onto another macro slot MOVES (source cleared, Delete+Map+Flush) and
+// a drop onto the field clears the slot (bOnlyDelete=1). Plain {skillId}
+// payloads (SkillBook) have no origin and only ever place.
+export interface SkillMacroDragPayload {
+  skillId: number;
+  macroSlot?: number;
+  macroIndex?: number;
+}
+
 export class SkillMacro extends GamePanel implements DragTarget {
   OnSave: ((macros: MacroRowData[]) => void) | null = null;
   skillNameOf: (skillId: number) => string = (skillId) => `Skill ${skillId}`;
   skillIconOf: ((skillId: number) => Texture | null) | null = null;
-  onDragStart: ((payload: { skillId: number }, texture: Texture, x: number, y: number) => void) | null = null;
+  onDragStart: ((payload: SkillMacroDragPayload, texture: Texture, x: number, y: number) => void) | null = null;
 
   private _background: WzSprite | null = null;
   private _loader: WzTextureLoader;
@@ -250,7 +260,9 @@ export class SkillMacro extends GamePanel implements DragTarget {
         if (slot >= 0 && slot < 3) {
           const skillId = macro.skills[slot];
           const tex = this._rows[row].slots[slot].texture;
-          if (skillId && tex && tex !== Texture.EMPTY) this.onDragStart?.({ skillId }, tex, x, y);
+          if (skillId && tex && tex !== Texture.EMPTY) {
+            this.onDragStart?.({ skillId, macroSlot: macro.slot, macroIndex: slot }, tex, x, y);
+          }
         }
         return true;
       }
@@ -309,7 +321,8 @@ export class SkillMacro extends GamePanel implements DragTarget {
    */
   tryAcceptDrag(payload: unknown, x: number, y: number): boolean {
     if (!this.isVisible || !payload || typeof payload !== 'object' || !('skillId' in payload)) return false;
-    const skillId = Number((payload as { skillId?: unknown }).skillId);
+    const p = payload as SkillMacroDragPayload;
+    const skillId = Number(p.skillId);
     if (!Number.isInteger(skillId) || skillId <= 0) return false;
     const lx = x - this.container.position.x;
     const ly = y - this.container.position.y;
@@ -319,7 +332,23 @@ export class SkillMacro extends GamePanel implements DragTarget {
     const macro = this._macros[this._scrollOffset + row];
     if (!macro) return false;
     macro.skills[slot] = skillId;
+    // OG MapMacro move semantics — a macro-originated drop clears its source
+    // slot (Delete before Map), unless it landed back where it came from.
+    if (p.macroSlot !== undefined && p.macroIndex !== undefined
+      && (p.macroSlot !== macro.slot || p.macroIndex !== slot)) {
+      this.clearSlot(p.macroSlot, p.macroIndex);
+    }
     this._selectedSlot = macro.slot;
+    this._refreshRows();
+    return true;
+  }
+
+  /** OG MapMacro(bOnlyDelete=1) — clears one macro skill slot (no packet; the
+      deferred OnSave flush carries it like any other edit). */
+  clearSlot(macroSlot: number, index: number): boolean {
+    const macro = this._macros.find((m) => m.slot === macroSlot);
+    if (!macro || index < 0 || index > 2 || !macro.skills[index]) return false;
+    macro.skills[index] = 0;
     this._refreshRows();
     return true;
   }

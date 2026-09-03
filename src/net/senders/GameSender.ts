@@ -16,6 +16,8 @@ import {
   WhisperSendBit,
   MiniRoomProtocol,
   ScriptAnswerAction,
+  CashShopRequestType,
+  CashShopPaymentType,
 } from '../protocol/Enums.js';
 
 export { MapleStat } from '../protocol/Enums.js';
@@ -526,10 +528,16 @@ export class GameSender {
   }
 
   static UserMove(fieldKey: number, movePathBlob: Uint8Array): OutPacket {
+    // OG CP_UserMove header (CUserLocal::SendMovePath → CInPacket layout that
+    // our server's handleUserMove decodes): 2 ints, byte fieldKey, then 5 ints
+    // (the last two being the anti-cheat dwCrc / Crc32 slots) before the
+    // CMovePath body. The server reads all 5 — the path must start after them.
     const p = OutPacket.Of(InHeader.UserMove);
     p.writeInt(0);
     p.writeInt(0);
     p.writeByte(fieldKey);
+    p.writeInt(0);
+    p.writeInt(0);
     p.writeInt(0);
     p.writeInt(0);
     p.writeInt(0);
@@ -2408,11 +2416,22 @@ export class GameSender {
     return p;
   }
 
-  /** Sub-action 3: CCashShop::SendBuyRequest — buy a single item by SN. */
-  static CashShopBuy(sn: number): OutPacket {
+  /** Sub-action 3: CCashShop::SendBuyRequest @0x48E530 (OnBuy) — buy a single
+   *  item by SN. v95 body after the sub-action byte:
+   *    byte   = (dwOption == 2)      // MaplePoint-only flag
+   *    int    = dwOption             // payment type (1 NX, 2 MaplePoint, 4 prepaid)
+   *    int    = nCommSN              // commodity SN
+   *    byte   = m_bRequestBuyOneADay
+   *    int    = nEventSN             // zero-good event SN (0 for normal)
+   *  Matches kinoko CashShopHandler Buy decode. */
+  static CashShopBuy(sn: number, paymentType = CashShopPaymentType.NXCredit, oneADay = false, eventSN = 0): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(3);
+    p.writeByte(CashShopRequestType.Buy);
+    p.writeByte(paymentType === CashShopPaymentType.MaplePoint ? 1 : 0);
+    p.writeInt(paymentType);
     p.writeInt(sn);
+    p.writeByte(oneADay ? 1 : 0);
+    p.writeInt(eventSN);
     return p;
   }
 
@@ -2424,19 +2443,24 @@ export class GameSender {
     return p;
   }
 
-  /** Sub-action 6: CCashShop::SendMoveLtoSRequest — move item from locker to inventory. */
-  static CashShopMoveLtoS(sn: number): OutPacket {
+  /** Sub-action 14: CCashShop::OnMoveCashItemLtoS @0x4828E0 — move a locker
+   * item to an inventory slot. */
+  static CashShopMoveLtoS(sn: number, invType = 5, position = 0): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(6);
-    p.writeInt(sn);
+    p.writeByte(CashShopRequestType.MoveLtoS);
+    p.writeLong(BigInt(sn));
+    p.writeByte(invType);
+    p.writeShort(position);
     return p;
   }
 
-  /** Sub-action 7: CCashShop::SendMoveStoLRequest — move item from inventory to locker. */
-  static CashShopMoveStoL(sn: number): OutPacket {
+  /** Sub-action 15: CCashShop::OnMoveCashItemStoL @0x482B50 — move an
+   * inventory cash item to the locker. */
+  static CashShopMoveStoL(sn: number, invType = 5): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(7);
-    p.writeInt(sn);
+    p.writeByte(CashShopRequestType.MoveStoL);
+    p.writeLong(BigInt(sn));
+    p.writeByte(invType);
     return p;
   }
 
@@ -2594,11 +2618,9 @@ export class GameSender {
     return p;
   }
 
-  /** Sub-action 27: CCashShop::SendQueryCashRequest — query current NX/MaplePoint/Prepaid balances. */
+  /** CCashShop::TrySendQueryCashRequest @0x481BC0 — opcode 274 with no body. */
   static CashShopQueryCash(): OutPacket {
-    const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(27);
-    return p;
+    return OutPacket.Of(InHeader.CashShopQueryCashRequest);
   }
 
   /** Sub-action 26: CCashShop::SendCashGachaponOpenRequest — open a cash gachapon ticket. */

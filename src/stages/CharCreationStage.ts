@@ -126,6 +126,10 @@ export class CharCreationStage extends Stage {
 
   private _notice: LoginNoticeOverlay | null = null;
   private _checkingName = false;
+  // OG CLogin::m_sCheckedName — SendNewCharPacket sends GetCheckedName(), not
+  // the live edit box. Freeze the name that passed the duplicate check; if the
+  // user edits afterwards, re-run the check instead of sending unchecked text.
+  private _checkedName = '';
 
   // Track whether board has been built (called once per sub-screen)
   private _boardBuilt = false;
@@ -491,7 +495,9 @@ export class CharCreationStage extends Stage {
     look.gender = this._male ? 0 : 1;
     look.skin = skin;
     look.face = face;
-    look.hair = hairBase + hairColor;
+    // OG CLogin::GetSelectedAL(AvatarLook): hair = AL[2] + 10 * (AL[1] / 10) —
+    // the base's ones digit is stripped, color comes fully from AL[2].
+    look.hair = Math.floor(hairBase / 10) * 10 + hairColor;
     if (coat !== 0) look.hairEquip.set(BodyPartSlot.Clothes, coat);
     if (pants !== 0) look.hairEquip.set(BodyPartSlot.Pants, pants);
     if (shoes !== 0) look.hairEquip.set(BodyPartSlot.Shoes, shoes);
@@ -550,6 +556,8 @@ export class CharCreationStage extends Stage {
   private _onCheckDuplicatedId(args: CheckDuplicatedIdArgs): void {
     this._checkingName = false;
     if (args.resultCode === 0) {
+      // OG stores m_sCheckedName here; the create packet sends that snapshot.
+      this._checkedName = this._nameField?.text ?? '';
       this._subScreen = SubScreen.Look;
     } else {
       const msg = args.resultCode === 1 ? 'Name already in use.'
@@ -561,7 +569,16 @@ export class CharCreationStage extends Stage {
   }
 
   private _sendCreate(): void {
-    const name = this._nameField?.text ?? '';
+    // OG sends GetCheckedName(): if the name changed since the duplicate check,
+    // re-validate instead of sending unchecked text.
+    const liveName = this._nameField?.text ?? '';
+    if (liveName !== this._checkedName) {
+      this._subScreen = SubScreen.Name;
+      this._checkedName = '';
+      this._onCheckName();
+      return;
+    }
+    const name = this._checkedName;
     const face = this._curId(CatFace, this._sel[CatFace]);
     const hairBase = this._curId(CatHair, this._sel[CatHair]);
     const hairColor = this._curId(CatHairColor, this._sel[CatHairColor]);
@@ -572,7 +589,9 @@ export class CharCreationStage extends Stage {
     const shoes = this._curId(CatShoes, this._sel[CatShoes]);
     const weapon = this._curId(CatWeapon, this._sel[CatWeapon]);
     const srace = serverRace(this._raceIndex);
-    const subJob = this._raceIndex === 5 ? 1 : 0;
+    // OG CUINewCharRaceSelect::SelectRaceButton: only button 0 (Dual Blade,
+    // uiRace 0) sets m_nSelectedSubJob = 1; every other race sends subJob 0.
+    const subJob = this._raceIndex === 0 ? 1 : 0;
 
     if (!this.game.session.isConnected) {
       this._goBackToCharSelect();
@@ -587,8 +606,15 @@ export class CharCreationStage extends Stage {
     if (args.success && args.entry) {
       this._goBackToCharSelect();
     } else {
-      this._notice?.show(args.resultCode === 30 ? 'Name already in use.' : 'Creation failed.');
+      // OG CLogin::OnCreateNewCharacterResult codes: 10 = over the character
+      // limit, 26 = event notice, 30 = bad name (Error 10), anything else =
+      // generic creation failure (Error 18). Code 30 is NOT "already in use".
+      const msg = args.resultCode === 30 ? 'This name cannot be used.'
+        : args.resultCode === 10 ? 'You cannot create any more characters.'
+        : 'Creation failed.';
+      this._notice?.show(msg);
       this._subScreen = SubScreen.Name;
+      this._checkedName = '';
       if (this._nameField) this._nameField.isFocused = true;
     }
   }

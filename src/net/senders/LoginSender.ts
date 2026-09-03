@@ -96,16 +96,14 @@ export class LoginSender {
     return p;
   }
 
-  // NOTE (found while implementing CreateNewCharacterInCS below): the real
-  // OG sender for InHeader=22, CLogin::SendNewCharPacket's non-char-sale
-  // branch (decompile/5D7BD0.c), encodes name:str, race:int, subJob:short,
-  // then 8x int (CLogin::GetSelectedAL ability-point-allocation selections),
-  // then gender:byte — not the face/hair/hairColor/skin/coat/pants/shoes/
-  // weapon fields this method currently writes. This method's byte layout
-  // looks like it was written against a different client version/format
-  // and has not been re-verified against this OG decompile. Flagging for a
-  // dedicated re-verification pass; not changed here since that would alter
-  // already-shipped behavior without confirmation.
+  // OG CLogin::SendNewCharPacket, non-char-sale branch (opcode 22): name:str,
+  // race:int, subJob:short, then 8x int CLogin::GetSelectedAL(0..7), then
+  // gender:byte. The 8 ints are the APPEARANCE selections from
+  // m_aMaleItem/m_aFemaleItem (loaded from Etc.wz/MakeCharInfo.img):
+  // AL[0]=face, AL[1]=hair base, AL[2]=hair color offset, AL[3]=skin,
+  // AL[4]=coat, AL[5]=pants, AL[6]=shoes, AL[7]=weapon — matching the
+  // face/hair/hairColor/skin/coat/pants/shoes/weapon parameters below in
+  // order. Hair combines OG-side as AL[2] + 10 * (AL[1] / 10).
   static CreateNewCharacter(
     name: string,
     race: number,

@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
+import { Container, Graphics, Sprite, Text, TextStyle, Texture } from 'pixi.js';
 import { GamePanel } from './GamePanel.js';
 import { WzSprite } from '../../render/WzSprite.js';
 import { WzTextureLoader } from '../../render/WzTextureLoader.js';
@@ -54,7 +54,7 @@ export class QuickSlotBar extends GamePanel implements DragTarget {
   private _btSlideDown: Button | null;
   private _bShowSlide = true;
   private _cashTagLoader: (() => Sprite | null) | null = null;
-  bindItemToKey: ((scancode: number, itemId: number) => void) | null = null;
+  bindItemToKey: ((scancode: number, itemId: number, invType?: number) => void) | null = null;
   private _attachedToStatusBar = false;
 
   constructor(
@@ -337,26 +337,26 @@ export class QuickSlotBar extends GamePanel implements DragTarget {
       const { itemId, invType } = payload as { itemId: number; invType: number };
       // OG CDraggableItem::MapFuncKey: only specific items are bindable
       if (this._isBindableItem(itemId, invType)) {
-        return this.TryBindItemAt(itemId, x, y);
+        return this.TryBindItemAt(itemId, x, y, invType);
       }
     }
     return false;
   }
 
-  TryBindItemAt(itemId: number, x: number, y: number): boolean {
+  TryBindItemAt(itemId: number, x: number, y: number, invType?: number): boolean {
     if (!this.isVisible) return false;
     for (let i = 0; i < SlotCount; i++) {
       const r = this._slotRect(i);
       if (x >= r.x && x < r.x + r.width && y >= r.y && y < r.y + r.height) {
-        this._bindItem(this._keys[i], itemId);
+        this._bindItem(this._keys[i], itemId, invType);
         return true;
       }
     }
     return false;
   }
 
-  private _bindItem(scancode: number, itemId: number): void {
-    this.bindItemToKey?.(scancode, itemId);
+  private _bindItem(scancode: number, itemId: number, invType?: number): void {
+    this.bindItemToKey?.(scancode, itemId, invType);
   }
 
   TryBindSkillAt(skillId: number, x: number, y: number): boolean {

@@ -1,5 +1,7 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import { GamePanel } from './GamePanel.js';
+import type { DragTarget } from '../DragController.js';
+import type { ItemDragPayload } from './ItemInventory.js';
 import { Button } from '../Button.js';
 import { TextField } from '../TextField.js';
 import { ScrollBar } from './ScrollBar.js';
@@ -77,7 +79,7 @@ function truncate(text: string, maxW: number, measure: (s: string) => number): s
   return out + '..';
 }
 
-export class PersonalShop extends GamePanel {
+export class PersonalShop extends GamePanel implements DragTarget {
   OnBuyItem: ((index: number, count: number) => void) | null = null;
   OnLeave: (() => void) | null = null;
   OnPutItem: ((invType: number, position: number, setCount: number, setSize: number, price: number) => void) | null = null;
@@ -547,9 +549,21 @@ export class PersonalShop extends GamePanel {
     return lx >= 0 && lx < 509 && ly >= 0 && ly < 551;
   }
 
+  // DragTarget — OG CPersonalShopDlg PutItem path: an inventory item dragged
+  // onto the owner window arms pendingItem exactly like the click-arm
+  // (GameStage onItemSelected); clicking a grid row then opens the put-item
+  // dialog (bundles/set math). Worn slots (negative) cannot be listed.
+  tryAcceptDrag(payload: unknown, _x: number, _y: number): boolean {
+    if (!this.isVisible || !this._isOwner) return false;
+    if (!payload || typeof payload !== 'object' || !('itemId' in payload)) return false;
+    const p = payload as ItemDragPayload;
+    if (typeof p.slotPos !== 'number' || p.slotPos <= 0) return false;
+    this.pendingItem = { invType: p.invType, position: p.slotPos, stackSize: p.quantity ?? 1 };
+    return true;
+  }
+
   /** OG GetItemIndexFromPoint @0x697B90. */
-  getItemIndexFromPoint(lx: number, ly: number): number {
-    let cur = this._buyScroll?.pos ?? 0;
+  getItemIndexFromPoint(lx: number, ly: number): number {    let cur = this._buyScroll?.pos ?? 0;
     for (let y = 200; ; y += ROW_PITCH) {
       if (cur >= 0 && cur < this._items.length) {
         if (lx >= GRID_LEFT && lx <= GRID_RIGHT && ly >= y - ROW_HEIGHT && ly <= y) return cur;

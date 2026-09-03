@@ -9,6 +9,30 @@ attack-specific logic is choosing *which* action a swing uses.
 The set is keyed off the weapon's `info/attack` type and one action is
 picked at random per swing — which is why a melee weapon visibly cycles
 through several poses. Mirrors the v95 client's attack-action pick.
+
+## Code space (v95 authoritative)
+
+`CodeToAction` is the v95 `s_aCharacterActionData[]` table (built by the
+client's `_dynamic_initializer_for__s_aCharacterActionData__`, read back
+by `get_action_name_from_code` @0x4BA910): the array index IS the action
+code, and entry `.bsName` is the pose. Every entry below was verified by
+decrypting the exe's StringPool IDs 0x407..0x42A / 0x1ADA.. etc., so a
+code round-trips with the pose a real client plays:
+
+- 5..8    `swingO1` `swingO2` `swingO3` `swingOF`
+- 9..12   `swingT1` `swingT2` `swingT3` `swingTF`
+- 13..15  `swingP1` `swingP2` `swingPF`
+- 16..18  `stabO1` `stabO2` `stabOF`
+- 19..21  `stabT1` `stabT2` `stabTF`
+- 22..24  `swingD1` `swingD2` `stabD1`
+- 31/32/36 `shoot1` `shoot2` `shootF` (bow/crossbow shoot poses)
+- 41      `proneStab`
+- 116     `shot` (gun)
+
+Code → pose is unambiguous; pose → code is not (e.g. `swingO1` lives at
+indexes 5, 33 and 37). `CodeFor` returns the FIRST (canonical, basic-melee)
+index that carries the name, which is the value the melee/shoot pose
+tables actually emit for that pose.
 */
 export class AttackAction {
   private static readonly OneHand  = ['stabO1', 'stabO2', 'swingO1', 'swingO2', 'swingO3'];
@@ -23,13 +47,17 @@ export class AttackAction {
   private static readonly Knuckle  = ['swingO1', 'swingO2', 'swingO3'];
   private static readonly BareHand = ['swingO1', 'swingO2', 'swingO3'];
 
-  // TODO_AUDIT.md Hundred-and-forty-ninth pass: shared common action-code bridge for local send + remote render.
+  // v95 s_aCharacterActionData — index == action code (see class doc).
   private static readonly CodeToAction = new Map<number, string>([
-    [5, 'stabO1'], [6, 'swingO1'], [7, 'swingO2'], [8, 'swingO3'],
-    [9, 'shoot1'], [10, 'shoot2'], [11, 'shoot3'], [12, 'shot'],
-    [13, 'stabO2'], [14, 'swingT1'], [15, 'swingT2'], [16, 'swingT3'],
-    [17, 'stabT1'], [18, 'swingP1'], [19, 'swingP2'], [20, 'swingP3'],
-    [21, 'swingO1'], [22, 'swingO2'], [23, 'proneStab'],
+    [5, 'swingO1'], [6, 'swingO2'], [7, 'swingO3'], [8, 'swingOF'],
+    [9, 'swingT1'], [10, 'swingT2'], [11, 'swingT3'], [12, 'swingTF'],
+    [13, 'swingP1'], [14, 'swingP2'], [15, 'swingPF'],
+    [16, 'stabO1'], [17, 'stabO2'], [18, 'stabOF'],
+    [19, 'stabT1'], [20, 'stabT2'], [21, 'stabTF'],
+    [22, 'swingD1'], [23, 'swingD2'], [24, 'stabD1'],
+    [31, 'shoot1'], [32, 'shoot2'], [36, 'shootF'],
+    [41, 'proneStab'],
+    [116, 'shot'],
   ]);
   private static readonly ActionToCode = (() => {
     const m = new Map<string, number>();

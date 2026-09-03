@@ -441,6 +441,96 @@ export const enum TrunkRequestAction {
   Close         = 8,
 }
 
+/**
+ * InHeader.UserCashShopRequest=275 first-payload byte.
+ * Kinoko `CashItemRequestType` (kinoko GAME_VERSION = 95) — cross-checked
+ * against live v95 decompiles this session: RequestCashPurchaseRecord
+ * @0x4823C0 = 0x2C(44); OnMoveCashItemLtoS @0x4828E0 = 0x0E(14);
+ * OnMoveCashItemStoL @0x482B50 = 0x0F(15); OnRebateLockerItem @0x485840 =
+ * 0x1C(28); SendGiftsPacket @0x487B60 = 4; OnSetWish @0x4837D0 = 5;
+ * OnExItemSlot(IncSlotCount) @0x48D890 = 6; OnIncTrunkCount @0x48DC70 = 7;
+ * OnIncCharacterSlotCount @0x48DEC0 = 8; OnBuy @0x48E530 = 3;
+ * SendBuyNameChangeItemPacket @0x488250 = 0x32(50);
+ * SendBuyTransferWorldItemPacket @0x482F30 = 0x35(53);
+ * ApplyWishListEvent @0x482EA0 = 0x23(35).
+ */
+export const enum CashShopRequestType {
+  WebShopOrderGetList = 0,
+  LoadLocker = 1,
+  LoadWish = 2,
+  Buy = 3,
+  Gift = 4,
+  SetWish = 5,
+  IncSlotCount = 6,
+  IncTrunkCount = 7,
+  IncCharSlotCount = 8,
+  IncBuyCharCount = 9,
+  EnableEquipSlotExt = 10,
+  CancelPurchase = 11,
+  ConfirmPurchase = 12,
+  Destroy = 13,
+  MoveLtoS = 14,
+  MoveStoL = 15,
+  Expire = 16,
+  Use = 17,
+  StatChange = 18,
+  SkillChange = 19,
+  SkillReset = 20,
+  DestroyPetItem = 21,
+  SetPetName = 22,
+  SetPetLife = 23,
+  SetPetSkill = 24,
+  SetItemName = 25,
+  SendMemo = 26,
+  GetMaplePoint = 27,
+  Rebate = 28,
+  UseCoupon = 29,
+  GiftCoupon = 30,
+  Couple = 31,
+  BuyPackage = 32,
+  GiftPackage = 33,
+  BuyNormal = 34,
+  ApplyWishListEvent = 35,
+  MovePetStat = 36,
+  Friendship = 37,
+  ShopScan = 38,
+  LoadPetExceptionList = 39,
+  UpdatePetExceptionList = 40,
+  FreeCashItem = 41,
+  LoadFreeCashItem = 42,
+  Script = 43,
+  PurchaseRecord = 44,
+  TradeDone = 45,
+  BuyDone = 46,
+  TradeSave = 47,
+  TradeLog = 48,
+  EvolPet = 49,
+  BuyNameChange = 50,
+  CancelChangeName = 51,
+  CancelNameChangeFail = 52,
+  BuyTransferWorld = 53,
+  CancelTransferWorld = 54,
+  CharacterSale = 55,
+  ItemUpgrade = 60,
+  ItemUpgradeFail = 62,
+  ItemUpgradeReq = 63,
+  ItemUpgradeDone = 64,
+  Vega = 67,
+  CashItemGachapon = 74,
+  CashGachaponOpen = 75,
+  CashGachaponCopy = 76,
+  ChangeMaplePoint = 77,
+  Give = 189,
+}
+
+/** Buy/extension `dwOption` payment-type bits (OnBuy @0x48E530).
+ *  1 = NX Credit, 2 = MaplePoint, 4 = Prepaid NX; `0` = no-affordable-type. */
+export const enum CashShopPaymentType {
+  NXCredit = 1,
+  MaplePoint = 2,
+  PrepaidNX = 4,
+}
+
 /** InHeader.UserQuestRequest=119 sub-action. */
 export const enum QuestRequestAction {
   Accept           = 1,

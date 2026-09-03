@@ -145,6 +145,12 @@ export class KeyConfig extends GamePanel implements DragTarget {
   onBindingsChanged: (() => void) | null = null;
   onSaveToServer: ((changed: { index: number; fk: FuncKeyMappedRecord }[]) => void) | null = null;
   onOpenQuickSlot: (() => void) | null = null;
+  /** OG CDraggableItem::MapFuncKey item gate (same predicate QuickSlotBar
+      receives as _isBindableItem). Unset = accept legacy TI set (2/3/4). */
+  isBindableItem: ((itemId: number, invType: number) => boolean) | null = null;
+  /** OG MapFuncKey nType selector: Effect 7 for non-cash-effect/scrolls that
+      toggle (TI4 429, cash 501s), Item 2 otherwise. Unset = Item. */
+  itemTypeFor: ((itemId: number, invType: number) => FuncKeyType) | null = null;
   skillIconResolver: ((skillId: number) => WzSprite | null) | null = null;
   itemIconResolver: ((itemId: number) => WzSprite | null) | null = null;
 
@@ -337,12 +343,16 @@ this._gfx = new Graphics();
   }
 
   // OG: CFuncKeyMappedMan — bind item to key slot (FuncKeyType.Item).
-  bindItemToKey(scancode: number, itemId: number): void {
+  // type comes from the MapFuncKey gate (Effect 7 for non-cash-effect 429 /
+  // cash 501s); callers without a TI pass the Item default.
+  bindItemToKey(scancode: number, itemId: number, type: FuncKeyType = FuncKeyType.Item): void {
     if (scancode < 0 || scancode >= MapSize) return;
-    const fk: FuncKeyMappedRecord = { type: FuncKeyType.Item, id: itemId };
+    const fk: FuncKeyMappedRecord = { type, id: itemId };
     const changed: { index: number; fk: FuncKeyMappedRecord }[] = [];
     for (let i = 0; i < MapSize; i++) {
-      if (this._map[i].type === FuncKeyType.Item && this._map[i].id === itemId && i !== scancode) {
+      // OG MapFuncKey dedupe — clears item-family types (2/3/7) with the same id.
+      const t = this._map[i].type;
+      if ((t === FuncKeyType.Item || t === FuncKeyType.Emotion || t === FuncKeyType.Effect) && this._map[i].id === itemId && i !== scancode) {
         this._map[i] = { ...FuncKeyMappedNone };
         changed.push({ index: i, fk: FuncKeyMappedNone });
       }
@@ -377,20 +387,22 @@ this._gfx = new Graphics();
     if ('skillId' in payload) return this.tryBindSkillAt((payload as { skillId: number }).skillId, x, y);
     if ('itemId' in payload && 'invType' in payload) {
       const { itemId, invType } = payload as { itemId: number; invType: number };
-      if (invType === 2 || invType === 3 || invType === 4) {
-        return this.tryBindItemAt(itemId, x, y);
+      // OG MapFuncKey category gate — same predicate as QuickSlotBar drops.
+      if (this.isBindableItem ? !this.isBindableItem(itemId, invType) : !(invType === 2 || invType === 3 || invType === 4)) {
+        return false;
       }
+      return this.tryBindItemAt(itemId, x, y, invType);
     }
     return false;
   }
 
-  tryBindItemAt(itemId: number, screenX: number, screenY: number): boolean {
+  tryBindItemAt(itemId: number, screenX: number, screenY: number, invType = 0): boolean {
     if (!this.isVisible) return false;
     const lx = screenX - this._root.x;
     const ly = screenY - this._root.y;
     const sc = hitTestKey(lx, ly);
     if (sc < 0) return false;
-    this.bindItemToKey(sc, itemId);
+    this.bindItemToKey(sc, itemId, this.itemTypeFor?.(itemId, invType) ?? FuncKeyType.Item);
     return true;
   }
 
@@ -798,6 +810,31 @@ private _layoutButtons(): void {
         }
       }
       this._map[sc] = this._dragIcon;
+    } else if (this._dragFromScancode >= 0) {
+      const t = this._dragIcon.type;
+      if (t === FuncKeyType.Item || t === FuncKeyType.Emotion || t === FuncKeyType.Effect) {
+        // OG CDraggableItem::UnmapFuncKey — an item binding dragged off every
+        // key clears all item-family bindings with that id. (The picked-up
+        // cell is already empty; this catches duplicates. The OK diff against
+        // the open snapshot persists the picked-up deletion itself.)
+        const id = this._dragIcon.id;
+        const changed: { index: number; fk: FuncKeyMappedRecord }[] = [];
+        for (let i = 0; i < MapSize; i++) {
+          const mt = this._map[i].type;
+          if ((mt === FuncKeyType.Item || mt === FuncKeyType.Emotion || mt === FuncKeyType.Effect) && this._map[i].id === id) {
+            this._map[i] = { ...FuncKeyMappedNone };
+            changed.push({ index: i, fk: FuncKeyMappedNone });
+          }
+        }
+        if (changed.length > 0) {
+          for (let i = 0; i < MapSize; i++) this._mapOnOpen[i] = { ...this._map[i] };
+          this.onSaveToServer?.(changed);
+        }
+      } else {
+        // OG keeps non-item drags (skills/menus/macros) dropped off-grid —
+        // put the picked-up binding back where it came from.
+        this._map[this._dragFromScancode] = this._dragIcon;
+      }
     }
     this._cancelDrag();
   }

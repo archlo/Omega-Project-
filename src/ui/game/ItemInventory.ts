@@ -49,10 +49,10 @@ const TAB_COLORS = ['#5A825A', '#5A5AA0', '#826E46', '#646464', '#965096'];
 
 // OG: CUIItem::SetItemTI swaps tabs 2↔3. Visual tab index → server invType:
 // tab 0→1, tab 1→2, tab 2→4, tab 3→3, tab 4→5
-const TAB_TO_INVTYPE = [1, 2, 4, 3, 5];
+export const TAB_TO_INVTYPE = [1, 2, 4, 3, 5];
 // Reverse: server invType → visual tab index (for applyOps routing)
 // invType 3→tab 2 (Setup/Install), invType 4→tab 3 (Etc) — matches the swap
-const INVTYPE_TO_TAB: Record<number, number> = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4 };
+export const INVTYPE_TO_TAB: Record<number, number> = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4 };
 
 const _labelStyle = new TextStyle({ fill: '#CCC', fontSize: 10, fontFamily: 'monospace' });
 const _titleStyle = new TextStyle({ fill: '#DCC896', fontSize: 11, fontFamily: 'monospace' });
@@ -69,7 +69,9 @@ export class InvItem {
 }
 
 // OG: CDraggableItem's drop payload — TODO_AUDIT.md item-drag-and-drop TODO.
-export interface ItemDragPayload { itemId: number; slotPos: number; invType: number; }
+// invType is the SERVER TI (use TAB_TO_INVTYPE, not tab+1 — tabs 2/3 are
+// swapped). quantity lets trade/shop dialogs arm stackables from a drag.
+export interface ItemDragPayload { itemId: number; slotPos: number; invType: number; quantity?: number; }
 
 // OG class: CUIItem (TSingleton<CUIItem>, RTTI ms_RTTI_CUIItem; vtable
 // referenced throughout CDraggableItem methods alongside CUIEquip).
@@ -589,12 +591,24 @@ export class ItemInventory extends GamePanel implements DragTarget {
   }
 
   /** Total quantity of all items with the given itemId across all tabs. */
-  countItem(itemId: number): number {
-    let total = 0;
+  countItem(itemId: number): number {    let total = 0;
     for (const item of this._items) {
       if (item.id === itemId) total += item.quantity;
     }
     return total;
+  }
+
+  /** OG UseFuncKeyMapped case 2 item lookup — first slot holding itemId in
+      the given server TI (visual-tab routed). */
+  findItemSlot(itemId: number, invType: number): { invType: number; slot: number } | null {
+    const tab = INVTYPE_TO_TAB[invType] ?? -1;
+    if (tab < 0) return null;
+    for (const item of this._items) {
+      if (item.tab === tab && item.id === itemId && item.slot > 0) {
+        return { invType, slot: item.slot };
+      }
+    }
+    return null;
   }
 
   setActiveUseSlot(slot: number): void { this._activeUseSlot = slot; }
@@ -789,7 +803,7 @@ export class ItemInventory extends GamePanel implements DragTarget {
 
     this.onItemSelected?.(item);
     const icon = this._icons?.LoadIcon(item.id);
-    if (icon) this.onDragStart?.({ itemId: item.id, slotPos: item.slot, invType: item.tab + 1 }, icon.Texture, this._mouseX, this._mouseY);
+    if (icon) this.onDragStart?.({ itemId: item.id, slotPos: item.slot, invType: TAB_TO_INVTYPE[item.tab] ?? item.tab + 1, quantity: item.quantity }, icon.Texture, this._mouseX, this._mouseY);
 
     const key = `${item.tab}-${item.slot}`;
     const now = performance.now();

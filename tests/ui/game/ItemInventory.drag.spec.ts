@@ -21,7 +21,7 @@ describe('ItemInventory drag-and-drop', () => {
     // Equip tab (index 0) is active by default; slot (0,0) at GRID_X=10, GRID_Y=51.
     inv.handleMouseButton(370 + 10 + 4, 50 + 51 + 4, true);
 
-    expect(started).toEqual({ itemId: 1302000, slotPos: 1, invType: 1 });
+    expect(started).toEqual({ itemId: 1302000, slotPos: 1, invType: 1, quantity: 1 });
   });
 
   it('does not start a drag when the slot is empty', () => {

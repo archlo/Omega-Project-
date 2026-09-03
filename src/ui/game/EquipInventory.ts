@@ -773,15 +773,11 @@ export class EquipInventory extends GamePanel implements DragTarget {
     for (const s of SLOTS) {
       if (!this._slotVisible(s)) continue;
       if (lx >= s.ox && lx < s.ox + SLOT_SIZE && ly >= s.oy && ly < s.oy + SLOT_SIZE) {
+        // OG OnDropped has no equip→equip route — worn drops onto equip
+        // slots do nothing (GetOff goes to CUIItem, throws go to the field).
         if (p.slotPos > 0) {
           // Equip from inventory → character slot
           this.onEquipDrop?.(p.invType, p.slotPos, s.bodyPart);
-        } else if (p.slotPos < 0) {
-          // Swap worn item to a different slot
-          const srcBodyPart = -p.slotPos;
-          if (srcBodyPart !== s.bodyPart) {
-            this.onUnequipToInventory?.(p.invType, srcBodyPart, -s.bodyPart);
-          }
         }
         return true;
       }

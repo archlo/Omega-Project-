@@ -252,11 +252,14 @@ export class VegaDialog extends GamePanel implements DragTarget {
     if (!this.isVisible || this._state !== 0 || this._requestSent) return false;
     if (!payload || typeof payload !== 'object' || !('itemId' in payload)) return false;
     const p = payload as ItemDragPayload;
-    if (p.itemId >= 1000000 && p.itemId < 2000000) {
+    // OG discriminator is the inventory type, not the item-id range: equips
+    // (server TI 1) vs upgrade scrolls (server TI 2, Use tab). Id ranges
+    // misclassified Cash/pet equips and out-of-range ids.
+    if (p.invType === 1) {
       this._equipItemTI = 1;
       this._equipSlotPos = p.slotPos;
       this._equipLabel.text = `Equip: ${p.itemId}`;
-    } else if (p.itemId >= 2000000 && p.itemId < 3000000) {
+    } else if (p.invType === 2) {
       if (this._scrollList.length > 0 && !this._scrollList.includes(p.itemId)) {
         return false;
       }

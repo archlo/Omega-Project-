@@ -1711,13 +1711,16 @@ export class SkillBook extends GamePanel {
       return true;
     }
 
-    // OG: Row click — GetSkillIndexFromPoint with bIcon=0
+    // OG: Row click — GetSkillIndexFromPoint with bIcon=0. Same drag gate as
+    // the icon path (job-type, nonslot, level) so rows can't drag skills the
+    // icon refuses.
     const rowIdx = this._getSkillIndexFromPoint(lx, ly, false);
     if (rowIdx >= 0) {
       const abs = this._scrollOffset + rowIdx;
       if (abs < tab.length) {
         const sk = tab[abs];
-        if (!sk.passive && sk.level > 0) {
+        const jobType = Math.floor(sk.id / 1000) % 10;
+        if (!sk.passive && sk.level > 0 && jobType !== 0 && jobType !== 9 && !isNonslotSkill(sk.id)) {
           this.onDragSound?.();
           this.onDragStart?.({ skillId: sk.id }, this._rowIcons[rowIdx].texture, x, y);
           const now = performance.now();

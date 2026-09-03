@@ -28,6 +28,13 @@ export class AnimatedSprite {
   get Current(): WzSprite { return this._frames[this._index]; }
   get Target(): Sprite { return this._pixiSprite; }
 
+  /** OG CMapLoadable::SetObjectState — switching an obj to a new state
+      restarts its layer animation from the first frame. */
+  Restart(): void {
+    this._index = 0;
+    this._accumMs = 0;
+  }
+
   Update(dtMs: number): void {
     if (this._frames.length < 2) return;
     this._accumMs += dtMs;

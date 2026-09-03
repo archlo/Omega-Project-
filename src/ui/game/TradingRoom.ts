@@ -1,5 +1,7 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import { GamePanel } from './GamePanel.js';
+import type { DragTarget } from '../DragController.js';
+import type { ItemDragPayload } from './ItemInventory.js';
 import { WzSprite } from '../../render/WzSprite.js';
 import { WzTextureLoader } from '../../render/WzTextureLoader.js';
 import { WzPackage } from '../../wz/WzPackage.js';
@@ -59,7 +61,7 @@ export interface TradeItem {
   quantity: number;
 }
 
-export class TradingRoom extends GamePanel {
+export class TradingRoom extends GamePanel implements DragTarget {
   /** OG PutItem — fired when one of my 9 slots receives an item. */
   OnPutItem: ((index: number, invType: number, position: number, quantity: number) => void) | null = null;
   /** OG MoveItemToInventory — take back own offered item. */
@@ -243,6 +245,21 @@ export class TradingRoom extends GamePanel {
       w: CELL,
       h: CELL,
     };
+  }
+
+  // DragTarget — OG CTradingRoomDlg PutItem path: an inventory item dragged
+  // onto the window arms pendingItem exactly like the click-arm (GameStage
+  // onItemSelected); the user then clicks a my-grid slot to place it (qty
+  // prompt included). Worn slots (negative) cannot be traded.
+  tryAcceptDrag(payload: unknown, _x: number, _y: number): boolean {
+    if (!this.isVisible || this._myConfirmed) return false;
+    if (!payload || typeof payload !== 'object' || !('itemId' in payload)) return false;
+    const p = payload as ItemDragPayload;
+    // Full inventory payload required — key-binding drags ({itemId} without
+    // a slot) must not arm the offer.
+    if (typeof p.slotPos !== 'number' || p.slotPos <= 0) return false;
+    this.pendingItem = { invType: p.invType, position: p.slotPos, itemId: p.itemId, quantity: p.quantity ?? 1 };
+    return true;
   }
 
   // ── Data ────────────────────────────────────────────────────────────────────

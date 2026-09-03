@@ -867,8 +867,7 @@ export class CashShopStage extends Stage {
     }
 
     const main = this._commodities.filter((c) => !isRandomWindow(c));
-    const cmp = (a: CashCommodity, b: CashCommodity) =>
-      a.priority - b.priority || a.sn - b.sn;
+    const cmp = (a: CashCommodity, b: CashCommodity) => this._compareSort(a, b);
     // Group in Category.img order; within a row keep the current sort.
     main.sort((a, b) =>
       (rowIndex.get(`${a.category}_${a.categorySub}`) ?? 1 << 30)
@@ -908,11 +907,7 @@ export class CashShopStage extends Stage {
   private _applySortType(): void {
     const rowKey = (c: CashCommodity) => c.category * 1000 + c.categorySub;
     const cmp = (a: CashCommodity, b: CashCommodity): number => {
-      switch (this._sortType) {
-        case 1: return b.price - a.price;            // price, most expensive first
-        case 2: return a.sn - b.sn;                  // SN ascending
-        default: return a.priority - b.priority || a.sn - b.sn; // priority asc
-      }
+      return this._compareSort(a, b);
     };
     // Stable per-row sort; rows ordered by their Category.img appearance.
     this._commodities.sort((a, b) => {
@@ -1374,6 +1369,8 @@ export class CashShopStage extends Stage {
       // feet on its ground line (~y=203).
       container.position.set(CHAR_X + 130, CHAR_Y + 203);
       this._root.addChild(container);
+    } else {
+      this._charLook?.container.removeFromParent();
     }
 
     // PreviewOnOff toggle button — OG SetUserPreviewControl layers:
@@ -2053,7 +2050,7 @@ export class CashShopStage extends Stage {
    *  TS CharacterData exposes the same tabs as indexed SlotItem arrays
    *  (CharacterDataDecoder): equipInventory / consumeInventory /
    *  installInventory / etcInventory / cashInventory, each {slot, item}. */
-  private _getInvItems(): { itemId: number; count: number; cashSN: number }[] {
+  private _getInvItems(): { itemId: number; count: number; cashSN: number; slot: number; invType: number }[] {
     if (this._invItemTI === 4) {
       const cash = this._characterData ? (this._characterData as any).cashInventory : null;
       const result = Array.isArray(cash) ? this._mapSlotItems(cash) : [];
@@ -2061,7 +2058,7 @@ export class CashShopStage extends Stage {
       // that the migrated snapshot doesn't carry yet.
       for (const item of this._cashInventoryItems) {
         if (!result.some(r => r.cashSN === item.sn)) {
-          result.push({ itemId: item.itemId, count: item.count, cashSN: item.sn });
+           result.push({ itemId: item.itemId, count: item.count, cashSN: item.sn, slot: result.length + 1, invType: 5 });
         }
       }
       return result;
@@ -2078,14 +2075,14 @@ export class CashShopStage extends Stage {
   }
 
   /** Maps decoded {slot, item} entries to display items sorted by slot. */
-  private _mapSlotItems(slots: Array<{ slot?: number; item?: any }>): { itemId: number; count: number; cashSN: number }[] {
-    const result: { itemId: number; count: number; cashSN: number }[] = [];
+  private _mapSlotItems(slots: Array<{ slot?: number; item?: any }>): { itemId: number; count: number; cashSN: number; slot: number; invType: number }[] {
+    const result: { itemId: number; count: number; cashSN: number; slot: number; invType: number }[] = [];
     for (const entry of [...slots].sort((a, b) => (a.slot ?? 0) - (b.slot ?? 0))) {
       const item = entry?.item;
       const itemId = item?.itemId ?? 0;
       if (itemId <= 0) continue;
       const cashSN = item?.cash && typeof item?.itemSn === 'bigint' ? Number(item.itemSn & 0xffffffffn) : 0;
-      result.push({ itemId, count: Math.max(1, item?.quantity ?? 1), cashSN });
+      result.push({ itemId, count: Math.max(1, item?.quantity ?? 1), cashSN, slot: entry.slot ?? result.length + 1, invType: this._invItemTI + 1 });
     }
     return result;
   }
@@ -2135,11 +2132,11 @@ export class CashShopStage extends Stage {
     const cd = this._characterData as any;
     if (!cd) return 0;
     const arr =
-      invType === 1 ? cd.consumeInventory
-      : invType === 2 ? cd.installInventory
-      : invType === 3 ? cd.etcInventory
-      : invType === 4 ? cd.cashInventory
-      : cd.equipInventory;
+      invType === 1 ? cd.equipInventory
+      : invType === 2 ? cd.consumeInventory
+      : invType === 3 ? cd.installInventory
+      : invType === 4 ? cd.etcInventory
+      : cd.cashInventory;
     return Array.isArray(arr) ? arr.length : 0;
   }
 
@@ -2378,8 +2375,19 @@ export class CashShopStage extends Stage {
   // ── Status message ──
   private _drawStatusMessage(): void {
     if (this._statusMessage) {
-      this._g.rect(STATUS_X, STATUS_Y + STATUS_H + 4, STATUS_W, 20).fill({ color: 0x0A0E1A });
-      this._addText(this._statusMessage, STATUS_X + 10, STATUS_Y + STATUS_H + 8, COL_TEXT_GREEN, 11);
+      // Keep the fallback status line inside the 600px cash-shop viewport;
+      // STATUS_Y + STATUS_H is already the bottom edge of the OG status panel.
+      const y = STATUS_Y + STATUS_H - 20;
+      this._g.rect(STATUS_X, y, STATUS_W, 20).fill({ color: 0x0A0E1A });
+      this._addText(this._statusMessage, STATUS_X + 10, y + 4, COL_TEXT_GREEN, 11);
+    }
+  }
+
+  private _compareSort(a: CashCommodity, b: CashCommodity): number {
+    switch (this._sortType) {
+      case 1: return b.price - a.price || a.sn - b.sn;
+      case 2: return a.sn - b.sn;
+      default: return a.priority - b.priority || a.sn - b.sn;
     }
   }
 
@@ -2845,7 +2853,8 @@ export class CashShopStage extends Stage {
     }
     // OG OnSetWish @0x4837D0 / OnRemoveWish @0x483960 — W adds the selected
     // commodity to the first empty wishlist slot, Shift+W removes it.
-    if (key === 'w' || key === 'W') {
+    if (this._activeDialog === 'none' && !this._couponVisible && !this._giftVisible
+      && !this._confirmBuyVisible && !this._searchActive && (key === 'w' || key === 'W')) {
       const selected = this._getCurrentPageItems()[this._page * PLATES_PER_PAGE + this._selectedPlate];
       if (selected) {
         if (key === 'W') this.RemoveWish(selected.sn);
@@ -3270,6 +3279,7 @@ export class CashShopStage extends Stage {
       if (col >= 0 && col < LOCKER_COLS && row >= 0 && row < LOCKER_ROWS) {
         const idx = this._lockerScroll * LOCKER_COLS + row * LOCKER_COLS + col;
         this._selectedLockerCell = idx;
+        return;
       }
     }
     if (this._oneADayActive && this._handleOneADayClick(lx, ly)) return;
@@ -4149,6 +4159,8 @@ export class CashShopStage extends Stage {
    */
   private _processBuy(item: CashCommodity): void {
     const { itemId, sn } = item;
+    const paymentType = this._confirmBuyPaymentType === 1 ? 2 : this._confirmBuyPaymentType === 2 ? 4 : 1;
+    const oneADay = Math.floor(sn / 100000) === 210 || sn === 5640000;
 
     // OG ProcessBuy routing order (0x4936B0):
     // couple ring → package(910) → SN 80000000-89999999 normal → friendship →
@@ -4193,7 +4205,7 @@ export class CashShopStage extends Stage {
     if (this._isCharSale(itemId)) {
       // OG: CUICharacterSaleDlg — opens a separate dialog for character purchase
       // For now, send the buy request directly (server handles the dialog flow)
-      this.game?.session.send(GameSender.CashShopBuy(sn));
+      this.game?.session.send(GameSender.CashShopBuy(sn, paymentType, oneADay));
       return;
     }
 
@@ -4245,7 +4257,7 @@ export class CashShopStage extends Stage {
     }
 
     // Default: normal single-item buy → sub-action 3
-    this.game?.session.send(GameSender.CashShopBuy(sn));
+    this.game?.session.send(GameSender.CashShopBuy(sn, paymentType, oneADay));
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -4452,7 +4464,8 @@ export class CashShopStage extends Stage {
       case 0x78: // MoveLtoSFailed
       case 0x7A: // MoveStoLFailed
         this._stoLRequestSent = false;
-        this._statusMessage = 'Could not move the item.';
+        this._buyPending = false;
+        this._statusMessage = this._noticeFailReason((args as { reason: number }).reason);
         break;
       case 0x7C: // DestroyFailed
       case 0x97: // RebateFailed

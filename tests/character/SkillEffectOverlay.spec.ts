@@ -40,6 +40,7 @@ describe('SkillEffectOverlay', () => {
     (overlay as any)._worldEntries.push({
       Animation: { Frames: [{ sprite: { NewSprite: (flip: boolean) => { const s = new Sprite(); s.scale.x = flip ? -1 : 1; return s; } }, delayMs: 100 }], TotalDurationMs: 100 },
       CharId: 7,
+      Pos: null,
       FacingLeft: true,
       FrameIndex: 0,
       FrameTimerMs: 0,
@@ -62,6 +63,7 @@ describe('SkillEffectOverlay', () => {
         TotalDurationMs: 200,
       },
       CharId: 7,
+      Pos: null,
       Key: 'activeItem',
       FacingLeft: true,
       FrameIndex: 0,

@@ -1,23 +1,8 @@
-node_modules/
-dist/
-.audit/
-.nx/
-*.nx
-.wz/
-*.wz
-.wz_client/
+node_modules
 
-.agents/
-.claude/
-.codex/
-ida/
-nx-tools/
-*.md
-.mcp.json
-*.py
-*.mjs
-*.bat
-/ida_output
-/test-screenshots
-/docs
-/.mimocode
+# Local machine config (never commit paths)
+CLAUDE.local.md
+
+*.nx
+*.wz
+*/wz_client 

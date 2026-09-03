@@ -14,6 +14,15 @@ type ObjEntry  = { layer: number; info: ObjInfo;  sprite: WzSprite | null; anim:
 
 export class MapScene {
   readonly container = new Container();
+  /** Backdrops (`front=0`) — FieldScene parents this under its bg container. */
+  readonly backgroundContainer = new Container();
+  /** Login/obj pass (`LoadObjects=true`) — stays inside `container`. */
+  readonly objectContainer = new Container();
+  /** Foregrounds (`front=1`) — FieldScene parents this under its fg container,
+   *  above tiles/objs/entities. Previously these drew inside `container`,
+   *  which FieldScene mounts behind everything, so front layers rendered
+   *  behind the field instead of over it. */
+  readonly foregroundContainer = new Container();
 
   private _backgrounds: BackEntry[] = [];
   private _foregrounds: BackEntry[] = [];
@@ -25,6 +34,8 @@ export class MapScene {
   private _fgScrollY: number[] = [];
 
   private _sprites: Map<string, Sprite> = new Map();
+  /** Draw target for the current _rebuildDisplay pass (bg / obj / fg). */
+  private _out: Container = this.container;
 
   BgmPath: string | null = null;
   /** World-coordinate position of the map's `sp` (start point) portal, or null if absent. */
@@ -50,7 +61,11 @@ export class MapScene {
   constructor(
     private _mapPkg: WzPackage | null,
     private _loader: WzTextureLoader,
-  ) {}
+  ) {
+    this.container.addChild(this.backgroundContainer);
+    this.container.addChild(this.objectContainer);
+    this.container.addChild(this.foregroundContainer);
+  }
 
   Load(mapRoot: WzProperty): void {
     const info = mapRoot.Get('info');
@@ -148,30 +163,35 @@ export class MapScene {
   }
 
   private _rebuildDisplay(): void {
-    this.container.removeChildren();
+    this.backgroundContainer.removeChildren();
+    this.objectContainer.removeChildren();
+    this.foregroundContainer.removeChildren();
     this._sprites.clear();
 
     const screenCenter = { x: this._screenW / 2, y: this._screenH / 2 };
 
+    this._out = this.backgroundContainer;
     for (let i = 0; i < this._backgrounds.length; i++) {
       const { info, sprite, anim } = this._backgrounds[i];
       this._drawBackEntry(info, sprite, anim, screenCenter, this._screenW, this._screenH,
         this._bgScrollX[i] ?? 0, this._bgScrollY[i] ?? 0);
     }
 
+    this._out = this.objectContainer;
     for (const { info, sprite, anim } of this._layer0Objects) {
       const sx = info.X + screenCenter.x - this.Camera.x;
       const sy = info.Y + screenCenter.y - this.Camera.y;
       if (anim) {
         const s = anim.Draw(sx, sy, info.Flip);
-        this.container.addChild(s);
+        this._out.addChild(s);
       } else if (sprite) {
         const s = sprite.ToPixi(info.Flip);
         s.position.set(sx, sy);
-        this.container.addChild(s);
+        this._out.addChild(s);
       }
     }
 
+    this._out = this.foregroundContainer;
     for (let i = 0; i < this._foregrounds.length; i++) {
       const { info, sprite, anim } = this._foregrounds[i];
       this._drawBackEntry(info, sprite, anim, screenCenter, this._screenW, this._screenH,
@@ -265,7 +285,7 @@ export class MapScene {
       if (!isTiled && !isScrolling) {
         const s = anim.Draw(bx, by);
         s.alpha = alpha;
-        this.container.addChild(s);
+        this._out.addChild(s);
         return;
       }
     }
@@ -280,7 +300,7 @@ export class MapScene {
           const s = this._newSprite(wz);
           s.alpha = alpha;
           s.position.set(bx, by);
-          this.container.addChild(s);
+          this._out.addChild(s);
           break;
         }
         case BackType.HMoveA:
@@ -302,7 +322,7 @@ export class MapScene {
         case BackType.Normal: {
           const s = this._newSprite(wz);
           s.position.set(bx, by);
-          this.container.addChild(s);
+          this._out.addChild(s);
           break;
         }
         case BackType.HMoveA:
@@ -354,7 +374,7 @@ export class MapScene {
    */
   private _tileH(wz: WzSprite, bx: number, by: number, info: BackInfo, screenWidth: number, screenHeight: number, alpha = 1): void {
     const period = info.Cx > 0 ? info.Cx : wz.Width;
-    if (period <= 0) { const s = this._cloneSprite(wz); s.alpha = alpha; s.position.set(bx, by); this.container.addChild(s); return; }
+    if (period <= 0) { const s = this._cloneSprite(wz); s.alpha = alpha; s.position.set(bx, by); this._out.addChild(s); return; }
 
     const texW = wz.Width;
     const vpLeft = 0;
@@ -379,7 +399,7 @@ export class MapScene {
       const s = this._cloneSprite(wz);
       s.alpha = alpha;
       s.position.set(startX + j * period, by);
-      this.container.addChild(s);
+      this._out.addChild(s);
     }
   }
 
@@ -388,7 +408,7 @@ export class MapScene {
    */
   private _tileV(wz: WzSprite, bx: number, by: number, info: BackInfo, screenWidth: number, screenHeight: number, alpha = 1): void {
     const period = info.Cy > 0 ? info.Cy : wz.Height;
-    if (period <= 0) { const s = this._cloneSprite(wz); s.alpha = alpha; s.position.set(bx, by); this.container.addChild(s); return; }
+    if (period <= 0) { const s = this._cloneSprite(wz); s.alpha = alpha; s.position.set(bx, by); this._out.addChild(s); return; }
 
     const texH = wz.Height;
     const vpTop = 0;
@@ -406,7 +426,7 @@ export class MapScene {
       const s = this._cloneSprite(wz);
       s.alpha = alpha;
       s.position.set(bx, tileStartTop + i * period);
-      this.container.addChild(s);
+      this._out.addChild(s);
     }
   }
 
@@ -416,7 +436,7 @@ export class MapScene {
   private _tileBoth(wz: WzSprite, bx: number, by: number, info: BackInfo, screenWidth: number, screenHeight: number, alpha = 1): void {
     const px = info.Cx > 0 ? info.Cx : wz.Width;
     const py = info.Cy > 0 ? info.Cy : wz.Height;
-    if (px <= 0 || py <= 0) { const s = this._cloneSprite(wz); s.alpha = alpha; s.position.set(bx, by); this.container.addChild(s); return; }
+    if (px <= 0 || py <= 0) { const s = this._cloneSprite(wz); s.alpha = alpha; s.position.set(bx, by); this._out.addChild(s); return; }
 
     const texW = wz.Width;
     const texH = wz.Height;
@@ -438,7 +458,7 @@ export class MapScene {
         const s = this._cloneSprite(wz);
         s.alpha = alpha;
         s.position.set(startX + j * px, startY + i * py);
-        this.container.addChild(s);
+        this._out.addChild(s);
       }
   }
 
@@ -449,33 +469,33 @@ export class MapScene {
 
   private _tileHLegacy(wz: WzSprite, bx: number, by: number, info: BackInfo, screenWidth: number): void {
     const period = info.Cx > 0 ? info.Cx : wz.Width;
-    if (period <= 0) { const s = this._cloneSprite(wz); s.position.set(bx, by); this.container.addChild(s); return; }
+    if (period <= 0) { const s = this._cloneSprite(wz); s.position.set(bx, by); this._out.addChild(s); return; }
     let x = bx;
     while (x - wz.OriginX > -period) x -= period;
     for (; x < screenWidth + period; x += period) {
-      const s = this._cloneSprite(wz); s.position.set(x, by); this.container.addChild(s);
+      const s = this._cloneSprite(wz); s.position.set(x, by); this._out.addChild(s);
     }
   }
 
   private _tileVLegacy(wz: WzSprite, bx: number, by: number, info: BackInfo, screenHeight: number): void {
     const period = info.Cy > 0 ? info.Cy : wz.Height;
-    if (period <= 0) { const s = this._cloneSprite(wz); s.position.set(bx, by); this.container.addChild(s); return; }
+    if (period <= 0) { const s = this._cloneSprite(wz); s.position.set(bx, by); this._out.addChild(s); return; }
     let y = by;
     while (y - wz.OriginY > -period) y -= period;
     for (; y < screenHeight + period; y += period) {
-      const s = this._cloneSprite(wz); s.position.set(bx, y); this.container.addChild(s);
+      const s = this._cloneSprite(wz); s.position.set(bx, y); this._out.addChild(s);
     }
   }
 
   private _tileBothLegacy(wz: WzSprite, bx: number, by: number, info: BackInfo, screenWidth: number, screenHeight: number): void {
     const px = info.Cx > 0 ? info.Cx : wz.Width;
     const py = info.Cy > 0 ? info.Cy : wz.Height;
-    if (px <= 0 || py <= 0) { const s = this._cloneSprite(wz); s.position.set(bx, by); this.container.addChild(s); return; }
+    if (px <= 0 || py <= 0) { const s = this._cloneSprite(wz); s.position.set(bx, by); this._out.addChild(s); return; }
     let sx = bx; while (sx - wz.OriginX > -px) sx -= px;
     let sy = by; while (sy - wz.OriginY > -py) sy -= py;
     for (let y = sy; y < screenHeight + py; y += py)
       for (let x = sx; x < screenWidth + px; x += px) {
-        const s = this._cloneSprite(wz); s.position.set(x, y); this.container.addChild(s);
+        const s = this._cloneSprite(wz); s.position.set(x, y); this._out.addChild(s);
       }
   }
 

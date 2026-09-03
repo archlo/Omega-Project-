@@ -9,6 +9,10 @@ export class ObjInfo {
   Y = 0;
   Z = 0;
   Flip = false;
+  /** Optional named-object key (quest/obstacle objs). OG CMapLoadable::MakeObj
+      reads this from the map entry and registers the obj in m_mNamedObj with
+      per-state layers from the Obj.wz node's s0/s1/... children. */
+  Name = '';
 
   static From(entry: WzProperty): ObjInfo {
     const o: ObjInfo = {
@@ -20,6 +24,7 @@ export class ObjInfo {
       Y: ObjInfo._readInt(entry, 'y'),
       Z: ObjInfo._readInt(entry, 'z'),
       Flip: ObjInfo._readInt(entry, 'f') !== 0,
+      Name: (entry.Get('name') as string) ?? '',
     };
     return o;
   }
