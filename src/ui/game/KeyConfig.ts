@@ -406,6 +406,29 @@ this._gfx = new Graphics();
     return true;
   }
 
+  /** OG CDraggableItem::UnmapFuncKey (bOnStatusBar=1) — clears item-family
+      bindings (types 2/3/7) carrying this id, restricted to the given
+      scancodes (the 8 quickslot keys). Snapshots + sends like the bind path
+      so the server persists the removal. */
+  unbindItemByIdOnKeys(itemId: number, scancodes: readonly number[]): number {
+    const changed: { index: number; fk: FuncKeyMappedRecord }[] = [];
+    for (const sc of scancodes) {
+      if (sc < 0 || sc >= MapSize) continue;
+      const t = this._map[sc].type;
+      if ((t === FuncKeyType.Item || t === FuncKeyType.Emotion || t === FuncKeyType.Effect)
+        && this._map[sc].id === itemId) {
+        this._map[sc] = { ...FuncKeyMappedNone };
+        changed.push({ index: sc, fk: FuncKeyMappedNone });
+      }
+    }
+    if (changed.length > 0) {
+      for (let i = 0; i < MapSize; i++) this._mapOnOpen[i] = { ...this._map[i] };
+      this.onSaveToServer?.(changed);
+    }
+    this.onBindingsChanged?.();
+    return changed.length;
+  }
+
   update(_dt: number): void {
     this._layoutButtons();
     if (!this.isVisible) return;

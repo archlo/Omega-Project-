@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { Text } from 'pixi.js';
+import { Text, Texture } from 'pixi.js';
 import { InPacket } from '../../../src/net/packet/InPacket.js';
 import { InHeader } from '../../../src/net/packet/OpCodes.js';
 import { TAB_TO_INVTYPE, INVTYPE_TO_TAB } from '../../../src/ui/game/ItemInventory.js';
@@ -9,6 +9,8 @@ import { ItemScrollDialog } from '../../../src/ui/game/ItemScrollDialog.js';
 import { VegaDialog } from '../../../src/ui/game/VegaDialog.js';
 import { KeyConfig } from '../../../src/ui/game/KeyConfig.js';
 import { SkillMacro } from '../../../src/ui/game/SkillMacro.js';
+import { QuickSlotBar } from '../../../src/ui/game/QuickSlotBar.js';
+import { FuncKeyType } from '../../../src/domain/FuncKeyMapped.js';
 import { MegaphoneCompose } from '../../../src/ui/game/MegaphoneCompose.js';
 import { WzTextureLoader } from '../../../src/render/WzTextureLoader.js';
 import { GameStage } from '../../../src/stages/GameStage.js';
@@ -183,6 +185,102 @@ describe('SkillMacro move semantics', () => {
   });
 });
 
+describe('QuickSlotBar drag-out', () => {
+  function makeBar(binding: { type: number; id: number }): any {
+    const bar: any = new QuickSlotBar(
+      null as any, null, null,
+      () => binding as any,
+      () => {},
+      () => ({ Texture: Texture.EMPTY }) as any,
+      () => ({ Texture: Texture.EMPTY }) as any,
+    );
+    bar.isVisible = true;
+    bar.onDragStart = vi.fn();
+    return bar;
+  }
+
+  // Popup mode (viewW <= 800): grid at (viewW/2 + 143 + 7, viewH - 144 + 15).
+  // Default 800x600 → slot 0 at (550, 471), 32px cells.
+  it('starts a skill drag from a bound cell', () => {
+    const bar = makeBar({ type: FuncKeyType.Skill, id: 1001003 });
+    expect(bar.tryStartDrag(560, 480)).toBe(true);
+    expect(bar.onDragStart).toHaveBeenCalledWith({ skillId: 1001003 }, Texture.EMPTY, 560, 480);
+  });
+
+  it('starts an id-only item drag from a bound cell', () => {
+    const bar = makeBar({ type: FuncKeyType.Item, id: 2000000 });
+    expect(bar.tryStartDrag(560, 480)).toBe(true);
+    expect(bar.onDragStart).toHaveBeenCalledWith({ itemId: 2000000 }, Texture.EMPTY, 560, 480);
+  });
+
+  it('ignores empty cells and misses', () => {
+    const bar = makeBar({ type: FuncKeyType.None, id: 0 });
+    expect(bar.tryStartDrag(560, 480)).toBe(false);
+    expect(bar.onDragStart).not.toHaveBeenCalled();
+    const bound = makeBar({ type: FuncKeyType.Skill, id: 1 });
+    expect(bound.tryStartDrag(10, 10)).toBe(false);
+  });
+});
+
+describe('MapFuncKey gates', () => {
+  function gate(): any {
+    return Object.create(GameStage.prototype);
+  }
+
+  it('binds 429/501s as Effect, 516s as Emotion, rest as Item', () => {
+    const s = gate();
+    expect(s._isBindableItem(2040000, 2)).toBe(false);
+    expect(s._isBindableItem(2000000, 2)).toBe(true);
+    expect(s._isBindableItem(3010000, 3)).toBe(true);
+    expect(s._isBindableItem(4290000, 4)).toBe(true);
+    expect(s._funcKeyItemType(4290000, 4)).toBe(FuncKeyType.Effect);
+    expect(s._isBindableItem(5010000, 5)).toBe(true);
+    expect(s._funcKeyItemType(5010000, 5)).toBe(FuncKeyType.Effect);
+    expect(s._isBindableItem(5160000, 5)).toBe(true);
+    expect(s._funcKeyItemType(5160000, 5)).toBe(FuncKeyType.Emotion);
+    expect(s._isBindableItem(5240000, 5)).toBe(true);
+    expect(s._funcKeyItemType(5240000, 5)).toBe(FuncKeyType.Item);
+    expect(s._isBindableItem(4000000, 4)).toBe(false);
+  });
+
+  it('dispatches Emotion bindings through the cash-item emotion', () => {
+    const s: any = Object.create(GameStage.prototype);
+    s._quitOverlay = null;
+    s._quizModal = null;
+    s._gameMenu = null;
+    s._panels = [];
+    s._chatBar = null;
+    s._keyConfig = { forKey: () => ({ type: FuncKeyType.Emotion, id: 5160000 }) };
+    s._item = { countItem: () => 3 };
+    s._player = { morphTemplateId: 0, SetEmotion: vi.fn() };
+    s.game = { session: { send: vi.fn(), isConnected: true } };
+    s.handleKeyDown = () => true;
+    s.onKeyPress('Q');
+    const out = s.game.session.send.mock.calls[0][0];
+    const p = new InPacket(out.toArray());
+    expect(p.readShort()).toBe(InHeader.UserEmotion);
+    // 5160000 % 100 + 8 = 8
+    expect(p.readInt()).toBe(8);
+    expect(s._player.SetEmotion).toHaveBeenCalledWith(8);
+  });
+
+  it('skips Emotion dispatch without the item', () => {
+    const s: any = Object.create(GameStage.prototype);
+    s._quitOverlay = null;
+    s._quizModal = null;
+    s._gameMenu = null;
+    s._panels = [];
+    s._chatBar = null;
+    s._keyConfig = { forKey: () => ({ type: FuncKeyType.Emotion, id: 5160000 }) };
+    s._item = { countItem: () => 0 };
+    s._player = { morphTemplateId: 0, SetEmotion: vi.fn() };
+    s.game = { session: { send: vi.fn(), isConnected: true } };
+    s.handleKeyDown = () => true;
+    s.onKeyPress('Q');
+    expect(s.game.session.send).not.toHaveBeenCalled();
+  });
+});
+
 describe('GameStage drop fallback', () => {
   function makeStage(panels: any[], payload: unknown): any {
     const stage: any = Object.create(GameStage.prototype);
@@ -246,6 +344,38 @@ describe('GameStage drop fallback', () => {
     stage._skillMacro = { clearSlot: vi.fn(() => true) };
     stage.onMouseButton(400, 300, false, 0);
     expect(stage._skillMacro.clearSlot).not.toHaveBeenCalled();
+    expect(stage.game.session.send).not.toHaveBeenCalled();
+  });
+
+  it('unmaps quickslot-bound items dropped on the field (scoped to quickslot keys)', () => {
+    const { KeyConfig: KC } = { KeyConfig };
+    const kc: any = new KC(new WzTextureLoader(), null, null);
+    kc.isVisible = true;
+    kc.bindItemToKey(42, 2000000);
+    kc.bindItemToKey(3, 2000001);
+    const sent: unknown[] = [];
+    kc.onSaveToServer = (c: unknown) => sent.push(c);
+    const stage = makeStage([], { itemId: 2000000 });
+    stage._keyConfig = kc;
+    stage._quickSlots = { GetKeys: () => [42, 2, 47, 73, 29, 83, 79, 81] };
+    stage.onMouseButton(400, 300, false, 0);
+    // Cleared on quickslot scancode 42, kept on regular key 3.
+    expect(kc.bindingAt(42).type).toBe(0);
+    expect(kc.bindingAt(3).id).toBe(2000001);
+    expect(stage.game.session.send).not.toHaveBeenCalled();
+    expect(sent.length).toBe(1);
+  });
+
+  it('keeps quickslot bindings when the drop lands on a panel', () => {
+    const kc: any = new KeyConfig(new WzTextureLoader(), null, null);
+    kc.isVisible = true;
+    kc.bindItemToKey(42, 2000000);
+    const covering = { isVisible: true, container: { getBounds: () => ({ minX: 0, maxX: 800, minY: 0, maxY: 600 }) }, tryAcceptDrag: () => false };
+    const stage = makeStage([covering], { itemId: 2000000 });
+    stage._keyConfig = kc;
+    stage._quickSlots = { GetKeys: () => [42, 2, 47, 73, 29, 83, 79, 81] };
+    stage.onMouseButton(400, 300, false, 0);
+    expect(kc.bindingAt(42).id).toBe(2000000);
     expect(stage.game.session.send).not.toHaveBeenCalled();
   });
 });

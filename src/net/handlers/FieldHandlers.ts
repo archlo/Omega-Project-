@@ -2209,18 +2209,22 @@ export class FieldHandlers {
     const isMoney = p.readBool();
     const info = p.readInt();
     const ownerId = p.readInt();
-    p.readByte(); // ownType
+    const ownType = p.readByte();
     const x = p.readShort();
     const y = p.readShort();
     const sourceId = p.readInt();
     const hasSourcePos = enterType !== DropEnterType.OnTheFoothold;
-    const animated = enterType === DropEnterType.Create;
+    // OG OnDropEnterField: every type except OnTheFoothold (2) starts in
+    // state 0 (delayed, then parabolic toss); type 2 sits idle (state 3).
+    // Type 4 never occurs on this wire (no such server enter type).
+    const animated = enterType !== DropEnterType.OnTheFoothold;
     const fading = enterType === DropEnterType.FadingOut;
     let sx = x, sy = y;
+    let delayMs = 0;
     if (hasSourcePos) {
       sx = p.readShort();
       sy = p.readShort();
-      p.readShort(); // delay
+      delayMs = p.readShort();
     }
     if (!isMoney) {
       p.readInt(); // dateExpire low
@@ -2228,7 +2232,7 @@ export class FieldHandlers {
     }
     const bByPet = p.readBool();
     p.readBool(); // trailing
-    this.onDropEnter?.({ dropId, isMoney, itemIdOrAmount: info, ownerId, sourceId, x, y, sourceX: sx, sourceY: sy, animated, fading });
+    this.onDropEnter?.({ dropId, isMoney, itemIdOrAmount: info, ownerId, ownType, sourceId, x, y, sourceX: sx, sourceY: sy, animated, fading, delayMs, enterType });
   }
 
   private handleDropLeave(p: InPacket): void {
@@ -4080,9 +4084,8 @@ export class FieldHandlers {
   }
 
   private handleReactorMove(p: InPacket): void {
-    // OG: CReactorPool::OnReactorMove (IDA: 0x6cd110) — objId(4) + dx(i16) +
-    // dy(i16), fed to IWzVector2D::RelMove as a *relative* delta, not an
-    // absolute position.
+    // OG: CReactorPool::OnReactorMove (IDA: 0x6cd110) — objId(4) + x(i16) +
+    // y(i16) as an ABSOLUTE position (RelMove to it), not a delta.
     try {
       const objId = p.readInt();
       const dx = p.readShort();

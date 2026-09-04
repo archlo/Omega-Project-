@@ -147,7 +147,7 @@ export interface UserAttackArgs {
   ballStart?: { x: number; y: number };
 }
 
-export interface DropEnterArgs { dropId: number; isMoney: boolean; itemIdOrAmount: number; ownerId: number; sourceId: number; x: number; y: number; sourceX?: number; sourceY?: number; animated?: boolean; fading?: boolean; }
+export interface DropEnterArgs { dropId: number; isMoney: boolean; itemIdOrAmount: number; ownerId: number; ownType: number; sourceId: number; x: number; y: number; sourceX?: number; sourceY?: number; animated?: boolean; fading?: boolean; delayMs: number; enterType: number; }
 export interface DropLeaveArgs { dropId: number; leaveType: number; pickUpId?: number; petIndex?: number; delay?: number; }
 
 export interface InventoryOpArg { opType: number; invType: number; pos: number; itemId?: number; quantity?: number; attribute?: number; newPos?: number; equipExp?: number; petLevel?: number; petTameness?: number; petRepleteness?: number; petRemainLife?: number; equipStats?: EquipStats; }
@@ -591,8 +591,12 @@ export interface ReactorChangeStateArgs {
   state: number;
   x: number;
   y: number;
+  /** Hit-start delay: the visual layer flips tHitStart=now+this (OG gates
+      the layer reload in CReactorPool::Update). NOT an animation delay. */
   aniDelay: number;
+  /** -2 arms despawn once the new state's animation completes. */
   properEventIdx: number;
+  /** Hittability resumes now+this*100ms (OG tStateEnd, FindHitReactor gate). */
   stateEndDeciseconds: number;
 }
 
@@ -605,7 +609,7 @@ export interface ReactorLeaveArgs {
 
 export interface ReactorMoveArgs {
   objId: number;
-  /** Relative move delta in OG (fed to `IWzVector2D::RelMove`), not an absolute position. */
+  /** ABSOLUTE position in OG (OnReactorMove RelMoves to it), not a delta. */
   dx: number;
   dy: number;
 }

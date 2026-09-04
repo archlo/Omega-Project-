@@ -56,6 +56,11 @@ export class QuickSlotBar extends GamePanel implements DragTarget {
   private _cashTagLoader: (() => Sprite | null) | null = null;
   bindItemToKey: ((scancode: number, itemId: number, invType?: number) => void) | null = null;
   private _attachedToStatusBar = false;
+  /** OG CUIStatusBar quickslot drag-out — mousedown on a bound cell starts a
+   *  DragController drag (CDraggableSkill/CDraggableItem from the bar). Skill
+   *  payloads are {skillId}; item payloads are {itemId} with no invType —
+   *  bindings carry the id only. */
+  onDragStart: ((payload: { skillId: number } | { itemId: number }, texture: Texture, x: number, y: number) => void) | null = null;
 
   constructor(
     loader: WzTextureLoader, ui: WzPackage | null, _font: BuiltInFont | null,
@@ -330,8 +335,7 @@ export class QuickSlotBar extends GamePanel implements DragTarget {
   // wires CDraggableSkill::OnDropped's quickslot-drop case (IDA 0x50a4e0)
   // to the previously-dead TryBindSkillAt below via DragController.
   // Also handles item drops (OG: CDraggableItem → CUIStatusBar::MapFuncKey).
-  tryAcceptDrag(payload: unknown, x: number, y: number): boolean {
-    if (!payload || typeof payload !== 'object') return false;
+  tryAcceptDrag(payload: unknown, x: number, y: number): boolean {    if (!payload || typeof payload !== 'object') return false;
     if ('skillId' in payload) return this.TryBindSkillAt((payload as { skillId: number }).skillId, x, y);
     if ('itemId' in payload && 'invType' in payload) {
       const { itemId, invType } = payload as { itemId: number; invType: number };
@@ -367,6 +371,36 @@ export class QuickSlotBar extends GamePanel implements DragTarget {
         this._bindSkill(this._keys[i], skillId);
         return true;
       }
+    }
+    return false;
+  }
+
+  /** OG quickslot drag-out — mousedown on a bound cell begins a
+   *  DragController drag so the binding can be re-dropped (KeyConfig/
+   *  quickslot re-map) or dragged off to unmap. Returns true only on a real
+   *  cell hit; everything else falls through to the status bar / world. */
+  tryStartDrag(x: number, y: number): boolean {
+    if (!this.isVisible || !this.onDragStart) return false;
+    for (let i = 0; i < SlotCount; i++) {
+      const r = this._slotRect(i);
+      if (x < r.x || x >= r.x + r.width || y < r.y || y >= r.y + r.height) continue;
+      const binding = this._bindingAt(this._keys[i]);
+      if (binding.type === FuncKeyType.Skill && binding.id > 0) {
+        const icon = this._skillIcon(binding.id);
+        if (!icon?.Texture) return false;
+        this.onDragStart({ skillId: binding.id }, icon.Texture, x, y);
+        return true;
+      }
+      if ((binding.type === FuncKeyType.Item || binding.type === FuncKeyType.Effect) && binding.id > 0) {
+        const icon = this._itemIcon(binding.id);
+        if (!icon?.Texture) return false;
+        // Bindings store the id only (no TI) — the field-drop unmap path
+        // clears by id within the quickslot scancodes (OG UnmapFuncKey,
+        // bOnStatusBar=1).
+        this.onDragStart({ itemId: binding.id }, icon.Texture, x, y);
+        return true;
+      }
+      return false;
     }
     return false;
   }

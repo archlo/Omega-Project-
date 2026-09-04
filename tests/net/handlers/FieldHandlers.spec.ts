@@ -506,8 +506,7 @@ describe('FieldHandlers', () => {
     expect(args[0].bounds).toEqual({ left: -300, top: -200, right: 500, bottom: 600 });
   });
 
-  it('DropEnterField fires callback', () => {
-    const args: Args[] = [];
+  it('DropEnterField fires callback', () => {    const args: Args[] = [];
     handlers.onDropEnter = (a) => args.push(a as any);
     const p = OutPacket.Raw();
     // enterType=0 (JustShowing) with source position block + trailing bByPet + trailing bool
@@ -527,6 +526,88 @@ describe('FieldHandlers', () => {
     expect(args[0].y).toBe(75);
     expect(args[0].sourceX).toBe(10);
     expect(args[0].sourceY).toBe(20);
+    expect(args[0].enterType).toBe(0);
+    expect(args[0].ownType).toBe(0);
+    expect(args[0].delayMs).toBe(0);
+    // OG: every type except OnTheFoothold (2) tosses; type 0 is animated.
+    expect(args[0].animated).toBe(true);
+    expect(args[0].fading).toBe(false);
+  });
+
+  it('ReactorChangeState decodes the hit-start/event/state-end tail (IDA 0x6ccd60)', () => {
+    const args: Args[] = [];
+    handlers.onReactorChangeState = (a) => args.push(a as any);
+    const p = OutPacket.Raw();
+    // objId + state + x/y + aniDelay(u16) + properEventIdx(i8) + stateEnd(i8)
+    p.writeInt(7001); p.writeByte(2); p.writeShort(100); p.writeShort(200);
+    p.writeUShort(150); p.writeSByte(-2); p.writeSByte(5);
+    dispatchPayload(router, OutHeader.ReactorChangeState, p.toArray());
+    expect(args).toHaveLength(1);
+    expect(args[0].objId).toBe(7001);
+    expect(args[0].state).toBe(2);
+    expect(args[0].x).toBe(100);
+    expect(args[0].y).toBe(200);
+    expect(args[0].aniDelay).toBe(150);
+    expect(args[0].properEventIdx).toBe(-2);
+    expect(args[0].stateEndDeciseconds).toBe(5);
+  });
+
+  it('ReactorMove decodes an absolute position (IDA 0x6cd110 RelMove target)', () => {
+    const args: Args[] = [];
+    handlers.onReactorMove = (a) => args.push(a as any);
+    const p = OutPacket.Raw();
+    p.writeInt(7001); p.writeShort(1234); p.writeShort(567);
+    dispatchPayload(router, OutHeader.ReactorMove, p.toArray());
+    expect(args).toHaveLength(1);
+    expect(args[0].objId).toBe(7001);
+    expect(args[0].dx).toBe(1234);
+    expect(args[0].dy).toBe(567);
+  });
+
+  it('ReactorEnterField decodes state/flip/name (IDA 0x6cf490)', () => {
+    const args: Args[] = [];
+    handlers.onReactorEnter = (a) => args.push(a as any);
+    const p = OutPacket.Raw();
+    p.writeInt(7001); p.writeInt(1002000); p.writeByte(3);
+    p.writeShort(100); p.writeShort(200); p.writeByte(1);
+    p.writeString('box');
+    dispatchPayload(router, OutHeader.ReactorEnterField, p.toArray());
+    expect(args).toHaveLength(1);
+    expect(args[0].objId).toBe(7001);
+    expect(args[0].templateId).toBe(1002000);
+    expect(args[0].state).toBe(3);
+    expect(args[0].flip).toBe(true);
+    expect(args[0].name).toBe('box');
+  });
+
+  it('DropEnterField decodes ownType/delay and maps OnTheFoothold to idle', () => {
+    const args: Args[] = [];
+    handlers.onDropEnter = (a) => args.push(a as any);
+    const p = OutPacket.Raw();
+    // enterType=1 (Create), ownType=3 (explosive), delay=120
+    p.writeByte(1); p.writeInt(9002); p.writeByte(1); p.writeInt(500); p.writeInt(42);
+    p.writeByte(3); p.writeShort(60); p.writeShort(80);
+    p.writeInt(0); p.writeShort(60); p.writeShort(10); p.writeShort(120);
+    p.writeByte(0); p.writeByte(0);
+    dispatchPayload(router, OutHeader.DropEnterField, p.toArray());
+    expect(args).toHaveLength(1);
+    expect(args[0].enterType).toBe(1);
+    expect(args[0].ownType).toBe(3);
+    expect(args[0].delayMs).toBe(120);
+    expect(args[0].animated).toBe(true);
+
+    // enterType=2 (OnTheFoothold): no source block, sits idle.
+    const q = OutPacket.Raw();
+    q.writeByte(2); q.writeInt(9003); q.writeByte(0); q.writeInt(2000000); q.writeInt(42);
+    q.writeByte(0); q.writeShort(70); q.writeShort(90);
+    q.writeInt(0);
+    q.writeInt(0); q.writeInt(0); // dateExpire
+    q.writeByte(0); q.writeByte(0);
+    dispatchPayload(router, OutHeader.DropEnterField, q.toArray());
+    expect(args).toHaveLength(2);
+    expect(args[1].animated).toBe(false);
+    expect(args[1].sourceX).toBe(70);
+    expect(args[1].sourceY).toBe(90);
   });
 
   it('PartyResult CreateDone(8) consumes the real town-portal shape, not a full party decode (decompile/A10AB0.c)', () => {

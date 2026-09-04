@@ -79,7 +79,8 @@ import type {
 import { ScriptMessageType, ScriptMessageParam } from '../net/packet/ScriptMessageType.js';
 import { GameSender, ChatGroupType } from '../net/senders/GameSender.js';
 import { MiniRoomType, MiniRoomProtocol as MiniRoomProtocolFull } from '../net/packet/MiniRoomProtocol.js';
-import { MapleStat, MessengerAction, ShopResultType, TrunkResultType, DropLeaveType, JobName, ScriptAnswerAction } from '../net/protocol/Enums.js';
+import { MapleStat, MessengerAction, ShopResultType, TrunkResultType, DropLeaveType, DropEnterType,
+JobName, ScriptAnswerAction } from '../net/protocol/Enums.js';
 import { EquipStats, InventoryType } from '../domain/InventoryItem.js';
 import { InventoryOpType } from '../net/protocol/Enums.js';
 import { ItemIconLoader } from '../character/ItemIconLoader.js';
@@ -873,6 +874,10 @@ export class GameStage extends Stage {
     } else if (fk.type === FuncKeyType.Effect) {
       // OG UseFuncKeyMapped case 7 — toggle-style effect items.
       if (this.game.session.isConnected) this.game.session.send(GameSender.ActiveEffectItemChange(fk.id));
+    } else if (fk.type === FuncKeyType.Emotion) {
+      // OG UseFuncKeyMapped case 3 — cash-item emotion (nID % 100 + 8),
+      // gated on owning the item.
+      if ((this._item?.countItem(fk.id) ?? 0) > 0) this._sendEmotionChange(fk.id % 100 + 8);
     }
     // Fallback: Pickup/Sit/Tab shortcuts from handleKeyDown
     this.handleKeyDown(key);
@@ -1030,6 +1035,20 @@ export class GameStage extends Stage {
         }
         return;
       }
+      // OG CDraggableItem::UnmapFuncKey (bOnStatusBar=1) — a quickslot-bound
+      // item dragged onto the field clears its binding within the 8
+      // quickslot scancodes. These payloads carry the id only (no invType),
+      // which is all the clear loop needs. Skill drags have no unmap route
+      // and vanish, matching OG.
+      if (!claimed && payload && typeof payload === 'object' && 'itemId' in payload
+        && !('invType' in payload) && !this._pointOverVisiblePanel(x, y)) {
+        const id = (payload as { itemId: unknown }).itemId;
+        if (typeof id === 'number') {
+          const keys = this._quickSlots?.GetKeys() ?? [];
+          this._keyConfig?.unbindItemByIdOnKeys(id, keys);
+        }
+        return;
+      }
       // TODO_AUDIT.md item-drag-and-drop TODO: dragging a worn equip slot
       // with nothing claiming the drop (no upgrade/protect/scissors dialog
       // open) falls back to the original immediate-unequip behavior.
@@ -1088,6 +1107,12 @@ export class GameStage extends Stage {
     // region â€” so the panel loop would otherwise steal every chat-bar click.
     // The ChatBar's hit test returns false for outside clicks so panels and
     // world/entity handling below still receive them.
+    // OG quickslot drag-out: mousedown on a bound quickslot cell starts a
+    // DragController drag (re-drop to re-map, field-drop to unmap). Claims
+    // only real cell hits, so chat / panels / world still receive everything
+    // else. Runs before the panel loop because StatusBar swallows the whole
+    // bar rectangle.
+    if (down && this._quickSlots?.tryStartDrag(x, y)) return;
     if (this._chatBar?.handleMouseButton(x, y, down)) return;
     for (let i = this._panels.length - 1; i >= 0; i--) {
       const p = this._panels[i];
@@ -1553,6 +1578,8 @@ export class GameStage extends Stage {
     );
     this._quickSlots.bindItemToKey = (scancode, itemId, invType = 0) =>
       this._keyConfig.bindItemToKey(scancode, itemId, this._funcKeyItemType(itemId, invType));
+    this._quickSlots.onDragStart = (payload, texture, x, y) =>
+      this._dragController.beginDrag(payload, texture, x, y);
     // OG CUIStatusBar owns CQuickSlot as child layer at (881,2) — force attached
     // so the bar is always ON the status bar, not as a floating popup.
     this._quickSlots.setAttached(true);
@@ -3280,9 +3307,17 @@ export class GameStage extends Stage {
     for (const s of this._summons.values()) s.Update(dt);
     for (const tp of this._townPortals.values()) tp.Update(dt);
     for (const emp of this._employees.values()) emp.Update(dt);
-    // OG CReactor::Update — advance the reactor's state animation; without
+    // OG CReactorPool::Update — advance the reactor's state animation; without
     // this tick the container was never rebuilt after Load (invisible).
+    // Finished reactors (properEventIdx -2 + completed anim loop) despawn
+    // like CReactorPool::RemoveReactor.
     for (const reactor of this._reactors.values()) reactor.Update(dt);
+    for (const [objId, reactor] of this._reactors) {
+      if (!reactor.Finished) continue;
+      reactor.container.removeFromParent();
+      reactor.container.destroy();
+      this._reactors.delete(objId);
+    }
     for (const aa of this._affectedAreas.values()) aa.Update(dt);
     for (const og of this._openGates.values()) og.Update(dt);
 
@@ -6385,7 +6420,9 @@ this._localCharId = args.characterId ?? 0;
     const reactor = new ReactorLook(args.objId, args.templateId, args.state);
     reactor.Load(this._loader, this._reactorWz);
     reactor.Position = { x: args.x, y: args.y };
-    reactor.container.scale.x = args.flip ? -1 : 1;
+    reactor.Flip = args.flip;
+    reactor.SeedState(args.state);
+    reactor.onHitSound = (templateId, oldState) => this._playReactorSound(templateId, oldState);
     reactor.EnsureDisplay();
     this._reactors.set(args.objId, reactor);
   }
@@ -6406,14 +6443,34 @@ this._localCharId = args.characterId ?? 0;
   private _onReactorChangeState(args: ReactorChangeStateArgs): void {
     const reactor = this._reactors.get(args.objId);
     if (!reactor) return;
-    reactor.SetState(args.state);
+    // OG OnReactorChangeState: absolute position; the hit-start delay gates
+    // the visual switch and the state-end window gates hittability.
+    reactor.ApplyChangeState(args.state, {
+      hitDelayMs: args.aniDelay,
+      properEventIdx: args.properEventIdx,
+      stateEndMs: args.stateEndDeciseconds * 100,
+    });
     reactor.Position = { x: args.x, y: args.y };
   }
 
   private _onReactorMove(args: ReactorMoveArgs): void {
     const reactor = this._reactors.get(args.objId);
     if (!reactor) return;
-    reactor.Position = { x: reactor.Position.x + args.dx, y: reactor.Position.y + args.dy };
+    // OG OnReactorMove decodes an ABSOLUTE position (RelMove to it), not a delta.
+    reactor.Position = { x: args.dx, y: args.dy };
+  }
+
+  /** OG play_reactor_sound: Sound/Reactor.img/<templateId>/<oldState>/Hit
+      with positional volume, fired on every state switch. */
+  private _playReactorSound(templateId: number, oldState: number): void {
+    if (!this._mobSoundWz || !this.game.audioPlayer) return;
+    const node = this._mobSoundWz.GetItem(`Reactor.img/${templateId.toString().padStart(7, '0')}/${oldState}/Hit`);
+    if (node instanceof WzSound) {
+      this.game.audioPlayer.PlayEffect(node.AudioBytes);
+    } else if (node instanceof WzUol) {
+      const resolved = node.Resolve();
+      if (resolved instanceof WzSound) this.game.audioPlayer.PlayEffect(resolved.AudioBytes);
+    }
   }
 
   private _onEmployeeEnter(args: EmployeeEnterArgs): void {
@@ -7042,17 +7099,23 @@ this._localCharId = args.characterId ?? 0;
    * attack packet carrying the skillId. Buff/movement skills (no `damage`
    * level data) return without attacking.
    */
-  /** OG CReactor::OnHit — send UserHitReactor for every reactor whose body
-   *  box overlaps the attack rect. The server validates hitable/state/skill
-   *  gates (FieldHandler::handleReactorHit) and broadcasts the state change.
-   *  Body box approximated as ±25px wide, 50px tall above the base point —
-   *  the client does not track per-template WZ rects. */
+  /** OG CReactorPool::FindHitReactor — send UserHitReactor for every reactor
+   *  whose CURRENT canvas lt/rb box overlaps the attack rect. Only reactors
+   *  past their state-end window are hittable; the server validates
+   *  hitable/state/skill gates (FieldHandler::handleReactorHit) and
+   *  broadcasts the state change. */
   private _hitReactorsInRect(minX: number, maxX: number, minY: number, maxY: number, skillId: number): void {
     if (!this._reactors || this._reactors.size === 0) return;
+    const now = Date.now();
     for (const reactor of this._reactors.values()) {
-      const p = reactor.Position;
-      if (p.x + 25 < minX || p.x - 25 > maxX) continue;
-      if (p.y < minY || p.y - 50 > maxY) continue;
+      if (!reactor.IsHittable(now)) continue;
+      const box = reactor.HitRect();
+      // Legacy fallback while WZ art is missing (no lt/rb to test).
+      const left = box ? box.left : reactor.Position.x - 25;
+      const right = box ? box.right : reactor.Position.x + 25;
+      const top = box ? box.top : reactor.Position.y - 50;
+      const bottom = box ? box.bottom : reactor.Position.y;
+      if (right < minX || left > maxX || bottom < minY || top > maxY) continue;
       this.game.session.send(GameSender.HitReactor(reactor.ObjId, 0, 0, skillId));
     }
   }
@@ -7830,9 +7893,13 @@ this._localCharId = args.characterId ?? 0;
         || cat === 212 || cat === 226 || cat === 227 || cat === 210;
     }
     if (invType === 5) {
-      // Cash items: 524/530, 501s, or etc_cash type 6 (no client helper for
-      // the latter — not yet gated, documented miss).
-      return cat === 524 || cat === 530 || cat === 501;
+      // Cash items: 524/530, 501s, or etc_cash type 6. OG
+      // get_etc_cash_item_type admits cashslot types
+      // {1-7,36,37,40,42,46,55,58,59,60,63,77}; type 6 resolves from the
+      // 516 prefix (get_cashslot_item_type switch) — the only one of that
+      // set whose binding shape MapFuncKey consumes (nType 3).
+      const cashType = Math.floor(itemId / 10000) === 516 ? 6 : 0;
+      return cat === 524 || cat === 530 || cat === 501 || cashType === 6;
     }
     if (invType === 4) {
       // Etc items: only non_cash_effect (429)
@@ -7846,12 +7913,14 @@ this._localCharId = args.characterId ?? 0;
   }
 
   // OG MapFuncKey nType selector: Effect 7 for toggle-style items (non-cash
-  // effect 429, cash 501s → SendActiveEffectItemChange on press), Item 2 for
+  // effect 429, cash 501s → SendActiveEffectItemChange on press), Emotion 3
+  // for etc-cash type 6 (516 prefix → SendEmotionChange on press), Item 2 for
   // everything else bindable.
   private _funcKeyItemType(itemId: number, invType: number): FuncKeyType {
     const cat = Math.floor(itemId / 10000);
     if (invType === 4 && cat === 429) return FuncKeyType.Effect;
     if (invType === 5 && cat === 501) return FuncKeyType.Effect;
+    if (invType === 5 && cat === 516) return FuncKeyType.Emotion;
     return FuncKeyType.Item;
   }
 
@@ -8273,21 +8342,30 @@ this._localCharId = args.characterId ?? 0;
     const moneyFrames = args.isMoney && this._itemIcons
       ? this._itemIcons.GetMoneyAnimation(args.itemIdOrAmount)
       : null;
+    // OG OnDropEnterField: every type except OnTheFoothold (2) starts delayed
+    // (state 0) then tosses; FadingOut (trade-blocked) tosses, then vanishes
+    // on landing; explosive no-own drops (ownType 3) use the slower/longer
+    // parabolic duration. The drop sound plays for CREATE only.
     const drop = new DropSprite(
       args.dropId, args.isMoney, args.itemIdOrAmount,
       { x: args.sourceX ?? args.x, y: args.sourceY ?? args.y },
       { x: args.x, y: args.y },
-      args.animated ?? false,
+      args.enterType !== DropEnterType.OnTheFoothold,
       icon,
       undefined,
-      args.fading ?? false,
+      args.enterType === DropEnterType.FadingOut,
       moneyFrames,
+      args.delayMs,
+      args.ownType === 3,
     );
     drop.nameOf = this._itemNameOf;
     this._drops.push(drop);
     // OG: CDropPool::Update plays the drop sound when a CREATE-type drop
-    // begins its toss (StringPool 1284 = Sound.wz/Game.img/DropItem).
-    if (args.animated) this._fieldSounds?.PlayDrop();
+    // begins its toss (StringPool 1284 = Sound.wz/Game.img/DropItem) — after
+    // the enter delay, not at packet arrival.
+    if (args.enterType === DropEnterType.Create) {
+      drop.onTossStart = () => this._fieldSounds?.PlayDrop();
+    }
   }
 
   // TODO_AUDIT.md Twenty-fourth pass: CDropPool::OnDropLeaveField
