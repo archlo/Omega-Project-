@@ -48,7 +48,7 @@ describe('ChatBar history recall', () => {
     bar.onKeyPress('ArrowDown');
     expect((bar as any)._input).toBe('second');
     bar.onKeyPress('ArrowDown');
-    expect((bar as any)._input).toBe(''); // back past newest clears input
+    expect((bar as any)._input).toBe('second'); // past newest: input kept (OG skips SetText)
   });
 
   it('turns Maple item tags into clickable chat links', () => {
@@ -184,6 +184,16 @@ describe('ChatBar filter tabs (IDB OnButtonClicked 0x880540)', () => {
     expect((bar as any)._tabLabels[5].x).toBe(1 + 4 * 46 + 4); // Expedition at slot 4
   });
 
+  it('filter tabs show only in expanded (OG SetChatType tail: type == 3)', () => {
+    const bar = new ChatBar();
+    bar.startChat(); // SMALL — tabs hidden
+    expect((bar as any)._tabGraphics[0].visible).toBe(false);
+    expect((bar as any)._tabLabels[0].visible).toBe(false);
+    bar.setChatType(3); // EXPANDED — tabs shown
+    expect((bar as any)._tabGraphics[0].visible).toBe(true);
+    expect((bar as any)._tabLabels[0].visible).toBe(true);
+  });
+
   it('uses ChatType-indexed font colors for group messages', () => {
     const bar = new ChatBar();
     // _chatFonts[2] = party pink, [3] = buddy orange, [4] = guild purple,
@@ -236,9 +246,9 @@ describe('ChatBar combo box label (OG chatTarget label canvases)', () => {
     bar.onChatTargetChange = (v) => changed.push(v);
     const c = combo(bar);
 
-    // Open the dropdown and click Party (3rd visible item, index 2 — the two
-    // empty labels at indices 6/7 are filtered out). Dropdown rows are laid
-    // out upward from the box.
+    // Open the dropdown and click "To the party" (3rd visible item, index 2 —
+    // the two empty labels at indices 6/7 are filtered out). Dropdown rows
+    // are laid out upward from the box.
     c.handleMouseButton(30, 10, true); // toggle open
     const itemH = 16;
     const idxInList = 2;
@@ -248,6 +258,7 @@ describe('ChatBar combo box label (OG chatTarget label canvases)', () => {
     expect((bar as any)._nChatTarget).toBe(2);
     expect(changed).toEqual(['party']);
     expect(c._label.visible).toBe(true); // no WZ label stubbed → text fallback
+    expect(c._label.text).toBe('To the party');
   });
 });
 
@@ -332,11 +343,11 @@ describe('ChatBar focus lifecycle (OG EndChat @0x87A520 / HitTest @0x86D500)', (
 });
 
 describe('ChatBar SetChatTarget (OG @0x87FD30)', () => {
-  it('boots with target 8 (Find) per the CUIStatusBar ctor', () => {
+  it('boots with target 8 ("To All", SP 0x322) per the CUIStatusBar ctor', () => {
     const bar = new ChatBar();
     expect((bar as any)._nChatTarget).toBe(8);
     const c = (bar as any)._combo;
-    expect(c._label.text).toBe('Find');
+    expect(c._label.text).toBe('To All');
   });
 
   it('switching target opens chat, clears input and the whisper target', () => {
@@ -531,6 +542,16 @@ describe('ChatBar highlight colors (OG ChatLogAdd @0x87AEC0)', () => {
     const b = bar as any;
     expect(b._chatLog[0].nBack).toBe(0);
     expect(b._lines[0].children.length).toBe(1);
+  });
+
+  it('log lines never fade (OG ChatLogDraw draws constant alpha)', () => {
+    const bar = new ChatBar();
+    bar.startChat();
+    bar.addLine('stays', 0);
+    const b = bar as any;
+    for (let i = 0; i < 10; i++) bar.update(16);
+    expect(b._lines[0].alpha).toBe(1);
+    expect('timestamp' in b._chatLog[0]).toBe(false);
   });
 });
 

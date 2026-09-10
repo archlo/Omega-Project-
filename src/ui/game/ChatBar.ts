@@ -88,14 +88,22 @@ const TAB_NAMES = ['All', 'Friend', 'Party', 'Guild', 'Alliance', 'Expedition'];
 const TAB_H = 18;
 const TAB_SPACING = 46;  // OG: filter button spacing in _ResetChatBarPos
 
-// --- ComboBox items (OG StringPool IDs from MakeCtrlEdit) ---
-// Index 0=0x324(All), 1=0x327(Whisper), 2=0x323(Party), 3=0x189C(Buddy),
-// Index 4=0x326(Guild), 5=0x1896(Alliance), 8=0x322(Find)
-const CHAT_TARGETS = ['All', 'Whisper', 'Party', 'Buddy', 'Guild', 'Alliance', '', '', 'Find'];
+// --- ComboBox items (OG MakeCtrlEdit @0x870BA0 — StringPool literals dumped
+// from the exe: 0x324="To a buddy", 0x327="To Group", 0x323="To the party",
+// 0x189C="To Expedition", 0x326="To the Guild", 0x1896="To Alliance",
+// 0x322="To All", added with dwParams 0,1,2,3,4,5,8). There is NO
+// person-whisper combo entry — target 7 is reached via Tab-with-history,
+// name clicks, or the ChangeWhisperTarget dialog only.
+const CHAT_TARGETS = ['To a buddy', 'To Group', 'To the party', 'To Expedition', 'To the Guild', 'To Alliance', '', '', 'To All'];
+// Internal routing keys (TS-side; OG sends these via opcode 140 group wire /
+// 142 couple / whisper — TS currently routes group targets through slash and
+// normal chat, so the keys stay stable while the wire is pending).
 const CHAT_TARGET_INTERNAL = ['all', 'whisper', 'party', 'buddy', 'guild', 'alliance', '', '', 'find'];
 
-// --- Tab cycling (OG OnKey 0x87FDE0 — VK_TAB mapping) ---
-// Tab index 0..8 cycles through chat targets in this exact order:
+// --- Tab cycling (OG OnKey @0x87FDE0 — VK_TAB mapping over the combo params:
+// buddy(0), couple(6), group(1), party(2), expedition(3), guild(4),
+// alliance(5), whisper-person(7 via history), all(8)) ---
+// -1 = whisper special (existing whisper target or ChangeWhisperTarget dialog)
 const TAB_CYCLE = [6, 2, 3, 4, 5, -1, 1, 8, 0];
 // -1 = whisper special (calls ChangeWhisperTarget or uses existing target)
 
@@ -305,10 +313,6 @@ export class ChatBar extends GamePanel {
 
   // OG: filter button checked states (m_bChecked on each CCtrlOriginButton)
   private _filterChecked: boolean[] = [true, false, false, false, false, false];
-
-  // --- OG: ChatMessageDisplayTime / ChatMessageFadeTime ---
-  private static readonly MSG_DISPLAY_MS = 10000;  // 10s display
-  private static readonly MSG_FADE_MS = 2000;       // 2s fade
 
   // --- OG: Chat target label textures (WZ sprites per target type) ---
   private _chatTargetLabels: (WzSprite | null)[] = [];
@@ -531,7 +535,7 @@ export class ChatBar extends GamePanel {
     const tabBarY = displayY;
     this._tabBarGfx.clear();
     this._tabBarGfx.rect(DISPLAY_X, tabBarY, displayW, TAB_H).fill({ color: '#222', alpha: 0.7 });
-    const showTabs = this._chatType !== CHAT_TYPE_NONE && this._chatType !== CHAT_TYPE_MINIMAL;
+    const showTabs = this._chatType === CHAT_TYPE_EXPANDED;
     this._tabBarGfx.visible = showTabs;
 
     // Chat log lines
@@ -625,7 +629,8 @@ export class ChatBar extends GamePanel {
     // OG: _ResetChatBarPos (0x86DC30) — hide filter buttons for groups the
     // character isn't in, clear the matching filter bit, then lay out shown
     // buttons left-to-right at x=1+i*46, y=m_ptChatWnd.y-19.
-    const show = this._chatType !== CHAT_TYPE_NONE && this._chatType !== CHAT_TYPE_MINIMAL;
+    // OG SetChatType tail: filter buttons shown ONLY in expanded (==3).
+    const show = this._chatType === CHAT_TYPE_EXPANDED;
     const members = [true, true, this._memberParty, this._memberGuild, this._memberAlliance, this._memberExpedition];
     if (show) {
       if (!this._memberParty) this._dwChatFilterFlag &= ~FILTER_PARTY;
@@ -767,7 +772,6 @@ export class ChatBar extends GamePanel {
         end: prefixLength + Math.min(end - start, link.end - start),
       }));
 
-    const now = performance.now();
     for (const word of words) {
       const wordStart = sourceOffset;
       sourceOffset += word.length;
@@ -780,7 +784,6 @@ export class ChatBar extends GamePanel {
           text: currentLine, lType, nBack: this._backColorFor(lType, channelID), nChannelID: channelID,
           bWhisperIcon: whisperIcon, isFirstLine, itemID: 0,
           itemLinks: linksFor(currentStart, wordStart, 0),
-          timestamp: now, displayMs: ChatBar.MSG_DISPLAY_MS, fadeMs: ChatBar.MSG_FADE_MS,
         });
         // OG: continuation lines get 5-space indent if not in type 7-12 range
         const prefix = (lType < 7 || lType > 12) ? CONTINUATION_INDENT : '';
@@ -797,7 +800,6 @@ export class ChatBar extends GamePanel {
         text: currentLine, lType, nBack: this._backColorFor(lType, channelID), nChannelID: channelID,
         bWhisperIcon: whisperIcon, isFirstLine, itemID: 0,
         itemLinks: linksFor(currentStart, sourceOffset, currentLine.startsWith(CONTINUATION_INDENT) ? CONTINUATION_INDENT.length : 0),
-        timestamp: now, displayMs: ChatBar.MSG_DISPLAY_MS, fadeMs: ChatBar.MSG_FADE_MS,
       });
     }
 
@@ -1108,8 +1110,9 @@ private _setFilterButton(): void {
 
   /** Show the WZ label canvas for a chat target (OG combo draws the label canvas
    * anchored at its origin relative to the base box). Falls back to text when no
-   * canvas exists (e.g. target 8 "Find", whisper 7). Targets with neither
-   * (e.g. 6/couple, which has no combo item) leave the label untouched. */
+   * canvas exists (e.g. target 1 "To Group", target 7 person-whisper);
+   * targets with neither text (e.g. 6/couple, no combo item) leave the label
+   * untouched. */
   private _applyComboLabel(target: number): void {
     const ws = this._chatTargetLabels[target];
     if (ws) {
@@ -1294,7 +1297,7 @@ private _setFilterButton(): void {
 
     // OG: route by first char
     if (msg.startsWith('/')) {
-      // Slash command → SendChatMsgSlash
+      // Slash command → SendChatMsgSlash (+ HistoryAddforCommand, same array)
       this.onSendChat?.(msg);
       this._historyAdd(msg);
     } else if (this._whisperTarget && this._nChatTarget === 7) {
@@ -1310,7 +1313,13 @@ private _setFilterButton(): void {
         this.onEmotion?.(emotionKey - 111);
       }
     } else {
-      // Route by current chat target (OG switch on tabCycleIndex)
+      // Route by current chat target. NOTE (IDA SendGroupMessage @0x87F7F0):
+      // OG sends group targets on opcode 140 with a member-ID list built
+      // client-side (0: online friends, 1: m_sFriendGroupTarget group,
+      // 2: party as wire 1, 3: expedition as wire 6, 4/5: guild/alliance;
+      // empty groups get SP notices 0xA2/0xA0/0x18A4). TS routes through
+      // onSendChat (slash/normal) instead — porting the 140 wire (with the
+      // empty-group notices) is GameStage+server work, not ChatBar.
       const target = this._nChatTarget;
       if (target >= 0 && target <= 5) {
         // Group message → SendGroupMessage
@@ -1387,11 +1396,11 @@ private _setFilterButton(): void {
   }
 
   private _historyDown(): void {
-    if (this._historyIndex >= 0) {
-      this._historyIndex--;
-    }
-    this._input = this._historyIndex >= 0 && this._historyIndex < this._sentHistory.length
-      ? this._sentHistory[this._historyIndex] : '';
+    // OG HistoryDown past the newest returns empty → OnKey skips SetText,
+    // so the current input is kept (never cleared by Down).
+    if (this._historyIndex <= 0) return;
+    this._historyIndex--;
+    this._input = this._sentHistory[this._historyIndex];
     this._syncInput();
   }
 
@@ -2067,15 +2076,17 @@ private _setFilterButton(): void {
     // resolve to these canvas paths). No 'label' subfolder exists.
     const ctRoot = bar.Get('chatTarget') as WzProperty | null;
     if (ctRoot) {
-      // OG combo index -> canvas child (StringPool 0x324/0x323/0x189C/0x326/
-      // 0x1896): 0=all, 2=party, 3=friend(buddy), 4=guild, 5=association
-      // (alliance). Targets 1/7 (whisper) and 8 (find) have no canvas.
+      // OG combo param -> short-label canvas (canvas names are the short
+      // target words): 0 buddy->friend, 2 party, 3 expedition, 4 guild,
+      // 5 alliance->association, 8 all. Params 1 (To Group) and 7 (person
+      // whisper) have no canvas — text fallback.
       const labelForTarget: Record<number, string> = {
-        0: 'all',
+        0: 'friend',
         2: 'party',
-        3: 'friend',
+        3: 'expedition',
         4: 'guild',
         5: 'association',
+        8: 'all',
       };
       for (const t of Object.keys(labelForTarget)) {
         const target = Number(t);
