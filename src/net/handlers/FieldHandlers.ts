@@ -55,7 +55,7 @@ import {
   HourChangedArgs, MiniMapOnOffArgs, ConsultAuthkeyUpdateArgs, ClassCompetitionAuthkeyUpdateArgs,
   WebBoardAuthkeyUpdateArgs, SessionValueArgs, PartyValueArgs, FieldSetVariableArgs,
   BonusExpRateChangedArgs, PotionDiscountRateChangedArgs, NotifyLevelUpArgs, NotifyWeddingArgs,
-  NotifyJobChangeArgs, MapleTVUseResArgs, AvatarMegaphoneResArgs, SuccessInUsegachaponBoxArgs,
+  NotifyJobChangeArgs, MapleTVUseResArgs, AvatarMegaphoneResArgs, BroadcastMsgArgs, SuccessInUsegachaponBoxArgs,
   SetBuyEquipExtArgs, SetPassengerRequestArgs, ScriptProgressMessageArgs, DataCRCCheckFailedArgs,
   UpdateGMBoardArgs, ShowSlotMessageArgs, AccountMoreInfoArgs, FindFriendArgs, TransferChannelNotifyArgs,
   ForcedStatSetArgs, ShopLinkResultArgs, ImitatedNPCDataArgs, ImitatedNPCDataEntry, LimitedNPCDisableInfoArgs,
@@ -341,7 +341,7 @@ export class FieldHandlers {
   onMessageBoxLeaveField: ((args: MessageBoxLeaveFieldArgs) => void) | null = null;
   onMassacreIncGauge: ((args: MassacreIncGaugeArgs) => void) | null = null;
   onMassacreResult: ((args: MassacreResultArgs) => void) | null = null;
-  onBroadcastMsg: ((msgType: number, text: string | null) => void) | null = null;
+  onBroadcastMsg: ((args: BroadcastMsgArgs) => void) | null = null;
   onEntrustedShopCheckResult: ((args: EntrustedShopCheckResultArgs) => void) | null = null;
   onSkillUseResult: ((ack: number) => void) | null = null;
   onSkillLearnItemResult: ((args: { charId: number; isMasterybook: boolean; used: boolean; succeed: boolean }) => void) | null = null;
@@ -4715,17 +4715,62 @@ export class FieldHandlers {
     } catch { /* malformed */ }
   }
 
-  // OG: CWvsContext::OnBroadcastMsg (decompile/A04160.c) — msgType determines
-  // how the text is displayed. Type 4 carries an extra subFlag byte (0 = clear
-  // ticker, non-zero = show with following string). Other types just have the
-  // text string directly after the msgType byte.
+  // OG: CWvsContext::OnBroadcastMsg @0xA04160 — byte type; type 4 carries an
+  // extra subFlag byte (0 = clear ticker, no string). Per-type tails after
+  // the string: T8 byte channel/byte whisperIcon/byte hasItem [+item blob];
+  // T3/T20 byte channel/byte whisperIcon; T10 byte lineCount/[str x2]/byte
+  // channel/byte whisperIcon; T6 int itemId; T7 int templateId.
   private handleBroadcastMsg(p: InPacket): void {
     try {
       const msgType = p.readByte();
       let subFlag = 1;
       if (msgType === 4) subFlag = p.readByte();
-      const text = subFlag === 0 ? null : p.readString();
-      this.onBroadcastMsg?.(msgType, text);
+      if (subFlag === 0) {
+        this.onBroadcastMsg?.({ msgType, text: null });
+        return;
+      }
+      const text = p.readString();
+      switch (msgType) {
+        case 8: {
+          const channel = p.readByte();
+          const whisperIcon = p.readByte() !== 0;
+          const hasItem = p.readByte() !== 0;
+          let itemId = 0;
+          if (hasItem) itemId = ItemDecoder.Decode(p).itemId;
+          this.onBroadcastMsg?.({ msgType, text, channel, whisperIcon, itemId });
+          break;
+        }
+        case 3:
+        case 20: {
+          const channel = p.readByte();
+          const whisperIcon = p.readByte() !== 0;
+          this.onBroadcastMsg?.({ msgType, text, channel, whisperIcon });
+          break;
+        }
+        case 10: {
+          const lineCount = p.readByte();
+          const extraLines: string[] = [];
+          if (lineCount > 1) extraLines.push(p.readString());
+          if (lineCount > 2) extraLines.push(p.readString());
+          const channel = p.readByte();
+          const whisperIcon = p.readByte() !== 0;
+          this.onBroadcastMsg?.({ msgType, text, channel, whisperIcon, extraLines });
+          break;
+        }
+        case 6: {
+          const itemId = p.readInt();
+          this.onBroadcastMsg?.({ msgType, text, itemId });
+          break;
+        }
+        case 7: {
+          const templateId = p.readInt();
+          this.onBroadcastMsg?.({ msgType, text, templateId });
+          break;
+        }
+        default:
+          this.onBroadcastMsg?.({ msgType, text });
+          break;
+      }
     } catch { /* malformed */ }
   }
 

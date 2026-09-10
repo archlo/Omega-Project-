@@ -429,6 +429,20 @@ export interface NotifyWeddingArgs { flag: number; name: string; }
 export interface NotifyJobChangeArgs { flag: number; job: number; name: string; }
 export interface MapleTVUseResArgs { message: string; }
 export interface AvatarMegaphoneResArgs { result: number; message: string; }
+/** OG: CWvsContext::OnBroadcastMsg @0xA04160 (opcode 71). Per-type tails:
+ * T8: byte channel, byte whisperIcon, byte hasItem [+ GW_ItemSlotBase blob];
+ * T3/T20: byte channel, byte whisperIcon; T10: byte lineCount, [str x2],
+ * byte channel, byte whisperIcon; T6: int itemId; T7: int templateId.
+ * lType mapping: 2->13, 3/10->14, 8/9->16, 20->15, 5->12, 0/6->10. */
+export interface BroadcastMsgArgs {
+  msgType: number;
+  text: string | null;
+  channel?: number;
+  whisperIcon?: boolean;
+  itemId?: number;
+  extraLines?: string[];
+  templateId?: number;
+}
 export interface SuccessInUsegachaponBoxArgs { itemId: number; }
 export interface SetBuyEquipExtArgs { flag: boolean; }
 /** OG: CWvsContext::OnSetPassenserRequest @0x9FB090 (opcode 126) —

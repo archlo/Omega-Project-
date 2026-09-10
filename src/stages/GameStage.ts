@@ -2137,11 +2137,13 @@ export class GameStage extends Stage {
     this._repair.OnRepair = (slot) => { this.game.session.send(GameSender.RepairDurability(slot)); };
     this._repair.OnRepairAll = () => { this.game.session.send(GameSender.RepairDurabilityAll()); };
     this._repair.OnClosed = () => {};
-    // TODO_AUDIT.md Hundred-and-seventeenth pass: CItemSpeakerDlg megaphone
-    // compose â€” sender confirmed (opcode 85 shape from 0x5c9e70 decompile).
-    this._megaphoneCompose = new MegaphoneCompose();
-    this._megaphoneCompose.OnSend = (invPos, itemId, message, isWhisper) => {
-      this.game.session.send(GameSender.MegaphoneCompose(invPos, itemId, message, isWhisper));
+    // OG CItemSpeakerDlg megaphone compose — sender confirmed (opcode 85
+    // shape from 0x5c9e70 decompile); dialog chrome from OnCreate @0x5CA210
+    // (ItemMegaphone/backgrnd 236x182, BtOK/BtCancle, edit, whisper checkbox).
+    this._megaphoneCompose = new MegaphoneCompose(this._loader, uiWz);
+    this._megaphoneCompose.setIconProvider((id) => this._itemIcons?.LoadIcon(id) ?? null);
+    this._megaphoneCompose.OnSend = (invPos, itemId, message, isWhisper, targetTI, targetPOS) => {
+      this.game.session.send(GameSender.MegaphoneCompose(invPos, itemId, message, isWhisper, targetTI, targetPOS));
     };
 
     this._vegaDialog = new VegaDialog(this._loader, uiWz, font, this._mobSoundWz, this.game.audioPlayer);
@@ -4001,7 +4003,12 @@ this._dmgNumbers?.Update(dt);
     };
     fh.onSetWeekEventMessage = (args) => { this._chatBar.addLine(args.message); };
     fh.onUpdateGMBoard = (args) => { this._chatBar.addLine(`[GM Board] ${args.message}`); };
-    fh.onAvatarMegaphoneRes = (args) => { this._chatBar.addLine(args.message); };
+    fh.onAvatarMegaphoneRes = (args) => {
+      // OG result codes (kinoko CashItemResultType): 96 queue-full, 97 level
+      // limit, 0 + message plain notice.
+      if (args.result !== 0) this._notice?.show('Megaphone', args.message);
+      else if (args.message) this._chatBar.addLine(args.message);
+    };
     fh.onMapleTVUseRes = (args) => { this._chatBar.addLine(`[MapleTV] ${args.message}`); };
     // TODO_AUDIT.md "Resolved against the v95 decompile" section: the real
     // CMapleTVMan opcodes (405/406/407, MapleTVHandlers.ts) were correctly
@@ -4483,13 +4490,85 @@ this._dmgNumbers?.Update(dt);
       this._shopMarker?.Add(args.id, args.itemId, args.characterName, args.hope, args.x, args.y);
     };
     fh.onMessageBoxLeaveField = (args) => { this._shopMarker?.Remove(args.id); };
-    fh.onBroadcastMsg = (msgType, text) => {
+    fh.onBroadcastMsg = (args) => {
+      const { msgType, text } = args;
       if (msgType === 4) {
         if (text) this._slideNotice.show(text, this.game.pixiApp.screen.width);
         else this._slideNotice.hide();
-      } else {
-        this._statusMessenger.showLoot(`[Broadcast ${msgType}] ${text}`);
+        return;
       }
+      // OG: CWvsContext::OnBroadcastMsg @0xA04160 — megaphone family renders
+      // as chat-log lines (NOT banners). Hide megaphone types on 9xxxxx maps
+      // (field/1M % 100 == 9); undercover-hide has no TS equivalent yet.
+      const fieldId = this._field?.LoadedMapId ?? 0;
+      const megaHidden = Math.floor(fieldId / 1000000) % 100 === 9;
+      const megaTypes = [2, 3, 8, 9, 10, 20];
+      if (text == null) return;
+      if (msgType === 0) {
+        // SP 0x38F "[Notice]" prefix, lType 10.
+        this._chatBar.addLine(`[Notice]${text}`, 10);
+        return;
+      }
+      if (msgType === 1) {
+        this._notice?.show('Notice', text);
+        return;
+      }
+      if (msgType === 5) {
+        this._chatBar.addLine(text, 12);
+        return;
+      }
+      if (msgType === 6) {
+        this._chatBar.addLine(text, 10);
+        return;
+      }
+      if (msgType === 7) {
+        const dlg = this._utilDlg;
+        if (!dlg) return;
+        dlg.SetUtilDlgEx(UtilDlgType.TEXT, args.templateId ?? 0, true, false, text);
+        dlg.SetUtilDlgEx_TEXT(false, false);
+        dlg.show();
+        return;
+      }
+      if (msgType === 2) {
+        // SP 0x72D "%s : %s" rejoin is the identity for server-formatted
+        // "name : msg" (only observable via the absent curse filter) → raw.
+        if (!megaHidden) this._chatBar.addLine(text, 13);
+        return;
+      }
+      if (msgType === 3 || msgType === 20) {
+        if (!megaHidden) {
+          this._chatBar.addLine(text, 14, args.channel ?? -1, args.whisperIcon ?? false);
+        }
+        return;
+      }
+      if (msgType === 8 || msgType === 9) {
+        if (!megaHidden) {
+          // SP 0x115F "[item]msg" over the post-" : " remainder.
+          let line = text;
+          const sep = text.indexOf(' : ');
+          if (sep >= 0 && args.itemId) {
+            const itemName = this.game.nameService.ItemName(args.itemId) ?? `Item[${args.itemId}]`;
+            line = `${text.substring(0, sep)} : [${itemName}]${text.substring(sep + 3)}`;
+          }
+          this._chatBar.addLine(line, 16, args.channel ?? -1, args.whisperIcon ?? false);
+        }
+        return;
+      }
+      if (msgType === 10) {
+        // Triple: main line + extra lines, all lType 14, extras formatted
+        // SP 0x72D with the MAIN line's speaker.
+        if (!megaHidden) {
+          const sep = text.indexOf(' : ');
+          const speaker = sep >= 0 ? text.substring(0, sep) : '';
+          this._chatBar.addLine(text, 14, args.channel ?? -1, args.whisperIcon ?? false);
+          for (const extra of args.extraLines ?? []) {
+            this._chatBar.addLine(speaker ? `${speaker} : ${extra}` : extra, 14,
+              args.channel ?? -1, args.whisperIcon ?? false);
+          }
+        }
+        return;
+      }
+      this._statusMessenger.showLoot(`[Broadcast ${msgType}] ${text}`);
     };
 
     fh.onMobChangeController = (mobId, isCtrl) => {
