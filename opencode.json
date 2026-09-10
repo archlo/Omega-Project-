@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugin": ["@dietrichgebert/ponytail"],
+  "plugin": [],
   "skills": {
     "paths": [".agents/skills"]
   },
@@ -8,6 +8,11 @@
     "ida": {
       "type": "local",
       "command": ["ida-mcp", "proxy"],
+      "enabled": true
+    },
+    "playwright": {
+      "type": "local",
+      "command": ["npx", "-y", "@playwright/mcp"],
       "enabled": true
     }
   }

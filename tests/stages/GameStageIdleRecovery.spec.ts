@@ -70,8 +70,8 @@ describe('idle HP/MP recovery (OG CWvsContext::TryRecovery 0x9D4020)', () => {
   });
 });
 
-describe('melee swing input lock (single-fire plant)', () => {
-  it('_tryMeleeAttack locks movement input and flags the swing window', () => {
+describe('melee swing (single-fire, OG v95 allows movement during attack)', () => {
+  it('_tryMeleeAttack flags the swing window but does NOT lock input (OG v95 parity)', () => {
     const { stage } = makeStage();
     expect(vi.isMockFunction(stage.game.session.send)).toBe(false);
     stage._mobs = new Map();
@@ -79,7 +79,8 @@ describe('melee swing input lock (single-fire plant)', () => {
     stage._attackCooldown = 0;
     stage._tryMeleeAttack();
     expect(stage._meleeSwingActive).toBe(true);
-    expect(stage._physics.InputLocked).toBe(true);
+    // OG v95: character can walk while attacking — no input lock.
+    expect(stage._physics.InputLocked).toBe(false);
     expect(stage._attackCooldown).toBe(GameStage.AttackCooldownSeconds);
   });
 });

@@ -38,13 +38,39 @@ describe('FieldSoundService', () => {
   });
 
   it('caches the resolved sound and does not re-resolve on repeat plays', () => {
-    const pkg = stubPackage({ 'Game.img/DropItem': new WzSound() });
-    const audio = stubAudio();
-    const svc = new FieldSoundService(pkg as any, audio as any);
-    svc.PlayDrop();
-    svc.PlayDrop();
-    expect(pkg.GetItem).toHaveBeenCalledTimes(1);
-    expect(audio.PlayEffect).toHaveBeenCalledTimes(2);
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(10_000);
+      const pkg = stubPackage({ 'Game.img/DropItem': new WzSound() });
+      const audio = stubAudio();
+      const svc = new FieldSoundService(pkg as any, audio as any);
+      svc.PlayDrop();
+      vi.setSystemTime(10_000 + 301); // past the OG 300ms throttle
+      svc.PlayDrop();
+      expect(pkg.GetItem).toHaveBeenCalledTimes(1);
+      expect(audio.PlayEffect).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('throttles the drop sound to one play per 300ms (OG tLastSfx gate)', () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(50_000);
+      const pkg = stubPackage({ 'Game.img/DropItem': new WzSound() });
+      const audio = stubAudio();
+      const svc = new FieldSoundService(pkg as any, audio as any);
+      svc.PlayDrop();
+      vi.setSystemTime(50_000 + 300); // exactly 300ms — OG requires > 300
+      svc.PlayDrop();
+      expect(audio.PlayEffect).toHaveBeenCalledTimes(1);
+      vi.setSystemTime(50_000 + 301);
+      svc.PlayDrop();
+      expect(audio.PlayEffect).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('no-ops when the Sound.wz package is unavailable', () => {

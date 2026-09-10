@@ -48,6 +48,10 @@ export interface CtInfo {
   nNpcNo: number;
   nMapNo: number;
   _iconPath?: string; // WZ path for icon nodes (nType=1/2)
+  /** Item id whose WZ icon renders inline (OG #i/#v item nodes, nType=1). */
+  iconItemId?: number;
+  /** Skill id whose WZ icon renders inline (OG #s nodes, nType=1). */
+  iconSkillId?: number;
 }
 
 // ─── PET_INFO (20 bytes) ──────────────────────────────────────────────────
@@ -220,6 +224,24 @@ export class UtilDlgEx extends GamePanel {
   _avatarNameOf: ((itemId: number) => string) | null = null;
   /** Resolves the NPC display name for the speaker name tag (String.wz). */
   npcNameOf: ((id: number) => string | null) | null = null;
+  /** OG #o — mob name (String.wz Mob.img). */
+  mobNameOf: ((id: number) => string | null) | null = null;
+  /** OG #m — map name (String.wz, SP 0x6EC "mapName"). */
+  mapNameOf: ((id: number) => string | null) | null = null;
+  /** OG #t/#z/#e — item name (String.wz). */
+  itemNameOf: ((id: number) => string | null) | null = null;
+  /** OG #q — skill name (String.wz Skill.img). */
+  skillNameOf: ((id: number) => string | null) | null = null;
+  /** OG #h — the player character's name (Korean #h1/#h2/#h3 particles dropped). */
+  charNameOf: (() => string | null) | null = null;
+  /** OG #c — live inventory count for an item id. */
+  countItemOf: ((id: number) => number) | null = null;
+  /** OG #i/#v icon canvas (CItemInfo::GetItemIcon). */
+  itemIconOf: ((id: number) => WzSprite | null) | null = null;
+  /** OG #s icon canvas (CSkillInfo apCanvas). */
+  skillIconOf: ((id: number) => WzSprite | null) | null = null;
+  /** OG #u quest-state text: 0 "Not Started" / 1 "In Progress" / 2 "Complete". */
+  questStateOf: ((questId: number) => 0 | 1 | 2) | null = null;
 
   // ── Script-dialog state (set by the GameStage script-message wiring) ───
   /** Wire msgType of the Say/SayImage being answered (echoed in the reply). */
@@ -326,7 +348,15 @@ export class UtilDlgEx extends GamePanel {
     this.m_bQuest = bQuest;
     this.m_aImageList = [];
     this._lines = [];
-    this.m_bParam = 0;
+    // NOTE (OG SetUtilDlgEx @0x98E9F0): m_bParam is NOT reset here — the
+    // caller sets it from the packet's messageParam BEFORE this call, and
+    // wiping it silently dropped SpeakerOnRight (442 anchor), FlipSpeaker,
+    // and NotCancellable on every NPC dialog. The one deviation: this TS
+    // instance is SHARED across script + system prompts (OG news one up per
+    // dialog), so a no-NPC system prompt resets it — speaker flags are
+    // meaningless without a speaker, and this stops a stale SpeakerOnRight
+    // leaking into meso-drop/trade/shop prompts.
+    if (bNoNPC) this.m_bParam = 0;
     this.m_bMsgImage = 0;
     this.m_bMsgImage_Img = 0;
     this.m_nCurDisplayItemIndex = 0;
@@ -365,69 +395,221 @@ export class UtilDlgEx extends GamePanel {
   }
 
   // OG: CTextAnalyzer::AnalyzeText — parses formatted text into CT_INFO nodes.
-  // Tag subset implemented: #f[path]# / #f<path># icons (SP-decoded payloads
-  // carry NO brackets), #i[id]# items, #b bold, #n/#k font reset, #d no-op,
-  // and the #L<n># ... #l# selectable-row wrapper used by quest lists
-  // (row format "#d#L%d# %s#l#k\r\n" — StringPool 3236).
+  //
+  // Full phrase table, verified live in the IDB (GetPhraseType @0x97D650,
+  // GetPhrase_Sharp @0x9836B0, AnalyzeText @0x987CC0; color/bold/select
+  // pre-dispatch via StringPool 0x8EA-0x8F1 = "#k#r#g#b#e#n#l#d"):
+  //
+  // Tokenizer (GetPhrase_Sharp): '#' + code + payload, where the terminator
+  // ('#', backslash, or end) is CONSUMED — so "#L0# label" tokenizes as "#L0"
+  // with no stray "#" node. Code sets: {@,B,F,L,M,_,a,c,f,h,i,m,o,p,q,s,t,u,
+  // v,x,y,z} consume trailing plain chars; {D,Q,R,W,j} consume through the
+  // next '#' inclusive; anything else is a 2-char phrase.
+  //
+  // State toggles (no node): #k color0, #r color1, #g color2, #b color3,
+  // #d color5, #e bold=1, #n bold=0, #l end-row. Font = bold + 2*color.
+  // #L<n> opens a select row (nType=4 dot node in OG; merged with its text
+  // here so the LIST focus machinery keeps working).
+  // #E/#I/#S/#K emit nType=3 func lines (status-bar blink, no visual).
+  // #w toggles the reward-row flag (tracked, no visual change).
+  // #i/#v item icon+name, #s skill icon+name (nType=1); #t/#z item name text
+  // (#z also stores pIcon); #p/#o/#m/#q names (+nNpcNo/nMapNo); #h char name;
+  // #c live item count; #f/#F literal WZ canvas; #W quest summary icon canvas.
+  // Quest-record codes (#M #Q #R #a #u #x #y #@), gauges (#B #j) and timers
+  // (#Q #D) have no client-side data source — they emit nothing (documented,
+  // not invented). Unknown codes emit literally (OG type-0 fallback).
+  //
+  // HARD GUARANTEE (the live bug this fixes): every loop iteration consumes
+  // at least one character, so unknown codes can never hang the tab the way
+  // the old subset parser did (it looped forever on #r/#p/#o/#m/#t/...,
+  // freezing the game before show() — no NPC, no buttons, no dialog).
   private _analyzeText(text: string): void {
     this._lines = [];
-    let fontIndex = 0;
+    let nBold = 0;
+    let nColor = 0;
+    let rowSelect: number | null = null; // inside #L<n> ... #l
     let y = 0;
-    let selectTag = -1; // active #L<n># row index, terminated by #l
-    const lines = text.split(/\r?\n/);
-    for (const rawLine of lines) {
+    const fontOf = (): number => Math.min(nBold + 2 * nColor, 11);
+    const blank = (over: Partial<CtInfo>): CtInfo => ({
+      nType: 0, nItemNo: this._lines.length, nLine: 0, pFont: fontOf(),
+      sText: '', pIcon: 0, nLeft: 0, nTop: y, nWidth: 0, nHeight: 18,
+      nSelect: -1, nUnderLine: 0, bLineChange: 0, nFuncCode: 0,
+      bReward: 0, nNpcNo: 0, nMapNo: 0, ...over,
+    });
+    const pushText = (s: string, x: number, inRow: number | null): number => {
+      if (s.length === 0) return 0;
+      if (inRow !== null) {
+        // OG: row text keeps the live font (bold + 2*color), like any node.
+        this._lines.push(blank({ nType: 4, sText: s, nLeft: 0, nSelect: inRow, nUnderLine: 16, nWidth: 200 }));
+        return 0;
+      }
+      this._lines.push(blank({ nType: 0, sText: s, nLeft: x }));
+      return s.length * 8;
+    };
+
+    for (const rawLine of text.split(/\r?\n/)) {
       let remaining = rawLine;
       let x = 0;
-      while (remaining.length > 0) {
-        const iconMatch = remaining.match(/^#f\[([^\]]+)\]#/) ?? remaining.match(/^#f([^#]+)#/);
-        if (iconMatch) {
-          this._lines.push({
-            nType: 2, nItemNo: this._lines.length, nLine: 0, pFont: 0,
-            sText: '', pIcon: 0, nLeft: x, nTop: y, nWidth: 0, nHeight: 18,
-            nSelect: -1, nUnderLine: 0, bLineChange: 0, nFuncCode: 0,
-            bReward: 0, nNpcNo: 0, nMapNo: 0, _iconPath: iconMatch[1],
-          });
-          x += 18;
-          remaining = remaining.slice(iconMatch[0].length);
+      // Iterations are bounded by remaining length; every branch below
+      // consumes >= 1 char, so this always terminates.
+      let guard = remaining.length * 2 + 8;
+      while (remaining.length > 0 && guard-- > 0) {
+        const head = remaining[0];
+        if (head === '\\' && remaining.length > 1) {
+          // OG backslash escape: literal next char.
+          x += pushText(remaining[1], x, rowSelect);
+          remaining = remaining.slice(2);
           continue;
         }
-        const listStart = remaining.match(/^#L(\d+)#/);
-        if (listStart) { selectTag = parseInt(listStart[1], 10); remaining = remaining.slice(listStart[0].length); continue; }
-        if (remaining.startsWith('#l')) { selectTag = -1; remaining = remaining.slice(2); continue; }
-        const boldMatch = remaining.match(/^#b/);
-        if (boldMatch) { fontIndex = 1; remaining = remaining.slice(2); continue; }
-        const resetMatch = remaining.match(/^#[nk]/);
-        if (resetMatch) { fontIndex = 0; remaining = remaining.slice(2); continue; }
-        if (remaining.startsWith('#d')) { remaining = remaining.slice(2); continue; }
-        // Plain text until next # or end
-        const nextHash = remaining.indexOf('#');
-        const chunk = nextHash >= 0 ? remaining.slice(0, nextHash) : remaining;
-        if (chunk.length > 0) {
-          if (selectTag >= 0) {
-            // Selectable list row (same shape AddDotLine produces so the LIST
-            // focus/click machinery picks it up via SetUtilDlgEx_LIST).
-            this._lines.push({
-              nType: 4, nItemNo: this._lines.length, nLine: 0, pFont: 5,
-              sText: chunk, pIcon: 0, nLeft: 0, nTop: y, nWidth: 200, nHeight: 18,
-              nSelect: selectTag, nUnderLine: 16, bLineChange: 0, nFuncCode: 0,
-              bReward: 0, nNpcNo: 0, nMapNo: 0,
-            });
-            x = 0;
-          } else {
-            this._lines.push({
-              nType: 0, nItemNo: this._lines.length, nLine: 0, pFont: fontIndex,
-              sText: chunk, pIcon: 0, nLeft: x, nTop: y, nWidth: 0, nHeight: 18,
-              nSelect: -1, nUnderLine: 0, bLineChange: 0, nFuncCode: 0,
-              bReward: 0, nNpcNo: 0, nMapNo: 0,
-            });
-            x += chunk.length * 8;
-          }
+        if (head !== '#') {
+          const m = remaining.search(/[#\\]/);
+          const chunk = m < 0 ? remaining : remaining.slice(0, m);
+          x += pushText(chunk, x, rowSelect);
+          remaining = m < 0 ? '' : remaining.slice(m);
+          continue;
         }
-        remaining = nextHash >= 0 ? remaining.slice(nextHash) : '';
+        const { phrase, rest } = UtilDlgEx.takeSharpPhrase(remaining);
+        remaining = rest;
+        if (phrase === '#' && rest === '') break; // trailing lone '#' (OG drops it)
+        switch (phrase) {
+          case '#k': nColor = 0; continue;
+          case '#r': nColor = 1; continue;
+          case '#g': nColor = 2; continue;
+          case '#b': nColor = 3; continue;
+          case '#d': nColor = 5; continue;
+          case '#e': nBold = 1; continue;
+          case '#n': nBold = 0; continue;
+          case '#l': rowSelect = null; continue;
+        }
+        const code = phrase[1] ?? '';
+        const param = /^\d+$/.test(phrase.slice(2)) ? parseInt(phrase.slice(2), 10) : 0;
+        switch (code) {
+          case 'L': rowSelect = param; continue;
+          case 'E': case 'I': case 'S': case 'K':
+            this._lines.push(blank({ nType: 3, nFuncCode: { E: 0, I: 1, S: 2, K: 3 }[code] ?? 0 }));
+            continue;
+          case 'w': continue; // reward-row flag (no visual)
+          case 'i': case 'v': {
+            const name = this.itemNameOf?.(param) ?? `[${param}]`;
+            this._lines.push(blank({ nType: 1, sText: name, pIcon: param, nLeft: x, iconItemId: param }));
+            x += name.length * 8;
+            continue;
+          }
+          case 's': {
+            const name = this.skillNameOf?.(param) ?? `[${param}]`;
+            this._lines.push(blank({ nType: 1, sText: name, pIcon: param, nLeft: x, iconSkillId: param }));
+            x += name.length * 8;
+            continue;
+          }
+          case 't': {
+            const name = this.itemNameOf?.(param) ?? `[${param}]`;
+            x += pushText(name, x, rowSelect);
+            continue;
+          }
+          case 'z': {
+            const name = this.itemNameOf?.(param) ?? `[${param}]`;
+            const node = blank({ nType: 0, sText: name, nLeft: x, pIcon: param });
+            if (rowSelect !== null) { node.nType = 4; node.nLeft = 0; node.nSelect = rowSelect; node.nWidth = 200; x = 0; }
+            this._lines.push(node);
+            if (rowSelect === null) x += name.length * 8;
+            continue;
+          }
+          case 'p': {
+            const name = this.npcNameOf?.(param) ?? `[NPC ${param}]`;
+            const node = blank({ nType: 0, sText: name, nLeft: x, nNpcNo: param });
+            if (rowSelect !== null) { node.nType = 4; node.nLeft = 0; node.nSelect = rowSelect; node.nWidth = 200; x = 0; }
+            this._lines.push(node);
+            if (rowSelect === null) x += name.length * 8;
+            continue;
+          }
+          case 'o': {
+            const name = this.mobNameOf?.(param) ?? `[Mob ${param}]`;
+            x += pushText(name, x, rowSelect);
+            continue;
+          }
+          case 'm': {
+            const name = this.mapNameOf?.(param) ?? `[Map ${param}]`;
+            const node = blank({ nType: 0, sText: name, nLeft: x, nMapNo: param });
+            if (rowSelect !== null) { node.nType = 4; node.nLeft = 0; node.nSelect = rowSelect; node.nWidth = 200; x = 0; }
+            this._lines.push(node);
+            if (rowSelect === null) x += name.length * 8;
+            continue;
+          }
+          case 'q': {
+            const name = this.skillNameOf?.(param) ?? `[Skill ${param}]`;
+            x += pushText(name, x, rowSelect);
+            continue;
+          }
+          case 'h': {
+            const name = this.charNameOf?.() ?? '';
+            x += pushText(name, x, rowSelect);
+            continue;
+          }
+          case 'c': {
+            const count = this.countItemOf?.(param) ?? 0;
+            x += pushText(String(count), x, rowSelect);
+            continue;
+          }
+          case 'u': {
+            const st = this.questStateOf?.(param) ?? 0;
+            x += pushText(['Not Started', 'In Progress', 'Complete'][st] ?? '', x, rowSelect);
+            continue;
+          }
+          case 'f': case 'F': {
+            // OG canvas path is phrase+2; accept the legacy [#...#] bracket form too.
+            const raw = phrase.slice(2);
+            const path = raw.startsWith('[') && raw.endsWith(']') ? raw.slice(1, -1) : raw;
+            this._lines.push(blank({ nType: 2, nLeft: x, _iconPath: path }));
+            x += 18;
+            continue;
+          }
+          case 'W': {
+            this._lines.push(blank({
+              nType: 2, nLeft: x,
+              _iconPath: `UI/UIWindow2.img/Quest/quest_info/summary_icon/${phrase.slice(2)}`,
+            }));
+            x += 18;
+            continue;
+          }
+          // No client-side data source (documented, not invented):
+          // #M quest mob name, #Q quest time limit, #R quest record value,
+          // #a quest mob count, #x quest bonus exp, #y quest info string,
+          // #@ NPC labeled string, #B progress gauge, #j quest gauge,
+          // #D quest playtime.
+          case 'M': case 'Q': case 'R': case 'a': case 'x': case 'y':
+          case '@': case 'B': case 'j': case 'D':
+            continue;
+          default:
+            // OG type-0 fallback: unknown codes render literally.
+            x += pushText(phrase, x, rowSelect);
+            continue;
+        }
       }
       y += 18;
     }
     this.m_ctHeight = y;
+  }
+
+  /** OG GetPhrase_Sharp tokenizing: '#' + code + payload, with the terminator
+   *  ('#', backslash, or end) CONSUMED — so "#L0# label" yields phrase "#L0"
+   *  with no stray "#" node. Set 1 {@,B,F,L,M,_,a,c,f,h,i,m,o,p,q,s,t,u,v,x,
+   *  y,z} eats trailing plain chars; set 2 {D,Q,R,W,j} eats through the next
+   *  '#' inclusive; anything else is a 2-char phrase. Always progresses. */
+  private static takeSharpPhrase(src: string): { phrase: string; rest: string } {
+    if (src.length < 2) return { phrase: '#', rest: '' };
+    const code = src[1];
+    if ('@BFLM_acfhimopqstuvxyz_'.includes(code)) {
+      let i = 2;
+      while (i < src.length && src[i] !== '#' && src[i] !== '\\' && src[i] !== '\r') i++;
+      const end = i < src.length && (src[i] === '#' || src[i] === '\\') ? i + 1 : i;
+      return { phrase: src.slice(0, i), rest: src.slice(end) };
+    }
+    if ('DQRWj'.includes(code)) {
+      const close = src.indexOf('#', 2);
+      if (close >= 0) return { phrase: src.slice(0, close), rest: src.slice(close + 1) };
+      return { phrase: src.slice(0, 2), rest: src.slice(2) };
+    }
+    return { phrase: src.slice(0, 2), rest: src.slice(2) };
   }
 
   SetUtilDlgEx_TEXT(bPrev: boolean, bNext: boolean): void {
@@ -942,20 +1124,16 @@ export class UtilDlgEx extends GamePanel {
         case 1: // Conditional icon (only when selected/reward/displayed)
           if (line.nSelect === -1 && !line.bReward && i > this.m_nCurDisplayItemIndex) break;
           // falls through
-        case 2: // Always-visible icon
-          if (line._iconPath && this._uiWz && this._loader) {
-            const node = this._uiWz.GetItem(line._iconPath);
-            if (node instanceof WzCanvas) {
-              const sprite = this._loader.Load(node);
-              if (sprite) {
-                const s = sprite.ToPixi();
-                s.x = this.m_ctLeft + line.nLeft;
-                s.y = this.m_ctTop + drawY;
-                this._contentLayer.addChild(s);
-              }
-            }
+        case 2: { // Always-visible icon
+          const sprite = this._resolveLineIcon(line);
+          if (sprite) {
+            const s = sprite.ToPixi();
+            s.x = this.m_ctLeft + line.nLeft;
+            s.y = this.m_ctTop + drawY;
+            this._contentLayer.addChild(s);
           }
           break;
+        }
         case 3: // Function node (triggers status bar blink, no visual)
           break;
       }
@@ -973,6 +1151,25 @@ export class UtilDlgEx extends GamePanel {
       }
     }
     this._contentLayer.addChild(sepG);
+  }
+
+  // OG nType=1 icon resolution: literal WZ canvas path (#f), live item icon
+  // (#i/#v via CItemInfo::GetItemIcon), or live skill icon (#s via CSkillInfo).
+  private _resolveLineIcon(line: CtInfo): WzSprite | null {
+    if (line._iconPath && this._uiWz && this._loader) {
+      const node = this._uiWz.GetItem(line._iconPath);
+      if (node instanceof WzCanvas) {
+        const sprite = this._loader.Load(node);
+        if (sprite) return sprite;
+      }
+    }
+    if (line.iconItemId !== undefined && this.itemIconOf) {
+      return this.itemIconOf(line.iconItemId);
+    }
+    if (line.iconSkillId !== undefined && this.skillIconOf) {
+      return this.skillIconOf(line.iconSkillId);
+    }
+    return null;
   }
 
   // ─── Image (OG: MakeImage 0x982280) ────────────────────────────────────
@@ -1513,9 +1710,11 @@ export class UtilDlgEx extends GamePanel {
   }
 
   // ─── Button factory ─────────────────────────────────────────────────────
-  // OG: button WZ paths — mapped by button ID. The v95 UtilDlgEx subtree has
-  // BtClose/BtNext/BtNo/BtOK/BtPrev/BtQGiveup/BtQNo/BtQYes/BtYes; quest
-  // dialogs (m_bQuest) swap Yes/No for BtQYes/BtQNo.
+  // OG: button WZ art comes from MakeUOLByUIType("UI/UIWindow2.img/UtilDlgEx",
+  // SP-name): SP 0x8FB/0x8FC/0x8FD/0x8FF/0x900/0x901 = BtPrev/BtNext/BtOK/
+  // BtClose/BtYes/BtNo. NOTE 0x2001 == 8193: the TEXT-Next and LIST-Select
+  // buttons share the IMAGE-Nav-Next id, so all three use the BtNext art;
+  // quest dialogs (m_bQuest) swap Yes/No for SP 0xCD7/0xCD8 = BtQYes/BtQNo.
   private static readonly BTN_WZ_MAP: Record<number, string> = {
     1: 'UIWindow2.img/UtilDlgEx/BtOK',
     2: 'UIWindow2.img/UtilDlgEx/BtClose',
@@ -1946,14 +2145,18 @@ export class UtilDlgEx extends GamePanel {
     let y = this.m_ctTop;
     for (let i = 0; i <= this.m_nCurDisplayItemIndex && i < this._lines.length; i++) {
       const line = this._lines[i];
-      let displayText = line.sText;
-      if (i === this.m_nCurDisplayItemIndex && !this.m_bFinishShow) {
-        displayText = line.sText.substring(0, this.m_nCurDisplayTextItemPos);
+      // Icon/func nodes are drawn by the content builder, not the typewriter —
+      // but they still advance the row cursor so layout matches _buildTextContent.
+      if (line.nType === 0 || line.nType === 4) {
+        let displayText = line.sText;
+        if (i === this.m_nCurDisplayItemIndex && !this.m_bFinishShow) {
+          displayText = line.sText.substring(0, this.m_nCurDisplayTextItemPos);
+        }
+        const t = new Text({ text: displayText, style: this._fonts[Math.min(line.pFont, 11)] });
+        t.x = this.m_ctLeft + line.nLeft;
+        t.y = y;
+        this._contentLayer.addChild(t);
       }
-      const t = new Text({ text: displayText, style: this._fonts[Math.min(line.pFont, 11)] });
-      t.x = this.m_ctLeft + line.nLeft;
-      t.y = y;
-      this._contentLayer.addChild(t);
       y += line.nHeight || 18;
     }
   }

@@ -64,6 +64,20 @@ const StateNames: Record<number, string> = {
 };
 
 /**
+ * OG mob hit action codes (CMob::GetRandomHitAction = rand() % nHitCount + 7,
+ * with s_sMobAction[7..9] = hit1/hit2/hitF resolved live from StringPool).
+ * They must NEVER be cast straight to MobState (in the TS enum, 7 is Rope,
+ * 8 is Fly, 9 is Jump!). Casting raw codes put the mob in a bogus state with
+ * no frames, so the first hit rendered the colored placeholder box and the
+ * one-time-action completion check never matched. NOTE: there is no Hit3
+ * code — s_sMobAction[9] is "hitF", so stray WZ 'hit3' nodes are orphaned
+ * in v95 (never addressable by any action code).
+ */
+const HitActionToState: Record<number, MobState> = {
+  7: MobState.Hit, 8: MobState.Hit2, 9: MobState.HitF,
+};
+
+/**
  * OG CMob::SetLayerZ — special template ID Z-order overrides.
  * Key = templateId, Value = Z offset added to base formula (0 = fixed top layer).
  * From IDA: Zakum body parts (0x864700-0x86476E), Horntail parts (0x866E13-0x866E8A),
@@ -333,7 +347,7 @@ export class MobLook {
     const hitAction = this.GetRandomHitAction();
     if (hitAction < 0) return;
     this._nOneTimeAction = hitAction;
-    this.SetState(hitAction as MobState);
+    this.SetState(HitActionToState[hitAction] ?? MobState.Hit);
     const delay = this.GetActionDelay(hitAction);
     this._tHitExpire = now + delay;
     this._tLastHitExpire = this._tHitExpire;
@@ -642,9 +656,10 @@ export class MobLook {
   /** OG CMob::IsRectIntersectWithTrapezoid */
   IsRectIntersectWithTrapezoid(_rect: unknown): boolean { return false; }
 
-  /** OG CMob::GetActionDelay — sums tDelay across all frames for given action */
+  /** OG CMob::GetActionDelay — sums tDelay across all frames for given action.
+   *  Takes an OG action code (7-10 = Hit1..HitF); mapped to MobState first. */
   GetActionDelay(nAction: number): number {
-    const state = nAction as MobState;
+    const state = HitActionToState[nAction] ?? (nAction as MobState);
     const frames = this._anims.get(state);
     if (!frames || frames.length === 0) return 0;
     let total = 0;
@@ -693,15 +708,21 @@ export class MobLook {
     return this._facingLeft ? [] : this._rcMultiBody; // TODO: flip support
   }
 
-  /** OG CMob::LoadMobAction (0x63b690) — loads action frames from WZ */
+  /** OG CMob::LoadMobAction (0x63b690) — loads action frames from WZ.
+   *  Takes an OG action code resolved through CActionMan::s_sMobAction
+   *  (verified live: 0=move, 1=stand, 2=jump, 3=fly, 4=rope, 5=regen, 6=bomb,
+   *  7=hit1, 8=hit2, 9=hitF, 10=die1, 11=die2, 12=dieF, 13-20=attack1-8). */
   LoadMobAction(nAction: number): boolean {
     if (this._actionFrames.has(nAction)) return true;
     const stateMap: Record<number, MobState> = {
-      0: MobState.Stand, 1: MobState.Move, 2: MobState.Attack,
-      3: MobState.Attack2, 4: MobState.Attack3, 5: MobState.Attack4,
-      6: MobState.Attack5, 7: MobState.Attack6, 8: MobState.Attack7,
-      9: MobState.Attack8, 10: MobState.Die, 11: MobState.Die2,
-      12: MobState.Die3, 22: MobState.DieF, 39: MobState.Fly,
+      0: MobState.Move, 1: MobState.Stand, 2: MobState.Jump,
+      3: MobState.Fly, 4: MobState.Rope, 5: MobState.Regen,
+      6: MobState.Bomb, 7: MobState.Hit, 8: MobState.Hit2,
+      9: MobState.HitF, 10: MobState.Die, 11: MobState.Die2,
+      12: MobState.DieF, 13: MobState.Attack, 14: MobState.Attack2,
+      15: MobState.Attack3, 16: MobState.Attack4, 17: MobState.Attack5,
+      18: MobState.Attack6, 19: MobState.Attack7, 20: MobState.Attack8,
+      22: MobState.DieF, 39: MobState.Fly,
     };
     const state = stateMap[nAction];
     if (state !== undefined && this._anims.has(state)) {
@@ -712,15 +733,13 @@ export class MobLook {
   }
   private _actionFrames = new Map<number, { sprite: WzSprite; delayMs: number }[]>();
 
-  /** OG CMob::GetPushedDamage — returns damage when mob pushes player */
-  /** OG CMob::GetPushedDamage — reads nPushedDamage from template */
-  GetPushedDamage(): number { return this._info?.Pushed ?? 0; }
-
-  /** OG CMob::GetRandomHitAction — returns random hit animation (7 + rand()%nHitCount) */
+  /** OG CMob::GetRandomHitAction (0x639F70) — rand() % nHitCount + 7, where
+   *  s_sMobAction[7..9] = hit1/hit2/hitF. Counts the addressable hit states. */
   GetRandomHitAction(): number {
-    // OG: if nHitCount <= 0, return -1; else return rand() % nHitCount + 7
-    // nHitCount is derived from how many hitN frames exist in WZ
-    const hitStates = [MobState.Hit, MobState.Hit2, MobState.Hit3, MobState.HitF];
+    // OG: if nHitCount <= 0, return -1; else return rand() % nHitCount + 7.
+    // Only hit1/hit2/hitF have action codes (7/8/9) — a WZ 'hit3' node is
+    // orphaned in v95 and never picked.
+    const hitStates = [MobState.Hit, MobState.Hit2, MobState.HitF];
     let hitCount = 0;
     for (const hs of hitStates) {
       if (this._anims.has(hs) && this._anims.get(hs)!.length > 0) hitCount++;

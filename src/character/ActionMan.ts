@@ -34,10 +34,11 @@ export interface AttackRange {
   bottom: number;
 }
 
-/** Weapon afterimage entry — one per weapon UOL path. */
+/** Weapon afterimage entry — one per weapon UOL path. Ranges are keyed by
+ *  OG action NAME (swingO1, stabT1, ...) as stored under the level node. */
 export interface WeaponAfterimage {
   uol: string;
-  ranges: AttackRange[];
+  ranges: Map<string, AttackRange>;
   frames: WzCanvas[];
 }
 
@@ -1264,20 +1265,41 @@ export class ActionMan {
   // Melee attack range (OG: 0x428D00)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  GetMeleeAttackRange(sAfterimageUOL: string | null, nAction: number): AttackRange | null {
-    if (nAction === 74) {
+  /**
+   * OG CActionMan::GetMeleeAttackRange — rect for (afterimage, action).
+   * nAction 74 is a hardcoded rect; 57 reuses proneStab's (index 41's) rect;
+   * otherwise the arcRange entry looked up BY ACTION NAME. Rects are authored
+   * facing-LEFT (all x negative) — the caller mirrors them when facing right
+   * (OG adjust_rect @0x63C7D0) and offsets by the attacker position.
+   */
+  GetMeleeAttackRange(
+    afterimage: string | null, level: number, actionName: string, actionCode: number,
+  ): AttackRange | null {
+    if (actionCode === 74) {
       return { left: -88, top: -62, right: -18, bottom: -6 };
     }
+    if (!afterimage) return null;
+    const entry = this.GetWeaponAfterImage(afterimage, level);
+    if (!entry) return null;
+    const name = actionCode === 57 ? 'proneStab' : actionName;
+    return entry.ranges.get(name) ?? null;
+  }
 
-    const action = nAction === 57 ? 41 : nAction;
-    if (!sAfterimageUOL) return null;
-
-    const afterimage = this._afterimages.get(sAfterimageUOL);
-    if (afterimage && afterimage.ranges[action]) {
-      return afterimage.ranges[action];
+  /**
+   * OG adjust_rect @0x63C7D0 — mirror a facing-left-authored rect when the
+   * attacker faces right, then offset it by the attacker position.
+   */
+  static AdjustAttackRect(
+    range: AttackRange, x: number, y: number, facingRight: boolean,
+  ): { left: number; top: number; right: number; bottom: number } {
+    let { left, top, right, bottom } = range;
+    if (facingRight) {
+      const negRight = -right;
+      const negLeft = -left;
+      left = negRight;
+      right = negLeft;
     }
-
-    return null;
+    return { left: left + x, top: top + y, right: right + x, bottom: bottom + y };
   }
 
   GetDefaultAttackRange(weaponType: number): AttackRange {
@@ -1288,46 +1310,45 @@ export class ActionMan {
   // Weapon afterimage (OG: 0x428080)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  GetWeaponAfterImage(sUOL: string, effectWz: WzPackage | null): WeaponAfterimage | null {
-    if (!sUOL) return null;
-
-    const cached = this._afterimages.get(sUOL);
+  /**
+   * OG CActionMan::GetWeaponAfterImage — loads
+   * `Character/Afterimage/<afterimage>.img/<level>/<actionName>` (the
+   * afterimage name comes from the weapon's `info/afterImage`, the level is
+   * max(0, floor((mastery-10)/5))). Each action node carries `lt`/`rb`
+   * vectors (StringPool 0x1AD6/0x1ADB) forming the arcRange rect. Cached per
+   * name+level. When the exact level node is missing (e.g. very high
+   * mastery), falls back to the nearest lower level, then 0 — OG would
+   * zero-fill (whiff), but silently missing is worse than an adjacent row.
+   */
+  GetWeaponAfterImage(afterimage: string, level: number): WeaponAfterimage | null {
+    if (!afterimage || !this._characterWz) return null;
+    const key = `${afterimage}/${level}`;
+    const cached = this._afterimages.get(key);
     if (cached) return cached;
 
-    if (!effectWz) return null;
-
-    const afterimageRoot = effectWz.GetItem('afterimage.img');
-    const root = afterimageRoot instanceof WzImage ? afterimageRoot.Root : null;
+    const img = this._characterWz.GetItem(`Afterimage/${afterimage}.img`);
+    const root = img instanceof WzImage ? img.Root : null;
     if (!root) return null;
 
-    const weaponNode = root.Get(sUOL);
-    if (!(weaponNode instanceof WzProperty)) return null;
+    let levelNode: WzProperty | null = null;
+    for (let lv = Math.max(0, level); lv >= 0; lv--) {
+      const node = root.Get(`${lv}`);
+      if (node instanceof WzProperty) { levelNode = node; break; }
+    }
+    if (!levelNode) return null;
 
-    const ranges: AttackRange[] = [];
-    for (let action = 0; action < 200; action++) {
-      const rangeNode = weaponNode.Get(`${action}`);
-      if (rangeNode instanceof WzProperty) {
-        ranges[action] = {
-          left: this._readInt(rangeNode, 'l', 0),
-          top: this._readInt(rangeNode, 't', 0),
-          right: this._readInt(rangeNode, 'r', 0),
-          bottom: this._readInt(rangeNode, 'b', 0),
-        };
-      }
+    const ranges = new Map<string, AttackRange>();
+    for (const [name, node] of Object.entries(levelNode.Items)) {
+      if (!(node instanceof WzProperty)) continue;
+      const lt = node.Get('lt');
+      const rb = node.Get('rb');
+      if (!(lt instanceof WzVector) || !(rb instanceof WzVector)) continue;
+      ranges.set(name, { left: lt.X, top: lt.Y, right: rb.X, bottom: rb.Y });
     }
 
-    const frames: WzCanvas[] = [];
-    let fi = 0;
-    while (true) {
-      const frameNode = weaponNode.Get(`${fi}`);
-      if (frameNode instanceof WzCanvas) frames.push(frameNode);
-      else if (frameNode === null) break;
-      fi++;
-    }
-
-    const afterimage: WeaponAfterimage = { uol: sUOL, ranges, frames };
-    this._afterimages.set(sUOL, afterimage);
-    return afterimage;
+    const entry: WeaponAfterimage = { uol: key, ranges, frames: [] };
+    this._afterimages.set(key, entry);
+    return entry;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

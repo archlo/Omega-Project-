@@ -62,15 +62,17 @@ describe('GameStage chat wiring (OG CUIStatusBar 0x87FDE0 / 0x8803F0)', () => {
     expect(spy).toHaveBeenCalled();
   });
 
-  it('routes keys to the focused chat bar so Enter sends + EndChat', () => {
+  it('routes keys to the focused chat bar so Enter sends and stays open', () => {
+    // OG Enter: EndChat then StartChat(null) — stays open, focused, cleared.
     const chat = new ChatBar();
     const stage = makeStage(chat);
     chat.focus();
     const send = vi.spyOn(chat as any, '_sendInput');
-    const end = vi.spyOn(chat, 'endChat');
+    const start = vi.spyOn(chat, 'startChat');
     stage.onKeyPress('Enter');
     expect(send).toHaveBeenCalled();
-    expect(end).toHaveBeenCalled();
+    expect(start).toHaveBeenCalled();
+    expect(chat.isFocused).toBe(true);
   });
 
   it('the chat bar owns all keys while focused (letters type, not func keys)', () => {
@@ -90,8 +92,8 @@ describe('GameStage chat wiring (OG CUIStatusBar 0x87FDE0 / 0x8803F0)', () => {
     const chat = new ChatBar();
     const stage = makeStage(chat);
     const comboSpy = vi.spyOn((chat as any)._combo, 'toggle');
-    // Combo box is at (3, 539) [aligned with the chatSpace2 strip], 68x21.
-    stage.onMouseButton(10, 550, true, 0);
+    // Combo box is at (3, 519) [OG MakeCtrlEdit CreateCtrl_2], 68x21.
+    stage.onMouseButton(10, 525, true, 0);
     expect(comboSpy).toHaveBeenCalled();
   });
 

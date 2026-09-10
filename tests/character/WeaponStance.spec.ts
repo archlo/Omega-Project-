@@ -38,9 +38,10 @@ describe('MoveActionToStance weapon-variant expansion (MoveAction2RawAction 0x45
   });
 });
 
-// OG: while a melee one-time action plays the character must not slide —
-// GameStage locks movement input for the swing duration.
-describe('PlayerController.InputLocked (melee swing plant)', () => {
+// OG: PlayerController.InputLocked suppresses movement/jump input when set.
+// GameStage no longer uses this for melee swings (OG allows walking while
+// attacking), but the feature is still used for death/other immobilize states.
+describe('PlayerController.InputLocked (immobilize)', () => {
   function makeController(): { c: PlayerController; inputCalls: PlayerInput[] } {
     const c = new PlayerController({
       GetFoothold: () => null,
@@ -66,7 +67,7 @@ describe('PlayerController.InputLocked (melee swing plant)', () => {
 
   const idleInput: PlayerInput = { Left: false, Right: false, Up: false, Down: false, JumpPressed: false };
 
-  it('locks horizontal input so holding a direction does not move the character', () => {
+  it('locks horizontal input when InputLocked is set', () => {
     const { c } = makeController();
     const held: PlayerInput = { ...idleInput, Right: true };
     c.Update(held, 0.5);

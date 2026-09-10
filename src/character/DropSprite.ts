@@ -1,4 +1,4 @@
-import { Container, Graphics, Text, TextStyle } from 'pixi.js';
+import { Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
 import { WzSprite } from '../render/WzSprite.js';
 
 export class DropSprite {
@@ -21,6 +21,16 @@ export class DropSprite {
   private _moneyFrame = 0;
   private _moneyTimer = 0;
   private _moneySprite: import('pixi.js').Sprite | null = null;
+  // USER-REQUESTED DEVIATION (not in v95 OG — verified live in the IDB:
+  // CDropPool::Update states 1-2 move drops by position-only RelMove, the
+  // enter-time Rotate(0.0, 300) is a settle-to-zero tween, and only meso bags
+  // visibly animate via MakeMoneyAnimation frame cycles; item drops merely
+  // toss, land, and bob ±3px). Item drops tumble while airborne (states 1-2)
+  // and settle flat on landing like OG. Money drops keep their OG frame spin
+  // and never rotate.
+  private static readonly SpinRadPerSec = (Math.PI * 2) / 0.5; // one turn per 500ms
+  private _spin = 0;
+  private _iconSprite: Sprite | null = null;
   private _state: number;
   private _tick = 0;
   // OG OnDropEnterField: tCreateTime = now + delay — the drop waits in state
@@ -156,6 +166,7 @@ export class DropSprite {
       case 1: {
         this._fireTossStart();
         this._tick += dtMs;
+        this._spinTumble(dt);
         const dx = this._ground.x - this._source.x;
         const t = this._tick / 1000;
         const xf = Math.min(1, this._tick / 500)
@@ -171,6 +182,7 @@ export class DropSprite {
       }
       case 2: {
         this._tick += dtMs;
+        this._spinTumble(dt);
         const y = this._source.y + (this._tick / 1000) * this._vy;
         if (y >= this._ground.y) { this._land(); }
         else this.Position = { x: this._ground.x, y };
@@ -217,13 +229,23 @@ export class DropSprite {
     }
   }
 
-  /** Shared landing: snap to ground, enter idle — or vanish for
+  /** Shared landing: snap to ground, settle flat, enter idle — or vanish for
       FadingOut drops (OG removes non-real drops at state 3). */
   private _land(): void {
     this._state = 3;
     this._tick = 0;
     this.Position = { x: this._ground.x, y: this._ground.y };
+    // Settle flat like OG's enter-time Rotate(0.0, 300) tween target.
+    this._spin = 0;
+    if (this._iconSprite) this._iconSprite.rotation = 0;
     if (this._vanishAfterLanding) this.Finished = true;
+  }
+
+  /** Advance the airborne tumble (item icons only — money frame-spins). */
+  private _spinTumble(dt: number): void {
+    if (!this._iconSprite) return;
+    this._spin += DropSprite.SpinRadPerSec * dt;
+    this._iconSprite.rotation = this._spin;
   }
 
   private _fireTossStart(): void {
@@ -274,7 +296,19 @@ export class DropSprite {
       // and never actually added the icon sprite to the container, so any
       // drop with a real `_icon` rendered as a completely empty Graphics
       // (worse than the no-icon placeholder below).
-      this.container.addChild(this._icon.NewSprite());
+      // Spin pivots around the icon's visual center: NewSprite() anchors at
+      // the WZ origin, so re-anchor to center and offset the position by the
+      // same delta — the drop point stays pixel-identical, rotation no longer
+      // swings the icon around the container origin.
+      const s = this._icon.NewSprite();
+      s.anchor.set(0.5, 0.5);
+      s.position.set(
+        this._icon.Width / 2 - this._icon.OriginX,
+        this._icon.Height / 2 - this._icon.OriginY,
+      );
+      s.rotation = this._spin;
+      this._iconSprite = s;
+      this.container.addChild(s);
       const name = this.nameOf(this.ItemIdOrAmount);
       if (name) {
         const nameStyle = new TextStyle({ fontSize: 9, fill: 0xffffff, stroke: '#000000' });

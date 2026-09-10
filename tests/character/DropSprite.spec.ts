@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import { Sprite } from 'pixi.js';
 import { DropSprite } from '../../src/character/DropSprite.js';
+import type { WzSprite } from '../../src/render/WzSprite.js';
 
 // OG: CAnimationDisplayer::ABSORBITEM::Update (0x441650) — pickup flight
 // 700ms; X/Y lerp linearly drop→target; arc term 11488774560*(v16-350)²>>45
@@ -131,7 +133,8 @@ describe('DropSprite enter states', () => {
     expect(explosive.Position.y).toBeLessThan(normal.Position.y);
   });
 
-  it('fires onTossStart once when the toss begins (after any delay)', () => {
+    it('fires onTossStart once when the toss begins (after any delay)', () => {
+
     let calls = 0;
     const delayed = new DropSprite(17, false, 2000000, { x: 0, y: 0 }, { x: 0, y: 500 }, true,
       null, undefined, false, null, 200, false);
@@ -148,5 +151,57 @@ describe('DropSprite enter states', () => {
     instant.onTossStart = () => { now++; };
     instant.Update(0.016);
     expect(now).toBe(1);
+  });
+});
+
+// Item tumble — user-requested deviation (v95 OG items only toss + bob; the
+// enter-time Rotate(0.0, 300) is a settle-to-zero tween and only meso bags
+// visibly animate via MakeMoneyAnimation frame cycles). WZ item icons rotate
+// around their visual center while airborne (states 1-2) and settle flat on
+// landing; money drops and icon-less fallbacks never rotate.
+describe('DropSprite item tumble', () => {
+  const fakeIcon = {
+    Width: 20, Height: 20, OriginX: 4, OriginY: 16,
+    NewSprite: () => new Sprite(),
+  } as unknown as WzSprite;
+
+  it('pivots the icon around its visual center without moving the drop point', () => {
+    const drop = new DropSprite(20, false, 2000000, { x: 0, y: 0 }, { x: 0, y: 500 }, true, fakeIcon);
+    const icon = (drop as any)._iconSprite;
+    expect(icon.anchor.x).toBeCloseTo(0.5, 5);
+    expect(icon.anchor.y).toBeCloseTo(0.5, 5);
+    // Center lands where the WZ origin was: (w/2 - ox, h/2 - oy).
+    expect(icon.position.x).toBeCloseTo(20 / 2 - 4, 5);
+    expect(icon.position.y).toBeCloseTo(20 / 2 - 16, 5);
+    expect(icon.rotation).toBe(0);
+  });
+
+  it('rotates while tossing and settles flat on landing', () => {
+    const drop = new DropSprite(21, false, 2000000, { x: 0, y: 480 }, { x: 0, y: 500 }, true, fakeIcon);
+    expect((drop as any)._state).toBe(1);
+    drop.Update(0.1);
+    const midSpin = (drop as any)._spin as number;
+    expect(midSpin).toBeGreaterThan(0);
+    expect((drop as any)._iconSprite.rotation).toBeCloseTo(midSpin, 5);
+    for (let i = 0; i < 300 && (drop as any)._state !== 3; i++) drop.Update(0.016);
+    expect((drop as any)._state).toBe(3);
+    expect((drop as any)._spin).toBe(0);
+    expect((drop as any)._iconSprite.rotation).toBe(0);
+  });
+
+  it('never rotates money drops (they frame-spin instead)', () => {
+    const frame = { NewSprite: () => new Sprite() } as unknown as WzSprite;
+    const drop = new DropSprite(22, true, 100, { x: 0, y: 480 }, { x: 0, y: 500 }, true,
+      null, undefined, false, { frames: [frame, frame], delays: [80, 80] }, 0, false);
+    drop.Update(0.1);
+    expect((drop as any)._spin).toBe(0);
+    expect((drop as any)._iconSprite).toBeNull();
+  });
+
+  it('leaves icon-less fallbacks static (toss + bob only)', () => {
+    const drop = new DropSprite(23, false, 2000000, { x: 0, y: 480 }, { x: 0, y: 500 }, true);
+    drop.Update(0.1);
+    expect((drop as any)._spin).toBe(0);
+    expect((drop as any)._iconSprite).toBeNull();
   });
 });

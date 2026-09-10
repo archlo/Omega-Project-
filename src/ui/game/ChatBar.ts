@@ -34,7 +34,7 @@ const CHAT_DY = 0;
 // input row — moves as one unit when expanded/dragged.
 const EDIT_ID = 1011;
 const EDIT_X = 75;
-const EDIT_Y_ABS = 548;     // input-strip row, lowered to sit inside the chatEnter box
+const EDIT_Y_ABS = 524;     // OG MakeCtrlEdit: CreateCtrl(id=1011, x=75, y=524, w=409, h=12)
 export const EDIT_W = 409;
 const EDIT_H = 12;
 const EDIT_MAX_CHARS = 70;  // OG: 256 if GM, else 70
@@ -43,7 +43,7 @@ const EDIT_MAX_CHARS = 70;  // OG: 256 if GM, else 70
 // CreateCtrl_2(id=1012, x=3, y=519, w=68, h=21) — same bottom-anchored unit.
 const COMBO_ID = 1012;
 const COMBO_X = 3;
-const COMBO_Y_ABS = 539;    // aligned with the chatSpace2 strip
+const COMBO_Y_ABS = 519;    // OG MakeCtrlEdit: CreateCtrl_2(id=1012, x=3, y=519, w=68, h=21)
 const COMBO_W = 68;
 const COMBO_H = 21;
 const COMBO_BOX_WIDTH = 90;  // OG: nBoxWidth = 90
@@ -54,7 +54,6 @@ const DISPLAY_X = 0;        // OG: text drawn at x=9 inside canvas
 const DISPLAY_W_515 = 515;  // Expanded width (OG: 0x203)
 const DISPLAY_W_518 = 518;  // Minimal width (OG: 0x206)
 const LINE_H = 13;          // Line height (OG: 13px)
-const LOG_UP = 2;           // user pref: log text sits 2px higher
 const CHAT_LINE_H = 13;     // Same as LINE_H
 const MAX_LOG_ENTRIES = 64; // OG: m_aChatLog trimmed to > 0x40
 const TEXT_X = 9;           // OG: DrawTextA x=9 inside canvas
@@ -151,10 +150,10 @@ const FONT_COLORS: { height: number; color: number }[] = [
 // ═══════════════════════════════════════════════════════════════════════════════
 // OG m_paramEdit: sFont=StringPool 6693, nFontHeight=11, nBackColor=-1(white),
 // nFontColor=-16777216 = 0xFF000000 (black). The cream #FFD was a placeholder.
-const _inputStyle = new TextStyle({ fill: '#000000', fontSize: 11, fontFamily: 'monospace' });
-const _comboStyle = new TextStyle({ fill: '#FFF', fontSize: 11, fontFamily: 'monospace' });
-const _tabStyle = new TextStyle({ fill: '#CCC', fontSize: 10, fontFamily: 'monospace' });
-const _tabActiveStyle = new TextStyle({ fill: '#FFF', fontSize: 10, fontFamily: 'monospace' });
+const _inputStyle = new TextStyle({ fill: '#000000', fontSize: 11, fontFamily: 'Arial' });
+const _comboStyle = new TextStyle({ fill: '#FFF', fontSize: 11, fontFamily: 'Arial' });
+const _tabStyle = new TextStyle({ fill: '#CCC', fontSize: 10, fontFamily: 'Arial' });
+const _tabActiveStyle = new TextStyle({ fill: '#FFF', fontSize: 10, fontFamily: 'Arial' });
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ChatLog entry (OG CUIStatusBar::CChatLog)
@@ -169,9 +168,6 @@ interface ChatLogEntry {
   isFirstLine: boolean;   // m_bFirstLine
   itemID: number;         // m_pItem.nItemID (0 = no item link)
   itemLinks?: { start: number; end: number; itemId: number }[];  // char ranges for [ItemName] spans
-  timestamp?: number;     // OG: creation timestamp (ms) for fade-out
-  displayMs?: number;     // OG: ChatMessageDisplayTime (10000ms)
-  fadeMs?: number;        // OG: ChatMessageFadeTime (2000ms)
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -194,18 +190,33 @@ export class ChatBar extends GamePanel {
   // FIXED against the status bar, so the edit/combo rows use absolute Y
   // (OG CreateCtrl y=524 / y=519) and do NOT follow _chatWndY.
   private get _editY(): number { return EDIT_Y_ABS + CHAT_DY; }
-  /** Per-type vertical nudge of the log text (user pref): minimal 2px UP,
-   *  expanded 10px DOWN, small unchanged. Used by render AND hit tests. */
-  private get _logUp(): number {
-    if (this._chatType === CHAT_TYPE_MINIMAL) return 5;
-    if (this._chatType === CHAT_TYPE_EXPANDED) return -10;
-    return 0;
+  /** OG ChatLogDraw: main text at h-13*idx-13; whisper first-line parts
+   * (lType 14/16/23/24) shift up 5px when not expanded
+   * (h+13*(-1-idx)-(type!=3?5:0)). */
+  private _whisperShift(showWhisper: boolean): number {
+    return (showWhisper && this._chatType !== CHAT_TYPE_EXPANDED) ? 5 : 0;
+  }
+  /** Display-row index for a root-relative y, honoring each row's actual
+   * (possibly whisper-shifted) span. Returns -1 when no row contains y. */
+  private _rowAtY(ly: number, displayY: number, tabOff: number, bottomIdx: number, filtered: number[]): number {
+    for (let r = 0; r < this._maxLines; r++) {
+      const vi = bottomIdx - r;
+      let shift = 0;
+      if (vi >= 0 && vi < filtered.length) {
+        const e = this._chatLog[filtered[vi]];
+        shift = this._whisperShift(
+          (e.lType === 14 || e.lType === 16 || e.lType === 23 || e.lType === 24) && e.isFirstLine);
+      }
+      const top = displayY + tabOff + this._chatHeight - 13 * r - 13 - shift;
+      if (ly >= top && ly < top + LINE_H) return r;
+    }
+    return -1;
   }
   private get _comboY(): number { return COMBO_Y_ABS + CHAT_DY; }
   private _chatWndLineVisible = 1; // m_nChatWndLineVisible
   private _nScrWidth = SCROLLBAR_W; // m_nScrWidth = CCtrlScrollBar::GetScrollBarSize(1, 8)
   private _dwChatFilterFlag = 0; // m_dwChatFilterFlag
-  private _nChatTarget = 0;    // m_nChatTarget (0=all, per combo index)
+  private _nChatTarget = 8;    // m_nChatTarget (OG ctor: 8/Find; combo dwParams 0,1,2,3,4,5,8)
   private _tabCycleIndex = 0;  // m_paramEdit.sEmptyImageUOL (tab cycle position)
   private _activeTab = 0;
   private _isFocused = false;
@@ -227,10 +238,15 @@ export class ChatBar extends GamePanel {
   // OG: CChatHelper spam detection (m_asRecent[4], m_dwChatTimeStamp[4], m_dwMutedTime)
   private _recentMessages: string[] = []; // max 4
   private _recentTimestamps: number[] = []; // timestamps for spam window
-  private _muteEndTime = 0; // m_dwMutedTime — when mute expires
-  private static readonly SPAM_WINDOW = 2000;  // 0x7D0 — 2s between identical msgs
-  private static readonly SPAM_COUNT = 4;      // 4 identical msgs triggers mute
-  private static readonly MUTE_DURATION = 30000; // 30s mute (OG: 2800ms but 30s is standard)
+  private _muteEndTime = 0; // m_dwMutedTime — mute start; blocked while now-start < 0xAF0
+  private static readonly SPAM_WINDOW = 2000;  // 0x7D0 — 4 sends inside this window…
+  private static readonly SPAM_COUNT = 4;      // …all identical → mute (OG compares all 4 recents)
+  private static readonly MUTE_DURATION = 2800; // 0xAF0 — OG mute length
+  /** OG TryChat mute notices: 0x390 identical-spam, 0x391 speed. */
+  private static readonly SPAM_NOTICE = 'Repeating the same line over and over\r\ncan negatively affect other users.';
+  /** OG TryChat chat-blocked gate (CWvsContext+8300): SP 0x392. No server
+   * source sets this yet — dead until wired, documented gap. */
+  private _chatBlocked = false;
 
   // OG: CChatHelper last-entry dedup (m_asHistory[8], m_nHistoryIndex)
   private _lastSentText = ''; // for HistoryAdd dedup
@@ -309,39 +325,12 @@ export class ChatBar extends GamePanel {
   // --- OG: Chat enter texture (WZ) ---
   private _chatEnterTexture: WzSprite | null = null;
 
-  // --- OG: Whisper picker modal state ---
+  // --- OG ChangeWhisperTarget @0x87EDA0: the whisper-target picker is a
+  // shared CUtilDlgEx COMBOBOX dialog fed by m_lsWhisperCandidate — NOT a
+  // bespoke modal. ChatBar fires onWhisperDialogRequest; GameStage shows the
+  // real UtilDlgEx COMBOBOX and applies the result via setWhisperTarget.
+  onWhisperDialogRequest: ((candidates: string[]) => void) | null = null;
   private _whisperPickerOpen = false;
-  private _whisperPickerSelectedIdx = 0;
-  private _whisperPickerScrollOffset = 0;
-  private _whisperPickerContainer: Container | null = null;
-  private _whisperPickerRows: Container[] = [];
-  private _whisperPickerComboText: Text | null = null;
-  private _whisperPickerScrollGfx: Graphics | null = null;
-  private _whisperPickerDropdownOpen = false;
-  private _whisperPickerDropdownScroll = 0;
-  private _whisperPickerDropdownRows: Container[] = [];
-  private _whisperPickerDropdownContainer: Container | null = null;
-  // prev/next/ok/close buttons
-  private _whisperPickerPrevBtn: Graphics | null = null;
-  private _whisperPickerNextBtn: Graphics | null = null;
-  private _whisperPickerOkBtn: Graphics | null = null;
-  private _whisperPickerCloseBtn: Graphics | null = null;
-  // WZ textures for whisper picker
-  private _whisperPickerDialogBg: WzSprite | null = null;
-  private _whisperPickerRowTextures: { selected: WzSprite | null; normal: WzSprite | null } = { selected: null, normal: null };
-  private _whisperPickerComboTextures: { normal: WzSprite | null; hover: WzSprite | null; pressed: WzSprite | null } = { normal: null, hover: null, pressed: null };
-  private _whisperPickerButtonTextures: { prevNormal: WzSprite | null; nextNormal: WzSprite | null; okNormal: WzSprite | null; closeNormal: WzSprite | null } = { prevNormal: null, nextNormal: null, okNormal: null, closeNormal: null };
-
-  // --- OG: Whisper picker modal layout constants (from StatusBarChatLayoutRules) ---
-  private static readonly WP_MODAL_W = 260;
-  private static readonly WP_COMBO_LEFT = 21;
-  private static readonly WP_COMBO_W = 222;
-  private static readonly WP_COMBO_H = 18;
-  private static readonly WP_ROW_H = 16;
-  private static readonly WP_VISIBLE_ROWS = 6;
-  private static readonly WP_BUTTON_BOTTOM = 31;
-  private static readonly WP_OK_LEFT = 157;
-  private static readonly WP_CLOSE_LEFT = 198;
 
   // Chat log display lines (each is a Container with optional whisper icon + channel digits + text)
   private _lines: Container[] = [];
@@ -413,14 +402,13 @@ export class ChatBar extends GamePanel {
       .filter(it => it.label);
     this._combo = new ComboBox({ width: COMBO_W, height: COMBO_H, style: _comboStyle });
     this._combo.setItems(comboItems);
+    // OG OnChildNotify 1012/600 → SetChatTarget(param): full switch semantics.
     this._combo.onChange = (val) => {
       const idx = CHAT_TARGET_INTERNAL.indexOf(val);
-      if (idx >= 0) {
-        this._nChatTarget = idx;
-        this._applyComboLabel(idx);
-        this.onChatTargetChange?.(val);
-      }
+      if (idx >= 0) this.setChatTarget(idx);
     };
+    // OG boots with m_nChatTarget=8 (Find).
+    this._applyComboLabel(this._nChatTarget);
     this._combo.container.x = COMBO_X;
     this._combo.container.y = this._comboY;
     this._root.addChild(this._combo.container);
@@ -430,7 +418,7 @@ export class ChatBar extends GamePanel {
       this._chatFonts.push(new TextStyle({
         fill: this._argbToCss(fc.color),
         fontSize: fc.height,
-        fontFamily: 'monospace',
+        fontFamily: 'Arial',
       }      ));
     }
 
@@ -511,9 +499,9 @@ export class ChatBar extends GamePanel {
     // bCreate=1 (small/expanded): chatEnter=true, chatCover=true, chatSpace=false, chatSpace2=false
     const bCreate = this._chatType !== CHAT_TYPE_MINIMAL;
     if (this._layerSpace) this._layerSpace.visible = !bCreate;
-    // OG draws chatSpace2 as the persistent foreground/input layer; it is
-    // present in both closed and open states.
-    if (this._layerSpace2) this._layerSpace2.visible = true;
+    // OG MakeCtrlEdit tail: chatSpace2 visible only when bCreate==0
+    // (same as chatSpace; the input strip uses chatEnter/chatCover instead).
+    if (this._layerSpace2) this._layerSpace2.visible = !bCreate;
     if (this._layerEnter) this._layerEnter.visible = bCreate;
     // OG SetChatType @0x879C00: the chat/tapBar layer is created for types
     // 3 (expanded) and 2 (small), destroyed for 0/1.
@@ -525,11 +513,9 @@ export class ChatBar extends GamePanel {
     if (this._scrollUpButton) this._scrollUpButton.container.visible = showScrollControls;
     if (this._scrollDownButton) this._scrollDownButton.container.visible = showScrollControls;
 
-    // _bg is the LOG-AREA backdrop (navy tint) — keep it visible even when the
-    // WZ chrome loads: the chatSpace/chatEnter canvases only cover the input
-    // strip, so without this the expanded log renders over the bare field.
-    // It sits below the WZ sprites in the display list, so they draw on top.
-    this._bg.visible = true;
+    // No WZ backdrop in OG: the log draws over the chatSpace canvases.
+    // Keep the Graphics rect as a no-WZ fallback only.
+    this._bg.visible = !this._layerSpace && !this._layerSpace2;
     this._inputBg.visible = !this._layerEnter;
   }
 
@@ -610,7 +596,7 @@ export class ChatBar extends GamePanel {
     for (let i = 0; i < this._maxLines; i++) {
       const container = new Container();
       // OG: y is set in _syncLines via bottom-up calculation
-      container.y = displayY + tabOffset + this._chatHeight - 13 * i - 13 - this._logUp;
+      container.y = displayY + tabOffset + this._chatHeight - 13 * i - 13;
       container.visible = false;
 
       const t = new Text({ text: '', style: this._chatFonts[0] });
@@ -732,12 +718,32 @@ export class ChatBar extends GamePanel {
     ];
   }
 
+  // OG ChatLogAdd @0x87AEC0: per-type background highlight (ARGB, 0 = none).
+  private _backColorFor(lType: number, channelID: number): number {
+    switch (lType) {
+      case 11: return 0xB0FFFFFF;
+      case 13: return 0xB0CAE7FF;
+      case 14: return 0xCCFFBFDD;
+      case 15: return 0xFFF74B4B;
+      case 16:
+      case 21: return 0xDDFFC600;
+      case 18: return 0x2C4D1AAD;
+      case 19: return channelID !== -1 ? 0xFF99CC33 : 0x80FF5C59;
+      case 20: return 0x80FF5C59;
+      case 22:
+      case 23: return 0xFF99CC33;
+      default: return 0;
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // OG: ChatLogAdd (0x87AEC0) — add message with word-wrap
   // ═══════════════════════════════════════════════════════════════════════════
   addLine(text: string, lTypeOrLinks: number | { itemId: number; start: number; end: number }[] = 0, channelID = -1, whisperIcon = false, itemLinks: { itemId: number; start: number; end: number }[] = []): void {
     // Backward-compatible: if second arg is an array, treat as old links param
     const lType = typeof lTypeOrLinks === 'number' ? lTypeOrLinks : 0;
+    // OG: TrimRight + TrimLeft before wrapping.
+    text = text.trim();
     // OG: word-wrap at 547-nScrWidth pixels, first-line whisper indent -38
     let maxWidth = 547 - this._nScrWidth;
     // OG: types 14,16,19,20 get -38 on first line
@@ -771,7 +777,7 @@ export class ChatBar extends GamePanel {
       const testWidth = _tmpText.width;
       if (testWidth > maxWidth && currentLine.length > 0) {
         this._chatLog.push({
-          text: currentLine, lType, nBack: 0, nChannelID: channelID,
+          text: currentLine, lType, nBack: this._backColorFor(lType, channelID), nChannelID: channelID,
           bWhisperIcon: whisperIcon, isFirstLine, itemID: 0,
           itemLinks: linksFor(currentStart, wordStart, 0),
           timestamp: now, displayMs: ChatBar.MSG_DISPLAY_MS, fadeMs: ChatBar.MSG_FADE_MS,
@@ -788,7 +794,7 @@ export class ChatBar extends GamePanel {
     _tmpText.destroy();
     if (currentLine.length > 0) {
       this._chatLog.push({
-        text: currentLine, lType, nBack: 0, nChannelID: channelID,
+        text: currentLine, lType, nBack: this._backColorFor(lType, channelID), nChannelID: channelID,
         bWhisperIcon: whisperIcon, isFirstLine, itemID: 0,
         itemLinks: linksFor(currentStart, sourceOffset, currentLine.startsWith(CONTINUATION_INDENT) ? CONTINUATION_INDENT.length : 0),
         timestamp: now, displayMs: ChatBar.MSG_DISPLAY_MS, fadeMs: ChatBar.MSG_FADE_MS,
@@ -844,15 +850,18 @@ export class ChatBar extends GamePanel {
     const totalEntries = this._getFilteredChatLogCount();
     const scrollRange = Math.max(0, totalEntries - this._chatWndLineVisible + 1);
     const now = performance.now();
-    // OG: if scrollRange <= 2 OR already at bottom OR > 5000ms since last scroll → snap to bottom
+    // OG: v2 = 1-lineVisible+count; if v2<=2 OR curPos==range-1 (at bottom)
+    // OR >5000ms since last scroll → curPos=v2-1 (bottom). TS _scroll counts
+    // lines UP from the bottom (0 = newest at bottom row), so bottom is 0.
     // OG: 0x1388 = 5000ms
     if (scrollRange <= 2
-      || this._scroll >= scrollRange - 1
+      || this._scroll === 0
       || (now - this._lastScrollTime) > 5000) {
-      this._scroll = Math.max(0, scrollRange - 1);
+      this._scroll = 0;
     } else {
-      // OG: otherwise maintain current scroll position
-      this._scroll = Math.min(this._scroll, scrollRange - 1);
+      // OG: curPos-1 — the appended entry shifts content down one, so hold
+      // the same visible entries by moving one line up from the bottom.
+      this._scroll = Math.min(this._scroll + 1, scrollRange - 1);
     }
     this._syncLines();
     this._drawScrollbar();
@@ -893,6 +902,7 @@ export class ChatBar extends GamePanel {
       while (container.children.length > 0) {
         container.removeChildAt(0).destroy();
       }
+      delete (container as any)._whisperHit;
 
       const visIdx = bottomIdx - i;
       if (visIdx < 0 || visIdx >= filtered.length) {
@@ -905,9 +915,26 @@ export class ChatBar extends GamePanel {
       const isWhisperType = (entry.lType === 14 || entry.lType === 16 || entry.lType === 23 || entry.lType === 24);
       const showWhisper = isWhisperType && entry.isFirstLine;
 
-      // OG: y = m_nChatWndHeight - 13*idx - 13 (bottom-up rendering)
-      const lineY = this._chatHeight - 13 * i - 13 - this._logUp;
+      // OG ChatLogDraw: y = m_nChatWndHeight - 13*idx - 13 (bottom-up).
+      // Whisper first-line parts shift up 5px when not expanded.
+      const lineY = this._chatHeight - 13 * i - 13 - this._whisperShift(showWhisper);
       container.y = displayY + tabOffset + lineY;
+
+      // OG: per-line background highlight (m_nBack). Children are laid out
+      // in container-local coords (text row at local y=0), so the OG
+      // canvas-space rects are shifted by -lineY. Minimal/small use the
+      // unshifted band origin even for whisper rows (no shift term in OG).
+      if (entry.nBack !== 0) {
+        const hl = new Graphics();
+        const hlW = 563 - this._nScrWidth;
+        if (this._chatType === CHAT_TYPE_EXPANDED) {
+          hl.rect(0, -2, hlW, LINE_H + 2).fill({ color: this._argbToCss(entry.nBack) });
+        } else {
+          const bandTop = (this._chatHeight - 13 * i - 23) - lineY;
+          hl.rect(0, bandTop, hlW, this._chatHeight).fill({ color: this._argbToCss(entry.nBack) });
+        }
+        container.addChild(hl);
+      }
 
       if (showWhisper) {
         // OG: split on ':' to separate character name from chat text
@@ -923,6 +950,8 @@ export class ChatBar extends GamePanel {
 
           // Measure name width for icon/digit positioning
           const nameW = nameT.width;
+          // OG TryBeginWhisper hit rect: (nameW+6, y, nameW+39, y+12).
+          (container as any)._whisperHit = { x0: TEXT_X + nameW + 6, x1: TEXT_X + nameW + 39 };
 
           if (entry.lType === 23) {
             // OG: type 23 draws channel ID at (nCharWidth + 9, nTop)
@@ -933,9 +962,11 @@ export class ChatBar extends GamePanel {
               container.addChild(chT);
             }
           } else {
-            // OG: types 14, 16, 24 — whisper icon + channel digits
-            if (entry.nChannelID >= 0) {
-              const iconIdx = entry.nChannelID === 1
+            // OG: types 14, 16, 24 — whisper icon + channel digits.
+            // OG maps channel 0 → 1 (current channel: icon only, no digits).
+            const chId = entry.nChannelID === 0 ? 1 : entry.nChannelID;
+            if (chId >= 0) {
+              const iconIdx = chId === 1
                 ? (entry.bWhisperIcon ? 3 : 2)
                 : (entry.bWhisperIcon ? 1 : 0);
               const wzIcon = this._whisperIcons[iconIdx];
@@ -947,12 +978,13 @@ export class ChatBar extends GamePanel {
                 container.addChild(s);
               }
             }
-            // Channel digits (only for non-current channels)
-            if (entry.nChannelID >= 0 && entry.nChannelID !== 1) {
-              const ch = entry.nChannelID;
+            // Channel digits (only for non-current channels). OG draws tens
+            // unconditionally (Format %d → "0".."9"), then ones.
+            if (chId >= 0 && chId !== 1) {
+              const ch = chId;
               const tens = Math.floor(ch / 10);
               const ones = ch % 10;
-              if (tens > 0 && this._channelDigits[tens]) {
+              if (this._channelDigits[tens]) {
                 const s = new Sprite(this._channelDigits[tens]!.Texture);
                 s.anchor.set(0, 0);
                 s.x = nameW + 22;
@@ -1031,6 +1063,8 @@ private _setFilterButton(): void {
 
   get chatTarget(): string { return CHAT_TARGET_INTERNAL[this._nChatTarget] ?? 'all'; }
   get activeTab(): number { return this._activeTab; }
+  /** Local character name — OG TryBeginWhisper ignores clicks on your own name. */
+  myName = '';
 
   // OG: _ResetChatBarPos membership gating — call when party/guild/alliance/
   // expedition membership changes. Non-member group tabs are hidden and their
@@ -1046,7 +1080,23 @@ private _setFilterButton(): void {
   // ═══════════════════════════════════════════════════════════════════════════
   // OG: SetChatTarget (0x87FD30) — switch chat target by combo index
   // ═══════════════════════════════════════════════════════════════════════════
+  // OG: SetChatTarget (0x87FD30) — switch chat target by combo index
+  // ═══════════════════════════════════════════════════════════════════════════
   setChatTarget(target: number): void {
+    // OG case 7: ChangeWhisperTarget dialog; the target applies only when
+    // the dialog confirms (via setWhisperTarget). Cancel leaves it untouched.
+    if (target === 7) {
+      this.openWhisperPicker();
+      return;
+    }
+    // OG cases 0,2,3,4,5,6,8: StartChat (open if minimal + focus + clear the
+    // input line) and clear the whisper target. Target 1 (group-whisper
+    // dialog) is not ported — plain apply, documented gap.
+    if (target !== 1) {
+      this._whisperTarget = '';
+      this.startChat();
+      this.setInput('');
+    }
     this._nChatTarget = target;
     const cycleIndex = TAB_CYCLE.indexOf(target);
     if (cycleIndex >= 0) this._tabCycleIndex = cycleIndex;
@@ -1058,7 +1108,8 @@ private _setFilterButton(): void {
 
   /** Show the WZ label canvas for a chat target (OG combo draws the label canvas
    * anchored at its origin relative to the base box). Falls back to text when no
-   * canvas exists (e.g. target 8 "Find", whisper 7). */
+   * canvas exists (e.g. target 8 "Find", whisper 7). Targets with neither
+   * (e.g. 6/couple, which has no combo item) leave the label untouched. */
   private _applyComboLabel(target: number): void {
     const ws = this._chatTargetLabels[target];
     if (ws) {
@@ -1069,7 +1120,8 @@ private _setFilterButton(): void {
       this._combo.setLabelSprite(s);
     } else {
       this._combo.setLabelSprite(null);
-      this._combo.setLabel(target === 7 ? 'Whisper' : (CHAT_TARGETS[target] ?? 'All'));
+      const text = target === 7 ? 'Whisper' : (CHAT_TARGETS[target] || CHAT_TARGET_INTERNAL[target]);
+      if (text) this._combo.setLabel(text);
     }
   }
 
@@ -1078,14 +1130,22 @@ private _setFilterButton(): void {
     this.setChatTarget(idx);
   }
 
-  // OG: SetChatTarget by whisper name
+  // OG OnKey Tab case 5 (existing whisper target): SetWhisperTarget +
+  // StartChat (which clears the input line). Empty name (OG
+  // SetWhisperTargetFromCandidate with no candidates) only clears the
+  // whisper target — the chat target itself is left untouched.
   private setChatTargetByName(name: string): void {
+    if (!name) {
+      this._whisperTarget = '';
+      return;
+    }
     this._changeWhisperTarget(name);
     this._nChatTarget = 7;
     this._applyComboLabel(7);
     this.onChatTargetChange?.('whisper');
     // Add to whisper candidate list (OG: AddWhisperCandidate)
     this._addWhisperCandidate(name);
+    this.setInput('');
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1140,11 +1200,10 @@ private _setFilterButton(): void {
     if (this._chatType === CHAT_TYPE_SMALL) {
       this.setChatType(CHAT_TYPE_MINIMAL);
     }
+    // OG EndChat keeps the edit text (only Esc/outside-click paths clear it
+    // explicitly) — typed input survives losing focus.
     this._isFocused = false;
     this._cursor.visible = false;
-    this._historyIndex = -1;
-    this._input = '';
-    this._syncInput();
     this._updateWzVisibility();
   }
 
@@ -1158,12 +1217,23 @@ private _setFilterButton(): void {
     this._cursor.x = EDIT_X + 4 + this._inputText.width;
   }
 
+  /** OG TryChat chat-block gate mutator (see _chatBlocked). */
+  setChatBlocked(blocked: boolean): void {
+    this._chatBlocked = blocked;
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // OG: CChatHelper::TryChat (0x4AA550) — spam check + send
-  // 4 identical messages within 2s → 30s mute
+  // 4 identical messages within 2s → 2800ms mute (0xAF0)
   // ═══════════════════════════════════════════════════════════════════════════
   private _tryChat(msg: string): boolean {
     const now = performance.now();
+
+    // OG: chat-blocked account state → SP 0x392 notice, message dropped.
+    if (this._chatBlocked) {
+      this.floatNotice('You are currently blocked from chatting.', 5000);
+      return false;
+    }
 
     // OG: check if muted
     if (now < this._muteEndTime) {
@@ -1186,10 +1256,10 @@ private _setFilterButton(): void {
       }
     }
 
-    // OG: if 4+ identical messages within 2s window → mute for 30s
+    // OG: if 4+ identical messages within 2s window → mute for 0xAF0 (2800ms)
     if (identicalCount >= ChatBar.SPAM_COUNT && (now - oldestInWindow) < ChatBar.SPAM_WINDOW) {
       this._muteEndTime = now + ChatBar.MUTE_DURATION;
-      this.floatNotice('Chat muted for spam.', 5000);
+      this.floatNotice(ChatBar.SPAM_NOTICE, 5000);
       return false;
     }
 
@@ -1231,6 +1301,14 @@ private _setFilterButton(): void {
       // Whisper target set → GameStage sends via GameSender.Whisper and adds to chat log
       this.onSendChat?.(msg);
       this._historyAdd(msg);
+    } else if (this._nChatTarget === 7) {
+      // OG: whisper target empty + non-slash text → SP 0xAFD notice
+      // ("There is no one to whisper to.", lType 12), message dropped.
+      this.addLine('There is no one to whisper to.', 12);
+      const emotionKey = this._getEmotionKey(msg);
+      if (emotionKey) {
+        this.onEmotion?.(emotionKey - 111);
+      }
     } else {
       // Route by current chat target (OG switch on tabCycleIndex)
       const target = this._nChatTarget;
@@ -1243,6 +1321,12 @@ private _setFilterButton(): void {
       } else {
         // Normal chat → SendChatMsg
         this.onSendChat?.(msg);
+        if (target === 8) {
+          // OG: SP 6445/0x192D notice after Find-target sends (lType 12).
+          // (OG gates on the expedition filter button existing; it always
+          // does in the real client.)
+          this.addLine('Select View All to check sent messages.', 12);
+        }
       }
 
       // OG: emotion check — GetEmotionKey → SendEmotionChange
@@ -1325,9 +1409,10 @@ private _setFilterButton(): void {
       return true;
     }
     if (key === 'Enter') {
-      // OG: VK_ENTER → get text, EndChat, sanitize, route
+      // OG: VK_ENTER → GetText, EndChat, sanitize, route, then StartChat(null):
+      // the chat stays open, focused, with cleared input (NOT collapsed).
       this._sendInput();
-      this.endChat();
+      this.startChat();
       return true;
     }
     if (key === 'Backspace') {
@@ -1340,14 +1425,12 @@ private _setFilterButton(): void {
       const next = TAB_CYCLE[this._tabCycleIndex];
       this._tabCycleIndex = (this._tabCycleIndex + 1) % TAB_CYCLE.length;
       if (next === -1) {
-        // Whisper target — use existing whisper target or prompt
+        // OG OnKey case 5: whisper target nonempty → SetWhisperTarget +
+        // StartChat; empty → SetChatTarget(7) → ChangeWhisperTarget dialog.
         if (this._whisperTarget) {
           this.setChatTargetByName(this._whisperTarget);
         } else {
-          // OG: m_nChatTarget = 7, update combo label
-          this._nChatTarget = 7;
-          this._applyComboLabel(7);
-          this.onChatTargetChange?.('whisper');
+          this.setChatTarget(7);
         }
       } else {
         // OG: SetChatTarget(next) — updates m_nChatTarget and combo selection
@@ -1373,11 +1456,11 @@ private _setFilterButton(): void {
       return false;
     }
     if (key === 'PageUp') {
-      this.scrollBy(-this._maxLines);
+      this.scrollBy(this._maxLines); // older
       return true;
     }
     if (key === 'PageDown') {
-      this.scrollBy(this._maxLines);
+      this.scrollBy(-this._maxLines); // newer
       return true;
     }
     // OG: Ctrl+A (select all), Ctrl+C (copy), Ctrl+V (paste), Ctrl+X (cut)
@@ -1468,21 +1551,9 @@ private _setFilterButton(): void {
       }
     }
 
-    // OG: Close whisper picker on outside click
-    if (this._whisperPickerOpen && this._whisperPickerContainer) {
-      const wpX = this._whisperPickerContainer.x;
-      const wpY = this._whisperPickerContainer.y;
-      const wpW = ChatBar.WP_MODAL_W;
-      const wpH = 300; // approximate modal height
-      const inWhisperPicker = lx >= wpX && lx < wpX + wpW && ly >= wpY && ly < wpY + wpH;
-      if (!inWhisperPicker && down) {
-        this.closeWhisperPicker();
-        return false;
-      }
-      if (inWhisperPicker) {
-        return true; // consume clicks inside whisper picker
-      }
-    }
+    // NOTE: the whisper-target picker is the shared CUtilDlgEx COMBOBOX
+    // dialog (ChangeWhisperTarget @0x87EDA0), owned by GameStage._utilDlg —
+    // clicks route through the normal tab/display/input/scrollbar regions.
 
     if (!inTabs && !inDisplay && !inInput && !inScrollbar) {
       if (down) this._blur();
@@ -1511,8 +1582,6 @@ private _setFilterButton(): void {
     // OG: TryBeginWhisper — click on whisper icon in chat log
     if (inDisplay) {
       const tabOff = this._chatType === CHAT_TYPE_EXPANDED ? TAB_H : 0;
-      const lineIdx = Math.floor((this._chatHeight - this._logUp - (ly - displayY - tabOff)) / LINE_H);
-      // Map display line index (bottom-up) to filtered chatLog index
       const filtered: number[] = [];
       for (let i = 0; i < this._chatLog.length; i++) {
         if (this._isFiltered(this._chatLog[i].lType)) filtered.push(i);
@@ -1521,12 +1590,17 @@ private _setFilterButton(): void {
       const scrollRange = Math.max(0, totalVisible - this._chatWndLineVisible + 1);
       const clampedScroll = Math.min(this._scroll, scrollRange);
       const bottomIdx = totalVisible - 1 - clampedScroll;
-      const visIdx = bottomIdx - lineIdx;
+      // Row probe honoring the whisper -5px shift (OG TryBeginWhisper
+      // computes the row top with the same -(type!=3?5:0) term as Draw).
+      const lineIdx = this._rowAtY(ly, displayY, tabOff, bottomIdx, filtered);
+      const visIdx = lineIdx < 0 ? -1 : bottomIdx - lineIdx;
 
       if (visIdx >= 0 && visIdx < filtered.length) {
         const entry = this._chatLog[filtered[visIdx]];
 
-        // OG: TryBeginWhisper — click on character name in whisper types
+        // OG TryBeginWhisper: types 14/15/16/18-22 with icon + first line,
+        // hit rect (nameW+6, y, nameW+39, y+12), ignores your own name, then
+        // AddWhisperCandidate + ChangeWhisperTarget dialog.
         const isWhisperType = (entry.lType === 14 || entry.lType === 15 || entry.lType === 16
           || entry.lType === 18 || entry.lType === 19 || entry.lType === 20
           || entry.lType === 21 || entry.lType === 22);
@@ -1535,9 +1609,11 @@ private _setFilterButton(): void {
           const colonIdx = entry.text.indexOf(':');
           if (colonIdx > 0) {
             const charName = entry.text.substring(0, colonIdx).trim();
-            if (charName) {
+            const hit = (this._lines[lineIdx] as any)?._whisperHit;
+            const inWhisperRect = !!hit && lx >= hit.x0 && lx < hit.x1;
+            if (charName && inWhisperRect && charName.toLowerCase() !== this.myName.toLowerCase()) {
               this._addWhisperCandidate(charName);
-              this.setChatTargetByName(charName);
+              this.openWhisperPicker();
               this.focus();
               return true;
             }
@@ -1592,13 +1668,10 @@ private _setFilterButton(): void {
       return true;
     }
 
-    // Display click → focus
-    if (inDisplay) {
-      this.focus();
-      return true;
-    }
-
-    return true;
+    // OG HitTest: plain display clicks are a miss (pass through to the
+    // field) — only controls, links and the whisper rect side-effect.
+    // Notably, clicking the log does NOT focus the edit box.
+    return false;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1631,7 +1704,8 @@ private _setFilterButton(): void {
     const thumbH = Math.max(12, Math.floor(trackH * this._maxLines / Math.max(1, totalLines)));
     const span = trackH - thumbH;
     const maxScroll = Math.max(1, totalLines - this._maxLines);
-    const frac = Math.max(0, Math.min(1, this._scroll / maxScroll));
+    // _scroll counts up from the bottom — thumb sits at the bottom when new.
+    const frac = 1 - Math.max(0, Math.min(1, this._scroll / maxScroll));
     const ty = trackTop + Math.floor(span * frac);
     this._scrollGfx.rect(trackX + 1, ty, SCROLLBAR_W - 2, thumbH).fill({ color: 0x888888 });
   }
@@ -1665,47 +1739,11 @@ private _setFilterButton(): void {
         this._hideFloatNotice();
       }
     }
-    // OG: message fade-out — update alpha on chat lines based on age
-    this._updateMessageFade(now);
+    // OG ChatLogDraw has no per-line aging: text draws at constant alpha
+    // (variant 0) and icons at 255. Lines persist until trimmed past 64.
+    // (The timed fade belongs to ScreenMsg/balloons, not the chat log.)
     // OG: point notification timers
     this._updatePointNotifications(now);
-    // OG: whisper picker dropdown scroll auto-repeat
-    this._updateWhisperPickerScrollRepeat(now);
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // OG: ChatMessageDisplayTime — fade-out old messages (10s display + 2s fade)
-  // ═══════════════════════════════════════════════════════════════════════════
-  private _updateMessageFade(now: number): void {
-    for (let i = 0; i < this._lines.length; i++) {
-      const container = this._lines[i];
-      if (!container || !container.visible) continue;
-
-      // Find the corresponding chat log entry
-      const filtered: number[] = [];
-      for (let j = 0; j < this._chatLog.length; j++) {
-        if (this._isFiltered(this._chatLog[j].lType)) filtered.push(j);
-      }
-      const totalVisible = filtered.length;
-      const scrollRange = Math.max(0, totalVisible - this._chatWndLineVisible + 1);
-      const clampedScroll = Math.min(this._scroll, scrollRange);
-      const bottomIdx = totalVisible - 1 - clampedScroll;
-      const visIdx = bottomIdx - i;
-
-      if (visIdx < 0 || visIdx >= filtered.length) continue;
-      const entry = this._chatLog[filtered[visIdx]];
-      if (!entry.timestamp || !entry.displayMs) continue;
-
-      const age = now - entry.timestamp;
-      if (age > entry.displayMs + (entry.fadeMs ?? 2000)) {
-        container.alpha = 0;
-      } else if (age > entry.displayMs) {
-        const fadeProgress = (age - entry.displayMs) / (entry.fadeMs ?? 2000);
-        container.alpha = 1 - Math.min(1, fadeProgress);
-      } else {
-        container.alpha = 1;
-      }
-    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1755,7 +1793,7 @@ private _setFilterButton(): void {
     const bg = new Graphics();
     bg.roundRect(0, 0, 200, 20, 4).fill({ color: 0x000000, alpha: 0.7 });
     c.addChild(bg);
-    const t = new Text({ text, style: new TextStyle({ fill: color, fontSize: 11, fontFamily: 'monospace', fontWeight: 'bold' }) });
+    const t = new Text({ text, style: new TextStyle({ fill: color, fontSize: 11, fontFamily: 'Arial', fontWeight: 'bold' }) });
     t.x = 10;
     t.y = 3;
     c.addChild(t);
@@ -1773,7 +1811,7 @@ private _setFilterButton(): void {
     if (!this._shortcutTooltip) {
       this._shortcutTooltip = new Text({
         text: '',
-        style: new TextStyle({ fill: '#FFF', fontSize: 10, fontFamily: 'monospace', wordWrap: true, wordWrapWidth: 150 })
+        style: new TextStyle({ fill: '#FFF', fontSize: 10, fontFamily: 'Arial', wordWrap: true, wordWrapWidth: 150 })
       });
       this._shortcutTooltip.zIndex = 100;
       this._root.addChild(this._shortcutTooltip);
@@ -1789,7 +1827,9 @@ private _setFilterButton(): void {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // OG: Whisper picker modal dialog (CCtrlComboBoxSelect)
+  // OG ChangeWhisperTarget @0x87EDA0 — CUtilDlgEx COMBOBOX over the candidate
+  // list. The dialog itself lives in GameStage (_utilDlg); this just requests
+  // it. Confirm applies via setWhisperTarget; cancel leaves state untouched.
   // ═══════════════════════════════════════════════════════════════════════════
   toggleWhisperPicker(): void {
     if (this._whisperPickerOpen) {
@@ -1802,335 +1842,12 @@ private _setFilterButton(): void {
   openWhisperPicker(): void {
     if (this._whisperPickerOpen) return;
     this._whisperPickerOpen = true;
-    this._whisperPickerSelectedIdx = 0;
-    this._whisperPickerScrollOffset = 0;
-    this._whisperPickerDropdownOpen = false;
-    this._whisperPickerDropdownScroll = 0;
-    this._buildWhisperPickerUI();
+    this.onWhisperDialogRequest?.([...this._whisperCandidate]);
   }
 
   closeWhisperPicker(): void {
     if (!this._whisperPickerOpen) return;
     this._whisperPickerOpen = false;
-    this._whisperPickerDropdownOpen = false;
-    this._destroyWhisperPickerUI();
-  }
-
-  private _buildWhisperPickerUI(): void {
-    this._destroyWhisperPickerUI();
-
-    const modalW = ChatBar.WP_MODAL_W;
-    const rowH = ChatBar.WP_ROW_H;
-    const visibleRows = ChatBar.WP_VISIBLE_ROWS;
-    const listH = rowH * visibleRows;
-    const comboH = ChatBar.WP_COMBO_H;
-    const btnBottom = ChatBar.WP_BUTTON_BOTTOM;
-    const modalH = listH + comboH + btnBottom + 40;
-
-    const modalX = (800 - modalW) / 2;
-    const modalY = this._chatWndY - modalH - 10;
-
-    this._whisperPickerContainer = new Container();
-    this._whisperPickerContainer.x = modalX;
-    this._whisperPickerContainer.y = modalY;
-
-    // Dialog background
-    const bg = new Graphics();
-    bg.roundRect(0, 0, modalW, modalH, 6).fill({ color: 0x1A1A2E, alpha: 0.95 });
-    bg.rect(0, 0, modalW, modalH).stroke({ color: 0x444466, width: 1 });
-    this._whisperPickerContainer.addChild(bg);
-
-    // Title
-    const title = new Text({ text: 'Select Whisper Target', style: new TextStyle({ fill: '#AAA', fontSize: 11, fontFamily: 'monospace' }) });
-    title.x = 10;
-    title.y = 6;
-    this._whisperPickerContainer.addChild(title);
-
-    // List area
-    const listY = 24;
-    const listContainer = new Container();
-    listContainer.x = ChatBar.WP_COMBO_LEFT;
-    listContainer.y = listY;
-
-    const listMask = new Graphics();
-    listMask.rect(0, 0, ChatBar.WP_COMBO_W, listH).fill({ color: 0xFFFFFF });
-    listMask.x = ChatBar.WP_COMBO_LEFT;
-    listMask.y = listY;
-    this._whisperPickerContainer.addChild(listMask);
-
-    const candidates = this._whisperCandidate;
-    const maxScroll = Math.max(0, candidates.length - visibleRows);
-
-    for (let i = 0; i < Math.min(visibleRows, candidates.length); i++) {
-      const rowIdx = i + this._whisperPickerScrollOffset;
-      if (rowIdx >= candidates.length) break;
-
-      const row = new Container();
-      row.y = i * rowH;
-
-      const isSelected = rowIdx === this._whisperPickerSelectedIdx;
-      const rowBg = new Graphics();
-      rowBg.rect(0, 0, ChatBar.WP_COMBO_W, rowH).fill({ color: isSelected ? 0x3C4164 : 0x222244, alpha: 0.9 });
-      row.addChild(rowBg);
-
-      const label = new Text({ text: candidates[rowIdx], style: new TextStyle({ fill: isSelected ? '#FFF' : '#CCC', fontSize: 11, fontFamily: 'monospace' }) });
-      label.x = 6;
-      label.y = 2;
-      row.addChild(label);
-
-      row.eventMode = 'static';
-      row.cursor = 'pointer';
-      row.on('pointerdown', () => {
-        this._whisperPickerSelectedIdx = rowIdx;
-        this._buildWhisperPickerUI();
-      });
-      row.on('pointerdoubleclick', () => {
-        this._whisperPickerSelectedIdx = rowIdx;
-        this._confirmWhisperPicker();
-      });
-
-      listContainer.addChild(row);
-      this._whisperPickerRows.push(row);
-    }
-
-    listContainer.mask = listMask;
-    this._whisperPickerContainer.addChild(listContainer);
-
-    // Scrollbar
-    if (candidates.length > visibleRows) {
-      const sbX = ChatBar.WP_COMBO_LEFT + ChatBar.WP_COMBO_W + 2;
-      const sb = new Graphics();
-      sb.rect(0, 0, 8, listH).fill({ color: 0x333333, alpha: 0.6 });
-      const thumbH = Math.max(12, Math.floor(listH * visibleRows / candidates.length));
-      const span = listH - thumbH;
-      const frac = maxScroll > 0 ? this._whisperPickerScrollOffset / maxScroll : 0;
-      sb.rect(1, Math.floor(span * frac), 6, thumbH).fill({ color: 0x888888 });
-      this._whisperPickerContainer.addChild(sb);
-      this._whisperPickerScrollGfx = sb;
-
-      const upBtn = new Graphics();
-      upBtn.moveTo(4, 2).lineTo(0, 7).lineTo(8, 7).closePath().fill({ color: 0xAAAACC });
-      upBtn.x = sbX;
-      upBtn.y = -10;
-      upBtn.eventMode = 'static';
-      upBtn.cursor = 'pointer';
-      upBtn.on('pointerdown', () => {
-        if (this._whisperPickerScrollOffset > 0) {
-          this._whisperPickerScrollOffset--;
-          this._buildWhisperPickerUI();
-        }
-      });
-      this._whisperPickerContainer.addChild(upBtn);
-
-      const downBtn = new Graphics();
-      downBtn.moveTo(4, 7).lineTo(0, 2).lineTo(8, 2).closePath().fill({ color: 0xAAAACC });
-      downBtn.x = sbX;
-      downBtn.y = listH + 2;
-      downBtn.eventMode = 'static';
-      downBtn.cursor = 'pointer';
-      downBtn.on('pointerdown', () => {
-        if (this._whisperPickerScrollOffset < maxScroll) {
-          this._whisperPickerScrollOffset++;
-          this._buildWhisperPickerUI();
-        }
-      });
-      this._whisperPickerContainer.addChild(downBtn);
-    }
-
-    // Combo box area
-    const comboY = listY + listH + 6;
-    const comboContainer = new Container();
-    comboContainer.x = ChatBar.WP_COMBO_LEFT;
-    comboContainer.y = comboY;
-
-    const comboBg = new Graphics();
-    comboBg.rect(0, 0, ChatBar.WP_COMBO_W, comboH).fill({ color: 0x222244, alpha: 0.9 });
-    comboBg.rect(0, 0, ChatBar.WP_COMBO_W, comboH).stroke({ color: 0x555577, width: 1 });
-    comboContainer.addChild(comboBg);
-
-    const selectedName = candidates.length > 0 ? candidates[this._whisperPickerSelectedIdx] : 'No targets';
-    this._whisperPickerComboText = new Text({ text: selectedName, style: new TextStyle({ fill: '#FFF', fontSize: 11, fontFamily: 'monospace' }) });
-    this._whisperPickerComboText.x = 6;
-    this._whisperPickerComboText.y = 3;
-    comboContainer.addChild(this._whisperPickerComboText);
-
-    const toggleBtn = new Graphics();
-    toggleBtn.moveTo(ChatBar.WP_COMBO_W - 12, 5).lineTo(ChatBar.WP_COMBO_W - 18, 5).lineTo(ChatBar.WP_COMBO_W - 15, 12).closePath().fill({ color: 0xAAAACC });
-    toggleBtn.eventMode = 'static';
-    toggleBtn.cursor = 'pointer';
-    toggleBtn.on('pointerdown', () => {
-      this._whisperPickerDropdownOpen = !this._whisperPickerDropdownOpen;
-      this._buildWhisperPickerUI();
-    });
-    comboContainer.addChild(toggleBtn);
-
-    this._whisperPickerContainer.addChild(comboContainer);
-
-    // Dropdown (if open)
-    if (this._whisperPickerDropdownOpen) {
-      this._buildWhisperPickerDropdown(comboY + comboH + 2, ChatBar.WP_COMBO_LEFT, ChatBar.WP_COMBO_W);
-    }
-
-    // Buttons row
-    const btnY = comboY + comboH + (this._whisperPickerDropdownOpen ? listH + 10 : 8);
-
-    this._whisperPickerPrevBtn = new Graphics();
-    this._whisperPickerPrevBtn.roundRect(0, 0, 36, 18, 3).fill({ color: 0x334466 });
-    this._whisperPickerPrevBtn.x = ChatBar.WP_COMBO_LEFT;
-    this._whisperPickerPrevBtn.y = btnY;
-    const prevLabel = new Text({ text: 'Prev', style: new TextStyle({ fill: '#CCC', fontSize: 10, fontFamily: 'monospace' }) });
-    prevLabel.x = 4;
-    prevLabel.y = 3;
-    this._whisperPickerPrevBtn.addChild(prevLabel);
-    this._whisperPickerPrevBtn.eventMode = 'static';
-    this._whisperPickerPrevBtn.cursor = 'pointer';
-    this._whisperPickerPrevBtn.on('pointerdown', () => {
-      if (this._whisperPickerSelectedIdx > 0) {
-        this._whisperPickerSelectedIdx--;
-        if (this._whisperPickerSelectedIdx < this._whisperPickerScrollOffset) {
-          this._whisperPickerScrollOffset = this._whisperPickerSelectedIdx;
-        }
-        this._buildWhisperPickerUI();
-      }
-    });
-    this._whisperPickerContainer.addChild(this._whisperPickerPrevBtn);
-
-    this._whisperPickerNextBtn = new Graphics();
-    this._whisperPickerNextBtn.roundRect(0, 0, 36, 18, 3).fill({ color: 0x334466 });
-    this._whisperPickerNextBtn.x = ChatBar.WP_COMBO_LEFT + 40;
-    this._whisperPickerNextBtn.y = btnY;
-    const nextLabel = new Text({ text: 'Next', style: new TextStyle({ fill: '#CCC', fontSize: 10, fontFamily: 'monospace' }) });
-    nextLabel.x = 4;
-    nextLabel.y = 3;
-    this._whisperPickerNextBtn.addChild(nextLabel);
-    this._whisperPickerNextBtn.eventMode = 'static';
-    this._whisperPickerNextBtn.cursor = 'pointer';
-    this._whisperPickerNextBtn.on('pointerdown', () => {
-      if (this._whisperPickerSelectedIdx < candidates.length - 1) {
-        this._whisperPickerSelectedIdx++;
-        if (this._whisperPickerSelectedIdx >= this._whisperPickerScrollOffset + visibleRows) {
-          this._whisperPickerScrollOffset = this._whisperPickerSelectedIdx - visibleRows + 1;
-        }
-        this._buildWhisperPickerUI();
-      }
-    });
-    this._whisperPickerContainer.addChild(this._whisperPickerNextBtn);
-
-    this._whisperPickerOkBtn = new Graphics();
-    this._whisperPickerOkBtn.roundRect(0, 0, 36, 18, 3).fill({ color: 0x226644 });
-    this._whisperPickerOkBtn.x = ChatBar.WP_OK_LEFT;
-    this._whisperPickerOkBtn.y = btnY;
-    const okLabel = new Text({ text: 'OK', style: new TextStyle({ fill: '#FFF', fontSize: 10, fontFamily: 'monospace' }) });
-    okLabel.x = 8;
-    okLabel.y = 3;
-    this._whisperPickerOkBtn.addChild(okLabel);
-    this._whisperPickerOkBtn.eventMode = 'static';
-    this._whisperPickerOkBtn.cursor = 'pointer';
-    this._whisperPickerOkBtn.on('pointerdown', () => this._confirmWhisperPicker());
-    this._whisperPickerContainer.addChild(this._whisperPickerOkBtn);
-
-    this._whisperPickerCloseBtn = new Graphics();
-    this._whisperPickerCloseBtn.roundRect(0, 0, 36, 18, 3).fill({ color: 0x664444 });
-    this._whisperPickerCloseBtn.x = ChatBar.WP_CLOSE_LEFT;
-    this._whisperPickerCloseBtn.y = btnY;
-    const closeLabel = new Text({ text: 'Close', style: new TextStyle({ fill: '#FFF', fontSize: 10, fontFamily: 'monospace' }) });
-    closeLabel.x = 4;
-    closeLabel.y = 3;
-    this._whisperPickerCloseBtn.addChild(closeLabel);
-    this._whisperPickerCloseBtn.eventMode = 'static';
-    this._whisperPickerCloseBtn.cursor = 'pointer';
-    this._whisperPickerCloseBtn.on('pointerdown', () => this.closeWhisperPicker());
-    this._whisperPickerContainer.addChild(this._whisperPickerCloseBtn);
-
-    this._root.addChild(this._whisperPickerContainer);
-  }
-
-  private _buildWhisperPickerDropdown(y: number, x: number, w: number): void {
-    const candidates = this._whisperCandidate;
-    const rowH = ChatBar.WP_ROW_H;
-    const maxVisible = ChatBar.WP_VISIBLE_ROWS;
-    const maxScroll = Math.max(0, candidates.length - maxVisible);
-
-    this._whisperPickerDropdownContainer = new Container();
-    this._whisperPickerDropdownContainer.x = x;
-    this._whisperPickerDropdownContainer.y = y;
-
-    const bg = new Graphics();
-    bg.rect(0, 0, w, rowH * maxVisible + 2).fill({ color: 0x1A1A2E, alpha: 0.95 });
-    bg.rect(0, 0, w, rowH * maxVisible + 2).stroke({ color: 0x555577, width: 1 });
-    this._whisperPickerDropdownContainer.addChild(bg);
-
-    for (let i = 0; i < Math.min(maxVisible, candidates.length); i++) {
-      const rowIdx = i + this._whisperPickerDropdownScroll;
-      if (rowIdx >= candidates.length) break;
-
-      const row = new Container();
-      row.y = i * rowH + 1;
-
-      const isSelected = rowIdx === this._whisperPickerSelectedIdx;
-      const rowBg = new Graphics();
-      rowBg.rect(0, 0, w, rowH).fill({ color: isSelected ? 0x3C4164 : 0x1A1A2E, alpha: 0.9 });
-      row.addChild(rowBg);
-
-      const label = new Text({ text: candidates[rowIdx], style: new TextStyle({ fill: isSelected ? '#FFF' : '#CCC', fontSize: 11, fontFamily: 'monospace' }) });
-      label.x = 6;
-      label.y = 2;
-      row.addChild(label);
-
-      row.eventMode = 'static';
-      row.cursor = 'pointer';
-      row.on('pointerdown', () => {
-        this._whisperPickerSelectedIdx = rowIdx;
-        this._whisperPickerDropdownOpen = false;
-        this._buildWhisperPickerUI();
-      });
-
-      this._whisperPickerDropdownContainer.addChild(row);
-      this._whisperPickerDropdownRows.push(row);
-    }
-
-    if (candidates.length > maxVisible) {
-      const sb = new Graphics();
-      sb.rect(w - 10, 1, 8, rowH * maxVisible).fill({ color: 0x333333, alpha: 0.6 });
-      const thumbH = Math.max(8, Math.floor(rowH * maxVisible * maxVisible / candidates.length));
-      const span = rowH * maxVisible - thumbH;
-      const frac = maxScroll > 0 ? this._whisperPickerDropdownScroll / maxScroll : 0;
-      sb.rect(w - 9, 1 + Math.floor(span * frac), 6, thumbH).fill({ color: 0x888888 });
-      this._whisperPickerDropdownContainer.addChild(sb);
-    }
-
-    this._whisperPickerContainer?.addChild(this._whisperPickerDropdownContainer);
-  }
-
-  private _confirmWhisperPicker(): void {
-    const candidates = this._whisperCandidate;
-    if (candidates.length > 0 && this._whisperPickerSelectedIdx < candidates.length) {
-      const name = candidates[this._whisperPickerSelectedIdx];
-      this.setChatTargetByName(name);
-      this.closeWhisperPicker();
-      this.focus();
-    }
-  }
-
-  private _destroyWhisperPickerUI(): void {
-    if (this._whisperPickerContainer) {
-      this._whisperPickerContainer.removeFromParent();
-      this._whisperPickerContainer.destroy({ children: true });
-      this._whisperPickerContainer = null;
-    }
-    this._whisperPickerRows = [];
-    this._whisperPickerDropdownRows = [];
-    this._whisperPickerDropdownContainer = null;
-    this._whisperPickerComboText = null;
-    this._whisperPickerScrollGfx = null;
-    this._whisperPickerPrevBtn = null;
-    this._whisperPickerNextBtn = null;
-    this._whisperPickerOkBtn = null;
-    this._whisperPickerCloseBtn = null;
-  }
-
-  private _updateWhisperPickerScrollRepeat(_now: number): void {
-    // Placeholder for auto-repeat scroll on held buttons (OG behavior)
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -2183,8 +1900,10 @@ private _setFilterButton(): void {
     if (ctTarget) {
       // Load combo box background states
       this._combo.loadWzAsset(loader, ctTarget, 'base/normal');
-      // Load dropdown item sprites from chatTarget children (all, friend, party, guild, association, expedition)
-      this._combo.loadDropdownItemSprites(loader, ctTarget);
+      // Load dropdown item sprites from chatTarget children (all, friend,
+      // party, guild, association, expedition). Internal values buddy/alliance
+      // map to the WZ friend/association canvases.
+      this._combo.loadDropdownItemSprites(loader, ctTarget, { buddy: 'friend', alliance: 'association' });
     }
 
     const addControl = (name: string, onClick: () => void): Button | null => {
@@ -2337,45 +2056,10 @@ private _setFilterButton(): void {
       }
     }
 
-    // OG: Whisper picker dialog textures (from StatusBar2.img/Chat/Dlg/)
-    const dlgRoot = ui.GetItem('StatusBar2.img/Chat/Dlg') as WzProperty | null;
-    if (dlgRoot) {
-      const dlgBg = dlgRoot.Get('Dlg');
-      if (dlgBg instanceof WzCanvas) {
-        this._whisperPickerDialogBg = loader.Load(dlgBg);
-      }
-      const selNode = dlgRoot.Get('Sel');
-      if (selNode instanceof WzCanvas) this._whisperPickerRowTextures.selected = loader.Load(selNode);
-      const rowNode = dlgRoot.Get('Row');
-      if (rowNode instanceof WzCanvas) this._whisperPickerRowTextures.normal = loader.Load(rowNode);
-      const btnPrev = dlgRoot.Get('BtPrev') as WzProperty | null;
-      if (btnPrev) {
-        const n = btnPrev.Get('normal/0');
-        if (n instanceof WzCanvas) this._whisperPickerButtonTextures.prevNormal = loader.Load(n);
-      }
-      const btnNext = dlgRoot.Get('BtNext') as WzProperty | null;
-      if (btnNext) {
-        const n = btnNext.Get('normal/0');
-        if (n instanceof WzCanvas) this._whisperPickerButtonTextures.nextNormal = loader.Load(n);
-      }
-      const btnOk = dlgRoot.Get('BtOK') as WzProperty | null;
-      if (btnOk) {
-        const n = btnOk.Get('normal/0');
-        if (n instanceof WzCanvas) this._whisperPickerButtonTextures.okNormal = loader.Load(n);
-      }
-      const btnClose = dlgRoot.Get('BtClose') as WzProperty | null;
-      if (btnClose) {
-        const n = btnClose.Get('normal/0');
-        if (n instanceof WzCanvas) this._whisperPickerButtonTextures.closeNormal = loader.Load(n);
-      }
-      const comboNode = dlgRoot.Get('Combo') as WzProperty | null;
-      if (comboNode) {
-        const cn = comboNode.Get('normal/0');
-        if (cn instanceof WzCanvas) this._whisperPickerComboTextures.normal = loader.Load(cn);
-        const ch = comboNode.Get('mouseOver/0');
-        if (ch instanceof WzCanvas) this._whisperPickerComboTextures.hover = loader.Load(ch);
-      }
-    }
+    // NOTE: StatusBar2.img has no Chat/Dlg subtree (verified via nxdump —
+    // only lowercase chat/ exists with Tap/scroll/tapBar/tapBarOver), and the
+    // OG whisper picker is the shared CUtilDlgEx COMBOBOX dialog, so there is
+    // nothing to probe here.
 
     // OG: Chat target label textures — DIRECT children of chatTarget
     // (all, friend, party, guild, association, expedition). These are the combo
@@ -2383,12 +2067,13 @@ private _setFilterButton(): void {
     // resolve to these canvas paths). No 'label' subfolder exists.
     const ctRoot = bar.Get('chatTarget') as WzProperty | null;
     if (ctRoot) {
-      // chat target value -> canvas child name (target 8 "Find" has no canvas)
+      // OG combo index -> canvas child (StringPool 0x324/0x323/0x189C/0x326/
+      // 0x1896): 0=all, 2=party, 3=friend(buddy), 4=guild, 5=association
+      // (alliance). Targets 1/7 (whisper) and 8 (find) have no canvas.
       const labelForTarget: Record<number, string> = {
         0: 'all',
-        1: 'friend',
         2: 'party',
-        3: 'expedition',
+        3: 'friend',
         4: 'guild',
         5: 'association',
       };
@@ -2426,9 +2111,9 @@ private _setFilterButton(): void {
   // OG: ChangeChatWndSize (0x87A540) — snap to 13px increments
   private _changeChatWndSize(ry: number): void {
     if (!this._draggingResize) return;
-    // OG: compute delta from start, snap to 13px
+    // OG: height += 13*((m_nCurPtY-ry)/13) — C++ truncating division
     const delta = this._dragStartWndY - ry;
-    const snapDelta = Math.round(delta / 13) * 13;
+    const snapDelta = Math.trunc(delta / 13) * 13;
     let newH = this._dragStartH + snapDelta;
     // OG: clamp to 26..489
     newH = Math.max(26, Math.min(489, newH));
@@ -2466,9 +2151,10 @@ private _setFilterButton(): void {
       if (span > 0) {
         const maxScroll = Math.max(0, totalLines - this._maxLines);
         const delta = ly - this._dragScrollY;
+        // Dragging the thumb down moves the view newer (_scroll decreases).
         const scrollDelta = Math.round((delta / span) * maxScroll);
         if (scrollDelta !== 0) {
-          this.scrollBy(scrollDelta);
+          this.scrollBy(-scrollDelta);
           this._dragScrollY = ly;
         }
       }
@@ -2476,9 +2162,9 @@ private _setFilterButton(): void {
     }
 
     if (this._draggingResize) {
-      // OG: ChangeChatWndSize — snap to 13px increments
+      // OG ChangeChatWndSize: 13*((m_nCurPtY-ry)/13), truncating division
       const delta = this._dragStartWndY - y;
-      const snapDelta = Math.round(delta / 13) * 13;
+      const snapDelta = Math.trunc(delta / 13) * 13;
       let newH = this._dragStartH + snapDelta;
       newH = Math.max(26, Math.min(489, newH));
       this._chatWndLineVisible = Math.floor(newH / 13);
@@ -2486,17 +2172,20 @@ private _setFilterButton(): void {
       this._chatHeight = newH;
       this._chatWndY = 515 + CHAT_DY - this._chatHeight;
       this._maxLines = this._chatWndLineVisible;
-      this._applyLayout();
-      this._updateWzVisibility();
+    this._applyLayout();
+    this._updateWzVisibility();
+    // Re-resolve the combo label now that WZ canvases are available
+    // (boots on the Find text fallback until this runs).
+    this._applyComboLabel(this._nChatTarget);
       this._setFilterButton();
       this._syncLines();
       return;
     }
 
-    // Tap bar hover highlight (OG: tapBarOver layer)
+    // Tap bar hover highlight (OG OnMouseMove: rx < 577, y-2 < ry < y+8).
     if (this._chatType === CHAT_TYPE_EXPANDED && this._layerTapBarOver) {
-      const inTapBar = lx >= DISPLAY_X && lx < DISPLAY_X + DISPLAY_W_515
-        && ly >= this._chatWndY - 2 && ly < this._chatWndY - 2 + 4;
+      const inTapBar = lx >= DISPLAY_X && lx < DISPLAY_X + 577
+        && ly > this._chatWndY - 2 && ly < this._chatWndY + 8;
       this._layerTapBarOver.visible = inTapBar;
     }
 
@@ -2507,7 +2196,6 @@ private _setFilterButton(): void {
       const inDisplay = lx >= DISPLAY_X && lx < DISPLAY_X + DISPLAY_W_515
         && ly >= displayY + tabOffset && ly < displayY + this._chatHeight;
       if (inDisplay) {
-        const lineIdx = Math.floor((this._chatHeight - this._logUp - (ly - displayY - tabOffset)) / LINE_H);
         const filtered: number[] = [];
         for (let i = 0; i < this._chatLog.length; i++) {
           if (this._isFiltered(this._chatLog[i].lType)) filtered.push(i);
@@ -2516,7 +2204,8 @@ private _setFilterButton(): void {
         const scrollRange = Math.max(0, totalVisible - this._chatWndLineVisible + 1);
         const clampedScroll = Math.min(this._scroll, scrollRange);
         const bottomIdx = totalVisible - 1 - clampedScroll;
-        const visIdx = bottomIdx - lineIdx;
+        const lineIdx = this._rowAtY(ly, displayY, tabOffset, bottomIdx, filtered);
+        const visIdx = lineIdx < 0 ? -1 : bottomIdx - lineIdx;
         if (visIdx >= 0 && visIdx < filtered.length) {
           const entry = this._chatLog[filtered[visIdx]];
           if (entry.itemLinks && entry.itemLinks.length > 0 && this.onItemInfo) {
@@ -2552,7 +2241,7 @@ private _setFilterButton(): void {
     if (!this._floatNoticeText) {
       this._floatNoticeText = new Text({
         text,
-        style: new TextStyle({ fill: '#FFD700', fontSize: 12, fontFamily: 'monospace', fontWeight: 'bold' })
+        style: new TextStyle({ fill: '#FFD700', fontSize: 12, fontFamily: 'Arial', fontWeight: 'bold' })
       });
       this._floatNoticeText.anchor.set(0.5, 1);
       this._root.addChild(this._floatNoticeText);
@@ -2744,7 +2433,12 @@ private _setFilterButton(): void {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // OG: ConvertWhisperToNormal (0x8771C0) — convert whisper format
+  // OG: ConvertWhisperToNormal (0x8771C0) — whisper display formatter.
+  // IDA-verified literals: name accumulator skips [...] segments, line
+  // markers "<<" (0xBA4EC0) / ">>" (0xBA4EC4), display joiner " : "
+  // (0xB4B88C). The full marker protocol needs live whisper traffic to pin
+  // down, and our server already relays preformatted "name : text" lines, so
+  // this stays a message-text extractor until then. Currently no callers.
   // ═══════════════════════════════════════════════════════════════════════════
   convertWhisperToNormal(text: string): string {
     // OG: strips whisper formatting — handles "Name : msg", "Name:msg", channel prefix

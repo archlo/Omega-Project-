@@ -693,7 +693,6 @@ export class CashShopStage extends Stage {
         const s = game.session;
         s?.send(GameSender.CashShopQueryCash());
         s?.send(GameSender.CashShopLoadLocker());
-        s?.send(GameSender.CashShopLoadGift());
         s?.send(GameSender.CashShopLoadWish());
       }
       // Store authorization state (OG: m_bCashShopAuthorized)
@@ -1361,18 +1360,6 @@ export class CashShopStage extends Stage {
       if (spr) this._drawWzSprite(spr, CHAR_X + 141 + i * 38, CHAR_Y + 11);
     }
 
-    if (this._charLook && this._previewEnabled) {
-      this._charLook.Update(1 / 60, { x: 0, y: 0 }, false, false);
-      this._charLook.RebuildDisplay();
-      const container = this._charLook.container;
-      // Character stands centered in the (24,40)+(212x165) preview box,
-      // feet on its ground line (~y=203).
-      container.position.set(CHAR_X + 130, CHAR_Y + 203);
-      this._root.addChild(container);
-    } else {
-      this._charLook?.container.removeFromParent();
-    }
-
     // PreviewOnOff toggle button — OG SetUserPreviewControl layers:
     // PreviewOnOff toggle — Off is a 33x23 button at (119,17); On is a big
     // 230x226 overlay centered on the preview box at (24,40)+(212x165).
@@ -1398,6 +1385,21 @@ export class CashShopStage extends Stage {
       if (this._hoveredBtn === hoverKey) {
         this._g.rect(CHAR_X + x, CHAR_Y + 236, w, 20).stroke({ color: COL_TEXT_GOLD, width: 1 });
       }
+    }
+
+    // Character container must be added LAST so it renders on top of the
+    // preview background and toggle overlay.  addChild moves the child to
+    // the end of the parent's children array (highest z in PixiJS).
+    if (this._charLook && this._previewEnabled) {
+      this._charLook.Update(1 / 60, { x: 0, y: 0 }, false, false);
+      this._charLook.RebuildDisplay();
+      const container = this._charLook.container;
+      // Character stands centered in the (24,40)+(212x165) preview box,
+      // feet on its ground line (~y=203).
+      container.position.set(CHAR_X + 130, CHAR_Y + 203);
+      this._root.addChild(container);
+    } else {
+      this._charLook?.container.removeFromParent();
     }
 
     // OG CCSWnd_Char::OnCreate @0x4C4590 — CCtrlEdit id1003 at (50,214) 182x15
@@ -3662,12 +3664,12 @@ export class CashShopStage extends Stage {
           this._statusMessage = 'Inventory slots are already fully expanded.';
           return;
         }
-        this.game?.session.send(GameSender.CashShopIncSlotCount(invType));
+        this.game?.session.send(GameSender.CashShopIncSlotCount(this._paymentTypeWire(), invType));
         return;
       }
     }
     if (lx >= INV_X + 176 && lx < INV_X + 240 && ly >= INV_Y + 135 && ly < INV_Y + 157) {
-      this.game?.session.send(GameSender.CashShopIncTrunkCount());
+      this.game?.session.send(GameSender.CashShopIncTrunkCount(this._paymentTypeWire()));
       return;
     }
 
@@ -3678,7 +3680,7 @@ export class CashShopStage extends Stage {
         : this._lockerScroll * LOCKER_COLS;
       const item = this._lockerItems[idx];
       if (item) {
-        this.game?.session.send(GameSender.CashShopRebate(item.sn));
+        this.game?.session.send(GameSender.CashShopRebate(this._paymentTypeWire(), item.sn));
         this._statusMessage = `Rebate requested for ${item.name}.`;
       }
       return;
@@ -4086,7 +4088,7 @@ export class CashShopStage extends Stage {
   private _confirmNameChange(): void {
     if (!this._nameChangeItem || !this.game) return;
     if (this._nameChangeNewName.length < 4) { this._statusMessage = 'Name too short.'; return; }
-    this.game.session.send(GameSender.CashShopNameChange(this._nameChangeItem.sn, this._nameChangeNewName));
+    this.game.session.send(GameSender.CashShopNameChange(this._paymentTypeWire(), this._nameChangeItem.sn, this._nameChangeNewName));
     this._statusMessage = `Name change to "${this._nameChangeNewName}"...`;
     this._activeDialog = 'none';
     this._nameChangeItem = null;
@@ -4104,7 +4106,7 @@ export class CashShopStage extends Stage {
   private _confirmCoupleName(): void {
     if (!this._coupleNameItem || !this.game) return;
     if (this._coupleNameValue.length < 2) { this._statusMessage = 'Name too short.'; return; }
-    this.game.session.send(GameSender.CashShopCouple(this._coupleNameItem.sn, this._coupleNameValue));
+    this.game.session.send(GameSender.CashShopCouple('', this._paymentTypeWire(), this._coupleNameItem.sn, this._coupleNameValue, ''));
     this._statusMessage = `Couple ring to "${this._coupleNameValue}"...`;
     this._activeDialog = 'none';
     this._coupleNameItem = null;
@@ -4113,7 +4115,7 @@ export class CashShopStage extends Stage {
   private _confirmFriendName(): void {
     if (!this._friendNameItem || !this.game) return;
     if (this._friendNameValue.length < 2) { this._statusMessage = 'Name too short.'; return; }
-    this.game.session.send(GameSender.CashShopFriendShip(this._friendNameItem.sn, this._friendNameValue));
+    this.game.session.send(GameSender.CashShopFriendShip('', this._paymentTypeWire(), this._friendNameItem.sn, this._friendNameValue, ''));
     this._statusMessage = `Friendship ring to "${this._friendNameValue}"...`;
     this._activeDialog = 'none';
     this._friendNameItem = null;
@@ -4124,7 +4126,7 @@ export class CashShopStage extends Stage {
     // OG: body-part index maps to equip slot position
     const bodyParts = [1, 2, 3, 5, 6, 7, 8, 9]; // hat, face, top, bottom, shoes, weapon, shield, cape
     const bodyPart = bodyParts[this._equipSlotExtBodyPart] ?? 0;
-    this.game.session.send(GameSender.CashShopEnableEquipSlotExt(bodyPart, 30)); // 30 days
+    this.game.session.send(GameSender.CashShopEnableEquipSlotExt(this._confirmBuyPaymentType === 1, this._equipSlotExtItem?.sn ?? 0));
     this._statusMessage = `Equip slot extended for slot ${bodyPart}...`;
     this._activeDialog = 'none';
     this._equipSlotExtItem = null;
@@ -4157,6 +4159,11 @@ export class CashShopStage extends Stage {
    * OG: CCashShop::ProcessBuy — 12-way dispatcher based on itemId.
    * Routes the purchase to the correct packet sender.
    */
+  /** Maps _confirmBuyPaymentType (0=NX Credit, 1=MaplePoint, 2=Prepaid) to the wire value. */
+  private _paymentTypeWire(): number {
+    return this._confirmBuyPaymentType === 1 ? 2 : this._confirmBuyPaymentType === 2 ? 4 : 1;
+  }
+
   private _processBuy(item: CashCommodity): void {
     const { itemId, sn } = item;
     const paymentType = this._confirmBuyPaymentType === 1 ? 2 : this._confirmBuyPaymentType === 2 ? 4 : 1;
@@ -4177,7 +4184,7 @@ export class CashShopStage extends Stage {
 
     // Package boxes: itemId/10000 == 910 → OnBuyPackage
     if (Math.floor(itemId / 10000) === 910) {
-      this.game?.session.send(GameSender.CashShopBuyPackage([sn]));
+      this.game?.session.send(GameSender.CashShopBuyPackage(paymentType, sn));
       return;
     }
 
@@ -4197,7 +4204,7 @@ export class CashShopStage extends Stage {
 
     // Character slot increment: itemId/1000 == 5430 → OnIncCharacterSlotCount
     if (this._isCharSlotInc(itemId)) {
-      this.game?.session.send(GameSender.CashShopIncCharSlotCount());
+      this.game?.session.send(GameSender.CashShopIncCharSlotCount(paymentType, sn));
       return;
     }
 
@@ -4222,7 +4229,7 @@ export class CashShopStage extends Stage {
     if (this._isSlotInc(itemId)) {
       // Determine inventory type from item subcategory
       const invType = Math.floor(itemId / 1000) % 10;
-      this.game?.session.send(GameSender.CashShopIncSlotCount(invType));
+      this.game?.session.send(GameSender.CashShopIncSlotCount(paymentType, invType));
       return;
     }
 
@@ -4246,13 +4253,13 @@ export class CashShopStage extends Stage {
 
     // Trunk count extension (itemId == 5001053) → sub-action 11
     if (itemId === 5001053) {
-      this.game?.session.send(GameSender.CashShopIncTrunkCount());
+      this.game?.session.send(GameSender.CashShopIncTrunkCount(paymentType));
       return;
     }
 
     // Buy-char count extension (itemId == 5001054) → sub-action 13
     if (itemId === 5001054) {
-      this.game?.session.send(GameSender.CashShopIncBuyCharCount());
+      this.game?.session.send(GameSender.CashShopIncBuyCharCount(paymentType, sn));
       return;
     }
 

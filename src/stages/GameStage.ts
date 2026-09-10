@@ -2952,6 +2952,25 @@ export class GameStage extends Stage {
     this._chatBar.onEmotion = (emotion) => {
       this._sendEmotionChange(emotion);
     };
+    // OG ChangeWhisperTarget @0x87EDA0: CUtilDlgEx COMBOBOX over the whisper
+    // candidate list. Confirm applies via setWhisperTarget (which also
+    // re-adds the candidate); cancel leaves the target untouched.
+    this._chatBar.onWhisperDialogRequest = (candidates) => {
+      const dlg = this._utilDlg;
+      if (!dlg) return;
+      dlg.SetUtilDlgEx(UtilDlgType.COMBOBOX, 0, true, false);
+      dlg.SetUtilDlgEx_COMBOBOX(candidates);
+      dlg.onResult = (r: UtilDlgResult) => {
+        this._chatBar.closeWhisperPicker();
+        if (r.type !== 'ok') return;
+        const name = dlg.GetComboBoxStr();
+        if (name) {
+          this._chatBar.setWhisperTarget(name);
+          this._chatBar.focus();
+        }
+      };
+      dlg.show();
+    };
 
     this._skill.onDragStart = (payload, texture, x, y) => { this._dragController.beginDrag(payload, texture, x, y); };
     this._skill.onSkillUp = (_skillId) => { /* OG: UI refresh only; packet sent via onSendSkillUp */ };
@@ -3185,7 +3204,6 @@ export class GameStage extends Stage {
       // Release the melee-swing input lock once the one-time action finished.
       if (this._meleeSwingActive && !this._player?.IsPlayingOneTimeAction) {
         this._meleeSwingActive = false;
-        if (this._physics) this._physics.InputLocked = false;
       }
       this._physics.Update(input, dt);
       this._player?.UpdateFromPhysics(dt, this._physics.Stance, this._physics.FacingLeft, this._physics.ClimbMoving);
@@ -6461,16 +6479,30 @@ this._localCharId = args.characterId ?? 0;
   }
 
   /** OG play_reactor_sound: Sound/Reactor.img/<templateId>/<oldState>/Hit
-      with positional volume, fired on every state switch. */
+      (StringPool 0xC2D "Sound/Reactor.img/%s/%s" over Format(SP2121 "%d/%d",
+      dwTemplateId, nOldState) + "Hit"), seType HIT only (0x37), positional
+      volume, fired from LoadReactorLayer on the hit visual switch.
+      NOTE: the template id is RAW decimal ("%d") — short ids like 2000/2001
+      exist verbatim in Sound.nx, so no zero-padding. Positional volume is
+      skipped like every other TS sound (full-volume convention). */
+  private readonly _reactorSoundCache = new Map<string, WzSound | null>();
   private _playReactorSound(templateId: number, oldState: number): void {
     if (!this._mobSoundWz || !this.game.audioPlayer) return;
-    const node = this._mobSoundWz.GetItem(`Reactor.img/${templateId.toString().padStart(7, '0')}/${oldState}/Hit`);
-    if (node instanceof WzSound) {
-      this.game.audioPlayer.PlayEffect(node.AudioBytes);
-    } else if (node instanceof WzUol) {
-      const resolved = node.Resolve();
-      if (resolved instanceof WzSound) this.game.audioPlayer.PlayEffect(resolved.AudioBytes);
+    const key = `${templateId}/${oldState}`;
+    let sound = this._reactorSoundCache.get(key);
+    if (sound === undefined) {
+      const node = this._mobSoundWz.GetItem(`Reactor.img/${templateId}/${oldState}/Hit`);
+      if (node instanceof WzSound) {
+        sound = node;
+      } else if (node instanceof WzUol) {
+        const resolved = node.Resolve();
+        sound = resolved instanceof WzSound ? resolved : null;
+      } else {
+        sound = null;
+      }
+      this._reactorSoundCache.set(key, sound);
     }
+    if (sound) this.game.audioPlayer.PlayEffect(sound.AudioBytes);
   }
 
   private _onEmployeeEnter(args: EmployeeEnterArgs): void {
@@ -6988,19 +7020,45 @@ this._localCharId = args.characterId ?? 0;
   private _tryMeleeAttack(): void {
     if (!this._physics) return;
     this._attackCooldown = GameStage.AttackCooldownSeconds;
-    // Plant the character for the duration of the swing's one-time action —
-    // movement/jump input is suppressed until it finishes (released in update).
+    // OG v95 does NOT stop movement during attacks — the swing animation
+    // overlays on the current stance (walk/stand) and the character can
+    // keep walking. Only the one-time-action gate (IsOnPlayingOneTimeAction)
+    // prevents a second attack until the first finishes.
     this._meleeSwingActive = true;
-    this._physics.InputLocked = true;
 
     const pos = this._physics.Position;
     const facingLeft = this._physics.FacingLeft;
     const attackAction = this._player?.PickAttackAction() ?? 'swingO1';
     this._player?.PlayAttackAction(attackAction);
-    const minX = facingLeft ? pos.x - GameStage.MeleeReachX : pos.x;
-    const maxX = facingLeft ? pos.x : pos.x + GameStage.MeleeReachX;
-    const minY = pos.y - GameStage.MeleeReachY * 2;
-    const maxY = pos.y + GameStage.MeleeReachY;
+    // OG CUserLocal::TryDoingNormalAttack @0x9123C0 — the hit rect is the
+    // weapon's afterimage arcRange for THIS action (CActionMan::
+    // GetMeleeAttackRange @0x428D00 over Character/Afterimage/<afterimage>/
+    // <masteryLevel>/<action> lt/rb, with the nAction==74 hardcoded rect and
+    // the 57→proneStab rule), mirrored when facing right (adjust_rect
+    // @0x63C7D0 — rects are authored facing-left, x negative) and offset by
+    // the attacker position. Mobs intersect by body rect (OG IntersectRect
+    // against arcArea), not by center point.
+    const actMan = ActionMan.GetInstance();
+    const swingWeaponId = this._equip?.equippedWeaponItemId ?? null;
+    const swingAfterimage = swingWeaponId !== null
+      ? actMan.GetCharacterImgEntry(swingWeaponId, null)?.sWeaponAfterimage || null
+      : 'barehands';
+    const swingMastery = this._statDetailInfo?.Inputs.mastery ?? this._masteryFromSkills;
+    const afterimageLevel = Math.max(0, Math.floor((swingMastery - 10) / 5));
+    const actionCode = AttackAction.CodeFor(attackAction);
+    const wzRange = actMan.GetMeleeAttackRange(swingAfterimage, afterimageLevel, attackAction, actionCode);
+    let minX: number, maxX: number, minY: number, maxY: number;
+    if (wzRange) {
+      const r = ActionMan.AdjustAttackRect(wzRange, pos.x, pos.y, !facingLeft);
+      minX = r.left; maxX = r.right; minY = r.top; maxY = r.bottom;
+    } else {
+      // No WZ arcRange (OG would whiff an empty rect) — keep the legacy
+      // reach box so attacks still connect when data is missing.
+      minX = facingLeft ? pos.x - GameStage.MeleeReachX : pos.x;
+      maxX = facingLeft ? pos.x : pos.x + GameStage.MeleeReachX;
+      minY = pos.y - GameStage.MeleeReachY * 2;
+      maxY = pos.y + GameStage.MeleeReachY;
+    }
 
     // OG CReactor::OnHit — a swing overlapping a reactor's body sends
     // UserHitReactor; the server owns hitable/state rules.
@@ -7011,7 +7069,9 @@ this._localCharId = args.characterId ?? 0;
     for (const mob of this._mobs.values()) {
       if (mob.IsDead) continue;
       const mp = mob.Position;
-      const hx0 = mp.x - 20, hx1 = mp.x + 20, hy0 = mp.y - 50, hy1 = mp.y;
+      const body = mob.GetBodyRect();
+      const hx0 = mp.x + body.left, hx1 = mp.x + body.right;
+      const hy0 = mp.y + body.top, hy1 = mp.y + body.bottom;
       if (hx1 < minX || hx0 > maxX || hy1 < minY || hy0 > maxY) continue;
       const dx = pos.x - mp.x, dy = pos.y - mp.y;
       const d = dx * dx + dy * dy;
@@ -7238,7 +7298,7 @@ this._localCharId = args.characterId ?? 0;
   // OG: CUserLocal::RegisterAfterimage (0x902d90) â€” stores afterimage data
   // for the attack trail effect. The afterimage UOL is built from:
   //   skill-specific: SKILLENTRY::GetAfterimageUOL â†’ "{base}/{weaponName}/{level}"
-  //   basic attack: "Effect/Character/{weaponType}/{level}" where level = floor((mastery-10)/5)
+  //   basic attack: "Character/Afterimage/{afterimage}/{level}" where level = floor((mastery-10)/5)
   // SfxUOL comes from the weapon's Character.wz entry (sSfx field).
   private _registerAfterimage(
     pos: { x: number; y: number }, facingLeft: boolean, attackAction: string,
@@ -7246,24 +7306,19 @@ this._localCharId = args.characterId ?? 0;
     const weaponId = this._equip?.equippedWeaponItemId ?? null;
     const actionCode = AttackAction.CodeFor(attackAction);
 
-    // Build afterimage UOL from weapon type and mastery level
-    // OG: GetAfterimageUOL (0x8ed0c0) â€” for basic attacks (no skill),
-    // path = "Effect/Character/{weaponName}/{masteryLevel}"
-    // where masteryLevel = max(0, floor((mastery - 10) / 5))
+    // OG: GetAfterimageUOL (0x8ed0c0)
+    // afterimage name from weapon info/afterImage in Character.wz
+    // path = "Character/Afterimage/{name}/{level}"
+    // level = max(0, floor((mastery - 10) / 5))
     let afterimageUOL = '';
     if (weaponId !== null) {
-      const wt = getWeaponType(weaponId);
-      const masteryLevel = Math.max(0, Math.floor((this._masteryFromSkills - 10) / 5));
-      // Weapon name from item ID â€” OG uses StringPool for weapon category names
-      const weaponNames: Record<number, string> = {
-        30: 'sword', 31: 'sword', 32: 'sword', 33: 'dagger',
-        37: 'wand', 38: 'staff', 39: 'knuckle',
-        40: 'axe', 41: 'axe', 42: 'hammer',
-        43: 'bow', 44: 'crossbow', 45: 'claw',
-        46: 'gun', 47: 'gun',
-      };
-      const weaponName = weaponNames[wt] ?? 'sword';
-      afterimageUOL = `Effect/Character/${weaponName}/${masteryLevel}`;
+      const actMan = ActionMan.GetInstance();
+      const charEntry = actMan.GetCharacterImgEntry(weaponId, null);
+      const afterimage = charEntry?.sWeaponAfterimage;
+      if (afterimage) {
+        const masteryLevel = Math.max(0, Math.floor((this._masteryFromSkills - 10) / 5));
+        afterimageUOL = `Character/Afterimage/${afterimage}/${masteryLevel}`;
+      }
     }
 
     this._afterimageInfo = {
@@ -7589,6 +7644,7 @@ this._localCharId = args.characterId ?? 0;
       // OG CUser::DrawNameTags â€” the local player's name plate below the feet.
       if (this._player) this._player.charName = stat.name;
       if (this._messengerWin) this._messengerWin.selfName = stat.name;
+      if (this._chatBar) this._chatBar.myName = stat.name;
     }
     if (this._stats) {
       this._stats.level = stat.level;
@@ -9263,6 +9319,27 @@ this._localCharId = args.characterId ?? 0;
     dlg.m_bParam = (args as { messageParam?: number }).messageParam ?? 0;
     dlg.scriptMsgType = args.msgType;
     dlg.npcNameOf = (id) => this.game.nameService?.NpcName(id) ?? null;
+    // OG CTextAnalyzer name substitutions (#o/#m/#t/#z/#e/#q/#s/#h/#c/#u/#i/#v).
+    dlg.mobNameOf = (id) => this.game.nameService?.MobName(id) ?? null;
+    dlg.mapNameOf = (id) => this.game.nameService?.MapName(id)
+      ?? this.game.nameService?.MapShortName(id) ?? null;
+    dlg.itemNameOf = (id) => this.game.nameService?.ItemName(id) ?? null;
+    dlg.skillNameOf = (id) => this.game.nameService?.SkillName(id) ?? null;
+    dlg.charNameOf = () => this._statusBar?.charName
+      ?? this._player?.charName ?? null;
+    dlg.countItemOf = (id) => this._item?.countItem(id) ?? 0;
+    dlg.itemIconOf = (id) => this._itemIcons?.LoadIcon(id) ?? null;
+    dlg.skillIconOf = (id) => {
+      const canvas = this._skillService?.Get(id)?.Icon1
+        ?? this._skillService?.Get(id)?.Icon0;
+      return canvas ? this._loader.Load(canvas) : null;
+    };
+    // OG #u quest-state text (SP 4314/4315/6704): in-progress → 1, completed → 2.
+    dlg.questStateOf = (id) => {
+      if ((this._questStates.get(id) ?? 0) === 1) return 1;
+      if (this._questRecords.some((q) => q.questId === id && q.state === 0)) return 2;
+      return 0;
+    };
     dlg.onResult = (r) => this._onScriptDialogResult(r, dlg);
 
     switch (args.msgType) {

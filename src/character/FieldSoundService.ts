@@ -5,13 +5,22 @@ import { WzAudioPlayer } from '../render/WzAudioPlayer.js';
 
 export class FieldSoundService {
   private readonly _cache = new Map<string, WzSound | null>();
+  private _lastDropMs = 0;
 
   constructor(
     private readonly _soundWz: WzPackage | null,
     private readonly _audio: WzAudioPlayer | null,
   ) {}
 
-  PlayDrop(): void { this._play('DropItem'); }
+  PlayDrop(): void {
+    // OG CDropPool::Update: the drop sound (StringPool 1284 over the
+    // "Sound/Game.img/" prefix, enterType CREATE only) is gated on a global
+    // 300ms throttle (tCur - tLastSfx > 300) so multi-drop bursts don't stack.
+    const now = Date.now();
+    if (now - this._lastDropMs <= 300) return;
+    this._lastDropMs = now;
+    this._play('DropItem');
+  }
   PlayPickUp(): void { this._play('PickUpItem'); }
 
   private _play(evt: string): void {

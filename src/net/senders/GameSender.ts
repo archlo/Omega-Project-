@@ -832,12 +832,11 @@ export class GameSender {
   // once per recipient (OG loops `m_aSendGifts` one entry at a time, driven
   // by the CashItemResult response advancing `m_nGiftsIdx`); the caller is
   // responsible for re-invoking this per recipient.
-  static CashShopSendGift(spw: string, commoditySN: number, requestBuyOneADay: boolean, recipientName: string, giftMessage: string): OutPacket {
+  static CashShopSendGift(spw: string, commoditySN: number, recipientName: string, giftMessage: string): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(4);
+    p.writeByte(CashShopRequestType.Gift);
     p.writeString(spw);
     p.writeInt(commoditySN);
-    p.writeByte(requestBuyOneADay ? 1 : 0);
     p.writeString(recipientName);
     p.writeString(giftMessage);
     return p;
@@ -2398,21 +2397,14 @@ export class GameSender {
   /** Sub-action 0: CCashShop::SendLoadLockerRequest — request locker contents. */
   static CashShopLoadLocker(): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(0);
-    return p;
-  }
-
-  /** Sub-action 1: CCashShop::SendLoadGiftRequest — request gift box contents. */
-  static CashShopLoadGift(): OutPacket {
-    const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(1);
+    p.writeByte(CashShopRequestType.LoadLocker);
     return p;
   }
 
   /** Sub-action 2: CCashShop::SendLoadWishRequest — request wishlist. */
   static CashShopLoadWish(): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(2);
+    p.writeByte(CashShopRequestType.LoadWish);
     return p;
   }
 
@@ -2438,7 +2430,7 @@ export class GameSender {
   /** Sub-action 5: CCashShop::SendSetWishRequest — set the 10-slot wishlist. */
   static CashShopSetWish(sns: number[]): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(5);
+    p.writeByte(CashShopRequestType.SetWish);
     for (let i = 0; i < 10; i++) p.writeInt(sns[i] ?? 0);
     return p;
   }
@@ -2464,109 +2456,131 @@ export class GameSender {
     return p;
   }
 
-  /** Sub-action 8: CCashShop::SendUseCouponRequest — redeem a coupon code. */
   static CashShopUseCoupon(couponCode: string): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(8);
+    p.writeByte(CashShopRequestType.UseCoupon);
     p.writeString(couponCode);
     return p;
   }
 
-  /** Sub-action 9: CCashShop::SendGiftCouponRequest — gift a coupon to a player. */
   static CashShopGiftCoupon(receiverName: string, couponCode: string): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(9);
+    p.writeByte(CashShopRequestType.GiftCoupon);
     p.writeString(receiverName);
     p.writeString(couponCode);
     return p;
   }
 
-  /** Sub-action 10: CCashShop::SendIncSlotCountRequest — purchase extra inventory slots. */
-  static CashShopIncSlotCount(invType: number): OutPacket {
+  /** Sub-action 6: buy 4 equip/use/setup/etc slots via UI, or 8-slot pack via commodity.
+   *  OG: [6][dwOption][paymentType][isAdd4Slots][nTI (when isAdd4Slots==0)] */
+  static CashShopIncSlotCount(paymentType: number, invType: number): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(10);
-    p.writeByte(invType);
+    p.writeByte(CashShopRequestType.IncSlotCount);
+    p.writeByte(2); // dwOption = always 2
+    p.writeInt(paymentType); // 1=NX_Credit, 2=MaplePoint, 4=NX_Prepaid
+    p.writeByte(0); // isAdd4Slots = 0 (buy via UI, not commodity pack)
+    p.writeByte(invType); // nTI: 1=Equip, 2=Use, 3=Setup, 4=Etc
     return p;
   }
 
-  /** Sub-action 11: CCashShop::SendIncTrunkCountRequest — purchase extra trunk slots. */
-  static CashShopIncTrunkCount(): OutPacket {
+  /** Sub-action 7: buy 4 trunk/storage slots via UI, or 8-slot pack via commodity.
+   *  OG: [7][dwOption][paymentType][isAdd4Slots] */
+  static CashShopIncTrunkCount(paymentType: number): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(11);
+    p.writeByte(CashShopRequestType.IncTrunkCount);
+    p.writeByte(2); // dwOption = always 2
+    p.writeInt(paymentType);
+    p.writeByte(0); // isAdd4Slots = 0 (buy via UI)
     return p;
   }
 
-  /** Sub-action 12: CCashShop::SendIncCharSlotCountRequest — purchase extra character slot. */
-  static CashShopIncCharSlotCount(): OutPacket {
+  /** Sub-action 8: buy a character slot (commodity 5430000).
+   *  OG: [8][dwOption][paymentType][commodityId] */
+  static CashShopIncCharSlotCount(paymentType: number, commodityId: number): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(12);
+    p.writeByte(CashShopRequestType.IncCharSlotCount);
+    p.writeByte(2); // dwOption = always 2
+    p.writeInt(paymentType);
+    p.writeInt(commodityId);
     return p;
   }
 
-  /** Sub-action 13: CCashShop::SendIncBuyCharCountRequest — purchase extra buy-character count. */
-  static CashShopIncBuyCharCount(): OutPacket {
+  /** Sub-action 9: increase buy-char count (unimplemented in kinoko, follows v95 convention).
+   *  OG: [9][dwOption][paymentType][commodityId] */
+  static CashShopIncBuyCharCount(paymentType: number, commodityId: number): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(13);
+    p.writeByte(CashShopRequestType.IncBuyCharCount);
+    p.writeByte(2); // dwOption = always 2
+    p.writeInt(paymentType);
+    p.writeInt(commodityId);
     return p;
   }
 
-  /** Sub-action 14: CCashShop::SendEnableEquipSlotExtRequest — extend an equip slot by days. */
-  static CashShopEnableEquipSlotExt(bodyPartIndex: number, days: number): OutPacket {
+  /** Sub-action 10: extend an equip slot (30 or 7 day pass).
+   *  OG: [10][isMaplePoint][commodityId] */
+  static CashShopEnableEquipSlotExt(isMaplePoint: boolean, commodityId: number): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(14);
-    p.writeShort(bodyPartIndex);
-    p.writeShort(days);
+    p.writeByte(CashShopRequestType.EnableEquipSlotExt);
+    p.writeByte(isMaplePoint ? 1 : 0);
+    p.writeInt(commodityId);
     return p;
   }
 
-  /** Sub-action 15: CCashShop::SendDestroyRequest — destroy a locker item by SN. */
+  /** Sub-action 13: destroy a locker item.
+   *  OG: [13][int nCommSN] */
   static CashShopDestroy(sn: number): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(15);
+    p.writeByte(CashShopRequestType.Destroy);
     p.writeInt(sn);
     return p;
   }
 
-  /** Sub-action 16: CCashShop::SendExpireRequest — expire a locker item by SN. */
   static CashShopExpire(sn: number): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(16);
+    p.writeByte(CashShopRequestType.Expire);
     p.writeInt(sn);
     return p;
   }
 
-  /** Sub-action 17: CCashShop::SendRebateRequest — request rebate for a locker item. */
-  static CashShopRebate(sn: number): OutPacket {
+  /** Sub-action 28: rebate a locker item (unimplemented in kinoko, follows v95 convention).
+   *  OG: [28][dwOption][paymentType][commodityId] */
+  static CashShopRebate(paymentType: number, commodityId: number): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(17);
-    p.writeInt(sn);
+    p.writeByte(CashShopRequestType.Rebate);
+    p.writeByte(2); // dwOption = always 2
+    p.writeInt(paymentType);
+    p.writeInt(commodityId);
     return p;
   }
 
-  /** Sub-action 18: CCashShop::SendCoupleRequest — buy a couple/linked item for a partner. */
-  static CashShopCouple(sn: number, receiverName: string): OutPacket {
+  /** Sub-action 31: buy a couple ring.
+   *  OG: [31][spw][paymentType][commodityId][receiverName][message] */
+  static CashShopCouple(spw: string, paymentType: number, commodityId: number, receiverName: string, message: string): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(18);
-    p.writeInt(sn);
+    p.writeByte(CashShopRequestType.Couple);
+    p.writeString(spw);
+    p.writeInt(paymentType);
+    p.writeInt(commodityId);
     p.writeString(receiverName);
+    p.writeString(message);
     return p;
   }
 
-  /** Sub-action 19: CCashShop::SendBuyPackageRequest — buy a package deal by SNs. */
-  static CashShopBuyPackage(sns: number[]): OutPacket {
+  /** Sub-action 32: buy a package commodity.
+   *  OG: [32][dwOption][paymentType][commodityId] */
+  static CashShopBuyPackage(paymentType: number, commodityId: number): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(19);
-    p.writeByte(sns.length);
-    for (const sn of sns) p.writeInt(sn);
+    p.writeByte(CashShopRequestType.BuyPackage);
+    p.writeByte(2); // dwOption = always 2
+    p.writeInt(paymentType);
+    p.writeInt(commodityId);
     return p;
   }
 
   /** Sub-action 20: CCashShop::SendGiftPackageRequest — gift a package to a player. */
-  /** Sub-action 33: CCashShop::OnGiftPackage @0x4907B0 — gift a package item
-   *  (itemId/10000 == 910) to one recipient. */
   static CashShopGiftPackage(commoditySN: number, receiverName: string, giftMessage: string): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(33);
+    p.writeByte(CashShopRequestType.GiftPackage);
     p.writeString(''); // SPW
     p.writeInt(commoditySN);
     p.writeString(receiverName);
@@ -2574,45 +2588,44 @@ export class GameSender {
     return p;
   }
 
-  /** Sub-action 21: CCashShop::SendBuyNormalRequest — buy multiple normal items at once. */
   static CashShopBuyNormal(count: number, sns: number[]): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(21);
+    p.writeByte(CashShopRequestType.BuyNormal);
     p.writeByte(count);
     for (const sn of sns) p.writeInt(sn);
     return p;
   }
 
-  /** Sub-action 22: CCashShop::SendFriendShipRequest — buy a friendship item for another player. */
-  static CashShopFriendShip(sn: number, receiverName: string): OutPacket {
+  /** Sub-action 37: buy a friendship ring.
+   *  OG: [37][spw][paymentType][commodityId][receiverName][message] */
+  static CashShopFriendShip(spw: string, paymentType: number, commodityId: number, receiverName: string, message: string): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(22);
-    p.writeInt(sn);
+    p.writeByte(CashShopRequestType.Friendship);
+    p.writeString(spw);
+    p.writeInt(paymentType);
+    p.writeInt(commodityId);
     p.writeString(receiverName);
+    p.writeString(message);
     return p;
   }
 
-  /** Sub-action 23: CCashShop::SendFreeCashItemRequest — claim a free cash item. */
   static CashShopFreeCashItem(sn: number): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(23);
+    p.writeByte(CashShopRequestType.FreeCashItem);
     p.writeInt(sn);
     return p;
   }
 
-  /** Sub-action 0x2C (44): CCashShop::RequestCashPurchaseRecord @0x4823C0 —
-   *  purchase record for a limit(2|3) commodity SN (0 = the global flag). */
   static CashShopPurchaseRecord(sn: number): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(44);
+    p.writeByte(CashShopRequestType.PurchaseRecord);
     p.writeInt(sn);
     return p;
   }
 
-  /** Sub-action 25: CCashShop::SendChangeMaplePointRequest — convert Maple Points for an item. */
   static CashShopChangeMaplePoint(sn: number, amount: number): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(25);
+    p.writeByte(CashShopRequestType.ChangeMaplePoint);
     p.writeInt(sn);
     p.writeInt(amount);
     return p;
@@ -2623,45 +2636,42 @@ export class GameSender {
     return OutPacket.Of(InHeader.CashShopQueryCashRequest);
   }
 
-  /** Sub-action 26: CCashShop::SendCashGachaponOpenRequest — open a cash gachapon ticket. */
   static CashShopCashGachaponOpen(sn: number): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(26);
+    p.writeByte(CashShopRequestType.CashGachaponOpen);
     p.writeInt(sn);
     return p;
   }
 
-  // ── Additional cash shop senders (from IDA decompilation) ──
-
-  /** CCashShop::SendCheckNameChangePossiblePacket (decompile/488190.c). */
   static CashShopCheckNameChange(itemId: number, newName: string): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(28); // sub-action 28
+    p.writeByte(CashShopRequestType.BuyNameChange);
     p.writeInt(itemId);
     p.writeString(newName);
     return p;
   }
 
-  /** CCashShop::SendNameChangeRequest — confirm name change after checking. */
-  static CashShopNameChange(sn: number, newName: string): OutPacket {
+  /** Sub-action 50: buy a name change (unimplemented in kinoko, follows v95 convention).
+   *  OG: [50][dwOption][paymentType][commodityId][newName] */
+  static CashShopNameChange(paymentType: number, commodityId: number, newName: string): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(29); // sub-action 29
-    p.writeInt(sn);
+    p.writeByte(CashShopRequestType.BuyNameChange);
+    p.writeByte(2); // dwOption = always 2
+    p.writeInt(paymentType);
+    p.writeInt(commodityId);
     p.writeString(newName);
     return p;
   }
 
-  /** CCashShop::SendCheckTransferWorldPossiblePacket (decompile/4884C0.c). */
   static CashShopCheckTransferWorld(): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(30); // sub-action 30
+    p.writeByte(CashShopRequestType.BuyTransferWorld);
     return p;
   }
 
-  /** CCashShop::SendTransferWorldRequest — transfer character to another world. */
   static CashShopTransferWorld(sn: number, worldName: string): OutPacket {
     const p = OutPacket.Of(InHeader.UserCashShopRequest);
-    p.writeByte(31); // sub-action 31
+    p.writeByte(CashShopRequestType.BuyTransferWorld);
     p.writeInt(sn);
     p.writeString(worldName);
     return p;

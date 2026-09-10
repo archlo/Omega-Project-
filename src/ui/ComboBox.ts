@@ -4,7 +4,7 @@ import { WzTextureLoader } from '../render/WzTextureLoader.js';
 import { WzProperty } from '../wz/WzProperty.js';
 import { WzCanvas } from '../wz/WzCanvas.js';
 
-const DEFAULT_STYLE = new TextStyle({ fill: '#FFF', fontSize: 11, fontFamily: 'monospace' });
+const DEFAULT_STYLE = new TextStyle({ fill: '#FFF', fontSize: 11, fontFamily: 'Arial' });
 const DEFAULT_ITEM_H = 16;
 const DEFAULT_WIDTH = 68;
 const DEFAULT_HEIGHT = 21;
@@ -57,7 +57,7 @@ export class ComboBox {
     this.container.addChild(this._bg);
 
     this._label = new Text({ text: '', style: opts?.style ?? DEFAULT_STYLE });
-    this._label.x = 4;
+    this._label.x = 3; // OG CCtrlComboBox::Draw DrawTextA(rx+3, ry+3)
     this._label.y = TEXT_Y_PAD;
     this.container.addChild(this._label);
 
@@ -189,10 +189,12 @@ export class ComboBox {
   // ─── Graphics fallback ───────────────────────────────────────────────
 
   private _drawFallback(): void {
+    // OG m_paramComboBox: nBackColor=0xFF555555, nBorderColor=0xFF404040
+    // (nBackFocusedColor=0xFFFFC600 when focused — not modeled in fallback).
     const g = this._bg;
     g.clear();
-    g.rect(0, 0, this._width, this._height).fill({ color: '#111', alpha: 0.8 });
-    g.rect(0, 0, this._width, this._height).stroke({ color: '#555', width: 1 });
+    g.rect(0, 0, this._width, this._height).fill({ color: '#555555', alpha: 1 });
+    g.rect(0, 0, this._width, this._height).stroke({ color: '#404040', width: 1 });
 
     this._triangle.clear();
     const tx = this._width - 12;
@@ -250,10 +252,13 @@ export class ComboBox {
    * The node should have children matching the item values (e.g. "all", "friend", "party", etc.)
    * Each child should have a '0' or 'bmp' canvas.
    */
-  loadDropdownItemSprites(loader: WzTextureLoader, root: WzProperty): void {
+  loadDropdownItemSprites(loader: WzTextureLoader, root: WzProperty, alias?: Record<string, string>): void {
     for (const item of this._items) {
       if (!item.value) continue;
-      const node = root.Get(item.value);
+      // WZ child names differ from internal values for some targets
+      // (buddy->friend, alliance->association); whisper/find have no canvas.
+      const nodeName = alias?.[item.value] ?? item.value;
+      const node = root.Get(nodeName);
       if (!node) continue;
       let canvas: WzCanvas | null = null;
       if (node instanceof WzCanvas) {

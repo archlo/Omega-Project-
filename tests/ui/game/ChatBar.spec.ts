@@ -6,9 +6,9 @@ import { WzSprite } from '../../../src/render/WzSprite.js';
 // ponytail: avoids pulling in jsdom just to satisfy Text.width's canvas measurement in tests
 Object.defineProperty(Text.prototype, 'width', { get: () => 0 });
 
-// OG edit control coordinates (ChatBar.ts: edit y = _chatWndY + 6, dynamic)
+// OG edit control coordinates (ChatBar.ts: CreateCtrl id=1011 x=75 y=524)
 const EDIT_X = 75;
-const EDIT_Y = 548; // input-strip row
+const EDIT_Y = 524; // OG MakeCtrlEdit input row
 const DISPLAY_X = 0;
 const DISPLAY_Y_SMALL = 492;
 const CHAT_HEIGHT_SMALL = 24;
@@ -26,7 +26,8 @@ describe('ChatBar history recall', () => {
     const [sx, sy] = screenPos(bar, EDIT_X + 4, (bar as any)._editY + 2);
     bar.handleMouseButton(sx, sy, true);
     for (const ch of msg) bar.onKeyPress(ch);
-    bar.onKeyPress('Enter');
+    bar.onKeyPress('Enter'); // OG: stays open + focused after send
+    (bar as any)._blur(); // test harness stands in for outside-click
   }
 
   it('ArrowUp/ArrowDown cycle through previously sent messages', () => {
@@ -62,8 +63,10 @@ describe('ChatBar history recall', () => {
     // Click at char 8 → lx = TEXT_X + 8*CHAR_W = 65
     // OG bottom-up: line 0 y = displayY + chatHeight - 13 = 492 + 24 - 13 = 503
     // Line center y = 503 + 6 = 509
+    // OG HitTest: display clicks are a pass-through miss — the link fires as
+    // a side effect (TryBeginShowItemInfo) and the click is NOT consumed.
     const [sx, sy] = screenPos(bar, TEXT_X + 8 * CHAR_W, DISPLAY_Y_SMALL + CHAT_HEIGHT_SMALL - LINE_H + 6);
-    expect(bar.handleMouseButton(sx, sy, true)).toBe(true);
+    expect(bar.handleMouseButton(sx, sy, true)).toBe(false);
     expect(clicked).toBe(2000000);
   });
 
@@ -211,13 +214,20 @@ describe('ChatBar combo box label (OG chatTarget label canvases)', () => {
     expect(c._label.visible).toBe(false);
   });
 
-  it('fallbacks to text when no WZ canvas exists (whisper 7 / find 8)', () => {
+  it('routes target 7 through the ChangeWhisperTarget dialog (no direct apply)', () => {
+    // OG SetChatTarget case 7 → ChangeWhisperTarget dialog; the target
+    // applies only on confirm via setWhisperTarget.
     const bar = new ChatBar();
-    bar.setChatTarget(7); // whisper has no canvas
-    const c = combo(bar);
-    expect(c._labelSprite).toBeNull();
-    expect(c._label.visible).toBe(true);
-    expect(c._label.text).toBe('Whisper');
+    const requested: string[][] = [];
+    bar.onWhisperDialogRequest = (c) => requested.push(c);
+    (bar as any)._addWhisperCandidate('alice');
+    bar.setChatTarget(7);
+    expect(requested).toEqual([['alice']]);
+    expect((bar as any)._nChatTarget).not.toBe(7);
+    expect((bar as any)._whisperPickerOpen).toBe(true);
+    // Confirm path applies the target.
+    bar.setWhisperTarget('alice');
+    expect((bar as any)._nChatTarget).toBe(7);
   });
 
   it('combo click change routes through _applyComboLabel and fires onChatTargetChange', () => {
@@ -246,6 +256,155 @@ describe('ChatBar input edit control (OG m_paramEdit)', () => {
     const bar = new ChatBar();
     const st: any = (bar as any)._inputText.style;
     expect(String(st.fill).toLowerCase()).toBe('#000000');
+  });
+
+  it('uses Arial (StringPool 6693) for input, combo and log fonts', () => {
+    const bar = new ChatBar();
+    expect((bar as any)._inputText.style.fontFamily).toBe('Arial');
+    expect((bar as any)._chatFonts[0].fontFamily).toBe('Arial');
+  });
+});
+
+describe('ChatBar IDA-verified layout (MakeCtrlEdit/ChatLogDraw)', () => {
+  it('whisper first-lines shift up 5px when not expanded, 0 when expanded', () => {
+    // OG ChatLogDraw: nTop = h+13*(-1-idx)-(type!=3?5:0) for lType 14/16/23/24
+    // first lines; main text at h-13*idx-13 with no shift.
+    const small = new ChatBar();
+    small.startChat(); // SMALL: displayY=492, h=24
+    small.addLine('bob: hi', 14);
+    expect((small as any)._lines[0].y).toBe(492 + (24 - 13 - 5)); // 498
+
+    const plain = new ChatBar();
+    plain.startChat();
+    plain.addLine('hello', 0);
+    expect((plain as any)._lines[0].y).toBe(492 + (24 - 13)); // 503, no shift
+
+    const exp = new ChatBar();
+    exp.setChatType(3); // EXPANDED: displayY=515-70=445, tabOffset=18
+    exp.addLine('bob: hi', 14);
+    expect((exp as any)._lines[0].y).toBe(445 + 18 + (70 - 13)); // 530, no shift
+  });
+
+  it('chatSpace2 is visible only when the input controls are destroyed (!bCreate)', () => {
+    // OG MakeCtrlEdit tail: space/space2 visible = (bCreate==0).
+    const bar = new ChatBar();
+    const b = bar as any;
+    b._layerSpace2 = new Sprite(Texture.EMPTY);
+    b._updateWzVisibility(); // MINIMAL → bCreate=0
+    expect(b._layerSpace2.visible).toBe(true);
+    bar.startChat(); // SMALL → bCreate=1
+    expect(b._layerSpace2.visible).toBe(false);
+  });
+});
+
+describe('ChatBar focus lifecycle (OG EndChat @0x87A520 / HitTest @0x86D500)', () => {
+  it('plain display clicks pass through without focusing', () => {
+    const bar = new ChatBar();
+    bar.startChat();
+    bar.addLine('plain', 0);
+    (bar as any)._blur();
+    expect(bar.isFocused).toBe(false);
+    const root = (bar as any)._root;
+    // Display row, no links/whisper: unconsumed, stays unfocused.
+    const consumed = bar.handleMouseButton(root.x + 200, root.y + 503, true);
+    expect(consumed).toBe(false);
+    expect(bar.isFocused).toBe(false);
+  });
+
+  it('losing focus keeps the typed input (OG EndChat does not clear)', () => {
+    const bar = new ChatBar();
+    bar.startChat();
+    for (const ch of 'half') bar.onKeyPress(ch);
+    (bar as any)._blur();
+    expect(bar.isFocused).toBe(false);
+    expect((bar as any)._input).toBe('half');
+  });
+
+  it('Enter keeps the chat open and focused with cleared input', () => {
+    const bar = new ChatBar();
+    bar.startChat();
+    for (const ch of 'hi') bar.onKeyPress(ch);
+    bar.onKeyPress('Enter');
+    expect(bar.isFocused).toBe(true);
+    expect((bar as any)._input).toBe('');
+    expect((bar as any)._chatType).toBe(2);
+  });
+});
+
+describe('ChatBar SetChatTarget (OG @0x87FD30)', () => {
+  it('boots with target 8 (Find) per the CUIStatusBar ctor', () => {
+    const bar = new ChatBar();
+    expect((bar as any)._nChatTarget).toBe(8);
+    const c = (bar as any)._combo;
+    expect(c._label.text).toBe('Find');
+  });
+
+  it('switching target opens chat, clears input and the whisper target', () => {
+    const bar = new ChatBar();
+    (bar as any)._input = 'half-typed';
+    (bar as any)._whisperTarget = 'alice';
+    const changed: string[] = [];
+    bar.onChatTargetChange = (v) => changed.push(v);
+    bar.setChatTarget(2);
+    expect((bar as any)._nChatTarget).toBe(2);
+    expect((bar as any)._input).toBe('');
+    expect((bar as any)._whisperTarget).toBe('');
+    expect((bar as any)._chatType).toBe(2); // StartChat from minimal
+    expect(changed).toEqual(['party']);
+  });
+
+  it('combo selection routes through the full SetChatTarget switch', () => {    const bar = new ChatBar();
+    const changed: string[] = [];
+    bar.onChatTargetChange = (v) => changed.push(v);
+    const c = (bar as any)._combo;
+    // Select Whisper (param 1): plain apply, no dialog (group dialog gap).
+    c.handleMouseButton(30, 10, true); // open
+    const itemH = 16;
+    const ly = -c._items.filter((it: any) => it.label).length * itemH + 1 * itemH + itemH / 2;
+    c.handleMouseButton(30, ly, true);
+    expect((bar as any)._nChatTarget).toBe(1);
+    expect(changed).toEqual(['whisper']);
+  });
+});
+
+describe('ChatBar scroll model (OG _RefreshChatLog @0x879B70)', () => {  function expandedBar(): ChatBar {
+    const bar = new ChatBar();
+    bar.setChatType(3); // h=70 → 5 visible lines
+    return bar;
+  }
+
+  it('shows the newest message at the bottom once the log overflows', () => {
+    const bar = expandedBar();
+    for (let i = 0; i < 10; i++) bar.addLine(`msg${i}`, 0);
+    const b = bar as any;
+    expect(b._scroll).toBe(0);
+    // Bottom row (i=0) shows the newest entry.
+    const bottomText = b._lineTexts[0]?.text ?? b._lines[0].children.map((c: any) => c.text ?? '').join('');
+    expect(bottomText).toContain('msg9');
+  });
+
+  it('holds the viewed entries when a new message arrives while scrolled up', () => {
+    const bar = expandedBar();
+    for (let i = 0; i < 10; i++) bar.addLine(`msg${i}`, 0);
+    const b = bar as any;
+    bar.scrollBy(2);
+    const before: string = b._lines[0].children.map((c: any) => c.text ?? '').join('');
+    bar.addLine('newest', 0);
+    expect(b._scroll).toBe(3);
+    const after: string = b._lines[0].children.map((c: any) => c.text ?? '').join('');
+    expect(after).toBe(before);
+  });
+
+  it('PageUp moves older, PageDown moves newer', () => {
+    const bar = expandedBar();
+    for (let i = 0; i < 10; i++) bar.addLine(`msg${i}`, 0);
+    const b = bar as any;
+    bar.focus();
+    bar.onKeyPress('PageUp');
+    expect(b._scroll).toBeGreaterThan(0);
+    const up = b._scroll;
+    bar.onKeyPress('PageDown');
+    expect(b._scroll).toBeLessThan(up);
   });
 });
 
@@ -294,5 +453,146 @@ describe('ChatBar WZ layer positions (OG mainBar origin anchor)', () => {
     b._applyLayout();
     expect(enter.position.x).toBe(45);
     expect(enter.position.y).toBe(518 + 23); // 541 — unchanged from minimal
+  });
+});
+
+describe('ChatBar whisper click (OG TryBeginWhisper @0x87F390)', () => {  function whisperBar(): ChatBar {
+    const bar = new ChatBar();
+    bar.startChat(); // SMALL: displayY=492, h=24
+    // lType 14 + icon + first line. Text width shim = 0 → hit rect x in [15, 48).
+    bar.addLine('bob: hi', 14, -1, true);
+    return bar;
+  }
+
+  function click(bar: ChatBar, lx: number, ly: number): void {
+    const root = (bar as any)._root;
+    bar.handleMouseButton(root.x + lx, root.y + ly, true);
+  }
+
+  it('click inside the (nameW+6, nameW+39) rect opens the dialog without applying', () => {
+    const bar = whisperBar();
+    const requested: string[][] = [];
+    bar.onWhisperDialogRequest = (c) => requested.push(c);
+    click(bar, 20, 500); // inside [15,48), row y 498..511
+    expect(requested).toEqual([['bob']]);
+    expect((bar as any)._nChatTarget).not.toBe(7);
+  });
+
+  it('click elsewhere on the whisper line does not open the dialog', () => {
+    const bar = whisperBar();
+    let opened = false;
+    bar.onWhisperDialogRequest = () => { opened = true; };
+    click(bar, 200, 500);
+    expect(opened).toBe(false);
+  });
+
+  it('ignores clicks on your own name', () => {
+    const bar = whisperBar();
+    bar.myName = 'bob';
+    let opened = false;
+    bar.onWhisperDialogRequest = () => { opened = true; };
+    click(bar, 20, 500);
+    expect(opened).toBe(false);
+  });
+});
+
+describe('ChatBar highlight colors (OG ChatLogAdd @0x87AEC0)', () => {
+  it('assigns per-type m_nBack values', () => {
+    const bar = new ChatBar();
+    const backOf = (t: number, ch = -1) => (bar as any)._backColorFor(t, ch);
+    expect(backOf(0)).toBe(0);
+    expect(backOf(14)).toBe(0xCCFFBFDD);
+    expect(backOf(15)).toBe(0xFFF74B4B);
+    expect(backOf(16)).toBe(0xDDFFC600);
+    expect(backOf(21)).toBe(0xDDFFC600);
+    expect(backOf(19, 2)).toBe(0xFF99CC33);
+    expect(backOf(19, -1)).toBe(0x80FF5C59);
+    expect(backOf(20)).toBe(0x80FF5C59);
+    expect(backOf(22)).toBe(0xFF99CC33);
+    expect(backOf(11)).toBe(0xB0FFFFFF);
+  });
+
+  it('draws the highlight band behind back-colored lines', () => {
+    const bar = new ChatBar();
+    bar.startChat();
+    bar.addLine('sys', 14);
+    const b = bar as any;
+    expect(b._chatLog[0].nBack).toBe(0xCCFFBFDD);
+    // First child of the row container is the highlight Graphics.
+    const row = b._lines[0];
+    expect(row.children.length).toBeGreaterThan(1);
+    expect(row.children[0].constructor.name).toBe('Graphics');
+  });
+
+  it('leaves plain lines without a highlight rect', () => {
+    const bar = new ChatBar();
+    bar.startChat();
+    bar.addLine('plain', 0);
+    const b = bar as any;
+    expect(b._chatLog[0].nBack).toBe(0);
+    expect(b._lines[0].children.length).toBe(1);
+  });
+});
+
+describe('ChatBar send path (OG OnKey Enter @0x87FDE0)', () => {  function send(bar: ChatBar, msg: string): void {
+    const root = (bar as any)._root;
+    const editY = (bar as any)._editY;
+    bar.handleMouseButton(root.x + 75 + 4, root.y + editY + 2, true);
+    for (const ch of msg) bar.onKeyPress(ch);
+    bar.onKeyPress('Enter');
+  }
+
+  it('whisper target with no name shows the SP 0xAFD notice and sends nothing', () => {
+    const bar = new ChatBar();
+    (bar as any)._nChatTarget = 7; // whisper mode, no name (bypasses dialog)
+    const sent: string[] = [];
+    bar.onSendChat = (m) => sent.push(m);
+    send(bar, 'hello');
+    expect(sent).toEqual([]);
+    const log = (bar as any)._chatLog;
+    expect(log[log.length - 1].text).toBe('There is no one to whisper to.');
+    expect(log[log.length - 1].lType).toBe(12);
+  });
+
+  it('Find-target sends append the SP 6445 notice', () => {
+    const bar = new ChatBar(); // boots target 8
+    expect((bar as any)._nChatTarget).toBe(8);
+    const sent: string[] = [];
+    bar.onSendChat = (m) => sent.push(m);
+    send(bar, 'hello map');
+    expect(sent).toEqual(['hello map']);
+    const log = (bar as any)._chatLog;
+    expect(log[log.length - 1].text).toBe('Select View All to check sent messages.');
+  });
+});
+
+describe('ChatBar spam gate (OG CChatHelper::TryChat @0x4AA550)', () => {
+  it('mutes for 2800ms (0xAF0) on 4 identical lines, with the SP 0x390 text', () => {
+    const bar = new ChatBar();
+    const notices: string[] = [];
+    (bar as any).floatNotice = (t: string) => notices.push(t);
+    const tryChat = (m: string): boolean => (bar as any)._tryChat(m);
+    expect(tryChat('spam')).toBe(true);
+    expect(tryChat('spam')).toBe(true);
+    expect(tryChat('spam')).toBe(true);
+    expect(tryChat('spam')).toBe(true);
+    expect(tryChat('spam')).toBe(false);
+    expect(notices[notices.length - 1]).toContain('Repeating the same line');
+    // Mute window is 2800ms, not 30s.
+    (bar as any)._muteEndTime = performance.now() - 2799;
+    expect(tryChat('spam')).toBe(false);
+    (bar as any)._muteEndTime = performance.now() - 2801;
+    expect(tryChat('other')).toBe(true);
+  });
+
+  it('chat-blocked state drops messages with the SP 0x392 notice', () => {
+    const bar = new ChatBar();
+    const notices: string[] = [];
+    (bar as any).floatNotice = (t: string) => notices.push(t);
+    bar.setChatBlocked(true);
+    expect((bar as any)._tryChat('hello')).toBe(false);
+    expect(notices[notices.length - 1]).toBe('You are currently blocked from chatting.');
+    bar.setChatBlocked(false);
+    expect((bar as any)._tryChat('hello')).toBe(true);
   });
 });
